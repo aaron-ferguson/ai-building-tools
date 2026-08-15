@@ -296,7 +296,31 @@ Nothing is written back to Notion.
 
 ---
 
-## Step 6 — Report
+## Step 6 — Commit the backlog, and only the backlog
+
+`capture` writes backlog files. It never writes source, so **every path in its commit is under
+`.claude/backlog/`** — and that has to be enforced by what you stage, not by what you believe you
+edited:
+
+```bash
+git add .claude/backlog/QUEUE.md .claude/backlog/items/0007-*.md .claude/backlog/config.yml
+git diff --cached --name-only     # every line must be under .claude/backlog/
+git commit -m "Capture 0007: <title>"
+```
+
+**Never `git commit -a`, `git add .`, or `git add -A` here.** Capture usually runs in the window
+that is *not* developing, so the other window's half-finished work is sitting in the same tree and
+frequently in the same index. Sweeping it up is silent: no error, no conflict, and a source change
+lands under a commit message about a backlog entry. This has happened, and it is why
+`CONCURRENCY.md` Rule 7 exists.
+
+If you find source paths already staged when you arrive, they are the other window's. Leave them:
+`git restore --staged <path>` takes them out of *your* commit without touching their working tree.
+Never `git stash` to tidy the tree — bare `stash` takes their uncommitted work with it.
+
+---
+
+## Step 7 — Report
 
 One short block: the ID, the title, its position, and what else moved. Don't echo the whole
 item file back — it's on disk.

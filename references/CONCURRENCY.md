@@ -125,7 +125,7 @@ itself.
 
 ---
 
-## Rule 6 — The working tree is shared too
+## Rule 6 — The working tree is shared too, so claim files as well as rows
 
 The queue is not the only thing two windows contend over. A second window running the test suite
 while the first is mid-edit is testing a file set that never existed, and its red — or its green
@@ -134,3 +134,46 @@ while the first is mid-edit is testing a file set that never existed, and its re
 `qa` checks `git status --porcelain` before running anything and says plainly when the tree
 carries changes outside the item under test. It still runs; it labels the result advisory rather
 than pretending to a confident verdict. See `qa` Step 2.
+
+**A row-level claim says who owns the *work*, not who owns the *files*.** Two sessions can hold
+different rows, obey every rule above, and still spend an hour editing the same component — and
+nothing so far would have warned either of them. So a claim carries a file scope:
+
+- On claim, `develop` writes `touches:` into the item's frontmatter — the paths or globs it
+  expects to edit, read off the item's own description. It is a declaration, not a lock.
+- **Before claiming, read the `touches:` of every `in-progress` item.** If your candidate overlaps
+  one, do not take it: take the next `ready` row whose scope is clear, and name the row you
+  stepped over and the scope it collided with. Overlap is a reason to pick differently, never
+  something to negotiate around.
+- If the work reaches further than declared, widen `touches:` the moment you know. A scope that
+  silently grows is worse than none, because the other window is trusting it.
+- Nothing rescues an overlap taken anyway. There is no merge protocol here; the whole design is
+  to keep two sessions out of the same files in the first place.
+
+**The shape this protects is one developing window plus one capturing or QA'ing window.** Two
+windows both running `develop` is the mode where this rule earns its keep — and if every `ready`
+row collides with an in-progress scope, the honest answer is that there is nothing to develop
+right now, not that the collision is acceptable.
+
+---
+
+## Rule 7 — The git index is shared, and it is the easiest thing to lose work to
+
+The queue has locks and tokens. The index has neither: it is one staging area per repository, and
+any session can commit what another session has staged.
+
+**This is not hypothetical.** A window running `capture` committed with the index swept whole and
+carried off a developing window's staged file deletion, so that deletion is recorded in a commit
+about an unrelated backlog entry. Nothing errored. Neither session noticed until afterwards.
+
+- **Never `git commit -a`, `git add .`, or `git add -A`.** Every one of them commits whatever the
+  other window has in flight. Stage explicit paths, always.
+- **Stage and commit in the same turn.** Staged work is exposed until it lands, so staging before
+  a long test run and committing after it holds the window open for exactly the loss above.
+- **Read back what you are about to commit.** `git diff --cached --name-only` before every commit;
+  if a path in it is not yours, `git restore --staged <path>` instead of committing it.
+- **Never bare `git stash`** — it takes the other window's uncommitted work with it. Scope it to
+  your own paths (`git stash push -u <path>…`), or do not stash at all.
+- A commit describes the work of the session that made it. If you find another session's change
+  already committed under your message, say so plainly in your report — do not rewrite their
+  history to tidy it.

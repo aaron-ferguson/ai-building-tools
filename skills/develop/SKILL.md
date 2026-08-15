@@ -53,14 +53,25 @@ mkdir "$BACKLOG/.lock" 2>/dev/null || { cat "$BACKLOG/.lock/held-by"; }   # busy
 CLAIM=$(head -c2 /dev/urandom | xxd -p)
 ```
 
+**Check the file scope before you claim.** Read the `touches:` of every `in-progress` item. If
+your candidate's files overlap one, **take the next `ready` row whose scope is clear instead**,
+and name the row you stepped over and the scope it hit. Two sessions in one file is the failure
+this prevents, and there is no merge protocol to fall back on (`CONCURRENCY.md` Rule 6). If every
+`ready` row collides, say that there is nothing safe to develop right now rather than taking one
+anyway.
+
 Inside the lock, in this order:
 
 1. **Re-read the row.** It may have changed since you chose it. If it is no longer `ready`,
    release the lock and pick again — do not proceed on the version you read a minute ago.
 2. Set the row's status to `in-progress` and write `$CLAIM` into its `Owner` column, as one
    single-line `Edit`.
-3. Write `claimed_by: <token>` and `claimed_at: <ISO-8601 UTC>` into the item file's frontmatter.
+3. Write `claimed_by: <token>`, `claimed_at: <ISO-8601 UTC>`, and `touches:` — the paths or globs
+   you expect to edit — into the item file's frontmatter.
 4. `rm -rf "$BACKLOG/.lock"` — in this same turn, before any implementation work.
+
+Widen `touches:` the moment the work reaches further than you declared: the other window is
+reading it to decide what it may safely take.
 
 Report the token to the user, so the other window's output is legible to them. Then read the
 full item file before doing anything else.
@@ -104,8 +115,13 @@ non-negotiable there, and this skill does not restate it. Read it before you wri
 line. For a bug item, the first test reproduces the bug and stays as a permanent guard.
 
 Work FR by FR, committing each logical unit as it completes rather than one commit at the end,
-in the commit format the conventions define, referencing the item ID (`0007`). Stage specific
-files — never `git add .`; a second window may be editing this repo.
+in the commit format the conventions define, referencing the item ID (`0007`).
+
+**Every commit contains this session's work and nothing else.** The index is shared and unguarded
+— another window can commit whatever you leave staged, and has (`CONCURRENCY.md` Rule 7). So:
+stage explicit paths, never `git add .` / `-A` and never `git commit -a`; stage and commit in the
+same turn rather than staging before a long test run; and read back `git diff --cached
+--name-only` before each commit, unstaging anything that is not yours.
 
 Respect the item's **Out of scope** section. If you find adjacent problems, don't fix them
 here — capture them as new backlog items and keep going. That's what the queue is for.
@@ -126,8 +142,8 @@ why it is safe for the other window to run `/qa` while you are mid-item.
 If QA fails: fix, re-run QA, and record what the failure was in the item's notes. Never close
 an item on a red or skipped check, and never report success you haven't seen. If you can't
 get it green, set the item back to `ready` (or `blocked` with the reason) and report honestly
-what's left — **and clear the `Owner` token when you do**, since you are no longer holding it
-and the next session needs to be able to take it.
+what's left — **and clear the `Owner` token and `touches:` when you do**, since you are no longer
+holding either the row or its files, and the next session needs to be able to take both.
 
 ---
 
@@ -142,9 +158,11 @@ Only after QA is green:
    your row with a single `Edit` and append it to `DONE.md`, dropping the `Owner` token on the
    way. Nothing else in `QUEUE.md` is touched; there is no position column to renumber. No lock
    is needed for this: it is a single-line edit to a row only you hold.
-4. Commit the backlog change alongside the code change. Stage the specific files — a second
-   window is editing this repo too, and `git add .` would sweep its in-flight work into your
-   commit.
+4. Commit the backlog change alongside the code change, staging the specific files and checking
+   `git diff --cached --name-only` first. A second window is editing this repo too, and a swept
+   index — `git add .`, or `git commit -a` — takes its in-flight work into your commit.
+   Also clear `touches:` from the item's frontmatter as you close it: the scope is a live claim
+   on files, and a closed item must not keep reserving them.
 5. Anything you learned that belongs in the project's `CLAUDE.md` or a convention file goes in
    the same change, unprompted.
 

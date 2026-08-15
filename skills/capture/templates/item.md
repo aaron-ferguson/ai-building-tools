@@ -14,6 +14,11 @@ source: user | agent | notion:<page-id>
 # token in this conversation — see the ai-building-tools CONCURRENCY.md.
 claimed_by:
 claimed_at:
+# Paths or globs this item is expected to edit — a live claim on files, not just on the row.
+# `develop` writes it on claim and clears it on close or release, widens it if the work reaches
+# further, and reads every in-progress item's copy before claiming so two sessions never end up
+# in the same files. Best effort is enough; it warns, it does not lock.
+touches:
 ---
 
 ## Problem
