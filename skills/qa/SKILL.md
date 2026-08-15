@@ -1,0 +1,136 @@
+---
+name: qa
+description: >
+  Verify a change against a backlog item's acceptance criteria and non-functional requirements
+  at the QA level the item declares — unit, integration, or end-to-end. Use when the user says
+  "QA this", "verify it", "check it works", "run the e2e tests on this", "does this meet the
+  criteria", or invokes /qa. Invoked automatically by the develop skill before an item can be
+  closed. Reads .claude/backlog/items/ for the acceptance criteria and QA plan.
+---
+
+# /qa
+
+Verify that a change actually satisfies what was promised. Distinct from `/code-review`, which
+hunts for defects in a diff — this one checks a change against a **written contract** and
+returns pass or fail.
+
+**`qa` writes nothing to the backlog.** It reads `QUEUE.md`, the item file and `config.yml`,
+and modifies none of them — not the status, not the ACs, not the notes. Its output is a verdict
+to its caller, and `develop` owns acting on it. That read-only guarantee is what makes it safe
+to run in a second window against an item another session is actively developing. If you notice
+something worth recording, hand it to `capture`; do not edit the item yourself.
+(See `references/CONCURRENCY.md` at the plugin root — `../../references/CONCURRENCY.md` from
+this file.)
+
+**This skill states no standards of its own.** What counts as secure, private, accessible, or
+adequately tested is defined by the project's conventions and cited here, never restated.
+Resolve them per `references/CONVENTIONS.md`.
+
+---
+
+## Step 1 — Get the contract
+
+With an item ID: read `.claude/backlog/items/<id>-*.md` and take the **Acceptance criteria**,
+**Non-functional requirements**, and **QA plan** sections.
+
+Without one: infer the item from the branch, recent commits, or the conversation. If there's
+no backlog item at all, QA against whatever the user stated as the goal — and say explicitly
+that you're verifying an unwritten contract, which is weaker.
+
+Read `.claude/backlog/config.yml` for the project's real commands, and resolve the conventions
+per `references/CONVENTIONS.md`. If none resolve, stop — a verdict issued against no standard
+is indistinguishable from one issued against a real one, and that is the failure mode this
+whole design exists to prevent.
+
+---
+
+## Step 2 — Check whose tree you are testing, then run the declared level
+
+**Before running anything**, see what else is in flight:
+
+```bash
+git status --porcelain
+```
+
+A second window developing another item means the suite you are about to run covers a file set
+that never existed as a coherent state. Its red may belong to work half-written, and its green
+may be luck.
+
+- Changes confined to the item under test → proceed normally.
+- Changes outside it → **still run**, but say so in the verdict and label the result
+  **advisory**: name the unrelated paths, and state that a confident PASS needs a clean tree.
+  Do not stash, revert, or check out anything to tidy it — that is another session's work and
+  destroying it is far worse than an imprecise verdict.
+- The item under test has an `Owner` token in `QUEUE.md` that you did not mint, and you were
+  invoked directly rather than by `develop` → say plainly that you are QA'ing an item another
+  session is mid-way through, so a red may simply mean unfinished.
+
+The item's `qa_level` was set at capture time. Run **that** level and everything below it —
+levels are cumulative, sitting on the pyramid defined in `testing-conventions.md`.
+
+| Level | Run |
+|---|---|
+| `verify` | the scripted assertion named in the item's QA plan, plus lint/typecheck if the project has them. The assertion must be executed and its output shown — a `verify` item read-and-eyeballed is not verified |
+| `unit` | lint, typecheck, unit suite scoped to the change |
+| `integration` | the above, plus the integration suite across the seams this change touches |
+| `e2e` | the above, plus the specific journeys named in the item's QA plan |
+
+**If the declared level has no command in `config.yml`, stop and say so.** Do not substitute a
+lower level and call it verified — that is exactly the silent downgrade the per-item declaration
+exists to prevent.
+
+Scope to the change; full-suite runs are for when the user asks. Keep output lean, and raise
+verbosity only while investigating a failure.
+
+**For e2e:** drive the real entry point against a local or staging target with synthetic data —
+never production, never production credentials. Stop every server, container, or browser you
+started, in this same turn. If Playwright is the project's runner, use it.
+
+---
+
+## Step 3 — Check the acceptance criteria literally
+
+Walk each AC one at a time and record how you verified it — which test, which observed
+behaviour, which screenshot. "Looks right" is not a verification. An AC you cannot verify is a
+**fail**, not a pass with a caveat.
+
+---
+
+## Step 4 — Check the NFRs that the item declared
+
+For each filled row in the item's NFR table, confirm the stated requirement holds. **Load the
+cited convention file** — the row states what this item must satisfy, the convention states
+what the rule is, and you are checking against the rule. Do not check against the row alone
+unless it is self-evidently complete.
+
+Then run the always-on pass regardless of what the table says. **Read `CONVENTIONS_CORE.md` for
+the current always-on rules and check the diff against them** — they are non-negotiable, they
+apply to every change, and an item does not get a row for them precisely because they are never
+optional. This skill deliberately does not list them: a copy here would drift from the source
+and you would end up checking the stale version.
+
+The privacy pass in `data-privacy-conventions.md` runs on any change that adds or moves a log
+field, an analytics event, or an egress destination, whether or not the item has a Privacy row.
+
+If the change touches auth, credentials, or data visibility and the item has no Security row,
+that's a gap in the item — flag it and run the `security-conventions.md` pass anyway. Same for
+a UI change with no Accessibility row and `accessibility-conventions.md`. A missing row is an
+oversight at capture time, not permission to skip the check.
+
+---
+
+## Step 5 — Verdict
+
+State **PASS** or **FAIL** plainly, then the evidence table: each AC and NFR row, how it was
+checked, and the result. Include the actual failure output for anything red.
+
+If Step 2 found unrelated changes in the tree, mark the verdict **PASS (advisory)** or
+**FAIL (advisory)** and name what made it so. An advisory PASS is not a green `develop` may
+close on — it is a request to re-run against a clean tree.
+
+A partial pass is a FAIL with a list. Never soften a red result, never report a check you
+skipped as though it ran, and never close an item on your own authority — `develop` owns
+closing, and it needs a real green from you to do it.
+
+If QA passes but you noticed unrelated problems along the way, don't fix them here — hand them
+to `capture` as new items.

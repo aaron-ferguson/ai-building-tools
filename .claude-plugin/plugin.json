@@ -1,0 +1,19 @@
+{
+  "name": "ai-building-tools",
+  "version": "0.1.0",
+  "description": "Capture, develop, and QA skills — a stack-ranked local backlog that agents work from, verified against ai-building-conventions",
+  "author": {
+    "name": "Aaron Ferguson",
+    "url": "https://github.com/aaron-ferguson"
+  },
+  "repository": "https://github.com/aaron-ferguson/ai-building-tools",
+  "license": "MIT",
+  "keywords": [
+    "backlog",
+    "stack-rank",
+    "tdd",
+    "qa",
+    "workflow",
+    "conventions"
+  ]
+}
