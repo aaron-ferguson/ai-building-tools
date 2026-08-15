@@ -149,7 +149,8 @@ sliding session to session. The levels sit on the testing pyramid defined in
 **Estimate `size`** — `s` (one sitting), `m` (a focused session), `l` (multiple sessions, or
 needs a design decision before it can start). This exists so a short session can see the cost of
 row 1 without being tempted to reorder around it. It is an input to tie-breaker 4 only; it never
-moves an item between tiers.
+moves an item between tiers. Write it in **both** places — `size:` in the item's frontmatter and
+the `Size` cell of the queue row — since `develop` reads the row and `qa` reads the file.
 
 **Write acceptance criteria as given/when/then.** `qa` checks these literally.
 
