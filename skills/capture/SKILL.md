@@ -303,10 +303,15 @@ Nothing is written back to Notion.
 edited:
 
 ```bash
-git add .claude/backlog/QUEUE.md .claude/backlog/items/0007-*.md .claude/backlog/config.yml
-git diff --cached --name-only     # every line must be under .claude/backlog/
-git commit -m "Capture 0007: <title>"
+git commit -m "Capture 0007: <title>" -- \
+  .claude/backlog/QUEUE.md .claude/backlog/items/0007-*.md .claude/backlog/config.yml
 ```
+
+**Commit by pathspec — the `--` and the explicit paths are the whole safety feature**, and
+`git add` followed by a bare `git commit` is not a substitute for it. `git commit` commits the
+*entire index*, not the paths you happened to stage a moment earlier, so a careful
+`git add .claude/backlog/… && git commit` still carries off whatever the other window had
+staged. The pathspec form commits those paths and nothing else, whatever else is in the index.
 
 **Never `git commit -a`, `git add .`, or `git add -A` here.** Capture usually runs in the window
 that is *not* developing, so the other window's half-finished work is sitting in the same tree and

@@ -166,8 +166,10 @@ any session can commit what another session has staged.
 carried off a developing window's staged file deletion, so that deletion is recorded in a commit
 about an unrelated backlog entry. Nothing errored. Neither session noticed until afterwards.
 
-- **Never `git commit -a`, `git add .`, or `git add -A`.** Every one of them commits whatever the
-  other window has in flight. Stage explicit paths, always.
+- **Commit by pathspec: `git commit -m "…" -- <paths>`.** This is the only form that commits what
+  you name and nothing else. `git commit` writes the *whole index*, not the paths you staged a
+  moment ago, so even a disciplined `git add <my files> && git commit` carries off anything the
+  other window left staged. `git commit -a` and `git add .` / `-A` are worse again.
 - **Stage and commit in the same turn.** Staged work is exposed until it lands, so staging before
   a long test run and committing after it holds the window open for exactly the loss above.
 - **Read back what you are about to commit.** `git diff --cached --name-only` before every commit;
