@@ -1,5 +1,6 @@
 {
   "name": "ai-building-tools",
+  "description": "Workflow tools for building software with agents \u2014 a stack-ranked backlog, TDD delivery, and verification against a written contract.",
   "owner": {
     "name": "Aaron Ferguson",
     "url": "https://github.com/aaron-ferguson"
