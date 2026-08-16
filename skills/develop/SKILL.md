@@ -34,7 +34,19 @@ defined by the project's conventions and cited here, never restated. Resolve the
 
 ## Step 1 — Select and claim the item
 
-Read `.claude/backlog/QUEUE.md`.
+**If the backlog has a `./next` script, run it instead of reading `QUEUE.md`.** It prints row 1,
+the first row whose status is `ready`, the ready/total counts, and the files every in-progress
+item has claimed — the whole of what this step needs, in a fixed handful of lines however long
+the queue grows. `QUEUE.md` is the file both windows edit most, so it is also the one a session
+re-reads most; reading it whole to learn one row is the largest avoidable context cost in the
+backlog. Read the file itself only when the question is about *order* — a re-rank, a themes
+pass, or where a new item belongs. Otherwise:
+
+```bash
+.claude/backlog/next
+```
+
+If there is no such script, read `.claude/backlog/QUEUE.md`.
 
 - No argument → the **topmost row with status `ready`**. The rank is not a suggestion.
 - Argument is an ID (`/develop 0007`) → that item, but say so if you're skipping higher rows
@@ -75,7 +87,10 @@ Inside the lock, in this order:
 2. Set the row's status to `in-progress` and write `$CLAIM` into its `Owner` column, as one
    single-line `Edit`.
 3. Write `claimed_by: <token>`, `claimed_at: <ISO-8601 UTC>`, and `touches:` — the paths or globs
-   you expect to edit — into the item file's frontmatter.
+   you expect to edit — into the item file's frontmatter. **List paths that exist**: `ls` the
+   directories first rather than writing the filename the item's prose implies. A `touches:`
+   naming a file that is not there reserves nothing, and the other window cannot tell the
+   difference between a path you invented and one you are about to create.
 4. `rm -rf "$BACKLOG/.lock"` — in this same turn, before any implementation work.
 
 Widen `touches:` the moment the work reaches further than you declared: the other window is
@@ -122,6 +137,13 @@ Follow the TDD cycle and the commit rules exactly as the conventions core states
 non-negotiable there, and this skill does not restate it. Read it before you write the first
 line. For a bug item, the first test reproduces the bug and stays as a permanent guard.
 
+**Read one sibling test in the target directory before writing the first test.** Not for style —
+for what is actually wired up. Which matchers exist (a project without `jest-dom` has no
+`toBeInTheDocument`), which helpers and fixtures are already there, whether the suite uses
+`fireEvent` or `userEvent`, and what the helper functions return. Each of those is a red-to-red
+round trip when guessed at, and they come in threes; one file read costs less than the first
+wrong guess.
+
 Work FR by FR, committing each logical unit as it completes rather than one commit at the end,
 in the commit format the conventions define, referencing the item ID (`0007`).
 
@@ -152,6 +174,21 @@ a disproved theory, a mechanism that surprised you, a rule that misled you.
 
 Invoke the `qa` skill with the item ID. Do not self-certify — the point of a separate pass is
 that it checks the written ACs rather than what you remember building.
+
+**Before you do, run the project's whole test suite once — every runner it has, not the item's
+declared level.** The level says what this item had to *prove*; it does not say what this item
+was allowed to *break*, and those are different questions. A `unit` item that changes a shared
+default can leave the browser suite red and close green, because nothing on its path ever
+started a browser. That has happened: an item shipped a model change under `qa_level: unit` and
+left four end-to-end specs failing, and it was two items before anything ran them — by which
+point the fix was archaeology rather than a one-line correction, and needed a backlog item of
+its own.
+
+If the full suite is red in a file this item never touched, **find out whose it is before
+touching anything**: `git log -1 -- <path>` and the in-progress rows will usually say. Another
+session's red is theirs to fix and yours to report, not to repair silently. If the tree is too
+entangled to judge, verify in a throwaway worktree (`git worktree add`) so you are reading your
+own work rather than the shared tree, and remove it in the same turn.
 
 `qa` returns a verdict and writes nothing to the backlog — closing is yours alone. That is also
 why it is safe for the other window to run `/qa` while you are mid-item.

@@ -15,11 +15,6 @@ Statuses: `ready` (pick it up) · `in-progress` (a session has it) · `blocked` 
 `Owner` holds the claim token of the session working the row, or `—`. **A row whose token you
 did not mint belongs to another session** — leave it alone and take the next `ready` row.
 
-`Size` is rough cost — `s` one sitting · `m` a focused session · `l` multiple sessions or a
-design decision first. **It exists so a short session can see what row 1 costs without being
-tempted to reorder around it, and it never moves an item's rank.** It mirrors `size:` in the
-item's frontmatter; `—` means nobody has estimated it yet.
-
 | ID | Title | Type | Size | QA | Status | Owner | Item |
 |------|-------|------|------|----|--------|-------|------|
 |  |  |  |  |  |  | — |  |

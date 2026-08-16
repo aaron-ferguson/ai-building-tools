@@ -41,24 +41,7 @@ directory. Prefer this when the project has a backlog.
 This is the wiring the conventions repo already prescribes, so most projects need no config at
 all. Take the directory containing the imported `CONVENTIONS_CORE.md`.
 
-**3. An older-style path reference in `CLAUDE.md`**
-
-Projects wired before the core-import pattern existed name convention files by path directly:
-
-```markdown
-- Coding: /path/to/ai-building-conventions/coding-conventions.md
-- Git:    /path/to/ai-building-conventions/git-conventions.md
-```
-
-Take the common parent directory **only if it contains `CONVENTIONS_CORE.md`**. That check is
-what keeps this a reading rather than a guess — the project stated the path, you are confirming
-it points at a conventions repo, not inferring one.
-
-When this is the source that resolves, say so once and offer the upgrade: adding the
-`## Conventions` import gives on-demand access to every convention file via the core's index,
-where the old form only reaches the two or three files it happens to name.
-
-**4. Nothing resolved → stop.**
+**3. Nothing resolved → stop.**
 
 Do not guess a path, do not search the filesystem for a directory that looks right, and do not
 proceed on your own judgement of what the conventions probably say. Report this and stop:

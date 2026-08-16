@@ -37,14 +37,23 @@ Per project, at the repo root:
 ```
 .claude/backlog/
   config.yml     project settings, next_id, conventions path, test commands, optional Notion block
-  QUEUE.md       the stack rank — line order IS the rank
+  QUEUE.md       the stack rank — line order IS the rank. Header and table only.
+  RANKING.md     why the order is what it is. Standing reasoning, read only for re-ranks.
+  next           reader: row 1, first takeable row, and files in-progress items have claimed
   DONE.md        completed items, newest first
   .lock/         transient; held for seconds during an ID or item claim. Never committed.
   items/
     0007-rate-limit-feedback-endpoint.md
 ```
 
-Templates for all three files are in this skill's `templates/` directory.
+Templates are in this skill's `templates/` directory. Copy `next` too and `chmod +x` it.
+
+**`QUEUE.md` holds the header and the table, and nothing else.** Standing reasoning about the
+order lives in `RANKING.md`. The split is mechanical rather than tidy-minded: the queue is
+rewritten on every claim and every close, by every window, so any prose parked in it is re-read
+— and in an agent session, re-echoed — on each of those edits, while changing perhaps once a
+week. `./next` exists for the same reason and goes further: it answers "what do I do next" in a
+handful of lines whether the queue holds ten rows or three hundred.
 
 ---
 
@@ -149,8 +158,7 @@ sliding session to session. The levels sit on the testing pyramid defined in
 **Estimate `size`** — `s` (one sitting), `m` (a focused session), `l` (multiple sessions, or
 needs a design decision before it can start). This exists so a short session can see the cost of
 row 1 without being tempted to reorder around it. It is an input to tie-breaker 4 only; it never
-moves an item between tiers. Write it in **both** places — `size:` in the item's frontmatter and
-the `Size` cell of the queue row — since `develop` reads the row and `qa` reads the file.
+moves an item between tiers.
 
 **Write acceptance criteria as given/when/then.** `qa` checks these literally.
 
