@@ -94,6 +94,28 @@ Walk each AC one at a time and record how you verified it — which test, which 
 behaviour, which screenshot. "Looks right" is not a verification. An AC you cannot verify is a
 **fail**, not a pass with a caveat.
 
+**A green check is only evidence if it could have been red, and confirming that is your job
+rather than the implementer's.** They have already convinced themselves; the whole reason this
+pass is separate is to distrust that. So for each AC whose verdict rests on an automated check,
+break the behaviour the check exists to catch and confirm the check goes red — then restore it.
+The failure mode is not a check wired to nothing, which is obvious; it is a check that runs,
+asserts, and measures something *adjacent* to the defect: a UI drag that ends off the element
+under test so the click never lands there, a value chosen where the distortion is symmetrical, a
+synthetic gesture whose step size clears the very threshold it is testing. Each of those passes
+against deliberately broken code.
+
+Budget this for the checks you would cite when closing the item, not for the whole suite. **If a
+check cannot be made to fail, the AC is unverified** — that is a `FAIL` under the rule above, not
+a pass with a note.
+
+**And a check can only see what its runner can represent.** Before accepting one, ask what the
+runner actually simulates: a headless browser has no collapsing chrome, no real compositor and no
+finger; a fake clock has no drift. If the defect lives in what the runner *substitutes*, no
+result from it counts in either direction — say so, and fall back to the level that can observe
+it, even when that level is a human on a device. **A higher test level is not automatically a
+stronger one**; it is stronger only if its runner can observe the defect, and promoting an item
+to a level that structurally cannot see the bug buys a green light that means nothing.
+
 ---
 
 ## Step 4 — Check the NFRs that the item declared

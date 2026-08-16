@@ -223,6 +223,14 @@ Only after QA is green:
    on files, and a closed item must not keep reserving them.
 5. Anything you learned that belongs in the project's `CLAUDE.md` or a convention file goes in
    the same change, unprompted.
+6. **Then check what this change *invalidated*, which is the half that gets missed.** Adding new
+   learning is easy to remember; the sentence elsewhere that your change just made false is not,
+   and it is the more dangerous of the two — a stale rule reads as current, gets followed, and
+   gets your change reverted by someone who believes they are fixing a regression. If the item
+   reversed a decision, grep the project's `CLAUDE.md`, the conventions, and any guard test's
+   prose for the rule you overturned, and correct it where it lives — **including any note that
+   says not to do the thing you just did.** Say it was reversed and on whose call, so the next
+   reader can tell a decision from an erosion.
 
 **Do not push** unless the project's `CLAUDE.md` or `git-conventions.md` says an item close
 should push, or the user asks. The default is to leave the commits local and say so — closing an
