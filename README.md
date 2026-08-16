@@ -1,18 +1,20 @@
 # AI Building Tools
 
-Four skills that give a project a **stack-ranked local backlog any agent can work from**:
+Five skills that give a project a **stack-ranked local backlog any agent can work from**:
 queue a piece of feedback once, and weeks later a cold session can pick it up, build it, and
 verify it without asking a single clarifying question.
 
 | Skill | Does | Phase |
 |---|---|---|
 | `/queue` | Turns something you just said into a fully specified item and inserts it at a considered rank | Define |
+| `/design` | Answers a design question and records the decision — no artifact | Design |
 | `/prototype` | Builds something to look at — a flow diagram, a clickable mockup, or a real component | Design |
 | `/develop` | Takes the top `ready` item, builds it TDD, hands it off to verify, closes it out | Build |
 | `/verify` | Verifies a change against the item's written acceptance criteria and returns PASS or FAIL | Check |
 
-`/design` — answer a design question and record the decision, without building an artifact —
-will complete the Design phase alongside `/prototype`.
+`/design` and `/prototype` split the Design phase by output: **tell me** versus **show me**.
+Default to `/design` — escalation is cheap, a prototype you didn't need is not. `/design` never
+invokes `/prototype`; it names what a prototype would have to settle and leaves the call to you.
 
 The executor here is the **agent**, and the artifact is code. Its sibling
 [`ai-context-tools`](https://github.com/aaron-ferguson/ai-context-tools) is the other half —

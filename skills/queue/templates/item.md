@@ -2,7 +2,7 @@
 id: "NNNN"
 title: <verb + noun phrase, what the change does>
 type: bug | feature | chore | debt
-status: ready
+status: design | ready | in-progress | blocked | needs-qa
 qa_level: verify | unit | integration | e2e
 # Rough cost, so a session can see what it's taking on WITHOUT reordering the queue.
 # s = one sitting · m = a focused session · l = multiple sessions or needs a design decision first.
@@ -61,6 +61,20 @@ for the authoritative list.
 The always-on rules in `CONVENTIONS_CORE.md` apply to every item and get no row here — they are
 never optional, so a row would only invite treating them as a choice. `verify` reads them from source
 on every run.
+
+## Open design question  *(only while `status: design`)*
+
+What has to be settled before this item can have acceptance criteria. Write it as a question with
+a decidable answer, not a topic — "modal or full page for the bulk edit?" not "bulk edit UX".
+State it before the design work starts; that is the same discipline as writing kill criteria
+before running a test.
+
+- **Question:**
+- **Why it blocks specification:** which AC cannot be written until this is answered
+- **Settle it with:** `/design` (returns a decision) or `/prototype <level>` (returns something
+  to look at, when the answer needs to be seen rather than reasoned about)
+
+Delete this section when the item moves to `ready`, and record the answer in **Notes & decisions**.
 
 ## Acceptance criteria
 

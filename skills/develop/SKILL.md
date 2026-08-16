@@ -53,6 +53,12 @@ If there is no such script, read `.claude/backlog/QUEUE.md`.
   and why you believe that's intended.
 - Row 1 is `blocked` → report the blocker, take the next `ready` row. Never reorder to make
   your choice look correct.
+- Row is `design` → **skip it**, name it, and say what its open question is. The item has no
+  acceptance criteria yet by definition, so building it means inventing the contract you would
+  then be verified against. Settle it with `/design` or `/prototype` first. Do not "just start"
+  on a design row because the title reads clearly — the title is not the spec.
+- Argument is an ID whose status is `design` → say so and stop rather than proceeding. Offer to
+  settle the question first.
 - Row is `in-progress` → **it belongs to another session unless you minted its `Owner` token in
   this conversation.** Skip it and take the next `ready` row, naming the token you skipped. Do
   not take it over because the work looks stalled or the tree looks like nobody is on it; ask.
@@ -108,7 +114,8 @@ you'll be held to, and the QA level. This is the last cheap moment to catch a
 misunderstanding.
 
 **If the item is underspecified — no FRs, no ACs, or a stale problem statement — stop and fix
-the item first**, then proceed. An item that can't be restated can't be verified. Update the
+the item first** (and if what is missing is a design decision rather than detail, that is a
+`design` item, not a fixable one — set the status and hand it back), then proceed. An item that can't be restated can't be verified. Update the
 item file so the next reader gets the improved version.
 
 If the item's assumptions have gone stale since it was queued (the code moved, the bug is already

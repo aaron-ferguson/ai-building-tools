@@ -145,6 +145,21 @@ first time you edit either one, and `verify` will then check the stale copy.
 
 The always-on rules in the conventions core apply to every item and need no row.
 
+**If the item cannot have acceptance criteria yet, set `status: design` instead of guessing
+them.** Not every item arrives specifiable. When the blocker is a decision — which pattern,
+which flow, what the empty state is — write the *Open design question* section in the item,
+set the status, and rank it normally. It keeps its rank: the work is worth what it was worth.
+
+This is a real status, not a euphemism for vague. The test is whether a *decision* is missing,
+not whether detail is missing. Missing detail you sharpen now; a missing decision is settled by
+`/design` (returns an answer) or `/prototype` (returns something to look at), and the findings
+come back here to be written up. Guessing acceptance criteria to avoid the status is how an item
+gets built to a contract nobody agreed to.
+
+**Clearing it:** when the question is answered, write the FRs and ACs it unblocks, record the
+answer in *Notes & decisions*, delete the *Open design question* section, and set `ready`.
+`design` and `prototype` hand findings here; they never write item files themselves.
+
 **Set `qa_level` now, at queue time.** This is the decision that stops QA rigor quietly
 sliding session to session. The levels sit on the testing pyramid defined in
 `testing-conventions.md` — read it if the choice isn't obvious:
