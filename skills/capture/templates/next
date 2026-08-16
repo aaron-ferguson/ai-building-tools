@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+# What a session needs to start work, in a fixed handful of lines.
+#
+# Reading QUEUE.md whole costs more context every time the queue grows, and the queue is the
+# file both windows edit most — so it is also the file the harness re-echoes most often. Almost
+# every read only wants three facts: what is row 1, what is the first row I may actually take,
+# and which files another session has claimed. This prints those, and its output is the same
+# size whether the queue holds ten rows or three hundred.
+#
+# It is a reader and nothing else: it never writes, never takes the lock, and never decides.
+# Claiming a row is still an edit to QUEUE.md under the lock, per references/CONCURRENCY.md.
+#
+# Read the whole file when you genuinely need the whole file — a re-rank, a themes pass, or any
+# judgement about *order* rather than about what to do next.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+QUEUE="$DIR/QUEUE.md"
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+
+# Every data row of the table: table lines that are not the header or its underline.
+rows() {
+  awk -F'|' '/^\|/ {
+    id = $2; gsub(/^ +| +$/, "", id)
+    if (id == "ID" || id ~ /^-+$/) next
+    print
+  }' "$QUEUE"
+}
+
+# One trimmed cell out of a row. Columns: 2 id, 3 title, 4 type, 5 size, 6 qa, 7 status, 8 owner.
+field() {
+  printf '%s' "$1" | awk -F'|' -v n="$2" '{ v = $n; gsub(/^ +| +$/, "", v); print v }'
+}
+
+status_is() {
+  rows | awk -F'|' -v want="$1" '{ s = $7; gsub(/^ +| +$/, "", s); if (s == want) print }'
+}
+
+first="$(rows | head -1)"
+[ -n "$first" ] || { echo "queue is empty"; exit 0; }
+
+printf 'ROW 1:  %s | %s | size %s | qa %s | %s %s\n' \
+  "$(field "$first" 2)" "$(field "$first" 3)" "$(field "$first" 5)" \
+  "$(field "$first" 6)" "$(field "$first" 7)" "$(field "$first" 8)"
+
+take="$(status_is ready | head -1)"
+if [ -n "$take" ]; then
+  printf 'TAKE:   %s | %s | size %s | qa %s\n' \
+    "$(field "$take" 2)" "$(field "$take" 3)" "$(field "$take" 5)" "$(field "$take" 6)"
+else
+  printf 'TAKE:   nothing is ready\n'
+fi
+
+printf 'COUNTS: %s ready of %s rows\n' \
+  "$(status_is ready | wc -l | tr -d ' ')" "$(rows | wc -l | tr -d ' ')"
+
+# Files another session holds. This is the check that stops two windows in one file, and it is
+# why the script reads item frontmatter rather than only the table: `touches:` is a claim on
+# files, not just on a row.
+busy="$(status_is in-progress || true)"
+if [ -n "$busy" ]; then
+  printf 'CLAIMED FILES — another session owns these; take a row that avoids them:\n'
+  printf '%s\n' "$busy" | while IFS= read -r row; do
+    id="$(field "$row" 2)"
+    owner="$(field "$row" 8)"
+    item="$(ls "$DIR/items/$id-"*.md 2>/dev/null | head -1 || true)"
+    touches=""
+    if [ -n "$item" ]; then
+      touches="$(awk '
+        /^touches:/ { inside = 1; next }
+        inside && /^  *- / { sub(/^ *- */, ""); printf "%s ", $0; next }
+        inside { exit }
+      ' "$item")"
+    fi
+    printf '  %s [%s] %s\n' "$id" "$owner" "${touches:-no touches declared}"
+  done
+fi
