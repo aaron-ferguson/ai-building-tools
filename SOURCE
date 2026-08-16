@@ -8,4 +8,6 @@ An edit is durable only once it is committed **and pushed** to that remote — t
 resolves the plugin from the remote, never from a local clone, so committing alone still loses it.
 
 Machines may map this repo to a local checkout in `~/.claude/plugin-sources`, one
-`<repo><TAB><path>` per line. That mapping is per-machine and deliberately not stored here.
+`<repo><TAB><path>` per line. That mapping is per-machine and deliberately not stored here —
+a path that exists only on one machine cannot ship in a file whose whole job is to survive
+being reinstalled somewhere else.
