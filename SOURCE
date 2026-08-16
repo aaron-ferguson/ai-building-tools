@@ -1,0 +1,11 @@
+repo: aaron-ferguson/ai-building-tools
+
+This file ships with the plugin so it lands in the install cache, where it marks that copy as
+disposable: a plugin is installed from the repo above at a pinned commit, and anything edited
+under `~/.claude/plugins/cache/` is silently reverted by the next update.
+
+An edit is durable only once it is committed **and pushed** to that remote — the installer
+resolves the plugin from the remote, never from a local clone, so committing alone still loses it.
+
+Machines may map this repo to a local checkout in `~/.claude/plugin-sources`, one
+`<repo><TAB><path>` per line. That mapping is per-machine and deliberately not stored here.

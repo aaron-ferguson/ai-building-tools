@@ -118,3 +118,14 @@ lookup in [`references/CONVENTIONS.md`](references/CONVENTIONS.md).
 ## Licence
 
 MIT.
+
+## Editing this plugin
+
+**Do not edit the installed copy under `~/.claude/plugins/cache/`.** A plugin is installed from
+this repository at a pinned commit, so anything changed in the cache is silently reverted by the
+next update — no error, no conflict. Edit here, commit, and **push**: the installer resolves the
+plugin from the remote, so a local commit alone still loses the change.
+
+The `SOURCE` file at the repo root ships with the plugin for exactly this reason. It lands in the
+install cache and marks that copy as disposable, which is what lets tooling warn before the work
+is lost rather than after.
