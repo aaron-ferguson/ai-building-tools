@@ -38,11 +38,11 @@ requirement yet.
 ## Non-functional requirements
 
 Keep only the rows that apply and delete the rest. An empty row is noise; a filled row is a
-commitment `develop` and `qa` will hold you to.
+commitment `develop` and `verify` will hold you to.
 
 The middle column says what **this item** must satisfy. The third cites the convention file that
 defines the rule — by bare filename, since the conventions directory is resolved per project.
-**Cite, never restate:** a rule copied in here drifts from source, and `qa` will then verify the
+**Cite, never restate:** a rule copied in here drifts from source, and `verify` will then verify the
 stale copy. The convention files below are the usual mapping; check the conventions core's index
 for the authoritative list.
 
@@ -59,19 +59,19 @@ for the authoritative list.
 | Documentation | | `documentation-conventions.md` |
 
 The always-on rules in `CONVENTIONS_CORE.md` apply to every item and get no row here — they are
-never optional, so a row would only invite treating them as a choice. `qa` reads them from source
+never optional, so a row would only invite treating them as a choice. `verify` reads them from source
 on every run.
 
 ## Acceptance criteria
 
-Given / when / then. `qa` checks these literally and will not close the item without them.
+Given / when / then. `verify` checks these literally and will not close the item without them.
 
 - [ ] AC1 —
 - [ ] AC2 —
 
 ## QA plan
 
-- **Level:** <verify | unit | integration | e2e> — chosen at capture time, not at develop time.
+- **Level:** <verify | unit | integration | e2e> — chosen at queue time, not at develop time.
 - **Why this level:** <one line; e2e needs a reason that unit + integration can't cover it>
 - **Specific checks:** <suites to run, journeys to drive, manual steps if any>
 

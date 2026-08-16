@@ -1,7 +1,7 @@
 # Backlog concurrency protocol
 
-Read by `capture`, `develop`, and `qa`. The backlog is designed to be worked by **two or more
-sessions at once** — typically one window developing while another captures feedback and QAs.
+Read by `queue`, `develop`, and `verify`. The backlog is designed to be worked by **two or more
+sessions at once** — typically one window developing while another queues feedback and verifies.
 These rules are what make that safe. They are not optional; a session that ignores them
 silently destroys another session's work.
 
@@ -43,7 +43,7 @@ Treat that failure as information, not an obstacle to route around.
 Exactly two operations cannot be expressed as a single-line edit, because they read a value and
 write back a value derived from it:
 
-- **Claiming an ID** (`capture`) — read `next_id`, use it, write `next_id + 1`.
+- **Claiming an ID** (`queue`) — read `next_id`, use it, write `next_id + 1`.
 - **Claiming an item** (`develop`) — read a row's status as `ready`, write it `in-progress`.
 
 Both take the lock. Nothing else does.
@@ -114,13 +114,13 @@ back to `ready` and clearing the token, which is a single-line edit under the lo
 
 ---
 
-## Rule 5 — `qa` never writes the queue
+## Rule 5 — `verify` never writes the queue
 
-`qa` reads `QUEUE.md`, the item file, and `config.yml`, and writes **none of them**. Its output
+`verify` reads `QUEUE.md`, the item file, and `config.yml`, and writes **none of them**. Its output
 is a verdict to its caller. This is what makes it safe to run in a second window against an item
-the first window is developing, and it is why `develop` — not `qa` — owns closing an item.
+the first window is developing, and it is why `develop` — not `verify` — owns closing an item.
 
-If QA notices something worth recording, it hands it to `capture` rather than editing the item
+If verify notices something worth recording, it hands it to `queue` rather than editing the item
 itself.
 
 ---
@@ -131,9 +131,9 @@ The queue is not the only thing two windows contend over. A second window runnin
 while the first is mid-edit is testing a file set that never existed, and its red — or its green
 — means nothing.
 
-`qa` checks `git status --porcelain` before running anything and says plainly when the tree
+`verify` checks `git status --porcelain` before running anything and says plainly when the tree
 carries changes outside the item under test. It still runs; it labels the result advisory rather
-than pretending to a confident verdict. See `qa` Step 2.
+than pretending to a confident verdict. See `verify` Step 2.
 
 **A row-level claim says who owns the *work*, not who owns the *files*.** Two sessions can hold
 different rows, obey every rule above, and still spend an hour editing the same component — and
@@ -150,7 +150,7 @@ nothing so far would have warned either of them. So a claim carries a file scope
 - Nothing rescues an overlap taken anyway. There is no merge protocol here; the whole design is
   to keep two sessions out of the same files in the first place.
 
-**The shape this protects is one developing window plus one capturing or QA'ing window.** Two
+**The shape this protects is one developing window plus one queueing or verifying window.** Two
 windows both running `develop` is the mode where this rule earns its keep — and if every `ready`
 row collides with an in-progress scope, the honest answer is that there is nothing to develop
 right now, not that the collision is acceptable.
@@ -162,7 +162,7 @@ right now, not that the collision is acceptable.
 The queue has locks and tokens. The index has neither: it is one staging area per repository, and
 any session can commit what another session has staged.
 
-**This is not hypothetical.** A window running `capture` committed with the index swept whole and
+**This is not hypothetical.** A window running `queue` committed with the index swept whole and
 carried off a developing window's staged file deletion, so that deletion is recorded in a commit
 about an unrelated backlog entry. Nothing errored. Neither session noticed until afterwards.
 

@@ -1,23 +1,32 @@
 # AI Building Tools
 
 Three skills that give a project a **stack-ranked local backlog any agent can work from**:
-capture a piece of feedback once, and weeks later a cold session can pick it up, build it, and
+queue a piece of feedback once, and weeks later a cold session can pick it up, build it, and
 verify it without asking a single clarifying question.
 
-| Skill | Does |
-|---|---|
-| `/capture` | Turns something you just said into a fully specified item and inserts it at a considered rank |
-| `/develop` | Takes the top `ready` item, builds it TDD, hands it to QA, closes it out |
-| `/qa` | Verifies a change against the item's written acceptance criteria and returns PASS or FAIL |
+| Skill | Does | Phase |
+|---|---|---|
+| `/queue` | Turns something you just said into a fully specified item and inserts it at a considered rank | Define |
+| `/develop` | Takes the top `ready` item, builds it TDD, hands it off to verify, closes it out | Build |
+| `/verify` | Verifies a change against the item's written acceptance criteria and returns PASS or FAIL | Check |
+
+Two more will fill the **Design** phase between `/queue` and `/develop` — `/prototype` (build
+something to look at) and `/design` (answer a design question and record the decision). They
+join once they carry no company-specific configuration, since this repo is public.
+
+The executor here is the **agent**, and the artifact is code. Its sibling
+[`ai-context-tools`](https://github.com/aaron-ferguson/ai-context-tools) is the other half —
+there the executor is you, and the artifact is a decision or a record. `/queue` is for work an
+agent will build; `/capture` over there is for your own tasks, meetings, and notes.
 
 They're designed to be run by **two sessions at once** — one window developing, another
-capturing feedback and QA'ing — without either destroying the other's work.
+queueing feedback and verifying — without either destroying the other's work.
 
 ---
 
 ## Relationship to `ai-building-conventions`
 
-These tools **own workflow**: how work is captured, ranked, claimed, verified, and closed.
+These tools **own workflow**: how work is queued, ranked, claimed, verified, and closed.
 
 They **own no principles about code or product**. Every claim about what good software looks
 like — TDD, secrets handling, input validation, PII in logs, accessibility, migration safety —
@@ -34,7 +43,7 @@ TDD cycle is *not* (it's true regardless).
 
 **The dependency runs one way.** These tools require the conventions; the conventions know
 nothing about these tools and need no changes to work with them. You can adopt the conventions
-alone. You cannot usefully adopt these tools alone — with no standard to check against, `qa`
+alone. You cannot usefully adopt these tools alone — with no standard to check against, `verify`
 would issue verdicts that look identical whether or not anything was actually verified, and
 that silent equivalence is worse than being blocked. So the skills stop and tell you how to
 wire it up instead.
@@ -65,7 +74,7 @@ conventions:
   path: ../ai-building-conventions
 ```
 
-Then say *"capture this: <the thing>"* in any project. `/capture` scaffolds
+Then say *"queue this: <the thing>"* in any project. `/queue` scaffolds
 `.claude/backlog/` on first use, reading your real test commands out of `package.json` (or
 `Makefile`, `pyproject.toml`) rather than guessing.
 
@@ -102,11 +111,11 @@ A few decisions that look odd until you know why:
   which is exactly how two concurrent sessions silently clobber each other.
 - **Rank by pairwise comparison, never a score.** Five tiers, then ordered tie-breakers. False
   precision produces ties, and ties are the thing the queue exists to eliminate.
-- **`qa_level` is set at capture time, not develop time.** This is what stops QA rigor quietly
+- **`qa_level` is set at queue time, not develop time.** This is what stops QA rigor quietly
   sliding session to session — the moment the level is chosen by whoever is doing the work, it
   drifts down to whatever is convenient today.
-- **`qa` writes nothing.** Its output is a verdict; `develop` alone closes items. That read-only
-  guarantee is what makes it safe to QA in one window while another develops.
+- **`verify` writes nothing.** Its output is a verdict; `develop` alone closes items. That read-only
+  guarantee is what makes it safe to verify in one window while another develops.
 - **Only two operations take a lock** — claiming an ID and claiming an item. Everything else is
   a single-line edit, which two sessions can do concurrently without coordination.
 

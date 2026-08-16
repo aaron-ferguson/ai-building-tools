@@ -1,24 +1,24 @@
 ---
-name: qa
+name: verify
 description: >
   Verify a change against a backlog item's acceptance criteria and non-functional requirements
   at the QA level the item declares — unit, integration, or end-to-end. Use when the user says
   "QA this", "verify it", "check it works", "run the e2e tests on this", "does this meet the
-  criteria", or invokes /qa. Invoked automatically by the develop skill before an item can be
+  criteria", or invokes /verify. Invoked automatically by the develop skill before an item can be
   closed. Reads .claude/backlog/items/ for the acceptance criteria and QA plan.
 ---
 
-# /qa
+# /verify
 
 Verify that a change actually satisfies what was promised. Distinct from `/code-review`, which
 hunts for defects in a diff — this one checks a change against a **written contract** and
 returns pass or fail.
 
-**`qa` writes nothing to the backlog.** It reads `QUEUE.md`, the item file and `config.yml`,
+**`verify` writes nothing to the backlog.** It reads `QUEUE.md`, the item file and `config.yml`,
 and modifies none of them — not the status, not the ACs, not the notes. Its output is a verdict
 to its caller, and `develop` owns acting on it. That read-only guarantee is what makes it safe
 to run in a second window against an item another session is actively developing. If you notice
-something worth recording, hand it to `capture`; do not edit the item yourself.
+something worth recording, hand it to `queue`; do not edit the item yourself.
 (See `references/CONCURRENCY.md` at the plugin root — `../../references/CONCURRENCY.md` from
 this file.)
 
@@ -34,7 +34,7 @@ With an item ID: read `.claude/backlog/items/<id>-*.md` and take the **Acceptanc
 **Non-functional requirements**, and **QA plan** sections.
 
 Without one: infer the item from the branch, recent commits, or the conversation. If there's
-no backlog item at all, QA against whatever the user stated as the goal — and say explicitly
+no backlog item at all, verify against whatever the user stated as the goal — and say explicitly
 that you're verifying an unwritten contract, which is weaker.
 
 Read `.claude/backlog/config.yml` for the project's real commands, and resolve the conventions
@@ -62,10 +62,10 @@ may be luck.
   Do not stash, revert, or check out anything to tidy it — that is another session's work and
   destroying it is far worse than an imprecise verdict.
 - The item under test has an `Owner` token in `QUEUE.md` that you did not mint, and you were
-  invoked directly rather than by `develop` → say plainly that you are QA'ing an item another
+  invoked directly rather than by `develop` → say plainly that you are verifying an item another
   session is mid-way through, so a red may simply mean unfinished.
 
-The item's `qa_level` was set at capture time. Run **that** level and everything below it —
+The item's `qa_level` was set at queue time. Run **that** level and everything below it —
 levels are cumulative, sitting on the pyramid defined in `testing-conventions.md`.
 
 | Level | Run |
@@ -137,7 +137,7 @@ field, an analytics event, or an egress destination, whether or not the item has
 If the change touches auth, credentials, or data visibility and the item has no Security row,
 that's a gap in the item — flag it and run the `security-conventions.md` pass anyway. Same for
 a UI change with no Accessibility row and `accessibility-conventions.md`. A missing row is an
-oversight at capture time, not permission to skip the check.
+oversight at queue time, not permission to skip the check.
 
 ---
 
@@ -155,4 +155,4 @@ skipped as though it ran, and never close an item on your own authority — `dev
 closing, and it needs a real green from you to do it.
 
 If QA passes but you noticed unrelated problems along the way, don't fix them here — hand them
-to `capture` as new items.
+to `queue` as new items.

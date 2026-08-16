@@ -1,16 +1,20 @@
 ---
-name: capture
+name: queue
 description: >
-  Capture project feedback, bugs, and work items into a stack-ranked local backlog that any
-  agent can pick up later. Use this skill whenever the user reports a bug, requests a feature,
-  says "add this to the backlog/queue/list", "log this for later", "we should fix X sometime",
-  "capture this", "note this down", "park this", or invokes /capture. Also use to reorder,
-  inspect, block, or import the backlog — "what's next", "show the queue", "move X to the top",
-  "reprioritise", "import feedback from Notion". Use proactively when the user describes work
-  that is clearly not for right now. The backlog lives in .claude/backlog/ inside the project.
+  Turn project feedback, bugs, and work items into a stack-ranked local backlog that any agent
+  can pick up later and build without asking a clarifying question. Use whenever the user
+  reports a bug, requests a feature, or says "queue this", "add this to the backlog", "log this
+  bug", "we should fix X sometime", "park this for later", or invokes /queue. Also use to
+  reorder, inspect, block, or import the backlog — "what's next to build", "show the queue",
+  "move X to the top", "reprioritise", "import feedback from Notion". Use proactively when the
+  user describes engineering work that is clearly not for right now. The executor is the agent,
+  and the artifact is code. NOT for the user's own tasks, meetings, or notes — that is /capture,
+  which keeps a personal knowledge base and where the executor is the user. When the input is a
+  commitment to a person, a meeting outcome, or a dated follow-up, it belongs there instead. The
+  backlog lives in .claude/backlog/ inside the project.
 ---
 
-# /capture
+# /queue
 
 Turn something the user just said into a fully specified, stack-ranked backlog item that a
 cold agent can pick up weeks later and implement without asking a single clarifying question.
@@ -19,7 +23,7 @@ The queue file is the product; this skill is a thin wrapper over it. If you ever
 this skill, `.claude/backlog/QUEUE.md` is still readable on its own.
 
 **The backlog is worked by more than one session at a time** — commonly one window developing
-while another captures. Read `references/CONCURRENCY.md` at the plugin root
+while another queues. Read `references/CONCURRENCY.md` at the plugin root
 (`../../references/CONCURRENCY.md` from this file) before writing anything. In short: edit one
 row at a time, never rewrite `QUEUE.md` whole, and take the lock only to claim an ID.
 
@@ -96,7 +100,7 @@ something downstream reads it. Fill it in as follows.
 
 **Claim an ID — under the lock.** This is a read-modify-write and it is one of exactly two
 operations in the whole backlog that needs coordination. Reading `next_id`, using it, and
-writing back `next_id + 1` without the lock is how two parallel captures both take 29.
+writing back `next_id + 1` without the lock is how two parallel queue runs both take 29.
 
 ```bash
 BACKLOG=".claude/backlog"
@@ -137,11 +141,11 @@ don't apply: a table of nine "N/A"s trains everyone to skip the table.
 
 **Never restate a convention's rules inside an item.** The item says what *this change* must
 do; the convention says what the rule *is*. Copy the rule in and it drifts from source the
-first time you edit either one, and `qa` will then check the stale copy.
+first time you edit either one, and `verify` will then check the stale copy.
 
 The always-on rules in the conventions core apply to every item and need no row.
 
-**Set `qa_level` now, at capture time.** This is the decision that stops QA rigor quietly
+**Set `qa_level` now, at queue time.** This is the decision that stops QA rigor quietly
 sliding session to session. The levels sit on the testing pyramid defined in
 `testing-conventions.md` — read it if the choice isn't obvious:
 
@@ -160,7 +164,7 @@ needs a design decision before it can start). This exists so a short session can
 row 1 without being tempted to reorder around it. It is an input to tie-breaker 4 only; it never
 moves an item between tiers.
 
-**Write acceptance criteria as given/when/then.** `qa` checks these literally.
+**Write acceptance criteria as given/when/then.** `verify` checks these literally.
 
 If the user's report genuinely doesn't contain enough to write FRs or ACs, ask — but ask once,
 batched, with your proposed defaults, not one question at a time.
@@ -306,7 +310,7 @@ Nothing is written back to Notion.
 
 ## Step 6 — Commit the backlog, and only the backlog
 
-`capture` writes backlog files. It never writes source, so **every path in its commit is under
+`queue` writes backlog files. It never writes source, so **every path in its commit is under
 `.claude/backlog/`** — and that has to be enforced by what you stage, not by what you believe you
 edited:
 

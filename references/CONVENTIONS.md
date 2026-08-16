@@ -1,13 +1,13 @@
 # Resolving the conventions
 
-Read by `capture`, `develop`, and `qa` before they do anything that cites a standard.
+Read by `queue`, `develop`, and `verify` before they do anything that cites a standard.
 
 These tools hold **no principles about code or product**. Every claim about what good software
 looks like — TDD, secrets handling, input validation, PII in logs, accessibility, migration
 safety — lives in the [`ai-building-conventions`](https://github.com/aaron-ferguson/ai-building-conventions)
 repository and is **cited, never restated**. A restated rule is a rule that drifts.
 
-What these tools *do* own is workflow: how work is captured, ranked, claimed, verified, and
+What these tools *do* own is workflow: how work is queued, ranked, claimed, verified, and
 closed. That split is the whole design. The test for any line is not "is this a principle?" but:
 
 > Would this still be true if the backlog didn't exist?
@@ -55,7 +55,7 @@ proceed on your own judgement of what the conventions probably say. Report this 
 >
 > If you don't have the repo yet: https://github.com/aaron-ferguson/ai-building-conventions
 
-Stopping is correct here. A backlog item captured with no NFR standard, or QA'd against no
+Stopping is correct here. A backlog item queued with no NFR standard, or verified against no
 standard, looks exactly like one that was done properly — and that silent equivalence is worse
 than the inconvenience of being blocked.
 

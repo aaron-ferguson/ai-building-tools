@@ -2,18 +2,18 @@
 name: develop
 description: >
   Pull the next item off the project's stack-ranked backlog and implement it end to end —
-  TDD per conventions, then QA, then close it out and capture what the work surfaced.
+  TDD per conventions, then verify, then close it out and queue what the work surfaced.
   Use this skill when the user says "let's
   work on the next thing", "pick up the next item", "what's next — do it", "work the backlog",
   "develop 0007", "start on the top item", or invokes /develop. Also use when the user has
   tokens/time to spend and asks what to do next with intent to actually do it. Reads
-  .claude/backlog/ — created by the capture skill.
+  .claude/backlog/ — created by the queue skill.
 ---
 
 # /develop
 
 Take the top `ready` item off `.claude/backlog/QUEUE.md` and finish it: implemented, tested,
-QA'd, committed, and moved to `DONE.md` — then leave the backlog in a state the next session can
+verified, committed, and moved to `DONE.md` — then leave the backlog in a state the next session can
 pick up cold. One item per invocation unless told otherwise.
 
 **Closing the row is not the end of the job.** An item is finished when the work it *created* has
@@ -56,7 +56,7 @@ If there is no such script, read `.claude/backlog/QUEUE.md`.
 - Row is `in-progress` → **it belongs to another session unless you minted its `Owner` token in
   this conversation.** Skip it and take the next `ready` row, naming the token you skipped. Do
   not take it over because the work looks stalled or the tree looks like nobody is on it; ask.
-- No backlog directory → tell the user and offer `capture` to start one. Don't invent work.
+- No backlog directory → tell the user and offer `queue` to start one. Don't invent work.
 
 **On size:** the rank is absolute and you do not get to skip row 1 because it's an `l` and the
 session is short. If row 1 is bigger than the budget, say so and let the user choose — take it
@@ -111,7 +111,7 @@ misunderstanding.
 the item first**, then proceed. An item that can't be restated can't be verified. Update the
 item file so the next reader gets the improved version.
 
-If the item's assumptions have gone stale since capture (the code moved, the bug is already
+If the item's assumptions have gone stale since it was queued (the code moved, the bug is already
 fixed, a dependency changed), say so and ask before building to a spec that no longer matches
 reality.
 
@@ -161,7 +161,7 @@ in the commit format the conventions define, referencing the item ID (`0007`).
   window's working tree alone. Never `git stash` to tidy: bare `stash` takes their work with it.
 
 Respect the item's **Out of scope** section. If you find adjacent problems, don't fix them
-here — capture them as new backlog items and keep going. That's what the queue is for. Note
+here — queue them as new backlog items and keep going. That's what the queue is for. Note
 them as you go; Step 7 is the backstop that gets them written down, not the place to start
 remembering them.
 
@@ -170,9 +170,9 @@ a disproved theory, a mechanism that surprised you, a rule that misled you.
 
 ---
 
-## Step 5 — Hand off to QA
+## Step 5 — Hand off to verify
 
-Invoke the `qa` skill with the item ID. Do not self-certify — the point of a separate pass is
+Invoke the `verify` skill with the item ID. Do not self-certify — the point of a separate pass is
 that it checks the written ACs rather than what you remember building.
 
 **Before you do, run the project's whole test suite once — every runner it has, not the item's
@@ -190,8 +190,8 @@ session's red is theirs to fix and yours to report, not to repair silently. If t
 entangled to judge, verify in a throwaway worktree (`git worktree add`) so you are reading your
 own work rather than the shared tree, and remove it in the same turn.
 
-`qa` returns a verdict and writes nothing to the backlog — closing is yours alone. That is also
-why it is safe for the other window to run `/qa` while you are mid-item.
+`verify` returns a verdict and writes nothing to the backlog — closing is yours alone. That is also
+why it is safe for the other window to run `/verify` while you are mid-item.
 
 If QA fails: fix, re-run QA, and record what the failure was in the item's notes. Never close
 an item on a red or skipped check, and never report success you haven't seen. If you can't
@@ -263,8 +263,8 @@ Walk these sources explicitly rather than trying to remember:
 
 Then, for each one, do exactly one of:
 
-1. **Capture it.** Invoke the `capture` skill so it becomes a properly specified, ranked item —
-   not a bullet in your report and not a `TODO` in the code. Capture writes the FRs, ACs and QA
+1. **Queue it.** Invoke the `queue` skill so it becomes a properly specified, ranked item —
+   not a bullet in your report and not a `TODO` in the code. Queue writes the FRs, ACs and QA
    level a cold agent needs; a one-line note does not.
 2. **Re-rank an existing item**, when the work you just did changed what something else is worth.
    Say so and do it — a rank that is now wrong is a decision the queue is silently getting wrong
@@ -280,7 +280,7 @@ happened: a red e2e suite was waved off as another item's territory, that item n
 it, and it stayed unowned through an entire item's life.
 
 **A pre-existing failure still needs an owner.** The value of proving a red check is not yours is
-that you may close your item; it is not that the red goes away. If no item claims it, capture it.
+that you may close your item; it is not that the red goes away. If no item claims it, queue it.
 
 Report what came out of this step even when the answer is "nothing" — an explicit "nothing new
 surfaced" is a claim you have checked, and it is what makes the step visible when it is skipped.
@@ -289,5 +289,5 @@ surfaced" is a claim you have checked, and it is what makes the step visible whe
 
 ## Step 8 — Report
 
-Item closed, what changed, what QA ran and its result, **what Step 7 captured or re-ranked**, and
+Item closed, what changed, what QA ran and its result, **what Step 7 queued or re-ranked**, and
 what's now at the top of the queue.
