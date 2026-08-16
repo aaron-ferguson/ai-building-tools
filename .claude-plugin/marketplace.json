@@ -1,6 +1,6 @@
 {
   "name": "ai-building-tools",
-  "description": "Workflow tools for building software with agents \u2014 a stack-ranked backlog, TDD delivery, and verification against a written contract.",
+  "description": "Workflow tools for building software with agents — a stack-ranked backlog, TDD delivery, and verification against a written contract.",
   "owner": {
     "name": "Aaron Ferguson",
     "url": "https://github.com/aaron-ferguson"
@@ -9,7 +9,7 @@
     {
       "name": "ai-building-tools",
       "source": "./",
-      "description": "Queue, develop, and verify skills \u2014 a stack-ranked local backlog that agents work from, verified against ai-building-conventions",
+      "description": "Queue, prototype, develop, and verify skills — a stack-ranked local backlog that agents work from, verified against ai-building-conventions",
       "author": {
         "name": "Aaron Ferguson"
       },
@@ -18,6 +18,7 @@
       "keywords": [
         "backlog",
         "stack-rank",
+        "prototype",
         "tdd",
         "verify",
         "workflow",
