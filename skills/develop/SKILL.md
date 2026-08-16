@@ -2,7 +2,8 @@
 name: develop
 description: >
   Pull the next item off the project's stack-ranked backlog and implement it end to end —
-  TDD per conventions, then QA, then close it out. Use this skill when the user says "let's
+  TDD per conventions, then QA, then close it out and capture what the work surfaced.
+  Use this skill when the user says "let's
   work on the next thing", "pick up the next item", "what's next — do it", "work the backlog",
   "develop 0007", "start on the top item", or invokes /develop. Also use when the user has
   tokens/time to spend and asks what to do next with intent to actually do it. Reads
@@ -12,7 +13,14 @@ description: >
 # /develop
 
 Take the top `ready` item off `.claude/backlog/QUEUE.md` and finish it: implemented, tested,
-QA'd, committed, and moved to `DONE.md`. One item per invocation unless told otherwise.
+QA'd, committed, and moved to `DONE.md` — then leave the backlog in a state the next session can
+pick up cold. One item per invocation unless told otherwise.
+
+**Closing the row is not the end of the job.** An item is finished when the work it *created* has
+somewhere to live too: the deferrals, the reds you proved were not yours, the thing you noticed
+and moved past. That is Step 7, it is not optional, and it is the step this skill most often gets
+skipped — the documentation habit holds because the item file is open, while the
+project-management half quietly leaves with the conversation.
 
 **Another session may be working this same backlog** — commonly a second window capturing
 feedback and running QA. Read `references/CONCURRENCY.md` at the plugin root
@@ -119,12 +127,21 @@ in the commit format the conventions define, referencing the item ID (`0007`).
 
 **Every commit contains this session's work and nothing else.** The index is shared and unguarded
 — another window can commit whatever you leave staged, and has (`CONCURRENCY.md` Rule 7). So:
-stage explicit paths, never `git add .` / `-A` and never `git commit -a`; stage and commit in the
-same turn rather than staging before a long test run; and read back `git diff --cached
---name-only` before each commit, unstaging anything that is not yours.
+
+- **Commit by pathspec** — `git commit -m "…" -- path/one path/two`. This is the actual guard.
+  `git commit` commits the whole index, so `git add <paths> && git commit` still carries off
+  whatever the other window staged in between; naming the paths on the commit does not.
+- Never `git add .` / `-A`, never `git commit -a`.
+- **Verify first, stage last.** A `git diff --cached --name-only` read-back is worth having, but
+  it proves what is staged *at that instant* and nothing about the moment the commit runs. Files
+  left staged across a test run are a race you will eventually lose — and the loss is silent.
+- Unstage anything that is not yours with `git restore --staged <path>`, which leaves the other
+  window's working tree alone. Never `git stash` to tidy: bare `stash` takes their work with it.
 
 Respect the item's **Out of scope** section. If you find adjacent problems, don't fix them
-here — capture them as new backlog items and keep going. That's what the queue is for.
+here — capture them as new backlog items and keep going. That's what the queue is for. Note
+them as you go; Step 7 is the backstop that gets them written down, not the place to start
+remembering them.
 
 Append anything non-obvious you learn to the item's **Notes & decisions** as you learn it —
 a disproved theory, a mechanism that surprised you, a rule that misled you.
@@ -158,9 +175,13 @@ Only after QA is green:
    your row with a single `Edit` and append it to `DONE.md`, dropping the `Owner` token on the
    way. Nothing else in `QUEUE.md` is touched; there is no position column to renumber. No lock
    is needed for this: it is a single-line edit to a row only you hold.
-4. Commit the backlog change alongside the code change, staging the specific files and checking
-   `git diff --cached --name-only` first. A second window is editing this repo too, and a swept
-   index — `git add .`, or `git commit -a` — takes its in-flight work into your commit.
+4. **Commit the backlog change alongside the code change, by pathspec.** A second window is
+   editing this repo too, and `git commit` commits the *entire index* rather than the paths you
+   staged a moment ago — so `git add <paths> && git commit` is not sufficient and has silently
+   swept another session's work into an item close. Name the paths on the commit itself:
+   `git commit -m "…" -- path/one path/two`. **Verify first and stage last**: a
+   `git diff --cached --name-only` read-back proves what is staged at that instant and grants
+   nothing about the moment the commit runs, so never leave files staged across a test run.
    Also clear `touches:` from the item's frontmatter as you close it: the scope is a live claim
    on files, and a closed item must not keep reserving them.
 5. Anything you learned that belongs in the project's `CLAUDE.md` or a convention file goes in
@@ -172,7 +193,56 @@ item is not authority to publish it.
 
 ---
 
-## Step 7 — Report
+## Step 7 — Sweep the session into the backlog
 
-Item closed, what changed, what QA ran and its result, anything new you captured, and what's
-now at the top of the queue.
+**Mandatory, and it runs even when the item closed cleanly.** Step 6 covers what you *learned* —
+the documentation half — and that half tends to get done, because writing up a mechanism is
+satisfying and the item file is open in front of you. The half that falls through is the
+**project-management** one: the work this work created. A finding you mention only in your final
+report is lost the moment the conversation ends, and it is lost in the most expensive way,
+because the next session re-derives it from scratch with none of the context you had.
+
+Walk these sources explicitly rather than trying to remember:
+
+- **Anything you said "out of scope" to** in Step 4. That was a decision to defer, not to drop.
+- **Every red or skipped check you did not fix** — including ones you determined were
+  pre-existing. "Not mine" is a statement about authorship, not about ownership.
+- **Anything you called someone else's territory.** See the rule below; this is the one that
+  bites.
+- **Anything you noticed on screen or in output and moved past** — a wrapped label, a slow step,
+  a confusing message, a stale comment.
+- **Anything the item's own notes predicted and reality contradicted** — a prerequisite that
+  never landed, an assumption that went stale, a rank that is now wrong.
+- **Anything the tooling or the conventions made harder than it needed to be.** That is a finding
+  about the process, and it belongs in the skill or convention file, not only in your head.
+
+Then, for each one, do exactly one of:
+
+1. **Capture it.** Invoke the `capture` skill so it becomes a properly specified, ranked item —
+   not a bullet in your report and not a `TODO` in the code. Capture writes the FRs, ACs and QA
+   level a cold agent needs; a one-line note does not.
+2. **Re-rank an existing item**, when the work you just did changed what something else is worth.
+   Say so and do it — a rank that is now wrong is a decision the queue is silently getting wrong
+   every time someone reads row 1.
+3. **Write it to the project's `CLAUDE.md` or a convention file**, if it is a durable rule rather
+   than a unit of work.
+
+**Handing a finding to another item is a claim about that item's scope, and it costs one grep to
+check.** Do not write "that belongs to 0054" unless you have read 0054 and confirmed it covers
+this. An unverified hand-off is indistinguishable from dropping the finding, except that it also
+sounds resolved — to you, to the user, and to the next session that reads your report. This has
+happened: a red e2e suite was waved off as another item's territory, that item never mentioned
+it, and it stayed unowned through an entire item's life.
+
+**A pre-existing failure still needs an owner.** The value of proving a red check is not yours is
+that you may close your item; it is not that the red goes away. If no item claims it, capture it.
+
+Report what came out of this step even when the answer is "nothing" — an explicit "nothing new
+surfaced" is a claim you have checked, and it is what makes the step visible when it is skipped.
+
+---
+
+## Step 8 — Report
+
+Item closed, what changed, what QA ran and its result, **what Step 7 captured or re-ranked**, and
+what's now at the top of the queue.
