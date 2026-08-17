@@ -21,6 +21,32 @@ commands:
   lint: <e.g. pnpm lint>
   typecheck: <e.g. pnpm typecheck>
 
+# Optional. An external issue tracker the backlog mirrors to, ONE WAY. The local
+# item stays the source of truth — it carries the FRs, NFR citations, acceptance
+# criteria, and QA level a ticket does not. Read references/TRACKER.md before
+# enabling. WHICH tracker/project/issue-types is a company-profile question; this
+# block records what the profile resolved to, so it is derived once, not per session.
+# Omit the whole block for solo projects — the skills then never touch the network.
+tracker:
+  enabled: false
+  type: jira
+  site: ""
+  project_key: ""            # never guess this; an item in the wrong project is noise
+  issue_type_for:
+    feature: Story
+    bug: Bug
+    chore: Task
+    debt: Task
+  mirror_on: [claim, close, block]
+
+# Optional. Record what each item actually cost when it closes — the only moment
+# per-item attribution exists, because only the session that did the work knows
+# which item its tokens belonged to. See references/TRACKER.md.
+cost_tracking:
+  enabled: false
+  transcript_dir: ""
+  effort_ledger: ""          # human hours: usually the dominant cost term by far
+
 # Optional. Only for projects collecting feedback from other humans via Notion.
 # Omit this whole block for solo projects — capture then never touches the network.
 notion:

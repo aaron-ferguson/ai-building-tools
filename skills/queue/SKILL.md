@@ -40,7 +40,7 @@ Per project, at the repo root:
 
 ```
 .claude/backlog/
-  config.yml     project settings, next_id, conventions path, test commands, optional Notion block
+  config.yml     project settings, next_id, conventions path, test commands, optional tracker / cost / Notion blocks
   QUEUE.md       the stack rank — line order IS the rank. Header and table only.
   RANKING.md     why the order is what it is. Standing reasoning, read only for re-ranks.
   next           reader: row 1, first takeable row, and files in-progress items have claimed
@@ -67,7 +67,11 @@ Find `.claude/backlog/` at the root of the current project. If it doesn't exist,
 by copying `templates/config.yml`, `templates/QUEUE.md`, and creating `items/`, then fill in
 `config.yml` from what the repo actually uses: read `package.json` scripts (or `Makefile`,
 `pyproject.toml`) for the real test/lint/typecheck commands rather than guessing. Leave the
-`notion:` block out unless the user says this project collects feedback from other people.
+`notion:` block out unless the user says this project collects feedback from other people,
+and leave `tracker:` / `cost_tracking:` out unless the project's `CLAUDE.md` profile points
+at a company tracker or the user asks for per-item cost attribution — see
+`references/TRACKER.md`. Never invent a project key: an item mirrored into the wrong
+project is noise in someone else's board.
 
 **Resolve the conventions now**, per `references/CONVENTIONS.md`, and record the path in
 `config.yml` under `conventions.path` so the next session doesn't have to re-derive it. If

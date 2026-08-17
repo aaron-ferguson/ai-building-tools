@@ -32,6 +32,28 @@ defined by the project's conventions and cited here, never restated. Resolve the
 
 ---
 
+## Where work is tracked, and where cost is recorded
+
+Two optional blocks in `.claude/backlog/config.yml` change what this skill does at claim
+and at close. Both are **off unless configured** — a solo project needs neither, and
+this skill never prompts to set them up.
+
+Read `references/TRACKER.md` before acting on either. In short:
+
+- **`tracker:`** — an external issue tracker the backlog **mirrors to, one way**. The
+  local item stays the source of truth: it holds the FRs, NFR citations, acceptance
+  criteria, and QA level a ticket does not, and an agent must never be blocked on the
+  network. **Which** tracker, project, and issue types is a company-profile question,
+  not a question this skill answers; the config block records what the profile resolved
+  to. If a mirror call fails, log it in the item's notes and carry on — a tracker
+  outage must not block a close.
+- **`cost_tracking:`** — record what the item actually cost when it closes. This is the
+  only place per-item cost can be captured, because the session that did the work is
+  the only thing that knows which item its tokens belonged to. Aggregate spend can
+  always be recovered later; the attribution cannot.
+
+---
+
 ## Step 1 — Select and claim the item
 
 **If the backlog has a `./next` script, run it instead of reading `QUEUE.md`.** It prints row 1,
@@ -101,6 +123,12 @@ Inside the lock, in this order:
 
 Widen `touches:` the moment the work reaches further than you declared: the other window is
 reading it to decide what it may safely take.
+
+**Then mirror the claim, if a tracker is configured** (`references/TRACKER.md`). Outside the
+lock — a network call must never be made while holding it. If the item has no `tracker_key`
+yet, create the ticket and write the key into the item's frontmatter; if it has one,
+transition it to the in-progress equivalent. Note the key in your report so the user can
+find it. A failure here is logged in the item's notes and does not stop the work.
 
 Report the token to the user, so the other window's output is legible to them. Then read the
 full item file before doing anything else.
@@ -228,9 +256,17 @@ Only after QA is green:
    nothing about the moment the commit runs, so never leave files staged across a test run.
    Also clear `touches:` from the item's frontmatter as you close it: the scope is a live claim
    on files, and a closed item must not keep reserving them.
-5. Anything you learned that belongs in the project's `CLAUDE.md` or a convention file goes in
+5. **Record what the item cost, if `cost_tracking:` is configured** — see
+   `references/TRACKER.md` for the fields. Write it into the item file before the closing
+   commit so it lands in the same change as the work it describes. This is the step that
+   turns `size: m` from a guess into a calibrated estimate: the next `m` is ranked by what
+   the last several actually cost, not by feel.
+6. **Mirror the close, if a tracker is configured** — transition the ticket to done and
+   comment the commit SHAs, so a human reading the ticket can reach the code without being
+   told. Failure is logged in the item's notes, never a blocker.
+7. Anything you learned that belongs in the project's `CLAUDE.md` or a convention file goes in
    the same change, unprompted.
-6. **Then check what this change *invalidated*, which is the half that gets missed.** Adding new
+8. **Then check what this change *invalidated*, which is the half that gets missed.** Adding new
    learning is easy to remember; the sentence elsewhere that your change just made false is not,
    and it is the more dangerous of the two — a stale rule reads as current, gets followed, and
    gets your change reverted by someone who believes they are fixing a regression. If the item
