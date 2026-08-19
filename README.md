@@ -140,3 +140,28 @@ plugin from the remote, so a local commit alone still loses the change.
 The `SOURCE` file at the repo root ships with the plugin for exactly this reason. It lands in the
 install cache and marks that copy as disposable, which is what lets tooling warn before the work
 is lost rather than after.
+
+**Pushing is not the last step — updating the install is.** A `/ai-building-tools:*` invocation
+runs the version in the plugin cache, pinned at the commit it was installed from. Until you update
+it, your pushed change is live for everyone except you, and the session you are testing in is
+running the old skill while you read the new one. That failure is quiet by construction: nothing
+errors, the skill just behaves like the version you stopped looking at.
+
+So the loop is four steps, not two:
+
+```bash
+git push origin main                        # 1. the installer resolves from the remote
+# bump "version" in .claude-plugin/plugin.json
+claude plugin update ai-building-tools       # 2. pull it into the cache
+```
+
+Then **use the plugin copy** — same as everyone else, and the only way packaging mistakes surface
+before someone else finds them.
+
+To see whether the copy you are running matches the one you are editing:
+
+```bash
+diff -rq skills ~/.claude/plugins/cache/ai-building-tools/ai-building-tools/*/skills
+```
+
+Silence means they agree. Any output is work you have written and are not running.
