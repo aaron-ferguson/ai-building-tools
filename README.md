@@ -155,6 +155,16 @@ git push origin main                        # 1. the installer resolves from the
 claude plugin update ai-building-tools       # 2. pull it into the cache
 ```
 
+**And a fifth step you cannot skip: restart.** A running session resolves its skills once, at
+start, from whatever was installed then — so `claude plugin update` changes nothing for the
+session you are sitting in. This is measurable: a `/capture` invocation in the session that
+wrote this was still executing the **0.6.1** copy while **0.8.2** was installed. Three
+versions behind, no warning, in the session that had just done the release.
+
+So the honest chain is: **push → bump → update → restart.** Skip the last one and you are
+reading new docs while running old code, which is the same failure as the first three, one
+layer further in.
+
 Then **use the plugin copy** — same as everyone else, and the only way packaging mistakes surface
 before someone else finds them.
 
