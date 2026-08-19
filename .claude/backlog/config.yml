@@ -1,0 +1,28 @@
+# Per-project backlog config. Read by the queue, develop, and verify skills.
+project: ai-building-tools
+
+# Where this project's conventions live. Required — these tools carry no standards of their
+# own and will stop rather than guess. Relative paths resolve from the repo root.
+conventions:
+  path: ../ai-building-conventions
+
+# Monotonic. queue claims this number for a new ticket, then increments it.
+next_id: 9
+
+# Where work in this project is tracked.
+#   local — this backlog is the source of truth. May live in a public repo.
+#   jira  — Jira is the source of truth; this backlog holds a pulled slice, company policy
+#           applies to every pushed ticket, and the repo must not be public.
+routing:
+  default: local
+  company: none
+  exceptions_allowed: true
+
+# Commands verify runs per level. This project is markdown skills with no test runner, so
+# most tickets are qa_level: verify and name a scripted assertion of their own.
+commands:
+  unit:
+  integration:
+  e2e:
+  lint:
+  typecheck:

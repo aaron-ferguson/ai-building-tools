@@ -1,2 +1,4 @@
 .DS_Store
 *.log
+.claude/backlog/.lock/
+.claude/backlog/claims/
