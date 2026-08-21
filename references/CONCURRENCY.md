@@ -66,6 +66,12 @@ Two consequences:
 - **Prefer single-writer files.** Most files are naturally one session's at a time; a shared one
   is a hazard to be minimised, not managed. Where a shared file is unavoidable, keep the window in
   which it is dirty as short as possible — see *A claim must be durable the moment it is made*.
+- **Know which files are shared, because it is more than the queue.** The obvious one is
+  `QUEUE.md`. The one that surprises people is **the project's own documentation** — `CLAUDE.md`,
+  conventions, any doc a close writes to — because every session records what it learned there,
+  at exactly the moment it is also committing. Both windows write it, neither expects the other
+  to. This paragraph exists because the session that wrote this rule swept the other window's
+  `CLAUDE.md` edits into the very commit that introduced the fix.
 - **When it happens anyway, report it; do not rebase.** The other session may already be building
   on the commit. Their rows land correctly under your message, which is the whole cost, and it is
   cheaper than rewritten history.
