@@ -116,9 +116,15 @@ mkdir "$BACKLOG/.lock" 2>/dev/null || { cat "$BACKLOG/.lock/held-by"; }   # busy
 CLAIM=$(head -c2 /dev/urandom | xxd -p)
 ```
 
-**Check the file scope before you claim.** Read the `touches:` of every `in-progress` item. If
-your candidate's files overlap one, **take the next `ready` row whose scope is clear instead**,
-and name the row you stepped over and the scope it hit. Two sessions in one file is the failure
+**Check the file scope before you claim.** Read the `touches:` of every `in-progress` item, and
+compare it against your candidate's `expects:` — the predicted scope `queue` recorded while the
+code was open. That comparison is why `expects:` exists: without it you would have to research
+every candidate yourself just to find out whether you may take it, and again for the next one
+down. Trust it for *triage* and nothing else — it is advisory, it ages, and you verify it for
+real in step 3 below. A candidate with no `expects:` at all is the case that still costs a look.
+
+If your candidate's files overlap an in-progress scope, **take the next `ready` row whose scope
+is clear instead**, and name the row you stepped over and the scope it hit. Two sessions in one file is the failure
 this prevents, and there is no merge protocol to fall back on (`CONCURRENCY.md`, *The working
 tree is shared too*). If every
 `ready` row collides, say that there is nothing safe to develop right now rather than taking one
@@ -130,11 +136,15 @@ Inside the lock, in this order:
    release the lock and pick again — do not proceed on the version you read a minute ago.
 2. Set the row's status to `in-progress` and write `$CLAIM` into its `Owner` column, as one
    single-line `Edit`.
-3. Write `claimed_by: <token>`, `claimed_at: <ISO-8601 UTC>`, and `touches:` — the paths or globs
-   you expect to edit — into the item file's frontmatter. **List paths that exist**: `ls` the
-   directories first rather than writing the filename the item's prose implies. A `touches:`
-   naming a file that is not there reserves nothing, and the other window cannot tell the
-   difference between a path you invented and one you are about to create.
+3. Write `claimed_by: <token>`, `claimed_at: <ISO-8601 UTC>`, and `touches:` into the item file's
+   frontmatter. **`touches:` is `expects:` checked against the code, never copied from it.** Grep
+   for the symbols this item will alter and include what comes back — an item written weeks ago
+   names the modules the work is *about*, and cannot name everything that *exercises* the
+   behaviour being changed. Correct `expects:` where it was wrong rather than silently diverging
+   from it; the next capture is calibrated by whether it turns out right. **List paths that
+   exist**: `ls` the directories first rather than writing the filename the prose implies. A
+   `touches:` naming a file that is not there reserves nothing, and the other window cannot tell
+   the difference between a path you invented and one you are about to create.
 4. **Commit the claim by pathspec** — `git commit -m "Claim 0007 [$CLAIM]" -- <queue> <item>`.
    Skipping this is what leaves the claim invisible to the other window and strands it in
    someone else's commit later.
@@ -244,6 +254,21 @@ touching anything**: `git log -1 -- <path>` and the in-progress rows will usuall
 session's red is theirs to fix and yours to report, not to repair silently. If the tree is too
 entangled to judge, verify in a throwaway worktree (`git worktree add`) so you are reading your
 own work rather than the shared tree, and remove it in the same turn.
+
+**A red in a file you *did* touch still has two owners, and telling them apart is the whole
+job.** Your change can have **falsified** a check — it asserts a rule this item deliberately
+reverses, and rewriting it is part of the work — or it can have **exposed** one that was already
+fragile, where the item merely added load, data or timing the check could not absorb. Both look
+identical at the failure: a plausible assertion about behaviour you just changed. The throwaway
+worktree separates them — run the check at the commit before your work, under the same
+conditions. Green there means it is yours; red there means it was fragile before you arrived.
+
+Fix the first. **Queue the second rather than stabilising it inside this item**, because an item
+that adopts every fragile check it brushes against stops being the item that was ranked. This is
+not hypothetical: a gesture item correctly re-anchored two specs it had genuinely invalidated,
+then spent a comparable stretch chasing a timing coupling that predated it — and the cheap
+mitigation it landed (capping the runner's workers) belonged in its own row, which is where the
+real fix now sits.
 
 `verify` returns a verdict and writes nothing to the backlog — closing is yours alone. That is also
 why it is safe for the other window to run `/verify` while you are mid-item.

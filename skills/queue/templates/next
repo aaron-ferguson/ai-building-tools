@@ -39,6 +39,15 @@ status_is() {
   rows | awk -F'|' -v want="$1" '{ s = $7; gsub(/^ +| +$/, "", s); if (s == want) print }'
 }
 
+# One frontmatter list, flattened to a line: `list_field <item> touches` or `... expects`.
+list_field() {
+  awk -v key="$2" '
+    $0 ~ "^" key ":" { inside = 1; next }
+    inside && /^  *- / { sub(/^ *- */, ""); printf "%s ", $0; next }
+    inside { exit }
+  ' "$1"
+}
+
 first="$(rows | head -1)"
 [ -n "$first" ] || { echo "queue is empty"; exit 0; }
 
@@ -84,12 +93,23 @@ if [ -n "$busy" ]; then
     item="$(ls "$DIR/items/$id-"*.md 2>/dev/null | head -1 || true)"
     touches=""
     if [ -n "$item" ]; then
-      touches="$(awk '
-        /^touches:/ { inside = 1; next }
-        inside && /^  *- / { sub(/^ *- */, ""); printf "%s ", $0; next }
-        inside { exit }
-      ' "$item")"
+      touches="$(list_field "$item" touches)"
     fi
-    printf '  %s [%s] %s\n' "$id" "$owner" "${touches:-no touches declared}"
+    # An empty `touches:` on an in-progress row is ambiguous — not yet declared, or released as
+    # it closes — and nothing here can tell them apart, so say so rather than implying it is free.
+    printf '  %s [%s] %s\n' "$id" "$owner" "${touches:-none declared — assume held, ask}"
   done
+fi
+
+# What the row you would take is predicted to reach, so the collision check above can be made
+# without opening the item. Advisory by construction: `expects:` is a prediction `queue` recorded
+# while the code was open, and `develop` verifies it against the code before promoting it to
+# `touches:`. See references/CONCURRENCY.md.
+if [ -n "$take" ] && [ -n "$busy" ]; then
+  take_id="$(field "$take" 2)"
+  take_item="$(ls "$DIR/items/$take_id-"*.md 2>/dev/null | head -1 || true)"
+  if [ -n "$take_item" ]; then
+    expects="$(list_field "$take_item" expects)"
+    printf 'TAKE EXPECTS: %s\n' "${expects:-not predicted — check this one by hand}"
+  fi
 fi

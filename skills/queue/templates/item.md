@@ -9,15 +9,21 @@ qa_level: verify | unit | integration | e2e
 size: s | m | l
 created: YYYY-MM-DD
 source: user | agent | notion:<page-id>
+# The files this item is PREDICTED to reach, written by `queue` while the code is already open
+# to write the FRs below — so a session choosing what to take next can spot a collision with an
+# in-progress item's `touches:` without researching every candidate itself. Advisory: it
+# protects nothing, it goes stale, and being wrong here costs one suboptimal pick. `develop`
+# checks it against the code on claim and promotes the corrected list to `touches:`.
+expects:
 # Written by `develop` when it claims the item, cleared when it closes or releases it.
 # The same token appears in QUEUE.md's Owner column. An item is yours only if you minted its
 # token in this conversation — see the ai-building-tools CONCURRENCY.md.
 claimed_by:
 claimed_at:
-# Paths or globs this item is expected to edit — a live claim on files, not just on the row.
-# `develop` writes it on claim and clears it on close or release, widens it if the work reaches
-# further, and reads every in-progress item's copy before claiming so two sessions never end up
-# in the same files. Best effort is enough; it warns, it does not lock.
+# The files this item is ACTUALLY claiming — a live claim, not just on the row. `develop` writes
+# it on claim by verifying `expects:` against the code, clears it on close or release, and widens
+# it the moment the work reaches further. Unlike `expects:`, being wrong here costs two sessions
+# in one file, which has no merge protocol behind it. It warns, it does not lock.
 touches:
 ---
 

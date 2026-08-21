@@ -90,14 +90,34 @@ than pretending to a confident verdict. See `verify` Step 2.
 different rows, obey every rule above, and still spend an hour editing the same component — and
 nothing so far would have warned either of them. So a claim carries a file scope:
 
-- On claim, `develop` writes `touches:` into the item's frontmatter — the paths or globs it
-  expects to edit, read off the item's own description. It is a declaration, not a lock.
-- **Before claiming, read the `touches:` of every `in-progress` item.** If your candidate overlaps
+- **Two fields carry file scope, and the split is the point.** `queue` writes `expects:` — the
+  files an item is *predicted* to reach, recorded while the code is already open to write the
+  FRs. `develop` writes `touches:` on claim — what it is *actually* claiming, produced by
+  checking `expects:` against the code rather than copying it. Both are declarations; neither
+  locks.
+- **They fail differently, which is what justifies keeping both.** A wrong `expects:` costs one
+  suboptimal pick, so it may be a best guess and it may age. A wrong `touches:` costs two
+  sessions in one file, which has no merge protocol behind it. Holding one field to both
+  standards is what forces the choice between a scope nobody can trust and a scope nobody can
+  afford to write.
+- **Predict at capture, verify at claim.** Without a prediction, a session choosing what to take
+  has to research each candidate just to learn whether it may take it — and again for the next
+  row down, which is the cost that makes the collision check get skipped. Without the
+  verification, the prose leads: an item names the modules the work is *about* and cannot name
+  everything that *exercises* the behaviour being changed. One item declared four implementation
+  files and went on to edit three specs, a shared test helper and the runner's config, because a
+  change that alters what a behaviour **means** reaches every test that drives it.
+- **Before claiming, read the `touches:` of every `in-progress` item** and compare it against your
+  candidate's `expects:`. If your candidate overlaps
   one, do not take it: take the next `ready` row whose scope is clear, and name the row you
   stepped over and the scope it collided with. Overlap is a reason to pick differently, never
   something to negotiate around.
 - If the work reaches further than declared, widen `touches:` the moment you know. A scope that
   silently grows is worse than none, because the other window is trusting it.
+- **An `in-progress` row whose `touches:` is empty is ambiguous, and the safe reading is "held".**
+  It means either "not declared yet" or "released as it closes", and nothing visible from outside
+  distinguishes them. Ask, or take a row that does not depend on the answer; silence is not
+  permission.
 - Nothing rescues an overlap taken anyway. There is no merge protocol here; the whole design is to
   keep two sessions out of the same files in the first place.
 

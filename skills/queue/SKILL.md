@@ -192,6 +192,23 @@ needs a design decision before it can start). This exists so a short session can
 row 1 without being tempted to reorder around it. It is an input to tie-breaker 4 only; it never
 moves an item between tiers.
 
+**Record `expects:` — the files this item is likely to reach — while the code is still open.**
+You cannot write the FRs above without reading the code that implements the behaviour, so the
+list costs almost nothing at this moment and cannot be reconstructed later at the same price.
+Name the implementation files, and the tests that exercise the behaviour being changed: a change
+that alters what an existing behaviour *means* reaches every spec that drives it, and those are
+the ones a later reader will miss.
+
+Its job is **triage, not protection**. A session deciding what to take next compares candidates'
+`expects:` against the `touches:` of in-progress rows, and skips a collision without having to
+research every candidate itself — which is the cost this field exists to remove. So:
+
+- **It protects nothing and locks nothing.** Being wrong costs one suboptimal pick, which is why
+  a best guess beats an empty field and why it is fine for it to age.
+- **It is never promoted unchecked.** `develop` verifies it against the code on claim and writes
+  the corrected list to `touches:`, which is the live claim. Finding it wrong there is the system
+  working, not a defect in the capture.
+
 **Write acceptance criteria as given/when/then.** `verify` checks these literally.
 
 If the user's report genuinely doesn't contain enough to write FRs or ACs, ask — but ask once,
