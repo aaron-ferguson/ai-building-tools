@@ -263,6 +263,17 @@ identical at the failure: a plausible assertion about behaviour you just changed
 worktree separates them — run the check at the commit before your work, under the same
 conditions. Green there means it is yours; red there means it was fragile before you arrived.
 
+**That comparison settles it only for a check that is deterministic, and the failure is
+confidently backwards.** Where the check samples anything the runner re-rolls per run — a random
+seed, a generated fixture, wall-clock pacing, a port or a worker assignment — one run at each
+commit compares two draws rather than two commits, and the likeliest outcome of a 1-in-6 flake is
+exactly the one that indicts you: red on your tree, green at the baseline. So before concluding
+from a single pair, ask what the check re-rolls; if anything, repeat both sides (`--repeat-each`
+or the runner's equivalent) and compare **rates**, not verdicts. A session lost real time to this
+after doing the worktree comparison correctly and believing its answer — the spec drew a fresh
+random board per page load, and repeating it showed 1 failure in 6 **at the baseline** against 0
+in 6 on the working tree.
+
 Fix the first. **Queue the second rather than stabilising it inside this item**, because an item
 that adopts every fragile check it brushes against stops being the item that was ranked. This is
 not hypothetical: a gesture item correctly re-anchored two specs it had genuinely invalidated,

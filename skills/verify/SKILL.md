@@ -120,6 +120,16 @@ to a level that structurally cannot see the bug buys a green light that means no
 
 ## Step 4 — Check the NFRs that the item declared
 
+**First, ask what the change made newly *reachable*.** The ACs enumerate what the change must
+do; nothing in them can cover a path the change **creates**, because there was nothing to write
+an AC about when the item was queued. Any change to routing, visibility, permissions, or the
+conditions under which a screen or endpoint is offered adds states that were previously
+unreachable — and a destructive or privileged action sitting on one of those is now available
+by a route nobody reviewed. Walk the newly reachable states and check each against the rules the
+project already holds elsewhere. A change that made a menu reachable while a saved document
+existed put an unconfirmed discard one tap away, and every written AC passed: the defect was
+created by the change rather than verified against it, so only this question finds it.
+
 For each filled row in the item's NFR table, confirm the stated requirement holds. **Load the
 cited convention file** — the row states what this item must satisfy, the convention states
 what the rule is, and you are checking against the rule. Do not check against the row alone
