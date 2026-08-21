@@ -1,6 +1,6 @@
 {
   "name": "ai-building-tools",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Queue, design, prototype, develop, and verify skills — a stack-ranked local backlog that agents work from, verified against ai-building-conventions",
   "author": {
     "name": "Aaron Ferguson",
