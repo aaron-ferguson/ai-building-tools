@@ -95,6 +95,21 @@ picking something easier is how the important expensive item never gets done.
 both read `ready` before either writes will both take the item, and you will not find out until
 you collide in the working tree.
 
+**If the backlog has a `./claim` script, use it** — it does the whole claim as one step and is the
+supported path:
+
+```bash
+.claude/backlog/claim 0007          # lock → re-read → edit row → frontmatter → commit → unlock
+```
+
+**The commit is the part that matters, and it is why this is a script.** A claim edits `QUEUE.md`;
+until something commits that edit, the claim is visible only in your working tree, and the next
+session to commit that file carries it off under their own message. That has happened. See
+`CONCURRENCY.md`, *A claim must be durable the moment it is made* — and note that on a
+tracker-backed backlog the API write is the durability and none of this applies.
+
+Without the script, do it by hand, and **commit the row before releasing the lock**:
+
 ```bash
 BACKLOG=".claude/backlog"
 mkdir "$BACKLOG/.lock" 2>/dev/null || { cat "$BACKLOG/.lock/held-by"; }   # busy → see CONCURRENCY.md
@@ -104,7 +119,8 @@ CLAIM=$(head -c2 /dev/urandom | xxd -p)
 **Check the file scope before you claim.** Read the `touches:` of every `in-progress` item. If
 your candidate's files overlap one, **take the next `ready` row whose scope is clear instead**,
 and name the row you stepped over and the scope it hit. Two sessions in one file is the failure
-this prevents, and there is no merge protocol to fall back on (`CONCURRENCY.md` Rule 6). If every
+this prevents, and there is no merge protocol to fall back on (`CONCURRENCY.md`, *The working
+tree is shared too*). If every
 `ready` row collides, say that there is nothing safe to develop right now rather than taking one
 anyway.
 
@@ -119,7 +135,10 @@ Inside the lock, in this order:
    directories first rather than writing the filename the item's prose implies. A `touches:`
    naming a file that is not there reserves nothing, and the other window cannot tell the
    difference between a path you invented and one you are about to create.
-4. `rm -rf "$BACKLOG/.lock"` — in this same turn, before any implementation work.
+4. **Commit the claim by pathspec** — `git commit -m "Claim 0007 [$CLAIM]" -- <queue> <item>`.
+   Skipping this is what leaves the claim invisible to the other window and strands it in
+   someone else's commit later.
+5. `rm -rf "$BACKLOG/.lock"` — in this same turn, before any implementation work.
 
 Widen `touches:` the moment the work reaches further than you declared: the other window is
 reading it to decide what it may safely take.
@@ -183,7 +202,8 @@ Work FR by FR, committing each logical unit as it completes rather than one comm
 in the commit format the conventions define, referencing the item ID (`0007`).
 
 **Every commit contains this session's work and nothing else.** The index is shared and unguarded
-— another window can commit whatever you leave staged, and has (`CONCURRENCY.md` Rule 7). So:
+— another window can commit whatever you leave staged, and has (`CONCURRENCY.md`, *The git index
+is shared*). So:
 
 - **Commit by pathspec** — `git commit -m "…" -- path/one path/two`. This is the actual guard.
   `git commit` commits the whole index, so `git add <paths> && git commit` still carries off
@@ -245,8 +265,12 @@ Only after QA is green:
 3. Move the item's row out of `QUEUE.md` into `DONE.md` (newest first). **Re-read `QUEUE.md`
    first** — the other window has had the whole implementation to insert rows — then delete
    your row with a single `Edit` and append it to `DONE.md`, dropping the `Owner` token on the
-   way. Nothing else in `QUEUE.md` is touched; there is no position column to renumber. No lock
-   is needed for this: it is a single-line edit to a row only you hold.
+   way. Nothing else in `QUEUE.md` is touched; there is no position column to renumber.
+   **Take the lock for this, and commit before releasing it.** The reasoning that a close needs
+   no lock — "a single-line edit to a row only you hold" — is true about the *row* and false
+   about the *file*: the commit that follows takes `QUEUE.md` whole, so an unlocked close can
+   interleave with another window's claim. See `CONCURRENCY.md`, *Lock every write to
+   `QUEUE.md`*.
 4. **Commit the backlog change alongside the code change, by pathspec.** A second window is
    editing this repo too, and `git commit` commits the *entire index* rather than the paths you
    staged a moment ago — so `git add <paths> && git commit` is not sufficient and has silently
@@ -254,6 +278,10 @@ Only after QA is green:
    `git commit -m "…" -- path/one path/two`. **Verify first and stage last**: a
    `git diff --cached --name-only` read-back proves what is staged at that instant and grants
    nothing about the moment the commit runs, so never leave files staged across a test run.
+   **A pathspec is necessary but not sufficient for a file the other window also edits**: it
+   commits that file's whole current state, their rows included, and no timing on your side
+   prevents it. Committing your own claim promptly is what keeps that window small; when it
+   happens anyway, report it rather than rebasing.
    Also clear `touches:` from the item's frontmatter as you close it: the scope is a live claim
    on files, and a closed item must not keep reserving them.
 5. **Record what the item cost, if `cost_tracking:` is configured** — see

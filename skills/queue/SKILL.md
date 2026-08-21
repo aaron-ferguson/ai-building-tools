@@ -43,14 +43,22 @@ Per project, at the repo root:
   config.yml     project settings, next_id, conventions path, test commands, optional tracker / cost / Notion blocks
   QUEUE.md       the stack rank — line order IS the rank. Header and table only.
   RANKING.md     why the order is what it is. Standing reasoning, read only for re-ranks.
-  next           reader: row 1, first takeable row, and files in-progress items have claimed
+  next           reader: row 1, first takeable row, files in-progress items have claimed
+  claim          claims a row: lock, edit, write frontmatter, commit, unlock — one atomic step
   DONE.md        completed items, newest first
   .lock/         transient; held for seconds during an ID or item claim. Never committed.
   items/
     0007-rate-limit-feedback-endpoint.md
 ```
 
-Templates are in this skill's `templates/` directory. Copy `next` too and `chmod +x` it.
+Templates are in this skill's `templates/` directory. Copy `next` and `claim` too, and
+`chmod +x` both.
+
+**`claim` is not a convenience.** A claim edits `QUEUE.md`, and until that edit is committed the
+claim exists only in one working tree — so the next session to commit the queue carries it off
+under their own message, silently. The script locks, edits, commits and unlocks as one step,
+because the commit is exactly the thing a session under load forgets. See `CONCURRENCY.md`,
+*A claim must be durable the moment it is made*.
 
 **`QUEUE.md` holds the header and the table, and nothing else.** Standing reasoning about the
 order lives in `RANKING.md`. The split is mechanical rather than tidy-minded: the queue is
@@ -64,7 +72,8 @@ handful of lines whether the queue holds ten rows or three hundred.
 ## Step 0 — Locate or create the backlog
 
 Find `.claude/backlog/` at the root of the current project. If it doesn't exist, scaffold it
-by copying `templates/config.yml`, `templates/QUEUE.md`, and creating `items/`, then fill in
+by copying `templates/config.yml`, `templates/QUEUE.md`, `templates/next`, `templates/claim`
+(both `chmod +x`), and creating `items/`, then fill in
 `config.yml` from what the repo actually uses: read `package.json` scripts (or `Makefile`,
 `pyproject.toml`) for the real test/lint/typecheck commands rather than guessing. Leave the
 `notion:` block out unless the user says this project collects feedback from other people,
@@ -348,7 +357,7 @@ staged. The pathspec form commits those paths and nothing else, whatever else is
 that is *not* developing, so the other window's half-finished work is sitting in the same tree and
 frequently in the same index. Sweeping it up is silent: no error, no conflict, and a source change
 lands under a commit message about a backlog entry. This has happened, and it is why
-`CONCURRENCY.md` Rule 7 exists.
+`CONCURRENCY.md`'s *The git index is shared* exists.
 
 If you find source paths already staged when you arrive, they are the other window's. Leave them:
 `git restore --staged <path>` takes them out of *your* commit without touching their working tree.

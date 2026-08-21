@@ -1,0 +1,99 @@
+#!/bin/sh
+#
+# Claim a backlog row: lock → edit QUEUE.md → write the item's frontmatter → commit → unlock,
+# as one atomic step.
+#
+# **The commit is why this is a script and not a rule in a document.** A claim edits QUEUE.md,
+# and until something commits that edit it sits dirty in the file both windows share — so the
+# next window to close anything commits it for you, under its own message. That is not
+# hypothetical: one project's close carried two pending claims exactly that way. Timing
+# discipline cannot fix it, because the foreign edit is already in the file before you touch it.
+# The only fix is upstream — never leave the claim uncommitted — and a script cannot forget.
+#
+# Usage:  .claude/backlog/claim <id> [token]
+#
+# `touches:` stays a hand edit afterwards: only you know what you are about to open, and it must
+# be widened the moment the work reaches further than you declared.
+#
+# See references/CONCURRENCY.md — 'A claim must be durable the moment it is made'.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+QUEUE="$DIR/QUEUE.md"
+LOCK="$DIR/.lock"
+
+ID="${1:-}"
+[ -n "$ID" ] || { echo "usage: claim <id> [token]" >&2; exit 2; }
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+
+TOKEN="${2:-$(head -c2 /dev/urandom | xxd -p)}"
+
+# Warn about anything already dirty in the queue before we add to it. With both windows using
+# this script the file should be clean; if it is not, our commit will carry those rows too, so
+# say which ones rather than letting it happen silently.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- "$QUEUE"; then
+  echo "WARNING: QUEUE.md already has uncommitted changes; this commit will carry them:" >&2
+  git -C "$DIR" diff -U0 -- "$QUEUE" | awk '/^[+-]\| / { print "  " $0 }' >&2
+fi
+
+# --- lock -------------------------------------------------------------------------------------
+mkdir "$LOCK" 2>/dev/null || {
+  echo "backlog is locked by: $(cat "$LOCK/held-by" 2>/dev/null || echo unknown)" >&2
+  exit 1
+}
+echo "claim $ID by $TOKEN" > "$LOCK/held-by"
+# Release the lock however we leave, so a failed claim never strands the other window.
+trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+# --- re-read the row under the lock -----------------------------------------------------------
+# It may have changed since it was chosen; proceeding on a stale read is the whole race.
+row="$(awk -F'|' -v id="$ID" '/^\|/ { v = $2; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
+[ -n "$row" ] || { echo "no row for $ID in QUEUE.md" >&2; exit 1; }
+
+status="$(printf '%s' "$row" | awk -F'|' '{ v = $7; gsub(/^ +| +$/, "", v); print v }')"
+[ "$status" = "ready" ] || {
+  owner="$(printf '%s' "$row" | awk -F'|' '{ v = $8; gsub(/^ +| +$/, "", v); print v }')"
+  echo "$ID is '$status' (owner $owner), not ready — pick another row" >&2
+  exit 1
+}
+
+# --- edit the row -----------------------------------------------------------------------------
+tmp="$(mktemp)"
+awk -F'|' -v OFS='|' -v id="$ID" -v tok="$TOKEN" '
+  /^\|/ {
+    v = $2; gsub(/^ +| +$/, "", v)
+    if (v == id) { $7 = " in-progress "; $8 = " " tok " " }
+  }
+  { print }
+' "$QUEUE" > "$tmp"
+mv "$tmp" "$QUEUE"
+
+# --- item frontmatter -------------------------------------------------------------------------
+item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
+[ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
+
+now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+tmp="$(mktemp)"
+awk -v tok="$TOKEN" -v now="$now" '
+  NR == 1 && /^---$/ { fm = 1; print; next }
+  fm && /^---$/      { fm = 0; print; next }
+  fm && /^claimed_by:/ { print "claimed_by: \"" tok "\""; next }
+  fm && /^claimed_at:/ { print "claimed_at: " now; next }
+  fm && /^status:/     { print "status: in-progress"; next }
+  { print }
+' "$item" > "$tmp"
+mv "$tmp" "$item"
+
+# --- commit, by pathspec, in the same breath as the edit --------------------------------------
+# Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
+  n=0
+  until git -C "$DIR" commit -q -m "Claim $ID [$TOKEN]" -- "$QUEUE" "$item" 2>/dev/null; do
+    n=$((n + 1))
+    [ "$n" -lt 30 ] || { echo "could not commit the claim (git busy); QUEUE.md is edited but uncommitted" >&2; exit 1; }
+  done
+fi
+
+echo "claimed $ID with token $TOKEN"
+echo "now set touches: in $item before you open anything"

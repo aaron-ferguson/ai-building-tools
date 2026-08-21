@@ -9,7 +9,8 @@
 # size whether the queue holds ten rows or three hundred.
 #
 # It is a reader and nothing else: it never writes, never takes the lock, and never decides.
-# Claiming a row is still an edit to QUEUE.md under the lock, per references/CONCURRENCY.md.
+# Claiming a row is `./claim <id>`, which locks, edits, commits and unlocks in one step — see
+# references/CONCURRENCY.md for why the commit is the part that matters.
 #
 # Read the whole file when you genuinely need the whole file — a re-rank, a themes pass, or any
 # judgement about *order* rather than about what to do next.
@@ -59,6 +60,21 @@ printf 'COUNTS: %s ready of %s rows\n' \
 # Files another session holds. This is the check that stops two windows in one file, and it is
 # why the script reads item frontmatter rather than only the table: `touches:` is a claim on
 # files, not just on a row.
+# An uncommitted queue is a claim only one session can see: whoever commits QUEUE.md next carries
+# these rows under their own message, and the first anyone notices is a confusing diff. With
+# ./claim in use the file is clean, so anything dirty here is worth saying out loud.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- "$QUEUE"; then
+  printf 'WARNING: QUEUE.md has uncommitted row changes — commit yours now, and do not commit rows\n'
+  printf '         you did not claim (references/CONCURRENCY.md). Changed rows:\n'
+  git -C "$DIR" diff -U0 -- "$QUEUE" | awk -F'|' '
+    /^[+-]\| / {
+      id = $2; gsub(/^[+-] *| *$/, "", id)
+      st = $7; gsub(/^ +| +$/, "", st)
+      ow = $8; gsub(/^ +| +$/, "", ow)
+      printf "         %s %s | %s | owner %s\n", substr($0, 1, 1), id, st, ow
+    }'
+fi
+
 busy="$(status_is in-progress || true)"
 if [ -n "$busy" ]; then
   printf 'CLAIMED FILES — another session owns these; take a row that avoids them:\n'
