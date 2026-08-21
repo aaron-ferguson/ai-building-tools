@@ -211,6 +211,12 @@ research every candidate itself — which is the cost this field exists to remov
 
 **Write acceptance criteria as given/when/then.** `verify` checks these literally.
 
+**An AC must be provable within the item's own scope.** An AC whose reproduction needs something
+the same item sends to *Out of scope* cannot be met, and `verify` is right to fail it — which
+leaves a finished item stuck between a red it cannot fix and a scope it must not grow. Write that
+as the observation it is ("the run reports X, whose fix is item NNNN"), and keep the AC to what
+this item can actually change.
+
 If the user's report genuinely doesn't contain enough to write FRs or ACs, ask — but ask once,
 batched, with your proposed defaults, not one question at a time.
 
