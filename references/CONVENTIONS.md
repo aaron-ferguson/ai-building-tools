@@ -1,6 +1,6 @@
 # Resolving the conventions
 
-Read by `queue`, `develop`, and `verify` before they do anything that cites a standard.
+Read by `queue`, `develop`, `verify`, and `retro` before they do anything that cites a standard.
 
 These tools hold **no principles about code or product**. Every claim about what good software
 looks like — TDD, secrets handling, input validation, PII in logs, accessibility, migration

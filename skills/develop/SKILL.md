@@ -18,9 +18,9 @@ pick up cold. One item per invocation unless told otherwise.
 
 **Closing the row is not the end of the job.** An item is finished when the work it *created* has
 somewhere to live too: the deferrals, the reds you proved were not yours, the thing you noticed
-and moved past. That is Step 7, it is not optional, and it is the step this skill most often gets
-skipped — the documentation habit holds because the item file is open, while the
-project-management half quietly leaves with the conversation.
+and moved past. That is `/retro`, handed off in Step 7, and it is not optional — the documentation
+habit holds because the item file is open in front of you, while the project-management half
+quietly leaves with the conversation.
 
 **Another session may be working this same backlog** — commonly a second window capturing
 feedback and running QA. Read `references/CONCURRENCY.md` at the plugin root
@@ -227,8 +227,8 @@ is shared*). So:
 
 Respect the item's **Out of scope** section. If you find adjacent problems, don't fix them
 here — queue them as new backlog items and keep going. That's what the queue is for. Note
-them as you go; Step 7 is the backstop that gets them written down, not the place to start
-remembering them.
+them as you go; the `/retro` hand-off in Step 7 is the backstop that gets them written down, not
+the place to start remembering them.
 
 Append anything non-obvious you learn to the item's **Notes & decisions** as you learn it —
 a disproved theory, a mechanism that surprised you, a rule that misled you.
@@ -317,16 +317,10 @@ Only after QA is green:
 6. **Mirror the close, if a tracker is configured** — transition the ticket to done and
    comment the commit SHAs, so a human reading the ticket can reach the code without being
    told. Failure is logged in the item's notes, never a blocker.
-7. Anything you learned that belongs in the project's `CLAUDE.md` or a convention file goes in
-   the same change, unprompted.
-8. **Then check what this change *invalidated*, which is the half that gets missed.** Adding new
-   learning is easy to remember; the sentence elsewhere that your change just made false is not,
-   and it is the more dangerous of the two — a stale rule reads as current, gets followed, and
-   gets your change reverted by someone who believes they are fixing a regression. If the item
-   reversed a decision, grep the project's `CLAUDE.md`, the conventions, and any guard test's
-   prose for the rule you overturned, and correct it where it lives — **including any note that
-   says not to do the thing you just did.** Say it was reversed and on whose call, so the next
-   reader can tell a decision from an erosion.
+7. **Write down anything you learned while the item file is still open** — a non-obvious
+   mechanism, a theory you disproved, a rule that misled you — per the conventions' own
+   documentation rules. Record it in the item's notes at minimum; `/retro` in Step 7 decides
+   whether it also belongs somewhere more permanent, and where.
 
 **Do not push** unless the project's `CLAUDE.md` or `git-conventions.md` says an item close
 should push, or the user asks. The default is to leave the commits local and say so — closing an
@@ -334,64 +328,29 @@ item is not authority to publish it.
 
 ---
 
-## Step 7 — Sweep the session into the backlog
+## Step 7 — Hand off to `/retro`
 
-**Mandatory, and it runs even when the item closed cleanly.** Step 6 covers what you *learned* —
-the documentation half — and that half tends to get done, because writing up a mechanism is
-satisfying and the item file is open in front of you. The half that falls through is the
-**project-management** one: the work this work created. A finding you mention only in your final
-report is lost the moment the conversation ends, and it is lost in the most expensive way,
-because the next session re-derives it from scratch with none of the context you had.
+Invoke the `retro` skill. It reviews the item you just closed *and* the session around it, and
+decides where each finding belongs — a new backlog row, the skill that misled you, the convention
+you cited, a comment in the file it governs, or nothing.
 
-Walk these sources explicitly rather than trying to remember:
+**This is not optional, and it is not the same as Step 6.** Step 6 records what you learned while
+the item file is open, which is the half that tends to get done. The half that falls through is
+the work this work *created*: the deferrals, the reds you proved were not yours, the thing you
+noticed and moved past. A finding that reaches only your final report is lost the moment the
+conversation ends, and lost in the most expensive way — the next session re-derives it with none
+of the context you had.
 
-- **Anything you said "out of scope" to** in Step 4. That was a decision to defer, not to drop.
-- **Every red or skipped check you did not fix** — including ones you determined were
-  pre-existing. "Not mine" is a statement about authorship, not about ownership.
-- **Anything you called someone else's territory.** See the rule below; this is the one that
-  bites.
-- **Anything you noticed on screen or in output and moved past** — a wrapped label, a slow step,
-  a confusing message, a stale comment.
-- **Anything the item's own notes predicted and reality contradicted** — a prerequisite that
-  never landed, an assumption that went stale, a rank that is now wrong.
-- **Anything the tooling or the conventions made harder than it needed to be.** That is a finding
-  about the process, and it belongs in the skill or convention file, not only in your head.
+It is a separate skill rather than a step here for the same reason `verify` is: closing an item
+and learning from it are different jobs, and the second one keeps getting cut short by the first.
+`/retro` also runs on its own, over a whole session rather than one item.
 
-Then, for each one, do exactly one of:
-
-1. **Queue it.** Invoke the `queue` skill so it becomes a properly specified, ranked item —
-   not a bullet in your report and not a `TODO` in the code. Queue writes the FRs, ACs and QA
-   level a cold agent needs; a one-line note does not.
-2. **Re-rank an existing item**, when the work you just did changed what something else is worth.
-   Say so and do it — a rank that is now wrong is a decision the queue is silently getting wrong
-   every time someone reads row 1.
-3. **Write it to the project's `CLAUDE.md` or a convention file**, if it is a durable rule rather
-   than a unit of work.
-
-**Handing a finding to another item is a claim about that item's scope, and it costs one grep to
-check.** Do not write "that belongs to 0054" unless you have read 0054 and confirmed it covers
-this. An unverified hand-off is indistinguishable from dropping the finding, except that it also
-sounds resolved — to you, to the user, and to the next session that reads your report. This has
-happened: a red e2e suite was waved off as another item's territory, that item never mentioned
-it, and it stayed unowned through an entire item's life.
-
-**And the write-back runs in both directions.** The rule above catches handing a finding *to*
-another item without checking. The mirror is just as costly and easier to miss: if you **fixed**
-something another row owns — a red suite, a stale assumption, a bug that item was written for —
-say so on that row. Otherwise the queue keeps ranking work that no longer exists, and the next
-session develops against it. That has happened: an item fixed another's red as part of its own
-close, told nobody, and the queue ranked a bug that no longer reproduced at position 1 for four
-days.
-
-**A pre-existing failure still needs an owner.** The value of proving a red check is not yours is
-that you may close your item; it is not that the red goes away. If no item claims it, queue it.
-
-Report what came out of this step even when the answer is "nothing" — an explicit "nothing new
-surfaced" is a claim you have checked, and it is what makes the step visible when it is skipped.
+**Report what came out of it**, even when the answer is "nothing new surfaced" — an explicit
+nothing is a claim you checked, and it is what makes a skipped retro visible.
 
 ---
 
 ## Step 8 — Report
 
-Item closed, what changed, what QA ran and its result, **what Step 7 queued or re-ranked**, and
-what's now at the top of the queue.
+Item closed, what changed, what QA ran and its result, **what `/retro` queued, re-ranked or wrote
+down**, and what's now at the top of the queue.

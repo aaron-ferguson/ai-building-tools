@@ -1,6 +1,6 @@
 # Backlog concurrency protocol
 
-Read by `queue`, `develop`, and `verify`. The backlog is designed to be worked by **two or more
+Read by `queue`, `develop`, `verify`, and `retro`. The backlog is designed to be worked by **two or more
 sessions at once** — typically one window developing while another queues feedback and verifies.
 These rules are what make that safe. They are not optional; a session that ignores them silently
 destroys another session's work.
