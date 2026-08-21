@@ -350,6 +350,14 @@ sounds resolved — to you, to the user, and to the next session that reads your
 happened: a red e2e suite was waved off as another item's territory, that item never mentioned
 it, and it stayed unowned through an entire item's life.
 
+**And the write-back runs in both directions.** The rule above catches handing a finding *to*
+another item without checking. The mirror is just as costly and easier to miss: if you **fixed**
+something another row owns — a red suite, a stale assumption, a bug that item was written for —
+say so on that row. Otherwise the queue keeps ranking work that no longer exists, and the next
+session develops against it. That has happened: an item fixed another's red as part of its own
+close, told nobody, and the queue ranked a bug that no longer reproduced at position 1 for four
+days.
+
 **A pre-existing failure still needs an owner.** The value of proving a red check is not yours is
 that you may close your item; it is not that the red goes away. If no item claims it, queue it.
 
