@@ -38,7 +38,10 @@ about an unrelated backlog entry. Nothing errored. Neither session noticed until
 - **Commit by pathspec: `git commit -m "…" -- <paths>`.** `git commit` writes the *whole index*,
   not the paths you staged a moment ago, so even a disciplined `git add <my files> && git commit`
   carries off anything the other window left staged. `git commit -a` and `git add .` / `-A` are
-  worse again.
+  worse again. **A file git does not yet know cannot be named in a pathspec** — committing a file
+  the work just created fails with `did not match any file(s) known to git`. Run
+  `git add -N <path>` first, in the same turn: intent-to-add records the path without staging its
+  content, so the commit still takes only what you name.
 - **Stage and commit in the same turn.** Staged work is exposed until it lands, so staging before
   a long test run and committing after it holds the window open for exactly the loss above.
 - **Read back what you are about to commit.** `git diff --cached --name-only` before every commit;
