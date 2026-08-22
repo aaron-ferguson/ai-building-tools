@@ -75,11 +75,21 @@ item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
 
 now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 tmp="$(mktemp)"
+# The two ownership keys are *replaced* where they exist and *added* where they do not. An item
+# written before the template carried them has nothing to replace, and a silent skip is the worst
+# outcome available: the row says claimed, the script says claimed, and the item file records no
+# owner at all — so the "did I mint this token?" test in CONCURRENCY.md has nothing to read.
 awk -v tok="$TOKEN" -v now="$now" '
   NR == 1 && /^---$/ { fm = 1; print; next }
-  fm && /^---$/      { fm = 0; print; next }
-  fm && /^claimed_by:/ { print "claimed_by: \"" tok "\""; next }
-  fm && /^claimed_at:/ { print "claimed_at: " now; next }
+  fm && /^---$/      {
+    if (!by) { print "claimed_by: \"" tok "\""; added = 1 }
+    if (!at) { print "claimed_at: " now;         added = 1 }
+    fm = 0
+    if (added) print "note: item predated the ownership keys; added them" > "/dev/stderr"
+    print; next
+  }
+  fm && /^claimed_by:/ { print "claimed_by: \"" tok "\""; by = 1; next }
+  fm && /^claimed_at:/ { print "claimed_at: " now;         at = 1; next }
   fm && /^status:/     { print "status: in-progress"; next }
   { print }
 ' "$item" > "$tmp"
