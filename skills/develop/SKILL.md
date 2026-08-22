@@ -171,7 +171,14 @@ you'll be held to, and the QA level. This is the last cheap moment to catch a
 misunderstanding.
 
 **If the item's real acceptance is a look, get something to look at in front of the author before
-you build it properly.** An AC that only a human can settle — does this feel right, does it read as
+you build it properly** — and that includes an item whose *written* acceptance is entirely
+numeric. A correctness fix that changes an appearance as a side effect has an unwritten AC only
+the author can settle, and nothing in the item will flag it: one item's ACs were all contrast
+ratios, so this rule never fired, and a complete implementation was built, tested and committed
+before the author saw the new look and rejected it in one line. Ask what the change *looks* like,
+not only what it must measure.
+
+An AC that only a human can settle — does this feel right, does it read as
 a place, is this the shape we meant — is not verified by any amount of implementation, and every
 test written against a *guessed* look is thrown away with the guess. One item spent three complete
 implementations, each with its own suite, before the author saw anything; the first two were
