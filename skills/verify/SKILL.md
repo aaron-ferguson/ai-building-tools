@@ -18,7 +18,9 @@ returns pass or fail.
 and modifies none of them — not the status, not the ACs, not the notes. Its output is a verdict
 to its caller, and `develop` owns acting on it. That read-only guarantee is what makes it safe
 to run in a second window against an item another session is actively developing. If you notice
-something worth recording, hand it to `queue`; do not edit the item yourself.
+something worth recording, hand it to `queue`; do not edit the item yourself. A finding you cannot
+yet place — a fragile check, a cost pattern — may be parked in `.claude/backlog/FINDINGS.md`, which
+is a buffer rather than the queue and so does not breach the rule above.
 (See `references/CONCURRENCY.md` at the plugin root — `../../references/CONCURRENCY.md` from
 this file.)
 

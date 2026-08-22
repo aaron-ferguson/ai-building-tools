@@ -76,7 +76,24 @@ friction, in detail, to produce nothing, is itself the waste this skill is suppo
 
 ## Step 1 — Gather the findings
 
-Two passes. Do both; they surface different things.
+**Read `.claude/backlog/FINDINGS.md` first, and treat it as the primary source.** Sessions park
+findings there as they hit them, which is both cheaper and more reliable than reconstructing them
+afterwards — the context was hot at the time, and a parked entry survives compaction, an
+interrupted session, and the gap between one session and the next.
+
+Two rules govern the file, and they are what keep it from becoming a graveyard:
+
+- **Empty what you process.** Every entry becomes a row, becomes an edit, or is dropped with a
+  stated reason. The file's normal state is empty; leaving processed entries in it is how the next
+  retro pays to read them again.
+- **Expire what has gone stale.** Anything older than about two weeks is dropped rather than
+  processed. A finding nobody acted on in two weeks was not worth acting on, and saying so plainly
+  beats re-reading it forever. **If the file has grown, that is itself a finding** — retros are not
+  running, or not emptying.
+
+Then a short check of the session for anything that never got parked. On a session that went
+cleanly this is a moment's work and the honest answer is usually "nothing"; on a long or painful
+one, do both passes below in full.
 
 **The items.** For each item closed or worked this session:
 

@@ -54,6 +54,11 @@ Per project, at the repo root:
 Templates are in this skill's `templates/` directory. Copy `next` and `claim` too, and
 `chmod +x` both.
 
+**`FINDINGS.md` is a buffer, not a second queue.** It holds what a session noticed but cannot yet
+place — a possible row, a skill that misled, a cost pattern. Anything whose home is already obvious
+goes to that home instead, and anything that is a unit of work becomes a row here. `retro` empties
+it; its template says how.
+
 **`claim` is not a convenience.** A claim edits `QUEUE.md`, and until that edit is committed the
 claim exists only in one working tree — so the next session to commit the queue carries it off
 under their own message, silently. The script locks, edits, commits and unlocks as one step,
@@ -72,8 +77,8 @@ handful of lines whether the queue holds ten rows or three hundred.
 ## Step 0 — Locate or create the backlog
 
 Find `.claude/backlog/` at the root of the current project. If it doesn't exist, scaffold it
-by copying `templates/config.yml`, `templates/QUEUE.md`, `templates/next`, `templates/claim`
-(both `chmod +x`), and creating `items/`, then fill in
+by copying `templates/config.yml`, `templates/QUEUE.md`, `templates/FINDINGS.md`,
+`templates/next`, `templates/claim` (both `chmod +x`), and creating `items/`, then fill in
 `config.yml` from what the repo actually uses: read `package.json` scripts (or `Makefile`,
 `pyproject.toml`) for the real test/lint/typecheck commands rather than guessing. Leave the
 `notion:` block out unless the user says this project collects feedback from other people,

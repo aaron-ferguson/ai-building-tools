@@ -249,6 +249,11 @@ the place to start remembering them.
 Append anything non-obvious you learn to the item's **Notes & decisions** as you learn it —
 a disproved theory, a mechanism that surprised you, a rule that misled you.
 
+**What has no home yet goes in `.claude/backlog/FINDINGS.md`, one dated line, as you hit it.** A
+skill that misled you, a cost pattern, a fragility you are not fixing here: parking it costs a line
+now and saves reconstructing it at the end, when the context has gone. Anything whose home *is*
+obvious — a mechanism, a rule, a unit of work — goes to that home instead, not here.
+
 ---
 
 ## Step 5 — Hand off to verify
