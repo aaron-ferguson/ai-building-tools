@@ -170,6 +170,22 @@ Out loud, in three or four lines: the FRs you're satisfying, the NFR rows that a
 you'll be held to, and the QA level. This is the last cheap moment to catch a
 misunderstanding.
 
+**If the item's real acceptance is a look, get something to look at in front of the author before
+you build it properly.** An AC that only a human can settle — does this feel right, does it read as
+a place, is this the shape we meant — is not verified by any amount of implementation, and every
+test written against a *guessed* look is thrown away with the guess. One item spent three complete
+implementations, each with its own suite, before the author saw anything; the first two were
+discarded whole. Build the cheapest thing that answers the question — `prototype` exists for this
+— and only then implement to the full standard against an answer you have.
+
+Two habits follow from the same arithmetic, and they are what makes the loop cheap:
+
+- **Show a batch, not a guess.** When you are tuning something perceptual, put the candidates in
+  front of them together — variants side by side in one image or one page. A round trip per guess
+  costs the same as a round trip per batch and answers a fraction as much.
+- **Look once per round.** Rendering a screenshot to check each parameter in turn is the same
+  mistake pointed at yourself: composite the variants into a single sheet and read that.
+
 **If the item is underspecified — no FRs, no ACs, or a stale problem statement — stop and fix
 the item first** (and if what is missing is a design decision rather than detail, that is a
 `design` item, not a fixable one — set the status and hand it back), then proceed. An item that can't be restated can't be verified. Update the

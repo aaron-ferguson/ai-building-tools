@@ -43,10 +43,34 @@ everything about *learning*, so that neither skill does half a job:
 `queue` remains the only thing that writes a *new backlog item*. When a finding is a unit of work,
 this skill hands it there rather than describing it in a report.
 
-**Run it even when everything went well.** A session with no friction still produces findings —
-the non-obvious thing that worked, the rule that held under pressure — and "nothing surfaced that
-is not already written down" is a claim worth making explicitly, because it is what makes a
-skipped retro visible.
+**Most of a retro's value should already be on disk before it runs.**
+`documentation-conventions.md` fires on *discovery* — you write the mechanism down in the same
+change as the code, while the file is open. That is the cheap half and it does not need this skill.
+What is left for the end is the half with no file to live in: the deferrals, the reds you proved
+were not yours, the skill that misled you, the row nobody has written. Scope the pass to that, and
+it stays small.
+
+Two habits shrink the end-of-session pass to almost nothing, and both are cheaper than this skill
+because they happen while the context is already hot:
+
+- **Queue the deferral when you defer it**, not when you remember it. "We should fix that later" is
+  a row, and it costs a fraction to write in the moment than to reconstruct at the end.
+- **Work from what you already have.** The session is in context; re-reading files you have already
+  read, to summarise work you have already done, is exactly the expense that makes a retro feel
+  like a tax. Grep only the destination you are about to edit.
+
+**A retro is allowed to find nothing, and saying so is a complete result.** This is not a ritual
+that owes an output. If the triggers below did not fire — nothing was corrected, nothing was
+deferred, no rule misled you, nothing cost more than it should have — then the honest report is one
+line saying you checked and there was nothing worth writing, and that is the end of it. **Do not
+manufacture a finding to justify the pass.** An invented lesson costs more than a skipped one: it
+goes into a file that every later session pays to read, and it dilutes the rules that were earned.
+The same applies to the cost review below — plenty of sessions are already about as cheap as they
+could have been.
+
+**Match the effort to the session.** A short session that went cleanly deserves the trigger check
+and nothing more. A long or painful one earns both passes in full. Reading a session that had no
+friction, in detail, to produce nothing, is itself the waste this skill is supposed to catch.
 
 ---
 
@@ -70,6 +94,14 @@ Two passes. Do both; they surface different things.
 **The session.** These are the ones a per-item review structurally cannot reach:
 
 - **What cost the most time**, whether or not it produced anything. Rank by cost, not by interest.
+- **What cost the most *work* — tokens, rounds, rebuilds — for what it returned.** Distinct from
+  the line above, because the expensive thing is often not the slow thing. Look for: work built and
+  then thrown away, the same question asked of the model twice, a file read whole to learn one
+  fact, a suite run again when nothing it covers had changed, a round trip per guess where one
+  round trip could have carried a batch. **The fix is nearly always upstream of the cost** — the
+  cheap retro finding is "cache this", the real one is "we should not have built that yet". Say
+  which, and route it: a habit belongs in the skill that governs the work, a one-off belongs
+  nowhere. And be honest when the answer is that the session was already lean.
 - **Anything you got wrong and corrected mid-session.** The correction is the finding.
 - **Anything the user had to correct you on.** They paid attention so a future session would not
   have to — the highest-value input available, and the one a self-assessment omits by nature.
