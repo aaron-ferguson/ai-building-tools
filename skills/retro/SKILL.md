@@ -239,10 +239,20 @@ the sessions it was written for.
 - **Push per each repo's own rules.** A project may treat a push as a release; the conventions and
   tools repos are the source of truth for other machines, so an unpushed edit there is lost at the
   next install.
-- **A skill edit has a release chain, and every step is silent when skipped**: push, bump the
-  plugin version, update the install, then **restart**. Skills resolve at session start, so the
-  session that wrote the change is the last one to receive it. Say this in the report rather than
-  letting the user assume the change is live.
+- **A skill edit is not live in the session that wrote it.** Skills resolve at session start, so
+  the author is always the last to receive their own change. What it takes to land depends on how
+  the plugin is installed — check `~/.claude/plugins/known_marketplaces.json`:
+  - **`directory` source** — the checkout *is* the install. Nothing to bump, nothing to update;
+    the change is live at the next **restart**. Push still matters, for other machines and backup.
+  - **`github` or a versioned marketplace** — push, bump the plugin version, update the install,
+    then restart, and every one of those steps is silent when skipped. **If skills are edited
+    often, this is the wrong source for them**; a directory source removes two steps that will
+    otherwise be repeated forever.
+
+  **Report it in one line, not a paragraph.** This fires on every retro that touches a skill, which
+  is most of them, so it is a standing cost — `Skills changed — restart to load them.` is the whole
+  message. It is a consequence of an edit, never a *finding*: it does not belong in `FINDINGS.md`,
+  where it would sit un-triageable and make a healthy buffer look like a neglected one.
 
 Verify the installed copy matches the source afterwards. A silent no-op here is exactly the trap
 Step 2 warns about, one layer further in.
@@ -256,6 +266,6 @@ see for themselves:
 
 - What was proposed and deliberately **not** written, with the reason.
 - Anything left uncommitted, unpushed, or unreleased.
-- **Whether a restart is required** for any skill change to take effect.
+- **Whether a restart is required**, in one line — see Step 5. No explanation unless asked.
 
 If nothing surfaced, say that plainly.
