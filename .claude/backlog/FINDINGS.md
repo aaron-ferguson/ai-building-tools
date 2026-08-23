@@ -238,3 +238,21 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   for single-row safety and cannot be one shell call. The cost is a lock held for minutes rather than
   seconds, so keep every non-`QUEUE.md` edit outside it (pointer: references/CONCURRENCY.md *Lock
   every write to QUEUE.md*, skills/verify Step 5).
+- 2026-08-23 — **0007 would not have fixed the defect it exists for.** It is the ticket that replaces
+  the `Owner` column with claim directories, and its six FRs covered the mechanism, `CONCURRENCY.md`
+  and `.gitignore` — but named neither `claim` nor `close`, the only two files that implement
+  ownership. Closing it as written would have left both scripts on the `claimed_by:` token protocol
+  with the prose describing directories: the "two live protocols" finding parked twice above, still
+  standing after its own fix landed. It surfaced only because 0006 gained an FR whose AC required the
+  templates to be coherent. The generalisable rule: **an FR stating what a mechanism *is* needs a
+  sibling FR naming the code that implements it**, or the ticket verifies its own documentation
+  (pointer: items/0007 FR7–FR8, items/0006 FR8/AC8, FINDINGS entries on the two claim protocols).
+- 2026-08-23 — **`queue` has no operation for amending an already-specified ticket.** Step 1's table
+  routes Add, Rerank, block/wait status, and Surface-parked-work; adding an FR to an unclaimed,
+  fully-specified ticket is none of them, and it is not a capture either. Everything needed was
+  reachable by analogy — Step 2's rules for FRs, ACs, `expects:` and `size` apply unchanged, and the
+  recorded reason goes in *Notes & decisions* — but nothing said to re-check `size`, the ACs, the QA
+  plan's specific checks and *Out of scope* against the widened scope, which is where the work
+  actually was. Both tickets needed `size` or QA-plan edits the new FR made necessary (pointer:
+  skills/queue Step 1, Step 2).
+

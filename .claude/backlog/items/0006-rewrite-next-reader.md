@@ -9,7 +9,15 @@ size: m
 created: 2026-08-18
 parent: "0002"
 blocked_by: ["0005", "0007"]
-relates: []
+relates: ["0007", "0022", "0023", "0024", "0026"]
+expects:
+  - skills/queue/templates/next
+  - skills/queue/templates/claim
+  - skills/queue/templates/close
+  - skills/queue/SKILL.md
+  - .claude/backlog/next
+  - .claude/backlog/claim
+  - .claude/backlog/close
 touches:
 ---
 
@@ -44,6 +52,12 @@ and is the rank consistent with the dependencies.
   siblings.
 - FR6 — Claimed tickets are read from `claims/`, not from a table column.
 - FR7 — The script writes nothing, takes no lock, and decides nothing.
+- FR8 — **This project's own backlog runs all three scripts, not just ships them.** `next`, `claim`
+  and `close` are instantiated into `.claude/backlog/` from the templates and made executable, so a
+  close here reconciles its dependents automatically instead of by hand. The template is still the
+  authority: the local copies are copies, and a divergence between them is a defect in whichever
+  drifted, not a local variant. FR7 is unchanged by this — instantiating is the develop session
+  copying a file, never `next` acquiring the power to write.
 
 ## Non-functional requirements
 
@@ -69,6 +83,12 @@ and is the rank consistent with the dependencies.
   reported and the script exits non-zero.
 - [ ] AC7 — Given a 300-row fixture, when `next` runs, then output line count is identical to the
   6-row fixture's.
+- [ ] AC8 — Given this repo after the change, when each of `.claude/backlog/next`, `claim` and
+  `close` is tested with `test -x`, then all three exist and are executable, and `diff` against the
+  corresponding `skills/queue/templates/` file reports no difference.
+- [ ] AC9 — Given a fixture backlog where ticket B has `blocked_by: ["A"]` and A is at
+  `next: verify` under a held claim, when `close` is run on A, then B's item frontmatter and its
+  `QUEUE.md` row both read `ready`, and both edits are in `close`'s own commit.
 
 ## QA plan
 
@@ -78,10 +98,42 @@ and is the rank consistent with the dependencies.
   live in `skills/queue/templates/fixtures/`, and the assertion script is committed with them so
   the check is repeatable rather than a one-off.
 - **Specific checks:** run `next` and `next --check` against each fixture, diffing against expected
-  output files; `wc -l` comparison for AC7.
+  output files; `wc -l` comparison for AC7; `test -x` plus `diff` against the templates for AC8; a
+  throwaway fixture backlog exercised through `claim` then `close` for AC9, asserting on the
+  dependent's status in both files and on `git show --stat` for the commit's paths.
 
 ## Out of scope
 
-Any writing. `next` stays a reader — that guarantee is why it is safe to run in a second window.
+Any writing *by `next`*. It stays a reader — that guarantee is why it is safe to run in a second
+window, and FR8 does not touch it: `claim` and `close` write, `next` does not, and instantiating all
+three changes which scripts exist here rather than what any one of them may do.
+
+Backfilling the reconcile the hand-closes already missed. Only 0026 drifted and it is already
+reconciled; a sweep for historical misses is `./next --drift` on the day the scripts land, not work
+this ticket owns.
 
 ## Notes & decisions
+
+- 2026-08-23 — **FR8 folded in here rather than given its own ticket**, on Aaron's call. The
+  reconcile hook already exists in `skills/queue/templates/close` and is well guarded; nothing was
+  missing from the design, only from this backlog, which has never had the three scripts
+  instantiated. Every hand-close therefore skips the reconcile — that is how closing 0022 left 0026
+  reading `blocked` for three subsequent closes with nothing reporting it (parked in `FINDINGS.md`).
+- 2026-08-23 — **0006 is the first point where all three can be instantiated coherently**, which is
+  the substantive argument for folding rather than a separate ticket. `claim` and `close` test
+  ownership by the `claimed_by:` frontmatter token; this backlog's `QUEUE.md` and FR6 both say a
+  claim is the directory `claims/<id>/`. Those are two live protocols (parked twice in
+  `FINDINGS.md`), and the one that settles it is 0007 — already in this ticket's `blocked_by`. So
+  the instantiation lands after the collision is resolved, and a separate ticket would have had to
+  be blocked on 0007 anyway.
+- 2026-08-23 — **The cost of folding, stated plainly:** the reconcile does not start working here
+  until 0006 clears, and 0006 sits behind 0005 and then 0007. Closes in this backlog stay by-hand
+  until then, so `./next --drift` cannot be the safety net either — it is one of the files being
+  instantiated. Until 0006 lands, a hand-close must reconcile its dependents in the same commit by
+  reading `blocked_by` across `items/`, which is what this session did for 0026.
+- 2026-08-23 — **Rejected: naming the blocking ticket in `QUEUE.md`'s `Status` column** (asked in the
+  same conversation). It widens the cache the whole of 0024 exists to distrust, does not fit the
+  multi-blocker rows (0006 itself, 0004), forces `close`'s whole-cell status replace to compute a set
+  difference, and changes no reader's behaviour at read time — the test that removed `Type`, `Size`,
+  `QA` and `Item`. The real need underneath it was seeing the dependency *shape*, and FR4 `--tree`
+  and FR5 `--check` already cover it.
