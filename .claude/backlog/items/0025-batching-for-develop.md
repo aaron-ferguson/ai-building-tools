@@ -2,7 +2,7 @@
 id: "0025"
 title: Name the batching case for develop, not just for capture
 type: chore
-next: develop
+next: verify
 status: ready
 qa_level: verify
 size: s
@@ -15,13 +15,9 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - README.md
-claimed_by: 3640
-claimed_at: 2026-08-23T21:41:30Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - README.md
-  - tests/batching.test.sh   # new
 ---
 
 ## Problem
