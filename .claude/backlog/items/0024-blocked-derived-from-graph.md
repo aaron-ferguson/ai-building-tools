@@ -3,10 +3,11 @@ id: "0024"
 title: Derive the blocked status from the graph rather than the column
 type: bug
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
+closed: 2026-08-23
 source: agent
 parent: "0002"
 blocked_by: []
@@ -19,8 +20,8 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
-claimed_by: "8e21"
-claimed_at: 2026-08-23T20:52:00Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -66,16 +67,16 @@ The failure is asymmetric and that is what makes it worth fixing rather than tol
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture where 0002 is `done` and 0001's `blocked_by` names only 0002, when
+- [x] AC1 — Given a fixture where 0002 is `done` and 0001's `blocked_by` names only 0002, when
       `./next develop` runs, then 0001 is offered.
-- [ ] AC2 — Given the same fixture with 0001's column reading `blocked`, when the drift mode runs, then
+- [x] AC2 — Given the same fixture with 0001's column reading `blocked`, when the drift mode runs, then
       it names 0001 as written-blocked but derived-ready and exits non-zero.
-- [ ] AC3 — Given a fixture where 0001's column reads `ready` and its `blocked_by` names an open ticket,
+- [x] AC3 — Given a fixture where 0001's column reads `ready` and its `blocked_by` names an open ticket,
       when the drift mode runs, then it names 0001 in the opposite direction.
-- [ ] AC4 — Given no drift, when the drift mode runs, then it says so plainly and exits zero.
-- [ ] AC5 — Given `templates/QUEUE.md` and `templates/item.md`, when read, then both state that `blocked`
+- [x] AC4 — Given no drift, when the drift mode runs, then it says so plainly and exits zero.
+- [x] AC5 — Given `templates/QUEUE.md` and `templates/item.md`, when read, then both state that `blocked`
       is derived from `blocked_by` and not authored.
-- [ ] AC6 — Given the skill that closes a ticket, when read, then it requires reconciling the rows that
+- [x] AC6 — Given the skill that closes a ticket, when read, then it requires reconciling the rows that
       named the closed ticket, in the closing commit.
 
 ## QA plan
@@ -297,3 +298,18 @@ confirming a clean tree, not re-deriving the verdict.
 **0026 left stale, deliberately, for the third time.** Nothing names 0024 in `blocked_by`, so this
 close reconciles nothing; 0026's drift belongs to the earlier 0022 close and is not a row this
 session holds.
+
+### CLOSED, 2026-08-23 [8e21]
+
+The advisory condition cleared **inside the pass**: `retro` committed its three files at `ff44474`
+and `07dd4c8` while the verdict above was being written, so the tree that made the result advisory
+is now a clean committed state. Every green was re-checked against it rather than assumed —
+`AC6` is byte-identical at `HEAD:skills/verify/SKILL.md:168` to the working-tree copy it was first
+read in, the tree-wide `blocked` grep still finds one convention, and both suites were re-run on the
+clean tree: `tests/next.test.sh` 21/21, `tests/claim.test.sh` 18/18, with `templates/next` diffed
+against a pre-mutation backup to prove no mutation was left behind. Closed on that, not on the
+advisory.
+
+**Reconciled: nothing.** No item names 0024 in `blocked_by`, so this close clears no row. `--drift`
+exits 1 on this backlog for **0026 only**, which is the earlier 0022 close's unreconciled dependent
+and not a row this session may write — reported, not owned, exactly as Step 5.3 now requires.

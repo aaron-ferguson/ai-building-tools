@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0024 | Derive the blocked status from the graph rather than the column | bug | verify | 2026-08-23 | [items/0024-blocked-derived-from-graph.md](items/0024-blocked-derived-from-graph.md) |
 | 0022 | Fix claim's fixed-index column parsing against the pared table | bug | verify | 2026-08-23 | [items/0022-claim-parses-by-header-name.md](items/0022-claim-parses-by-header-name.md) |
 | 0020 | Split CONCURRENCY.md into rules and incidents | chore | verify | 2026-08-23 | [items/0020-split-concurrency-rules-from-incidents.md](items/0020-split-concurrency-rules-from-incidents.md) |
 | 0019 | Design asks on taste, decides on fact, and writes the ticket itself | chore | verify | 2026-08-23 | [items/0019-design-escalation-and-writes.md](items/0019-design-escalation-and-writes.md) |
