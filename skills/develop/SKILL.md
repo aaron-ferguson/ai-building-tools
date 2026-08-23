@@ -55,7 +55,7 @@ acting on either.
 ## Step 1 — Select and claim the item
 
 **Run `./next develop` rather than reading `QUEUE.md`.** It prints the first takeable row — `next:
-develop`, `status: ready`, no open `blocked_by` — with its `size`, `qa_level` and `expects:`, plus the
+develop`, nothing still open in `blocked_by` — with its `size`, `qa_level` and `expects:`, plus the
 files every in-progress ticket has claimed. Reading the queue whole to learn one row is the largest
 avoidable context cost in the backlog; open the file only for questions about *order*.
 
@@ -65,14 +65,18 @@ avoidable context cost in the backlog; open the file only for questions about *o
 
 Without the script, read `QUEUE.md` and apply the same rules:
 
-- **No argument → the topmost `next: develop` / `status: ready` row.** The rank is not a suggestion.
+- **No argument → the topmost takeable `next: develop` row.** The rank is not a suggestion.
 - **An ID (`/develop 0007`)** → that ticket, but say so if you are skipping higher rows and why you
   believe that is intended.
 - **`blocked` or `waiting`** → report which and what clears it: a named ticket, or for `waiting` the
   question in its `## Waiting on` section (`./next --waiting`). Then take the next takeable row.
   Never reorder to make your choice look correct.
-- **An open `blocked_by` is never takeable, whatever the status column says** — derived from the
-  graph, because the two disagree the moment a blocker closes and nobody edits the rows below it.
+- **`blocked_by` decides takeability, never the `Status` column** — `blocked` is derived, and the
+  column only caches it. **Both directions matter and only one is ever noticed.** A row still naming
+  an open ticket is not takeable however green the column looks. A row written `blocked` whose
+  `blocked_by` entries are all `done` **is** takeable: take it, say the column was stale, and fix it
+  in your claim edit. Skipping it is how four rows sat unavailable for a whole session. `./next
+  --drift` lists both directions across the whole queue and exits non-zero if it finds any.
 - **`next: design`** → skip it and name its open question. It has no acceptance criteria by
   definition, so building it means inventing the contract you will then be verified against. The
   title is not the spec. Same for **`next: queue`**: hand it back rather than inventing the missing
@@ -261,8 +265,9 @@ adopts every fragile check it brushes against stops being the ticket that was ra
 6. **Mirror the state if a tracker is configured** — transition to its in-review equivalent, comment
    the commit SHAs. Failure is logged in the notes, never a blocker.
 
-**If you cannot get the tree green**, set `next: develop` with `status: ready` — or `blocked`/`waiting`
-with the reason — clear the claim and `touches:`, and report what is left. Never hand a red tree to QA
+**If you cannot get the tree green**, set `next: develop` with `status: ready` — or `waiting` with the
+reason, or a `blocked_by` entry naming the ticket that must land first, since `blocked` is derived and
+never typed — clear the claim and `touches:`, and report what is left. Never hand a red tree to QA
 as though it were done.
 
 **Do not push** unless the project's `CLAUDE.md` or `git-conventions.md` says so, or the user asks.
