@@ -3,7 +3,7 @@ id: "0024"
 title: Derive the blocked status from the graph rather than the column
 type: bug
 next: verify
-status: in-progress
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -19,13 +19,9 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
-claimed_by: "5366"
-claimed_at: 2026-08-23T20:31:40Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/items/0024-blocked-derived-from-graph.md
-  - .claude/backlog/QUEUE.md
-  - .claude/backlog/DONE.md
-  - .claude/backlog/FINDINGS.md
 ---
 
 ## Problem
@@ -241,3 +237,63 @@ overturned rule in the same file. The reader and the tests were left alone.
   `tests/next.test.sh` 21/21. This change touches no executable code; the reader was run against a
   copy of the real backlog to confirm the added header prose did not break table parsing (it parses
   by header name, so it did not), and the fixture was removed in the same turn.
+
+### ADVISORY PASS from verify, 2026-08-23 [5366]
+
+**All six ACs and the NFR row pass. The ticket is not closed, because the tree was not mine to
+verify against** — `retro` was editing `skills/verify/SKILL.md`, `skills/queue/SKILL.md` and
+`references/CONCURRENCY.md` in another window throughout the pass, two of them in this ticket's
+own `expects:`. Step 2 makes that advisory and Step 7 forbids closing on it.
+
+**The previous FAIL's instruction was met exactly.** `.claude/backlog/QUEUE.md` lines 28–45 are now
+byte-identical to `templates/QUEUE.md` for the narrowed definition, the DERIVED paragraph and the
+not-a-ticket routing — diffed, not eyeballed. The bottom `develop` takes paragraph came along with
+them. The reader and the tests were left alone, as instructed.
+
+**The re-grep was redone independently, not taken on the note's word.** `external blocker` has no
+live occurrence outside this ticket's own history. Every one of the 37 remaining `` `blocked` ``
+lines in the tree was read: all are either the derived vocabulary or a usage, and `queue/SKILL.md:245`
+is terse-not-contradictory exactly as claimed, because line 94 governs how the column gets its value.
+`CONCURRENCY.md:57–62` carries the narrow close-reconciles carve-out, so FR4 no longer contradicts
+*A stage writes only the ticket it holds*.
+
+**Mutation-tested rather than taken on its green** — five mutations to `templates/next`, each drove
+the matching assertions red and left the others alone:
+
+| Mutation | Expected red | Result |
+|---|---|---|
+| `exit "$drifted"` → `exit 0` | AC2, AC3 exit codes only | 19/21, exactly the two exit assertions |
+| written-blocked/derived-ready branch → `if false` | AC2 whole | 17/21, AC2's four; AC3, AC4, FR1 untouched |
+| written-ready/derived-blocked branch → `elif false` | AC3 whole | 16/21, AC3's five |
+| no-drift message garbled | AC4 message only | 20/21, the one assertion |
+| `derived_of` trusts the column | AC3, AC4 | 13/21 — AC1 and FR1 stayed green, confirming FR1 is the load-bearing case for the stale-blocked path and AC1 alone would not catch a column-trusting reader |
+
+The exit codes pin separately from the output, which is what the QA plan asked for: mutation 1 broke
+both exit assertions and no message assertion.
+
+**Ran against a copy of the real backlog** — the added header prose does not break table parsing
+(the reader keys on header names): `--drift` names only 0026 and exits 1; `./next develop` offers
+`TAKE 0026` and correctly reports 0024's claimed files. Because `--drift` reports both directions
+over every row, this also proves the narrowing orphaned nothing: no row in this backlog uses
+`blocked` for a non-ticket blocker.
+
+**Newly reachable states, checked (Step 4):** the change makes rows written `blocked` takeable to a
+reader of the live file — verified as 0026 and intended. No destructive or privileged action sits
+behind the new path. Privacy, security and accessibility passes are untriggered: prose only, no log
+field, analytics event, egress destination, auth surface or UI.
+
+**The no-new-test decision was checked against the source, not accepted.** `README.md:176–188` does
+state the position quoted — the shipped scripts are the only executable code and the skills'
+behaviour is verified by `/verify` against ACs — so this is the project's documented convention, not
+an exemption written for this ticket. Commit `458e202` is atomic and pathspec-staged: one file.
+
+**What has to be clean before this closes:** `references/CONCURRENCY.md`, `skills/queue/SKILL.md`
+and `skills/verify/SKILL.md` committed or reverted by whoever holds them. Nothing else is
+outstanding — do not redo the reader, the tests, the grep or the prose. Every green above was
+checked against **both** the committed and the working-tree copy of every file the ACs rest on
+(AC6 holds at `HEAD:skills/verify/SKILL.md:162` and at working-tree line 168), so the re-run is
+confirming a clean tree, not re-deriving the verdict.
+
+**0026 left stale, deliberately, for the third time.** Nothing names 0024 in `blocked_by`, so this
+close reconciles nothing; 0026's drift belongs to the earlier 0022 close and is not a row this
+session holds.
