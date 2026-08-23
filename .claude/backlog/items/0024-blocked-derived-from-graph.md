@@ -3,7 +3,7 @@ id: "0024"
 title: Derive the blocked status from the graph rather than the column
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -18,8 +18,8 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "c7fa"
+claimed_at: 2026-08-23T17:32:25Z
 touches:
 ---
 
