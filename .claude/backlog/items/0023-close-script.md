@@ -17,9 +17,13 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by:
-claimed_at:
+claimed_by: "64f1"
+claimed_at: 2026-08-23T21:23:26Z
 touches:
+  - skills/queue/templates/close
+  - tests/close.test.sh
+  - skills/verify/SKILL.md
+  - references/CONCURRENCY.md
 ---
 
 ## Problem
