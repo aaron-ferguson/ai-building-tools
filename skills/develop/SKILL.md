@@ -57,7 +57,7 @@ Read `references/TRACKER.md` before acting on either. In short:
 ## Step 1 — Select and claim the item
 
 **If the backlog has a `./next` script, run it instead of reading `QUEUE.md`.** It prints row 1,
-the first row whose status is `ready`, the ready/total counts, and the files every in-progress
+the first takeable row — `next: develop` and `status: ready` — the ready/total counts, and the files every in-progress
 item has claimed — the whole of what this step needs, in a fixed handful of lines however long
 the queue grows. `QUEUE.md` is the file both windows edit most, so it is also the one a session
 re-reads most; reading it whole to learn one row is the largest avoidable context cost in the
@@ -70,19 +70,23 @@ pass, or where a new item belongs. Otherwise:
 
 If there is no such script, read `.claude/backlog/QUEUE.md`.
 
-- No argument → the **topmost row with status `ready`**. The rank is not a suggestion.
+- No argument → the **topmost row that is `next: develop` and `status: ready`**. Two columns,
+  two questions: `Next` is the stage that acts, `Status` is whether anything can. The rank is
+  not a suggestion.
 - Argument is an ID (`/develop 0007`) → that item, but say so if you're skipping higher rows
   and why you believe that's intended.
-- Row 1 is `blocked` → report the blocker, take the next `ready` row. Never reorder to make
-  your choice look correct.
-- Row is `design` → **skip it**, name it, and say what its open question is. The item has no
+- Row 1 is `blocked` or `waiting` → report which, and what clears it — a named ticket for
+  `blocked`, a named person for `waiting` — then take the next takeable row. Never reorder to
+  make your choice look correct.
+- Row is `next: design` → **skip it**, name it, and say what its open question is. The item has no
   acceptance criteria yet by definition, so building it means inventing the contract you would
   then be verified against. Settle it with `/design` or `/prototype` first. Do not "just start"
   on a design row because the title reads clearly — the title is not the spec.
-- Argument is an ID whose status is `design` → say so and stop rather than proceeding. Offer to
-  settle the question first.
-- Row is `in-progress` → **it belongs to another session unless you minted its `Owner` token in
-  this conversation.** Skip it and take the next `ready` row, naming the token you skipped. Do
+- Argument is an ID whose `next` is `design` → say so and stop rather than proceeding. Offer to
+  settle the question first. Same for `next: queue`: it is not specified enough for any stage to
+  take it, so hand it back to `queue` rather than inventing the missing half.
+- Row is `in-progress` → **it belongs to another session unless you minted its claim token in
+  this conversation.** Skip it and take the next takeable row, naming the token you skipped. Do
   not take it over because the work looks stalled or the tree looks like nobody is on it; ask.
 - No backlog directory → tell the user and offer `queue` to start one. Don't invent work.
 
@@ -134,8 +138,9 @@ Inside the lock, in this order:
 
 1. **Re-read the row.** It may have changed since you chose it. If it is no longer `ready`,
    release the lock and pick again — do not proceed on the version you read a minute ago.
-2. Set the row's status to `in-progress` and write `$CLAIM` into its `Owner` column, as one
-   single-line `Edit`.
+2. Set the row's `Status` to `in-progress`, as one single-line `Edit`. The token's home is the
+   item's `claimed_by:` — the pared table has no ownership column; write `$CLAIM` into one only
+   where a project's table still carries it.
 3. Write `claimed_by: <token>`, `claimed_at: <ISO-8601 UTC>`, and `touches:` into the item file's
    frontmatter. **`touches:` is `expects:` checked against the code, never copied from it.** Grep
    for the symbols this item will alter and include what comes back — an item written weeks ago
@@ -316,8 +321,8 @@ why it is safe for the other window to run `/verify` while you are mid-item.
 
 If QA fails: fix, re-run QA, and record what the failure was in the item's notes. Never close
 an item on a red or skipped check, and never report success you haven't seen. If you can't
-get it green, set the item back to `ready` (or `blocked` with the reason) and report honestly
-what's left — **and clear the `Owner` token and `touches:` when you do**, since you are no longer
+get it green, set the item back to `status: ready` (or `blocked`/`waiting` with the reason) and
+report honestly what's left — **and clear the claim token and `touches:` when you do**, since you are no longer
 holding either the row or its files, and the next session needs to be able to take both.
 
 ---
@@ -330,7 +335,7 @@ Only after QA is green:
 2. Tick the ACs in the item file and set `status: done` with the date.
 3. Move the item's row out of `QUEUE.md` into `DONE.md` (newest first). **Re-read `QUEUE.md`
    first** — the other window has had the whole implementation to insert rows — then delete
-   your row with a single `Edit` and append it to `DONE.md`, dropping the `Owner` token on the
+   your row with a single `Edit` and append it to `DONE.md`, dropping the claim token on the
    way. Nothing else in `QUEUE.md` is touched; there is no position column to renumber.
    **Take the lock for this, and commit before releasing it.** The reasoning that a close needs
    no lock — "a single-line edit to a row only you hold" — is true about the *row* and false

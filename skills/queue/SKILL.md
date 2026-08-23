@@ -102,7 +102,7 @@ cite no standard is a backlog that cannot be verified later.
 | describes a bug / feature / annoyance | **Add** (Step 2) |
 | "what's next", "show the queue" | Read `QUEUE.md`, print the top rows, stop |
 | "move X up", "do Y first", "reprioritise" | **Rerank** (Step 4) |
-| "X is blocked on Y" | Set status `blocked`, record the blocker in the item file |
+| "X is blocked on Y" | Set `status: blocked` (or `waiting`, if a person is what is needed), record it in the item file |
 | "import from Notion", "any new feedback?" | **Import** (Step 5) |
 
 Adding is the default when the intent is ambiguous.
@@ -164,19 +164,20 @@ first time you edit either one, and `verify` will then check the stale copy.
 
 The always-on rules in the conventions core apply to every item and need no row.
 
-**If the item cannot have acceptance criteria yet, set `status: design` instead of guessing
+**If the item cannot have acceptance criteria yet, set `next: design` instead of guessing
 them.** Not every item arrives specifiable. When the blocker is a decision — which pattern,
 which flow, what the empty state is — write the *Open design question* section in the item,
-set the status, and rank it normally. It keeps its rank: the work is worth what it was worth.
+set the stage, and rank it normally. It keeps its rank: the work is worth what it was worth.
 
-This is a real status, not a euphemism for vague. The test is whether a *decision* is missing,
+This is a real stage, not a euphemism for vague. The test is whether a *decision* is missing,
 not whether detail is missing. Missing detail you sharpen now; a missing decision is settled by
 `/design` (returns an answer) or `/prototype` (returns something to look at), and the findings
-come back here to be written up. Guessing acceptance criteria to avoid the status is how an item
+come back here to be written up. Guessing acceptance criteria to avoid the stage is how an item
 gets built to a contract nobody agreed to.
 
 **Clearing it:** when the question is answered, write the FRs and ACs it unblocks, record the
-answer in *Notes & decisions*, delete the *Open design question* section, and set `ready`.
+answer in *Notes & decisions*, delete the *Open design question* section, and set
+`next: develop` / `status: ready`.
 `design` and `prototype` hand findings here; they never write item files themselves.
 
 **Set `qa_level` now, at queue time.** This is the decision that stops QA rigor quietly
@@ -281,7 +282,7 @@ Stop at the first one that separates them; do not average them.
   to the top of its tier, and above its tier if the date is close.
 - **A regression guard ranks with the bug it guards.** Never split a fix from the test that
   stops it returning and let the test drift down the queue.
-- **A blocked item keeps its rank.** Set `status: blocked` and leave the line where it is. Do
+- **A blocked or waiting item keeps its rank.** Set the status and leave the line where it is. Do
   not sink it to the bottom — when the blocker clears you would have to rediscover why it
   mattered, and that judgement is exactly what you're storing here.
 

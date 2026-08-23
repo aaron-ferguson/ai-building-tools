@@ -7,10 +7,11 @@ type: bug | feature | chore | debt
 # acceptance criteria can exist · `develop` = specified, build it · `verify` = built, QA it.
 next: queue | design | develop | verify
 # Whether anything can act at all. `ready` = it can · `waiting` = a PERSON is needed · `blocked`
-# = an open `blocked_by` · `in-progress` = a session holds a claim. `waiting` and `blocked` are
-# not one value because different things clear them: a person answering, versus another ticket
-# closing. Merged, telling which would mean opening the ticket.
-status: ready | waiting | blocked | in-progress
+# = an open `blocked_by` · `in-progress` = a session holds a claim · `done` = terminal, the
+# ticket's row has moved to `DONE.md`. `waiting` and `blocked` are not one value because
+# different things clear them: a person answering, versus another ticket closing. Merged,
+# telling which would mean opening the ticket.
+status: ready | waiting | blocked | in-progress | done
 qa_level: verify | unit | integration | e2e
 # Rough cost, so a session can see what it's taking on WITHOUT reordering the queue.
 # s = one sitting · m = a focused session · l = multiple sessions or needs a design decision first.

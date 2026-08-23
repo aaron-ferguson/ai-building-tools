@@ -6,7 +6,7 @@ description: >
   interaction is accessible. Use when the user asks "should this be a modal or a page", "where
   should this live", "what's the right pattern for X", "how do we handle the empty state", "is
   this accessible", or invokes /design. Also use to settle a backlog item sitting at
-  `status: design`. Returns a DECISION with reasoning, checked against the project's design,
+  `next: design`. Returns a DECISION with reasoning, checked against the project's design,
   UI, and accessibility conventions and its design system. NOT for building an artifact — if
   the user wants a diagram, a clickable mockup, or a real component to look at, that is
   /prototype. Tell me versus show me is the line.
@@ -51,7 +51,7 @@ directory). This skill uses `design_system` only.
 
 ## Step 1 — Get the question, and make it decidable
 
-From a backlog item at `status: design`: read its **Open design question** section. That is the
+From a backlog item at `next: design`: read its **Open design question** section. That is the
 contract — answer *that*, not a broader topic you find more interesting.
 
 Ad-hoc: take the question as asked.
@@ -115,7 +115,7 @@ less context. This step is most of the value of the skill.
 **Item-scoped** — it answers a specific backlog item's open question:
 hand `queue` the answer, and the answer to record in the item's **Notes & decisions**. `queue`
 writes the FRs and ACs the answer unblocks, deletes the item's *Open design question* section,
-and moves it to `ready`. Do not write to the item yourself.
+and moves it to `next: develop`. Do not write to the item yourself.
 
 **Standing** — it sets a pattern beyond this one item: write a decision record where the
 project's `documentation-conventions.md` says decision records live. Include the question, the
