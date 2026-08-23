@@ -2,7 +2,7 @@
 id: "0023"
 title: Add a close script mirroring claim
 type: chore
-next: verify
+next: develop
 status: ready
 qa_level: verify
 size: m
@@ -17,8 +17,8 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by: fd27
-claimed_at: 2026-08-23T21:05:05Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -194,3 +194,66 @@ this file breaches it again. That is a standing cost of the ceiling, not a defec
   a row has taken the lock since the exemption was removed. Corrected to three with the reason, per
   the documentation conventions' rule that a change contradicting a documented statement fixes it in
   the same commit.
+
+### Verify pass 2026-08-23 — FAIL (token `fd27`)
+
+AC1–AC8 all pass, and each was mutation-checked rather than taken on trust: eleven mutations of
+`close`, every one diff-verified as applied (the trap this ticket's own notes set), and every one
+caught by the assertion specific to it — no holes. AC7 measures 6,030 bytes / ~1,493 tokens, and is
+provably falsifiable: the same measure at `3b29524` was 6,610 / ~1,637, i.e. red.
+
+**The failure is Step 4's reachability walk, not an AC.** The reconcile FR7 added writes item files
+of tickets this session does not hold, and its only ownership guard is gated behind a `QUEUE.md`
+row:
+
+```sh
+dep_row="$(awk ... "$QUEUE")"
+if [ -n "$dep_row" ] && [ "$(read_cell "$dep_row" "$Q_STATUS")" = "in-progress" ]; then
+```
+
+A dependent with **no row** therefore gets its `status:` rewritten unconditionally. Two reachable
+states, one root cause, neither pinned by any AC:
+
+1. **A `done` dependent is resurrected.** `close` never clears `blocked_by` on the ticket it closes,
+   so a closed ticket keeps naming its blockers for ever. Closing a blocker later flips it back:
+
+   ```
+   === BEFORE: 0050 status ===    status: done
+   closed 0001 — The blocker being closed
+   reconciled (no longer blocked): 0050
+   === AFTER: 0050 status ===     status: ready
+   ```
+
+   It stays in `DONE.md` while its item reads `ready`, so the two files disagree about whether the
+   ticket is finished — the "queue that lies" failure FR7 exists to prevent, in the other direction.
+
+2. **A dependent another session holds is overwritten — a direct FR7 violation.** FR7 says "never a
+   row another session holds `in-progress`, which it reports instead". With no row, it is neither
+   skipped nor reported:
+
+   ```
+   === BEFORE ===  status: in-progress   claimed_by: "ff99"
+   reconciled (no longer blocked): 0060
+   === AFTER  ===  status: ready         claimed_by: "ff99"
+   ```
+
+   The row is the wrong place to look: `CONCURRENCY.md` *Claim tokens* says the item's `claimed_by:`
+   **is** the token's home, "the pared `QUEUE.md` has no ownership column". The guard consults the one
+   place the protocol says ownership does not live.
+
+Not triggered on this repo today — 0021 is the only row naming 0023, and its other blocker 0025 is
+`ready`, so it correctly stays `blocked`. That is luck about the current graph, not a working guard.
+
+**Suggested fix:** guard on the dependent's own frontmatter rather than its row — skip unless its
+`status:` is `blocked`, and skip-and-report when `claimed_by:` is non-empty. Then add the two ACs
+that pin them, since AC8's three cases are all row-bearing and cannot see this.
+
+Everything else checked clean: FR5 (both skills name `./close`, hand-close kept as the documented
+fallback), FR6/AC7, the `README.md` "three operations take a lock" correction, and the Documentation
+NFR — the rule is stated once in `CONCURRENCY.md` *The three scripts* and cited by name elsewhere.
+No privacy, security or accessibility surface: no log field, analytics event or egress destination is
+added, and the script's only inputs are two argv values, both validated at the top.
+
+**Note on which copy was tested:** the repo copy is the authority and is what ran. The skill executing
+this session is the pinned install `0.9.1`, which predates this change and carries no `close` template
+at all.
