@@ -3,10 +3,11 @@ id: "0025"
 title: Name the batching case for develop, not just for capture
 type: chore
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
+closed: 2026-08-23
 source: agent
 parent: "0009"
 blocked_by: []
@@ -15,12 +16,9 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - README.md
-claimed_by: "795a"
-claimed_at: 2026-08-23T21:49:37Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - README.md
 ---
 
 ## Problem
@@ -72,13 +70,13 @@ prohibition, and is the sentence a careful reader would follow into the expensiv
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/develop/SKILL.md`, when read, then it states the batching case and gives the
+- [x] AC1 — Given `skills/develop/SKILL.md`, when read, then it states the batching case and gives the
       shared-file-scope-or-shared-slice test.
-- [ ] AC2 — Given that file, when grepped for `One item per invocation`, then there is no match.
-- [ ] AC3 — Given that file, when read, then it requires claiming and closing each ticket individually,
+- [x] AC2 — Given that file, when grepped for `One item per invocation`, then there is no match.
+- [x] AC3 — Given that file, when read, then it requires claiming and closing each ticket individually,
       and stopping the batch on a wrong contract.
-- [ ] AC4 — Given that file, when read, then the batching statement carries a dated figure.
-- [ ] AC5 — Given `skills/verify/SKILL.md`, when read, then it states that each ticket in a batch closes
+- [x] AC4 — Given that file, when read, then the batching statement carries a dated figure.
+- [x] AC5 — Given `skills/verify/SKILL.md`, when read, then it states that each ticket in a batch closes
       on its own acceptance criteria.
 
 ## QA plan
@@ -119,3 +117,14 @@ prohibition, and is the sentence a careful reader would follow into the expensiv
 - The counter-intuitive half is FR3's first guardrail. Batching is per *session*, and ownership stays per
   *row* — a batch that claims all its tickets at once would hold rows it is not working on, which is the
   scope-reservation problem `CONCURRENCY.md` already names for `touches:`.
+- **Verified 2026-08-23 (PASS).** `tests/batching.test.sh` 11/11, and every one of the 11 was
+  **proved mutable** — each assertion was driven red by breaking the prose it guards and restored by
+  the mutated path alone. The mutation that mattered: `batching.test.sh`'s `awk` window is
+  `/one gate per session/` plus 15 lines, which **overspills the batching paragraph by three lines**,
+  so the "inside the paragraph" assertions are only paragraph-scoped by luck of what follows.
+  Stripping the date from the paragraph alone still goes red today, so it is a latent weakness rather
+  than a false green — parked in `FINDINGS.md`, not fixed here.
+- **The copy verified is the repo copy, which is not the copy that ran.** `skills/develop`,
+  `skills/verify` and `skills/queue` all differ between this repo and the pinned install at
+  `0.9.1`, so the session that verified this rule was reading the pre-0025 `verify`. Per `SOURCE`
+  the rule is not live until the version is bumped, pushed and reinstalled.

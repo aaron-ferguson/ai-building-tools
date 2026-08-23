@@ -3,7 +3,7 @@ id: "0021"
 title: Hold the skills to the conventions' own context-rent rule
 type: chore
 next: develop
-status: blocked
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-23

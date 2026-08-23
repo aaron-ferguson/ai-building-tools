@@ -214,3 +214,27 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   when the holder is *you* — the existing report shows the token and timestamp, which is enough to
   diagnose only if the reader remembers minting it (pointer: references/CONCURRENCY.md *Lock every
   write to QUEUE.md*, CONCURRENCY-INCIDENTS.md busy/stale paths, skills/queue/templates/claim).
+- 2026-08-23 — **a paragraph-scoped grep test scoped by line count drifts out of its paragraph.**
+  `tests/batching.test.sh` narrows its assertions to develop's batching paragraph with
+  `awk '/one gate per session/{f=1} f{print; if (++n>14) exit}'` — a 15-line window over a 12-line
+  paragraph, so it currently reads three lines of the *next* paragraph. Every "in the paragraph"
+  assertion is therefore one edit away from passing on unrelated prose, which is the adjacent-
+  measurement failure `verify` Step 3 warns about rather than a check wired to nothing. Verified
+  today that it still fails correctly when the date is stripped from the paragraph alone, so this is
+  latent, not live. A blank-line terminator (`/^$/{if(f)exit}`) costs nothing and cannot drift
+  (pointer: tests/batching.test.sh PARA extraction).
+- 2026-08-23 — **`verify`'s new batching permission makes its own drift-reporting instruction
+  ambiguous, and no AC covers it.** Step 5.3 says to diff `./next --drift` before and after the
+  reconcile and "report what was already there rather than owning it". Across a batch the second
+  close's "before" report already contains the first close's effects — which *are* yours, from
+  earlier in the same session — so the rule that distinguishes your drift from someone else's stops
+  distinguishing them. 0025 licensed multi-ticket verify sessions without touching Step 5, and its
+  ACs only reach as far as "each ticket closes on its own ACs" (pointer: skills/verify Step 5.3,
+  items/0025).
+- 2026-08-23 — **the by-hand claim works across Bash invocations if you drop the trap entirely.**
+  The parked finding above says the whole lock sequence must be one invocation; the actual culprit is
+  the `trap`, not the split. An explicit `mkdir` then an explicit `rm -rf` at the end holds a valid
+  lock across several tool calls, which is what a `verify` close needs — its edits go through `Edit`
+  for single-row safety and cannot be one shell call. The cost is a lock held for minutes rather than
+  seconds, so keep every non-`QUEUE.md` edit outside it (pointer: references/CONCURRENCY.md *Lock
+  every write to QUEUE.md*, skills/verify Step 5).
