@@ -104,7 +104,7 @@ cite no standard is a backlog that cannot be verified later.
 | "move X up", "do Y first", "reprioritise" | **Rerank** (Step 4) |
 | "X is blocked on Y" | Set `status: blocked` and record `blocked_by:` in the item file |
 | "X needs an answer from someone" | Set `status: waiting` **and write the `## Waiting on` section** — the question and who can answer it. A `waiting` row with no such section is a defect `./next --waiting` reports, because it is indistinguishable from a forgotten one |
-| "import from Notion", "any new feedback?" | **Import** (Step 5) |
+| "sweep the findings", "import from Notion", "any new feedback?" | **Surface parked work** (Step 5) |
 
 Adding is the default when the intent is ambiguous.
 
@@ -346,24 +346,52 @@ it.
 
 ---
 
-## Step 5 — Import from Notion (opt-in)
+## Step 5 — Surface work that was parked somewhere else
 
-Only if `config.yml` has `notion.enabled: true`. Most projects won't; skip silently otherwise
-and never prompt to set it up unless the user raises it.
+**One step, two sources.** Both hand you the same thing — a report rather than a work item — so
+both get the same treatment, and splitting them into parallel steps would mean writing the
+specification rules twice and then letting one copy drift.
 
-The flow is **one-way, Notion → local**. Notion is where other humans report; the local queue
-is what agents work from.
+| Source | Availability | What it holds |
+|---|---|---|
+| `.claude/backlog/FINDINGS.md` | always, no config | what a session noticed while working and could not place |
+| Notion | only if `config.yml` has `notion.enabled: true` | what other humans reported |
+
+### The buffer — `FINDINGS.md`
+
+**`queue` takes the entries that are units of work; `retro` takes the lessons.** Two sweepers, one
+file, and neither waits for the other. **An entry that is both is taken by both** — forcing the
+classification at write time would put friction exactly where it is least wanted, at the moment of
+noticing.
+
+For each entry that is a unit of work:
+
+1. **Do the Step 2 work properly.** A parked line is one sentence and a pointer; it has no
+   functional requirements, no NFR citations, no acceptance criteria and no QA level. Write them.
+2. **If you cannot specify it, do not rank it.** Write the item file with a *Problem* section and
+   `next: queue`, and **leave it out of `QUEUE.md`**. The queue is the file every session reads to
+   find its next row, so it holds only specified, ranked tickets — an unspecified row there costs
+   every reader a look and gives `develop` something it must refuse.
+3. **Rank per Step 3** once it is specified. A parked finding gets no rank bonus for having been
+   noticed recently; that is the recency trap Step 3 names.
+
+**Remove only the entries you processed, and commit in the same turn**, by pathspec. Leaving a
+processed entry is how the next sweep pays to read it again; removing an unprocessed one is how
+`retro`'s half disappears. `git commit -m "Sweep <n> findings into rows" -- .claude/backlog/…`
+
+### Notion (opt-in)
+
+Only if `config.yml` has `notion.enabled: true`. Most projects won't; skip silently otherwise and
+never prompt to set it up unless the user raises it. The flow is **one-way, Notion → local**:
+Notion is where other humans report, the local queue is what agents work from, and nothing is
+written back.
 
 1. `mcp__claude_ai_Notion__notion-query-data-sources` on `notion.data_source_id`.
 2. Skip any page whose id already appears in `imported-notion-ids.txt`.
-3. For each new page, map its fields and then **do the Step 2 work properly** — a raw Notion
-   row is a report, not a work item. It has a title, a type, a priority, and a paragraph; it
-   has no functional requirements, no NFRs, no acceptance criteria, and no QA level. Write
-   those. An imported item that skips this is the thing `develop` will choke on.
-4. Set `source: notion:<page-id>` in the frontmatter, append the page id to the imported log,
-   and rank per Step 3. A Notion `Priority` of `Urgent` is an input to ranking, not the answer.
-
-Nothing is written back to Notion.
+3. Map its fields, then run the same three numbered steps above.
+4. Set `source: notion:<page-id>` in the frontmatter and append the page id to the imported log. A
+   Notion `Priority` of `Urgent` is an input to tier selection and nothing more — the reporter was
+   rating their own annoyance, not your queue.
 
 ---
 

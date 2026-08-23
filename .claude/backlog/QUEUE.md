@@ -43,7 +43,6 @@ conversation belongs to another session.**
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0022 | Fix claim's fixed-index column parsing against the pared table | develop | ready | 0002 |
-| 0014 | Queue sweeps FINDINGS.md for units of work | develop | blocked | 0009 |
 | 0015 | Remove cross-skill invocation | develop | blocked | 0009 |
 | 0016 | Make retro a batch process over many sessions | develop | blocked | 0009 |
 | 0017 | Document one skill per session, with the measurement | develop | blocked | 0009 |

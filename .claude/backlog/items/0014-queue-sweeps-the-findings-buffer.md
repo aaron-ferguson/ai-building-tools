@@ -2,13 +2,14 @@
 id: "0014"
 title: Queue sweeps FINDINGS.md for units of work
 type: chore
-next: develop
-status: blocked
+next: verify
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
+closed: 2026-08-23
 parent: "0009"
-blocked_by: ["0012"]
+blocked_by: []
 relates: []
 touches:
 ---
@@ -40,13 +41,13 @@ specification and ranking — badly and in the wrong session.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/queue/SKILL.md`, when read, then it has a sweep step naming
+- [x] AC1 — Given `skills/queue/SKILL.md`, when read, then it has a sweep step naming
       `FINDINGS.md` as a source and requiring full specification of anything it promotes.
-- [ ] AC2 — Given that step, when read, then it says to remove only processed entries and commit
+- [x] AC2 — Given that step, when read, then it says to remove only processed entries and commit
       in the same turn.
-- [ ] AC3 — Given `templates/FINDINGS.md`, when read, then it states that queue takes units of
+- [x] AC3 — Given `templates/FINDINGS.md`, when read, then it states that queue takes units of
       work, retro takes lessons, and an entry may be both.
-- [ ] AC4 — Given `skills/queue/SKILL.md`, when read, then the Notion flow and the buffer flow are
+- [x] AC4 — Given `skills/queue/SKILL.md`, when read, then the Notion flow and the buffer flow are
       one step with two sources, not two parallel steps.
 
 ## QA plan
@@ -67,3 +68,11 @@ specification and ranking — badly and in the wrong session.
 - Queue Step 5 already insists an imported row "is a report, not a work item" that needs FRs,
   NFRs, ACs and a QA level written. That is exactly the treatment a buffer entry needs, so this
   is a generalisation of an existing flow rather than new machinery.
+- **FR1 and FR4 are not in tension once read together.** FR1 says specify and rank; FR4 says a
+  surfaced entry is never a ranked row. The resolution is the `next: queue` value the template
+  already defines: an entry you *can* specify becomes a specified, ranked row, and one you cannot
+  becomes an item file with a Problem section and **no row in `QUEUE.md`** until someone finishes
+  it. Both halves keep unspecified work out of the file every session reads.
+- The two-sweeper rule went into the template *and* into this repo's own live `FINDINGS.md`. The
+  template only reaches projects scaffolded after today; the copy in front of the next session
+  here is the one that changes behaviour now.
