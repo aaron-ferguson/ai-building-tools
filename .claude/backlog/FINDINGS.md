@@ -161,3 +161,14 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   finding arriving, not restating it — the conclusion has moved from *tight* to *no route left*
   (pointer: references/CONCURRENCY.md, 0020 FR4, 0023 AC7).
 
+
+- 2026-08-23 — verifying 0023: the rule and the script it encodes disagree about what *held* means.
+  `CONCURRENCY.md` *A stage writes only the ticket it holds* and `verify` Step 5's hand-close both
+  define it as a non-empty `claimed_by:` in the item, and the fix deliberately removed the row clause
+  from both. `close` still treats an `in-progress` row carrying no token as held as well (an `||`),
+  citing *The working tree is shared too* — so the script is stricter than the rule, and a hand-close
+  following the documented fallback would write a dependent the script leaves alone. Both directions
+  are defensible; what is not is the two paths differing, which is the shape of the defect this very
+  ticket's first verify pass failed on. Fixing it in the rule costs words the AC7 ceiling has no
+  margin for, which is why it is parked rather than edited (pointer: references/CONCURRENCY.md,
+  skills/verify/SKILL.md Step 5 item 3, skills/queue/templates/close reconcile guard, 0023 FR7).
