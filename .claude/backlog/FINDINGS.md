@@ -255,4 +255,23 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   plan's specific checks and *Out of scope* against the widened scope, which is where the work
   actually was. Both tickets needed `size` or QA-plan edits the new FR made necessary (pointer:
   skills/queue Step 1, Step 2).
-
+- 2026-08-23 — **half of `prototype` is three build procedures a run uses one of, and the ceiling
+  cannot say whether that should move.** Step 5 is 11,690 of its 23,394 bytes: level 1 (Mermaid), level 2
+  (clickable HTML) and level 3 (Angular), plus the field-reference contract. Step 2 has already picked one
+  level before any of it is read, so a level-1 run — the cheapest and probably commonest ask — loads the
+  drawer rules and the Angular route registration for nothing. Relocating each level to a
+  conditionally-read reference is the obvious move and is *not* clearly permitted: for a level-2 run the
+  reference opens in the same cycle, so the cost moves rather than falls, which 0021 puts out of scope.
+  This is a decision about where level detail lives rather than missing detail, so it wants `/design`, not
+  a trim (pointer: skills/prototype Step 5, items/0021 Out of scope, references/TRACKER.md and
+  references/NOTION.md as the conditional-read precedent).
+- 2026-08-23 — **a heading-preservation AC forbids the single most productive cut a size ticket can
+  make.** 0021's AC2 diffs every `##`/`###` heading before and after and requires all of them present, as
+  a proxy for "no rule is dropped". But the largest honest cut available was deleting `prototype`'s
+  `## Key Behaviors` whole — seven bullets, 2,027 bytes, every one restating a rule stated earlier in the
+  same file. FR2 was satisfied and AC2 was not, so a correct change reds its own check and needs a
+  rule-by-rule map written by hand to defend it. A heading is a proxy for a rule-bearing section, and it
+  stops being one exactly when a section bears no rule of its own. **A no-rule-dropped check should assert
+  over the rules, not the containers** — capture the bolded rule statements, or allow a removed heading
+  when accompanied by a stated destination for each rule it held (pointer: items/0021 AC2, its Outcome
+  table mapping the seven bullets, skills/prototype).
