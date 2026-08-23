@@ -2,6 +2,7 @@
 id: "0019"
 title: Design asks on taste, decides on fact, and writes the ticket itself
 type: chore
+next: develop
 status: blocked
 qa_level: verify
 size: s

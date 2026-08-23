@@ -10,7 +10,10 @@ next: queue | design | develop | verify
 # = an open `blocked_by` · `in-progress` = a session holds a claim · `done` = terminal, the
 # ticket's row has moved to `DONE.md`. `waiting` and `blocked` are not one value because
 # different things clear them: a person answering, versus another ticket closing. Merged,
-# telling which would mean opening the ticket.
+# telling which would mean opening the ticket. Two values sit off the stack rank and so out of
+# this list: a container ticket is `active` (it is never ranked, claimed, or built — its children
+# carry the stages, and its `next:` stays empty), and a dormant ticket in `SCHEDULED.md` is
+# `scheduled` with a `wake:` date.
 status: ready | waiting | blocked | in-progress | done
 qa_level: verify | unit | integration | e2e
 # Rough cost, so a session can see what it's taking on WITHOUT reordering the queue.

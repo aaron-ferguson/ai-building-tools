@@ -2,6 +2,7 @@
 id: "0008"
 title: Add the graph rules to queue, develop, and verify
 type: chore
+next: develop
 status: blocked
 qa_level: verify
 size: m

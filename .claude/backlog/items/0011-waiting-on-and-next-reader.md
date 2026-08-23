@@ -2,6 +2,7 @@
 id: "0011"
 title: Add the Waiting on section and rewrite next for the new fields
 type: chore
+next: develop
 status: blocked
 qa_level: verify
 size: m

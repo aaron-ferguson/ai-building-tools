@@ -2,6 +2,7 @@
 id: "0010"
 title: Split Status into Next and Status, and pare QUEUE.md
 type: chore
+next: develop
 status: in-progress
 qa_level: verify
 size: m

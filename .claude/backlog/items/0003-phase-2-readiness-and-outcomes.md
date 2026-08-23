@@ -2,6 +2,7 @@
 id: "0003"
 title: Phase 2 — the readiness gate and outcome reviews
 type: feature
+next: develop
 status: blocked
 qa_level: verify
 size: l

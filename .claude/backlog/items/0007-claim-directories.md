@@ -2,6 +2,7 @@
 id: "0007"
 title: Replace the Owner column with claim directories
 type: chore
+next: develop
 status: blocked
 qa_level: verify
 size: s

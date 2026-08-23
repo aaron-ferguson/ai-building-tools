@@ -2,6 +2,7 @@
 id: "0013"
 title: Verify closes the ticket; develop stops at next verify
 type: chore
+next: develop
 status: blocked
 qa_level: verify
 size: m

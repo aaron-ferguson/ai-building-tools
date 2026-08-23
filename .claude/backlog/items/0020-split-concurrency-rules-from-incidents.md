@@ -2,6 +2,7 @@
 id: "0020"
 title: Split CONCURRENCY.md into rules and incidents
 type: chore
+next: develop
 status: blocked
 qa_level: verify
 size: m

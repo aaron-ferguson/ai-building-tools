@@ -14,41 +14,56 @@ scope, the measure and the coupling, and it is never ranked, claimed, or built. 
 children is a *task*, and tasks are where all the work lives. A task becomes an effort the moment
 it gains a child, and its row leaves this file.
 
-Statuses: `design` (a decision is missing — see the ticket) · `ready` (passes the readiness gate,
-pick it up) · `in-progress` (a session holds a claim) · `blocked` (an open `blocked_by`, or an
-external blocker named in the ticket) · `needs-qa` (built, not verified). Completed tickets move
-to `DONE.md`; dormant scheduled ones live in `SCHEDULED.md`.
+**Two columns, because they answer different questions.** `Next` is the *stage* — which skill
+acts on this row: `queue` (not specified enough for any stage to take it) · `design` (a decision
+has to be settled before acceptance criteria can exist) · `develop` (specified, build it) ·
+`verify` (built, QA it). `Status` is the *state* — whether anything can act at all: `ready`
+(passes the readiness gate) · `waiting` · `blocked` · `in-progress` (a session holds a claim).
+Merged into one column a reader cannot filter for "work I can start" without already knowing
+which values are stages and which are states. Completed tickets move to `DONE.md`; dormant
+scheduled ones live in `SCHEDULED.md`.
+
+**`waiting` is not `blocked`, and the difference is who clears it.** `waiting` means a **person**
+is needed — an answer, a decision, an access grant — and only that person can clear it.
+`blocked` means an open `blocked_by`, or an external blocker named in the ticket, and it clears
+when that resolves. One value for both would mean opening the ticket to find out which kind of
+stuck it is.
 
 **A task with an open blocker is never `ready`.** That is derived from the graph, not a judgement
 call, and `develop` refuses the row even if the status says otherwise.
 
-Ownership is not a column. A claim is the directory `claims/<id>/`, created with `mkdir` — which
-either succeeds or fails, so claiming needs no lock. **A claim you did not create in this
+The other columns are `ID`, `Title` and `Parent`, and there are no more. `Type`, `Size` and `QA`
+changed no reader's behaviour at read time, and `Item` duplicated `ID` at the cost of most of the
+row's width: **the `ID` resolves to `items/<id>-*.md` by glob.**
+
+Ownership is not a column either. A claim is the directory `claims/<id>/`, created with `mkdir` —
+which either succeeds or fails, so claiming needs no lock. **A claim you did not create in this
 conversation belongs to another session.**
 
-| ID | Title | Type | Size | QA | Status | Parent | Item |
-|------|-------|------|------|----|--------|--------|------|
-| 0010 | Split Status into Next and Status, and pare QUEUE.md | chore | m | verify | in-progress | 0009 | [items/0010-next-and-status-fields.md](items/0010-next-and-status-fields.md) |
-| 0012 | Every session ends by parking what surprised it | chore | s | verify | ready | 0009 | [items/0012-park-findings-every-session.md](items/0012-park-findings-every-session.md) |
-| 0013 | Verify closes the ticket; develop stops at next verify | chore | m | verify | blocked | 0009 | [items/0013-verify-closes-the-ticket.md](items/0013-verify-closes-the-ticket.md) |
-| 0011 | Add the Waiting on section and rewrite next for the new fields | chore | m | verify | blocked | 0009 | [items/0011-waiting-on-and-next-reader.md](items/0011-waiting-on-and-next-reader.md) |
-| 0014 | Queue sweeps FINDINGS.md for units of work | chore | s | verify | blocked | 0009 | [items/0014-queue-sweeps-the-findings-buffer.md](items/0014-queue-sweeps-the-findings-buffer.md) |
-| 0015 | Remove cross-skill invocation | chore | s | verify | blocked | 0009 | [items/0015-remove-cross-skill-invocation.md](items/0015-remove-cross-skill-invocation.md) |
-| 0016 | Make retro a batch process over many sessions | chore | m | verify | blocked | 0009 | [items/0016-retro-as-a-batch-process.md](items/0016-retro-as-a-batch-process.md) |
-| 0017 | Document one skill per session, with the measurement | chore | s | verify | blocked | 0009 | [items/0017-document-one-skill-per-session.md](items/0017-document-one-skill-per-session.md) |
-| 0018 | Queue routes to design rather than design screening everything | chore | s | verify | blocked | 0009 | [items/0018-queue-routes-to-design.md](items/0018-queue-routes-to-design.md) |
-| 0019 | Design asks on taste, decides on fact, and writes the ticket itself | chore | s | verify | blocked | 0009 | [items/0019-design-escalation-and-writes.md](items/0019-design-escalation-and-writes.md) |
-| 0020 | Split CONCURRENCY.md into rules and incidents | chore | m | verify | blocked | 0009 | [items/0020-split-concurrency-rules-from-incidents.md](items/0020-split-concurrency-rules-from-incidents.md) |
-| 0021 | Hold the skills to the conventions' own context-rent rule | chore | m | verify | blocked | 0009 | [items/0021-trim-the-skills.md](items/0021-trim-the-skills.md) |
-| 0005 | Add the graph fields to the ticket template and QUEUE.md | chore | s | verify | ready | 0002 | [items/0005-add-graph-fields-to-template.md](items/0005-add-graph-fields-to-template.md) |
-| 0007 | Replace the Owner column with claim directories | chore | s | verify | blocked | 0002 | [items/0007-claim-directories.md](items/0007-claim-directories.md) |
-| 0006 | Rewrite next to parse by header name and walk ancestors | chore | m | verify | blocked | 0002 | [items/0006-rewrite-next-reader.md](items/0006-rewrite-next-reader.md) |
-| 0008 | Add the graph rules to queue, develop, and verify | chore | m | verify | blocked | 0002 | [items/0008-graph-rules-in-skills.md](items/0008-graph-rules-in-skills.md) |
-| 0003 | Phase 2 — the readiness gate and outcome reviews | feature | l | verify | blocked | 0001 | [items/0003-phase-2-readiness-and-outcomes.md](items/0003-phase-2-readiness-and-outcomes.md) |
-| 0004 | Phase 3 — extend tracker mirroring with hierarchy and standards | feature | l | verify | blocked | 0001 | [items/0004-phase-3-jira-bridge.md](items/0004-phase-3-jira-bridge.md) |
+| ID | Title | Next | Status | Parent |
+|------|-------|------|--------|--------|
+| 0010 | Split Status into Next and Status, and pare QUEUE.md | develop | in-progress | 0009 |
+| 0012 | Every session ends by parking what surprised it | develop | ready | 0009 |
+| 0013 | Verify closes the ticket; develop stops at next verify | develop | blocked | 0009 |
+| 0011 | Add the Waiting on section and rewrite next for the new fields | develop | blocked | 0009 |
+| 0014 | Queue sweeps FINDINGS.md for units of work | develop | blocked | 0009 |
+| 0015 | Remove cross-skill invocation | develop | blocked | 0009 |
+| 0016 | Make retro a batch process over many sessions | develop | blocked | 0009 |
+| 0017 | Document one skill per session, with the measurement | develop | blocked | 0009 |
+| 0018 | Queue routes to design rather than design screening everything | develop | blocked | 0009 |
+| 0019 | Design asks on taste, decides on fact, and writes the ticket itself | develop | blocked | 0009 |
+| 0020 | Split CONCURRENCY.md into rules and incidents | develop | blocked | 0009 |
+| 0021 | Hold the skills to the conventions' own context-rent rule | develop | blocked | 0009 |
+| 0005 | Add the graph fields to the ticket template and QUEUE.md | develop | ready | 0002 |
+| 0007 | Replace the Owner column with claim directories | develop | blocked | 0002 |
+| 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |
+| 0008 | Add the graph rules to queue, develop, and verify | develop | blocked | 0002 |
+| 0003 | Phase 2 — the readiness gate and outcome reviews | develop | blocked | 0001 |
+| 0004 | Phase 3 — extend tracker mirroring with hierarchy and standards | develop | blocked | 0001 |
 
-`develop` takes the topmost row whose status is `ready`. If the first row is `blocked` or
-`design`, it says so and takes the next `ready` row rather than silently reordering.
+`develop` takes the topmost row that is `next: develop` and `status: ready`. If a higher row is
+`waiting`, `blocked`, or at another stage, it says so and takes the next takeable row rather than
+silently reordering.
 
 Concurrency rules for anything writing this file: `CONCURRENCY.md` in the `ai-building-tools`
 plugin (`references/CONCURRENCY.md` at its root).

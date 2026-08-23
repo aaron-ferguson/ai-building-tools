@@ -2,6 +2,7 @@
 id: "0016"
 title: Make retro a batch process over many sessions
 type: chore
+next: develop
 status: blocked
 qa_level: verify
 size: m

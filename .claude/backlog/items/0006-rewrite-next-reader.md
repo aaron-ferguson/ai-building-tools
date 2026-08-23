@@ -2,6 +2,7 @@
 id: "0006"
 title: Rewrite next to parse by header name and walk ancestors
 type: chore
+next: develop
 status: blocked
 qa_level: verify
 size: m

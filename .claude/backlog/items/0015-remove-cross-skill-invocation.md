@@ -2,6 +2,7 @@
 id: "0015"
 title: Remove cross-skill invocation
 type: chore
+next: develop
 status: blocked
 qa_level: verify
 size: s

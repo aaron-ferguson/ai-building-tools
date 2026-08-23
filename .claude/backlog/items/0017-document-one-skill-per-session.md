@@ -2,6 +2,7 @@
 id: "0017"
 title: Document one skill per session, with the measurement
 type: chore
+next: develop
 status: blocked
 qa_level: verify
 size: s

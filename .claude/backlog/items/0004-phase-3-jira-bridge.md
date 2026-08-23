@@ -2,6 +2,7 @@
 id: "0004"
 title: Phase 3 — extend tracker mirroring with hierarchy and company ticket standards
 type: feature
+next: develop
 status: blocked
 qa_level: verify
 size: l

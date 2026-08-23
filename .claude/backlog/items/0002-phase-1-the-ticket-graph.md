@@ -2,6 +2,7 @@
 id: "0002"
 title: Phase 1 — the ticket graph
 type: feature
+next:
 status: active
 created: 2026-08-18
 parent: "0001"

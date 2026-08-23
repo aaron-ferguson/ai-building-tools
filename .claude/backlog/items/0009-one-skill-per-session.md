@@ -2,6 +2,7 @@
 id: "0009"
 title: One skill per session
 type: feature
+next:
 status: active
 created: 2026-08-23
 parent:

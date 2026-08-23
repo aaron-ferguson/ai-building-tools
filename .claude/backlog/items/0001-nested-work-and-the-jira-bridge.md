@@ -2,6 +2,7 @@
 id: "0001"
 title: Nested work and the Jira bridge
 type: feature
+next:
 status: active
 created: 2026-08-18
 parent:

@@ -2,6 +2,7 @@
 id: "0005"
 title: Add the graph fields to the ticket template and QUEUE.md
 type: chore
+next: develop
 status: ready
 qa_level: verify
 size: s

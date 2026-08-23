@@ -2,6 +2,7 @@
 id: "0012"
 title: Every session ends by parking what surprised it
 type: chore
+next: develop
 status: ready
 qa_level: verify
 size: s
