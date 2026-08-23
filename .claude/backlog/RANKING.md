@@ -48,6 +48,11 @@ below it. Its tasks are unchanged and still correct; they are simply not first.
 - **0021 blocked by the whole effort** rather than by one ticket is unusual and correct. The
   blocker is not any single outcome but the files settling.
 
+- **0022 at rank 1** is tie-breaker 1: it is a live regression in the shipped scaffold, introduced
+  by 0010 and owned by no other ticket. It ranks above 0009's remaining tasks because a new
+  project cannot claim a row at all until it lands, and above 0006 — which fixes the same defect
+  in `next` — because 0006 is blocked and this is not.
+
 ## The collision to watch
 
 0009 and 0002 touch the same files, and this is the thing most likely to cost real time:

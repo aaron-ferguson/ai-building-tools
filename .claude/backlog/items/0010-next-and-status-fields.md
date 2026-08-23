@@ -2,8 +2,9 @@
 id: "0010"
 title: Split Status into Next and Status, and pare QUEUE.md
 type: chore
-next: develop
-status: in-progress
+next:
+status: done
+closed: 2026-08-23
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -13,15 +14,6 @@ relates: ["0005"]
 claimed_by: "1b2e"
 claimed_at: 2026-08-23T14:57:10Z
 touches:
-  - skills/queue/templates/item.md
-  - skills/queue/templates/QUEUE.md
-  - skills/design/SKILL.md
-  - skills/develop/SKILL.md
-  - skills/queue/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/retro/SKILL.md
-  - .claude/backlog/QUEUE.md
-  - .claude/backlog/items/   # every item's frontmatter gains next:
 ---
 
 ## Problem
@@ -67,16 +59,16 @@ rewrites. A row is ~175 characters today and ~95 after; at a hundred rows that i
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/queue/templates/item.md`, when it is read, then `next:` and `status:` are separate
+- [x] AC1 — Given `skills/queue/templates/item.md`, when it is read, then `next:` and `status:` are separate
       fields and each lists its permitted values in a comment.
-- [ ] AC2 — Given `skills/queue/templates/QUEUE.md`, when the header row is read, then it is exactly
+- [x] AC2 — Given `skills/queue/templates/QUEUE.md`, when the header row is read, then it is exactly
       `| ID | Title | Next | Status | Parent |`.
-- [ ] AC3 — Given the five `SKILL.md` files, when grepped for `needs-qa` and for `status: design`,
+- [x] AC3 — Given the five `SKILL.md` files, when grepped for `needs-qa` and for `status: design`,
       then there are no matches.
-- [ ] AC4 — Given this repo's `QUEUE.md`, when it is read after the change, then every row has a
+- [x] AC4 — Given this repo's `QUEUE.md`, when it is read after the change, then every row has a
       `Next` value from FR1 and a `Status` value from FR1, and no row has more or fewer than five
       cells.
-- [ ] AC5 — Given the template's prose, when read, then it distinguishes `waiting` from `blocked`
+- [x] AC5 — Given the template's prose, when read, then it distinguishes `waiting` from `blocked`
       in terms of who clears it.
 
 ## QA plan

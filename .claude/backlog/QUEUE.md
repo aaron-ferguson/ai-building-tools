@@ -42,7 +42,7 @@ conversation belongs to another session.**
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0010 | Split Status into Next and Status, and pare QUEUE.md | develop | in-progress | 0009 |
+| 0022 | Fix claim's fixed-index column parsing against the pared table | develop | ready | 0002 |
 | 0012 | Every session ends by parking what surprised it | develop | ready | 0009 |
 | 0013 | Verify closes the ticket; develop stops at next verify | develop | blocked | 0009 |
 | 0011 | Add the Waiting on section and rewrite next for the new fields | develop | blocked | 0009 |
