@@ -288,4 +288,4 @@ done
 
 echo "closed $ID — $title"
 [ -z "$FREED" ]   || echo "reconciled (no longer blocked):$FREED"
-[ -z "$SKIPPED" ] || echo "left alone, held in-progress by another session:$SKIPPED"
+[ -z "$SKIPPED" ] || echo "left alone, held by another session:$SKIPPED"
