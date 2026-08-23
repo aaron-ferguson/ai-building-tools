@@ -198,8 +198,10 @@ tmp="$(mktemp)"
 awk -v at="$hdr_line" -v row="$done_row" 'NR == at + 1 { print; print row; next } { print }' "$DONE" > "$tmp"
 mv "$tmp" "$DONE"
 
-# --- reconcile the rows this ticket was blocking -----------------------------------------------
-# Only rows whose every remaining blocker is done, and never a row another session holds.
+# --- reconcile the tickets this ticket was blocking --------------------------------------------
+# Only dependents that are *currently blocked* and that nothing holds. Three guards, and the
+# selection is deliberately not `blocked_by` alone: nothing clears `blocked_by` at close, so a
+# closed ticket names its blockers for ever and selecting on it resurrects one.
 # Every blocker other than the one being closed. A blocker with no item file counts as open:
 # unrecognised is not the safe default, and freeing a row on a missing file is the wrong direction.
 other_blockers_all_done() {
@@ -227,10 +229,21 @@ for dep in "$DIR"/items/*.md; do
   if grep -q '^## Waiting on' "$dep"; then new_status=waiting; else new_status=ready; fi
 
   dep_row="$(awk -F'|' -v id="$dep_id" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
-  if [ -n "$dep_row" ] && [ "$(read_cell "$dep_row" "$Q_STATUS")" = "in-progress" ]; then
+
+  # Held by someone → report it, never write it. The item's `claimed_by:` is where ownership
+  # lives ('Claim tokens'); the row is checked too because an `in-progress` row with no token
+  # still reads as held — silence is not permission. A dependent may have no row at all, which
+  # is why the row can never be the only test.
+  if [ -n "$(fm_value "$dep" claimed_by)" ] ||
+     { [ -n "$dep_row" ] && [ "$(read_cell "$dep_row" "$Q_STATUS")" = "in-progress" ]; }; then
     SKIPPED="$SKIPPED $dep_id"
     continue
   fi
+
+  # Not blocked → there is nothing to free, and writing anyway is how a `done` dependent comes
+  # back to life. Silent: every ticket this one ever blocked and that has since closed lands
+  # here, and that is the normal case, not an anomaly.
+  [ "$(fm_value "$dep" status)" = "blocked" ] || continue
 
   tmp="$(mktemp)"
   awk -v s="$new_status" '

@@ -111,6 +111,13 @@ assert_line() {
   fi
 }
 
+refute_contains() {
+  case "$2" in
+    *"$3"*) bad "$1"; echo "         expected NOT to contain: $3"; echo "         got: $2" ;;
+    *)      ok "$1" ;;
+  esac
+}
+
 refute_line() {
   if grep -Fxq "$2" "$FIX/$BL/$3"; then
     bad "$1"; echo "         expected NOT to find: $2"
@@ -251,6 +258,55 @@ assert_contains "the still-blocked item is blocked" "$(cat "$FIX/$BL/items/0009-
 assert_line "a row blocked by an unreadable ticket stays put" '| 0010 | Blocked by a ticket with no item file | develop | blocked | 0000 |' QUEUE.md
 assert_contains "the reconcile is reported"       "$out" '0008'
 assert_clean "the reconcile landed in the close commit"
+
+# --- AC9/AC10 — a dependent with no QUEUE.md row -----------------------------------------------
+# The reconcile's only ownership guard was a `QUEUE.md` row, so a dependent with no row was
+# rewritten unconditionally. Both states below are reachable and neither is visible to AC8, whose
+# three dependents all have rows. `blocked_by` is never cleared at close, so a closed ticket names
+# its blockers for ever — selecting on `blocked_by` alone resurrects it.
+echo "AC9/AC10 — a rowless dependent is neither resurrected nor overwritten"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" \
+  '| 0020 | The blocker | verify | in-progress | 0000 |' \
+  '| 0021 | Freed by the close | develop | blocked | 0000 |' \
+  '| 0024 | Row says in-progress, item carries no token | develop | in-progress | 0000 |'
+mkitem 0020 verify in-progress '"ab12"' '[]'
+mkitem 0021 develop blocked '' '["0020"]'
+# Closed months ago, still naming the blocker it was closed under, and long gone from QUEUE.md.
+mkitem 0022 develop done '' '["0020"]'
+# Held by another session, and likewise rowless. Ownership lives in the item's claimed_by:, which
+# is the one place the old guard did not look (CONCURRENCY.md, 'Claim tokens').
+mkitem 0023 develop in-progress '"ff99"' '["0020"]'
+# An `in-progress` row whose item carries no token still reads as held — silence is not permission
+# — so the row is checked as well as the item. No AC pins this branch; FR7 does.
+mkitem 0024 develop blocked '' '["0020"]'
+# Already unblocked and still naming this ticket: there is nothing to free, so it must not be
+# rewritten, reported, or dragged into the close commit. This is what makes the guard an allowlist
+# on `blocked` rather than a denylist on `done`.
+mkitem 0025 develop ready '' '["0020"]'
+commit_fixture
+out="$(run_close 0020 ab12)" && rc=0 || rc=$?
+[ "$rc" -eq 0 ] && ok "exits 0" || { bad "exits 0 (got $rc)"; echo "         got: $out"; }
+assert_line "the rowed dependent is still freed" '| 0021 | Freed by the close | develop | ready | 0000 |' QUEUE.md
+done_dep="$(cat "$FIX/$BL/items/0022-fixture.md")"
+assert_contains  "AC9 — the closed dependent stays done"    "$done_dep" 'status: done'
+refute_contains  "AC9 — it is not reported as freed"        "$out" '0022'
+held_dep="$(cat "$FIX/$BL/items/0023-fixture.md")"
+assert_contains  "AC10 — the held dependent is not rewritten" "$held_dep" 'status: in-progress'
+assert_contains  "AC10 — its claim is intact"                 "$held_dep" 'claimed_by: "ff99"'
+assert_contains  "AC10 — it is reported, not silently skipped" "$out" 'left alone'
+assert_contains  "AC10 — the report names it"                  "$out" '0023'
+rowheld_dep="$(cat "$FIX/$BL/items/0024-fixture.md")"
+assert_contains  "FR7 — an in-progress row with no token is left alone" "$rowheld_dep" 'status: blocked'
+assert_contains  "FR7 — and reported"                                   "$out" '0024'
+assert_line "FR7 — its row is untouched" '| 0024 | Row says in-progress, item carries no token | develop | in-progress | 0000 |' QUEUE.md
+unblocked_dep="$(cat "$FIX/$BL/items/0025-fixture.md")"
+assert_contains  "FR7 — an already-unblocked dependent is untouched"     "$unblocked_dep" 'status: ready'
+refute_contains  "FR7 — and not reported as freed"                       "$(printf '%s' "$out" | grep 'reconciled' || true)" '0025'
+paths="$(git -C "$FIX" log -1 --name-only --format= | grep . | sort | tr '\n' ' ')"
+expect="$BL/DONE.md $BL/QUEUE.md $BL/items/0020-fixture.md $BL/items/0021-fixture.md "
+[ "$paths" = "$expect" ] && ok "commits only the row it closed and the row it freed" || {
+  bad "commits only the row it closed and the row it freed"; echo "         expected: $expect"; echo "         got:      $paths"; }
+assert_clean "nothing is left uncommitted"
 
 # --- result -----------------------------------------------------------------------------------
 echo
