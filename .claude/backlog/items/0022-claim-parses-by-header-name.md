@@ -2,8 +2,8 @@
 id: "0022"
 title: Fix claim's fixed-index column parsing against the pared table
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -14,9 +14,6 @@ source: agent
 expects:
   - skills/queue/templates/claim
 touches:
-  - skills/queue/templates/claim
-claimed_by: "b7f6"
-claimed_at: 2026-08-23T17:13:25Z
 ---
 
 ## Problem
@@ -84,3 +81,25 @@ script installed, so the breakage reaches only a newly scaffolded project.
 - Found while verifying `0010`, by testing the shipped scripts against a fixture rather than by
   any of that item's acceptance criteria — none of which could have covered a file the item did
   not touch. Parked in `FINDINGS.md` at the time.
+- Fixed by resolving the column from the header cell's *name*. `ID` is resolved by name too, which
+  the ACs did not ask for: FR1 says "any future column order", and a parser that finds `Status` by
+  name while still finding `ID` at `$2` satisfies every AC while making that promise false. The
+  trap is that it *looks* order-independent, so the next editor moves a column in front of `ID` and
+  gets a silent no-such-row. Caught by a fifth case, not by an AC.
+- **The harness reimplemented the parser it was testing** and so passed and failed with it: its
+  `assert_row` looked the id up at `$2`, and reported a correct claim against a reordered table as
+  a missing row. Fifteen minutes went on the implementation before the harness was the suspect.
+  It now matches the whole line with `grep -Fxq` and knows nothing about columns. Generalises: a
+  test helper that re-derives the thing under test is not evidence about it.
+- AC3's expected row is the interesting one. On a pre-`0010` eight-column table the old script
+  wrote the token into the `Owner` cell at `$8`; under FR3 it must not, so the assertion pins the
+  legacy `Owner` cell as *unchanged*. That is what "still claims correctly" means here — the
+  `Status` cell flips and nothing else does.
+- The old failure was safe but silent, and the harness shows why that reads as worse than a crash:
+  at the pre-fix commit 6 of 18 assertions still pass, all of them the "refuses / leaves the row
+  alone" ones. A parser that cannot read the table looks exactly like a backlog with nothing in it.
+- Verified by running the final harness against the pre-fix script in a throwaway `git worktree`
+  (removed in the same turn): 12 of 18 assertions are wired to the defect. A `git stash push` with
+  a pathspec was used once for the same purpose before switching — it worked, but the worktree is
+  the right tool in a tree a second window may be editing.
+
