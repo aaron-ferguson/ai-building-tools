@@ -28,6 +28,28 @@ it forever.
 Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, item id)`
 
 ---
+- 2026-08-23 — effort 0009 added ~20,300 bytes of AC-mandated content to the six skills, then 0021 asked
+  for 30% off the result. Two independently-written requirements that were never checked against each
+  other, and 0021 cannot close because of it. A ticket that sets a size target on a file other tickets in
+  the same effort will grow needs the target expressed absolutely, not as a percentage (pointer:
+  items/0021).
+- 2026-08-23 — every `verify`-level assertion in this effort greps single lines, so compressing a
+  paragraph breaks it by moving a phrase across a line break. It fired on 0012, 0015, 0016 and 0019
+  during 0021's trim, each time a false red on prose that still said the right thing. Either match a
+  phrase short enough to survive reflow, or read the file with newlines collapsed (pointer:
+  items/0012, items/0021).
+- 2026-08-23 — four of 0009's twelve tasks sat `blocked` on 0010 for the whole session after 0010 closed;
+  nothing clears a `blocked_by` when its blocker closes. `./next <stage>` now derives takeability from the
+  graph rather than the column, so the stale status no longer hides work — but the column still lies to
+  anyone reading `QUEUE.md` directly (pointer: templates/next, 0011).
+- 2026-08-23 — 0016's FR5 carried a kill criterion ("drop it if an isolated batch retro measures under
+  $1.50") that could not be evaluated, because no isolated batch retro has ever been run. Implemented as
+  written since reordering two headings is free, but a kill criterion whose measurement does not exist yet
+  is a decision deferred, not a decision made (pointer: items/0016).
+- 2026-08-23 — word-shaving moved ~1,100 bytes of `CONCURRENCY.md` across five passes; naming a category
+  to move out moved 11,000 in one. Five passes of tighter prose were wasted effort of a predictable kind,
+  and the same pattern repeated in the skills. A compression task should start by naming what leaves
+  (pointer: items/0020, items/0021).
 
 - 2026-08-23 — `skills/queue/templates/claim` reads status from `$7` and owner from `$8` by fixed
   column index, so the pared five-column table breaks it for any newly scaffolded project. No
@@ -35,9 +57,6 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 - 2026-08-23 — 0006's FR2/AC2 enumerate a seven-column (`Owner`) and eight-column (`Parent`) table
   as the shapes `next` must parse. A five-column shape now exists and neither fixture covers it,
   so 0006 would close green against a table nothing uses (pointer: items/0006, 0010).
-- 2026-08-23 — 0006 ("rewrite next to parse by header name") and 0011 ("rewrite next for the new
-  fields") both own the same reader under different parents (0002 and 0009). Whichever lands
-  second rewrites the first's work (pointer: items/0006, items/0011).
 - 2026-08-23 — 0010's Out of scope said removing the `Owner` column was 0007's job "because this
   repo's table already has none", but FR3/AC2 pin a header that excludes it, so the *template*
   lost the column here. An out-of-scope line written from the local table can contradict an FR
@@ -49,7 +68,6 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   restore discipline, and the obvious `git checkout -- .` would destroy another window's
   uncommitted work in the shared tree the same skill's Step 2 just warned about. Scope the restore
   to the mutated path (pointer: skills/verify Step 3, 0010).
-- 2026-08-23 — the pared table's failure mode in the shipped scripts is *safe* but silent: `next`
-  prints "0 ready of 2 rows" against a five-column table and `claim` refuses every row, both
-  without erroring. A reader would conclude the backlog was empty rather than that the parser was
-  wrong (pointer: templates/next, templates/claim, 0010).
+- 2026-08-23 — the pared table's silent failure is now loud in `next` (it refuses a shape it cannot
+  parse) but **still silent in `claim`**, which refuses every row without erroring. Half-fixed by 0011;
+  the other half is 0022 (pointer: templates/claim, 0022).
