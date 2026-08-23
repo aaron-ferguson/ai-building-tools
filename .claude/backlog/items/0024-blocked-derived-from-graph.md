@@ -3,7 +3,7 @@ id: "0024"
 title: Derive the blocked status from the graph rather than the column
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -19,9 +19,13 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "5366"
+claimed_at: 2026-08-23T20:31:40Z
 touches:
+  - .claude/backlog/items/0024-blocked-derived-from-graph.md
+  - .claude/backlog/QUEUE.md
+  - .claude/backlog/DONE.md
+  - .claude/backlog/FINDINGS.md
 ---
 
 ## Problem
