@@ -80,3 +80,40 @@ here — it converts a measurable saving into silent information loss.
   observation into each skill.
 - Full reasoning and the measured figures: `The Context Tax` and `Splitting the Suite`
   (Claude artifacts, 2026-08-22/23).
+
+## Outcome — 2026-08-23
+
+**Eleven of twelve tasks closed. 0021 is back at `next: queue`.** Gates A, B, C and most of D landed;
+`0021` (trim the skills) could not close because its AC1 conflicts with its own FR2 — see that ticket for
+the numbers and a proposed re-spec.
+
+### What the workflow is now
+
+`queue` sets the stage at capture time and sweeps `FINDINGS.md` for work. `design` settles the question
+and writes the ticket itself when nobody holds it, escalating on taste and deciding on fact. `develop`
+builds, leaves the tree green, and stops at `next: verify` — it closes nothing. `verify` claims the row,
+runs the declared level, and closes on green or sends it back with the reason written down. `retro` runs
+on a cadence over what many sessions parked. **No skill invokes another**, and every one of them parks
+what surprised it before reporting.
+
+### The cross-cutting commitments, checked
+
+- **No rule was dropped.** `CONCURRENCY.md` went 17,943 → 6,017 bytes with all 10 rule names intact,
+  diffed against a captured baseline rather than counted. All 59 `##` headings across the six skills
+  survive. The one rule that *changed* is *`verify` never writes the queue* → *A stage writes only the
+  ticket it holds*, which 0013 owns and which replaced a workaround with what it always meant.
+- **Nothing was measured by feel** for the parts that could be measured: byte and token counts are
+  recorded per file in 0020 and 0021. **The closing measurement is not done** — the effort opened with an
+  end-to-end run against a fresh project and closes with one, and that run has not happened. Until it
+  does, the ~$5.09 figure remains modelled rather than observed.
+- **`RANKING.md` is load-bearing** and was rewritten for the shape this effort left, including a table of
+  what each of 0002's tasks must re-specify against it.
+
+### What this effort did *not* do
+
+- **Re-run the measured exercise.** The single most valuable remaining piece of work, and it is not a
+  ticket yet: an end-to-end run against a fresh project under one-skill-per-session, compared on cost per
+  turn and context per turn rather than total.
+- **Reduce the six skills by 30%.** They fell 22% from where this effort had grown them, and 8% from
+  where they started before it. `verify` and `design` are still larger than they were on 2026-08-22.
+- **Fix `claim`.** The pared table still breaks it on a newly scaffolded project — 0022, ranked first.
