@@ -2,8 +2,8 @@
 id: "0021"
 title: Hold the skills to the conventions' own context-rent rule
 type: chore
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -12,18 +12,15 @@ parent: "0009"
 blocked_by: ["0023", "0025"]
 relates: ["0020"]
 expects:
+  - skills/develop/SKILL.md    # 0025 put it over the ceiling after the re-spec was written
   - skills/prototype/SKILL.md
   - skills/queue/SKILL.md
-  - tests/skill-size.test.sh   # new
+  - tests/skill-size.test.sh
+  - references/NOTION.md       # queue's opt-in Notion block moved here
   - README.md
-claimed_by: "514d"
-claimed_at: 2026-08-23T16:05:00Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/develop/SKILL.md   # over the ceiling by 572 after 0025 landed; not in expects
-  - skills/prototype/SKILL.md
-  - skills/queue/SKILL.md
-  - tests/skill-size.test.sh   # new
-  - README.md
 ---
 
 ## Problem
@@ -247,3 +244,131 @@ FR2 held and four files were genuinely at their floor — but the ticket had no 
 and still close, so a correct result was filed as a red AC. An exemption with an evidentiary bar
 (the file, its floor, every surviving section with its byte count) is closable and still auditable.
 
+## Outcome (2026-08-23) — AC1 met via one ceiling and two recorded exemptions
+
+**Three files were over the ceiling, not two.** The re-spec named `prototype` and `queue`; `develop` went
+over between the re-spec and this pass when **0025** landed its batching paragraph, consuming exactly the
+545-byte margin the re-spec had flagged as "a standing cost of the ceiling, not a defect". It went over by
+572. That prediction landing inside one day is the strongest available argument for FR1 being absolute:
+a percentage target would have moved with it and hidden the breach.
+
+### FR3 — before and after, this pass, all six files
+
+Appended to the two tables above rather than replacing them. The "0021 re-spec" column is the re-spec's
+own baseline; "this pass, before" is the working tree when this session claimed the ticket, and the two
+differ only where a sibling ticket landed in between.
+
+| File | pre-effort | first pass | 0021 re-spec | this pass, before | after | vs ceiling |
+|---|---|---|---|---|---|---|
+| `design` | 7,118 | 8,797 | 8,797 | 8,797 | 8,797 | under by 11,393 |
+| `develop` | 25,136 | 19,171 | 19,645 | 20,762 | **20,081** | under by 109 |
+| `prototype` | 31,297 | 26,262 | 26,262 | 26,262 | **23,394** | **exempt at floor** |
+| `queue` | 22,862 | 22,787 | 24,159 | 24,159 | **21,789** | **exempt at floor** |
+| `retro` | 16,113 | 14,831 | 14,831 | 14,831 | 14,831 | under by 5,359 |
+| `verify` | 10,316 | 11,946 | 14,415 | 15,659 | 15,659 | under by 4,531 |
+| **total** | **112,842** | **103,794** | **108,109** | **110,470** | **104,551** | — |
+
+A compliant cycle is now **104,551 bytes / ~25,893 tokens** of skill instructions, against the problem
+statement's 44,090 tokens for five skills. `develop` alone went 25,136 → 20,081 across the effort.
+
+### FR6 — two exemptions, with the evidence
+
+Both files had a full FR2-limited pass in this session on top of the first pass's cuts. What was removed
+was duplication, not rules: in `queue`, restatements of `CONCURRENCY.md` and of `testing-conventions.md`'s
+test-level pyramid, plus the routing section's justification; in `prototype`, a whole section that restated
+rules stated above it (see AC2 below) and the design-system rules stated twice.
+
+**`skills/queue/SKILL.md` — floor 21,789 bytes** (over the ceiling by 1,599)
+
+| Section | bytes | what it is |
+|---|---|---|
+| frontmatter + header | 2,201 | trigger description; the 0017 session header; the CONCURRENCY and CONVENTIONS pointers |
+| Storage layout | 1,558 | the file inventory a scaffold must produce, and why the queue holds only the table |
+| Step 0 — locate or create | 1,100 | scaffold rules; the fail-closed conventions resolution |
+| Step 1 — decide the operation | 920 | the operation table, incl. the `blocked`/`waiting` derivation rules |
+| Step 2 — add an item | 7,129 | the specification contract: ID claim, evidence, FRs, NFR elimination, `qa_level`, `size`, `expects:`, ACs, and the 0018 routing rules |
+| Step 3 — insert at the right rank | 4,779 | the five tiers, five ordered tie-breakers, four tier overrides, four never-rank-by rules, the insert procedure |
+| Step 4 — rerank | 502 | move-row mechanics; the in-progress prohibition |
+| Step 5 — surface parked work | 1,886 | the FINDINGS sweep, its three numbered steps, the two-sweeper rule |
+| Step 6 — commit the backlog | 925 | the pathspec rule and the other window's staged work |
+| Step 7 — park what surprised you | 642 | mandated verbatim by 0012 |
+| Step 8 — report | 147 | |
+
+Every section is a rule list. The two largest are the specification contract and the ranking method, and
+both are read on the operation this skill exists for — an add. Neither is conditional, so neither can move
+to a reference without moving the cost rather than cutting it, which this ticket puts out of scope.
+
+**`skills/prototype/SKILL.md` — floor 23,394 bytes** (over the ceiling by 3,204)
+
+| Section | bytes | what it is |
+|---|---|---|
+| frontmatter + header | 1,378 | trigger description (the longest of the six); the 0017 session header |
+| Configuration | 1,171 | the capability/needs/if-absent table and the never-guess-a-key rule |
+| Invocation | 420 | the four invocation forms |
+| The three fidelity levels | 1,036 | what each level is and what it is right for |
+| Design system | 1,209 | the MCP tools, the AA contrast rule, the unavailable-MCP fallback |
+| Steps 1–4 | 2,800 | input, level choice, the shared flow/wireframe blueprint, the revise loop |
+| Step 5 — build the artifact | 11,690 | the three level-specific build procedures and the field-reference contract |
+| Steps 6–7 | 2,049 | the Jira comment format; the Figma export |
+| Step 8 — park what surprised you | 639 | mandated verbatim by 0012 |
+| Error Handling / Handoff | 1,002 | the failure messages; the `/capture` handoff shape |
+
+**Step 5 is half the file and is the honest reason for the exemption.** It holds three build procedures —
+diagram, clickable HTML, Angular — and a run uses exactly one. That makes it the clearest candidate in
+either file for a conditionally-read reference, and it is *not* clearly permitted: for a level-2 run the
+reference is opened the same cycle, so the cost moves rather than falls. Deciding whether a
+level-2-only run should pay for level 1 and level 3 is a judgement about where level detail lives, so it
+is parked as a finding for `queue` rather than settled here.
+
+### AC2 — 73 of 74 headings intact; one removed section, with the rules it held
+
+Captured before the pass and diffed after, never counted. The single removal is
+**`skills/prototype/SKILL.md` — `## Key Behaviors`** (2,027 bytes), deleted because all seven of its
+bullets restated rules stated earlier in the same file. FR2 outranks FR1 *and* outranks AC2's proxy: the
+proxy exists to catch a dropped rule, and no rule was dropped. Where each one is now stated:
+
+| Key Behaviors bullet | now stated in |
+|---|---|
+| ticket or ad-hoc, scale depth to source, generate from AC, state assumptions | Step 1; Step 3's closing paragraph |
+| built on the design system at every level; real tokens; AA via `check-contrast` | `## Design system`; the Configuration table; Level 2's token bullet |
+| ticket posting is optional, never automatic | Step 6's opening ("Ask before posting rather than posting automatically") |
+| one directory per prototype; escalation adds files; one field reference across 2 and 3 | Step 5 *Where everything lives* (escalation clause folded in); *Developer documentation* |
+| level 2 ships the three-state switcher and Save/Load by default | Level 2's `DATA_STATES` bullet ("not optional polish"); its Save/Load bullet |
+| drawer collapsed by default, single topbar toggle, no hover strip, no Notes & Questions, real nav never in the drawer, template does not backfill | Level 2's two drawer paragraphs (both removed experiments folded in); *Real app navigation is not admin tooling*; the copy-forward clause folded into Level 2's opening |
+| no decorative emoji, monochrome functional glyphs excepted | Level 2's emoji bullet |
+
+### AC4 — the guard proves it can fail
+
+`tests/skill-size.test.sh` carries its own negative cases rather than leaving the padded-fixture check as
+a manual step: it pads a copy of the smallest compliant skill file past the ceiling and asserts the
+offender is *named with its overage*, then asserts a clean copy reports nothing. Three further cases drive
+the exemption path against a fixture — over the ceiling but under its floor (passes), over its floor
+(fails), and back under the ceiling (fails, so a stale exemption cannot sit there unnoticed). Measured with
+`wc -c`, never a decoded character count.
+
+### Notes & decisions from this pass
+
+- **The productive lens was duplication, not concision.** Consistent with the first pass's finding that
+  word-shaving moved 1,100 bytes and naming a category moved 11,000. Every cut over 300 bytes here was one
+  rule stated twice: `prototype`'s `Key Behaviors` against its own steps, its design-system rules against
+  Level 2 and Level 3, `queue`'s restatement of `CONCURRENCY.md` and of the testing pyramid. Prose written
+  tighter yielded almost nothing.
+- **A skill that says "this skill states no standards of its own" was restating two convention files.**
+  `queue` carried `testing-conventions.md`'s level definitions inline while declaring it cites rather than
+  restates, and summarised `CONCURRENCY.md` in three clauses one line after telling the reader to go read
+  it. Same defect this ticket's problem statement names: the skills enforce a rule on every project and
+  did not apply it to themselves.
+- **The ceiling caught a live breach on its first run, which is the argument for FR5.** `develop` was
+  compliant at re-spec and over by 572 when this session started, because 0025 landed in between. Recorded
+  only in a closed ticket, nothing would have said so.
+- **An exemption floor set at the current byte count is deliberately brittle.** Any later mandated addition
+  to `prototype` or `queue` reds the guard and forces the floor to be re-recorded. That is the intent: it
+  makes growth in an already-over file a decision rather than a drift.
+- **The AC1 pass line names the exempt files rather than reporting a clean sweep.** A guard that prints
+  "every skill file within the ceiling" while two sit above it is the silent-cap failure the conventions
+  warn about; the message now lists them.
+- **`README.md`'s test list was wrong in two ways and both were invisible.** It claimed the shipped scripts
+  were "the only thing with a test" — already false when `batching.test.sh` landed under 0025 — and listed
+  two of the four existing guards, so a session following it ran neither `next.test.sh` nor
+  `batching.test.sh`. Fixed in the same commit per the documentation rule that a change contradicting a
+  documented rule updates it.
