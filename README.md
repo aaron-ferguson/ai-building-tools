@@ -52,7 +52,16 @@ however many tickets come out of it. Writing five related tickets in one capture
 measurably cheaper per ticket than five sessions would have been. Isolation is per *skill*, not
 per unit of work.
 
-**What does not change.** No standard is relaxed and no gate is removed — TDD, the separate NFR
+**The same holds for `develop` and `verify`, with more force.** A develop session pays for the
+conventions, the project's `CLAUDE.md`, the concurrency protocol and its orientation in the code
+before it writes a line, and every one of those is shared across tickets that touch the same
+files. So the unit there is a **gate** — tickets whose `expects:` overlap or that share a parent
+slice — and not a ticket. What does *not* batch is ownership or judgement: each row is claimed and
+closed on its own, each ticket closes on its own acceptance criteria, and the batch stops at the
+first ticket whose contract turns out wrong. The figure above is capture-side; `0026` produces the
+develop-side one.
+
+**What does not change.** No standard is relaxed and no quality gate is removed — TDD, the separate NFR
 pass, mutation testing in `verify`, the `design` gate, `qa_level` chosen at queue time. That
 rigour is what caught a real zip-bomb vulnerability every acceptance criterion in the measured run
 passed over, and a test that stayed green with the guard it existed for deleted. Both live in the
