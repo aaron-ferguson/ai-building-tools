@@ -2,11 +2,12 @@
 id: "0018"
 title: Queue routes to design rather than design screening everything
 type: chore
-next: develop
-status: ready
+next: verify
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
+closed: 2026-08-23
 parent: "0009"
 blocked_by: []
 relates: []
@@ -45,13 +46,13 @@ ACs, and it answers it with the code already open.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/queue/SKILL.md`, when read, then it requires `next` to be set at
+- [x] AC1 — Given `skills/queue/SKILL.md`, when read, then it requires `next` to be set at
       capture time and the reason recorded.
-- [ ] AC2 — Given that file, when read, then both triggers in FR2 are stated and at least three
+- [x] AC2 — Given that file, when read, then both triggers in FR2 are stated and at least three
       examples of the `develop` case are given.
-- [ ] AC3 — Given `skills/develop/SKILL.md`, when read, then it describes setting `next: design`
+- [x] AC3 — Given `skills/develop/SKILL.md`, when read, then it describes setting `next: design`
       and stopping rather than deciding.
-- [ ] AC4 — Given `skills/verify/SKILL.md`, when read, then it describes setting `next: queue`
+- [x] AC4 — Given `skills/verify/SKILL.md`, when read, then it describes setting `next: queue`
       for a stale contract.
 
 ## QA plan
@@ -71,3 +72,9 @@ ACs, and it answers it with the code already open.
 
 - The safety valve in FR4 and FR5 is what makes it safe for queue to be wrong occasionally. A
   mis-route costs one stop-and-redirect; pre-screening every ticket costs a session every time.
+- **FR5 was already satisfied by 0013.** `verify`'s Step 5 gained the stale-contract path to
+  `next: queue` when it took over closing — the same session that decides "neither pass nor fail is
+  honest here" is the one that has to route it somewhere. Asserted here rather than re-implemented.
+- The negative case got the concrete list FR3 asked for, in bold, and the assertion counts the
+  examples rather than grepping for one. A rule with a vivid positive case and a vague negative one
+  gets applied in one direction only — which is exactly how every ticket ends up at `design`.

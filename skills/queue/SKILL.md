@@ -172,21 +172,46 @@ first time you edit either one, and `verify` will then check the stale copy.
 
 The always-on rules in the conventions core apply to every item and need no row.
 
-**If the item cannot have acceptance criteria yet, set `next: design` instead of guessing
-them.** Not every item arrives specifiable. When the blocker is a decision — which pattern,
-which flow, what the empty state is — write the *Open design question* section in the item,
-set the stage, and rank it normally. It keeps its rank: the work is worth what it was worth.
+### Set `next` now — this skill routes, and `design` does not screen
 
-This is a real stage, not a euphemism for vague. The test is whether a *decision* is missing,
-not whether detail is missing. Missing detail you sharpen now; a missing decision is settled by
-`/design` (returns an answer) or `/prototype` (returns something to look at), and the findings
-come back here to be written up. Guessing acceptance criteria to avoid the stage is how an item
-gets built to a contract nobody agreed to.
+**Every ticket this skill writes leaves with `next: design` or `next: develop`, and the reason
+recorded in *Notes & decisions*.** Never leave it blank for a later stage to work out. The
+alternative — every ticket starting at `design`, which then decides whether there is design work —
+pays a full session's startup on each one to mostly answer "nothing to do"; all five tickets in one
+measured backlog were pure parsing logic with no interface at all. Here it costs nothing extra:
+deciding whether acceptance criteria can be written **is** the design question, you have to answer
+it anyway to know whether to write ACs, and you are answering it with the code already open.
 
-**Clearing it:** when the question is answered, write the FRs and ACs it unblocks, record the
-answer in *Notes & decisions*, delete the *Open design question* section, and set
-`next: develop` / `status: ready`.
-`design` and `prototype` hand findings here; they never write item files themselves.
+Recording the reason is what lets a later reader tell a considered skip from an oversight.
+
+**Two triggers send a ticket to `design`, and they are genuinely different:**
+
+1. **A decision blocks writing acceptance criteria.** Which pattern, which flow, one step or
+   several — you cannot write a given/when/then until it is settled.
+2. **A person will look at the surface.** A screen, a layout, an interaction, an empty or error
+   state. The ACs may be writable, but what they should *say* turns on a judgement about the look.
+
+**Everything else routes to `develop`, and this is the case most often mis-sent.** A ticket with no
+surface and no open decision goes straight to `develop` however unfamiliar it is — unfamiliar is not
+undecided. Concretely: **a parser** (the input format is the contract), **a migration** (the schema
+before and after is the contract), **a schema change**, **an API contract**, a config reader, a
+build script, a CLI flag. Each of those has a right answer discoverable by reading the code, and
+sending it to `design` buys a session that reports there was nothing to decide.
+
+For a `design` ticket: write the *Open design question* section, set the stage, and **rank it
+normally** — it keeps its rank, because the work is worth what it was worth. This is a real stage,
+not a euphemism for vague: the test is whether a *decision* is missing, not whether detail is
+missing. Missing detail you sharpen now. Guessing acceptance criteria to avoid the stage is how a
+ticket gets built to a contract nobody agreed to.
+
+**Being wrong occasionally is affordable, which is what makes routing here correct.** A mis-route
+costs one stop-and-redirect: `develop` sets `next: design` and stops, `verify` sets `next: queue`
+on a stale contract. Pre-screening every ticket costs a session every time.
+
+**Clearing a `design` ticket:** `design` writes the answer into *Notes & decisions*, adds the FRs
+and ACs it unblocks, deletes the *Open design question* section, and sets `next: develop` itself
+when the ticket is unclaimed — see that skill. It hands off to this one only when the ticket is
+already claimed.
 
 **Set `qa_level` now, at queue time.** This is the decision that stops QA rigor quietly
 sliding session to session. The levels sit on the testing pyramid defined in

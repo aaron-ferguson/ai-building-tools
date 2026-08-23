@@ -212,9 +212,16 @@ Two habits follow from the same arithmetic, and they are what makes the loop che
   mistake pointed at yourself: composite the variants into a single sheet and read that.
 
 **If the item is underspecified — no FRs, no ACs, or a stale problem statement — stop and fix
-the item first** (and if what is missing is a design decision rather than detail, that is a
-`design` item, not a fixable one — set the status and hand it back), then proceed. An item that can't be restated can't be verified. Update the
-item file so the next reader gets the improved version.
+the item first**, then proceed. An item that can't be restated can't be verified. Update the item
+file so the next reader gets the improved version.
+
+**But if what is missing is a *decision* rather than detail, do not decide it — set
+`next: design`, `status: ready`, write the question into the ticket's *Open design question*
+section, release the claim, and stop.** Missing detail you sharpen here; a missing decision
+answered by the session that is about to build against it is a contract nobody agreed to, and it is
+`verify` that discovers you invented it. `queue` sets the routing at capture time and is sometimes
+wrong; this is the return path that makes being wrong cheap — one stop-and-redirect rather than a
+screening session per ticket. Name the command: `/design <id>`, in its own session.
 
 If the item's assumptions have gone stale since it was queued (the code moved, the bug is already
 fixed, a dependency changed), say so and ask before building to a spec that no longer matches
