@@ -3,7 +3,7 @@ id: "0024"
 title: Derive the blocked status from the graph rather than the column
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -12,15 +12,17 @@ parent: "0002"
 blocked_by: []
 relates: ["0011"]
 expects:
+  - .claude/backlog/QUEUE.md   # the live file, missed on the first pass — this ticket's whole defect
   - skills/queue/templates/next
   - skills/queue/templates/QUEUE.md
   - skills/queue/templates/item.md
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "4b95"
+claimed_at: 2026-08-23T20:23:22Z
 touches:
+  - .claude/backlog/QUEUE.md
 ---
 
 ## Problem
