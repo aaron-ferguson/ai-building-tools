@@ -2,13 +2,14 @@
 id: "0015"
 title: Remove cross-skill invocation
 type: chore
-next: develop
-status: blocked
+next: verify
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
+closed: 2026-08-23
 parent: "0009"
-blocked_by: ["0012", "0013"]
+blocked_by: []
 relates: []
 touches:
 ---
@@ -39,12 +40,12 @@ and it is why the measured run reached an average of 191,752 context tokens per 
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/`, when grepped for `Invoke the .* skill`, then there are no matches.
-- [ ] AC2 — Given `skills/develop/SKILL.md`, when read, then Steps 5 and 7 each name the command
+- [x] AC1 — Given `skills/`, when grepped for `Invoke the .* skill`, then there are no matches.
+- [x] AC2 — Given `skills/develop/SKILL.md`, when read, then Steps 5 and 7 each name the command
       a following session runs.
-- [ ] AC3 — Given `skills/develop/SKILL.md` Step 5, when read, then it still states why
+- [x] AC3 — Given `skills/develop/SKILL.md` Step 5, when read, then it still states why
       self-certifying is not acceptable.
-- [ ] AC4 — Given `skills/retro/SKILL.md`, when grepped for `Invoked by`, then there is no match
+- [x] AC4 — Given `skills/retro/SKILL.md`, when grepped for `Invoked by`, then there is no match
       claiming develop invokes it.
 
 ## QA plan
@@ -65,3 +66,15 @@ and it is why the measured run reached an average of 191,752 context tokens per 
 - Blocked on 0012 and 0013 rather than merely ordered after them. Removing the invocations before
   findings are parked and before verify can close converts a measurable saving into silent
   information loss — the more expensive failure and the harder one to notice.
+- **The step numbers in AC2 moved.** 0013 deleted `develop`'s close step, so what the AC calls
+  "Steps 5 and 7" are now Steps 5 and 6. Asserted by name (the verify stop, the retro step) rather
+  than by number, since a renumber is not a regression and pinning the digit would make every later
+  ticket in this effort fail this one's assertion.
+- **0013 landed FR1 already.** A step that stops at `next: verify` cannot also invoke `verify`, so
+  that half went with the ticket that made it true. This ticket owns FR2, FR4, FR5 and the
+  tree-wide grep.
+- The mutation pass is the reason AC3 exists: deleting Step 6 whole makes AC1 and AC4 pass. Both
+  the self-certifying reason and the "none of it is optional" line are asserted separately, so the
+  cheap way to satisfy this ticket fails it.
+- `README.md` claimed `/develop` hands off to `/retro` by invocation. Corrected at source rather
+  than annotated — a stale rule reads as current and gets followed.

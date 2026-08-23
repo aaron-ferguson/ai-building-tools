@@ -366,25 +366,28 @@ runs — `/verify <id>`, in a new session, per *one skill per session*. Do not i
 
 ---
 
-## Step 6 — Hand off to `/retro`
+## Step 6 — Name the retro; do not run it
 
-Invoke the `retro` skill. It reviews the item you just closed *and* the session around it, and
-decides where each finding belongs — a new backlog row, the skill that misled you, the convention
-you cited, a comment in the file it governs, or nothing.
+**Do not invoke `/retro` — a later session does.** Same precedent as `design`'s *"Do not invoke
+`/prototype` — the user does"*: pulling another skill into this session re-injects its whole
+instruction file into the largest context in the run, and that mechanism is why a measured
+end-to-end run averaged 191,752 context tokens per turn.
 
-**This is not optional, and it is not the same as Step 5.** Step 5 records what you learned while
-the item file is open, which is the half that tends to get done. The half that falls through is
-the work this work *created*: the deferrals, the reds you proved were not yours, the thing you
-noticed and moved past. A finding that reaches only your final report is lost the moment the
-conversation ends, and lost in the most expensive way — the next session re-derives it with none
-of the context you had.
+**What a retro is for has not changed, and none of it is optional.** Step 5 records what you
+learned while the item file was open, which is the half that tends to get done. The half that
+falls through is the work this work *created*: the deferrals, the reds you proved were not yours,
+the thing you noticed and moved past. A finding that reaches only your final report is lost the
+moment the conversation ends, and lost in the most expensive way — the next session re-derives it
+with none of the context you had.
 
-It is a separate skill rather than a step here for the same reason `verify` is: closing an item
-and learning from it are different jobs, and the second one keeps getting cut short by the first.
-`/retro` also runs on its own, over a whole session rather than one item.
+It is a separate skill for the same reason `verify` is: building an item, checking it, and learning
+from it are three jobs, and the last two are the ones that get cut short when one session owns all
+three. **What makes that durable now is Step 7, not this step** — anything that surprised you is on
+disk in `FINDINGS.md`, so a retro that runs next week still has it.
 
-**Report what came out of it**, even when the answer is "nothing new surfaced" — an explicit
-nothing is a claim you checked, and it is what makes a skipped retro visible.
+`/retro` is not a lifecycle stage and not a `next` value; it runs on a cadence over many sessions'
+parked findings. Say in your report whether the buffer looks worth sweeping, and name the command:
+`/retro`, in its own session.
 
 ---
 
@@ -411,6 +414,7 @@ instead of here.
 
 ## Step 8 — Report
 
-What was built, what changed, the full-suite result, **what `/retro` queued, re-ranked or wrote
-down**, the ticket now sitting at `next: verify`, and what's next at the top of the queue. The
-ticket is **not** closed — say so, and name the command that closes it.
+What was built, what changed, the full-suite result, anything parked in `FINDINGS.md`, the ticket
+now sitting at `next: verify`, and what's next at the top of the queue. The ticket is **not**
+closed — say so, and name the two commands a following session runs: `/verify <id>` to close it,
+and `/retro` if the buffer is worth sweeping. Each in its own session.

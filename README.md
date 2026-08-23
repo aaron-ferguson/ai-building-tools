@@ -11,17 +11,18 @@ verify it without asking a single clarifying question.
 | `/prototype` | Builds something to look at — a flow diagram, a clickable mockup, or a real component | Design |
 | `/develop` | Takes the top `ready` item, builds it TDD, and stops at `next: verify` | Build |
 | `/verify` | Checks a change against the item's written acceptance criteria, then closes it or sends it back | Check |
-| `/retro` | Reviews the items closed and the session around them, and lands the lessons where they get read again | Learn |
+| `/retro` | Sweeps the parked findings of many sessions and lands the lessons where they get read again | Learn |
 
 `/design` and `/prototype` split the Design phase by output: **tell me** versus **show me**.
 Default to `/design` — escalation is cheap, a prototype you didn't need is not. `/design` never
 invokes `/prototype`; it names what a prototype would have to settle and leaves the call to you.
 
-`/develop` hands off to `/retro` the way it hands off to `/verify`, and for the same reason:
-building an item, checking it, and learning from it are three jobs, and the last two are the ones
-that get cut short when one skill owns all three. `/retro` also runs on its own, over a whole
-session rather than one item — and it is the only skill here that routinely edits *these skills*,
-since "the workflow misled me" is a finding like any other.
+**No skill invokes another.** `/develop` stops at `next: verify` and names the command; `/verify`
+closes; `/retro` runs on its own cadence over what many sessions parked. Building an item, checking
+it, and learning from it are three jobs, and the last two are the ones that get cut short when one
+session owns all three — so the handoff travels on disk, through the ticket's `next` field and
+`FINDINGS.md`, rather than in a conversation that is about to end. `/retro` is the only skill here
+that routinely edits *these skills*, since "the workflow misled me" is a finding like any other.
 
 The executor here is the **agent**, and the artifact is code. Its sibling
 [`ai-context-tools`](https://github.com/aaron-ferguson/ai-context-tools) is the other half —

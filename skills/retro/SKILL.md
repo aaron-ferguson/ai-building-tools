@@ -1,13 +1,13 @@
 ---
 name: retro
 description: >
-  Review the work a session just did — the items it closed and the session around them — and land
-  the lessons where they will be read again: the skills that were used, the conventions that were
-  cited, the project's own docs, or the backlog. Use when the user says "retro", "run a retro",
-  "post-mortem", "session review", "what did we learn", "what could have gone better", or invokes
-  /retro. Invoked by `develop` when an item closes, and worth running on its own after any long or
-  painful session. Decides *where* a lesson belongs rather than defaulting to CLAUDE.md, and
-  carries a change through to durable — committed, and for a skill, released.
+  Review the findings many sessions parked in FINDINGS.md and land the lessons where they will be
+  read again: the skills that were used, the conventions that were cited, the project's own docs,
+  or the backlog. Use when the user says "retro", "run a retro", "post-mortem", "session review",
+  "what did we learn", "what could have gone better", or invokes /retro. Runs in its own session on
+  a cadence, never as part of the per-ticket lifecycle — no other skill invokes it. Decides *where*
+  a lesson belongs rather than defaulting to CLAUDE.md, and carries a change through to durable —
+  committed, and for a skill, released.
 ---
 
 # /retro
