@@ -55,7 +55,7 @@ conversation belongs to another session.**
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0026 | Re-run the measured end-to-end exercise and record the verdict | develop | blocked | 0009 |
-| 0021 | Hold the skills to the conventions' own context-rent rule | develop | ready | 0009 |
+| 0021 | Hold the skills to the conventions' own context-rent rule | develop | in-progress | 0009 |
 | 0005 | Add the graph fields to the ticket template and QUEUE.md | develop | ready | 0002 |
 | 0007 | Replace the Owner column with claim directories | develop | blocked | 0002 |
 | 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |

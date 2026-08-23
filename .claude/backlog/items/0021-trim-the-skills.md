@@ -3,7 +3,7 @@ id: "0021"
 title: Hold the skills to the conventions' own context-rent rule
 type: chore
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -16,7 +16,14 @@ expects:
   - skills/queue/SKILL.md
   - tests/skill-size.test.sh   # new
   - README.md
+claimed_by: "514d"
+claimed_at: 2026-08-23T16:05:00Z
 touches:
+  - skills/develop/SKILL.md   # over the ceiling by 572 after 0025 landed; not in expects
+  - skills/prototype/SKILL.md
+  - skills/queue/SKILL.md
+  - tests/skill-size.test.sh   # new
+  - README.md
 ---
 
 ## Problem
