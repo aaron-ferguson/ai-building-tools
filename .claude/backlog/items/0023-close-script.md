@@ -3,7 +3,7 @@ id: "0023"
 title: Add a close script mirroring claim
 type: chore
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -17,9 +17,10 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by: b6da
-claimed_at: 2026-08-23T21:35:05Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-08-23
 ---
 
 ## Problem
@@ -74,31 +75,31 @@ open side automated and is left to infer that the close side is hand-work by cho
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture backlog with a `next: verify` row claimed by token `ab12`, when
+- [x] AC1 — Given a fixture backlog with a `next: verify` row claimed by token `ab12`, when
       `./close 0001 ab12` runs, then the row is absent from `QUEUE.md`, present in `DONE.md`, the item's
       `status` reads `done`, and `git log -1 --name-only` shows exactly those three paths.
-- [ ] AC2 — Given the same fixture, when `./close 0001 ab12` runs, then `.lock/` does not exist
+- [x] AC2 — Given the same fixture, when `./close 0001 ab12` runs, then `.lock/` does not exist
       afterwards and the commit precedes its removal (asserted by the commit existing while the working
       tree is clean).
-- [ ] AC3 — Given a row whose `next` is `develop`, when `./close` is called on it, then it refuses,
+- [x] AC3 — Given a row whose `next` is `develop`, when `./close` is called on it, then it refuses,
       names what it found, exits non-zero, and leaves both files unchanged.
-- [ ] AC4 — Given a row claimed by a different token, when `./close <id> <wrong-token>` runs, then it
+- [x] AC4 — Given a row claimed by a different token, when `./close <id> <wrong-token>` runs, then it
       refuses, exits non-zero, and leaves both files unchanged.
-- [ ] AC5 — Given a `QUEUE.md` whose header is not `ID/Title/Next/Status/Parent`, when `./close` runs,
+- [x] AC5 — Given a `QUEUE.md` whose header is not `ID/Title/Next/Status/Parent`, when `./close` runs,
       then it errors on the shape rather than editing anything.
-- [ ] AC6 — Given a forced failure between the row edit and the commit, when the script exits, then
+- [x] AC6 — Given a forced failure between the row edit and the commit, when the script exits, then
       `.lock/` has been removed by the `trap`.
-- [ ] AC7 — Given `references/CONCURRENCY.md`, when its size is measured, then it is still under 1,500
+- [x] AC7 — Given `references/CONCURRENCY.md`, when its size is measured, then it is still under 1,500
       tokens.
-- [ ] AC8 — Given a fixture where one row is blocked only by the ticket being closed and another is
+- [x] AC8 — Given a fixture where one row is blocked only by the ticket being closed and another is
       blocked by it *plus* a ticket that is still open, when the close runs, then the first row and its
       item read `ready`, the second read `blocked` untouched, the freed ID is named in the output, and
       both changes land in the close commit rather than a follow-up.
-- [ ] AC9 — Given a dependent whose item `status:` is `done` and whose `blocked_by` still names the
+- [x] AC9 — Given a dependent whose item `status:` is `done` and whose `blocked_by` still names the
       ticket being closed, and which has no `QUEUE.md` row, when the close runs, then its item still
       reads `status: done`, it is not named in the reconcile report, and its path is not in the close
       commit.
-- [ ] AC10 — Given a rowless dependent held by another session — a non-empty `claimed_by:` — when the
+- [x] AC10 — Given a rowless dependent held by another session — a non-empty `claimed_by:` — when the
       close runs, then its `status:` and `claimed_by:` are unchanged, it is named in the "left alone"
       report rather than silently skipped, and its path is not in the close commit.
 
@@ -301,3 +302,24 @@ at all.
 - **`touches:` was widened mid-work** to `references/CONCURRENCY-INCIDENTS.md`, for the same reason
   it was widened in pass 1: rules are cited by name, and the file that carries their reasoning moves
   with them.
+
+### Verify pass 2 (2026-08-23) — PASS (token `b6da`)
+
+- 62/62 assertions green in `tests/close.test.sh`, and the suite was shown to bite rather than taken
+  on trust: **seven mutations of `close`, every one diff-verified as applied** before its result was
+  believed (this ticket's own trap), every one red on the assertion specific to it. The four on the
+  new guards: dropping the item-`claimed_by:` half leaves AC10's *report* assertion red and nothing
+  else — the write is stopped by the allowlist, so the ownership guard's unique contribution is the
+  report, which is why FR7 demands one; deleting the allowlist reds four including AC9 and the
+  commit-paths assertion; weakening it to `!= done` reds only the already-`ready` dependent case;
+  and **reversing the two guards reds AC10's report** — the order is pinned, as the develop notes
+  claimed. Three more on paths pass 1 had checked (`AC3`, `AC4`, the commit) reddened 27, 25 and 6.
+- **AC7 measured 6,050 bytes / ~1,498 tokens.** Falsifiable rather than merely true: the same measure
+  at `3b29524` is 6,610 / ~1,637, i.e. red. Margin ~1.7 tokens.
+- **The close of this ticket reconciled nothing, correctly.** 0021 is the only ticket naming 0023 in
+  `blocked_by`; its other blocker 0025 reads `ready`, so it stays `blocked`. Pre-existing drift on
+  0026 — `blocked` with no open blocker, left by an earlier close — was reported, not reconciled: it
+  names no ticket this session held.
+- Parked rather than fixed: `close` treats an `in-progress` row with no token as held, and the rule
+  and hand-close fallback now define *held* as `claimed_by:` alone, so the script is stricter than
+  the rule it encodes. The AC7 ceiling has no margin to state it (`FINDINGS.md`, this date).
