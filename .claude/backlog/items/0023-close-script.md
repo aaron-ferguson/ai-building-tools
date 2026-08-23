@@ -17,8 +17,8 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by:
-claimed_at:
+claimed_by: fd27
+claimed_at: 2026-08-23T21:05:05Z
 touches:
 ---
 
