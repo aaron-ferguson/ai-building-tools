@@ -81,3 +81,13 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   a correct claim as a missing row. Assert on whole lines, not on parsed cells. Worth a line in
   `testing-conventions.md` — the file warns about fixtures encoding domain assumptions, not about
   helpers reimplementing the parser (pointer: tests/claim.test.sh, testing-conventions.md).
+- 2026-08-23 — an exit-code assertion cannot tell a loud error from a silent refusal, because both
+  exit non-zero. 0022's AC4 has three assertions; under a mutation that removed the explicit
+  "no Status column" error entirely, `exits non-zero` still passed — the shape fell through to the
+  empty-status refusal, which is the exact defect AC4 exists to forbid. Only the two message
+  assertions were wired. Where an AC's substance is *how* a failure is reported, assert on the
+  message; the exit code is satisfied by the bug (pointer: tests/claim.test.sh AC4, 0022).
+- 2026-08-23 — the missing-scripts finding above names `/develop` Step 1, but `/verify` Step 1 has
+  the identical gap: it says to run `./next verify` and `./claim <id>`, and this repo's backlog has
+  neither, so the queue was read by hand and the claim done by hand under `.lock`. A retro fixing
+  only the develop pointer would leave verify broken (pointer: skills/verify Step 1, 0023).
