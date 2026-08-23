@@ -4,8 +4,9 @@ description: >
   Verify a change against a backlog item's acceptance criteria and non-functional requirements
   at the QA level the item declares — unit, integration, or end-to-end. Use when the user says
   "QA this", "verify it", "check it works", "run the e2e tests on this", "does this meet the
-  criteria", or invokes /verify. Invoked automatically by the develop skill before an item can be
-  closed. Reads .claude/backlog/items/ for the acceptance criteria and QA plan.
+  criteria", or invokes /verify. Runs in its own session on a ticket `develop` left at
+  `next: verify`, and is the stage that closes it. Reads .claude/backlog/items/ for the
+  acceptance criteria and QA plan.
 ---
 
 # /verify
@@ -14,15 +15,20 @@ Verify that a change actually satisfies what was promised. Distinct from `/code-
 hunts for defects in a diff — this one checks a change against a **written contract** and
 returns pass or fail.
 
-**`verify` writes nothing to the backlog.** It reads `QUEUE.md`, the item file and `config.yml`,
-and modifies none of them — not the status, not the ACs, not the notes. Its output is a verdict
-to its caller, and `develop` owns acting on it. That read-only guarantee is what makes it safe
-to run in a second window against an item another session is actively developing. If you notice
-something worth recording, hand it to `queue`; do not edit the item yourself. A finding you cannot
-yet place — a fragile check, a cost pattern — may be parked in `.claude/backlog/FINDINGS.md`, which
-is a buffer rather than the queue and so does not breach the rule above.
-(See `references/CONCURRENCY.md` at the plugin root — `../../references/CONCURRENCY.md` from
-this file.)
+**`verify` closes the ticket.** On green it ticks the ACs, sets the ticket done, moves the row to
+`DONE.md` and releases its claim. `develop` stops at `next: verify` and closes nothing, because a
+verdict that has to travel from the session that produced it to the session that acts on it has
+nowhere to travel once each skill runs alone.
+
+**What keeps two sessions off one ticket is the `next` field, not a read-only rule.** This skill
+acts only on tickets whose `next` is `verify` — and nothing is developing those, because `develop`
+released the claim before setting the field. So **refuse anything addressed to another stage**
+(Step 1) rather than checking it anyway. See `references/CONCURRENCY.md` at the plugin root
+(`../../references/CONCURRENCY.md` from this file), *A stage writes only the ticket it holds*, and
+read it before touching any backlog file.
+
+A unit of work you notice along the way goes to `queue` as a row, not into this ticket. A finding
+you cannot yet place goes in `.claude/backlog/FINDINGS.md` (Step 6).
 
 **This skill states no standards of its own.** What counts as secure, private, accessible, or
 adequately tested is defined by the project's conventions and cited here, never restated.
@@ -30,14 +36,28 @@ Resolve them per `references/CONVENTIONS.md`.
 
 ---
 
-## Step 1 — Get the contract
+## Step 1 — Get the contract, refuse what is not yours, then claim it
 
 With an item ID: read `.claude/backlog/items/<id>-*.md` and take the **Acceptance criteria**,
-**Non-functional requirements**, and **QA plan** sections.
+**Non-functional requirements**, and **QA plan** sections. With no argument, take the topmost row
+whose `next` is `verify` and whose `status` is `ready` — `./next verify` prints it.
 
-Without one: infer the item from the branch, recent commits, or the conversation. If there's
-no backlog item at all, verify against whatever the user stated as the goal — and say explicitly
-that you're verifying an unwritten contract, which is weaker.
+**Refuse a ticket whose `next` is not `verify`, and name what you found instead.** A `develop` row
+has not been built yet, so there is nothing to check; a `design` row has no acceptance criteria to
+check against, so a verdict on it would be issued against a contract you invented; a `queue` row
+is not specified enough for any stage. Say which of those it is and stop. This refusal is what
+keeps two stages off one ticket now that no read-only rule does — checking it anyway means QA-ing
+work another session is mid-way through, where a red means "unfinished" and looks like "broken".
+
+Without an ID and without a backlog item at all: verify against whatever the user stated as the
+goal — and say explicitly that you are verifying an unwritten contract, which is weaker. Nothing
+is closed on that path; there is no row to close.
+
+**Then claim the row, because this stage writes.** `./claim <id>` locks, edits the row to
+`in-progress`, writes the token into the item's frontmatter, commits and unlocks as one step. Do
+it by hand only if the project has no script, and **commit the row inside the lock** — an
+uncommitted claim is visible to nobody but you (`CONCURRENCY.md`, *A claim must be durable the
+moment it is made*).
 
 Read `.claude/backlog/config.yml` for the project's real commands, and resolve the conventions
 per `references/CONVENTIONS.md`. If none resolve, stop — a verdict issued against no standard
@@ -63,9 +83,9 @@ may be luck.
   **advisory**: name the unrelated paths, and state that a confident PASS needs a clean tree.
   Do not stash, revert, or check out anything to tidy it — that is another session's work and
   destroying it is far worse than an imprecise verdict.
-- The item under test is `in-progress` under a claim token you did not mint, and you were
-  invoked directly rather than by `develop` → say plainly that you are verifying an item another
-  session is mid-way through, so a red may simply mean unfinished.
+- The item under test is `in-progress` under a claim token **you did not mint in this
+  conversation** → it is another session's. Do not check it; say whose it appears to be and stop.
+  Step 1's refusal normally prevents this, so reaching it means the field and the claim disagree.
 
 The item's `qa_level` was set at queue time. Run **that** level and everything below it —
 levels are cumulative, sitting on the pyramid defined in `testing-conventions.md`.
@@ -107,7 +127,10 @@ behaviour, which screenshot. "Looks right" is not a verification. An AC you cann
 **A green check is only evidence if it could have been red, and confirming that is your job
 rather than the implementer's.** They have already convinced themselves; the whole reason this
 pass is separate is to distrust that. So for each AC whose verdict rests on an automated check,
-break the behaviour the check exists to catch and confirm the check goes red — then restore it.
+break the behaviour the check exists to catch and confirm the check goes red — then restore it,
+**by the path you mutated and no other** (`git checkout -- <that path>`). A bare
+`git checkout -- .` would destroy the other window's uncommitted work in the tree Step 2 just
+warned you about.
 The failure mode is not a check wired to nothing, which is obvious; it is a check that runs,
 asserts, and measures something *adjacent* to the defect: a UI drag that ends off the element
 under test so the click never lands there, a value chosen where the distortion is symmetrical, a
@@ -161,7 +184,44 @@ oversight at queue time, not permission to skip the check.
 
 ---
 
-## Step 5 — Park what surprised you
+## Step 5 — Act on the verdict
+
+This is the stage that closes. Do it here, in the session that produced the verdict — there is no
+window between testing and closing for a green to go stale in, which is why no durable verdict
+file exists and none is needed.
+
+**On green**, under the lock, and committed before you release it:
+
+1. Tick the ACs in the item file and set `status: done` with the date. Clear `touches:` — a closed
+   ticket must not keep reserving files.
+2. Re-read `QUEUE.md` — another window has had the whole QA run to insert rows — then delete your
+   row with a single `Edit` and append it to `DONE.md`, newest first. Nothing else in `QUEUE.md` is
+   touched; there is no position column to renumber.
+3. Release the claim: clear `claimed_by:` and `claimed_at:`.
+4. **Commit by pathspec** — `git commit -m "Close <id>: …" -- <queue> <done> <item>` — **then**
+   `rm -rf .claude/backlog/.lock`. The order matters: the lock guards the commit, not just the
+   edit, because the commit takes `QUEUE.md` whole and an unlocked close can interleave with
+   another window's claim (`CONCURRENCY.md`, *Lock every write to `QUEUE.md`*).
+5. Record this session's share of the cost if `cost_tracking:` is configured, and mirror the close
+   to the tracker if one is (`references/TRACKER.md`) — outside the lock, since a network call must
+   never be made while holding it. Tracker failure is logged in the item's notes, never a blocker.
+
+**On red**, the failure reason goes in the item's *Notes & decisions* **before** you touch any
+field: what failed, the actual output, and which AC it belongs to. Then set `next: develop,
+status: ready` and release the claim, under the lock, committed. Flipping the field without the
+reason means the next `develop` session re-derives the failure from nothing, which is the loss
+this whole handoff exists to prevent — and it is the half most easily skipped, because the red is
+still fresh in a conversation that is about to end.
+
+**On a stale contract** — the ACs no longer describe reality, so neither pass nor fail is honest —
+write why in the notes and set `next: queue, status: ready`. Do not re-specify the ticket yourself.
+
+**Do not push** unless the project's `CLAUDE.md` or `git-conventions.md` says a close should push,
+or the user asks. Closing a ticket is not authority to publish it.
+
+---
+
+## Step 6 — Park what surprised you
 
 Before reporting, write anything that surprised you into `.claude/backlog/FINDINGS.md` as one
 dated line. This is the discovery-time recording `documentation-conventions.md` already requires,
@@ -182,18 +242,19 @@ instead of here.
 
 ---
 
-## Step 6 — Verdict
+## Step 7 — Verdict
 
 State **PASS** or **FAIL** plainly, then the evidence table: each AC and NFR row, how it was
 checked, and the result. Include the actual failure output for anything red.
 
 If Step 2 found unrelated changes in the tree, mark the verdict **PASS (advisory)** or
-**FAIL (advisory)** and name what made it so. An advisory PASS is not a green `develop` may
-close on — it is a request to re-run against a clean tree.
+**FAIL (advisory)** and name what made it so. **An advisory PASS does not close the ticket** — it
+is a request to re-run against a clean tree, so leave the row at `next: verify, status: ready`,
+release the claim, and say what has to be clean.
 
-A partial pass is a FAIL with a list. Never soften a red result, never report a check you
-skipped as though it ran, and never close an item on your own authority — `develop` owns
-closing, and it needs a real green from you to do it.
+A partial pass is a FAIL with a list. Never soften a red result, and never report a check you
+skipped as though it ran. State plainly what Step 5 did — closed, sent back to `develop`, or sent
+back to `queue` — and name the commit.
 
 If QA passes but you noticed unrelated problems along the way, don't fix them here — hand them
 to `queue` as new items.

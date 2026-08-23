@@ -2,11 +2,12 @@
 id: "0013"
 title: Verify closes the ticket; develop stops at next verify
 type: chore
-next: develop
-status: ready
+next: verify
+status: done
 qa_level: verify
 size: m
 created: 2026-08-23
+closed: 2026-08-23
 parent: "0009"
 blocked_by: []
 relates: []
@@ -46,15 +47,15 @@ for a risk the new architecture does not have.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/develop/SKILL.md`, when read, then it contains no step that closes a
+- [x] AC1 — Given `skills/develop/SKILL.md`, when read, then it contains no step that closes a
       ticket or moves a row to `DONE.md`.
-- [ ] AC2 — Given `skills/verify/SKILL.md`, when read, then it closes on green and specifies the
+- [x] AC2 — Given `skills/verify/SKILL.md`, when read, then it closes on green and specifies the
       lock-and-commit order.
-- [ ] AC3 — Given `skills/verify/SKILL.md`, when read, then the red path writes the failure reason
+- [x] AC3 — Given `skills/verify/SKILL.md`, when read, then the red path writes the failure reason
       to the item before changing `next`.
-- [ ] AC4 — Given `references/CONCURRENCY.md`, when grepped for "verify never writes the queue"
+- [x] AC4 — Given `references/CONCURRENCY.md`, when grepped for "verify never writes the queue"
       and "writes nothing to the backlog", then there are no matches.
-- [ ] AC5 — Given `skills/verify/SKILL.md`, when read, then it states the refusal in FR4.
+- [x] AC5 — Given `skills/verify/SKILL.md`, when read, then it states the refusal in FR4.
 
 ## QA plan
 
@@ -78,3 +79,20 @@ for a risk the new architecture does not have.
   acts on it, and there is no window between testing and closing.
 - FR3 is the durability half. Flipping the status without the reason means the next develop
   session re-derives the failure, which is the loss this whole gate exists to prevent.
+- **"It does not run QA" is the item's declared level, not every test.** `develop` still runs the
+  project's whole suite once before stopping, and the Out of scope line above is what settles it:
+  this ticket moves *who closes*, not *what is checked*. The full-suite pass answers what the item
+  was allowed to break; QA answers what it had to prove. Handing a red tree to a QA session would
+  spend that whole session on a diagnosis the building session already had the context for.
+- **`verify` now claims the row.** FR2's "releases the claim" only resolves one way: `develop`
+  clears `claimed_by`/`claimed_at`/`touches:` at its stop (it is no longer holding the files), and
+  the QA session claims the row under its own token. Any other reading breaks the ownership test in
+  `CONCURRENCY.md` — an item is yours only if you minted its token in this conversation.
+- **Landed part of 0015's FR1 as collateral.** A step that stops at `next: verify` cannot also
+  invoke `verify`, so the invocation went here rather than being left unreachable for one ticket.
+  0015 still owns retro's invocation, retro's description, and the tree-wide grep.
+- Scoped the mutation pass's restore to the mutated path while rewriting Step 3, clearing the
+  parked finding against 0010 about `git checkout -- .` in a shared tree.
+- `develop`'s Step 6 was not deleted wholesale: the review checklist, the learned-notes write-up
+  and the cost record are build-session work and moved up into Step 5. Only the closing half —
+  ticking ACs, `status: done`, the `DONE.md` move — went to `verify`.

@@ -1,8 +1,8 @@
 ---
 name: develop
 description: >
-  Pull the next item off the project's stack-ranked backlog and implement it end to end —
-  TDD per conventions, then verify, then close it out and queue what the work surfaced.
+  Pull the next item off the project's stack-ranked backlog, implement it TDD per conventions,
+  leave the tree green, and stop at `next: verify` for a QA session to check and close.
   Use this skill when the user says "let's
   work on the next thing", "pick up the next item", "what's next — do it", "work the backlog",
   "develop 0007", "start on the top item", or invokes /develop. Also use when the user has
@@ -12,15 +12,14 @@ description: >
 
 # /develop
 
-Take the top `ready` item off `.claude/backlog/QUEUE.md` and finish it: implemented, tested,
-verified, committed, and moved to `DONE.md` — then leave the backlog in a state the next session can
-pick up cold. One item per invocation unless told otherwise.
+Take the top `ready` item off `.claude/backlog/QUEUE.md` and build it: implemented, committed,
+the tree left green, and the ticket set to `next: verify` so a QA session can check it against the
+written ACs and close it. One item per invocation unless told otherwise.
 
-**Closing the row is not the end of the job.** An item is finished when the work it *created* has
-somewhere to live too: the deferrals, the reds you proved were not yours, the thing you noticed
-and moved past. That is `/retro`, handed off in Step 7, and it is not optional — the documentation
-habit holds because the item file is open in front of you, while the project-management half
-quietly leaves with the conversation.
+**This skill does not close the ticket.** `verify` does, because the stage holding the verdict is
+the stage that should act on it — there is then no window in which a green goes stale, and no
+verdict has to survive a session boundary in conversation. Your last act is the implementation
+commit plus `next: verify, status: ready`.
 
 **Another session may be working this same backlog** — commonly a second window capturing
 feedback and running QA. Read `references/CONCURRENCY.md` at the plugin root
@@ -47,10 +46,10 @@ Read `references/TRACKER.md` before acting on either. In short:
   not a question this skill answers; the config block records what the profile resolved
   to. If a mirror call fails, log it in the item's notes and carry on — a tracker
   outage must not block a close.
-- **`cost_tracking:`** — record what the item actually cost when it closes. This is the
-  only place per-item cost can be captured, because the session that did the work is
-  the only thing that knows which item its tokens belonged to. Aggregate spend can
-  always be recovered later; the attribution cannot.
+- **`cost_tracking:`** — record what this session spent on the item before it stops. Only
+  the session that did the work knows which item its tokens belonged to, so this is the
+  only place the attribution can be captured; `verify` appends its own share when it
+  closes. Aggregate spend can always be recovered later; the attribution cannot.
 
 ---
 
@@ -257,7 +256,7 @@ is shared*). So:
 
 Respect the item's **Out of scope** section. If you find adjacent problems, don't fix them
 here — queue them as new backlog items and keep going. That's what the queue is for. Note
-them as you go; the `/retro` hand-off in Step 7 is the backstop that gets them written down, not
+them as you go; the `/retro` hand-off in Step 6 is the backstop that gets them written down, not
 the place to start remembering them.
 
 Append anything non-obvious you learn to the item's **Notes & decisions** as you learn it —
@@ -270,24 +269,28 @@ obvious — a mechanism, a rule, a unit of work — goes to that home instead, n
 
 ---
 
-## Step 5 — Hand off to verify
+## Step 5 — Leave the tree green, then stop at `next: verify`
 
-Invoke the `verify` skill with the item ID. Do not self-certify — the point of a separate pass is
-that it checks the written ACs rather than what you remember building.
+**This skill does not run the item's QA level and does not close the ticket.** QA is the declared
+`qa_level` checked against the written ACs, and it happens in a `verify` session. Do not
+self-certify: the point of a separate pass is that it checks what the ACs *say* rather than what
+you remember building, and no amount of care makes the implementing session able to read them that
+way.
 
-**Before you do, run the project's whole test suite once — every runner it has, not the item's
-declared level.** The level says what this item had to *prove*; it does not say what this item
-was allowed to *break*, and those are different questions. A `unit` item that changes a shared
-default can leave the browser suite red and close green, because nothing on its path ever
-started a browser. That has happened: an item shipped a model change under `qa_level: unit` and
-left four end-to-end specs failing, and it was two items before anything ran them — by which
-point the fix was archaeology rather than a one-line correction, and needed a backlog item of
-its own.
+**What you do run is the project's whole test suite once — every runner it has, not the item's
+declared level.** That is not QA. The level says what this item had to *prove*; it does not say
+what this item was allowed to *break*, and those are different questions. A `unit` item that
+changes a shared default can leave the browser suite red and pass QA, because nothing on its path
+ever started a browser. That has happened: an item shipped a model change under `qa_level: unit`
+and left four end-to-end specs failing, and it was two items before anything ran them — by which
+point the fix was archaeology rather than a one-line correction, and needed a backlog item of its
+own. Handing a red tree to a QA session spends that whole session on a diagnosis you already had
+the context for.
 
 If the full suite is red in a file this item never touched, **find out whose it is before
 touching anything**: `git log -1 -- <path>` and the in-progress rows will usually say. Another
 session's red is theirs to fix and yours to report, not to repair silently. If the tree is too
-entangled to judge, verify in a throwaway worktree (`git worktree add`) so you are reading your
+entangled to judge, run it in a throwaway worktree (`git worktree add`) so you are reading your
 own work rather than the shared tree, and remove it in the same turn.
 
 **A red in a file you *did* touch still has two owners, and telling them apart is the whole
@@ -316,71 +319,55 @@ then spent a comparable stretch chasing a timing coupling that predated it — a
 mitigation it landed (capping the runner's workers) belonged in its own row, which is where the
 real fix now sits.
 
-`verify` returns a verdict and writes nothing to the backlog — closing is yours alone. That is also
-why it is safe for the other window to run `/verify` while you are mid-item.
+### Then stop, in this order
 
-If QA fails: fix, re-run QA, and record what the failure was in the item's notes. Never close
-an item on a red or skipped check, and never report success you haven't seen. If you can't
-get it green, set the item back to `status: ready` (or `blocked`/`waiting` with the reason) and
-report honestly what's left — **and clear the claim token and `touches:` when you do**, since you are no longer
-holding either the row or its files, and the next session needs to be able to take both.
-
----
-
-## Step 6 — Close it out
-
-Only after QA is green:
-
-1. Run the review checklist the conventions define for changed code.
-2. Tick the ACs in the item file and set `status: done` with the date.
-3. Move the item's row out of `QUEUE.md` into `DONE.md` (newest first). **Re-read `QUEUE.md`
-   first** — the other window has had the whole implementation to insert rows — then delete
-   your row with a single `Edit` and append it to `DONE.md`, dropping the claim token on the
-   way. Nothing else in `QUEUE.md` is touched; there is no position column to renumber.
-   **Take the lock for this, and commit before releasing it.** The reasoning that a close needs
-   no lock — "a single-line edit to a row only you hold" — is true about the *row* and false
-   about the *file*: the commit that follows takes `QUEUE.md` whole, so an unlocked close can
-   interleave with another window's claim. See `CONCURRENCY.md`, *Lock every write to
-   `QUEUE.md`*.
-4. **Commit the backlog change alongside the code change, by pathspec.** A second window is
-   editing this repo too, and `git commit` commits the *entire index* rather than the paths you
-   staged a moment ago — so `git add <paths> && git commit` is not sufficient and has silently
-   swept another session's work into an item close. Name the paths on the commit itself:
-   `git commit -m "…" -- path/one path/two`. **Verify first and stage last**: a
-   `git diff --cached --name-only` read-back proves what is staged at that instant and grants
-   nothing about the moment the commit runs, so never leave files staged across a test run.
-   **A pathspec is necessary but not sufficient for a file the other window also edits**: it
-   commits that file's whole current state, their rows included, and no timing on your side
-   prevents it. Committing your own claim promptly is what keeps that window small; when it
-   happens anyway, report it rather than rebasing.
-   Also clear `touches:` from the item's frontmatter as you close it: the scope is a live claim
-   on files, and a closed item must not keep reserving them.
-5. **Record what the item cost, if `cost_tracking:` is configured** — see
-   `references/TRACKER.md` for the fields. Write it into the item file before the closing
-   commit so it lands in the same change as the work it describes. This is the step that
-   turns `size: m` from a guess into a calibrated estimate: the next `m` is ranked by what
-   the last several actually cost, not by feel.
-6. **Mirror the close, if a tracker is configured** — transition the ticket to done and
-   comment the commit SHAs, so a human reading the ticket can reach the code without being
-   told. Failure is logged in the item's notes, never a blocker.
-7. **Write down anything you learned while the item file is still open** — a non-obvious
+1. Run the review checklist the conventions define for changed code. This is a build-quality gate,
+   not QA — a `verify` session checks the contract, not your diff.
+2. **Write down anything you learned while the item file is still open** — a non-obvious
    mechanism, a theory you disproved, a rule that misled you — per the conventions' own
-   documentation rules. Record it in the item's notes at minimum; `/retro` in Step 7 decides
-   whether it also belongs somewhere more permanent, and where.
+   documentation rules, in the item's *Notes & decisions*. The QA session will not have had the
+   context that produced any of it.
+3. **Record what the item cost, if `cost_tracking:` is configured** — see `references/TRACKER.md`
+   for the fields. This session is the only thing that knows which item its tokens belonged to, so
+   it is the only place the attribution can be captured; a `verify` session appends its own share
+   when it closes. This is what turns `size: m` from a guess into a calibrated estimate.
+4. **Set the ticket to `next: verify` and `status: ready`, and clear `claimed_by:`, `claimed_at:`
+   and `touches:`.** You are no longer holding the row or its files, and the QA session claims
+   both itself — a `touches:` left behind reserves files nobody is editing, which is the
+   ambiguity `CONCURRENCY.md` warns reads as "held". **Take the lock for the row edit and commit
+   before releasing it** (`CONCURRENCY.md`, *Lock every write to `QUEUE.md`*).
+5. **Commit by pathspec, alongside the code change.** `git commit` commits the *entire index*
+   rather than the paths you staged a moment ago — so `git add <paths> && git commit` is not
+   sufficient and has silently swept another session's work into a backlog commit. Name the paths
+   on the commit itself: `git commit -m "…" -- path/one path/two`. **Verify first and stage last**:
+   a `git diff --cached --name-only` read-back proves what is staged at that instant and grants
+   nothing about the moment the commit runs. **A pathspec is necessary but not sufficient for a
+   file the other window also edits** — it commits that file's whole current state, their rows
+   included, and no timing on your side prevents it. When it happens anyway, report it rather than
+   rebasing.
+6. **Mirror the state, if a tracker is configured** (`references/TRACKER.md`) — transition the
+   ticket to its in-review equivalent and comment the commit SHAs, so a human reading the ticket
+   can reach the code. Failure is logged in the item's notes, never a blocker.
 
-**Do not push** unless the project's `CLAUDE.md` or `git-conventions.md` says an item close
-should push, or the user asks. The default is to leave the commits local and say so — closing an
-item is not authority to publish it.
+**If you cannot get the tree green**, set the ticket back to `next: develop` with
+`status: ready` — or `blocked`/`waiting` with the reason — clear the claim token and `touches:`,
+and report honestly what is left. Never hand a red tree to QA as though it were done.
+
+**Do not push** unless the project's `CLAUDE.md` or `git-conventions.md` says so, or the user
+asks. Building an item is not authority to publish it.
+
+**Then stop and report.** The ticket is built and awaiting QA; name the command the next session
+runs — `/verify <id>`, in a new session, per *one skill per session*. Do not invoke it here.
 
 ---
 
-## Step 7 — Hand off to `/retro`
+## Step 6 — Hand off to `/retro`
 
 Invoke the `retro` skill. It reviews the item you just closed *and* the session around it, and
 decides where each finding belongs — a new backlog row, the skill that misled you, the convention
 you cited, a comment in the file it governs, or nothing.
 
-**This is not optional, and it is not the same as Step 6.** Step 6 records what you learned while
+**This is not optional, and it is not the same as Step 5.** Step 5 records what you learned while
 the item file is open, which is the half that tends to get done. The half that falls through is
 the work this work *created*: the deferrals, the reds you proved were not yours, the thing you
 noticed and moved past. A finding that reaches only your final report is lost the moment the
@@ -396,7 +383,7 @@ nothing is a claim you checked, and it is what makes a skipped retro visible.
 
 ---
 
-## Step 8 — Park what surprised you
+## Step 7 — Park what surprised you
 
 Before reporting, write anything that surprised you into `.claude/backlog/FINDINGS.md` as one
 dated line. This is the discovery-time recording `documentation-conventions.md` already requires,
@@ -417,7 +404,8 @@ instead of here.
 
 ---
 
-## Step 9 — Report
+## Step 8 — Report
 
-Item closed, what changed, what QA ran and its result, **what `/retro` queued, re-ranked or wrote
-down**, and what's now at the top of the queue.
+What was built, what changed, the full-suite result, **what `/retro` queued, re-ranked or wrote
+down**, the ticket now sitting at `next: verify`, and what's next at the top of the queue. The
+ticket is **not** closed — say so, and name the command that closes it.

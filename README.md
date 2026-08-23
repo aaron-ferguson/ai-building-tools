@@ -9,8 +9,8 @@ verify it without asking a single clarifying question.
 | `/queue` | Turns something you just said into a fully specified item and inserts it at a considered rank | Define |
 | `/design` | Answers a design question and records the decision — no artifact | Design |
 | `/prototype` | Builds something to look at — a flow diagram, a clickable mockup, or a real component | Design |
-| `/develop` | Takes the top `ready` item, builds it TDD, hands it off to verify, closes it out | Build |
-| `/verify` | Verifies a change against the item's written acceptance criteria and returns PASS or FAIL | Check |
+| `/develop` | Takes the top `ready` item, builds it TDD, and stops at `next: verify` | Build |
+| `/verify` | Checks a change against the item's written acceptance criteria, then closes it or sends it back | Check |
 | `/retro` | Reviews the items closed and the session around them, and lands the lessons where they get read again | Learn |
 
 `/design` and `/prototype` split the Design phase by output: **tell me** versus **show me**.
@@ -123,8 +123,10 @@ A few decisions that look odd until you know why:
 - **`qa_level` is set at queue time, not develop time.** This is what stops QA rigor quietly
   sliding session to session — the moment the level is chosen by whoever is doing the work, it
   drifts down to whatever is convenient today.
-- **`verify` writes nothing.** Its output is a verdict; `develop` alone closes items. That read-only
-  guarantee is what makes it safe to verify in one window while another develops.
+- **`verify` closes the item, not `develop`.** The stage holding the verdict is the stage that
+  acts on it, so there is no window in which a green can go stale. What keeps two sessions off one
+  ticket is the `next` field, not a read-only rule: every stage refuses a ticket addressed to
+  another one.
 - **Only two operations take a lock** — claiming an ID and claiming an item. Everything else is
   a single-line edit, which two sessions can do concurrently without coordination.
 

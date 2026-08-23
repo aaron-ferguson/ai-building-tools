@@ -150,14 +150,23 @@ the *next* item committed the queue and swept both pending claims into a commit 
 else. Everything worked; the history is simply wrong, and the sweep was invisible until someone
 read the diff afterwards.
 
-## `verify` never writes the queue
+## A stage writes only the ticket it holds
 
-`verify` reads `QUEUE.md`, the item file, and `config.yml`, and writes **none of them**. Its output
-is a verdict to its caller. This is what makes it safe to run in a second window against an item
-the first window is developing, and it is why `develop` — not `verify` — owns closing an item.
+**This rule replaces *`verify` never writes the queue*, which was a workaround for a hazard the
+architecture no longer has.** That rule made `verify` read-only so it was safe to run in a second
+window against a ticket the first window was developing. With one skill per session, `verify`
+only acts on tickets whose `next` is `verify` — and nothing is developing those, because `develop`
+stopped and released the claim before setting that field.
 
-If verify notices something worth recording, it hands it to `queue` rather than editing the item
-itself.
+What the rule always meant, and still holds:
+
+- **Write nothing another session reads for coordination while that session holds the ticket.** A
+  stage claims the row it is about to write, and writes only that row and that item file.
+- **A stage that finds a ticket at another stage refuses it** rather than acting anyway. `develop`
+  skips a `next: design` row; `verify` refuses anything whose `next` is not `verify`. The `next`
+  field is what keeps two stages off one ticket, and it only works if every stage honours it.
+- `verify` now owns closing, because it is the stage holding the verdict at the moment it acts on
+  it. There is no window between testing and closing for a green to go stale in.
 
 ---
 
