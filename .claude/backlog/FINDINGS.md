@@ -64,10 +64,6 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 - 2026-08-23 — this repo carries three status values outside the ticket vocabulary — `active`
   (container), `scheduled` (SCHEDULED.md), `done` (terminal). 0010's FR1 enumerated four and none
   of these; the enumeration was false until widened (pointer: templates/item.md, 0010).
-- 2026-08-23 — verify's Step 3 mutation pass ("break the check, confirm it goes red") has no stated
-  restore discipline, and the obvious `git checkout -- .` would destroy another window's
-  uncommitted work in the shared tree the same skill's Step 2 just warned about. Scope the restore
-  to the mutated path (pointer: skills/verify Step 3, 0010).
 - 2026-08-23 — the pared table's silent failure is now loud in `next` (it refuses a shape it cannot
   parse) but **still silent in `claim`**, which refuses every row without erroring. Half-fixed by 0011;
   the other half is 0022 (pointer: templates/claim, 0022).
