@@ -2,8 +2,8 @@
 id: "0023"
 title: Add a close script mirroring claim
 type: chore
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -17,15 +17,9 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by: "8a04"
-claimed_at: 2026-08-23T20:47:31Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/close      # new
-  - tests/close.test.sh               # new
-  - skills/queue/SKILL.md
-  - skills/verify/SKILL.md
-  - references/CONCURRENCY.md
-  - README.md
 ---
 
 ## Problem
@@ -62,6 +56,12 @@ open side automated and is left to infer that the close side is hand-work by cho
   hand-closing under the lock remains documented as the fallback.
 - FR6 — `CONCURRENCY.md`'s *The two scripts* becomes three, without growing past 1,500 tokens — the
   ceiling 0020 set. Trade the words for it in that section rather than anywhere else.
+- FR7 — The close also **reconciles every row that named this ticket in `blocked_by`**, in the closing
+  commit, setting each row whose remaining blockers are all `done` to `ready` (or `waiting` where its
+  `## Waiting on` section says a person is needed) — and never a row another session holds
+  `in-progress`, which it reports instead. *Added at develop time:* 0024 landed after this ticket was
+  written and made the reconcile part of `verify` Step 5, which FR1 says the script encodes. A close
+  script that skipped it would make 0024's stale-cache defect systematic rather than occasional.
 
 ## Non-functional requirements
 
@@ -87,6 +87,10 @@ open side automated and is left to infer that the close side is hand-work by cho
       `.lock/` has been removed by the `trap`.
 - [ ] AC7 — Given `references/CONCURRENCY.md`, when its size is measured, then it is still under 1,500
       tokens.
+- [ ] AC8 — Given a fixture where one row is blocked only by the ticket being closed and another is
+      blocked by it *plus* a ticket that is still open, when the close runs, then the first row and its
+      item read `ready`, the second read `blocked` untouched, the freed ID is named in the output, and
+      both changes land in the close commit rather than a follow-up.
 
 ## QA plan
 
@@ -113,3 +117,80 @@ open side automated and is left to infer that the close side is hand-work by cho
   else's ticket.
 - Parented under 0002 rather than 0009: it is scaffold tooling, which is that effort's subject. 0009 is
   finished bar 0021.
+
+### Learned while building (2026-08-23)
+
+- **A mutation that silently fails to apply is indistinguishable from a guard that holds.** Six
+  mutations were run to prove the new guards could fail. Two came back green — and one of those,
+  unscoping the AC ticking, had simply not applied: the `perl` pattern never matched, so the "green"
+  was a report about an unmodified file. `diff` the mutated file before believing its result. Applied
+  properly it went red immediately. This is the mutation-testing analogue of the conventions'
+  *"a guard only ever seen passing is indistinguishable from one wired to nothing"* — the mutation
+  needs the same scepticism as the test. A related trap in the same pass: `perl -pe` interpolated
+  `$bfile` out of a shell line, producing a syntactically broken mutation whose red proved only that
+  the assertions touch that *line*, not that they test its *semantics*. Use a non-interpolating
+  editor for shell mutations.
+- **The other genuinely-green mutation was not a hole.** Removing the fatal "not a git repository"
+  check left the retry loop to fail instead, whose message also contains "uncommitted" — so AC6's
+  assertion passed on a different, and misleading, path: it would have reported "git busy" about a
+  repository that does not exist. Both behaviours are honest about the *lock*; only one is honest
+  about the *reason*. AC6 now pins the reason.
+- **FR3 says "matching `claim`'s behaviour exactly", and `close` deliberately diverges in one place.**
+  `claim` wraps its commit in `if git rev-parse …`, so outside a repository it silently skips
+  committing and exits 0. For `close` that is the failure the script exists to prevent, so an
+  uncommittable repository is fatal and says the files are edited but uncommitted. Worth flagging:
+  by the same argument `claim`'s tolerant skip is probably a latent bug, but it is 0022's file and
+  not this ticket's to change.
+- **AC5 is satisfied by requiring the columns the script needs, not by pinning the five-column
+  shape.** A literal `ID/Title/Next/Status/Parent` check would reject the pre-0010 eight-column table
+  that `claim` still deliberately claims (its own AC3), so the script resolves `ID`, `Title`, `Next`
+  and `Status` by name and errors naming whichever is missing. Any header lacking one of those errors,
+  which is what AC5 asks for; a reordered header with all four works, which no AC pins and the suite
+  now does.
+- **"Build on 0022's parser rather than writing a third one" means the same mechanism, not shared
+  code.** `next`, `claim` and `close` are copied independently into a project's `.claude/backlog/`, so
+  a shared library would break the template model — there is nowhere for it to live that all three
+  can reach. `close` reimplements by-name resolution as `header_of` / `column_in`. DRY's trigger is
+  the *third* repetition and this is the second, so the duplication is correct for now; the third
+  script to need it is the signal to find it a home.
+- **`close` refuses when `DONE.md` is absent rather than creating it.** Creating a file the project
+  never scaffolded would hide a scaffolding gap behind a working close, and the script's whole
+  character is refusing rather than guessing.
+
+### FR6: the ceiling was already breached before this ticket
+
+`references/CONCURRENCY.md` measured **6,610 bytes / ~1,637 tokens** at HEAD, against the 1,500-token
+ceiling 0020 set — it had grown from 6,017 / ~1,490 via 0024's additions and the retro's edit. So AC7
+was failing before this ticket touched the file, and FR6's instruction to *"trade the words for it in
+that section rather than anywhere else"* could not be followed: *The two scripts* is ~370 bytes and
+naming a third script grows it. **Measure in bytes at the 4.038 bytes/token ratio the ticket lineage
+established** — Python's `len()` on the decoded text undercounts by ~46 here, because the file is full
+of multi-byte em-dashes.
+
+The trade came instead from prose the file's own split assigns elsewhere. Nothing that is a *rule* was
+cut. Precisely:
+
+- Two histories **`CONCURRENCY-INCIDENTS.md` already carries in full** — *"Replaces `verify` never
+  writes the queue…"* (its §*The rule that was deleted, not narrowed*) and *"Closing was once exempt —
+  true of the row, false of the file…"* (its §*The rule that was narrowed and widened back*). Pure
+  deduplication, which is what this ticket's NFR asks for.
+- Justifications restating the rule in the sentence they follow: *"a suite over a file set that never
+  existed means nothing either way"*, *"and this is the part that surprises people"*, *"and since
+  when"*, *"count rows to learn a rank"*, *"staged work is exposed until it lands"*.
+- Two headings shortened to **the exact stems they are already cited by** — *The working tree is
+  shared too*, *Claim tokens* — which 0020's own notes say is how rules are cited. This makes the
+  citations in `CONCURRENCY-INCIDENTS.md` and `develop` SKILL.md exact rather than approximate.
+- One clause that is arguably a rule and was dropped: *"and `./next --drift` will show its own
+  session"*, from the reconcile bullet. `verify` Step 5 states the whole drift procedure, so it is
+  said once rather than twice.
+
+Result: **6,610 → 6,030 bytes, ~1,637 → ~1,493 tokens.** The margin is 7 tokens, so the next edit to
+this file breaches it again. That is a standing cost of the ceiling, not a defect in this change.
+
+- **Renaming the rule broke two live citations**, in `CONCURRENCY-INCIDENTS.md` §*A backlog with no
+  scripts* and §*The parser that reported an empty backlog*. Rules are cited by name, so a rename is
+  never a one-file edit — hence `references/CONCURRENCY-INCIDENTS.md` was added to `touches:` mid-work.
+- **`README.md`'s *"Only two operations take a lock"* was already false** before this change — closing
+  a row has taken the lock since the exemption was removed. Corrected to three with the reason, per
+  the documentation conventions' rule that a change contradicting a documented statement fixes it in
+  the same commit.
