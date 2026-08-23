@@ -3,7 +3,7 @@ id: "0022"
 title: Fix claim's fixed-index column parsing against the pared table
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -14,6 +14,8 @@ source: agent
 expects:
   - skills/queue/templates/claim
 touches:
+claimed_by: "8ac2"
+claimed_at: 2026-08-23T17:22:08Z
 ---
 
 ## Problem
