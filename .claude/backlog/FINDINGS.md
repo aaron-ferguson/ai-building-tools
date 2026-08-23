@@ -67,3 +67,17 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 - 2026-08-23 — the pared table's silent failure is now loud in `next` (it refuses a shape it cannot
   parse) but **still silent in `claim`**, which refuses every row without erroring. Half-fixed by 0011;
   the other half is 0022 (pointer: templates/claim, 0022).
+- 2026-08-23 — this repo's own backlog has **neither `next` nor `claim` installed**, so `/develop`'s
+  Step 1 ("run `./next develop` rather than reading `QUEUE.md`") had no correct answer and the whole
+  queue had to be read. The skill treats the scripts as present; the repo that ships them is the one
+  place they are not (pointer: skills/develop Step 1, .claude/backlog/).
+- 2026-08-23 — `/develop` Step 1 tells a session to claim with `./claim` and a minted token under
+  `.lock`, but this repo's `QUEUE.md` prose now says ownership is the directory `claims/<id>/` and
+  needs no lock. Two live protocols, and the item frontmatter still carries `claimed_by:`. Worse:
+  **an empty `claims/<id>/` is invisible to git**, so it cannot be "durable the moment it is made"
+  per CONCURRENCY.md — it needs a file in it. Input to 0007 (pointer: QUEUE.md prose, 0007).
+- 2026-08-23 — a test harness that re-derives what it is testing passes and fails with it: 0022's
+  `assert_row` looked the ID up at a fixed column while testing a fix for exactly that, and reported
+  a correct claim as a missing row. Assert on whole lines, not on parsed cells. Worth a line in
+  `testing-conventions.md` — the file warns about fixtures encoding domain assumptions, not about
+  helpers reimplementing the parser (pointer: tests/claim.test.sh, testing-conventions.md).
