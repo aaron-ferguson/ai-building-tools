@@ -16,15 +16,34 @@ see *What 0009 changed underneath 0002* below.
 
 1. **0022** — `claim` still parses the queue table by fixed column index, so it refuses every row on a
    newly scaffolded five-column table, silently. 0011 fixed the same defect in `next` (which now refuses
-   an unparseable shape loudly rather than reporting an empty backlog) and left `claim` to this ticket. It
-   is the only live regression in the shipped scaffold and ranks first: a new project cannot claim a row
-   at all until it lands.
-2. **0021** — at `next: queue`, not `develop`. Its AC1 (each skill at least 25% smaller) and its FR2 (no
+   an unparseable shape loudly rather than reporting an empty backlog) and left `claim` to this ticket.
+   Tier 1: a new project cannot claim a row at all until it lands, and **0026 cannot run without it.**
+2. **0026** — re-run the measured exercise. 0009's own closing commitment, and the reason the effort's
+   headline number is still *modelled* rather than observed. Ranked this high on **knowledge freshness**:
+   the control is a specific run on 2026-08-22, and every week of drift in the skills, conventions and
+   model makes that baseline a weaker comparison. It is also the ticket most likely to change what is
+   worth doing below it — if the saving did not materialise, 0025 and 0021 both need rethinking.
+   `blocked_by: 0022`.
+3. **0024** — `blocked` derived from the graph. Tier 2 and **smaller and more certain** than 0023, which
+   is why it goes first of the two. The defect is live and was observed this session: four rows sat
+   `blocked` for a whole session after their blocker closed. The failure is asymmetric — a stale `blocked`
+   hides work and nobody notices, while a stale `ready` is caught by the reader — so it is the direction
+   worth spending on.
+4. **0023** — a `close` script mirroring `claim`. Tier 2 for the same reason `claim` is a script: the
+   commit inside the lock is what a session under load forgets, and a forgotten one strands the close in
+   another window's commit. The measured cost is ~44 tool calls of pure mechanism across an eleven-ticket
+   session. Below 0024 by tie-breaker 4 and **sequenced after 0022**, whose parser it must share rather
+   than write a third copy of.
+5. **0025** — name the batching case for `develop`. Prose, and correct on today's evidence, but placed
+   below 0026 because FR4 wants that run's per-gate figure and 0017's precedent is that a workflow rule
+   with no cost behind it gets dropped under pressure. **Deliberately not `blocked` on it** — blocking a
+   correct rule on an unscheduled measurement is how it waits forever.
+6. **0021** — at `next: queue`, not `develop`. Its AC1 (each skill at least 25% smaller) and its FR2 (no
    rule dropped) conflict on four of six files, because effort 0009 added ~20,300 bytes of AC-mandated
    content to those files before this ticket ran. Two files met the floor, four did not, and the ticket
-   records the numbers and a proposed re-spec. `queue` decides which.
-3. **0005, 0007, 0006, 0008** — phase 1 of the graph, in their original order, with 0006's re-spec below.
-4. **0003, 0004** — later phases, blocked on 0002.
+   records the numbers and a proposed re-spec. `queue` decides which; 0026's result may moot it.
+7. **0005, 0007, 0006, 0008** — phase 1 of the graph, in their original order, with the re-specs below.
+8. **0003, 0004** — later phases, blocked on 0002.
 
 ## What 0009 changed underneath 0002
 
@@ -47,8 +66,17 @@ above records.
 
 ## Notes on tie-breakers used
 
-- **0022 at rank 1** is tie-breaker 1, blast radius: a live regression in the shipped scaffold that blocks
-  any new project from claiming a row, owned by no other ticket.
+- **0022 at rank 1** is Tier 1 and *also* a prerequisite: it blocks any new project from claiming a row,
+  and 0026 scaffolds a new project. Dependency order and tier agree here, which is unusual and made the
+  placement free.
+- **0026 above three cheaper tickets** is knowledge freshness (tie-breaker 3) doing real work rather than
+  breaking a tie. Nothing else on the queue decays; this one's control does.
+- **0024 above 0023** is tie-breaker 4, smaller and more certain, on two Tier 2 tickets that are otherwise
+  level.
+- **0025 not blocked on 0026** is a deliberate departure from how the rest of this backlog treats a
+  dependency. The rule is right now and the figure only sharpens it, so the coupling is recorded in the
+  ticket's notes with an instruction to revisit, rather than as a `blocked_by` that would park correct
+  prose behind an unscheduled experiment.
 - **0021 second but not takeable at `develop`.** Its stage is `queue`, so `./next develop` steps over it
   and says why. It is not sunk to the bottom: the work is worth what it was worth, and a ticket back at
   `queue` keeps its rank (see `QUEUE.md`).
