@@ -3,7 +3,7 @@ id: "0025"
 title: Name the batching case for develop, not just for capture
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -15,9 +15,12 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - README.md
-claimed_by:
-claimed_at:
+claimed_by: "795a"
+claimed_at: 2026-08-23T21:49:37Z
 touches:
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - README.md
 ---
 
 ## Problem
