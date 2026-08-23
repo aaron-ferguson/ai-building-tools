@@ -15,6 +15,14 @@
 # `touches:` stays a hand edit afterwards: only you know what you are about to open, and it must
 # be widened the moment the work reaches further than you declared.
 #
+# **Columns are resolved by header name, never by position.** The table's shape is not a contract:
+# it was pared from eight columns to five, and a parser keyed on a fixed index then read every
+# row's status as empty and refused every claim — silently, with a message that blamed the row.
+# A session's honest reading of that is "the backlog has nothing takeable". So: match the header
+# cell by name, work against any column order or count, and make a missing `Status` column a loud
+# error rather than a refusal. Ownership is not read from a column at all; it lives in the item's
+# `claimed_by:`.
+#
 # See references/CONCURRENCY.md — 'A claim must be durable the moment it is made'.
 
 set -eu
@@ -46,24 +54,54 @@ echo "claim $ID by $TOKEN" > "$LOCK/held-by"
 # Release the lock however we leave, so a failed claim never strands the other window.
 trap 'rm -rf "$LOCK"' EXIT INT TERM
 
+# --- find the columns by name, under the lock -------------------------------------------------
+# Under the lock, so the shape we write to is the shape we read. A pre-pared eight-column table
+# and the current five-column one differ only in where `Status` sits; both are claimable.
+#
+# `ID` is resolved by name too. Resolving one column by name and the other by position would make
+# the header comment's promise false in exactly the case nobody tests: the parser would look
+# order-independent and still read the wrong cell the day a column moves in front of `ID`.
+header="$(awk -F'|' '/^\|/ {
+  for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
+}' "$QUEUE")"
+[ -n "$header" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
+
+column_named() {
+  printf '%s' "$header" | awk -F'|' -v want="$1" '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
+  }'
+}
+
+ID_COL="$(column_named ID)"
+STATUS_COL="$(column_named Status)"
+[ -n "$STATUS_COL" ] || {
+  echo "no Status column in the QUEUE.md table — cannot tell a ready row from a blocked one" >&2
+  echo "header found: $header" >&2
+  exit 1
+}
+
 # --- re-read the row under the lock -----------------------------------------------------------
 # It may have changed since it was chosen; proceeding on a stale read is the whole race.
-row="$(awk -F'|' -v id="$ID" '/^\|/ { v = $2; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
+row="$(awk -F'|' -v id="$ID" -v c="$ID_COL" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
 [ -n "$row" ] || { echo "no row for $ID in QUEUE.md" >&2; exit 1; }
 
-status="$(printf '%s' "$row" | awk -F'|' '{ v = $7; gsub(/^ +| +$/, "", v); print v }')"
+status="$(printf '%s' "$row" | awk -F'|' -v c="$STATUS_COL" '{ v = $c; gsub(/^ +| +$/, "", v); print v }')"
 [ "$status" = "ready" ] || {
-  owner="$(printf '%s' "$row" | awk -F'|' '{ v = $8; gsub(/^ +| +$/, "", v); print v }')"
-  echo "$ID is '$status' (owner $owner), not ready — pick another row" >&2
+  echo "$ID is '$status', not ready — pick another row" >&2
+  if [ "$status" = "in-progress" ]; then
+    echo "who holds it is the item's claimed_by:, in items/$ID-*.md — not a queue column" >&2
+  fi
   exit 1
 }
 
 # --- edit the row -----------------------------------------------------------------------------
+# The Status cell and nothing else. The token goes in the item's frontmatter, so a legacy table
+# that still carries an Owner column keeps whatever is already in it.
 tmp="$(mktemp)"
-awk -F'|' -v OFS='|' -v id="$ID" -v tok="$TOKEN" '
+awk -F'|' -v OFS='|' -v id="$ID" -v idc="$ID_COL" -v c="$STATUS_COL" '
   /^\|/ {
-    v = $2; gsub(/^ +| +$/, "", v)
-    if (v == id) { $7 = " in-progress "; $8 = " " tok " " }
+    v = $idc; gsub(/^ +| +$/, "", v)
+    if (v == id) { $c = " in-progress " }
   }
   { print }
 ' "$QUEUE" > "$tmp"

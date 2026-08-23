@@ -173,6 +173,21 @@ lookup in [`references/CONVENTIONS.md`](references/CONVENTIONS.md).
 
 MIT.
 
+## Testing
+
+The shipped scripts are the only executable code in this repo, so they are the only thing with a
+test. Run every guard:
+
+```bash
+tests/claim.test.sh
+```
+
+Each case scaffolds a throwaway git repo with one `QUEUE.md` shape, runs the script against it,
+and asserts on the exit code, the message and the resulting row — then removes the fixture,
+including on failure. There is no runner and no framework; a guard is a `sh` file that exits
+non-zero. The skills' own behaviour is markdown and is verified by `/verify` against a ticket's
+acceptance criteria instead.
+
 ## Editing this plugin
 
 **Do not edit the installed copy under `~/.claude/plugins/cache/`.** A plugin is installed from
