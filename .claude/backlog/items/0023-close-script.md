@@ -2,7 +2,7 @@
 id: "0023"
 title: Add a close script mirroring claim
 type: chore
-next: develop
+next: verify
 status: ready
 qa_level: verify
 size: m
@@ -17,13 +17,9 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by: "64f1"
-claimed_at: 2026-08-23T21:23:26Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/close
-  - tests/close.test.sh
-  - skills/verify/SKILL.md
-  - references/CONCURRENCY.md
 ---
 
 ## Problem
@@ -66,6 +62,9 @@ open side automated and is left to infer that the close side is hand-work by cho
   `in-progress`, which it reports instead. *Added at develop time:* 0024 landed after this ticket was
   written and made the reconcile part of `verify` Step 5, which FR1 says the script encodes. A close
   script that skipped it would make 0024's stale-cache defect systematic rather than occasional.
+  *Sharpened after the first verify pass:* a dependent is selected on its own `status:` reading
+  `blocked`, never on `blocked_by` alone, and *held* is a non-empty `claimed_by:` in the item — not
+  an `in-progress` row, which a dependent need not have.
 
 ## Non-functional requirements
 
@@ -95,6 +94,13 @@ open side automated and is left to infer that the close side is hand-work by cho
       blocked by it *plus* a ticket that is still open, when the close runs, then the first row and its
       item read `ready`, the second read `blocked` untouched, the freed ID is named in the output, and
       both changes land in the close commit rather than a follow-up.
+- [ ] AC9 — Given a dependent whose item `status:` is `done` and whose `blocked_by` still names the
+      ticket being closed, and which has no `QUEUE.md` row, when the close runs, then its item still
+      reads `status: done`, it is not named in the reconcile report, and its path is not in the close
+      commit.
+- [ ] AC10 — Given a rowless dependent held by another session — a non-empty `claimed_by:` — when the
+      close runs, then its `status:` and `claimed_by:` are unchanged, it is named in the "left alone"
+      report rather than silently skipped, and its path is not in the close commit.
 
 ## QA plan
 
@@ -261,3 +267,37 @@ added, and the script's only inputs are two argv values, both validated at the t
 **Note on which copy was tested:** the repo copy is the authority and is what ran. The skill executing
 this session is the pinned install `0.9.1`, which predates this change and carries no `close` template
 at all.
+
+### Develop pass 2 (2026-08-23) — the FAIL fixed
+
+- **The defect was in the rule, not only in the script.** `CONCURRENCY.md` stated the exception as
+  "Reconcile no row another session holds `in-progress`", and `verify` Step 5 spelled the same
+  procedure out for the hand-close. Fixing the script alone would have left the documented fallback
+  instructing the next session to make both mistakes by hand, so all three changed together. This is
+  the Documentation NFR working in the direction that costs something: the single statement being
+  wrong is what made the implementation wrong.
+- **`blocked_by` is deliberately still not cleared at close.** Clearing it would fix the resurrection
+  at the cost of the graph's history of *why* a ticket was blocked, and no FR asks for that. The
+  guard is what stops a historical edge being read as a live one.
+- **The guards are ordered, and the order is a requirement rather than a preference.** Ownership is
+  tested first so a held dependent is *reported*, which FR7 demands; the `blocked` allowlist is
+  second and silent. Reversed, a held dependent at `status: in-progress` would be skipped by the
+  allowlist and never reported — correct outcome, wrong reason, exactly the shape AC6's note already
+  flagged in this ticket. Mutation M1 lands on precisely that: dropping the ownership guard leaves
+  the file unwritten and only the *report* assertion red.
+- **The allowlist is on `blocked`, not a denylist on `done`.** M4 weakened it to `!= done` and
+  survived every AC — an already-`ready` dependent still naming this ticket then gets a no-op write,
+  a spurious "freed" line, and an extra path in the close commit. Pinned by a fixture case rather
+  than an AC.
+- **Eight ACs passed over a defect because every fixture dependent had a row.** The rowless case was
+  not an exotic input: a closed dependent has no row by construction, since closing deletes it. A
+  guard written against one shape of input is verified only against that shape — recorded as an
+  incident in `CONCURRENCY-INCIDENTS.md` rather than only here.
+- **AC7's ceiling was paid, not breached.** The rule had to gain two clauses against 7 tokens of
+  margin. The trade came from moving the incident to `CONCURRENCY-INCIDENTS.md`, whose stated job is
+  "each rule's incident, its reasoning" — so nothing that is a rule was cut and the reasoning is not
+  lost, only relocated. 6,030 → 6,050 bytes, ~1,493 → ~1,498 tokens. The margin is now ~7 bytes: the
+  next edit to that file cannot be paid for this way, because the incidents are already out.
+- **`touches:` was widened mid-work** to `references/CONCURRENCY-INCIDENTS.md`, for the same reason
+  it was widened in pass 1: rules are cited by name, and the file that carries their reasoning moves
+  with them.

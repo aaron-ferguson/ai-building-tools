@@ -146,3 +146,18 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   reconcile a sixth step of `verify` Step 5, and building FR1 literally would have automated the
   stale-cache defect 0024 exists to fix. The staleness check in Step 2 is aimed at code that moved,
   not at a *sibling ticket* that moved (pointer: skills/develop Step 2, 0023 FR7, 0024).
+- 2026-08-23 — **`develop` has no step for a ticket `verify` failed back to it.** Step 1 takes a
+  `next: develop` row and Step 2 says restate the contract from the FRs, NFRs and ACs — but on a
+  re-entry the actual specification is the *verdict section* a previous `verify` wrote into the item,
+  which named the defect, the reproduction and the suggested fix. Nothing in the skill says to look
+  for it; this session found it only by reading the whole item. A ticket that has been round the loop
+  reads identically to a fresh one at Step 1, and the expensive half of its contract is in a section
+  the skill never mentions (pointer: skills/develop Steps 1–2, 0023).
+- 2026-08-23 — **the `CONCURRENCY.md` ceiling can no longer be paid the way it has been twice.** Both
+  previous payments came from prose the file's own split assigns elsewhere — restated justifications,
+  then this session moving an incident to `CONCURRENCY-INCIDENTS.md`. That route is now spent: the
+  incidents are out, and the file sits at ~1,498 of 1,500 tokens. The next rule that has to change
+  cannot buy its words from anywhere but another rule. This is the earlier "7 tokens of margin"
+  finding arriving, not restating it — the conclusion has moved from *tight* to *no route left*
+  (pointer: references/CONCURRENCY.md, 0020 FR4, 0023 AC7).
+
