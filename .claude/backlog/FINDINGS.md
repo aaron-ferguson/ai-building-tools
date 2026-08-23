@@ -28,45 +28,6 @@ it forever.
 Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, item id)`
 
 ---
-- 2026-08-23 — effort 0009 added ~20,300 bytes of AC-mandated content to the six skills, then 0021 asked
-  for 30% off the result. Two independently-written requirements that were never checked against each
-  other, and 0021 cannot close because of it. A ticket that sets a size target on a file other tickets in
-  the same effort will grow needs the target expressed absolutely, not as a percentage (pointer:
-  items/0021).
-- 2026-08-23 — every `verify`-level assertion in this effort greps single lines, so compressing a
-  paragraph breaks it by moving a phrase across a line break. It fired on 0012, 0015, 0016 and 0019
-  during 0021's trim, each time a false red on prose that still said the right thing. Either match a
-  phrase short enough to survive reflow, or read the file with newlines collapsed (pointer:
-  items/0012, items/0021).
-- 2026-08-23 — four of 0009's twelve tasks sat `blocked` on 0010 for the whole session after 0010 closed;
-  nothing clears a `blocked_by` when its blocker closes. `./next <stage>` now derives takeability from the
-  graph rather than the column, so the stale status no longer hides work — but the column still lies to
-  anyone reading `QUEUE.md` directly (pointer: templates/next, 0011).
-- 2026-08-23 — 0016's FR5 carried a kill criterion ("drop it if an isolated batch retro measures under
-  $1.50") that could not be evaluated, because no isolated batch retro has ever been run. Implemented as
-  written since reordering two headings is free, but a kill criterion whose measurement does not exist yet
-  is a decision deferred, not a decision made (pointer: items/0016).
-- 2026-08-23 — word-shaving moved ~1,100 bytes of `CONCURRENCY.md` across five passes; naming a category
-  to move out moved 11,000 in one. Five passes of tighter prose were wasted effort of a predictable kind,
-  and the same pattern repeated in the skills. A compression task should start by naming what leaves
-  (pointer: items/0020, items/0021).
-
-- 2026-08-23 — `skills/queue/templates/claim` reads status from `$7` and owner from `$8` by fixed
-  column index, so the pared five-column table breaks it for any newly scaffolded project. No
-  ticket owns `claim`: 0011 and 0006 both name only `next` (pointer: 0010).
-- 2026-08-23 — 0006's FR2/AC2 enumerate a seven-column (`Owner`) and eight-column (`Parent`) table
-  as the shapes `next` must parse. A five-column shape now exists and neither fixture covers it,
-  so 0006 would close green against a table nothing uses (pointer: items/0006, 0010).
-- 2026-08-23 — 0010's Out of scope said removing the `Owner` column was 0007's job "because this
-  repo's table already has none", but FR3/AC2 pin a header that excludes it, so the *template*
-  lost the column here. An out-of-scope line written from the local table can contradict an FR
-  written for the shipped template (pointer: items/0010).
-- 2026-08-23 — this repo carries three status values outside the ticket vocabulary — `active`
-  (container), `scheduled` (SCHEDULED.md), `done` (terminal). 0010's FR1 enumerated four and none
-  of these; the enumeration was false until widened (pointer: templates/item.md, 0010).
-- 2026-08-23 — the pared table's silent failure is now loud in `next` (it refuses a shape it cannot
-  parse) but **still silent in `claim`**, which refuses every row without erroring. Half-fixed by 0011;
-  the other half is 0022 (pointer: templates/claim, 0022).
 - 2026-08-23 — this repo's own backlog has **neither `next` nor `claim` installed**, so `/develop`'s
   Step 1 ("run `./next develop` rather than reading `QUEUE.md`") had no correct answer and the whole
   queue had to be read. The skill treats the scripts as present; the repo that ships them is the one
@@ -76,17 +37,6 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   needs no lock. Two live protocols, and the item frontmatter still carries `claimed_by:`. Worse:
   **an empty `claims/<id>/` is invisible to git**, so it cannot be "durable the moment it is made"
   per CONCURRENCY.md — it needs a file in it. Input to 0007 (pointer: QUEUE.md prose, 0007).
-- 2026-08-23 — a test harness that re-derives what it is testing passes and fails with it: 0022's
-  `assert_row` looked the ID up at a fixed column while testing a fix for exactly that, and reported
-  a correct claim as a missing row. Assert on whole lines, not on parsed cells. Worth a line in
-  `testing-conventions.md` — the file warns about fixtures encoding domain assumptions, not about
-  helpers reimplementing the parser (pointer: tests/claim.test.sh, testing-conventions.md).
-- 2026-08-23 — an exit-code assertion cannot tell a loud error from a silent refusal, because both
-  exit non-zero. 0022's AC4 has three assertions; under a mutation that removed the explicit
-  "no Status column" error entirely, `exits non-zero` still passed — the shape fell through to the
-  empty-status refusal, which is the exact defect AC4 exists to forbid. Only the two message
-  assertions were wired. Where an AC's substance is *how* a failure is reported, assert on the
-  message; the exit code is satisfied by the bug (pointer: tests/claim.test.sh AC4, 0022).
 - 2026-08-23 — the missing-scripts finding above names `/develop` Step 1, but `/verify` Step 1 has
   the identical gap: it says to run `./next verify` and `./claim <id>`, and this repo's backlog has
   neither, so the queue was read by hand and the claim done by hand under `.lock`. A retro fixing
@@ -95,29 +45,10 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   `touches:` entry is returned as list entries and printed as claimed *files* in `./next`'s CLAIMED
   FILES block. Annotating a frontmatter list is a natural thing to do and there is nothing to warn
   you (pointer: templates/next `fm_list`, 0024).
-- 2026-08-23 — the reconcile gap 0024 fixes reproduced *while 0024 was being built*: a concurrent
-  `verify` closed 0022 on the pre-fix skill and 0026 went stale within minutes. A fix to a skill does
-  not reach the sessions already running it, so a fix's own window stays open until every live session
-  restarts — worth saying out loud wherever a skill change is committed (pointer: skills/verify Step 5,
-  0024, 0026).
 - 2026-08-23 — `develop` Step 5 says run "the project's whole test suite, every runner it has", and
   this project has no runner at all: the suite is `tests/*.test.sh` run by hand, discoverable only by
   `ls`. Neither `config.yml`'s empty `commands:` block nor the skill says where the suite is, so each
   session rediscovers it (pointer: skills/develop Step 5, .claude/backlog/config.yml).
-- 2026-08-23 — the "a fix does not reach sessions already running it" line above is too kind: skills
-  execute from a **pinned copy** in `~/.claude/plugins/cache/ai-building-tools/<version>/`, not from
-  this repo. Verifying 0024 ran `verify` from cache `0.9.0`, which has zero matches for `reconcil` —
-  so the session closing tickets was the pre-fix one, and **restarting would not have helped**; only a
-  version bump or reinstall would. A skill fix is therefore not live when committed, and the session
-  verifying a skill change is the least likely to be running it. Any `/verify` of a skill edit should
-  read the repo copy as the authority and say which copy it executed (pointer: plugins cache vs
-  skills/, 0024).
-- 2026-08-23 — `verify` Step 5's reconcile step ends "run `./next --drift` and expect it to exit zero",
-  which a correct close cannot honour when an *earlier* close left drift behind. Closing 0024 today
-  would have inherited 0026's stale row from 0022's close: reconciling it is forbidden (not a row this
-  ticket named), so the closer sees exit 1, has no correct action, and the instruction reads as a
-  failure it caused. Expect zero *for the rows you reconciled*, or have the step diff drift before and
-  after (pointer: skills/verify Step 5, 0024, 0026).
 - 2026-08-23 — `develop` Step 1 opens "run `./next develop` rather than reading `QUEUE.md`", and this
   repo's own backlog has no `./next` and no `./claim`: both exist only as `skills/queue/templates/`,
   which `queue` instantiates on first use, and this backlog predates that. The documented fallback is
@@ -132,3 +63,13 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   template deliberately — diverging the wording to describe a local gap is the two-conventions defect
   0024 forbids — so the fix belongs in instantiating the scripts, not in the prose (pointer: 0024,
   .claude/backlog/QUEUE.md).
+- 2026-08-23 — `retro` cites `references/CONVENTIONS.md` with no qualifier, but the installed skill
+  directory has no `references/` — the path is relative to the **plugin root**, which `develop` and
+  `queue` both say explicitly ("at the plugin root") and `retro` and `verify` do not. Cost a wrong
+  turn at Step 0, on the one instruction that says to stop if it does not resolve (pointer:
+  skills/retro, skills/verify, skills/develop:30).
+- 2026-08-23 — the reflow rule landed in `queue` this pass covers a *grep* over prose, but the same
+  break hit an `Edit`: a replacement string quoting "…is edited, after which `verify` checks…" matched
+  nothing, because the file wraps between the two words. Every prose edit to these files has the
+  defect its assertions have, and nothing warns an editor (pointer: skills/queue qa_level, this
+  session).
