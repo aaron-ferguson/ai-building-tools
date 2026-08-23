@@ -43,7 +43,6 @@ conversation belongs to another session.**
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0022 | Fix claim's fixed-index column parsing against the pared table | develop | ready | 0002 |
-| 0012 | Every session ends by parking what surprised it | develop | ready | 0009 |
 | 0013 | Verify closes the ticket; develop stops at next verify | develop | ready | 0009 |
 | 0011 | Add the Waiting on section and rewrite next for the new fields | develop | ready | 0009 |
 | 0014 | Queue sweeps FINDINGS.md for units of work | develop | blocked | 0009 |

@@ -395,7 +395,28 @@ Never `git stash` to tidy the tree — bare `stash` takes their uncommitted work
 
 ---
 
-## Step 7 — Report
+## Step 7 — Park what surprised you
+
+Before reporting, write anything that surprised you into `.claude/backlog/FINDINGS.md` as one
+dated line. This is the discovery-time recording `documentation-conventions.md` already requires,
+at the one moment the context is still hot.
+
+Triggers, at minimum: **a template or skill step that had no correct answer for your case**; **a
+configured command that behaved unexpectedly**; **a scaffolding step you had to invent**.
+
+**An explicit "nothing surprised me" is a complete result.** The habit must not manufacture
+findings to justify itself — an invented entry is read, and paid for, by every later session.
+
+**Commit `FINDINGS.md` in the same turn you write it, by pathspec** —
+`git commit -m "Park what <skill> hit" -- .claude/backlog/FINDINGS.md`. A finding left uncommitted
+until close is one `git stash` from gone, and it is the other window's commit that carries it off.
+
+Anything whose home is already obvious — a mechanism, a rule, a unit of work — goes to that home
+instead of here.
+
+---
+
+## Step 8 — Report
 
 One short block: the ID, the title, its position, and what else moved. Don't echo the whole
 item file back — it's on disk.

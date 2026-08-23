@@ -396,7 +396,28 @@ nothing is a claim you checked, and it is what makes a skipped retro visible.
 
 ---
 
-## Step 8 — Report
+## Step 8 — Park what surprised you
+
+Before reporting, write anything that surprised you into `.claude/backlog/FINDINGS.md` as one
+dated line. This is the discovery-time recording `documentation-conventions.md` already requires,
+at the one moment the context is still hot.
+
+Triggers, at minimum: **a template or skill step that had no correct answer for your case**; **a
+configured command that behaved unexpectedly**; **a scaffolding step you had to invent**.
+
+**An explicit "nothing surprised me" is a complete result.** The habit must not manufacture
+findings to justify itself — an invented entry is read, and paid for, by every later session.
+
+**Commit `FINDINGS.md` in the same turn you write it, by pathspec** —
+`git commit -m "Park what <skill> hit" -- .claude/backlog/FINDINGS.md`. A finding left uncommitted
+until close is one `git stash` from gone, and it is the other window's commit that carries it off.
+
+Anything whose home is already obvious — a mechanism, a rule, a unit of work — goes to that home
+instead of here.
+
+---
+
+## Step 9 — Report
 
 Item closed, what changed, what QA ran and its result, **what `/retro` queued, re-ranked or wrote
 down**, and what's now at the top of the queue.

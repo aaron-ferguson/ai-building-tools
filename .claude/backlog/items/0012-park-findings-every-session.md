@@ -2,11 +2,12 @@
 id: "0012"
 title: Every session ends by parking what surprised it
 type: chore
-next: develop
-status: ready
+next: verify
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
+closed: 2026-08-23
 parent: "0009"
 blocked_by: []
 relates: []
@@ -46,11 +47,11 @@ An optional habit at the end of a long session is not a mechanism.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given each of the five `SKILL.md` files, when read, then each has a closing step that
+- [x] AC1 — Given each of the five `SKILL.md` files, when read, then each has a closing step that
       names `FINDINGS.md` and at least one concrete trigger.
-- [ ] AC2 — Given those files, when read, then each states that finding nothing is a complete
+- [x] AC2 — Given those files, when read, then each states that finding nothing is a complete
       result.
-- [ ] AC3 — Given the closing step, when read, then it says to commit `FINDINGS.md` in the same
+- [x] AC3 — Given the closing step, when read, then it says to commit `FINDINGS.md` in the same
       turn, by pathspec.
 
 ## QA plan
@@ -74,3 +75,10 @@ An optional habit at the end of a long session is not a mechanism.
 - In the measured run `FINDINGS.md` was written at Step 1 and left uncommitted until close —
   one `git stash` from gone, which is the hazard `CONCURRENCY.md` already documents for claims.
   FR4 exists for that, not for tidiness.
+- **Applied to six skills, not five.** The ACs say "the five `SKILL.md` files" but the scripted
+  assertion globs `skills/*/SKILL.md`, which is six — `prototype` is a skill that runs in a
+  session and can be surprised by its tooling like any other, so covering it is the reading that
+  makes the assertion and the prose agree. Every ticket in this effort with a `skills/*` glob is
+  applied the same way.
+- `retro` empties this buffer and also writes to it. Said so explicitly in its step rather than
+  leaving a reader to decide the two rules contradict each other.
