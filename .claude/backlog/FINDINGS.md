@@ -28,6 +28,16 @@ it forever.
 Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, item id)`
 
 ---
+- 2026-08-23 — **`verify` Step 5's reconcile has the same hole as the script built to encode it.** Its
+  wording is "for each one whose remaining `blocked_by` entries are all `done`, set its row and its
+  item `status:` to `ready`" — selecting dependents by `blocked_by` alone, with no check that the
+  dependent is *currently blocked*. Nothing clears `blocked_by` when a ticket closes, so a closed
+  ticket names its blockers for ever and a later close flips it from `done` back to `ready`. The
+  in-progress exemption is stated as "no row another session holds", but a dependent may have no row
+  at all, and `CONCURRENCY.md` *Claim tokens* puts ownership in the item's `claimed_by:`, not the row
+  — so the procedure checks ownership in the one place the protocol says it does not live. A session
+  hand-closing per Step 5 makes the same two mistakes `close` does; fixing only the script leaves the
+  documented fallback wrong (pointer: skills/verify Step 5 item 3, 0024, 0023 FR7).
 - 2026-08-23 — **`queue`'s Step 1 table has no row for a ticket sitting at `next: queue`**, which is
   the one stage `queue` itself owns. Every other stage's skill opens by taking the row at its stage;
   this one routes only on what the user just said, and its stated default for ambiguity is "Add" —
