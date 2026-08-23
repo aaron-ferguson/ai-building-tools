@@ -221,9 +221,15 @@ So the loop is four steps, not two:
 
 ```bash
 git push origin main                        # 1. the installer resolves from the remote
-# bump "version" in .claude-plugin/plugin.json
-claude plugin update ai-building-tools       # 2. pull it into the cache
+# 2. bump "version" in .claude-plugin/plugin.json
+claude plugin update ai-building-tools      # 3. pull it into the cache
 ```
+
+**Bump the patch digit.** A skill edit, a rule change, a new template script — patch. `0.5.0` went
+minor for shipping `./claim`, and that was hasty: the version then advertises a scale of change the
+plugin has not made, and a reader deciding whether to update cannot tell the releases apart. Reserve
+minor for a change to how the skills are *used* — a new skill, a renamed stage, a backlog layout an
+existing project has to migrate.
 
 **And a fifth step you cannot skip: restart.** A running session resolves its skills once, at
 start, from whatever was installed then — so `claude plugin update` changes nothing for the
