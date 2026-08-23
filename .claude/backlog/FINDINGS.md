@@ -204,3 +204,13 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   `<command-name>` marker naming the skill, so today's own isolated sessions are measurable per
   skill per turn. That is not a *fresh* project, so it satisfies FR2–FR7 but not FR1 as written
   (pointer: items/0026, README.md one-skill-per-session section).
+- 2026-08-23 — **a relative-path lock trap leaks the lock, and the leak is invisible until the next
+  claim.** The release idiom is `trap 'rm -rf .lock' EXIT`, which resolves against the shell's cwd
+  *at trap time*. A claim script that `cd`s to the repo root to commit — the natural shape, since the
+  commit needs repo-relative pathspecs — therefore deletes `.lock` in the wrong directory and exits
+  reporting success. This session held the backlog lock for ~8 minutes across an entire
+  implementation without knowing, and found out only because its own handoff hit a busy lock carrying
+  its own token. Two fixes, both cheap: absolute paths in the trap, and a busy-lock report that says
+  when the holder is *you* — the existing report shows the token and timestamp, which is enough to
+  diagnose only if the reader remembers minting it (pointer: references/CONCURRENCY.md *Lock every
+  write to QUEUE.md*, CONCURRENCY-INCIDENTS.md busy/stale paths, skills/queue/templates/claim).
