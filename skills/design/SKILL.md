@@ -14,186 +14,143 @@ description: >
 
 # /design
 
-Answer a design question well enough that nobody has to answer it again.
+Answer a design question well enough that nobody has to answer it again. The output is a **decision**,
+not an artifact: `/prototype` builds something to look at, this works out what should be built and writes
+down why.
 
-The output is a **decision**, not an artifact. `/prototype` builds something to look at; this
-skill works out what should be built and writes down why. Most design questions do not need a
-prototype — they need the existing pattern found, the convention applied, and the answer
-recorded where the next person will hit it.
+**One skill per session.** Run this skill in its own conversation; the backlog carries the handoff — the
+ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of $15.11
+went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09** isolated. **No standard
+is relaxed** — the rigour is all in the 15% that was output.
 
-**One skill per session.** Run this skill in its own conversation and let the backlog carry the
-handoff — the ticket's `next` field and `FINDINGS.md`, never a conversation. A measured
-end-to-end run on **2026-08-22** spent **85% of $15.11 on context handling** at an average of
-**191,752 tokens per turn**; isolated, the same work models at **~$5.09**. **No standard is
-relaxed by this** — the rigour that caught a zip-bomb vulnerability every acceptance criterion
-passed over is in the 15% that was output.
+**This skill states no standards of its own** — usable, accessible and consistent are defined by the
+project's conventions and cited, never restated. Resolve them per `references/CONVENTIONS.md`; if none
+resolve, stop as that file directs, because a verdict against no standard looks identical to a real
+one.
 
-**This skill states no standards of its own.** What counts as usable, accessible, or consistent
-is defined by the project's conventions and cited, never restated. Resolve them per
-`references/CONVENTIONS.md`. If none resolve, stop as that file directs — a design verdict
-issued against no standard looks identical to one issued against a real standard, and that
-silent equivalence is the failure this whole design exists to prevent.
-
-**It writes the ticket it settled, when nobody else holds it.** Handing an answer back to `queue`
-just to have it typed in costs that skill's whole instruction file: measured at 5,699 tokens, five
-turns and **$0.67** to edit a single ticket. The rule against writing existed so two sessions could
-not write one item — so it applies exactly when one does. **How to tell:** the item's `claimed_by:`
-is set and its row reads `in-progress`. Unclaimed → you write it (Step 4). Claimed by anyone →
-hand off, because the token is not yours.
-
-**It never invokes `/prototype`.** When a question genuinely cannot be settled on paper, say so
-and say what a prototype would have to settle — the user decides whether to build one.
-
----
-
-## Configuration
-
-Read the context config the project declares (`CLAUDE.md` names `company: <name>` and its config
-directory). This skill uses `design_system` only.
-
-- **Configured with an MCP server** → it is the source of truth for tokens, components, and
-  contrast. Query it rather than reasoning from memory about what components exist.
-- **Absent** → still answer the question from the conventions and the existing codebase, and say
-  explicitly that no design system was available, so component names and token values are
-  descriptions rather than citations.
+**It writes the ticket it settled, when nobody else holds it.** Handing the answer back to `queue` to be
+typed in costs that skill's whole instruction file — measured at 5,699 tokens, five turns and **$0.67**
+for one ticket. The rule against writing existed so two sessions could not write one item, so it applies
+exactly when one does. **How to tell:** `claimed_by:` set and the row `in-progress`. Unclaimed → you
+write it (Step 4). Claimed → hand off.
 
 ---
 
 ## Step 1 — Get the question, and make it decidable
 
-From a backlog item at `next: design`: read its **Open design question** section. That is the
-contract — answer *that*, not a broader topic you find more interesting.
+From a ticket at `next: design`: read its **Open design question** section. That is the contract — answer
+*that*, not a broader topic you find more interesting. Ad-hoc: take the question as asked.
 
-Ad-hoc: take the question as asked.
-
-**Sharpen it before answering.** A decidable question has a small set of candidate answers and
-something that distinguishes them. "Bulk edit UX" is a topic. "Modal or full page for bulk
-edit, given the user needs the list visible while editing?" is a question. If what you were
-given is a topic, say so and propose the sharper version before proceeding — an unsharpened
-question produces an answer nobody can act on.
-
-If the real answer is "this is three questions", say that and take them in order.
+**Sharpen it before answering.** A decidable question has a small set of candidate answers and something
+that distinguishes them. "Bulk edit UX" is a topic; "modal or full page for bulk edit, given the user
+needs the list visible while editing?" is a question. Given a topic, propose the sharper version first —
+an unsharpened question produces an answer nobody can act on. If the real answer is "this is three
+questions", say so and take them in order.
 
 ---
 
 ## Step 2 — Look before reasoning
 
-In this order, because each one can make the next unnecessary:
+In this order, because each can make the next unnecessary.
 
-1. **Prior art in this codebase.** Does this pattern already exist somewhere? An answer that
-   matches what the product already does beats a better answer that makes the product
-   inconsistent. If you find prior art you are choosing to depart from, say why explicitly.
-2. **The design system**, if configured. Search components before inventing one. A question of
-   the form "how should X look" is very often already answered by a component that exists.
-3. **The conventions.** Read the files the core's index names for design, UI, and accessibility.
-   Read them; do not recall them. Cite the file when the answer turns on a rule.
+1. **Prior art in this codebase.** An answer matching what the product already does beats a better one
+   that makes it inconsistent; departing from prior art needs an explicit why.
+2. **The design system.** The project's context config (`CLAUDE.md` names `company: <name>` and its
+   config directory) declares `design_system`; configured with an MCP server it is the source of truth
+   for tokens, components and contrast, so query it rather than reasoning from memory. Search components
+   before inventing one — "how should X look" is very often already answered by one that exists. Absent,
+   answer from the conventions and the codebase and **say so**, since component names and token values
+   are then descriptions rather than citations.
+3. **The conventions.** Read the files the core's index names for design, UI and accessibility — read
+   them, do not recall them. Cite the file when the answer turns on a rule.
 
-**If the question touches user-facing UI, accessibility is not optional** and does not wait to
-be asked about. Check contrast on any colored-text pairing you propose, and confirm the
-interaction works from the keyboard and reads correctly to a screen reader. An answer that only
-works with a mouse is not an answer.
+**If the question touches user-facing UI, accessibility is not optional** and does not wait to be asked
+about. Check contrast on any colored-text pairing you propose, and confirm the interaction works from the
+keyboard and reads to a screen reader. An answer that only works with a mouse is not an answer.
 
 ---
 
 ## Step 3 — Answer it
 
-State the recommendation first, then the reasoning. Not a survey — a decision.
+The recommendation first, then the reasoning. Not a survey — a decision.
 
-- **Give the real alternatives**, briefly, and say what would have to be true for each to win.
-  Two or three. A list of every conceivable option is a way of avoiding the decision.
-- **Name the trade-off you are accepting.** Every design decision costs something. An answer
-  with no stated cost has not been thought about hard enough.
-- **Say what it depends on.** If the answer flips on a fact you do not have — how many rows
-  typically, whether this is the primary path, who the user actually is — name that fact rather
-  than assuming it quietly.
+- **Give the real alternatives**, two or three, and what would have to be true for each to win. Every
+  conceivable option is a way of avoiding the decision.
+- **Name the trade-off you are accepting.** An answer with no stated cost has not been thought about hard
+  enough.
+- **Say what it depends on.** If the answer flips on a fact you do not have, name that fact rather than
+  assuming it quietly.
+
+**When the answer cannot be settled on paper**, say so and stop, then state what a prototype would have
+to settle — the specific thing that must be *seen* — which fidelity level settles it, and why a cheaper
+one would not. Same discipline as kill criteria before a test: the prototype has a job, and you can tell
+afterwards whether it did it.
+Do not invoke `/prototype` — the user does.
 
 ### When to involve a person: ask on taste, decide on fact
 
 **The test is what the answer turns on, not how important it feels.**
 
-- **It turns on taste** — which of two defensible looks, how formal the voice, whether this reads as
-  a place — then no amount of reasoning settles it and you are guessing on someone's behalf. Ask.
-- **It turns on fact** — what the data contains, what the code already does, what the convention
-  says, what the component exists — then go and check. **You have standing permission to decide
-  these without asking, and using it is the skill working.** A measured design run asked nothing,
-  went and read the workbook, and found that all three proposed inputs for a rule did not exist in
-  the data at all. A rule of "ask early" would have made that run strictly worse: the question was
-  answerable, and the answer killed every candidate.
+- **It turns on taste** — which of two defensible looks, how formal the voice, whether this reads as a
+  place — then no reasoning settles it and you are guessing on someone's behalf. Ask.
+- **It turns on fact** — what the data contains, what the code does, what the convention says, what
+  component exists — then go and check. **You have standing permission to decide these without asking,
+  and using it is the skill working.** A measured design run asked nothing, read the workbook, and found
+  all three proposed inputs for a rule did not exist in the data — "ask early" would have made it worse.
 
-**When you do ask, the recommendation and the question go in the same message.** Not the question
-after the case is built — a session that asks early costs cents, and one that assembles the full
-argument and *then* asks has already spent the budget on a direction that may be rejected in one
-line. Lead with what you would do and why, then the one thing that would change it.
-
-**When the answer cannot be settled on paper**, say so plainly and stop. Then state:
-
-- what a prototype would have to settle — the specific thing that has to be *seen* to be decided
-- which fidelity level would settle it, and why a cheaper one would not
-
-That is the same discipline as writing kill criteria before running a test: the prototype has a
-job, and you can tell afterwards whether it did it. Do not invoke `/prototype` — the user does.
+**When you do ask, the recommendation and the question go in the same message.** A session that asks
+early costs cents; one that assembles the full argument and *then* asks has already spent the budget on
+a direction that may be rejected in one line. Lead with what you would do and why, then the one thing
+that would change it.
 
 ---
 
 ## Step 4 — Record it, or it will be re-litigated
 
-A decision that lives only in a chat log gets decided differently next month by someone with
-less context. This step is most of the value of the skill.
+A decision living only in a chat log gets decided differently next month by someone with less context.
+This step is most of the skill's value.
 
 **Item-scoped, and the ticket is unclaimed** — you write it, here, now:
 
-1. Record the answer and what it rejected in the item's **Notes & decisions**.
-2. Write the FRs and the given/when/then ACs the answer unblocks. If the answer unblocks none, it
-   did not settle the question — say so rather than moving the stage.
-3. Delete the *Open design question* section.
-4. Set `next: develop`, `status: ready`, and commit by pathspec in the same turn.
+1. Record the answer and what it rejected in *Notes & decisions*.
+2. Write the FRs and given/when/then ACs the answer unblocks. If it unblocks none, it did not settle the
+   question — say so rather than moving the stage.
+3. Delete the *Open design question* section, set `next: develop` / `status: ready`, and commit by
+   pathspec in the same turn.
 
-**Item-scoped, and the ticket is claimed** (`claimed_by:` set, row `in-progress`) — hand `queue`
-the answer and the *Notes & decisions* entry to record, and write nothing yourself. The token is
-not yours, and two sessions in one item file has no merge protocol behind it.
+**Item-scoped, and the ticket is claimed** (`claimed_by:` set, row `in-progress`) — hand `queue` the
+answer and the *Notes & decisions* entry, writing nothing yourself. The token is not yours, and two
+sessions in one item file has no merge protocol behind it.
 
-**It has to be *seen* rather than decided** — set `status: waiting`, write the ask into the item's
-`## Waiting on` section (what must be looked at, and who can look), and stop. `./next --waiting`
-then surfaces it without anyone opening the ticket. Still do not invoke `/prototype`; name what it
-would have to settle and leave the call to the user.
+**It has to be *seen* rather than decided** — set `status: waiting`, write the ask into the ticket's
+`## Waiting on` section (what must be looked at, who can look), and stop; `./next --waiting` surfaces it
+without anyone opening the ticket. Still do not invoke `/prototype`.
 
-**Standing** — it sets a pattern beyond this one item: write a decision record where the
-project's `documentation-conventions.md` says decision records live. Include the question, the
-answer, what was rejected and why, and the date. What was rejected is the part that stops the
-same debate reopening.
+**Standing** — a pattern beyond this ticket: write a decision record where the project's
+`documentation-conventions.md` says they live, with the question, the answer, what was rejected and why,
+and the date. What was rejected is what stops the debate reopening.
 
-**Neither** — a one-off with no reuse: say so and skip the recording rather than manufacturing
-a document nobody will read. Not every question deserves a record, and pretending otherwise
-devalues the ones that do.
+**Neither** — a one-off: skip the recording rather than manufacturing a document nobody will read.
 
 ---
 
 ## Step 5 — Park what surprised you
 
-Before reporting, write anything that surprised you into `.claude/backlog/FINDINGS.md` as one
-dated line. This is the discovery-time recording `documentation-conventions.md` already requires,
-at the one moment the context is still hot.
+Before reporting, park what surprised you in `.claude/backlog/FINDINGS.md` — one dated line, while the
+context is still hot.
 
-Triggers, at minimum: **a template or skill step that had no correct answer for your case**; **a
-configured command that behaved unexpectedly**; **a scaffolding step you had to invent**.
+Triggers: **a template or skill step that had no correct answer for your case**, a configured command that
+behaved unexpectedly, a scaffolding step you had to invent.
 
-**An explicit "nothing surprised me" is a complete result.** The habit must not manufacture
-findings to justify itself — an invented entry is read, and paid for, by every later session.
-
-**Commit `FINDINGS.md` in the same turn you write it, by pathspec** —
-`git commit -m "Park what <skill> hit" -- .claude/backlog/FINDINGS.md`. A finding left uncommitted
-until close is one `git stash` from gone, and it is the other window's commit that carries it off.
-
-Anything whose home is already obvious — a mechanism, a rule, a unit of work — goes to that home
-instead of here.
+**An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
+entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
+uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
 
 ---
 
 ## Step 6 — Report
 
-Short. The decision, the one-line reason, what it depends on if anything, and where it was
-recorded. If a prototype is needed, that plus what it must settle.
-
-Never report a decision as settled when Step 3 found it depends on a fact you do not have —
-say what is still open. A confident answer to a question that was not actually answerable is
-worse than an admitted gap, because it gets built.
+Short: the decision, the one-line reason, what it depends on, and where it was recorded. If a prototype
+is needed, that plus what it must settle. **Never report a decision as settled when Step 3 found it
+depends on a fact you do not have** — a confident answer to an unanswerable question is worse than an
+admitted gap, because it gets built.

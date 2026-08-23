@@ -16,89 +16,71 @@ description: >
 
 # /queue
 
-Turn something the user just said into a fully specified, stack-ranked backlog item that a
-cold agent can pick up weeks later and implement without asking a single clarifying question.
+Turn something the user just said into a fully specified, stack-ranked ticket a cold agent can pick up
+weeks later and implement without asking a single clarifying question.
 
-The queue file is the product; this skill is a thin wrapper over it. If you ever can't run
-this skill, `.claude/backlog/QUEUE.md` is still readable on its own.
+The queue file is the product; this skill is a thin wrapper over it. If you cannot run this skill,
+`.claude/backlog/QUEUE.md` is still readable on its own.
 
-**One skill per session.** Run this skill in its own conversation and let the backlog carry the
-handoff — the ticket's `next` field and `FINDINGS.md`, never a conversation. A measured
-end-to-end run on **2026-08-22** spent **85% of $15.11 on context handling** at an average of
-**191,752 tokens per turn**; isolated, the same work models at **~$5.09**. **No standard is
-relaxed by this** — the rigour that caught a zip-bomb vulnerability every acceptance criterion
-passed over is in the 15% that was output.
+**One skill per session.** Run this skill in its own conversation; the backlog carries the handoff — the
+ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of $15.11
+went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09** isolated. **No standard
+is relaxed** — the rigour is all in the 15% that was output. Batch every related ticket into
+one capture session: isolation is per skill, not per ticket, because reading the source material is a
+shared cost paid once.
 
-**The backlog is worked by more than one session at a time** — commonly one window developing
-while another queues. Read `references/CONCURRENCY.md` at the plugin root
-(`../../references/CONCURRENCY.md` from this file) before writing anything. In short: edit one
-row at a time, never rewrite `QUEUE.md` whole, and take the lock only to claim an ID.
+**The backlog is worked by more than one session at a time.** Read `references/CONCURRENCY.md` at the
+plugin root before writing anything. In short: edit one row at a time, never rewrite `QUEUE.md` whole,
+take the lock for every write.
 
-**This skill states no standards of its own.** Every rule about security, privacy,
-accessibility, testing, or documentation is cited from the project's conventions, never
-restated here or in an item. Resolve them per `references/CONVENTIONS.md`; if none resolve,
-stop as that file directs.
+**This skill states no standards of its own.** Every rule about security, privacy, accessibility,
+testing or documentation is cited from the project's conventions, never restated here or in a ticket.
+Resolve them per `references/CONVENTIONS.md`; if none resolve, stop as that file directs.
 
 ---
 
 ## Storage layout
 
-Per project, at the repo root:
-
 ```
 .claude/backlog/
-  config.yml     project settings, next_id, conventions path, test commands, optional tracker / cost / Notion blocks
+  config.yml     project settings, next_id, conventions path, test commands, optional tracker/cost/Notion
   QUEUE.md       the stack rank — line order IS the rank. Header and table only.
   RANKING.md     why the order is what it is. Standing reasoning, read only for re-ranks.
+  FINDINGS.md    what sessions parked and could not place. A buffer, not a second queue.
   next           reader: `next <stage>` the takeable row · `next --waiting` who is waited on
   claim          claims a row: lock, edit, write frontmatter, commit, unlock — one atomic step
-  DONE.md        completed items, newest first
-  .lock/         transient; held for seconds during an ID or item claim. Never committed.
-  items/
-    0007-rate-limit-feedback-endpoint.md
+  DONE.md        completed tickets, newest first
+  .lock/         transient; held for seconds during an ID or row claim. Never committed.
+  items/0007-rate-limit-feedback-endpoint.md
 ```
 
-Templates are in this skill's `templates/` directory. Copy `next` and `claim` too, and
-`chmod +x` both.
+Templates are in this skill's `templates/`. Copy `next` and `claim` too, and `chmod +x` both.
 
-**`FINDINGS.md` is a buffer, not a second queue.** It holds what a session noticed but cannot yet
-place — a possible row, a skill that misled, a cost pattern. Anything whose home is already obvious
-goes to that home instead, and anything that is a unit of work becomes a row here. `retro` empties
-it; its template says how.
+**`QUEUE.md` holds the header and the table, and nothing else** — standing reasoning lives in
+`RANKING.md`. The split is mechanical rather than tidy-minded: the queue is rewritten on every claim and
+close, by every window, so prose parked there is re-read on each of those edits while changing perhaps
+once a week. `./next` goes further, answering "what do I do next" in a handful of lines whether the queue
+holds ten rows or three hundred.
 
-**`claim` is not a convenience.** A claim edits `QUEUE.md`, and until that edit is committed the
-claim exists only in one working tree — so the next session to commit the queue carries it off
-under their own message, silently. The script locks, edits, commits and unlocks as one step,
-because the commit is exactly the thing a session under load forgets. See `CONCURRENCY.md`,
-*A claim must be durable the moment it is made*.
-
-**`QUEUE.md` holds the header and the table, and nothing else.** Standing reasoning about the
-order lives in `RANKING.md`. The split is mechanical rather than tidy-minded: the queue is
-rewritten on every claim and every close, by every window, so any prose parked in it is re-read
-— and in an agent session, re-echoed — on each of those edits, while changing perhaps once a
-week. `./next` exists for the same reason and goes further: it answers "what do I do next" in a
-handful of lines whether the queue holds ten rows or three hundred.
+**Use `./claim` rather than hand-editing a claim**; the commit inside the lock is the point, and
+`CONCURRENCY.md`'s *A claim must be durable the moment it is made* is why.
 
 ---
 
 ## Step 0 — Locate or create the backlog
 
-Find `.claude/backlog/` at the root of the current project. If it doesn't exist, scaffold it
-by copying `templates/config.yml`, `templates/QUEUE.md`, `templates/RANKING.md`,
-`templates/FINDINGS.md`, `templates/next`, `templates/claim` (both `chmod +x`), and creating
-`items/`, then fill in
-`config.yml` from what the repo actually uses: read `package.json` scripts (or `Makefile`,
-`pyproject.toml`) for the real test/lint/typecheck commands rather than guessing. Leave the
-`notion:` block out unless the user says this project collects feedback from other people,
-and leave `tracker:` / `cost_tracking:` out unless the project's `CLAUDE.md` profile points
-at a company tracker or the user asks for per-item cost attribution — see
-`references/TRACKER.md`. Never invent a project key: an item mirrored into the wrong
-project is noise in someone else's board.
+Find `.claude/backlog/` at the project root. If it doesn't exist, scaffold it by copying every template
+above (`chmod +x` `next` and `claim`), creating `items/`, and filling `config.yml` from what the repo
+actually uses — read `package.json` scripts (or `Makefile`, `pyproject.toml`) for the real
+test/lint/typecheck commands rather than guessing. Leave `notion:` out unless the user says this project
+collects feedback from other people, and `tracker:` / `cost_tracking:` out unless the project's
+`CLAUDE.md` profile points at a company tracker or the user asks for per-ticket cost attribution
+(`references/TRACKER.md`). Never invent a project key: a ticket mirrored into the wrong project is noise
+on someone else's board.
 
-**Resolve the conventions now**, per `references/CONVENTIONS.md`, and record the path in
-`config.yml` under `conventions.path` so the next session doesn't have to re-derive it. If
-nothing resolves, do not scaffold — report the missing wiring and stop. A backlog whose items
-cite no standard is a backlog that cannot be verified later.
+**Resolve the conventions now**, per `references/CONVENTIONS.md`, and record the path in `config.yml`
+under `conventions.path` so the next session doesn't re-derive it. If nothing resolves, do not scaffold —
+report the missing wiring and stop. A backlog whose tickets cite no standard cannot be verified later.
 
 ---
 
@@ -107,274 +89,206 @@ cite no standard is a backlog that cannot be verified later.
 | User says | Do |
 |---|---|
 | describes a bug / feature / annoyance | **Add** (Step 2) |
-| "what's next", "show the queue" | Read `QUEUE.md`, print the top rows, stop |
+| "what's next", "show the queue" | `./next <stage>`, print it, stop |
 | "move X up", "do Y first", "reprioritise" | **Rerank** (Step 4) |
 | "X is blocked on Y" | Set `status: blocked` and record `blocked_by:` in the item file |
-| "X needs an answer from someone" | Set `status: waiting` **and write the `## Waiting on` section** — the question and who can answer it. A `waiting` row with no such section is a defect `./next --waiting` reports, because it is indistinguishable from a forgotten one |
-| "sweep the findings", "import from Notion", "any new feedback?" | **Surface parked work** (Step 5) |
+| "X needs an answer from someone" | Set `status: waiting` **and write the `## Waiting on` section** — the question and who can answer it. A `waiting` row with no such section is a defect `./next --waiting` reports, being indistinguishable from a forgotten one |
+| "sweep the findings", "import from Notion" | **Surface parked work** (Step 5) |
 
-Adding is the default when the intent is ambiguous.
-
-Read-only operations — printing the queue, reporting what's next — do not need the conventions
-resolved. Anything that writes an item does.
+Adding is the default when the intent is ambiguous. Read-only operations don't need the conventions
+resolved; anything that writes a ticket does.
 
 ---
 
 ## Step 2 — Add an item
 
-Read `templates/item.md`. That template is the contract — every section exists because
-something downstream reads it. Fill it in as follows.
+Read `templates/item.md`. That template is the contract — every section exists because something
+downstream reads it.
 
-**Claim an ID — under the lock.** This is a read-modify-write and it is one of exactly two
-operations in the whole backlog that needs coordination. Reading `next_id`, using it, and
-writing back `next_id + 1` without the lock is how two parallel queue runs both take 29.
+**Claim an ID under the lock** — reading `next_id`, using it, and writing back the increment unlocked is
+how two parallel runs both take 29. Release in the same turn; the item file, ranking and the row are all
+unlocked. Before using the number, confirm no `items/<id>-*.md` exists: if one does the counter drifted
+behind reality, so take the next free number and fix `next_id` rather than overwriting someone's ticket.
 
-```bash
-BACKLOG=".claude/backlog"
-mkdir "$BACKLOG/.lock" 2>/dev/null || { cat "$BACKLOG/.lock/held-by"; }   # busy → see CONCURRENCY.md
-```
+**Write the Problem section from evidence, not paraphrase.** A repro, error text, a screenshot path goes
+in verbatim; details living only in this conversation are lost the moment it ends.
 
-Inside the lock: read `next_id`, write back `next_id + 1`, then `rm -rf "$BACKLOG/.lock"` in
-the same turn. Everything after this — writing the item file, ranking, inserting the row — is
-done unlocked.
+**Derive functional requirements.** What would a reviewer check to say "yes, this is done"? Each FR
+independently verifiable; two vague FRs are worse than one sharp one.
 
-Before using the number, confirm no `items/<id>-*.md` already exists. If one does, the counter
-drifted behind reality (a session died after creating a file but before incrementing); take the
-next free number and fix `next_id` rather than overwriting someone's item.
+**Fill the NFR table by elimination, not by default.** Read the conventions core's index first — it names
+which file governs each dimension and when it is triggered — then decide row by row whether it applies to
+*this* change. Mandatory triggers, the ones most often missed: auth, credentials, data visibility or
+untrusted input → **Security**; personal data, a new log field, a new egress destination, or data sent to
+a model → **Privacy**; user-facing UI → **Accessibility**; schema change or backfill → **Migration**;
+real users already on this path → **Progressive delivery**.
 
-**Write the Problem section from evidence, not paraphrase.** If the user gave a repro, error
-text, or a screenshot path, put it in verbatim. Details that live only in this conversation
-are lost the moment it ends.
+For each row you keep, write **what this ticket must satisfy** and cite the governing convention by bare
+filename; read that file if you are not certain what it requires, because the row must be a commitment
+rather than a guess. Delete rows that don't apply — a table of nine "N/A"s trains everyone to skip the
+table. **Never restate a convention's rules inside a ticket**: the ticket says what *this change* must
+do, the convention says what the rule *is*, and a copy drifts the first time either is edited, after
+which `verify` checks the stale copy. The core's always-on rules apply to every ticket and need no row.
 
-**Derive functional requirements.** Ask yourself what a reviewer would check to say "yes, this
-is done." Each FR must be independently verifiable. Two vague FRs are worse than one sharp one.
+**Set `qa_level` now, at queue time** — the decision that stops QA rigour quietly sliding session to
+session. On the pyramid in `testing-conventions.md`: **`verify`** where no test runner applies (docs,
+config, tooling), requiring a **scripted assertion** the ticket names explicitly — a grep, a path check,
+a schema validation; if you cannot write one the ticket needs sharper ACs, not this level. **`unit`** for
+pure logic, no wiring changed. **`integration`** where it crosses a seam: route → service → database,
+adapter contracts, serialization, migrations. **`e2e`** for a critical journey whose breakage is
+unacceptable, or a change only manifesting through the real build — needs a one-line justification of
+why integration can't cover it, and there should be few.
 
-**Fill the NFR table by elimination, not by default.** Read the conventions core's index first
-— it names which file governs each dimension and when that file is triggered. Then walk every
-row and decide whether it genuinely applies to *this* change. The triggers below are the ones
-worth naming explicitly because they are the ones most often missed:
+**Estimate `size`** — `s` one sitting, `m` a focused session, `l` multiple sessions or needs a design
+decision first. It lets a short session see the cost of row 1 without reordering around it: input to
+tie-breaker 4 only, never moving a ticket between tiers.
 
-- Touches auth, credentials, data visibility, or untrusted input? → Security row is mandatory.
-- Introduces or moves personal data, a new log field, a new egress destination, or sends data
-  to a model? → Privacy row is mandatory.
-- User-facing UI? → Accessibility row is mandatory.
-- Schema change or backfill? → Migration row is mandatory.
-- Real users already on this path? → Progressive delivery row is mandatory.
+**Record `expects:` — the files this ticket is likely to reach — while the code is still open.** You
+cannot write the FRs without reading the code, so the list costs almost nothing now and cannot be
+reconstructed later at the same price. Name the implementation files *and* the tests that exercise the
+behaviour being changed: a change altering what a behaviour *means* reaches every spec that drives it,
+and those are the ones a later reader misses. Its job is **triage, not protection** — it locks nothing, a
+best guess beats an empty field, and `develop` verifies it against the code on claim.
 
-For each row you keep, write **what this specific item must satisfy** in the middle column, and
-cite the governing convention file by bare filename in the third. Read that file if you aren't
-certain what it requires — the row must be a real commitment, not a guess. Delete rows that
-don't apply: a table of nine "N/A"s trains everyone to skip the table.
+**Write acceptance criteria as given/when/then**; `verify` checks these literally. **An AC must be
+provable within the ticket's own scope** — one whose reproduction needs something the same ticket sends
+to *Out of scope* cannot be met, and `verify` is right to fail it, leaving a finished ticket stuck between
+a red it cannot fix and a scope it must not grow. Write that as the observation it is ("the run reports X,
+whose fix is ticket NNNN").
 
-**Never restate a convention's rules inside an item.** The item says what *this change* must
-do; the convention says what the rule *is*. Copy the rule in and it drifts from source the
-first time you edit either one, and `verify` will then check the stale copy.
-
-The always-on rules in the conventions core apply to every item and need no row.
+If the report genuinely doesn't contain enough to write FRs or ACs, ask — once, batched, with your
+proposed defaults.
 
 ### Set `next` now — this skill routes, and `design` does not screen
 
-**Every ticket this skill writes leaves with `next: design` or `next: develop`, and the reason
-recorded in *Notes & decisions*.** Never leave it blank for a later stage to work out. The
-alternative — every ticket starting at `design`, which then decides whether there is design work —
-pays a full session's startup on each one to mostly answer "nothing to do"; all five tickets in one
-measured backlog were pure parsing logic with no interface at all. Here it costs nothing extra:
-deciding whether acceptance criteria can be written **is** the design question, you have to answer
-it anyway to know whether to write ACs, and you are answering it with the code already open.
-
-Recording the reason is what lets a later reader tell a considered skip from an oversight.
+**Every ticket this skill writes leaves with `next: design` or `next: develop`, and the reason recorded
+in *Notes & decisions*.** Never leave it blank for a later stage to work out. The alternative — every
+ticket starting at `design`, which then decides whether there is design work — pays a full session's
+startup on each one to mostly answer "nothing to do"; all five tickets in one measured backlog were pure
+parsing logic with no interface at all. Here it costs nothing extra: deciding whether acceptance criteria
+can be written **is** the design question, and you answer it with the code already open. The recorded
+reason lets a later reader tell a considered skip from an oversight.
 
 **Two triggers send a ticket to `design`, and they are genuinely different:**
 
-1. **A decision blocks writing acceptance criteria.** Which pattern, which flow, one step or
-   several — you cannot write a given/when/then until it is settled.
-2. **A person will look at the surface.** A screen, a layout, an interaction, an empty or error
-   state. The ACs may be writable, but what they should *say* turns on a judgement about the look.
+1. **A decision blocks writing acceptance criteria** — which pattern, which flow, one step or several.
+2. **A person will look at the surface** — a screen, a layout, an interaction, an empty or error state.
+   The ACs may be writable, but what they should *say* turns on a judgement about the look.
 
-**Everything else routes to `develop`, and this is the case most often mis-sent.** A ticket with no
-surface and no open decision goes straight to `develop` however unfamiliar it is — unfamiliar is not
-undecided. Concretely: **a parser** (the input format is the contract), **a migration** (the schema
-before and after is the contract), **a schema change**, **an API contract**, a config reader, a
-build script, a CLI flag. Each of those has a right answer discoverable by reading the code, and
-sending it to `design` buys a session that reports there was nothing to decide.
+**Everything else routes to `develop`, and this is the case most often mis-sent.** No surface and no open
+decision goes straight to `develop` however unfamiliar it is — unfamiliar is not undecided. Concretely:
+**a parser** (the input format is the contract), **a migration** (the schema before and after is the
+contract), **a schema change**, **an API contract**, a config reader, a build script, a CLI flag. Each
+has a right answer discoverable by reading the code, and sending it to `design` buys a session that
+reports there was nothing to decide.
 
-For a `design` ticket: write the *Open design question* section, set the stage, and **rank it
-normally** — it keeps its rank, because the work is worth what it was worth. This is a real stage,
-not a euphemism for vague: the test is whether a *decision* is missing, not whether detail is
-missing. Missing detail you sharpen now. Guessing acceptance criteria to avoid the stage is how a
-ticket gets built to a contract nobody agreed to.
+For a `design` ticket: write the *Open design question* section, set the stage, and **rank it normally**
+— it keeps its rank, because the work is worth what it was worth. A real stage, not a euphemism for
+vague: the test is whether a *decision* is missing, not whether detail is. Guessing acceptance criteria
+to avoid the stage is how a ticket gets built to a contract nobody agreed to.
 
-**Being wrong occasionally is affordable, which is what makes routing here correct.** A mis-route
-costs one stop-and-redirect: `develop` sets `next: design` and stops, `verify` sets `next: queue`
-on a stale contract. Pre-screening every ticket costs a session every time.
+**Being wrong occasionally is affordable, which is what makes routing here correct.** A mis-route costs
+one stop-and-redirect: `develop` sets `next: design` and stops, `verify` sets `next: queue` on a stale
+contract. Pre-screening every ticket costs a session every time.
 
-**Clearing a `design` ticket:** `design` writes the answer into *Notes & decisions*, adds the FRs
-and ACs it unblocks, deletes the *Open design question* section, and sets `next: develop` itself
-when the ticket is unclaimed — see that skill. It hands off to this one only when the ticket is
-already claimed.
-
-**Set `qa_level` now, at queue time.** This is the decision that stops QA rigor quietly
-sliding session to session. The levels sit on the testing pyramid defined in
-`testing-conventions.md` — read it if the choice isn't obvious:
-
-- `verify` — no test runner applies (docs, config, conventions, tooling). Requires a **scripted
-  assertion** the item names explicitly — a grep, a path-existence check, a schema validation.
-  If you cannot write one, the item isn't verifiable and needs sharper ACs, not this level.
-- `unit` — pure logic, isolated module, no wiring changed.
-- `integration` — crosses a seam: route → service → database, adapter contracts, serialization,
-  migrations.
-- `e2e` — a critical user journey whose breakage is unacceptable, or the change only manifests
-  through the real build/infrastructure. Needs a one-line justification of why integration
-  can't cover it, and the pyramid says there should be few of these.
-
-**Estimate `size`** — `s` (one sitting), `m` (a focused session), `l` (multiple sessions, or
-needs a design decision before it can start). This exists so a short session can see the cost of
-row 1 without being tempted to reorder around it. It is an input to tie-breaker 4 only; it never
-moves an item between tiers.
-
-**Record `expects:` — the files this item is likely to reach — while the code is still open.**
-You cannot write the FRs above without reading the code that implements the behaviour, so the
-list costs almost nothing at this moment and cannot be reconstructed later at the same price.
-Name the implementation files, and the tests that exercise the behaviour being changed: a change
-that alters what an existing behaviour *means* reaches every spec that drives it, and those are
-the ones a later reader will miss.
-
-Its job is **triage, not protection**. A session deciding what to take next compares candidates'
-`expects:` against the `touches:` of in-progress rows, and skips a collision without having to
-research every candidate itself — which is the cost this field exists to remove. So:
-
-- **It protects nothing and locks nothing.** Being wrong costs one suboptimal pick, which is why
-  a best guess beats an empty field and why it is fine for it to age.
-- **It is never promoted unchecked.** `develop` verifies it against the code on claim and writes
-  the corrected list to `touches:`, which is the live claim. Finding it wrong there is the system
-  working, not a defect in the capture.
-
-**Write acceptance criteria as given/when/then.** `verify` checks these literally.
-
-**An AC must be provable within the item's own scope.** An AC whose reproduction needs something
-the same item sends to *Out of scope* cannot be met, and `verify` is right to fail it — which
-leaves a finished item stuck between a red it cannot fix and a scope it must not grow. Write that
-as the observation it is ("the run reports X, whose fix is item NNNN"), and keep the AC to what
-this item can actually change.
-
-If the user's report genuinely doesn't contain enough to write FRs or ACs, ask — but ask once,
-batched, with your proposed defaults, not one question at a time.
+**Clearing a `design` ticket:** `design` writes the answer into *Notes & decisions*, adds the FRs and ACs
+it unblocks, deletes the *Open design question* section, and sets `next: develop` itself when the ticket
+is unclaimed. It hands off here only when the ticket is already claimed.
 
 ---
 
 ## Step 3 — Insert at the right rank
 
-**Every new item must be placed at a considered position. This is not optional and there is no
-default slot.** Appending to the bottom because it's new, or putting it on top because it's
-freshest, both destroy the property the queue exists for: that `develop` can take row 1 without
-a judgement call. The session capturing the item is the one that decides — it has the context,
-and a cold agent weeks later will not.
+**Every new ticket is placed at a considered position. Not optional, and there is no default slot.**
+Appending to the bottom because it's new, or putting it on top because it's freshest, both destroy the
+property the queue exists for: that `develop` can take row 1 without a judgement call. The capturing
+session decides — it has the context, and a cold agent weeks later will not.
 
-Rank is a **total order produced by pairwise comparison**, not a score. Never compute a weighted
-number; false precision produces ties, and ties are the thing we're eliminating. The only
-operator is:
+Rank is a **total order produced by pairwise comparison**, never a score. False precision produces ties,
+and ties are what the queue eliminates. The only operator is:
 
 > If I could ship exactly one of these two before the other, which would I regret skipping more?
 
 ### The coarse sort: five tiers
 
-Place the item in a tier first, then position it within that tier.
-
 | Tier | Name | The test |
 |---|---|---|
-| 1 | **Bleeding** | Damage accrues while it sits. Live user-visible breakage, security or privacy exposure, data loss or corruption, or output that is silently wrong — wrong answers that look right are the worst case, because nobody is counting the damage. |
-| 2 | **Compounding** | Nothing is bleeding, but the fix gets more expensive every day it waits: a wrong pattern being copied into new code, a migration that costs more per row that accrues, a foundation defect each new project inherits, a decision that blocks design. |
-| 3 | **Blocking** | Queued work cannot start until this lands. Its value is mostly the work it releases. |
-| 4 | **Value** | Someone asked for it and it makes something better. Nothing degrades if it waits a month. |
-| 5 | **Debt & polish** | Real, inert, and known. Accepted trade-offs, cleanups, ergonomics, speculative hardening. |
+| 1 | **Bleeding** | Damage accrues while it sits: live user-visible breakage, security or privacy exposure, data loss, or output that is silently wrong — wrong answers that look right are the worst case, because nobody is counting the damage |
+| 2 | **Compounding** | Nothing bleeding, but the fix gets more expensive every day: a wrong pattern being copied into new code, a migration costing more per row that accrues, a foundation defect each new project inherits |
+| 3 | **Blocking** | Queued work cannot start until this lands. Its value is mostly the work it releases |
+| 4 | **Value** | Someone asked for it and it makes something better. Nothing degrades if it waits a month |
+| 5 | **Debt & polish** | Real, inert, known. Accepted trade-offs, cleanups, ergonomics, speculative hardening |
 
-Tier 2 is the one that gets mis-ranked most often, because nothing looks wrong today. A
-convention error that three more projects will copy this month is genuinely more urgent than a
-feature request, and the queue should say so.
+Tier 2 is mis-ranked most often, because nothing looks wrong today. A convention error three more
+projects will copy this month is genuinely more urgent than a feature request.
 
 ### Tie-breakers within a tier, applied in this order
 
 Stop at the first one that separates them; do not average them.
 
 1. **Blast radius** — all projects > one project > one path in one project.
-2. **Unblocks more** — the item that releases two queued items beats the one that releases none.
-3. **Knowledge freshness** — context that is hot right now is a perishable asset. An item you
-   can specify precisely today and would have to re-derive in a month wins over an equal one
-   that will be just as cheap later.
-4. **Smaller and more certain** — clears the deck, returns feedback sooner, and costs less if
-   what you learn doing it changes the plan for everything below.
-5. **Capture order** — if nothing above separates them, the earlier item stays higher. Stability
-   is a feature; a queue that reshuffles on every capture stops carrying signal.
+2. **Unblocks more** — releasing two queued tickets beats releasing none.
+3. **Knowledge freshness** — context hot right now is a perishable asset. A ticket you can specify
+   precisely today and would have to re-derive in a month wins over an equal one that stays cheap.
+4. **Smaller and more certain** — clears the deck, returns feedback sooner, costs less if what you learn
+   changes the plan below it.
+5. **Capture order** — otherwise the earlier ticket stays higher. A queue that reshuffles on every
+   capture stops carrying signal.
 
 ### Rules that override the tiers
 
-- **A prerequisite outranks its dependent.** If A makes B possible or materially cheaper, A goes
-  above B even when B sits a tier higher. Dependency order beats importance order — otherwise
-  row 1 is something that cannot actually be started.
-- **An external deadline promotes.** Someone waiting on it, an API deprecation, a date — moves
-  to the top of its tier, and above its tier if the date is close.
-- **A regression guard ranks with the bug it guards.** Never split a fix from the test that
-  stops it returning and let the test drift down the queue.
-- **A blocked or waiting item keeps its rank.** Set the status and leave the line where it is. Do
-  not sink it to the bottom — when the blocker clears you would have to rediscover why it
-  mattered, and that judgement is exactly what you're storing here.
+- **A prerequisite outranks its dependent.** If A makes B possible or materially cheaper, A goes above B
+  even when B sits a tier higher — otherwise row 1 is something that cannot be started.
+- **An external deadline promotes** to the top of its tier, and above its tier if the date is close.
+- **A regression guard ranks with the bug it guards.** Never split a fix from the test that stops it
+  returning and let the test drift down the queue.
+- **A blocked or waiting ticket keeps its rank.** Set the status and leave the line. Sinking it means
+  rediscovering why it mattered when the blocker clears, which is exactly the judgement being stored.
 
 ### Never rank by
 
-- **Recency.** Freshest is not most important, and the append-to-top reflex is the single most
-  common way a stack rank rots.
-- **The session's current budget.** Do not sink a big item because tokens are short today or
-  float a small one because they are. Rank is absolute; matching work to the session you
-  actually have is `develop`'s problem, and the item's `size` field is there to inform that
-  without touching the order. A queue reordered around convenience never surfaces the important
-  expensive thing.
-- **How interesting it is to build.**
-- **A number.** No priority field, no score column. If two items feel equal, they aren't — apply
-  the tie-breakers until one wins.
-- **An imported label.** A Notion `Priority` of `Urgent` is one input to tier selection and
-  nothing more; the reporter was rating their own annoyance, not your queue.
+- **Recency.** The append-to-top reflex is the single most common way a stack rank rots.
+- **The session's current budget.** Rank is absolute; matching work to the session you actually have is
+  `develop`'s problem, and `size` informs that without touching the order.
+- **How interesting it is to build**, or **a number** — if two feel equal they aren't, so apply the
+  tie-breakers until one wins.
+- **An imported label.** A Notion `Priority: Urgent` is one input to tier selection and nothing more.
 
 ### Procedure
 
-Compare the new item against the current row 1. If it doesn't beat row 1, walk down until you
-find the first row it beats and insert above that. **Insert; do not re-sort the queue.** Rows
-you aren't comparing against stay where they are.
+Compare the new ticket against row 1. If it doesn't beat row 1, walk down to the first row it beats and
+insert above that. **Insert; do not re-sort** — rows you aren't comparing against stay where they are.
 
-**Insert with a single `Edit`**, matching the row you're going above and replacing it with your
-new row followed by it. Re-read `QUEUE.md` immediately before that edit — another session may
-have closed an item or inserted its own since you last read it. Never rebuild and rewrite the
-whole file: there is no `#` column to renumber, so there is never a reason to touch a row you
-did not decide about. See `CONCURRENCY.md` Rules 1 and 2.
+**Insert with a single `Edit`**, matching the row you're going above and replacing it with your new row
+followed by it, and re-read `QUEUE.md` immediately before that edit. Never rebuild and rewrite the whole
+file (`CONCURRENCY.md`, *Never rewrite `QUEUE.md` by hand*). If the `Edit` fails because the row no
+longer matches, the queue moved under you — re-read, re-check the placement, edit again; never widen the
+match to force it through.
 
-If the `Edit` fails because the row no longer matches, that means the queue moved under you.
-Re-read, re-check that your placement still holds, and edit again — do not widen the match to
-force it through.
+Then re-read rows 1–3: if the new ticket makes the existing row 1 look wrong, that's real information, so
+say so and propose the rerank. **Write the reasoning into `RANKING.md`** — the pared table cannot carry
+it, and a re-rank a month from now is an argument from nothing without it.
 
-Then re-read rows 1–3. If the new item's presence makes the existing row 1 look wrong, that's
-real information — say so and propose the rerank. Otherwise leave the rest alone.
-
-If you cannot justify the placement in one sentence, the problem is upstream: the item's
-problem statement is too vague to rank, so sharpen that before placing it.
+If you cannot justify the placement in one sentence, the problem statement is too vague to rank. Sharpen
+it first.
 
 ### Report the placement
 
-One line, naming the neighbours and the reason: *"Slotted at #3 — above the export tidy-up
-because it blocks 0009, below the auth fix which is Tier 1."* Assert the placement rather than
-asking permission; if the user disagrees they will say so, and that is cheaper than a question
-every time.
+One line naming the neighbours and the reason: *"Slotted at #3 — above the export tidy-up because it
+blocks 0009, below the auth fix which is Tier 1."* Assert it rather than asking permission; if the user
+disagrees they will say so, which is cheaper than a question every time.
 
 ---
 
 ## Step 4 — Rerank
 
-Move whole rows. There is nothing to renumber — line order is the rank, and the table carries
-no position column precisely so that moving one row does not rewrite every other. Never add a
-priority field to resolve a tie; the tie is resolved by which line is higher.
+Move whole rows. There is nothing to renumber — line order is the rank, and the table carries no position
+column precisely so moving one row does not rewrite every other. Never add a priority field to resolve a
+tie; the tie is resolved by which line is higher.
 
-A move is two single-line edits — delete the row from where it was, insert it where it goes —
-each preceded by a fresh read. Do not reorder a row that is `in-progress` under a token you did
-not mint: another session is working it, and its rank is no longer the interesting fact about
-it.
+A move is two single-line edits — delete from where it was, insert where it goes — each preceded by a
+fresh read. Do not reorder a row that is `in-progress` under a token you did not mint: another session
+is working it, and its rank is no longer the interesting fact about it. Record why in `RANKING.md`.
 
 ---
 
@@ -391,89 +305,69 @@ specification rules twice and then letting one copy drift.
 
 ### The buffer — `FINDINGS.md`
 
-**`queue` takes the entries that are units of work; `retro` takes the lessons.** Two sweepers, one
-file, and neither waits for the other. **An entry that is both is taken by both** — forcing the
-classification at write time would put friction exactly where it is least wanted, at the moment of
-noticing.
+**`queue` takes the entries that are units of work; `retro` takes the lessons.** Two sweepers, one file,
+neither waiting for the other. **An entry that is both is taken by both** — forcing the classification at
+write time puts friction exactly where it is least wanted, at the moment of noticing.
 
 For each entry that is a unit of work:
 
-1. **Do the Step 2 work properly.** A parked line is one sentence and a pointer; it has no
-   functional requirements, no NFR citations, no acceptance criteria and no QA level. Write them.
+1. **Do the Step 2 work properly.** A parked line is one sentence and a pointer: no FRs, no NFR
+   citations, no ACs, no QA level. Write them.
 2. **If you cannot specify it, do not rank it.** Write the item file with a *Problem* section and
-   `next: queue`, and **leave it out of `QUEUE.md`**. The queue is the file every session reads to
-   find its next row, so it holds only specified, ranked tickets — an unspecified row there costs
-   every reader a look and gives `develop` something it must refuse.
-3. **Rank per Step 3** once it is specified. A parked finding gets no rank bonus for having been
-   noticed recently; that is the recency trap Step 3 names.
+   `next: queue`, and **leave it out of `QUEUE.md`**. The queue is what every session reads to find its
+   next row, so it holds only specified, ranked tickets — an unspecified row costs every reader a look
+   and gives `develop` something it must refuse.
+3. **Rank per Step 3** once specified. A parked finding gets no rank bonus for having been noticed
+   recently; that is the recency trap.
 
-**Remove only the entries you processed, and commit in the same turn**, by pathspec. Leaving a
-processed entry is how the next sweep pays to read it again; removing an unprocessed one is how
-`retro`'s half disappears. `git commit -m "Sweep <n> findings into rows" -- .claude/backlog/…`
+**Remove only the entries you processed, and commit in the same turn**, by pathspec. Leaving a processed
+entry is how the next sweep pays to read it again; removing an unprocessed one is how `retro`'s half
+disappears.
 
 ### Notion (opt-in)
 
-Only if `config.yml` has `notion.enabled: true`. Most projects won't; skip silently otherwise and
-never prompt to set it up unless the user raises it. The flow is **one-way, Notion → local**:
-Notion is where other humans report, the local queue is what agents work from, and nothing is
-written back.
+Only if `config.yml` has `notion.enabled: true`. Most projects won't; skip silently otherwise and never
+prompt to set it up. The flow is **one-way, Notion → local**: Notion is where other humans report, the
+local queue is what agents work from, and nothing is written back.
 
 1. `mcp__claude_ai_Notion__notion-query-data-sources` on `notion.data_source_id`.
 2. Skip any page whose id already appears in `imported-notion-ids.txt`.
 3. Map its fields, then run the same three numbered steps above.
-4. Set `source: notion:<page-id>` in the frontmatter and append the page id to the imported log. A
-   Notion `Priority` of `Urgent` is an input to tier selection and nothing more — the reporter was
-   rating their own annoyance, not your queue.
+4. Set `source: notion:<page-id>` in the frontmatter and append the page id to the imported log.
 
 ---
 
 ## Step 6 — Commit the backlog, and only the backlog
 
-`queue` writes backlog files. It never writes source, so **every path in its commit is under
-`.claude/backlog/`** — and that has to be enforced by what you stage, not by what you believe you
-edited:
+`queue` writes backlog files and never source, so **every path in its commit is under
+`.claude/backlog/`** — enforced by what you stage, not by what you believe you edited:
 
 ```bash
 git commit -m "Capture 0007: <title>" -- \
   .claude/backlog/QUEUE.md .claude/backlog/items/0007-*.md .claude/backlog/config.yml
 ```
 
-**Commit by pathspec — the `--` and the explicit paths are the whole safety feature**, and
-`git add` followed by a bare `git commit` is not a substitute for it. `git commit` commits the
-*entire index*, not the paths you happened to stage a moment earlier, so a careful
-`git add .claude/backlog/… && git commit` still carries off whatever the other window had
-staged. The pathspec form commits those paths and nothing else, whatever else is in the index.
+The `--` and the explicit paths are the whole safety feature; **`git add` then a bare `git commit` is not
+a substitute** (`CONCURRENCY.md`, *The git index is shared*, which is the rule and the reason). It matters
+most here because capture usually runs in the window that is *not* developing, so the other window's
+half-finished work is in the same tree and frequently the same index.
 
-**Never `git commit -a`, `git add .`, or `git add -A` here.** Capture usually runs in the window
-that is *not* developing, so the other window's half-finished work is sitting in the same tree and
-frequently in the same index. Sweeping it up is silent: no error, no conflict, and a source change
-lands under a commit message about a backlog entry. This has happened, and it is why
-`CONCURRENCY.md`'s *The git index is shared* exists.
-
-If you find source paths already staged when you arrive, they are the other window's. Leave them:
-`git restore --staged <path>` takes them out of *your* commit without touching their working tree.
-Never `git stash` to tidy the tree — bare `stash` takes their uncommitted work with it.
+Source paths already staged when you arrive are the other window's: `git restore --staged <path>` takes
+them out of *your* commit without touching their working tree. Never `git stash` to tidy.
 
 ---
 
 ## Step 7 — Park what surprised you
 
-Before reporting, write anything that surprised you into `.claude/backlog/FINDINGS.md` as one
-dated line. This is the discovery-time recording `documentation-conventions.md` already requires,
-at the one moment the context is still hot.
+Before reporting, park what surprised you in `.claude/backlog/FINDINGS.md` — one dated line, while the
+context is still hot.
 
-Triggers, at minimum: **a template or skill step that had no correct answer for your case**; **a
-configured command that behaved unexpectedly**; **a scaffolding step you had to invent**.
+Triggers: **a template or skill step that had no correct answer for your case**, a configured command that
+behaved unexpectedly, a scaffolding step you had to invent.
 
-**An explicit "nothing surprised me" is a complete result.** The habit must not manufacture
-findings to justify itself — an invented entry is read, and paid for, by every later session.
-
-**Commit `FINDINGS.md` in the same turn you write it, by pathspec** —
-`git commit -m "Park what <skill> hit" -- .claude/backlog/FINDINGS.md`. A finding left uncommitted
-until close is one `git stash` from gone, and it is the other window's commit that carries it off.
-
-Anything whose home is already obvious — a mechanism, a rule, a unit of work — goes to that home
-instead of here.
+**An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
+entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
+uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
 
 ---
 
