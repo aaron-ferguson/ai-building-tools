@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0019 | Design asks on taste, decides on fact, and writes the ticket itself | chore | verify | 2026-08-23 | [items/0019-design-escalation-and-writes.md](items/0019-design-escalation-and-writes.md) |
 | 0018 | Queue routes to design rather than design screening everything | chore | verify | 2026-08-23 | [items/0018-queue-routes-to-design.md](items/0018-queue-routes-to-design.md) |
 | 0017 | Document one skill per session, with the measurement | chore | verify | 2026-08-23 | [items/0017-document-one-skill-per-session.md](items/0017-document-one-skill-per-session.md) |
 | 0016 | Make retro a batch process over many sessions | chore | verify | 2026-08-23 | [items/0016-retro-as-a-batch-process.md](items/0016-retro-as-a-batch-process.md) |

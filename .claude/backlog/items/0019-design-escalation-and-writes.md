@@ -2,11 +2,12 @@
 id: "0019"
 title: Design asks on taste, decides on fact, and writes the ticket itself
 type: chore
-next: develop
-status: ready
+next: verify
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
+closed: 2026-08-23
 parent: "0009"
 blocked_by: []
 relates: []
@@ -50,13 +51,13 @@ confident answers to questions that were never answerable by reasoning.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/design/SKILL.md`, when read, then it describes writing the ticket when
+- [x] AC1 — Given `skills/design/SKILL.md`, when read, then it describes writing the ticket when
       unclaimed and handing off when claimed, and names how to tell.
-- [ ] AC2 — Given that file, when read, then the taste/fact test is stated.
-- [ ] AC3 — Given that file, when read, then it requires the recommendation and the question in
+- [x] AC2 — Given that file, when read, then the taste/fact test is stated.
+- [x] AC3 — Given that file, when read, then it requires the recommendation and the question in
       one message.
-- [ ] AC4 — Given that file, when read, then it still says design must not invoke `prototype`.
-- [ ] AC5 — Given `skills/queue/SKILL.md`, when read, then its clearing-a-design-ticket paragraph
+- [x] AC4 — Given that file, when read, then it still says design must not invoke `prototype`.
+- [x] AC5 — Given `skills/queue/SKILL.md`, when read, then its clearing-a-design-ticket paragraph
       matches FR1 rather than claiming design never writes items.
 
 ## QA plan
@@ -77,3 +78,13 @@ confident answers to questions that were never answerable by reasoning.
 - FR4 is deliberately protective. The measured design run did not ask anything, went and read the
   workbook, and found that all three proposed inputs for a rule did not exist in the data. A rule
   written as "ask early" would have made that run worse.
+- **The old rule was not wrong, it was over-scoped.** "Only `queue` and `develop` write item
+  files" existed so two sessions could not write one item — so the correct narrowing is to the case
+  where one actually does: `claimed_by:` set and the row `in-progress`. Unclaimed, there is no
+  second writer to collide with, and the hand-off was pure cost.
+- FR4 is deliberately protective and is asserted separately from FR2 for that reason. The taste/fact
+  test read alone drifts toward "ask when unsure", which would have made the measured design run
+  worse — it asked nothing, checked the data, and killed all three candidate answers.
+- AC5's contradiction lived in two places, not one: queue's clearing paragraph (rewritten under
+  0018) *and* a trailing sentence claiming design and prototype never write item files. Grepping for
+  the rule rather than the paragraph is what found the second.

@@ -34,9 +34,12 @@ is defined by the project's conventions and cited, never restated. Resolve them 
 issued against no standard looks identical to one issued against a real standard, and that
 silent equivalence is the failure this whole design exists to prevent.
 
-**It writes nothing to the queue.** If the answer changes a backlog item, hand it to `queue`.
-Only `queue` and `develop` write item files, which is what makes it safe to run this in one
-window while another develops.
+**It writes the ticket it settled, when nobody else holds it.** Handing an answer back to `queue`
+just to have it typed in costs that skill's whole instruction file: measured at 5,699 tokens, five
+turns and **$0.67** to edit a single ticket. The rule against writing existed so two sessions could
+not write one item — so it applies exactly when one does. **How to tell:** the item's `claimed_by:`
+is set and its row reads `in-progress`. Unclaimed → you write it (Step 4). Claimed by anyone →
+hand off, because the token is not yours.
 
 **It never invokes `/prototype`.** When a question genuinely cannot be settled on paper, say so
 and say what a prototype would have to settle — the user decides whether to build one.
@@ -102,7 +105,25 @@ State the recommendation first, then the reasoning. Not a survey — a decision.
   with no stated cost has not been thought about hard enough.
 - **Say what it depends on.** If the answer flips on a fact you do not have — how many rows
   typically, whether this is the primary path, who the user actually is — name that fact rather
-  than assuming it quietly. Ask if it is cheap to ask.
+  than assuming it quietly.
+
+### When to involve a person: ask on taste, decide on fact
+
+**The test is what the answer turns on, not how important it feels.**
+
+- **It turns on taste** — which of two defensible looks, how formal the voice, whether this reads as
+  a place — then no amount of reasoning settles it and you are guessing on someone's behalf. Ask.
+- **It turns on fact** — what the data contains, what the code already does, what the convention
+  says, what the component exists — then go and check. **You have standing permission to decide
+  these without asking, and using it is the skill working.** A measured design run asked nothing,
+  went and read the workbook, and found that all three proposed inputs for a rule did not exist in
+  the data at all. A rule of "ask early" would have made that run strictly worse: the question was
+  answerable, and the answer killed every candidate.
+
+**When you do ask, the recommendation and the question go in the same message.** Not the question
+after the case is built — a session that asks early costs cents, and one that assembles the full
+argument and *then* asks has already spent the budget on a direction that may be rejected in one
+line. Lead with what you would do and why, then the one thing that would change it.
 
 **When the answer cannot be settled on paper**, say so plainly and stop. Then state:
 
@@ -119,10 +140,22 @@ job, and you can tell afterwards whether it did it. Do not invoke `/prototype` �
 A decision that lives only in a chat log gets decided differently next month by someone with
 less context. This step is most of the value of the skill.
 
-**Item-scoped** — it answers a specific backlog item's open question:
-hand `queue` the answer, and the answer to record in the item's **Notes & decisions**. `queue`
-writes the FRs and ACs the answer unblocks, deletes the item's *Open design question* section,
-and moves it to `next: develop`. Do not write to the item yourself.
+**Item-scoped, and the ticket is unclaimed** — you write it, here, now:
+
+1. Record the answer and what it rejected in the item's **Notes & decisions**.
+2. Write the FRs and the given/when/then ACs the answer unblocks. If the answer unblocks none, it
+   did not settle the question — say so rather than moving the stage.
+3. Delete the *Open design question* section.
+4. Set `next: develop`, `status: ready`, and commit by pathspec in the same turn.
+
+**Item-scoped, and the ticket is claimed** (`claimed_by:` set, row `in-progress`) — hand `queue`
+the answer and the *Notes & decisions* entry to record, and write nothing yourself. The token is
+not yours, and two sessions in one item file has no merge protocol behind it.
+
+**It has to be *seen* rather than decided** — set `status: waiting`, write the ask into the item's
+`## Waiting on` section (what must be looked at, and who can look), and stop. `./next --waiting`
+then surfaces it without anyone opening the ticket. Still do not invoke `/prototype`; name what it
+would have to settle and leave the call to the user.
 
 **Standing** — it sets a pattern beyond this one item: write a decision record where the
 project's `documentation-conventions.md` says decision records live. Include the question, the
