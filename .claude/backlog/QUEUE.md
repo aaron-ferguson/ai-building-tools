@@ -42,7 +42,6 @@ conversation belongs to another session.**
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0022 | Fix claim's fixed-index column parsing against the pared table | verify | in-progress | 0002 |
 | 0026 | Re-run the measured end-to-end exercise and record the verdict | develop | blocked | 0009 |
 | 0024 | Derive the blocked status from the graph rather than the column | develop | in-progress | 0002 |
 | 0023 | Add a close script mirroring claim | develop | ready | 0002 |

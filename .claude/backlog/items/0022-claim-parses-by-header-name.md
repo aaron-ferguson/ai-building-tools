@@ -3,10 +3,11 @@ id: "0022"
 title: Fix claim's fixed-index column parsing against the pared table
 type: bug
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
+closed: 2026-08-23
 parent: "0002"
 blocked_by: []
 relates: ["0006", "0010", "0011"]
@@ -14,8 +15,8 @@ source: agent
 expects:
   - skills/queue/templates/claim
 touches:
-claimed_by: "8ac2"
-claimed_at: 2026-08-23T17:22:08Z
+claimed_by:
+claimed_at:
 ---
 
 ## Problem
@@ -56,13 +57,13 @@ script installed, so the breakage reaches only a newly scaffolded project.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a five-column `QUEUE.md` with a `ready` row, when `claim <id>` runs, then the
+- [x] AC1 — Given a five-column `QUEUE.md` with a `ready` row, when `claim <id>` runs, then the
       row is set `in-progress`, the frontmatter is written, and the change is committed.
-- [ ] AC2 — Given that same table with a `blocked` row, when `claim <id>` runs, then it refuses
+- [x] AC2 — Given that same table with a `blocked` row, when `claim <id>` runs, then it refuses
       and names the actual status (`blocked`), not the empty string.
-- [ ] AC3 — Given a pre-`0010` eight-column table, when `claim <id>` runs on a `ready` row, then
+- [x] AC3 — Given a pre-`0010` eight-column table, when `claim <id>` runs on a `ready` row, then
       it still succeeds.
-- [ ] AC4 — Given a table whose header has no `Status` cell, when `claim` runs, then it exits
+- [x] AC4 — Given a table whose header has no `Status` cell, when `claim` runs, then it exits
       non-zero quoting the header it found.
 
 ## QA plan
