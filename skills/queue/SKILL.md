@@ -91,7 +91,7 @@ report the missing wiring and stop. A backlog whose tickets cite no standard can
 | describes a bug / feature / annoyance | **Add** (Step 2) |
 | "what's next", "show the queue" | `./next <stage>`, print it, stop |
 | "move X up", "do Y first", "reprioritise" | **Rerank** (Step 4) |
-| "X is blocked on Y" | Set `status: blocked` and record `blocked_by:` in the item file |
+| "X is blocked on Y" | Record `blocked_by:` in the item file; set the column to `blocked` **because** that derives it, never as a judgement of your own |
 | "X needs an answer from someone" | Set `status: waiting` **and write the `## Waiting on` section** — the question and who can answer it. A `waiting` row with no such section is a defect `./next --waiting` reports, being indistinguishable from a forgotten one |
 | "sweep the findings", "import from Notion" | **Surface parked work** (Step 5) |
 

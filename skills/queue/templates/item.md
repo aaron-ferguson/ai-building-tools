@@ -8,7 +8,10 @@ type: bug | feature | chore | debt
 next: queue | design | develop | verify
 # Whether anything can act at all. `ready` = it can · `waiting` = a PERSON is needed · `blocked`
 # = an open `blocked_by` · `in-progress` = a session holds a claim · `done` = terminal, the
-# ticket's row has moved to `DONE.md`. `waiting` and `blocked` are not one value because
+# ticket's row has moved to `DONE.md`. `blocked` is DERIVED and never authored: it holds when
+# `blocked_by` names a ticket that is not `done`, so it is written by whatever closes that
+# ticket, never typed as a judgement. `./next --drift` reports where it has gone stale.
+# `waiting` and `blocked` are not one value because
 # different things clear them: a person answering, versus another ticket closing. Merged,
 # telling which would mean opening the ticket. Two values sit off the stack rank and so out of
 # this list: a container ticket is `active` (it is never ranked, claimed, or built — its children

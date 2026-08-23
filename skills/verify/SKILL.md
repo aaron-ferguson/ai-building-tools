@@ -158,11 +158,23 @@ verdict file exists or is needed.
 1. Tick the ACs, set `status: done` with the date, clear `touches:` — a closed ticket must not keep
    reserving files — and clear `claimed_by:` / `claimed_at:`.
 2. Re-read `QUEUE.md` — another window has had the whole QA run to insert rows — then delete your row
-   with a single `Edit` and append it to `DONE.md`, newest first. Nothing else is touched.
-3. **Commit by pathspec**, **then** release the lock. The order matters: the lock guards the commit,
+   with a single `Edit` and append it to `DONE.md`, newest first.
+3. **Reconcile every row that named this ticket in `blocked_by`, in this same commit.** `blocked` is
+   derived, not authored: the ticket you just closed *is* what clears those rows, and nothing else
+   will. Grep the items for your ID, and for each one whose remaining `blocked_by` entries are all
+   `done`, set its row and its item `status:` to `ready` (or `waiting`, if its `## Waiting on` section
+   says a person is needed). Then run `./next --drift` and expect it to exit zero.
+
+   **This reverses the previous rule that a close touches "nothing else".** That rule was narrower
+   writes, which `CONCURRENCY.md` is right to want — but it left the only event that can clear a
+   `blocked` row unable to clear it, and a closed ticket once left four rows unavailable for a whole
+   session with nothing blocking them. Narrow writes lost to a queue that lies. You still hold the
+   lock, and you write no row that another session holds `in-progress` — if one of the dependents is
+   claimed, leave it and say so in your report; its own session will see the drift.
+4. **Commit by pathspec**, **then** release the lock. The order matters: the lock guards the commit,
    not just the edit, because the commit takes `QUEUE.md` whole (`CONCURRENCY.md`, *Lock every write to
    `QUEUE.md`*).
-4. Record this session's cost share if `cost_tracking:` is configured, and mirror the close if a
+5. Record this session's cost share if `cost_tracking:` is configured, and mirror the close if a
    tracker is (`references/TRACKER.md`) — outside the lock, since a network call must never be made
    while holding it. Failure is logged in the notes, never a blocker.
 

@@ -28,6 +28,7 @@ touches:
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
   - tests/next.test.sh          # new — the fixture harness AC1-AC4 name
+  - references/CONCURRENCY.md   # widened: FR4 contradicts "a stage writes only the ticket it holds"
 ---
 
 ## Problem
