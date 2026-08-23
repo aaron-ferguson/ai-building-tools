@@ -2,7 +2,15 @@
 id: "NNNN"
 title: <verb + noun phrase, what the change does>
 type: bug | feature | chore | debt
-status: design | ready | in-progress | blocked | needs-qa
+# Which skill acts next. `queue` = not specified enough for any stage to take it — captured
+# half-baked, or found stale by a later stage · `design` = a decision has to be settled before
+# acceptance criteria can exist · `develop` = specified, build it · `verify` = built, QA it.
+next: queue | design | develop | verify
+# Whether anything can act at all. `ready` = it can · `waiting` = a PERSON is needed · `blocked`
+# = an open `blocked_by` · `in-progress` = a session holds a claim. `waiting` and `blocked` are
+# not one value because different things clear them: a person answering, versus another ticket
+# closing. Merged, telling which would mean opening the ticket.
+status: ready | waiting | blocked | in-progress
 qa_level: verify | unit | integration | e2e
 # Rough cost, so a session can see what it's taking on WITHOUT reordering the queue.
 # s = one sitting · m = a focused session · l = multiple sessions or needs a design decision first.
@@ -16,8 +24,9 @@ source: user | agent | notion:<page-id>
 # checks it against the code on claim and promotes the corrected list to `touches:`.
 expects:
 # Written by `develop` when it claims the item, cleared when it closes or releases it.
-# The same token appears in QUEUE.md's Owner column. An item is yours only if you minted its
-# token in this conversation — see the ai-building-tools CONCURRENCY.md.
+# This is where the token lives; the pared QUEUE.md carries no ownership column. An item is
+# yours only if you minted its token in this conversation — see the ai-building-tools
+# CONCURRENCY.md.
 claimed_by:
 claimed_at:
 # The files this item is ACTUALLY claiming — a live claim, not just on the row. `develop` writes
@@ -68,7 +77,7 @@ The always-on rules in `CONVENTIONS_CORE.md` apply to every item and get no row 
 never optional, so a row would only invite treating them as a choice. `verify` reads them from source
 on every run.
 
-## Open design question  *(only while `status: design`)*
+## Open design question  *(only while `next: design`)*
 
 What has to be settled before this item can have acceptance criteria. Write it as a question with
 a decidable answer, not a topic — "modal or full page for the bulk edit?" not "bulk edit UX".
@@ -80,7 +89,8 @@ before running a test.
 - **Settle it with:** `/design` (returns a decision) or `/prototype <level>` (returns something
   to look at, when the answer needs to be seen rather than reasoned about)
 
-Delete this section when the item moves to `ready`, and record the answer in **Notes & decisions**.
+Delete this section when the item moves to `next: develop`, and record the answer in
+**Notes & decisions**.
 
 ## Acceptance criteria
 
