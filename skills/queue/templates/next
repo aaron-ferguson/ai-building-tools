@@ -22,16 +22,18 @@ QUEUE="$DIR/QUEUE.md"
 
 usage() {
   cat <<'USAGE'
-usage: ./next [<stage> | --waiting | --help]
+usage: ./next [<stage> | --waiting | --drift | --help]
 
   ./next             counts by stage and by status, plus anything another session holds
   ./next <stage>     the first takeable row for that stage, and its size
                      stages: queue | design | develop | verify
   ./next --waiting   every waiting row with the question it is waiting on
+  ./next --drift     every row whose Status column disagrees with its blocked_by; exits 1 if any
   ./next --help      this
 
-Takeable means: `next` matches the stage, `status` is `ready`, and no `blocked_by` entry is still
-open. A row with an open blocker is never offered, whatever its status column says.
+Takeable means: `next` matches the stage and no `blocked_by` entry is still open. `blocked` is
+DERIVED from `blocked_by`, so the column is a cache of that answer and never the authority — a
+row is offered on the graph's answer whatever the column says, and the disagreement is reported.
 USAGE
 }
 
@@ -80,6 +82,8 @@ row_for() { rows | awk -F'|' -v id="$1" '{ v = $2; gsub(/^ +| +$/, "", v); if (v
 # set inside would be discarded and every "did anything match?" test would read false.
 ids_where() { rows | awk -F'|' -v n="$1" -v want="$2" '{ v = $n; gsub(/^ +| +$/, "", v); if (v == want) { id = $2; gsub(/^ +| +$/, "", id); print id } }'; }
 
+all_ids() { rows | awk -F'|' '{ v = $2; gsub(/^ +| +$/, "", v); print v }'; }
+
 item_for() { ls "$DIR/items/$1-"*.md 2>/dev/null | head -1 || true; }
 
 # One scalar out of an item's frontmatter.
@@ -117,6 +121,14 @@ open_blockers_of() {
     if [ -z "$bi" ]; then printf '%s(no item file) ' "$b"; continue; fi
     [ "$(fm "$bi" status)" = "done" ] || printf '%s ' "$b"
   done
+}
+
+# `blocked` is derived, never authored: a row is blocked if and only if `blocked_by` names at least
+# one ticket that is not done. The Status column caches that answer and nothing kept the cache in
+# step — a ticket closed and four rows naming it stayed `blocked` for the rest of a session. So
+# every read here asks the graph, and `--drift` reports the cache lines that have gone stale.
+derived_of() {
+  if [ -n "$(open_blockers_of "$1")" ]; then printf 'blocked'; else printf 'ready'; fi
 }
 
 # The first line of an item's `## Waiting on` section — the question, without opening the ticket.
@@ -187,6 +199,35 @@ if [ "${1:-}" = "--waiting" ]; then
   exit "$bad"
 fi
 
+# --- --drift ----------------------------------------------------------------------------------
+# The Status column and `blocked_by` are two answers to one question, and only one of them is
+# authoritative. This names every row where they disagree, in both directions, so the staleness is
+# visible without opening a ticket. It exits non-zero on any drift: a report that prints and exits
+# zero is invisible to anything scripted around it, which is the same silent failure it exists to
+# remove. Nothing here writes — reconciling the column belongs to whatever closed the blocker.
+if [ "${1:-}" = "--drift" ]; then
+  drifted=0
+  for id in $(all_ids); do
+    row="$(row_for "$id")"
+    written="$(field "$row" "$STATUS")"
+    derived="$(derived_of "$id")"
+
+    # Only `blocked` is derived. `waiting` is cleared by a person and `in-progress` by a claim, so
+    # neither can drift against the graph — but a row sitting at either WITH an open blocker is
+    # still a lie about takeability, and that direction is reported.
+    if [ "$written" = "blocked" ] && [ "$derived" = "ready" ]; then
+      printf 'DRIFT     %s | written blocked, derived ready — no blocked_by entry is still open\n' "$id"
+      drifted=1
+    elif [ "$written" != "blocked" ] && [ "$derived" = "blocked" ]; then
+      printf 'DRIFT     %s | written %s, derived blocked — blocked_by still open: %s\n' \
+        "$id" "$written" "$(open_blockers_of "$id")"
+      drifted=1
+    fi
+  done
+  [ "$drifted" -eq 1 ] || printf 'no drift: every Status column agrees with its blocked_by\n'
+  exit "$drifted"
+fi
+
 # --- ./next <stage> ---------------------------------------------------------------------------
 if [ -n "${1:-}" ]; then
   stage="$1"
@@ -198,14 +239,23 @@ if [ -n "${1:-}" ]; then
   took=0
   for id in $(ids_where "$NEXT" "$stage"); do
     row="$(row_for "$id")"
-    [ "$(field "$row" "$STATUS")" = "ready" ] || continue
-    # A row with an open blocker is never offered, whatever its status column says. That is
-    # derived from the graph rather than trusted from the table, because the two disagree the
-    # moment a blocker closes and nobody edits the rows it was blocking.
+    written="$(field "$row" "$STATUS")"
+    # `ready` and `blocked` are both candidates, because `blocked` is derived and the column only
+    # caches it. Trusting the cache is the asymmetric half of the defect: a stale `blocked` hides
+    # takeable work and no reader ever notices, where a stale `ready` is caught one line below.
+    # `waiting` and `in-progress` are NOT derived — a person and a claim clear those — so they
+    # stay authoritative and a row at either is skipped here as before.
+    case "$written" in
+      ready|blocked) : ;;
+      *) continue ;;
+    esac
     ob="$(open_blockers_of "$id")"
     if [ -n "$ob" ]; then
       printf 'SKIP      %s | blocked_by still open: %s\n' "$id" "$ob"
       continue
+    fi
+    if [ "$written" = "blocked" ]; then
+      printf 'DRIFT     %s | column says blocked, no blocked_by entry is still open\n' "$id"
     fi
     it="$(item_for "$id")"
     printf 'TAKE      %s | %s | size %s | qa %s\n' \
