@@ -3,7 +3,7 @@ id: "0023"
 title: Add a close script mirroring claim
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -17,8 +17,8 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by:
-claimed_at:
+claimed_by: b6da
+claimed_at: 2026-08-23T21:35:05Z
 touches:
 ---
 
