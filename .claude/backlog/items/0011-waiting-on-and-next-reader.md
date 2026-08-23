@@ -2,11 +2,12 @@
 id: "0011"
 title: Add the Waiting on section and rewrite next for the new fields
 type: chore
-next: develop
-status: ready
+next: verify
+status: done
 qa_level: verify
 size: m
 created: 2026-08-23
+closed: 2026-08-23
 parent: "0009"
 blocked_by: []
 relates: ["0006"]
@@ -41,15 +42,15 @@ column set, so it stops working the moment 0010 lands.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a queue with a `ready`/`develop` row and a `ready`/`design` row, when
+- [x] AC1 — Given a queue with a `ready`/`develop` row and a `ready`/`design` row, when
       `./next develop` runs, then it prints the develop row and not the design row.
-- [ ] AC2 — Given a `waiting` row with a `## Waiting on` section, when `./next --waiting` runs,
+- [x] AC2 — Given a `waiting` row with a `## Waiting on` section, when `./next --waiting` runs,
       then the output contains that section's first line.
-- [ ] AC3 — Given a `waiting` row with no such section, when `./next --waiting` runs, then it
+- [x] AC3 — Given a `waiting` row with no such section, when `./next --waiting` runs, then it
       names that row as malformed and exits non-zero.
-- [ ] AC4 — Given a row whose `blocked_by` names an open ticket, when `./next develop` runs, then
+- [x] AC4 — Given a row whose `blocked_by` names an open ticket, when `./next develop` runs, then
       that row is not offered even if its status reads `ready`.
-- [ ] AC5 — Given no matching row for a stage, when `./next <stage>` runs, then it says so plainly
+- [x] AC5 — Given no matching row for a stage, when `./next <stage>` runs, then it says so plainly
       and exits zero — an empty stage is not an error.
 
 ## QA plan
@@ -72,3 +73,18 @@ column set, so it stops working the moment 0010 lands.
   second re-reads the first's output rather than its own ticket. Sequence them; do not run both.
 - FR2 reading `size` from frontmatter is what allows 0010 to drop the `Size` column: the one row
   a session is about to take is the one row it opens anyway.
+- **The reader now refuses a table shape it cannot parse**, rather than printing zero rows. It
+  still parses by *position* — header-name parsing is 0006's job and was deliberately not done
+  here — but the parked finding against 0010 was about the *silent* failure, not the indices: the
+  old script reported "0 ready of 2 rows" against the pared table and a reader would conclude the
+  backlog was empty. A loud refusal closes that without taking 0006's scope. **0006 should now be
+  re-specified against this shape**: its FR2/AC2 fixtures enumerate seven- and eight-column tables
+  that no longer exist.
+- **`--waiting` iterates ids, not rows through a pipe.** The first cut set its `bad` counter inside
+  a `while read` fed by a pipeline, so the counter died with the subshell and AC3 could never fail.
+  Ids carry no whitespace, so a plain `for` keeps the loop in the shell that reads the result.
+- The first fixture ranked the blocked-but-`ready` row *below* a takeable one, so the loop broke
+  before reaching it and AC4 passed for the wrong reason. A guard about row 1 has to be tested at
+  row 1.
+- `blocked_by` naming a ticket with **no item file** is treated as open and says so, rather than
+  resolving to takeable. A blocker nobody can find is not a blocker anybody cleared.

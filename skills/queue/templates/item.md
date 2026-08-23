@@ -81,6 +81,18 @@ The always-on rules in `CONVENTIONS_CORE.md` apply to every item and get no row 
 never optional, so a row would only invite treating them as a choice. `verify` reads them from source
 on every run.
 
+## Waiting on  *(only while `status: waiting`)*
+
+The specific question, and who can answer it — one or two lines, written by whoever sets the
+status. `./next --waiting` prints the first line of this section, which is the whole point: the
+set of things needing a person is scannable without opening a ticket. A `waiting` row with no
+section here is reported as a defect in the row rather than skipped.
+
+- **Question:**
+- **Who can answer:**
+
+Delete this section when the status changes.
+
 ## Open design question  *(only while `next: design`)*
 
 What has to be settled before this item can have acceptance criteria. Write it as a question with

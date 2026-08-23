@@ -43,7 +43,7 @@ Per project, at the repo root:
   config.yml     project settings, next_id, conventions path, test commands, optional tracker / cost / Notion blocks
   QUEUE.md       the stack rank — line order IS the rank. Header and table only.
   RANKING.md     why the order is what it is. Standing reasoning, read only for re-ranks.
-  next           reader: row 1, first takeable row, files in-progress items have claimed
+  next           reader: `next <stage>` the takeable row · `next --waiting` who is waited on
   claim          claims a row: lock, edit, write frontmatter, commit, unlock — one atomic step
   DONE.md        completed items, newest first
   .lock/         transient; held for seconds during an ID or item claim. Never committed.
@@ -102,7 +102,8 @@ cite no standard is a backlog that cannot be verified later.
 | describes a bug / feature / annoyance | **Add** (Step 2) |
 | "what's next", "show the queue" | Read `QUEUE.md`, print the top rows, stop |
 | "move X up", "do Y first", "reprioritise" | **Rerank** (Step 4) |
-| "X is blocked on Y" | Set `status: blocked` (or `waiting`, if a person is what is needed), record it in the item file |
+| "X is blocked on Y" | Set `status: blocked` and record `blocked_by:` in the item file |
+| "X needs an answer from someone" | Set `status: waiting` **and write the `## Waiting on` section** — the question and who can answer it. A `waiting` row with no such section is a defect `./next --waiting` reports, because it is indistinguishable from a forgotten one |
 | "import from Notion", "any new feedback?" | **Import** (Step 5) |
 
 Adding is the default when the intent is ambiguous.

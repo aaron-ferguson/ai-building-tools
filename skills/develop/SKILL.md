@@ -55,16 +55,16 @@ Read `references/TRACKER.md` before acting on either. In short:
 
 ## Step 1 — Select and claim the item
 
-**If the backlog has a `./next` script, run it instead of reading `QUEUE.md`.** It prints row 1,
-the first takeable row — `next: develop` and `status: ready` — the ready/total counts, and the files every in-progress
-item has claimed — the whole of what this step needs, in a fixed handful of lines however long
-the queue grows. `QUEUE.md` is the file both windows edit most, so it is also the one a session
-re-reads most; reading it whole to learn one row is the largest avoidable context cost in the
-backlog. Read the file itself only when the question is about *order* — a re-rank, a themes
-pass, or where a new item belongs. Otherwise:
+**If the backlog has a `./next` script, run it instead of reading `QUEUE.md`.** It prints the
+first takeable row for your stage — `next: develop`, `status: ready`, no open `blocked_by` — with
+its `size` and `qa_level`, plus the files every in-progress item has claimed. That is the whole of
+what this step needs, in a fixed handful of lines however long the queue grows. `QUEUE.md` is the
+file both windows edit most, so it is also the one a session re-reads most; reading it whole to
+learn one row is the largest avoidable context cost in the backlog. Read the file itself only when
+the question is about *order* — a re-rank, a themes pass, or where a new item belongs. Otherwise:
 
 ```bash
-.claude/backlog/next
+.claude/backlog/next develop      # the row to take, its size, and what it expects to touch
 ```
 
 If there is no such script, read `.claude/backlog/QUEUE.md`.
@@ -75,8 +75,13 @@ If there is no such script, read `.claude/backlog/QUEUE.md`.
 - Argument is an ID (`/develop 0007`) → that item, but say so if you're skipping higher rows
   and why you believe that's intended.
 - Row 1 is `blocked` or `waiting` → report which, and what clears it — a named ticket for
-  `blocked`, a named person for `waiting` — then take the next takeable row. Never reorder to
-  make your choice look correct.
+  `blocked`, and for `waiting` the question in the item's `## Waiting on` section, which
+  `./next --waiting` prints without opening the ticket. Then take the next takeable row. Never
+  reorder to make your choice look correct.
+- **A row with an open `blocked_by` is never takeable, whatever its status column says.** That is
+  derived from the graph, not read from the table, because the two disagree the moment a blocker
+  closes and nobody edits the rows it was blocking. `./next <stage>` applies it for you and prints
+  a `SKIP` line naming the blocker; applying it yourself is the fallback when there is no script.
 - Row is `next: design` → **skip it**, name it, and say what its open question is. The item has no
   acceptance criteria yet by definition, so building it means inventing the contract you would
   then be verified against. Settle it with `/design` or `/prototype` first. Do not "just start"

@@ -285,10 +285,12 @@ because each encodes a rule above that is otherwise a matter of remembering:
   **commits by pathspec**, and unlocks, with a `trap` releasing the lock on every failure path. Use
   it instead of hand-editing a claim. The commit is the point: it is what makes the claim durable
   rather than a dirty file, and a script cannot forget it.
-- **`./next`** — a reader, and nothing else. Prints row 1, the first takeable row, the counts, and
-  the files every in-progress item has claimed. It also **warns when `QUEUE.md` holds uncommitted
-  row changes**, which is the signal that someone's claim is about to be swept into someone else's
-  commit.
+- **`./next [<stage> | --waiting]`** — a reader, and nothing else. `./next <stage>` prints the
+  first takeable row for that stage; `./next --waiting` prints every row needing a person and the
+  question it needs answered; bare `./next` prints the counts. All three list the files every
+  in-progress item has claimed, and **warn when `QUEUE.md` holds uncommitted row changes** — the
+  signal that someone's claim is about to be swept into someone else's commit. It refuses to run
+  against a table shape it cannot parse, rather than reporting an empty backlog.
 
 A project may not have them if its backlog predates them; hand-editing under the lock is still
 correct, just easier to get wrong.
