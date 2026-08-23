@@ -91,3 +91,16 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   the identical gap: it says to run `./next verify` and `./claim <id>`, and this repo's backlog has
   neither, so the queue was read by hand and the claim done by hand under `.lock`. A retro fixing
   only the develop pointer would leave verify broken (pointer: skills/verify Step 1, 0023).
+- 2026-08-23 — `next`/`claim`'s `fm_list` does not strip YAML `#` comments, so an inline comment on a
+  `touches:` entry is returned as list entries and printed as claimed *files* in `./next`'s CLAIMED
+  FILES block. Annotating a frontmatter list is a natural thing to do and there is nothing to warn
+  you (pointer: templates/next `fm_list`, 0024).
+- 2026-08-23 — the reconcile gap 0024 fixes reproduced *while 0024 was being built*: a concurrent
+  `verify` closed 0022 on the pre-fix skill and 0026 went stale within minutes. A fix to a skill does
+  not reach the sessions already running it, so a fix's own window stays open until every live session
+  restarts — worth saying out loud wherever a skill change is committed (pointer: skills/verify Step 5,
+  0024, 0026).
+- 2026-08-23 — `develop` Step 5 says run "the project's whole test suite, every runner it has", and
+  this project has no runner at all: the suite is `tests/*.test.sh` run by hand, discoverable only by
+  `ls`. Neither `config.yml`'s empty `commands:` block nor the skill says where the suite is, so each
+  session rediscovers it (pointer: skills/develop Step 5, .claude/backlog/config.yml).
