@@ -77,8 +77,9 @@ handful of lines whether the queue holds ten rows or three hundred.
 ## Step 0 — Locate or create the backlog
 
 Find `.claude/backlog/` at the root of the current project. If it doesn't exist, scaffold it
-by copying `templates/config.yml`, `templates/QUEUE.md`, `templates/FINDINGS.md`,
-`templates/next`, `templates/claim` (both `chmod +x`), and creating `items/`, then fill in
+by copying `templates/config.yml`, `templates/QUEUE.md`, `templates/RANKING.md`,
+`templates/FINDINGS.md`, `templates/next`, `templates/claim` (both `chmod +x`), and creating
+`items/`, then fill in
 `config.yml` from what the repo actually uses: read `package.json` scripts (or `Makefile`,
 `pyproject.toml`) for the real test/lint/typecheck commands rather than guessing. Leave the
 `notion:` block out unless the user says this project collects feedback from other people,

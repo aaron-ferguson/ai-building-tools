@@ -141,10 +141,12 @@ Inside the lock, in this order:
    for the symbols this item will alter and include what comes back — an item written weeks ago
    names the modules the work is *about*, and cannot name everything that *exercises* the
    behaviour being changed. Correct `expects:` where it was wrong rather than silently diverging
-   from it; the next capture is calibrated by whether it turns out right. **List paths that
-   exist**: `ls` the directories first rather than writing the filename the prose implies. A
-   `touches:` naming a file that is not there reserves nothing, and the other window cannot tell
-   the difference between a path you invented and one you are about to create.
+   from it; the next capture is calibrated by whether it turns out right. **`ls` the directories
+   first rather than writing the filename the prose implies** — a path you guessed at reserves
+   nothing, and the other window cannot tell it from one you are about to create. **A file this
+   item will create is declared the same way**, because the field reserves scope rather than
+   describing the tree; on a greenfield item every path is one of those, and saying so inline is
+   what tells the other window which kind it is looking at.
 4. **Commit the claim by pathspec** — `git commit -m "Claim 0007 [$CLAIM]" -- <queue> <item>`.
    Skipping this is what leaves the claim invisible to the other window and strands it in
    someone else's commit later.

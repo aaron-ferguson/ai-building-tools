@@ -81,6 +81,14 @@ levels are cumulative, sitting on the pyramid defined in `testing-conventions.md
 lower level and call it verified — that is exactly the silent downgrade the per-item declaration
 exists to prevent.
 
+**A configured level with no tests yet is an empty set, not a red.** Because levels are
+cumulative, an `integration` item on a young project runs a unit command over a directory that
+holds nothing — and most runners exit non-zero on "no test files found", which reads as a
+failing level when nothing failed. Check whether the run collected zero tests before calling it,
+and report it as `no tests at this level` rather than a FAIL. The genuine red to keep is the
+opposite case: a level that *had* tests and now collects none, which means they moved or stopped
+matching the pattern.
+
 Scope to the change; full-suite runs are for when the user asks. Keep output lean, and raise
 verbosity only while investigating a failure.
 
