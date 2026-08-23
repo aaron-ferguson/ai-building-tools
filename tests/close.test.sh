@@ -232,11 +232,15 @@ echo "AC8 — closing reconciles every row that named this ticket in blocked_by"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" \
   '| 0007 | The blocker | verify | in-progress | 0000 |' \
   '| 0008 | Freed by the close | develop | blocked | 0000 |' \
-  '| 0009 | Still blocked by another | develop | blocked | 0000 |'
+  '| 0009 | Still blocked by another | develop | blocked | 0000 |' \
+  '| 0010 | Blocked by a ticket with no item file | develop | blocked | 0000 |'
 mkitem 0007 verify in-progress '"ab12"' '[]'
 mkitem 0008 develop blocked '' '["0007"]'
 mkitem 0009 develop blocked '' '["0007", "0099"]'
 mkitem 0099 develop ready '' '[]'
+# 0404 has no item file at all. Unrecognised is not the safe default: a blocker the script cannot
+# read counts as open, so freeing this row would be the wrong direction to fail in.
+mkitem 0010 develop blocked '' '["0007", "0404"]'
 commit_fixture
 out="$(run_close 0007 ab12)" && rc=0 || rc=$?
 [ "$rc" -eq 0 ] && ok "exits 0" || { bad "exits 0 (got $rc)"; echo "         got: $out"; }
@@ -244,6 +248,7 @@ assert_line "the freed row is set ready"          '| 0008 | Freed by the close |
 assert_line "the still-blocked row is untouched"  '| 0009 | Still blocked by another | develop | blocked | 0000 |' QUEUE.md
 assert_contains "the freed item is ready"         "$(cat "$FIX/$BL/items/0008-fixture.md")" 'status: ready'
 assert_contains "the still-blocked item is blocked" "$(cat "$FIX/$BL/items/0009-fixture.md")" 'status: blocked'
+assert_line "a row blocked by an unreadable ticket stays put" '| 0010 | Blocked by a ticket with no item file | develop | blocked | 0000 |' QUEUE.md
 assert_contains "the reconcile is reported"       "$out" '0008'
 assert_clean "the reconcile landed in the close commit"
 

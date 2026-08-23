@@ -90,19 +90,19 @@ Q_TITLE="$(column_in "$QHEAD" Title)"
 Q_NEXT="$(column_in "$QHEAD" Next)"
 Q_STATUS="$(column_in "$QHEAD" Status)"
 
-cell() { printf '%s' "$1" | awk -F'|' -v c="$2" '{ v = $c; gsub(/^ +| +$/, "", v); print v }'; }
+read_cell() { printf '%s' "$1" | awk -F'|' -v c="$2" '{ v = $c; gsub(/^ +| +$/, "", v); print v }'; }
 
 # --- re-read the row under the lock -----------------------------------------------------------
 row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
 [ -n "$row" ] || { echo "no row for $ID in QUEUE.md" >&2; exit 1; }
 
-next_field="$(cell "$row" "$Q_NEXT")"
+next_field="$(read_cell "$row" "$Q_NEXT")"
 [ "$next_field" = "verify" ] || {
   echo "$ID is at stage '$next_field', not 'verify' — only a verified ticket is closable" >&2
   echo "verify owns closing, and it holds the verdict when it acts; nothing else may close a row" >&2
   exit 1
 }
-title="$(cell "$row" "$Q_TITLE")"
+title="$(read_cell "$row" "$Q_TITLE")"
 
 # --- the ownership test -----------------------------------------------------------------------
 item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
@@ -200,6 +200,17 @@ mv "$tmp" "$DONE"
 
 # --- reconcile the rows this ticket was blocking -----------------------------------------------
 # Only rows whose every remaining blocker is done, and never a row another session holds.
+# Every blocker other than the one being closed. A blocker with no item file counts as open:
+# unrecognised is not the safe default, and freeing a row on a missing file is the wrong direction.
+other_blockers_all_done() {
+  for b in $(printf '%s' "$1" | tr -d '[]"' | tr ',' ' '); do
+    [ "$b" != "$ID" ] || continue
+    bfile="$(ls "$DIR/items/$b-"*.md 2>/dev/null | head -1 || true)"
+    [ -n "$bfile" ] && [ "$(fm_value "$bfile" status)" = "done" ] || return 1
+  done
+  return 0
+}
+
 FREED=""
 SKIPPED=""
 RECONCILED_PATHS=""
@@ -210,22 +221,13 @@ for dep in "$DIR"/items/*.md; do
   case "$blockers" in *"$ID"*) ;; *) continue ;; esac
   dep_id="$(fm_value "$dep" id)"
   [ -n "$dep_id" ] || continue
-
-  still_open=""
-  for b in $(printf '%s' "$blockers" | tr -d '[]"' | tr ',' ' '); do
-    [ "$b" != "$ID" ] || continue
-    bfile="$(ls "$DIR/items/$b-"*.md 2>/dev/null | head -1 || true)"
-    if [ -z "$bfile" ] || [ "$(fm_value "$bfile" status)" != "done" ]; then
-      still_open="$still_open $b"
-    fi
-  done
-  [ -z "$still_open" ] || continue
+  other_blockers_all_done "$blockers" || continue
 
   # A person is needed → waiting, not ready. The section is the authority (`## Waiting on`).
   if grep -q '^## Waiting on' "$dep"; then new_status=waiting; else new_status=ready; fi
 
   dep_row="$(awk -F'|' -v id="$dep_id" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
-  if [ -n "$dep_row" ] && [ "$(cell "$dep_row" "$Q_STATUS")" = "in-progress" ]; then
+  if [ -n "$dep_row" ] && [ "$(read_cell "$dep_row" "$Q_STATUS")" = "in-progress" ]; then
     SKIPPED="$SKIPPED $dep_id"
     continue
   fi
