@@ -3,7 +3,7 @@ id: "0024"
 title: Derive the blocked status from the graph rather than the column
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -14,11 +14,20 @@ relates: ["0011"]
 expects:
   - skills/queue/templates/next
   - skills/queue/templates/QUEUE.md
+  - skills/queue/templates/item.md
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
-claimed_by:
-claimed_at:
+  - skills/develop/SKILL.md
+claimed_by: "63c5"
+claimed_at: 2026-08-23T17:22:16Z
 touches:
+  - skills/queue/templates/next
+  - skills/queue/templates/QUEUE.md
+  - skills/queue/templates/item.md
+  - skills/queue/SKILL.md
+  - skills/verify/SKILL.md
+  - skills/develop/SKILL.md
+  - tests/next.test.sh          # new — the fixture harness AC1-AC4 name
 ---
 
 ## Problem
