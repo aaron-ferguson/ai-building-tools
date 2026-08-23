@@ -246,14 +246,16 @@ where you decide *not* to make the change. A script must release it on its failu
 
 There is no ambient session id, so ownership is proved by a token the owning session minted.
 
-When `develop` claims an item, it generates a short token and writes it in the `Owner` column:
+When `develop` claims an item, it generates a short token:
 
 ```bash
 CLAIM=$(head -c2 /dev/urandom | xxd -p)   # 4 hex chars, e.g. 7f3a
 ```
 
-It also writes `claimed_by: <token>` and `claimed_at: <ISO-8601 UTC>` into the item file's
-frontmatter, then reports the token to the user.
+It writes `claimed_by: <token>` and `claimed_at: <ISO-8601 UTC>` into the item file's frontmatter
+— **that is the token's home**, and the pared `QUEUE.md` carries no ownership column. Where a
+project's table still has one, the token goes there too. Either way `develop` reports it to the
+user, and the row's `Status` reads `in-progress`.
 
 **The test for ownership is memory, not inference: an item is yours only if you minted its token in
 this conversation.** If you find an `in-progress` row whose token you do not recognise, it belongs
