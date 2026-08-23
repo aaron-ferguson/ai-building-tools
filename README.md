@@ -174,8 +174,11 @@ A few decisions that look odd until you know why:
   else is a single-line edit, which two sessions can do concurrently without coordination. A close
   needs the lock because the *commit* takes `QUEUE.md` whole even though the edit is one row.
 
-Full protocol in [`references/CONCURRENCY.md`](references/CONCURRENCY.md); the conventions
-lookup in [`references/CONVENTIONS.md`](references/CONVENTIONS.md).
+Full protocol in [`references/CONCURRENCY.md`](references/CONCURRENCY.md), with each rule's incident
+in [`CONCURRENCY-INCIDENTS.md`](references/CONCURRENCY-INCIDENTS.md); the conventions lookup in
+[`references/CONVENTIONS.md`](references/CONVENTIONS.md). Two more are read only when
+`config.yml` opts in: [`TRACKER.md`](references/TRACKER.md) for mirroring to an external tracker and
+recording cost, [`NOTION.md`](references/NOTION.md) for importing reported feedback.
 
 ---
 
@@ -185,20 +188,26 @@ MIT.
 
 ## Testing
 
-The shipped scripts are the only executable code in this repo, so they are the only thing with a
-test. Run every guard:
+Two things carry guards: the shipped scripts, and the skill files' own contract where a command can
+measure it. Run every guard:
 
 ```bash
-tests/claim.test.sh
-tests/close.test.sh
+tests/claim.test.sh        # ./claim — locking, row parsing, refusals
+tests/close.test.sh        # ./close — ticking ACs, DONE.md, reconciling dependents
+tests/next.test.sh         # ./next — takeability, --waiting, --drift
+tests/batching.test.sh     # develop and verify state the batching rule, not the old prohibition
+tests/skill-size.test.sh   # every skills/*/SKILL.md within its byte ceiling or a recorded floor
 ```
 
 Each case scaffolds a throwaway git repo with one `QUEUE.md` shape, runs the script against it,
 and asserts on the exit code, the message and the resulting files — then removes the fixture,
 including on failure. Refusals are asserted on the *message* and on *files unchanged*, never on the
-exit status alone: "exits non-zero" is satisfied by the silent refusal the guard exists to forbid. There is no runner and no framework; a guard is a `sh` file that exits
-non-zero. The skills' own behaviour is markdown and is verified by `/verify` against a ticket's
-acceptance criteria instead.
+exit status alone: "exits non-zero" is satisfied by the silent refusal the guard exists to forbid. There
+is no runner and no framework; a guard is a `sh` file that exits non-zero.
+
+A guard on the skills only asserts what a command can measure — a phrase present or absent, a byte
+count. Everything else about a skill's behaviour is prose, and is checked by `/verify` against a
+ticket's acceptance criteria instead.
 
 ## Editing this plugin
 
