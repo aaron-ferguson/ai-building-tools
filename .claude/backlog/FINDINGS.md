@@ -87,3 +87,36 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   nothing, because the file wraps between the two words. Every prose edit to these files has the
   defect its assertions have, and nothing warns an editor (pointer: skills/queue qa_level, this
   session).
+- 2026-08-23 — a **mutation that silently fails to apply reads exactly like a guard that holds**. Six
+  mutations were run against the new `close` guards; two came back green and one of those had simply
+  not applied (the `perl` pattern never matched), so the "green" was a report about an unmodified
+  file. Nothing in the loop distinguishes the two outcomes. Worse in shell specifically: `perl -pe`
+  interpolates `$var` out of the line being mutated, producing a broken mutation whose red proves only
+  that the assertions touch that *line*. `testing-conventions.md` tells you to prove a guard can fail
+  but says nothing about proving the *mutation* landed — `diff` it (pointer: testing-conventions.md
+  "Prove a new guard fails", tests/close.test.sh).
+- 2026-08-23 — **FR6's ceiling was already breached before the ticket that had to hold it.** 0020 set
+  `CONCURRENCY.md` at 1,500 tokens; 0024 and the retro pushed it to ~1,637, and 0023 was the ticket
+  that discovered it, by being the next one required to measure. A ceiling with no gate is found by
+  whichever ticket happens to cite it, which is arbitrary. Either the ceiling needs a scripted check
+  in `tests/` or the rule needs to say who measures it and when (pointer: 0020 FR4, 0023 AC7,
+  references/CONCURRENCY.md).
+- 2026-08-23 — the margin under that ceiling is now **7 tokens**, so the next edit to
+  `CONCURRENCY.md` breaches it again and the one after that has nothing left to trade. The file's
+  compressible prose is spent; further growth has to come out of a *rule*, which no session should
+  decide alone (pointer: references/CONCURRENCY.md, references/CONCURRENCY-INCIDENTS.md).
+- 2026-08-23 — **a `close` script now exists as a template while this repo's own backlog still has
+  none of the three installed**, so the `/verify` session that closes 0023 cannot use the thing 0023
+  built. Instantiating one script alone would be worse than none — it would hide the asymmetry the
+  earlier findings name — so this is a vote for instantiating all three as one unit of work (pointer:
+  the three earlier missing-scripts findings above, skills/queue/templates/).
+- 2026-08-23 — **renaming a rule is never a one-file edit.** `CONCURRENCY.md` names its rules and says
+  to cite by name, so retitling *The two scripts* to *The three scripts* broke two citations in
+  `CONCURRENCY-INCIDENTS.md`. Nothing greps for a stale citation, and a wrong rule name reads as a
+  correct one (pointer: references/CONCURRENCY.md:3, references/CONCURRENCY-INCIDENTS.md).
+- 2026-08-23 — `develop` Step 1 says to compare a candidate's `expects:` against every `in-progress`
+  `touches:`, but **nothing tells a session to check the ticket's own `expects:` against a stage that
+  landed after it was written**. 0023's FR1 enumerated a five-step close; 0024 had since made the
+  reconcile a sixth step of `verify` Step 5, and building FR1 literally would have automated the
+  stale-cache defect 0024 exists to fix. The staleness check in Step 2 is aimed at code that moved,
+  not at a *sibling ticket* that moved (pointer: skills/develop Step 2, 0023 FR7, 0024).
