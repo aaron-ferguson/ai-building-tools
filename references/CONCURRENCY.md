@@ -1,296 +1,106 @@
 # Backlog concurrency protocol
 
-Read by `queue`, `develop`, `verify`, and `retro`. The backlog is designed to be worked by **two or more
-sessions at once** — typically one window developing while another queues feedback and verifies.
-These rules are what make that safe. They are not optional; a session that ignores them silently
-destroys another session's work.
-
-**The rules are named, not numbered.** Inserting one in the middle would renumber every citation
-elsewhere, which is the same failure the queue table avoids by having no position column. Cite a
-rule by its name.
-
-The file is in two parts, and **which part applies depends on where the queue lives**:
-
-- **Part 1 — Two sessions, one repository.** Applies to *every* project. Two agent sessions
-  sharing a working tree contend over git itself, whatever the backlog is stored in.
-- **Part 2 — When the queue is a local file.** Applies only to the `QUEUE.md` backend. A project
-  whose backlog lives in Jira or Notion can skip it entirely: there is no lock, no row editing and
-  no commit, because the tracker is the store and its API write is the whole transaction.
-
-Mixing the two is a real cost, not a tidiness point — it tells a tracker-backed project to take a
-directory lock it has no use for, and buries the rules it does need.
+Read by every skill before it touches a backlog file. **Rules are named, not numbered** — cite by
+name. **`CONCURRENCY-INCIDENTS.md` holds each rule's incident, its reasoning, and what to do in a live
+conflict**; read it then, or to argue with a rule. **Part 1 applies everywhere; Part 2 only to the
+`QUEUE.md` backend**, since a tracker's API write is the whole transaction.
 
 ---
 
 # Part 1 — Two sessions, one repository
 
-Applies to every project regardless of where the queue lives.
-
 ## The git index is shared, and it is the easiest thing to lose work to
 
-The queue has locks and tokens. The index has neither: it is one staging area per repository, and
-any session can commit what another session has staged.
+One staging area per repository, no lock, no token: any session can commit what another staged.
 
-**This is not hypothetical.** A window running `queue` committed with the index swept whole and
-carried off a developing window's staged file deletion, so that deletion is recorded in a commit
-about an unrelated backlog entry. Nothing errored. Neither session noticed until afterwards.
-
-- **Commit by pathspec: `git commit -m "…" -- <paths>`.** `git commit` writes the *whole index*,
-  not the paths you staged a moment ago, so even a disciplined `git add <my files> && git commit`
-  carries off anything the other window left staged. `git commit -a` and `git add .` / `-A` are
-  worse again. **A file git does not yet know cannot be named in a pathspec** — committing a file
-  the work just created fails with `did not match any file(s) known to git`. Run
-  `git add -N <path>` first, in the same turn: intent-to-add records the path without staging its
-  content, so the commit still takes only what you name.
-- **Stage and commit in the same turn.** Staged work is exposed until it lands, so staging before
-  a long test run and committing after it holds the window open for exactly the loss above.
-- **Read back what you are about to commit.** `git diff --cached --name-only` before every commit;
-  if a path in it is not yours, `git restore --staged <path>` instead of committing it.
-- **Never bare `git stash`** — it takes the other window's uncommitted work with it. Scope it to
-  your own paths (`git stash push -u <path>…`), or do not stash at all.
-- A commit describes the work of the session that made it. If you find another session's change
-  already committed under your message, say so plainly in your report — do not rewrite their
-  history to tidy it.
+- **Commit by pathspec — `git commit -m "…" -- <paths>`.** Bare `git commit` writes the whole index,
+  so `git add <mine> && git commit` still takes their work. Never `-a`, `add .`, `add -A`. A file git
+  does not know yet needs **`git add -N` first**, or the pathspec fails.
+- **Stage and commit in one turn** — staged work is exposed until it lands — and **read back**
+  (`git diff --cached --name-only`), then `git restore --staged` anything not yours.
+- **Never bare `git stash`**; it takes their uncommitted work. **Your message on their change → report,
+  never rewrite history.**
 
 ### A pathspec is necessary but **not sufficient**, and this is the part that surprises people
 
-A pathspec limits the commit to the paths you name. It does **not** limit it to the *changes you
-made*: it commits the entire current state of those paths, including edits another session made to
-the same file.
-
-For a file only you are touching, those are the same thing, which is why the rule reads as
-airtight. For a file both windows edit — and on the local-file backend that is the queue, every
-time — they are not. **No discipline on your side prevents it**, because the other session's edit
-was already in the file before you opened it. There is no moment at which the file contains only
-your change, so there is nothing to time correctly.
-
-Two consequences:
-
-- **Prefer single-writer files.** Most files are naturally one session's at a time; a shared one
-  is a hazard to be minimised, not managed. Where a shared file is unavoidable, keep the window in
-  which it is dirty as short as possible — see *A claim must be durable the moment it is made*.
-- **Know which files are shared, because it is more than the queue.** The obvious one is
-  `QUEUE.md`. The one that surprises people is **the project's own documentation** — `CLAUDE.md`,
-  conventions, any doc a close writes to — because every session records what it learned there,
-  at exactly the moment it is also committing. Both windows write it, neither expects the other
-  to. This paragraph exists because the session that wrote this rule swept the other window's
-  `CLAUDE.md` edits into the very commit that introduced the fix.
-- **When it happens anyway, report it; do not rebase.** The other session may already be building
-  on the commit. Their rows land correctly under your message, which is the whole cost, and it is
-  cheaper than rewritten history.
+It limits the commit to the paths you name, **not to the changes you made** — their edits to those
+paths go too, and **nothing you do prevents it**. Prefer single-writer files, and know **the shared
+ones are more than the queue**: the project's own docs are written by every session as it commits.
 
 ## The working tree is shared too, so claim files as well as rows
 
-The queue is not the only thing two windows contend over. A second window running the test suite
-while the first is mid-edit is testing a file set that never existed, and its red — or its green —
-means nothing.
+A row claim owns the *work*, not the *files*: two sessions can hold different rows and still spend an
+hour in one component, unwarned.
 
-`verify` checks `git status --porcelain` before running anything and says plainly when the tree
-carries changes outside the item under test. It still runs; it labels the result advisory rather
-than pretending to a confident verdict. See `verify` Step 2.
-
-**A row-level claim says who owns the *work*, not who owns the *files*.** Two sessions can hold
-different rows, obey every rule above, and still spend an hour editing the same component — and
-nothing so far would have warned either of them. So a claim carries a file scope:
-
-- **Two fields carry file scope, and the split is the point.** `queue` writes `expects:` — the
-  files an item is *predicted* to reach, recorded while the code is already open to write the
-  FRs. `develop` writes `touches:` on claim — what it is *actually* claiming, produced by
-  checking `expects:` against the code rather than copying it. Both are declarations; neither
-  locks.
-- **They fail differently, which is what justifies keeping both.** A wrong `expects:` costs one
-  suboptimal pick, so it may be a best guess and it may age. A wrong `touches:` costs two
-  sessions in one file, which has no merge protocol behind it. Holding one field to both
-  standards is what forces the choice between a scope nobody can trust and a scope nobody can
-  afford to write.
-- **Predict at capture, verify at claim.** Without a prediction, a session choosing what to take
-  has to research each candidate just to learn whether it may take it — and again for the next
-  row down, which is the cost that makes the collision check get skipped. Without the
-  verification, the prose leads: an item names the modules the work is *about* and cannot name
-  everything that *exercises* the behaviour being changed. One item declared four implementation
-  files and went on to edit three specs, a shared test helper and the runner's config, because a
-  change that alters what a behaviour **means** reaches every test that drives it.
-- **Before claiming, read the `touches:` of every `in-progress` item** and compare it against your
-  candidate's `expects:`. If your candidate overlaps
-  one, do not take it: take the next `ready` row whose scope is clear, and name the row you
-  stepped over and the scope it collided with. Overlap is a reason to pick differently, never
-  something to negotiate around.
-- If the work reaches further than declared, widen `touches:` the moment you know. A scope that
-  silently grows is worse than none, because the other window is trusting it.
-- **An `in-progress` row whose `touches:` is empty is ambiguous, and the safe reading is "held".**
-  It means either "not declared yet" or "released as it closes", and nothing visible from outside
-  distinguishes them. Ask, or take a row that does not depend on the answer; silence is not
-  permission.
-- Nothing rescues an overlap taken anyway. There is no merge protocol here; the whole design is to
-  keep two sessions out of the same files in the first place.
-
-**The shape this protects is one developing window plus one queueing or verifying window.** Two
-windows both running `develop` is the mode where this rule earns its keep — and if every `ready`
-row collides with an in-progress scope, the honest answer is that there is nothing to develop right
-now, not that the collision is acceptable.
+- **Compare your candidate's `expects:` against every `in-progress` `touches:` before claiming.**
+  Overlap means pick differently: take the next clear `ready` row, name the one you stepped over. All
+  rows collide → nothing is developable right now.
+- **`queue` writes `expects:`** (predicted, code open); **`develop` writes `touches:` on claim**
+  (actual, checked against the code, never copied). Why two fields: `CONCURRENCY-INCIDENTS.md`.
+- **Widen `touches:` as the work reaches further**, and read an **empty `touches:` on an `in-progress`
+  row as "held"** — silence is not permission.
+- **`verify` marks its verdict advisory** on changes outside the ticket: a suite over a file set that
+  never existed means nothing either way.
 
 ## A claim must be durable the moment it is made
 
-A claim that only you can see is worse than no claim at all: it reads as taken to you and as free
-to everyone else, and both sessions proceed confidently.
-
-**Durable means visible to the other session without any further act by you.** What satisfies that
-depends on the backend, and the difference is not cosmetic:
-
-- **Tracker-backed (Jira, Notion, …)** — the API write *is* the durability. When the call returns,
-  the claim is visible to every session and every human. Nothing further is required, and none of
-  Part 2 applies.
-- **Local file** — the edit is durable only once **committed**. An uncommitted row edit lives in
-  one working tree; the other session cannot see it, and the next session to commit that file
-  carries it off under their own message. Commit it inside the lock, in the same turn as the edit.
-
-**This was learned the expensive way.** A claim was written to `QUEUE.md` and left uncommitted for
-the life of the item, because nothing in this protocol said to commit it. The window that closed
-the *next* item committed the queue and swept both pending claims into a commit about something
-else. Everything worked; the history is simply wrong, and the sweep was invisible until someone
-read the diff afterwards.
+A claim only you can see reads as taken to you and free to everyone else, and both proceed. **Durable
+= visible to the other session with no further act by you.** Tracker-backed, the API write is it.
+Local file, **only once committed** — inside the lock, same turn, or the next session to commit the
+file carries it off under its own message.
 
 ## A stage writes only the ticket it holds
 
-**This rule replaces *`verify` never writes the queue*, which was a workaround for a hazard the
-architecture no longer has.** That rule made `verify` read-only so it was safe to run in a second
-window against a ticket the first window was developing. With one skill per session, `verify`
-only acts on tickets whose `next` is `verify` — and nothing is developing those, because `develop`
-stopped and released the claim before setting that field.
+**Replaces *`verify` never writes the queue***, which guarded a hazard one-skill-per-session removed.
 
-What the rule always meant, and still holds:
-
-- **Write nothing another session reads for coordination while that session holds the ticket.** A
-  stage claims the row it is about to write, and writes only that row and that item file.
-- **A stage that finds a ticket at another stage refuses it** rather than acting anyway. `develop`
-  skips a `next: design` row; `verify` refuses anything whose `next` is not `verify`. The `next`
-  field is what keeps two stages off one ticket, and it only works if every stage honours it.
-- `verify` now owns closing, because it is the stage holding the verdict at the moment it acts on
-  it. There is no window between testing and closing for a green to go stale in.
+- **Write nothing another session reads for coordination while it holds the ticket.** Claim the row
+  you write; write only that row and its item file.
+- **A stage finding a ticket at another stage refuses it** — `develop` skips `next: design`, `verify`
+  refuses anything not `next: verify`. That field keeps two stages off one ticket.
+- **`verify` owns closing**, holding the verdict when it acts, so no green goes stale.
 
 ---
 
 # Part 2 — When the queue is a local file
 
-Applies only to the `QUEUE.md` backend. Skip this part entirely on a tracker-backed project.
-
-The whole of it rests on one idea: **make the common operations touch one line, and serialise every
-write to the file.**
-
 ## Never rewrite `QUEUE.md` by hand
 
-Use `Edit` on the single row you are changing. Never `Write` the file, never "read it, rebuild it,
-write it back" in a tool call. A full-file write from a copy read thirty seconds ago clobbers every
-row another session touched in between, and the loss is silent — no conflict, no error, the row is
-just gone.
-
-This is why **the table has no `#` column.** Line order is the rank; a position column would have to
-be renumbered on every insert and every close, which turns every edit into a full-file rewrite and
-re-creates exactly the collision this protocol exists to prevent. Do not add one back. To learn an
-item's rank, count the rows.
-
-Two sessions editing *different* rows with `Edit` do not conflict, and need no coordination at all.
-
-**`./claim` is the one exception, and it earns it by holding the lock.** It rebuilds the file, which
-is safe only because every other writer serialises behind the same lock — see *Lock every write*.
+`Edit` the one row you are changing. Never `Write`, never read-rebuild-write: a full-file write from a
+copy read a minute ago clobbers every row touched since, with no conflict and no error. Hence **no `#`
+column** — renumbering *is* that rewrite; count rows to learn a rank. Different rows need no
+coordination. **`./claim` is the one exception**, earning it by holding the lock while it rebuilds.
 
 ## Re-read immediately before you write
 
-Between reading a row and editing it, another session may have changed it. Read the file again right
-before the `Edit`, and confirm the row still says what you think. If it changed, stop and re-decide
-— do not force your version over it.
-
-`Edit` helps you here: it fails rather than guessing when its `old_string` no longer matches. Treat
-that failure as information, not an obstacle to route around.
+Read the row again right before the `Edit`. `Edit` fails rather than guessing when `old_string` stops
+matching — that is information, not an obstacle to route around.
 
 ## Lock every write to `QUEUE.md`
 
-**This rule was narrowed once and has been widened back.** It used to lock only the two operations
-that are literal read-modify-writes — claiming an id and claiming a row — and exempted closing a row
-on the reasoning that a close is "a single-line edit to a row only you hold."
+**Every write, no exemptions**: claiming an ID (`queue`), claiming a row (`develop`, `verify`), closing
+a row (`verify`). Closing was once exempt — true of the *row*, false of the *file*, since the commit
+takes the whole file.
 
-That reasoning is true about the *row* and false about the *file*. The edit is single-line; the
-**commit that follows it takes the whole file**, and `./claim` rebuilds the whole file. Both operate
-at file granularity, so the exemption let a close interleave with a claim. Every write now takes the
-lock:
+**Hold it for the read, the write and the commit, then release in the same turn** — including where you
+decide *not* to change anything; scripts release on failure paths via a `trap`. It guards a two-second
+operation, never an implementation.
 
-- **Claiming an ID** (`queue`) — read `next_id`, use it, write `next_id + 1`.
-- **Claiming a row** (`develop`) — read a row's status as `ready`, write it `in-progress`.
-- **Closing a row** (`develop`) — delete the row, append to `DONE.md`.
-
-**Hold it for the read, the write, and the commit, then release in the same turn.** It guards a
-two-second file operation, never a long one: `develop` releases the lock the moment the claim is
-committed and does *all* the actual work — code, tests, QA — unlocked. A lock held across an
-implementation would block the other window for an hour and be abandoned the first time a session
-ended mid-item.
-
-The lock is a directory, because `mkdir` is atomic on POSIX — it either creates or fails, with no
-window between checking and creating:
-
-```bash
-BACKLOG=".claude/backlog"
-if mkdir "$BACKLOG/.lock" 2>/dev/null; then
-  printf '%s\t%s\n' "$CLAIM" "$(date -u +%FT%TZ)" > "$BACKLOG/.lock/held-by"
-else
-  cat "$BACKLOG/.lock/held-by"   # who has it, and since when
-fi
-```
-
-**If the lock is busy:** wait a couple of seconds and retry, up to about three times. It is only
-ever held for a moment, so a genuine holder will be gone. If it is still held after that, read
-`held-by`:
-
-- Held for **under 5 minutes** → another session is mid-claim. Report that to the user and stop.
-  Do not break it.
-- Held for **over 5 minutes** → it is stale; a session almost certainly ended between `mkdir` and
-  `rmdir`. Say so, name the timestamp, remove it with `rm -rf "$BACKLOG/.lock"`, and continue.
-
-Always release with `rm -rf "$BACKLOG/.lock"` in the same turn you took it, including on the path
-where you decide *not* to make the change. A script must release it on its failure paths too, via a
-`trap`.
-
-`.claude/backlog/.lock/` is transient and must never be committed.
+**The lock is `.claude/backlog/.lock/`, a directory, because `mkdir` is atomic on POSIX.** Put `$CLAIM`
+and a UTC timestamp in `.lock/held-by`, so a busy lock says who holds it and since when; release with
+`rm -rf`, never commit it. **Snippet and the busy/stale paths: `CONCURRENCY-INCIDENTS.md`.**
 
 ## Claim tokens: how a session knows what is its own
 
-There is no ambient session id, so ownership is proved by a token the owning session minted.
+No ambient session id, so ownership is a minted token — `CLAIM=$(head -c2 /dev/urandom | xxd -p)` — in
+the item's `claimed_by:` with `claimed_at:` (ISO-8601 UTC). **That is the token's home** — the pared
+`QUEUE.md` has no ownership column. The row reads `in-progress`; report the token to the user.
 
-When `develop` claims an item, it generates a short token:
-
-```bash
-CLAIM=$(head -c2 /dev/urandom | xxd -p)   # 4 hex chars, e.g. 7f3a
-```
-
-It writes `claimed_by: <token>` and `claimed_at: <ISO-8601 UTC>` into the item file's frontmatter
-— **that is the token's home**, and the pared `QUEUE.md` carries no ownership column. Where a
-project's table still has one, the token goes there too. Either way `develop` reports it to the
-user, and the row's `Status` reads `in-progress`.
-
-**The test for ownership is memory, not inference: an item is yours only if you minted its token in
-this conversation.** If you find an `in-progress` row whose token you do not recognise, it belongs
-to the other window — even if the work looks like something you would have done, and even if the
-working tree contains changes that match it. Never take it over on your own judgement; say whose it
-appears to be and ask.
-
-A claim whose `claimed_at` is more than a few hours old, on an item with no matching work in the
-tree, is a session that died. Report it and offer to release it — releasing is setting the row back
-to `ready` and clearing the token, which is a single-line edit under the lock.
+**Ownership is memory, not inference: a ticket is yours only if you minted its token in this
+conversation.** An unfamiliar token is the other window's — say so and ask, never take it over. A
+`claimed_at` hours old with no matching work is a dead session: report it and offer to release it.
 
 ## The two scripts
 
-`queue` scaffolds both into `.claude/backlog/`. They are the supported way to touch the queue,
-because each encodes a rule above that is otherwise a matter of remembering:
-
-- **`./claim <id> [token]`** — locks, re-reads the row, edits it, writes the item's frontmatter,
-  **commits by pathspec**, and unlocks, with a `trap` releasing the lock on every failure path. Use
-  it instead of hand-editing a claim. The commit is the point: it is what makes the claim durable
-  rather than a dirty file, and a script cannot forget it.
-- **`./next [<stage> | --waiting]`** — a reader, and nothing else. `./next <stage>` prints the
-  first takeable row for that stage; `./next --waiting` prints every row needing a person and the
-  question it needs answered; bare `./next` prints the counts. All three list the files every
-  in-progress item has claimed, and **warn when `QUEUE.md` holds uncommitted row changes** — the
-  signal that someone's claim is about to be swept into someone else's commit. It refuses to run
-  against a table shape it cannot parse, rather than reporting an empty backlog.
-
-A project may not have them if its backlog predates them; hand-editing under the lock is still
-correct, just easier to get wrong.
+Each encodes a rule above that is otherwise a matter of remembering. **`./claim <id> [token]`** does
+the whole claim under the lock and **commits it** — the commit is the point, and a script cannot forget
+it. **`./next`** only reads; `--help` lists its modes. Both refuse rather than guess.

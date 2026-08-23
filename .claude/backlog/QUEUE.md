@@ -43,7 +43,6 @@ conversation belongs to another session.**
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0022 | Fix claim's fixed-index column parsing against the pared table | develop | ready | 0002 |
-| 0020 | Split CONCURRENCY.md into rules and incidents | develop | blocked | 0009 |
 | 0021 | Hold the skills to the conventions' own context-rent rule | develop | blocked | 0009 |
 | 0005 | Add the graph fields to the ticket template and QUEUE.md | develop | ready | 0002 |
 | 0007 | Replace the Owner column with claim directories | develop | blocked | 0002 |
