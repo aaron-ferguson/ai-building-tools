@@ -15,9 +15,13 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - README.md
-claimed_by:
-claimed_at:
+claimed_by: 3640
+claimed_at: 2026-08-23T21:41:30Z
 touches:
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - README.md
+  - tests/batching.test.sh   # new
 ---
 
 ## Problem
