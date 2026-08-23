@@ -28,7 +28,7 @@ conversation belongs to another session.**
 
 | ID | Title | Type | Size | QA | Status | Parent | Item |
 |------|-------|------|------|----|--------|--------|------|
-| 0010 | Split Status into Next and Status, and pare QUEUE.md | chore | m | verify | ready | 0009 | [items/0010-next-and-status-fields.md](items/0010-next-and-status-fields.md) |
+| 0010 | Split Status into Next and Status, and pare QUEUE.md | chore | m | verify | in-progress | 0009 | [items/0010-next-and-status-fields.md](items/0010-next-and-status-fields.md) |
 | 0012 | Every session ends by parking what surprised it | chore | s | verify | ready | 0009 | [items/0012-park-findings-every-session.md](items/0012-park-findings-every-session.md) |
 | 0013 | Verify closes the ticket; develop stops at next verify | chore | m | verify | blocked | 0009 | [items/0013-verify-closes-the-ticket.md](items/0013-verify-closes-the-ticket.md) |
 | 0011 | Add the Waiting on section and rewrite next for the new fields | chore | m | verify | blocked | 0009 | [items/0011-waiting-on-and-next-reader.md](items/0011-waiting-on-and-next-reader.md) |

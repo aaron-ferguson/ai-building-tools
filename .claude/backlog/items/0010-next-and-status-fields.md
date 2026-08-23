@@ -2,14 +2,25 @@
 id: "0010"
 title: Split Status into Next and Status, and pare QUEUE.md
 type: chore
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-23
 parent: "0009"
 blocked_by: []
 relates: ["0005"]
+claimed_by: "1b2e"
+claimed_at: 2026-08-23T14:57:10Z
 touches:
+  - skills/queue/templates/item.md
+  - skills/queue/templates/QUEUE.md
+  - skills/design/SKILL.md
+  - skills/develop/SKILL.md
+  - skills/queue/SKILL.md
+  - skills/verify/SKILL.md
+  - skills/retro/SKILL.md
+  - .claude/backlog/QUEUE.md
+  - .claude/backlog/items/   # every item's frontmatter gains next:
 ---
 
 ## Problem
