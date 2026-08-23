@@ -2,8 +2,8 @@
 id: "0024"
 title: Derive the blocked status from the graph rather than the column
 type: bug
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -18,8 +18,8 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
-claimed_by: "c7fa"
-claimed_at: 2026-08-23T17:32:25Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -144,3 +144,54 @@ copy of the real backlog. Two things worth keeping:
   list entries in `./next`'s CLAIMED FILES output. Hit while writing this ticket's own claim; the
   comments were removed rather than the parser changed, since it is nothing to do with `blocked`.
   Parked in `FINDINGS.md`.
+
+### FAIL from verify, 2026-08-23 [c7fa]
+
+All six ACs pass, and each was mutation-tested rather than taken on its green. **The NFR row fails,
+and with it FR3's "Do not leave both conventions in the tree."**
+
+`skills/queue/templates/QUEUE.md` was fixed — it carries the narrowed definition plus a whole
+**"`blocked` is DERIVED, never authored"** paragraph. **This repo's own `.claude/backlog/QUEUE.md`
+was not touched**, and still reads at line 28:
+
+```
+`blocked` means an open `blocked_by`, or an external blocker named in the ticket, and it clears
+when that resolves.
+```
+
+That is verbatim the clause the *Decisions taken while building* note says is "gone from the
+vocabulary" — written in the past tense, as though handled. Only the template was. The live file also
+has no derived/cache/reconcile paragraph at all, so the tree holds two definitions of `blocked` and
+the wrong one is in the file every session working this backlog actually reads.
+
+**It is a functional hazard, not a doc nit.** Reproduced in a fixture — a row blocked exactly the way
+line 28 still instructs:
+
+```
+=== ./next develop  (status: blocked, blocked_by: [], external blocker named in the body) ===
+DRIFT     0001 | column says blocked, no blocked_by entry is still open
+TAKE      0001 | Blocked on a vendor API nobody controls | size s | qa unit
+EXIT=0
+```
+
+The row is handed out as takeable, and `develop` (5008cce) now tells that session to "take it, say the
+column was stale, and **fix it in your claim edit**" — so the external blocker is erased from the
+column with no record. Two answers to "is this blocked?", which is the defect this ticket exists to
+remove, relocated rather than closed.
+
+`documentation-conventions.md:71` is the cited rule and is exact: *"When a change reverses a decision,
+grep for the rule you are overturning and correct it where it lives."* The grep was not done.
+
+**To fix:** bring `.claude/backlog/QUEUE.md`'s header into line with the template — the narrowed
+definition and the derived/cache/reconcile paragraph — and re-grep the tree for the overturned
+clause. Nothing else is outstanding; do not redo the reader or the tests.
+
+- Verified green and mutation-tested: `tests/next.test.sh` 21/21. Six mutations each drove the
+  matching assertions red — including confirming the harness's own claim that AC1 passes against a
+  reader that still treats the column as the authority, so the separate FR1 case is load-bearing.
+- Ran clean against a copy of the real backlog: `--drift` named only 0026 and exited 1, as the ticket
+  predicted. No row in this backlog uses `blocked` for a non-ticket blocker, so the narrowing leaves
+  no orphaned rows to migrate.
+- AC6 note: the fix is in `skills/verify/SKILL.md`, but the skill this session *executed* came from
+  the pinned plugin cache (`0.9.0`), which has no reconcile step. AC6 is satisfied by the source; the
+  distribution gap is parked in `FINDINGS.md`.
