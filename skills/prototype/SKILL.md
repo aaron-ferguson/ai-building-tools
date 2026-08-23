@@ -6,8 +6,7 @@ description: Build a prototype of a feature at whichever fidelity level is wante
 # Prototype
 
 Generates a prototype at one of three fidelity levels — diagram, clickable HTML mockup, or a real Angular
-component — for any ticket or ad-hoc feature idea. A force multiplier for design thinking, not a
-replacement for design or engineering work.
+component — for any ticket or ad-hoc feature idea.
 
 **One skill per session.** Run this skill in its own conversation; the backlog carries the handoff — the
 ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of $15.11
@@ -21,8 +20,7 @@ design system, the app a level-3 build lands in — comes from the context confi
 `CLAUDE.md` names `company: <name>` and the path to that config directory; read `tools.yml` there. Keys
 used: `ticket_source`, `design_system`, `prototype`.
 
-**What works without config, and what stops.** The grading is deliberate — the cheap levels are useful
-anywhere, the expensive ones fail loudly rather than guessing.
+**What works without config, and what stops.**
 
 | Capability | Needs | If absent |
 |---|---|---|
@@ -46,9 +44,7 @@ colors is worse than one that did not get built, because it looks finished.
 
 ## The three fidelity levels
 
-If the user doesn't say which level they want, **ask — don't guess**. The levels trade speed for realism,
-and picking wrong wastes their time either way: too low and they have to ask again, too high and you have
-burned effort on polish nobody needed yet.
+The levels trade speed for realism, and picking wrong wastes their time in both directions.
 
 1. **Diagram** — a Mermaid user-flow, viewable as a standalone HTML file. Cheapest to produce and cheapest
    to throw away. Right for agreeing a flow, the happy path and the edge cases before anyone has opinions
@@ -64,8 +60,7 @@ burned effort on polish nobody needed yet.
 ## Design system
 
 If `design_system` is configured and exposes an MCP server, **it is the source of truth** — build on it
-rather than invented colors or guessed styling. That is what makes a prototype read as a real product
-screen instead of a generic mock.
+rather than invented colors or guessed styling.
 
 - **`get-tokens`** — real colors, spacing, radii, typography. Follow any resolution notes the config
   records; systems differ in how primitives map to semantic roles.
@@ -77,15 +72,10 @@ screen instead of a generic mock.
 - **audit/score helpers** (`audit-spacing`, `audit-typography`, `score-alignment`, `suggest-token`) —
   for tightening a build once the structure is in place.
 
-**Per level.** Level 1: no styling to speak of, so skip unless naming a real component in the notes.
-Level 2: the template ships **neutral placeholder tokens** — replace that block with real ones when a
-system is configured and `check-contrast` anything new; with none configured, keep the placeholders and
-say plainly the colors are not the brand's. Level 3: pair the component catalog with the MCP — the
-catalog lists what is actually wired into the workspace, the MCP gives authoritative props and tokens,
-and real components with token CSS vars beat hand-rolled styles.
+**Level 1 needs none of this** — no styling to speak of, so skip it unless naming a real component in
+the notes. Levels 2 and 3 each say where the tokens go, in Step 5.
 
 **If the MCP is configured but unavailable this session, fall back to the template tokens and say so.**
-Never silently invent brand colors.
 
 ## Step 1: Get the input
 
@@ -99,7 +89,7 @@ If no ticket key: treat the message as an ad-hoc feature description. Parse it d
 
 ## Step 2: Pick the fidelity level
 
-If the user named a level in the invocation, use it. Otherwise, briefly describe the three options above and ask. Default to assuming they want to iterate up (start cheap, escalate once the flow is agreed) rather than jumping straight to level 3 unless they're clearly asking for the real thing.
+If the user named a level in the invocation, use it. Otherwise **ask — don't guess**: briefly describe the three options above and ask. Default to assuming they want to iterate up (start cheap, escalate once the flow is agreed) rather than jumping straight to level 3 unless they're clearly asking for the real thing.
 
 ## Step 3: Generate the design source
 
@@ -142,7 +132,7 @@ Re-generate only what's called out, re-display, repeat until approved.
 
 ## Step 5: Build the artifact
 
-**Where everything lives**: `<prototype.root>/<prototype.output_subdir>/[slug]/` — one directory per feature, regardless of fidelity level or whether it came from a ticket. Derive `[slug]`:
+**Where everything lives**: `<prototype.root>/<prototype.output_subdir>/[slug]/` — one directory per feature, regardless of fidelity level or whether it came from a ticket, so escalating 1 → 2 → 3 adds files rather than relocating anything. Derive `[slug]`:
 - From a ticket: `PROJ-1234` → `proj-1234-[short-feature-name]`
 - Ad-hoc: kebab-case the feature name, e.g. "case timeline redesign" → `case-timeline-redesign`
 
@@ -179,13 +169,13 @@ Tell the user: "Open `prototypes/[slug]/diagram.html` in your browser to view th
 
 ### Level 2 — Clickable HTML prototype
 
-Copy `assets/prototype-template.html` to `prototypes/[slug]/prototype.html` and **edit the copy** — it already has the design tokens, light/dark theming, a compact single-row topbar, a small client-side router, the persistent left **drawer** of administrative controls, and reference `list`/`detail` views showing the click-through pattern. Don't rewrite the boilerplate.
+Copy `assets/prototype-template.html` to `prototypes/[slug]/prototype.html` and **edit the copy** — it already has the design tokens, light/dark theming, a compact single-row topbar, a small client-side router, the persistent left **drawer** of administrative controls, and reference `list`/`detail` views showing the click-through pattern. Don't rewrite the boilerplate. **A prototype built before a template default was added does not retroactively get it** — copy the blocks forward.
 
 **The rule of thumb for the drawer**: anything about running the prototype *as a tool* belongs in it — swapping mock data volume, saving/loading a scenario, theme. Anything part of the *feature being demoed* belongs in the main content, however administrative it looks: a filter bar, a status legend that is part of the screen, a form's own field. A stakeholder must see and use those without hunting through a drawer.
 
 **Real app navigation is not admin tooling — this is the mistake to avoid.** If the feature has persistent navigation between top-level screens, that is part of the feature and belongs in the main app content, always visible, exactly as in production — never in the collapsible drawer. Build it as ordinary markup in the app shell (a `<nav>` alongside `.main` inside `.app`) and wire it with the same `navTo`/`data-nav` pattern. The drawer's "View" section is reserved for a narrower case: combining things that would *never* coexist in production, e.g. three role-restricted portals as tabs so one file can demo all three — and even then say so in the field-reference doc. **When in doubt it is real navigation**, so put it in the app.
 
-**The drawer mimics the collapsible sidebar pattern from tools like Jira, deliberately** — match it rather than reinventing. It is **collapsed by default** (`body.drawer-collapsed`), so the feature owns the full screen on load; expanding docks it open, shifting `.app` via `margin-left` rather than overlaying. The *topbar* spans full width at all times and never moves, and the single toggle icon (a small inline SVG) sits at its far left — which keeps it reachable whether the sidebar is open or collapsed, and is why the sidebar has no header of its own. The icon never changes, only its `title`. **It is the only way to toggle**: a hover-to-open edge strip was tried and removed as distracting in demos. Nothing auto-collapses when you pick an action. All of this is generic, driven off one class, and needs no per-prototype work.
+**The drawer mimics the collapsible sidebar pattern from tools like Jira, deliberately** — match it rather than reinventing. It is **collapsed by default** (`body.drawer-collapsed`), so the feature owns the full screen on load; expanding docks it open, shifting `.app` via `margin-left` rather than overlaying. The *topbar* spans full width at all times and never moves, and the single toggle icon (a small inline SVG) sits at its far left — which keeps it reachable whether the sidebar is open or collapsed, and is why the sidebar has no header of its own. The icon never changes, only its `title`. **It is the only way to toggle**: a hover-to-open edge strip was tried and removed as distracting in demos, as was a Notes & Questions section. Nothing auto-collapses when you pick an action. All of this is generic, driven off one class, and needs no per-prototype work.
 
 From there:
 
@@ -229,7 +219,7 @@ to demo it." Then generate the field reference doc below.
 
 ### Developer documentation (levels 2 and 3 only)
 
-A clickable mockup looks real enough that people forget it is mock data — until someone asks "what happens if this field is blank?" mid-demo, or an engineer picks it up to scope the real build and reverse-engineers intent from HTML. Write `prototypes/[slug]/field-reference.md` to answer those questions before they are asked.
+A clickable mockup looks real enough that people forget it is mock data — until someone asks "what happens if this field is blank?" mid-demo, or an engineer reverse-engineers intent from the HTML to scope the real build. Write `prototypes/[slug]/field-reference.md` to answer those questions before they are asked.
 
 **One document across levels 2 and 3** — level 3 is a fidelity upgrade of the same feature, so escalating means reading the current file and updating it in place (adding fields the Angular build introduced, correcting any that changed shape), never starting over.
 
@@ -321,21 +311,9 @@ uncommitted it is one `git stash` from gone. Anything whose home is obvious goes
 
 ---
 
-## Key Behaviors
-
-- Works from a ticket or an ad-hoc idea — never require a ticket first, and scale wireframe depth to the source type. Generate from AC where available, fall back to the description, and always state the assumptions made.
-- **Built on the configured design system at every level** — real tokens over invented colors, AA-verified pairings via `check-contrast`, authoritative props via `get-component`. The level-2 template's tokens are neutral placeholders; swapping in real ones is what makes a prototype read as on-brand.
-- Ticket posting is optional and asked for, never automatic.
-- **Each prototype lives entirely in `prototypes/[slug]/`** whatever the level, so escalating 1 → 2 → 3 adds files rather than relocating anything. `field-reference.md` is written for levels 2 and 3 and is one document across both — level 3 updates it in place.
-- **Every level-2 prototype ships with the Typical / Empty / Overloaded switcher and Save / Load scenario controls by default** — not something to ask about or skip. Deciding what those three states look like is part of the design thinking, and capturing what a stakeholder did in a demo costs the prototype no extra scope.
-- Those controls live in the persistent left drawer, **collapsed by default**, toggled solely by the topbar icon. Deliberately no hover-to-open edge strip and no Notes & Questions section — both tried and removed. **Real navigation between the feature's own top-level screens is never in this drawer**; it lives in the main app content as persistent nav, same as production. These defaults come from `prototype-template.html`, and a prototype built before one was added does not retroactively get it — copy the blocks forward.
-- **No decorative emoji, ever** — plain text labels, with the narrow exception of monochrome functional glyphs (`✕` `▸` `▾`, small single-color inline SVGs) acting as icons. A hard default, not a per-prototype style choice: these are client demos, and pictorial emoji read as unpolished.
-
 ## Error Handling
 
 - Ticket not found: "Could not find [KEY]. Please verify the ticket key."
-- Ticket has no content: ask the user to describe the feature before generating
-- Ad-hoc description too thin to work with: ask 1-2 clarifying questions before generating
 - Ticket-system auth error: say the connector needs reconnecting; do not retry silently.
 - Mermaid syntax error: simplify the diagram; note which branches were simplified
 - Build errors (level 3): fix before reporting done
