@@ -2,8 +2,8 @@
 id: "0024"
 title: Derive the blocked status from the graph rather than the column
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -18,17 +18,9 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
-claimed_by: "63c5"
-claimed_at: 2026-08-23T17:22:16Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next
-  - skills/queue/templates/QUEUE.md
-  - skills/queue/templates/item.md
-  - skills/queue/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/develop/SKILL.md
-  - tests/next.test.sh          # new — the fixture harness AC1-AC4 name
-  - references/CONCURRENCY.md   # widened: FR4 contradicts "a stage writes only the ticket it holds"
 ---
 
 ## Problem
@@ -108,3 +100,47 @@ The failure is asymmetric and that is what makes it worth fixing rather than tol
   tree must not end up with one of each.
 - Tier 2 rather than Tier 1: nothing is bleeding, but every ticket added to a backlog adds another row
   that can go stale, and the cost is paid by whoever next reads the queue and believes it.
+
+### Decisions taken while building (2026-08-23)
+
+- **FR3 resolved: the column carries `blocked`, and the close reconciles it.** The note above calls this
+  open, but FR4 and AC6 had already closed it — both require the *close* to reconcile the rows naming
+  the ticket, which only means anything if the column carries `blocked`. Option B leaves FR4 with
+  nothing to reconcile. The reason to prefer it anyway: `QUEUE.md` read on its own is what the README
+  calls the product, and a column that omits the answer makes the file lie by omission rather than by
+  staleness — which is worse, because omission never shows up as drift.
+- **The cache/authority split is what makes the narrow-writes objection survivable.** The column is a
+  *cache* of the graph, never the authority, so every reader derives and the cache being stale degrades
+  output rather than corrupting decisions. That is why `./next` now offers a row written `blocked` whose
+  blockers are all done: trusting the cache is the asymmetric half of the defect — a stale `blocked`
+  hides work and nobody notices, where a stale `ready` is caught by the very next line.
+- **`blocked` for a non-ticket blocker is gone from the vocabulary.** This repo's own `QUEUE.md` prose
+  had widened it to "an open `blocked_by`, **or an external blocker named in the ticket**", which FR1's
+  "if and only if" cannot derive — a `blocked` nothing can compute is a `blocked` nothing can clear.
+  The templates now route those two ways instead: a person clearing it is `waiting`, an event clearing
+  it is captured as a ticket and named in `blocked_by`.
+- **FR4 contradicted `CONCURRENCY.md`'s *A stage writes only the ticket it holds*,** so `touches:` was
+  widened mid-ticket to carry a named exception there rather than leave two conventions in the tree.
+  It is deliberately narrow: the close reconciles dependents, and reconciles no row another session
+  holds `in-progress`.
+
+### The defect reproduced live, during this session
+
+While this ticket was being built, the concurrent `verify` session closed **0022** — running the
+*pre-fix* `verify`, which had no reconcile step. 0026's `blocked_by` names only 0022, so its row was
+stale within minutes of the fix being written, and `./next --drift` named it on the first run against a
+copy of the real backlog. Two things worth keeping:
+
+- The window is not "eventually" — it is the same session. Any close reopens it until the reconcile
+  step ships, which is the argument for FR4 being in the closing commit rather than a sweep.
+- **0026's row was deliberately left stale.** Reconciling it is the closer's write, not this ticket's,
+  and taking it would be exactly the row-I-do-not-hold write the carve-out refuses. The self-healing
+  path is the one now written into `develop`: the next session sees `DRIFT`, takes the row anyway, and
+  fixes the column in its claim edit.
+
+### Not fixed here
+
+- `fm_list` does not strip YAML `#` comments, so an inline comment on a `touches:` entry comes back as
+  list entries in `./next`'s CLAIMED FILES output. Hit while writing this ticket's own claim; the
+  comments were removed rather than the parser changed, since it is nothing to do with `blocked`.
+  Parked in `FINDINGS.md`.
