@@ -39,8 +39,7 @@ assumption into the rest of the batch. The figure behind this is capture-side an
 **2026-08-22**: five related tickets in one session cost measurably less per ticket than five
 sessions would have. **0026** produces the develop-side one; fold it in when it lands.
 
-**Another session may be working this same backlog** — commonly a second window capturing
-feedback and running QA. Read `references/CONCURRENCY.md` at the plugin root
+**Another session may be working this same backlog.** Read `references/CONCURRENCY.md` at the plugin root
 (`../../references/CONCURRENCY.md` from this file) before touching any backlog file.
 
 **This skill states no standards of its own.** How to build, test, commit, and review is
@@ -85,11 +84,11 @@ Without the script, read `QUEUE.md` and apply the same rules:
   question in its `## Waiting on` section (`./next --waiting`). Then take the next takeable row.
   Never reorder to make your choice look correct.
 - **`blocked_by` decides takeability, never the `Status` column** — `blocked` is derived, and the
-  column only caches it. **Both directions matter and only one is ever noticed.** A row still naming
-  an open ticket is not takeable however green the column looks. A row written `blocked` whose
-  `blocked_by` entries are all `done` **is** takeable: take it, say the column was stale, and fix it
-  in your claim edit. Skipping it is how four rows sat unavailable for a whole session. `./next
-  --drift` lists both directions across the whole queue and exits non-zero if it finds any.
+  column only caches it. A row still naming an open ticket is not takeable however green the column
+  looks, and a row written `blocked` whose `blocked_by` entries are all `done` **is** takeable: take
+  it, say the column was stale, and fix it in your claim edit. Skipping it is how four rows sat
+  unavailable for a whole session. `./next --drift` lists every disagreement between column and
+  graph, in both directions, and exits non-zero if it finds any.
 - **`next: design`** → skip it and name its open question. It has no acceptance criteria by
   definition, so building it means inventing the contract you will then be verified against. The
   title is not the spec. Same for **`next: queue`**: hand it back rather than inventing the missing
@@ -154,14 +153,14 @@ be held to, and the QA level. This is the last cheap moment to catch a misunders
 **If the ticket's real acceptance is a look, get something in front of the author before building it
 properly** — including when its *written* acceptance is entirely numeric. A correctness fix that
 changes an appearance as a side effect has an unwritten AC only the author can settle, and nothing in
-the ticket flags it: one ticket's ACs were all contrast ratios, so this rule never fired, and a
-complete implementation was built, tested and committed before the author rejected the new look in one
-line. Ask what the change *looks* like, not only what it must measure.
+the ticket flags it: one ticket's ACs were all contrast ratios, so a complete implementation was
+built, tested and committed before the author rejected the new look in one line. Ask what the change
+*looks* like, not only what it must measure.
 
 An AC only a human can settle — does this feel right, does it read as a place — is not verified by any
 amount of implementation, and every test written against a *guessed* look is thrown away with the
-guess. One ticket spent three complete implementations, each with its own suite, before the author saw
-anything. Build the cheapest thing that answers the question (`prototype` exists for this), then
+guess; one ticket spent three implementations, each with its own suite, before the author saw anything.
+Build the cheapest thing that answers the question (`prototype` exists for this), then
 implement to the full standard against an answer you have. Two habits follow: **show a batch, not a
 guess** — variants side by side in one image, since a round trip costs the same either way — and
 **look once per round**, compositing variants into a single sheet rather than screenshotting each
@@ -174,10 +173,8 @@ verified.
 **But if what is missing is a *decision* rather than detail, do not decide it — set `next: design`,
 `status: ready`, write the question into the *Open design question* section, release the claim, and
 stop.** Missing detail you sharpen here; a missing decision answered by the session about to build
-against it is a contract nobody agreed to, and `verify` is what discovers you invented it. `queue`
-routes at capture time and is sometimes wrong; this return path is what makes being wrong cost one
-stop-and-redirect rather than a screening session per ticket. Name the command: `/design <id>`, in its
-own session.
+against it is a contract nobody agreed to, and `verify` is what discovers you invented it. Name the
+command: `/design <id>`, in its own session.
 
 If the ticket's assumptions have gone stale (the code moved, the bug is fixed, a dependency changed),
 say so and ask before building to a spec that no longer matches reality.
@@ -213,9 +210,9 @@ Work FR by FR, committing each logical unit as it completes rather than one comm
 conventions' commit format, referencing the ticket ID.
 
 **Every commit contains this session's work and nothing else**, per `CONCURRENCY.md`, *The git index
-is shared* — read it there rather than trusting a summary here. The one thing worth repeating because
-it is counter-intuitive: **`git add <paths> && git commit` is not a substitute for a pathspec**, since
-`git commit` writes the whole index.
+is shared* — read it there rather than trusting a summary here. One thing is worth repeating:
+**`git add <paths> && git commit` is not a substitute for a pathspec**, since `git commit` writes the
+whole index.
 
 Respect the ticket's **Out of scope**. Adjacent problems you find get queued as new tickets, not fixed
 here. Append anything non-obvious to *Notes & decisions* as you learn it — a disproved theory, a
@@ -228,15 +225,14 @@ to start remembering.
 ## Step 5 — Leave the tree green, then stop at `next: verify`
 
 **This skill does not run the ticket's QA level and does not close it.** Do not self-certify: the
-point of a separate pass is that it checks what the ACs *say* rather than what you remember building,
-and no amount of care makes the implementing session able to read them that way.
+point of a separate pass is that it checks what the ACs *say* rather than what you remember
+building.
 
 **What you do run is the project's whole test suite once — every runner it has, not the ticket's
 declared level.** That is not QA: the level says what this ticket had to *prove*, not what it was
 allowed to *break*. A `unit` ticket changing a shared default can leave the browser suite red and
 pass QA, because nothing on its path ever started a browser — that happened, and it was two tickets
-before anything ran them, by which point the fix was archaeology. Handing a red tree to a QA session
-spends that session on a diagnosis you already had the context for.
+before anything ran them. Handing a red tree to a QA session spends that session on a diagnosis you already had the context for.
 
 **Red in a file this ticket never touched:** find out whose it is before touching anything
 (`git log -1 -- <path>`, the in-progress rows). Another session's red is theirs to fix and yours to
@@ -254,8 +250,8 @@ the same conditions. Green there means it is yours.
 the check samples anything the runner re-rolls — a seed, a generated fixture, wall-clock pacing, a
 port or worker assignment — one run at each commit compares two draws rather than two commits, and the
 likeliest outcome of a 1-in-6 flake is exactly the one that indicts you. Ask what the check re-rolls;
-if anything, repeat both sides (`--repeat-each`) and compare **rates**, not verdicts. A session lost
-real time believing a correct worktree comparison: the spec drew a fresh random board per load, and
+if anything, repeat both sides (`--repeat-each`) and compare **rates**, not verdicts. A session lost real time
+on a correct worktree comparison: the spec drew a fresh random board per load, and
 repeating showed 1 failure in 6 **at the baseline** against 0 in 6 on the working tree.
 
 Fix the first. **Queue the second rather than stabilising it inside this ticket** — a ticket that
@@ -293,16 +289,15 @@ Building a ticket is not authority to publish it.
 
 ## Step 6 — Name the retro; do not run it
 
-**Do not invoke `/retro` — a later session does.** Same precedent as `design`'s *"Do not invoke
-`/prototype` — the user does"*: pulling another skill in re-injects its whole instruction file into the
-largest context in the run, which is why a measured run averaged 191,752 context tokens per turn.
+**Do not invoke `/retro` — a later session does.** Pulling another skill in re-injects its whole
+instruction file into the largest context in the run; a measured run averaged 191,752 context tokens
+per turn.
 
 **What a retro is for has not changed, and none of it is optional.** Step 5 records what you learned
-while the item file was open — the half that tends to get done. The half that falls through is the work
+while the item file was open. The half that falls through is the work
 this work *created*: the deferrals, the reds you proved were not yours, the thing you noticed and moved
-past. A finding that reaches only your final report dies with the conversation, and dies expensively —
-the next session re-derives it with none of your context. **What makes it durable is Step 7, not this
-step**: anything that surprised you is on disk, so a retro next week still has it.
+past. A finding that reaches only your final report dies with the conversation — the next session
+re-derives it with none of your context. **Step 7 is what makes it durable**, not this step.
 
 `/retro` is not a lifecycle stage and not a `next` value; it runs on a cadence over many sessions'
 findings. Say whether the buffer looks worth sweeping, and name the command —
