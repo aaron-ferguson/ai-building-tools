@@ -104,3 +104,17 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   this project has no runner at all: the suite is `tests/*.test.sh` run by hand, discoverable only by
   `ls`. Neither `config.yml`'s empty `commands:` block nor the skill says where the suite is, so each
   session rediscovers it (pointer: skills/develop Step 5, .claude/backlog/config.yml).
+- 2026-08-23 — the "a fix does not reach sessions already running it" line above is too kind: skills
+  execute from a **pinned copy** in `~/.claude/plugins/cache/ai-building-tools/<version>/`, not from
+  this repo. Verifying 0024 ran `verify` from cache `0.9.0`, which has zero matches for `reconcil` —
+  so the session closing tickets was the pre-fix one, and **restarting would not have helped**; only a
+  version bump or reinstall would. A skill fix is therefore not live when committed, and the session
+  verifying a skill change is the least likely to be running it. Any `/verify` of a skill edit should
+  read the repo copy as the authority and say which copy it executed (pointer: plugins cache vs
+  skills/, 0024).
+- 2026-08-23 — `verify` Step 5's reconcile step ends "run `./next --drift` and expect it to exit zero",
+  which a correct close cannot honour when an *earlier* close left drift behind. Closing 0024 today
+  would have inherited 0026's stale row from 0022's close: reconciling it is forbidden (not a row this
+  ticket named), so the closer sees exit 1, has no correct action, and the instruction reads as a
+  failure it caused. Expect zero *for the rows you reconciled*, or have the step diff drift before and
+  after (pointer: skills/verify Step 5, 0024, 0026).
