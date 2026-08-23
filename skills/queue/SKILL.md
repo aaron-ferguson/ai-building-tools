@@ -114,7 +114,11 @@ behind reality, so take the next free number and fix `next_id` rather than overw
 in verbatim; details living only in this conversation are lost the moment it ends.
 
 **Derive functional requirements.** What would a reviewer check to say "yes, this is done"? Each FR
-independently verifiable; two vague FRs are worse than one sharp one.
+independently verifiable; two vague FRs are worse than one sharp one. Where the ticket changes
+something this repo also **ships** — a template, a script, a scaffold — write the FRs *and* the Out of
+scope about the shipped artifact, never about this repo's copy of it: a scope line reasoned from the
+local instance ("ours already has no such column") contradicts an FR written for the template, and the
+template silently loses whatever the local copy happened to lack.
 
 **Fill the NFR table by elimination, not by default.** Read the conventions core's index first — it names
 which file governs each dimension and when it is triggered — then decide row by row whether it applies to
@@ -128,12 +132,18 @@ filename; read that file if you are not certain what it requires, because the ro
 rather than a guess. Delete rows that don't apply — a table of nine "N/A"s trains everyone to skip the
 table. **Never restate a convention's rules inside a ticket**: the ticket says what *this change* must
 do, the convention says what the rule *is*, and a copy drifts the first time either is edited, after
-which `verify` checks the stale copy. The core's always-on rules apply to every ticket and need no row.
+which `verify` checks the stale copy. The same holds for any **set** the ticket does not own — the
+status vocabulary, the table shapes a parser accepts: enumerate it in an FR and the FR is false the day
+the set grows, having read green the whole way. The core's always-on rules apply to every ticket and
+need no row.
 
 **Set `qa_level` now, at queue time** — the decision that stops QA rigour quietly sliding session to
 session. On the pyramid in `testing-conventions.md`: **`verify`** where no test runner applies (docs,
 config, tooling), requiring a **scripted assertion** the ticket names explicitly — a grep, a path check,
-a schema validation; if you cannot write one the ticket needs sharper ACs, not this level. **`unit`** for
+a schema validation; if you cannot write one the ticket needs sharper ACs, not this level. **A grep
+over prose must survive reflow** — match a phrase short enough to stay on one line, or collapse newlines
+before matching; rewrapping a paragraph moves a phrase across a line break and reds an assertion whose
+text still says the right thing. **`unit`** for
 pure logic, no wiring changed. **`integration`** where it crosses a seam: route → service → database,
 adapter contracts, serialization, migrations. **`e2e`** for a critical journey whose breakage is
 unacceptable, or a change only manifesting through the real build — needs a one-line justification of
@@ -153,8 +163,10 @@ best guess beats an empty field, and `develop` verifies it against the code on c
 **Write acceptance criteria as given/when/then**; `verify` checks these literally. **An AC must be
 provable within the ticket's own scope** — one whose reproduction needs something the same ticket sends
 to *Out of scope* cannot be met, and `verify` is right to fail it, leaving a finished ticket stuck between
-a red it cannot fix and a scope it must not grow. Write that as the observation it is ("the run reports X,
-whose fix is ticket NNNN").
+a red it cannot fix and a scope it must not grow. Write that as the observation it is ("the run reports
+X, whose fix is ticket NNNN"). **State any size or budget target absolutely** — bytes, a count, a
+ceiling — never as a percentage of a baseline a sibling ticket in the same effort is still moving: two
+independently-written targets over a shifting baseline leave the second one unclosable.
 
 If the report genuinely doesn't contain enough to write FRs or ACs, ask — once, batched, with your
 proposed defaults.

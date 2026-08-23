@@ -72,6 +72,12 @@ be luck.
   it seems to be and stop; Step 1's refusal normally prevents this, so reaching here means the field
   and the claim disagree.
 
+**And check which *copy* you are executing, when the change under test is a skill or a plugin file.**
+Skills run from the pinned install under `~/.claude/plugins/cache/<plugin>/<version>/`, not from this
+repo, so an edit committed here is not live until the version is bumped and the install updated
+(`SOURCE`). The session verifying a skill change is therefore the least likely to be running it: treat
+the repo copy as the authority, and say which copy executed.
+
 The `qa_level` was set at queue time. Run **that** level and everything below it — levels are
 cumulative, on the pyramid in `testing-conventions.md`.
 
@@ -163,7 +169,10 @@ verdict file exists or is needed.
    derived, not authored: the ticket you just closed *is* what clears those rows, and nothing else
    will. Grep the items for your ID, and for each one whose remaining `blocked_by` entries are all
    `done`, set its row and its item `status:` to `ready` (or `waiting`, if its `## Waiting on` section
-   says a person is needed). Then run `./next --drift` and expect it to exit zero.
+   says a person is needed). Then run `./next --drift` and expect zero **for the rows you reconciled**, not for the file:
+   drift an earlier close left behind names no ticket you hold, so reconciling it is forbidden and a
+   non-zero exit here can be entirely someone else's. Diff the report before and after your reconcile,
+   and report what was already there rather than owning it.
 
    **This reverses the previous rule that a close touches "nothing else".** That rule was narrower
    writes, which `CONCURRENCY.md` is right to want — but it left the only event that can clear a

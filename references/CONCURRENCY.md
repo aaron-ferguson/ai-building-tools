@@ -47,7 +47,8 @@ hour in one component, unwarned.
 A claim only you can see reads as taken to you and free to everyone else, and both proceed. **Durable
 = visible to the other session with no further act by you.** Tracker-backed, the API write is it.
 Local file, **only once committed** — inside the lock, same turn, or the next session to commit the
-file carries it off under its own message.
+file carries it off under its own message. **A directory is not a file:** git records no empty
+directory, so a `mkdir`-based claim stays invisible until something is written inside it.
 
 ## A stage writes only the ticket it holds
 
