@@ -3,7 +3,7 @@ id: "0026"
 title: Re-run the measured end-to-end exercise and record the verdict
 type: chore
 next: develop
-status: blocked
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-23
