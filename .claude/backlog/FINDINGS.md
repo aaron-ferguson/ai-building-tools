@@ -118,3 +118,17 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   ticket named), so the closer sees exit 1, has no correct action, and the instruction reads as a
   failure it caused. Expect zero *for the rows you reconciled*, or have the step diff drift before and
   after (pointer: skills/verify Step 5, 0024, 0026).
+- 2026-08-23 — `develop` Step 1 opens "run `./next develop` rather than reading `QUEUE.md`", and this
+  repo's own backlog has no `./next` and no `./claim`: both exist only as `skills/queue/templates/`,
+  which `queue` instantiates on first use, and this backlog predates that. The documented fallback is
+  to read the queue and apply the same rules by hand — which means reading the `Status` column, the
+  stale cache this backlog's whole 0024 exists to stop anyone trusting. It bit immediately: this
+  session read 0026 as `blocked`, skipped it, and took row 2; the template reader run afterwards
+  offered `TAKE 0026`. The fallback should derive from `blocked_by` explicitly, or the skills should
+  say to instantiate the scripts (pointer: skills/develop Step 1, skills/queue/templates/next,
+  .claude/backlog/).
+- 2026-08-23 — with the scripts un-instantiated, `.claude/backlog/QUEUE.md`'s header now documents
+  `./next --drift` as the gate on a backlog where that command does not run. Kept matching the
+  template deliberately — diverging the wording to describe a local gap is the two-conventions defect
+  0024 forbids — so the fix belongs in instantiating the scripts, not in the prose (pointer: 0024,
+  .claude/backlog/QUEUE.md).

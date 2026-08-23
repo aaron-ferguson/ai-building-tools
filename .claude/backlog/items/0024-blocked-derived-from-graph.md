@@ -2,8 +2,8 @@
 id: "0024"
 title: Derive the blocked status from the graph rather than the column
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -19,10 +19,9 @@ expects:
   - skills/queue/SKILL.md
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
-claimed_by: "4b95"
-claimed_at: 2026-08-23T20:23:22Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/QUEUE.md
 ---
 
 ## Problem
@@ -197,3 +196,44 @@ clause. Nothing else is outstanding; do not redo the reader or the tests.
 - AC6 note: the fix is in `skills/verify/SKILL.md`, but the skill this session *executed* came from
   the pinned plugin cache (`0.9.0`), which has no reconcile step. AC6 is satisfied by the source; the
   distribution gap is parked in `FINDINGS.md`.
+
+### Re-work after the FAIL, 2026-08-23 [4b95]
+
+The FAIL's instruction was followed exactly and nothing beyond it: `.claude/backlog/QUEUE.md`'s
+header now carries the narrowed definition, the `blocked` is DERIVED paragraph and the
+not-a-ticket routing, all matching `templates/QUEUE.md` verbatim, and the bottom `develop` takes
+paragraph was brought along with them — it still said `status: ready`, which is the same
+overturned rule in the same file. The reader and the tests were left alone.
+
+- **No new test, and that is this project's own convention rather than an exemption.** The
+  conventions core requires a bug fix to start with a failing test, but `README.md`'s Testing
+  section states the position for this repo: the shipped scripts are the only executable code, so
+  they are the only thing with a test, and "the skills' own behaviour is markdown and is verified
+  by `/verify` against a ticket's acceptance criteria instead." The guard for this defect is the
+  verify pass, which is precisely what caught it. Adding a grep-over-prose test would also have
+  contradicted that README sentence, requiring it to change in the same commit — a second
+  convention introduced to guard against a second convention.
+- **The whole tree was re-grepped, not just the one clause.** `external blocker` now has no live
+  occurrence (only this ticket's own history quoting it). `skills/queue/SKILL.md:245` — "a blocked
+  or waiting ticket keeps its rank. Set the status and leave the line" — was examined and
+  deliberately left: line 94 of the same file governs how the column gets its value ("set the
+  column to `blocked` **because** that derives it, never as a judgement of your own"), so 245 is
+  terse, not a second convention.
+- **The header now cites `./next --drift` in a backlog that has no `./next`.** The scripts exist
+  only as `skills/queue/templates/`, and `queue` instantiates them on first use — this backlog
+  predates that and was never scaffolded with them. Left citing the tool anyway, because diverging
+  this file's wording from the template to describe a local gap is exactly the two-conventions
+  defect FR3 forbids. Parked in `FINDINGS.md`.
+- **The stale column hid row 1 from this very session.** `QUEUE.md` was read by hand, because the
+  `./next develop` the skill opens with does not exist here; 0026's column read `blocked`, so it was
+  skipped and 0024 taken instead. Running the template reader against a copy of the real backlog
+  afterwards showed `TAKE 0026` — derived-ready since 0022 closed. The fallback path the skill
+  offers when the script is missing is the trust-the-column path this ticket exists to remove, so
+  the defect reproduced a second time, in the tool meant to route around it. Parked.
+- **0026's row was left stale again, for the same reason as last time.** Reconciling it is the
+  closer's write under FR4, and not a row this ticket holds (`CONCURRENCY.md`, *A stage writes only
+  the ticket it holds*).
+- Full suite green, by hand since there is no runner: `tests/claim.test.sh` 18/18,
+  `tests/next.test.sh` 21/21. This change touches no executable code; the reader was run against a
+  copy of the real backlog to confirm the added header prose did not break table parsing (it parses
+  by header name, so it did not), and the fixture was removed in the same turn.
