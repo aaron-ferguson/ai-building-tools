@@ -43,7 +43,6 @@ conversation belongs to another session.**
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0022 | Fix claim's fixed-index column parsing against the pared table | develop | ready | 0002 |
-| 0017 | Document one skill per session, with the measurement | develop | blocked | 0009 |
 | 0018 | Queue routes to design rather than design screening everything | develop | ready | 0009 |
 | 0019 | Design asks on taste, decides on fact, and writes the ticket itself | develop | ready | 0009 |
 | 0020 | Split CONCURRENCY.md into rules and incidents | develop | blocked | 0009 |

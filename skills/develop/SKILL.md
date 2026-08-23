@@ -21,6 +21,13 @@ the stage that should act on it — there is then no window in which a green goe
 verdict has to survive a session boundary in conversation. Your last act is the implementation
 commit plus `next: verify, status: ready`.
 
+**One skill per session.** Run this skill in its own conversation and let the backlog carry the
+handoff — the ticket's `next` field and `FINDINGS.md`, never a conversation. A measured
+end-to-end run on **2026-08-22** spent **85% of $15.11 on context handling** at an average of
+**191,752 tokens per turn**; isolated, the same work models at **~$5.09**. **No standard is
+relaxed by this** — the rigour that caught a zip-bomb vulnerability every acceptance criterion
+passed over is in the 15% that was output.
+
 **Another session may be working this same backlog** — commonly a second window capturing
 feedback and running QA. Read `references/CONCURRENCY.md` at the plugin root
 (`../../references/CONCURRENCY.md` from this file) before touching any backlog file.
@@ -362,7 +369,7 @@ and report honestly what is left. Never hand a red tree to QA as though it were 
 asks. Building an item is not authority to publish it.
 
 **Then stop and report.** The ticket is built and awaiting QA; name the command the next session
-runs — `/verify <id>`, in a new session, per *one skill per session*. Do not invoke it here.
+runs — `/verify <id>`, in a new session. Do not invoke it here.
 
 ---
 

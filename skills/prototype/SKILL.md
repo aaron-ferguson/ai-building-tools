@@ -9,6 +9,13 @@ Generates a prototype at one of three fidelity levels — diagram, clickable HTM
 
 Formerly the `/design` skill. Renamed and restructured around fidelity levels: what used to be a fixed pipeline (flow + wireframe, then optionally an Angular build) is now "pick the altitude first, then build just that."
 
+**One skill per session.** Run this skill in its own conversation and let the backlog carry the
+handoff — the ticket's `next` field and `FINDINGS.md`, never a conversation. A measured
+end-to-end run on **2026-08-22** spent **85% of $15.11 on context handling** at an average of
+**191,752 tokens per turn**; isolated, the same work models at **~$5.09**. **No standard is
+relaxed by this** — the rigour that caught a zip-bomb vulnerability every acceptance criterion
+passed over is in the 15% that was output.
+
 ## Configuration
 
 This skill carries no company or workspace specifics. Anything environment-shaped — the ticket

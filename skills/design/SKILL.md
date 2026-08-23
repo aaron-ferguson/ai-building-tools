@@ -21,6 +21,13 @@ skill works out what should be built and writes down why. Most design questions 
 prototype — they need the existing pattern found, the convention applied, and the answer
 recorded where the next person will hit it.
 
+**One skill per session.** Run this skill in its own conversation and let the backlog carry the
+handoff — the ticket's `next` field and `FINDINGS.md`, never a conversation. A measured
+end-to-end run on **2026-08-22** spent **85% of $15.11 on context handling** at an average of
+**191,752 tokens per turn**; isolated, the same work models at **~$5.09**. **No standard is
+relaxed by this** — the rigour that caught a zip-bomb vulnerability every acceptance criterion
+passed over is in the 15% that was output.
+
 **This skill states no standards of its own.** What counts as usable, accessible, or consistent
 is defined by the project's conventions and cited, never restated. Resolve them per
 `references/CONVENTIONS.md`. If none resolve, stop as that file directs — a design verdict

@@ -24,11 +24,18 @@ what must never be documented are defined by `documentation-conventions.md` and 
 restated. Resolve the conventions per `references/CONVENTIONS.md`, **read that file before Step 1**,
 and stop if none resolve — a retro with no standard to write against produces opinions, not rules.
 
+**One skill per session.** Run this skill in its own conversation and let the backlog carry the
+handoff — the ticket's `next` field and `FINDINGS.md`, never a conversation. A measured
+end-to-end run on **2026-08-22** spent **85% of $15.11 on context handling** at an average of
+**191,752 tokens per turn**; isolated, the same work models at **~$5.09**. **No standard is
+relaxed by this** — the rigour that caught a zip-bomb vulnerability every acceptance criterion
+passed over is in the 15% that was output.
+
 **Its input is `FINDINGS.md` across many sessions, not one session's memory.** Each skill parks
 what surprised it as it happens, so by the time this runs the observations are already on disk —
 which is the only thing that survives a session boundary. There is no live session left to review:
-with one skill per session, the sessions that produced these findings have already ended, and
-anything they did not park is gone.
+the sessions that produced these findings have already ended, and anything they did not park is
+gone.
 
 **It runs on a cadence, and it is not a lifecycle stage.** `retro` is not a `next` value, no skill
 invokes it, and it is not part of the per-ticket loop. Run it when **`FINDINGS.md` holds about

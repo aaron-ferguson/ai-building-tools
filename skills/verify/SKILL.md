@@ -20,6 +20,13 @@ returns pass or fail.
 verdict that has to travel from the session that produced it to the session that acts on it has
 nowhere to travel once each skill runs alone.
 
+**One skill per session.** Run this skill in its own conversation and let the backlog carry the
+handoff — the ticket's `next` field and `FINDINGS.md`, never a conversation. A measured
+end-to-end run on **2026-08-22** spent **85% of $15.11 on context handling** at an average of
+**191,752 tokens per turn**; isolated, the same work models at **~$5.09**. **No standard is
+relaxed by this** — the rigour that caught a zip-bomb vulnerability every acceptance criterion
+passed over is in the 15% that was output.
+
 **What keeps two sessions off one ticket is the `next` field, not a read-only rule.** This skill
 acts only on tickets whose `next` is `verify` — and nothing is developing those, because `develop`
 released the claim before setting the field. So **refuse anything addressed to another stage**

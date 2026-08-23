@@ -22,6 +22,13 @@ cold agent can pick up weeks later and implement without asking a single clarify
 The queue file is the product; this skill is a thin wrapper over it. If you ever can't run
 this skill, `.claude/backlog/QUEUE.md` is still readable on its own.
 
+**One skill per session.** Run this skill in its own conversation and let the backlog carry the
+handoff — the ticket's `next` field and `FINDINGS.md`, never a conversation. A measured
+end-to-end run on **2026-08-22** spent **85% of $15.11 on context handling** at an average of
+**191,752 tokens per turn**; isolated, the same work models at **~$5.09**. **No standard is
+relaxed by this** — the rigour that caught a zip-bomb vulnerability every acceptance criterion
+passed over is in the 15% that was output.
+
 **The backlog is worked by more than one session at a time** — commonly one window developing
 while another queues. Read `references/CONCURRENCY.md` at the plugin root
 (`../../references/CONCURRENCY.md` from this file) before writing anything. In short: edit one

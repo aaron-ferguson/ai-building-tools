@@ -2,13 +2,14 @@
 id: "0017"
 title: Document one skill per session, with the measurement
 type: chore
-next: develop
-status: blocked
+next: verify
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
+closed: 2026-08-23
 parent: "0009"
-blocked_by: ["0015"]
+blocked_by: []
 relates: []
 touches:
 ---
@@ -43,12 +44,12 @@ makes it stick.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `README.md`, when read, then it states the one-skill-per-session workflow and
+- [x] AC1 — Given `README.md`, when read, then it states the one-skill-per-session workflow and
       the batching exception in FR4.
-- [ ] AC2 — Given each of the five `SKILL.md` files, when read, then each states it once.
-- [ ] AC3 — Given the README statement, when read, then it carries at least one dated figure from
+- [x] AC2 — Given each of the five `SKILL.md` files, when read, then each states it once.
+- [x] AC3 — Given the README statement, when read, then it carries at least one dated figure from
       the measured run.
-- [ ] AC4 — Given the README statement, when read, then it names at least one thing that does not
+- [x] AC4 — Given the README statement, when read, then it names at least one thing that does not
       change.
 
 ## QA plan
@@ -68,3 +69,9 @@ makes it stick.
   tickets in one capture session was measurably cheaper per ticket than five sessions would have
   been, because reading the source material is a shared cost paid once. Isolation is per skill,
   not per unit of work.
+- **"States it once" had to be enforced, not just added.** `develop` and `retro` already used the
+  phrase incidentally mid-file, so a bare `grep -q` would have passed on them without a header
+  statement existing. Both incidental mentions were removed and the assertion counts occurrences,
+  because a rule stated twice in one file is the drift this effort's own trim ticket exists to fix.
+- The figures carry their date inline (`2026-08-22`) rather than in a footnote, so a later reader
+  can tell a measurement from an assertion without following a link.

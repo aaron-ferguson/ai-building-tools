@@ -29,8 +29,41 @@ The executor here is the **agent**, and the artifact is code. Its sibling
 there the executor is you, and the artifact is a decision or a record. `/queue` is for work an
 agent will build; `/capture` over there is for your own tasks, meetings, and notes.
 
-They're designed to be run by **two sessions at once** — one window developing, another
-queueing feedback and verifying — without either destroying the other's work.
+---
+
+## One skill per session
+
+**Run each skill in its own conversation.** The backlog is the handoff: a ticket moves
+`queue → design → develop → verify` through its `next` field on disk, and anything a session
+learned is parked in `FINDINGS.md`. Nothing travels in a conversation, so nothing is lost when one
+ends.
+
+**This is measured, not a preference.** An end-to-end run of the suite against a new project on
+**2026-08-22** cost **$15.11** over 95 turns. **85% of that was context handling** — 59%
+re-reading context, 26% loading it — and only 15% was output. The price of a turn doubled across
+the run, $0.12 in `queue` to $0.25 in `retro`, for work of the same kind: nothing got harder, the
+context got bigger, reaching an average of **191,752 tokens per turn**. Modelled at a 60k average
+context, the same run costs **~$5.09**.
+
+**One skill per session, not one ticket per session.** This is the counter-intuitive half and the
+one most easily lost. A `queue` session should batch every related ticket it can: the expensive
+part is understanding the domain once, and reading the source material is a shared cost paid once
+however many tickets come out of it. Writing five related tickets in one capture session was
+measurably cheaper per ticket than five sessions would have been. Isolation is per *skill*, not
+per unit of work.
+
+**What does not change.** No standard is relaxed and no gate is removed — TDD, the separate NFR
+pass, mutation testing in `verify`, the `design` gate, `qa_level` chosen at queue time. That
+rigour is what caught a real zip-bomb vulnerability every acceptance criterion in the measured run
+passed over, and a test that stayed green with the guard it existed for deleted. Both live in the
+15% of spend that was output. What moved is *where* work happens, not what is required of it.
+
+Full reasoning and figures: *The Context Tax* and *Splitting the Suite* (2026-08-22/23).
+
+---
+
+They're also designed to be run by **two sessions at once** — one developing, another queueing
+feedback and verifying — without either destroying the other's work.
 
 ---
 
