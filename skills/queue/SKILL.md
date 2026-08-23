@@ -339,7 +339,7 @@ no position column precisely so that moving one row does not rewrite every other
 priority field to resolve a tie; the tie is resolved by which line is higher.
 
 A move is two single-line edits — delete the row from where it was, insert it where it goes —
-each preceded by a fresh read. Do not reorder a row whose `Owner` column holds a token you did
+each preceded by a fresh read. Do not reorder a row that is `in-progress` under a token you did
 not mint: another session is working it, and its rank is no longer the interesting fact about
 it.
 

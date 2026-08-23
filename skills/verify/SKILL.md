@@ -63,7 +63,7 @@ may be luck.
   **advisory**: name the unrelated paths, and state that a confident PASS needs a clean tree.
   Do not stash, revert, or check out anything to tidy it — that is another session's work and
   destroying it is far worse than an imprecise verdict.
-- The item under test has an `Owner` token in `QUEUE.md` that you did not mint, and you were
+- The item under test is `in-progress` under a claim token you did not mint, and you were
   invoked directly rather than by `develop` → say plainly that you are verifying an item another
   session is mid-way through, so a red may simply mean unfinished.
 
