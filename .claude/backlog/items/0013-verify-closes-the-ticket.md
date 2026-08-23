@@ -3,12 +3,12 @@ id: "0013"
 title: Verify closes the ticket; develop stops at next verify
 type: chore
 next: develop
-status: blocked
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-23
 parent: "0009"
-blocked_by: ["0010"]
+blocked_by: []
 relates: []
 touches:
 ---

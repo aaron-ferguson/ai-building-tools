@@ -44,14 +44,14 @@ conversation belongs to another session.**
 |------|-------|------|--------|--------|
 | 0022 | Fix claim's fixed-index column parsing against the pared table | develop | ready | 0002 |
 | 0012 | Every session ends by parking what surprised it | develop | ready | 0009 |
-| 0013 | Verify closes the ticket; develop stops at next verify | develop | blocked | 0009 |
-| 0011 | Add the Waiting on section and rewrite next for the new fields | develop | blocked | 0009 |
+| 0013 | Verify closes the ticket; develop stops at next verify | develop | ready | 0009 |
+| 0011 | Add the Waiting on section and rewrite next for the new fields | develop | ready | 0009 |
 | 0014 | Queue sweeps FINDINGS.md for units of work | develop | blocked | 0009 |
 | 0015 | Remove cross-skill invocation | develop | blocked | 0009 |
 | 0016 | Make retro a batch process over many sessions | develop | blocked | 0009 |
 | 0017 | Document one skill per session, with the measurement | develop | blocked | 0009 |
-| 0018 | Queue routes to design rather than design screening everything | develop | blocked | 0009 |
-| 0019 | Design asks on taste, decides on fact, and writes the ticket itself | develop | blocked | 0009 |
+| 0018 | Queue routes to design rather than design screening everything | develop | ready | 0009 |
+| 0019 | Design asks on taste, decides on fact, and writes the ticket itself | develop | ready | 0009 |
 | 0020 | Split CONCURRENCY.md into rules and incidents | develop | blocked | 0009 |
 | 0021 | Hold the skills to the conventions' own context-rent rule | develop | blocked | 0009 |
 | 0005 | Add the graph fields to the ticket template and QUEUE.md | develop | ready | 0002 |

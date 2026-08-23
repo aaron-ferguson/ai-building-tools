@@ -3,12 +3,12 @@ id: "0018"
 title: Queue routes to design rather than design screening everything
 type: chore
 next: develop
-status: blocked
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-23
 parent: "0009"
-blocked_by: ["0010"]
+blocked_by: []
 relates: []
 touches:
 ---
