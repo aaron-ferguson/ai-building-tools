@@ -19,6 +19,16 @@ ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-0
 went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09** isolated. **No standard
 is relaxed** — the rigour is all in the 15% that was output.
 
+**One gate per invocation, not one ticket.** The same batching case applies for the same reason:
+**one gate per session, not one ticket per session** — tickets that share a file scope or a parent
+slice are checked in one session, since the conventions, this file and the suite's startup are a
+shared cost paid once however many verdicts come out of it. **A batch does not license one verdict
+covering several tickets.** Each ticket closes on its **own acceptance criteria** at its own declared
+`qa_level`, and a failing AC fails that ticket alone — never the batch, and never the reverse: one
+green ticket does not carry its neighbours. Claim and close each row individually
+(`CONCURRENCY.md`, *A stage writes only the ticket it holds*). The dated figure is capture-side,
+**2026-08-22**; **0026** produces the one for this side of the gate.
+
 **`verify` closes the ticket.** On green it ticks the ACs, sets it done, moves the row to `DONE.md` and
 releases its claim. `develop` closes nothing: a verdict that must travel from the session producing it
 to the session acting on it has nowhere to travel once each skill runs alone.

@@ -14,7 +14,7 @@ description: >
 
 Take the top `ready` item off `.claude/backlog/QUEUE.md` and build it: implemented, committed,
 the tree left green, and the ticket set to `next: verify` so a QA session can check it against the
-written ACs and close it. One item per invocation unless told otherwise.
+written ACs and close it.
 
 **This skill does not close the ticket.** `verify` does, because the stage holding the verdict is
 the stage that should act on it — there is then no window in which a green goes stale, and no
@@ -25,6 +25,19 @@ commit plus `next: verify, status: ready`.
 the ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of
 $15.11 went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09** isolated.
 **No standard is relaxed** — the rigour is all in the 15% that was output.
+
+**One gate per invocation, not one ticket.** The unit is a gate: **one gate per session, not one
+ticket per session** — a set of tickets that share a file scope (their `expects:` overlap) or share a
+parent slice, all `next: develop` and takeable. Tickets from unrelated efforts do not batch, because
+what a batch saves is the startup a session pays before it writes a line — the conventions, the
+project's `CLAUDE.md`, `CONCURRENCY.md`, this file, the orientation in the code — and that is only
+shared where the files are. Two guardrails, both of which a real eleven-ticket run needed:
+**Claim and close each ticket individually** — the row is the unit of ownership whatever the session
+is, and a batch holding rows it is not yet working on is the scope reservation `CONCURRENCY.md`
+forbids — and **Stop at the first ticket whose contract turns out wrong** rather than carrying a bad
+assumption into the rest of the batch. The figure behind this is capture-side and dated
+**2026-08-22**: five related tickets in one session cost measurably less per ticket than five
+sessions would have. **0026** produces the develop-side one; fold it in when it lands.
 
 **Another session may be working this same backlog** — commonly a second window capturing
 feedback and running QA. Read `references/CONCURRENCY.md` at the plugin root
