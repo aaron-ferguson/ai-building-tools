@@ -159,7 +159,19 @@ not permission to skip the check.
 This is the stage that closes, and it happens in the session that produced the verdict — so no durable
 verdict file exists or is needed.
 
-**On green**, under the lock, committed before you release it:
+**On green, close it with `./close`** — one step, and the supported path:
+
+```bash
+.claude/backlog/close 0007 8a04        # lock → re-read → tick ACs → move row → reconcile → commit → unlock
+```
+
+It does the whole sequence below under the lock and **commits it**, which is the step a session under
+load forgets (`CONCURRENCY.md`, *The three scripts*). It refuses rather than guessing on three grounds:
+a table shape it cannot read, a row not at `next: verify`, and a token that is not the one holding the
+claim — you pass the token because ownership is memory and no script can check memory.
+
+By hand, under the lock, committed before you release it — the fallback where the script is not
+installed:
 
 1. Tick the ACs, set `status: done` with the date, clear `touches:` — a closed ticket must not keep
    reserving files — and clear `claimed_by:` / `claimed_at:`.

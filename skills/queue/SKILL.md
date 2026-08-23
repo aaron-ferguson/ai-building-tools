@@ -49,12 +49,13 @@ Resolve them per `references/CONVENTIONS.md`; if none resolve, stop as that file
   FINDINGS.md    what sessions parked and could not place. A buffer, not a second queue.
   next           reader: `next <stage>` the takeable row · `next --waiting` who is waited on
   claim          claims a row: lock, edit, write frontmatter, commit, unlock — one atomic step
+  close          closes a row: lock, tick ACs, move to DONE.md, reconcile dependents, commit, unlock
   DONE.md        completed tickets, newest first
-  .lock/         transient; held for seconds during an ID or row claim. Never committed.
+  .lock/         transient; held for seconds during a claim or a close. Never committed.
   items/0007-rate-limit-feedback-endpoint.md
 ```
 
-Templates are in this skill's `templates/`. Copy `next` and `claim` too, and `chmod +x` both.
+Templates are in this skill's `templates/`. Copy `next`, `claim` and `close` too, and `chmod +x` all three.
 
 **`QUEUE.md` holds the header and the table, and nothing else** — standing reasoning lives in
 `RANKING.md`. The split is mechanical rather than tidy-minded: the queue is rewritten on every claim and
@@ -62,15 +63,16 @@ close, by every window, so prose parked there is re-read on each of those edits 
 once a week. `./next` goes further, answering "what do I do next" in a handful of lines whether the queue
 holds ten rows or three hundred.
 
-**Use `./claim` rather than hand-editing a claim**; the commit inside the lock is the point, and
-`CONCURRENCY.md`'s *A claim must be durable the moment it is made* is why.
+**Use `./claim` and `./close` rather than hand-editing either**; the commit inside the lock is the
+point in both cases, and `CONCURRENCY.md`'s *A claim must be durable the moment it is made* and
+*The three scripts* are why.
 
 ---
 
 ## Step 0 — Locate or create the backlog
 
 Find `.claude/backlog/` at the project root. If it doesn't exist, scaffold it by copying every template
-above (`chmod +x` `next` and `claim`), creating `items/`, and filling `config.yml` from what the repo
+above (`chmod +x` `next`, `claim` and `close`), creating `items/`, and filling `config.yml` from what the repo
 actually uses — read `package.json` scripts (or `Makefile`, `pyproject.toml`) for the real
 test/lint/typecheck commands rather than guessing. Leave `notion:` out unless the user says this project
 collects feedback from other people, and `tracker:` / `cost_tracking:` out unless the project's

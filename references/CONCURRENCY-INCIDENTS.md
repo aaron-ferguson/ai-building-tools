@@ -57,7 +57,7 @@ message, which is the whole cost, and it is cheaper than rewritten history.
 If you find source paths already staged when you arrive, they are the other window's. `git restore
 --staged <path>` takes them out of *your* commit without touching their working tree.
 
-### A backlog with no scripts — rule: *The two scripts*
+### A backlog with no scripts — rule: *The three scripts*
 
 A project may predate `./claim` and `./next`. Hand-editing under the lock is still correct, just
 easier to get wrong: the step most often forgotten is the commit inside the lock.
@@ -133,7 +133,7 @@ staleness guard so a stale green could not close a changed ticket. Both disappea
 took over closing: it holds the verdict in the session where it acts on it, so there is no window for
 a green to go stale in. **That deleted a ticket from the plan rather than adding one.**
 
-### The parser that reported an empty backlog — rule: *The two scripts*
+### The parser that reported an empty backlog — rule: *The three scripts*
 
 `./next` and `./claim` read the queue table by fixed column index. When the table was pared to five
 columns, `./next` printed "0 ready of 2 rows" and `./claim` refused every row — both without

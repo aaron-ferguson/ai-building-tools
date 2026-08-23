@@ -130,7 +130,7 @@ Then say *"queue this: <the thing>"* in any project. `/queue` scaffolds
   config.yml     project settings, next_id, conventions path, test commands
   QUEUE.md       the stack rank — line order IS the rank
   DONE.md        completed items, newest first
-  .lock/         transient, held for seconds during a claim. Never commit it.
+  .lock/         transient, held for seconds during a claim or a close. Never commit it.
   items/
     0007-rate-limit-feedback-endpoint.md
 ```
@@ -161,8 +161,9 @@ A few decisions that look odd until you know why:
   acts on it, so there is no window in which a green can go stale. What keeps two sessions off one
   ticket is the `next` field, not a read-only rule: every stage refuses a ticket addressed to
   another one.
-- **Only two operations take a lock** — claiming an ID and claiming an item. Everything else is
-  a single-line edit, which two sessions can do concurrently without coordination.
+- **Three operations take a lock** — claiming an ID, claiming an item, and closing one. Everything
+  else is a single-line edit, which two sessions can do concurrently without coordination. A close
+  needs the lock because the *commit* takes `QUEUE.md` whole even though the edit is one row.
 
 Full protocol in [`references/CONCURRENCY.md`](references/CONCURRENCY.md); the conventions
 lookup in [`references/CONVENTIONS.md`](references/CONVENTIONS.md).
@@ -180,11 +181,13 @@ test. Run every guard:
 
 ```bash
 tests/claim.test.sh
+tests/close.test.sh
 ```
 
 Each case scaffolds a throwaway git repo with one `QUEUE.md` shape, runs the script against it,
-and asserts on the exit code, the message and the resulting row — then removes the fixture,
-including on failure. There is no runner and no framework; a guard is a `sh` file that exits
+and asserts on the exit code, the message and the resulting files — then removes the fixture,
+including on failure. Refusals are asserted on the *message* and on *files unchanged*, never on the
+exit status alone: "exits non-zero" is satisfied by the silent refusal the guard exists to forbid. There is no runner and no framework; a guard is a `sh` file that exits
 non-zero. The skills' own behaviour is markdown and is verified by `/verify` against a ticket's
 acceptance criteria instead.
 
