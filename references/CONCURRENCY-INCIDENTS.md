@@ -133,6 +133,30 @@ staleness guard so a stale green could not close a changed ticket. Both disappea
 took over closing: it holds the verdict in the session where it acts on it, so there is no window for
 a green to go stale in. **That deleted a ticket from the plan rather than adding one.**
 
+### The reconcile that rewrote tickets it did not hold — rule: *A stage writes only the ticket it holds*
+
+The rule's exception lets a close write rows other than its own, and `close` implemented it by
+selecting every item whose `blocked_by` named the ticket being closed. Two things make that
+selection wrong, and both were reachable:
+
+**`blocked_by` outlives the close.** Nothing clears it when a ticket closes, so a closed ticket names
+its blockers for ever. Closing a blocker later flipped a `done` dependent back to `ready` while it
+sat in `DONE.md` — the two files then disagreed about whether it was finished, which is the same
+"queue that lies about what is takeable" the exception exists to prevent, in the other direction.
+
+**The ownership guard was a `QUEUE.md` row.** A dependent with no row — closed, or not yet ranked —
+was neither skipped nor reported, and had its `status:` rewritten under another session's live
+claim, `claimed_by:` left intact. The guard consulted the one place *Claim tokens* says ownership
+does not live.
+
+So the rule now selects on the dependent's own `status:` reading `blocked` rather than on
+`blocked_by` alone, and tests ownership in the item. It still checks the row too: an `in-progress`
+row carrying no token reads as held, per *The working tree is shared too*.
+
+The wider lesson is about the ACs, not the script. The verification that found this had eight
+criteria and all eight passed; every dependent in every fixture had a row, so no criterion could
+see the case. **A guard written against one shape of input is verified only against that shape.**
+
 ### The parser that reported an empty backlog — rule: *The three scripts*
 
 `./next` and `./claim` read the queue table by fixed column index. When the table was pared to five

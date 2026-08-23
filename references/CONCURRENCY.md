@@ -53,9 +53,9 @@ claim stays invisible until something is written inside it.
 
 - **Write nothing another session reads for coordination while it holds the ticket.** Claim the row
   you write; write only that row and its item file. **One narrow exception:** closing a ticket also
-  reconciles the rows that named it in `blocked_by`, in the closing commit — `blocked` is derived, so
-  the close is the only event that can clear them, and a stale one lies about what is takeable.
-  Reconcile no row another session holds `in-progress`; report it instead.
+  reconciles the tickets naming it in `blocked_by`, in the closing commit — `blocked` is derived, so
+  the close is the only event that can clear them. Reconcile only a dependent whose `status:` is
+  `blocked`, never one that is held — ownership is `claimed_by:`, not the row; report those.
 - **A stage finding a ticket at another stage refuses it** — `develop` skips `next: design`, `verify`
   refuses anything not `next: verify`. That field keeps two stages off one ticket.
 - **`verify` owns closing**, holding the verdict when it acts, so no green goes stale.

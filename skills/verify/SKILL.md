@@ -177,11 +177,16 @@ installed:
    reserving files — and clear `claimed_by:` / `claimed_at:`.
 2. Re-read `QUEUE.md` — another window has had the whole QA run to insert rows — then delete your row
    with a single `Edit` and append it to `DONE.md`, newest first.
-3. **Reconcile every row that named this ticket in `blocked_by`, in this same commit.** `blocked` is
+3. **Reconcile every ticket that named this one in `blocked_by`, in this same commit.** `blocked` is
    derived, not authored: the ticket you just closed *is* what clears those rows, and nothing else
    will. Grep the items for your ID, and for each one whose remaining `blocked_by` entries are all
    `done`, set its row and its item `status:` to `ready` (or `waiting`, if its `## Waiting on` section
-   says a person is needed). Then run `./next --drift` and expect zero **for the rows you reconciled**, not for the file:
+   says a person is needed). **Two of those you must not write**, and neither has to have a row —
+   `blocked_by` is never cleared, so a `done` dependent still names you and reconciling it resurrects
+   a closed ticket; and a dependent anything holds is reported, not written, where *held* means a
+   non-empty `claimed_by:` in the item, `CONCURRENCY.md`'s *Claim tokens* being where ownership lives.
+   Skip anything whose own `status:` does not read `blocked`. Then run `./next --drift` and expect
+   zero **for the rows you reconciled**, not for the file:
    drift an earlier close left behind names no ticket you hold, so reconciling it is forbidden and a
    non-zero exit here can be entirely someone else's. Diff the report before and after your reconcile,
    and report what was already there rather than owning it.
@@ -190,8 +195,8 @@ installed:
    writes, which `CONCURRENCY.md` is right to want — but it left the only event that can clear a
    `blocked` row unable to clear it, and a closed ticket once left four rows unavailable for a whole
    session with nothing blocking them. Narrow writes lost to a queue that lies. You still hold the
-   lock, and you write no row that another session holds `in-progress` — if one of the dependents is
-   claimed, leave it and say so in your report; its own session will see the drift.
+   lock, and you write nothing that is held — leave a claimed dependent alone and say so in your
+   report; its own session will see the drift.
 4. **Commit by pathspec**, **then** release the lock. The order matters: the lock guards the commit,
    not just the edit, because the commit takes `QUEUE.md` whole (`CONCURRENCY.md`, *Lock every write to
    `QUEUE.md`*).
