@@ -28,6 +28,22 @@ it forever.
 Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, item id)`
 
 ---
+- 2026-08-23 — **`queue`'s Step 1 table has no row for a ticket sitting at `next: queue`**, which is
+  the one stage `queue` itself owns. Every other stage's skill opens by taking the row at its stage;
+  this one routes only on what the user just said, and its stated default for ambiguity is "Add" —
+  which has no meaning on a bare `/queue` with nothing to capture. The item template explicitly
+  creates these rows ("captured half-baked, **or found stale by a later stage**"), so the inbound
+  case exists by design and the skill cannot see it. Found only because the user pointed at 0021 by
+  hand. Related: re-specifying a bounced ticket reuses most of Step 2 but must skip the ID claim and
+  skip Step 3 entirely (the rank is kept), and nothing says so (pointer: skills/queue Step 1 table,
+  templates/item.md `next:`, items/0021).
+- 2026-08-23 — **no rule covers an AC that a bounced ticket already verified.** 0021 returned from its
+  outcome pass with AC2 and AC3 ticked `[x]` and AC1 red. The re-spec un-ticks both, because a second
+  trimming pass invalidates a heading-preservation check and a before/after table measured against
+  the first — but that is a judgement call made from scratch, and the opposite reading (verified is
+  verified, leave them ticked) would have let a real regression through unchecked. `verify` closes on
+  ticked ACs, so which way this goes decides what gets re-run (pointer: skills/queue Step 2,
+  skills/verify, items/0021 ACs).
 - 2026-08-23 — `verify` Step 2's ownership test cannot see a **claimless writer**. It checks for an
   `in-progress` row under a token you did not mint; `retro` by design holds no ticket, so while it
   landed lessons into `skills/verify/SKILL.md`, `skills/queue/SKILL.md` and `references/CONCURRENCY.md`
