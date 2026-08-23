@@ -104,6 +104,19 @@ prohibition, and is the sentence a careful reader would follow into the expensiv
   prose on a measurement that has not been scheduled is how a correct rule waits indefinitely. FR4 is
   written so the develop-side figure can be folded in when 0026 produces it; **revisit this ticket's
   notes when it does.**
+- **`gate` now carries two meanings in the files this ticket edits, and FR1 fixed the term.** It
+  already meant a quality gate — `develop` Step 5's review checklist is "a build-quality gate, not
+  QA", and `README.md` said "no gate is removed" — and FR1 plus the QA plan's `grep` pin the new
+  batching sense. Inherited, not chosen: the batching sense is defined at first use in both skills,
+  and README's other use is now "no *quality* gate is removed". If a third sense ever appears,
+  rename this one; the quality gate is the older and more widely cited.
+- **README was in `expects:` but named by no FR or AC.** Editing it is not scope creep:
+  `documentation-conventions.md` requires that a change contradicting a documented rule correct that
+  rule in the same commit, and README argued the batching exception for `queue` **only** — which
+  develop's new rule makes incomplete rather than merely unmentioned.
+- FR4 cites the capture-side figure because **0026 has not run**, exactly as this ticket's ordering
+  note anticipated. It is named in both skills and in README as the source of the develop-side one,
+  so folding it in is a grep rather than a re-read.
 - The counter-intuitive half is FR3's first guardrail. Batching is per *session*, and ownership stays per
   *row* — a batch that claims all its tickets at once would hold rows it is not working on, which is the
   scope-reservation problem `CONCURRENCY.md` already names for `touches:`.

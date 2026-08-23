@@ -172,3 +172,35 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   ticket's first verify pass failed on. Fixing it in the rule costs words the AC7 ceiling has no
   margin for, which is why it is parked rather than edited (pointer: references/CONCURRENCY.md,
   skills/verify/SKILL.md Step 5 item 3, skills/queue/templates/close reconcile guard, 0023 FR7).
+
+- 2026-08-23 — **this repo is the one backlog that never gets the scripts it ships.** `develop`
+  Step 1 opens with *"Run `./next develop` rather than reading `QUEUE.md`"*, and
+  `.claude/backlog/` here holds no `next`, `claim` or `close` — they live in
+  `skills/queue/templates/` and are copied into a *new* project's backlog by `queue` Step 0. So the
+  project developing them claims by hand, against precisely the rules the scripts exist to
+  remember, and the largest avoidable context cost the step names is unavoidable here (pointer:
+  skills/develop Step 1, skills/queue Step 0, .claude/backlog/).
+- 2026-08-23 — **a by-hand claim cannot be spread across tool calls, and the lock silently says so.**
+  `trap 'rm -rf .lock' EXIT` fires when each Bash invocation's shell exits, so a lock taken in one
+  call is already gone by the next — the claim looked held and was not. The whole sequence (lock,
+  re-read, row edit, frontmatter, commit, release) has to be a single invocation. The skill's steps
+  1–5 read as five steps, which is the natural way to run them and the wrong one (pointer:
+  skills/develop Step 1, references/CONCURRENCY.md *Lock every write to QUEUE.md*).
+- 2026-08-23 — **`QUEUE.md`'s prose documents an ownership protocol this project has not built.** It
+  states that a claim is the directory `claims/<id>/` created with `mkdir` and that "claiming needs
+  no lock" — 0007's design, and 0007 is unbuilt and blocked on 0005. The implemented protocol is the
+  lock plus `claimed_by:`, and `CONCURRENCY.md`'s *A claim must be durable the moment it is made*
+  warns explicitly that a `mkdir` claim is invisible to git. A session trusting `QUEUE.md` over the
+  skill would claim invisibly and have it carried off by the next commit; `claims/` is empty while a
+  row read `in-progress`, which is what the mismatch looks like from outside (pointer:
+  .claude/backlog/QUEUE.md ownership paragraph, 0007).
+- 2026-08-23 — **0026 cannot be executed by the stage its row names.** Its FR1 wants a fresh project
+  taken through `queue → develop → verify` with each skill in its own session, and a develop session
+  cannot create sessions — the row needs a person, so it is `waiting` in substance whatever the
+  column says. Two things found while checking: its `blocked` was stale (sole blocker 0022 is
+  `done`), left alone because the row is not takeable anyway and the fix belongs to whoever takes
+  it; and the observed data FR2 wants already exists on disk —
+  `~/.claude/projects/<slug>/*.jsonl` carry per-turn `usage` (cache read/creation, output) and a
+  `<command-name>` marker naming the skill, so today's own isolated sessions are measurable per
+  skill per turn. That is not a *fresh* project, so it satisfies FR2–FR7 but not FR1 as written
+  (pointer: items/0026, README.md one-skill-per-session section).
