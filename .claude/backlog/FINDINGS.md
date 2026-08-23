@@ -28,6 +28,20 @@ it forever.
 Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, item id)`
 
 ---
+- 2026-08-23 — `verify` Step 2's ownership test cannot see a **claimless writer**. It checks for an
+  `in-progress` row under a token you did not mint; `retro` by design holds no ticket, so while it
+  landed lessons into `skills/verify/SKILL.md`, `skills/queue/SKILL.md` and `references/CONCURRENCY.md`
+  mid-pass, `QUEUE.md` showed exactly one in-progress row — mine — and the field-and-claim check read
+  as clean while three files were dirty. Only `git status` caught it, and only because Step 2 is run
+  again by habit rather than by instruction (pointer: skills/verify Step 2, skills/retro).
+- 2026-08-23 — an **advisory PASS has no way to bank what it verified**. 0024's greens were checked
+  against both the committed and the working-tree copy of every file its ACs rest on, so none was
+  luck — but Step 7 still forbids closing, and the row goes back to `next: verify` carrying no record
+  that the whole pass already ran. The next session re-runs 21 assertions, six mutations and a
+  tree-wide grep to reach the same verdict, and the only thing that actually has to change is a dirty
+  tree nobody in the pass controls. Either the verdict needs somewhere durable to sit, or advisory
+  needs to distinguish "green may be luck" from "green survived both states" (pointer: skills/verify
+  Steps 2 and 7, items/0024).
 - 2026-08-23 — this repo's own backlog has **neither `next` nor `claim` installed**, so `/develop`'s
   Step 1 ("run `./next develop` rather than reading `QUEUE.md`") had no correct answer and the whole
   queue had to be read. The skill treats the scripts as present; the repo that ships them is the one
