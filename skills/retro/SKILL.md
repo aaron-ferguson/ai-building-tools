@@ -24,150 +24,146 @@ what must never be documented are defined by `documentation-conventions.md` and 
 restated. Resolve the conventions per `references/CONVENTIONS.md`, **read that file before Step 1**,
 and stop if none resolve — a retro with no standard to write against produces opinions, not rules.
 
-**It reviews the session, not the decisions taken in it.** A choice the user already made is not
-a finding. Re-opening settled calls is how a retro becomes a second argument.
+**Its input is `FINDINGS.md` across many sessions, not one session's memory.** Each skill parks
+what surprised it as it happens, so by the time this runs the observations are already on disk —
+which is the only thing that survives a session boundary. There is no live session left to review:
+with one skill per session, the sessions that produced these findings have already ended, and
+anything they did not park is gone.
+
+**It runs on a cadence, and it is not a lifecycle stage.** `retro` is not a `next` value, no skill
+invokes it, and it is not part of the per-ticket loop. Run it when **`FINDINGS.md` holds about
+eight entries or more**, or **weekly** if the buffer fills slower than that — whichever comes
+first. Running after every ticket would mostly find nothing, and the cheapest nothing is the one
+not run: measured on 2026-08-22, `retro` cost **$5.50** — 36% of the run — at the lowest output per
+turn of any phase, because it ran last where context was largest.
+
+**The system learns *more* under this shape, not less.** Before, a lesson survived only if a retro
+happened to run after the session that noticed it; two of four findings in that run existed only in
+conversation and would have been lost. Now every session contributes whether a retro ever runs or
+not.
+
+**It reviews what sessions recorded, not the decisions taken in them.** A choice the user already
+made is not a finding. Re-opening settled calls is how a retro becomes a second argument.
 
 ---
 
 ## What this owns, and what it does not
 
-`develop` builds one item and closes it. This runs after that — or standalone — and owns
-everything about *learning*, so that neither skill does half a job:
+The lifecycle skills build one ticket and close it. This owns everything about *learning*, and
+narrows to the part that genuinely needs the cross-session view: **recognising that several
+sessions hit the same thing**, choosing destinations, and making the edits. A single session's
+observation is a parked line; the same line from three sessions is a rule.
 
-| | `develop` | `/retro` |
+| | the lifecycle skills | `/retro` |
 |---|---|---|
-| Question | did this item get built and verified? | what did this teach, and where does it go? |
-| Scope | one item | the items closed, plus the session around them |
+| Question | did this ticket get built, checked and closed? | what did many sessions teach, and where does it go? |
+| Scope | one ticket, one session | the buffer, across every session that filled it |
+| Trigger | the ticket's `next` field | a cadence — the buffer's size, or a week |
 | Output | working code, a closed row | edits to skills, conventions, project docs, and new rows |
 
-`queue` remains the only thing that writes a *new backlog item*. When a finding is a unit of work,
-this skill hands it there rather than describing it in a report.
+**This skill takes the lessons; `queue` takes the units of work.** Two sweepers, one file, and
+neither waits for the other — an entry that is both is taken by both. Leave the work entries where
+they are; `queue`'s sweep specifies and ranks them, which is a job this skill would do badly and in
+the wrong session.
 
-**Most of a retro's value should already be on disk before it runs.**
-`documentation-conventions.md` fires on *discovery* — you write the mechanism down in the same
-change as the code, while the file is open. That is the cheap half and it does not need this skill.
-What is left for the end is the half with no file to live in: the deferrals, the reds you proved
-were not yours, the skill that misled you, the row nobody has written. Scope the pass to that, and
-it stays small.
+**Most of the value is on disk before this runs.** `documentation-conventions.md` fires on
+*discovery* — the mechanism gets written down in the same change as the code, while the file is
+open. That is the cheap half and it does not need this skill. What reaches the buffer is the half
+with no file to live in: the deferrals, the reds proved not to be theirs, the skill that misled
+someone, the row nobody has written.
 
-Two habits shrink the end-of-session pass to almost nothing, and both are cheaper than this skill
-because they happen while the context is already hot:
-
-- **Queue the deferral when you defer it**, not when you remember it. "We should fix that later" is
-  a row, and it costs a fraction to write in the moment than to reconstruct at the end.
-- **Work from what you already have.** The session is in context; re-reading files you have already
-  read, to summarise work you have already done, is exactly the expense that makes a retro feel
-  like a tax. Grep only the destination you are about to edit.
-
-**A retro is allowed to find nothing, and saying so is a complete result.** This is not a ritual
-that owes an output. If the triggers below did not fire — nothing was corrected, nothing was
-deferred, no rule misled you, nothing cost more than it should have — then the honest report is one
-line saying you checked and there was nothing worth writing, and that is the end of it. **Do not
-manufacture a finding to justify the pass.** An invented lesson costs more than a skipped one: it
-goes into a file that every later session pays to read, and it dilutes the rules that were earned.
-The same applies to the cost review below — plenty of sessions are already about as cheap as they
-could have been.
-
-**Match the effort to the session.** A short session that went cleanly deserves the trigger check
-and nothing more. A long or painful one earns both passes in full. Reading a session that had no
-friction, in detail, to produce nothing, is itself the waste this skill is supposed to catch.
+**Match the effort to the buffer.** A buffer of three stale lines deserves one pass and a one-line
+report. A buffer showing the same thing three times, from three sessions, earns the full treatment.
+Reading a thin buffer in detail, to produce nothing, is itself the waste this skill is supposed to
+catch.
 
 ---
 
-## Step 1 — Gather the findings
+## Step 1 — Read the buffer
 
-**Read `.claude/backlog/FINDINGS.md` first, and treat it as the primary source.** Sessions park
-findings there as they hit them, which is both cheaper and more reliable than reconstructing them
-afterwards — the context was hot at the time, and a parked entry survives compaction, an
-interrupted session, and the gap between one session and the next.
+`.claude/backlog/FINDINGS.md` is the input, and the only one. Sessions parked these as they hit
+them, which is both cheaper and more reliable than reconstructing them afterwards — the context was
+hot at the time, and a parked entry survives compaction, an interrupted session, and the gap between
+one session and the next.
 
-Two rules govern the file, and they are what keep it from becoming a graveyard:
+**Expire what has gone stale.** Anything older than about two weeks is dropped rather than
+processed, with the reason stated. A finding nobody acted on in two weeks was not worth acting on,
+and saying so plainly beats re-reading it forever. **If the file has grown far past the cadence
+threshold, that is itself a finding** — retros are not running, or not emptying.
 
-- **Empty what you process.** Every entry becomes a row, becomes an edit, or is dropped with a
-  stated reason. The file's normal state is empty; leaving processed entries in it is how the next
-  retro pays to read them again.
-- **Expire what has gone stale.** Anything older than about two weeks is dropped rather than
-  processed. A finding nobody acted on in two weeks was not worth acting on, and saying so plainly
-  beats re-reading it forever. **If the file has grown, that is itself a finding** — retros are not
-  running, or not emptying.
+Then read across the entries rather than down them, because that is the view no single session had:
 
-Then a short check of the session for anything that never got parked. On a session that went
-cleanly this is a moment's work and the honest answer is usually "nothing"; on a long or painful
-one, do both passes below in full.
-
-**The items.** For each item closed or worked this session:
-
-- **Anything ruled out of scope.** That was a decision to defer, not to drop.
-- **Every red or skipped check left unfixed**, including ones proved pre-existing. "Not mine" is
-  a statement about authorship, never about ownership.
-- **Anything handed to another item.** That is a claim about that item's scope and costs one grep
-  to check — an unverified hand-off is indistinguishable from dropping the finding, except that it
-  also sounds resolved.
-- **Anything the item predicted that reality contradicted** — a prerequisite that never landed, an
-  assumption gone stale, a rank now wrong.
-- **Anything fixed that another row owns.** The mirror of the hand-off, and easier to miss: say so
-  on that row, or the queue keeps ranking work that no longer exists.
-
-**The session.** These are the ones a per-item review structurally cannot reach:
-
-- **What cost the most time**, whether or not it produced anything. Rank by cost, not by interest.
-- **What cost the most *work* — tokens, rounds, rebuilds — for what it returned.** Distinct from
-  the line above, because the expensive thing is often not the slow thing. Look for: work built and
-  then thrown away, the same question asked of the model twice, a file read whole to learn one
-  fact, a suite run again when nothing it covers had changed, a round trip per guess where one
-  round trip could have carried a batch. **The fix is nearly always upstream of the cost** — the
-  cheap retro finding is "cache this", the real one is "we should not have built that yet". Say
-  which, and route it: a habit belongs in the skill that governs the work, a one-off belongs
-  nowhere. And be honest when the answer is that the session was already lean.
-- **Anything you got wrong and corrected mid-session.** The correction is the finding.
-- **Anything the user had to correct you on.** They paid attention so a future session would not
-  have to — the highest-value input available, and the one a self-assessment omits by nature.
-- **A rule you followed that was incomplete or misleading.** Not only missing rules: a rule that
-  is right about its own case and silent about the neighbouring one reads as complete, which is
-  what makes it dangerous.
+- **The same thing hit more than once.** Three sessions tripping on one template step is a rule;
+  one session tripping on it is a line in a buffer. This is the finding a per-session review
+  structurally cannot produce, and it is why the cadence exists.
+- **What cost the most work for what it returned** — work built and thrown away, the same question
+  asked twice, a file read whole to learn one fact. **The fix is nearly always upstream of the
+  cost**: the cheap finding is "cache this", the real one is "we should not have built that yet".
+  Say which, and route it — a habit belongs in the skill that governs the work, a one-off belongs
+  nowhere.
 - **Anything a tool, skill, or convention made harder than it needed to be** — including this one.
 - **Anything re-derived that an earlier session already knew.** A documentation gap with a receipt.
+- **Anything the entries show was *invalidated*.** A sentence elsewhere that this work made false is
+  more dangerous than a missing one: a stale rule reads as current, gets followed, and gets the
+  change reverted by someone who believes they are fixing a regression.
 
-**`documentation-conventions.md` defines *when* a discovery must be written down** — and its
-triggers are the authority, not this list. Walk them alongside the two passes above; it also names
-what must *not* be documented, which is what stops a retro turning findings into clutter.
+`documentation-conventions.md` defines *when* a discovery must be written down, and its triggers are
+the authority rather than this list. It also names what must **not** be documented, which is what
+stops a retro turning findings into clutter.
 
 Then, for each finding, ask the question that decides everything downstream:
 
-> **What would have had to be written down, and where, for this session to have gone differently?**
+> **What would have had to be written down, and where, for that session to have gone differently?**
 
 A finding that cannot answer that is an observation. Say so and drop it rather than finding it a
 home — a rule nobody would have read is rent with no return.
 
 ---
 
-## Step 2 — Check it is not already written down
+## Step 2 — Propose, then wait
 
-**Grep the destination before proposing anything.** One command, and it is the difference between
+**The gate comes before the destination work, not after.** Present the findings you propose to act
+on, each with a one-line reason and a *provisional* destination — and what you propose to drop, with
+its reason. Then wait.
+
+This order is deliberate: checking a destination properly means greps, reading the file that would
+change, and comparing against the installed copy of a skill. All of that is wasted on a finding the
+user was never going to accept, and a rejected finding should cost nothing to have proposed. A menu
+of options hands the judgement back to the user, which is the opposite of the point — recommend.
+
+**A retro is allowed to find nothing, and saying so is a complete result.** If the buffer held only
+stale or dropped entries, the honest report is one line saying you read it and there was nothing
+worth writing. **Do not manufacture a finding to justify the pass.** An invented lesson costs more
+than a skipped one: it goes into a file every later session pays to read, and it dilutes the rules
+that were earned.
+
+---
+
+## Step 3 — Check the destination, then choose it
+
+Only for the findings that survived the gate.
+
+**Grep the destination before writing anything.** One command, and it is the difference between
 sharpening a rule and duplicating it. Where something related exists, **sharpen it in place**: an
 adjacent second bullet is how a file grows without getting better.
 
 Three traps, each of which has cost a real session:
 
 - **You may be running an older copy of a skill than the source.** A session resolves its skills
-  once, at start, from the installed copy. The checkout can be several versions ahead, and the
-  rule you are about to add may already be there — along with the fix for the problem you just
-  hit. Compare before you write.
+  once, at start, from the installed copy. The checkout can be several versions ahead, and the rule
+  you are about to add may already be there — along with the fix for the problem you just hit.
+  Compare before you write.
 - **A rule that exists but did not fire is not a missing rule.** If the guidance was there and was
   not followed, the finding is about *reach* — wrong file, wrong step, buried under something
-  louder — or it is simply that you erred. Say which. A second copy of an ignored rule weakens
+  louder — or it is simply that someone erred. Say which. A second copy of an ignored rule weakens
   both.
-- **Check what the session *invalidated*, not just what it added.** The sentence elsewhere that
-  this work just made false is more dangerous than a missing one: a stale rule reads as current,
-  gets followed, and gets the change reverted by someone who believes they are fixing a
-  regression. If a decision was reversed, grep the conventions, the project's docs and any guard
-  test's prose for the rule it overturned — **including any note saying not to do the thing that
-  was just done** — and correct it where it lives. Say it was reversed and on whose call, so the
-  next reader can tell a decision from an erosion.
+- **Check what was *invalidated*, not just what is missing.** If a decision was reversed, grep the
+  conventions, the project's docs and any guard test's prose for the rule it overturned —
+  **including any note saying not to do the thing that was just done** — and correct it where it
+  lives. Say it was reversed and on whose call, so the next reader can tell a decision from an
+  erosion.
 
----
-
-## Step 3 — Choose the destination
+### Where it goes
 
 **CLAUDE.md is almost never the right answer, and reaching for it first is the most common way a
 retro makes a project worse.** It loads into *every* session on that project — including every
@@ -212,18 +208,19 @@ skill.
 
 ---
 
-## Step 4 — Recommend, then write
+## Step 4 — Write it, and empty what you processed
 
-Present the findings with **a recommendation, not a survey**: each one, its destination, and a
-single line of why — plus what you propose *not* to write, and the reason. A menu of options hands
-the judgement back to the user, which is the opposite of the point.
+The findings are agreed and the destinations checked, so this step is mechanical. Match each file's
+existing voice and structure; a rule that reads as a foreign insertion is a rule that gets skipped.
+State the failure the rule prevents, not the reasoning that convinced you of it.
 
-Then wait. These are edits to files that shape every later session, and the user gets to disagree
-before they land — frequently about the destination rather than the finding.
+If a destination check changed your mind about *where* something goes, say so before writing — that
+is the disagreement the user is most likely to have, and Step 3 is where the evidence for it turned
+up.
 
-Once agreed, write them. Match each file's existing voice and structure; a rule that reads as a
-foreign insertion is a rule that gets skipped. State the failure the rule prevents, not the
-reasoning that convinced you of it.
+**Then remove from `FINDINGS.md` only the entries you processed**, and commit in the same turn, by
+pathspec. Leave the units of work: `queue`'s sweep specifies and ranks those, and deleting one here
+loses it silently. Leaving an entry you *did* process is how the next retro pays to read it again.
 
 ---
 

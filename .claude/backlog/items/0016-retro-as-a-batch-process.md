@@ -2,13 +2,14 @@
 id: "0016"
 title: Make retro a batch process over many sessions
 type: chore
-next: develop
-status: blocked
+next: verify
+status: done
 qa_level: verify
 size: m
 created: 2026-08-23
+closed: 2026-08-23
 parent: "0009"
-blocked_by: ["0012", "0015"]
+blocked_by: []
 relates: []
 touches:
 ---
@@ -47,14 +48,14 @@ cheapest nothing is the one not run.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/retro/SKILL.md`, when read, then it describes its input as the findings
+- [x] AC1 — Given `skills/retro/SKILL.md`, when read, then it describes its input as the findings
       buffer across sessions and contains no instruction to review the current session.
-- [ ] AC2 — Given that file, when read, then it names a cadence.
-- [ ] AC3 — Given that file, when read, then the approval gate precedes the destination-checking
+- [x] AC2 — Given that file, when read, then it names a cadence.
+- [x] AC3 — Given that file, when read, then the approval gate precedes the destination-checking
       step.
-- [ ] AC4 — Given that file, when read, then it states that retro is not a lifecycle stage and
+- [x] AC4 — Given that file, when read, then it states that retro is not a lifecycle stage and
       not a `next` value.
-- [ ] AC5 — Given that file, when read, then it still states that finding nothing is a complete
+- [x] AC5 — Given that file, when read, then it still states that finding nothing is a complete
       result and that manufacturing a finding is worse than skipping.
 
 ## QA plan
@@ -79,3 +80,18 @@ cheapest nothing is the one not run.
 - The system learns *more* under this shape, not less. Today a lesson survives only if a retro
   happens to run after the session that noticed it. With 0012 in place every session contributes
   whether a retro ever runs or not.
+- **FR5's kill criterion is unresolved, and implementing it was the cheaper bet.** The criterion
+  says drop FR5 if an isolated batch retro measures under $1.50 — but no isolated batch retro has
+  been run yet, so there is no measurement to test it against. Reordering two headings costs
+  nothing and the failure it prevents (a rejected finding that already paid for its destination
+  research) is real at any price. **What would settle it:** run one batch retro under this shape
+  and record its cost; if it comes in under $1.50, collapse Steps 2–4 back into one.
+- Rewording, not deleting, was needed for AC1: the first draft explained the change by quoting the
+  phrase it removed, which the assertion correctly flagged. A guard that greps for a deleted phrase
+  is defeated by explaining the deletion in those words.
+- FR1 removed the "short check of the session for anything that never got parked" pass. That pass
+  was the whole reason 0012 exists: with every skill parking as it goes, there is no unparked
+  residue for a later session to find, and pretending to look for one is the appearance of learning.
+- Cadence chosen as **eight entries or weekly, whichever comes first** — a threshold and a
+  ceiling, because a threshold alone lets a slow-filling buffer age past the two-week expiry and a
+  schedule alone runs on nothing.
