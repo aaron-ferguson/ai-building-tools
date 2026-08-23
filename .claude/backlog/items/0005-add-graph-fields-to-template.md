@@ -27,8 +27,10 @@ header, and 0008 writes rules that cite it.
   and `relates:` (list), each with a comment stating the stored direction.
 - FR2 — The template's prose states the container/task rule: a ticket with children is an effort,
   is never ranked or claimed, and holds outcome and scope; a ticket without children is a task.
-- FR3 — `templates/QUEUE.md` has a `Parent` column and no `Owner` column, with the header row
-  ordered `ID | Title | Type | Size | QA | Status | Parent | Item`.
+- FR3 — *Struck. The header row is now set by 0010, which pares the table to
+  `ID | Title | Next | Status | Parent` as part of splitting `Status` into two fields. Both
+  tickets rewrite the same line, and to contradictory contracts; one owner avoids writing it
+  twice. This ticket keeps the `Parent` column requirement only insofar as 0010 preserves it.*
 - FR4 — The template's prose states that children are derived (one `grep`), never stored, and why:
   a stored reverse edge is a second place to update and the one that goes stale.
 - FR5 — `epics/`, `EPICS.md`, and any separate effort template are explicitly *not* introduced.
@@ -45,8 +47,7 @@ header, and 0008 writes rules that cite it.
 
 - [ ] AC1 — Given `templates/item.md`, when the frontmatter is read, then `parent`, `blocked_by`,
   and `relates` are present with direction comments.
-- [ ] AC2 — Given `templates/QUEUE.md`, when the header row is read, then it contains `Parent`
-  and does not contain `Owner`.
+- [ ] AC2 — *Struck with FR3 — 0010 asserts the header row.*
 - [ ] AC3 — Given the plugin tree, when `epics/` or `EPICS.md` is searched for, then neither exists.
 - [ ] AC4 — Given `README.md`, when the storage-layout block is read, then it shows no `epics/`
   directory and no `Owner` column.
@@ -65,3 +66,9 @@ header, and 0008 writes rules that cite it.
 Any behaviour. This ticket ships the shape; 0006 reads it and 0008 enforces it.
 
 ## Notes & decisions
+
+- **FR3 and AC2 handed to 0010** (2026-08-23). 0010 splits `Status` into `Next` + `Status` and
+  pares the table in the same edit, so the header row has one owner rather than two tickets
+  setting it to different shapes. Nothing else in this ticket changes: the frontmatter fields,
+  the container/task prose, the derived-children rule and the no-`epics/` rule are untouched and
+  0010 depends on none of them.
