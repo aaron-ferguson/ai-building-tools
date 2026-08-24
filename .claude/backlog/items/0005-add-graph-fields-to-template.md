@@ -3,16 +3,16 @@ id: "0005"
 title: Add the graph fields to the ticket template and QUEUE.md
 type: chore
 next: verify
-status: in-progress
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-18
 parent: "0002"
 blocked_by: []
 relates: []
-touches: skills/queue/templates/item.md, tests/graph-fields.test.sh
-claimed_by: "bb6e"
-claimed_at: 2026-08-24T05:34:51Z
+touches:
+claimed_by:
+claimed_at:
 ---
 
 ## Problem
@@ -106,3 +106,22 @@ Any behaviour. This ticket ships the shape; 0006 reads it and 0008 enforces it.
   setting it to different shapes. Nothing else in this ticket changes: the frontmatter fields,
   the container/task prose, the derived-children rule and the no-`epics/` rule are untouched and
   0010 depends on none of them.
+
+- **Verified 2026-08-24** (token `bb6e`) — **advisory PASS, deliberately not closed.** All four live
+  ACs hold, and every AC-bearing assertion was mutation-proved rather than taken on trust: removing
+  `parent:` reds 10, rewording `blocked_by:`'s direction reds exactly 1, moving a phrase out of its
+  block while leaving it in the file reds exactly 1 (the vacuous-grep defect is genuinely fixed),
+  planting `EPICS.md` reds, adding `epics/` and `| Owner` to the README reds 2, adding `children:`
+  reds, dropping `source:` reds. The migration NFR was checked by stripping all three graph fields
+  from this item and confirming `./next` and `./next --drift` still parse it.
+
+- **Left at `next: verify` because the tree stopped being clean mid-pass.** Session `ebff` is renaming
+  the effort/task concept to project/task and has half-applied it: `tests/graph-fields.test.sh` — a
+  file inside this ticket's committed `touches:` — now asserts `a ticket with children is a project`
+  while `skills/queue/templates/item.md` still says `effort`, so this ticket's own guard is red
+  against a contract 0005 never agreed to. Nothing was reverted. **To close:** re-run once that
+  rename has landed on both files, or once the guard is back to the effort wording.
+
+- **AC3's guard is narrower than AC3 states.** The `find` covers `skills/`, `references/` and `tests/`
+  only, so an `EPICS.md` at the repo root or under `tools/` passes green — confirmed by planting both.
+  AC3 was verified by a direct tree-wide `find` instead. The guard's scope is a separate fix.
