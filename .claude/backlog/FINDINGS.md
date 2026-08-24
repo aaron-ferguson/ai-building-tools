@@ -29,6 +29,25 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-24 — **`develop` Step 5 tells a session to run the whole suite, but nothing tells it the
+  suite may be measuring a moving target.** 0026's harvest reads a live transcript store, and the
+  session count moved 30 -> 31 mid-run because another window opened a session. Any ticket whose
+  output is a measurement of the machine it runs on needs its snapshot pinned and recorded, and no
+  skill step says so (pointer: skills/develop/SKILL.md Step 5, tools/harvest-usage.sh, items/0026).
+- 2026-08-24 — **A ticket's QA plan can contradict a guard another ticket already shipped.** 0026's
+  plan asserted `grep -c 0026` is zero in develop's SKILL.md; `tests/batching.test.sh` (0025) asserts
+  `0026` is *present* in the same paragraph. Both are satisfiable at once only because the QA plan
+  qualified itself with "for the pending-placeholder sentences" — an unqualified one would have
+  forced a session to edit another ticket's guard to close its own. Worth a `queue` check that a new
+  QA plan's absence assertions do not collide with a shipped guard (pointer: items/0026 QA plan,
+  tests/batching.test.sh).
+- 2026-08-24 — **`develop` Step 5's red-triage is written for tests and has no advice for a figure
+  that will not reconcile.** The published $15.11 baseline could not be reproduced from its own
+  transcript (78% of published, by every variant tried). The falsified/exposed distinction the step
+  offers does not apply, and what saved the ticket was the FR having been written with an explicit
+  "or say you could not" fallback. That fallback is a ticket-writing habit worth naming somewhere
+  (pointer: skills/develop/SKILL.md Step 5, items/0026 FR2, MEASUREMENT.md).
+
 - 2026-08-24 — **`queue` has no procedure for splitting a ticket, and splitting is neither of its two
   no-new-ID cases.** Step 1 offers *re-specify* (a bounce-back at `next: queue`, keeps its rank, skips
   Step 3) and *amend* (a new FR on an unclaimed ticket, re-check size/ACs/scope). Narrowing a ticket
