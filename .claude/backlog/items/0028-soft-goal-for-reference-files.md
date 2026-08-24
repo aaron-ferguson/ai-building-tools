@@ -18,6 +18,8 @@ expects:
 claimed_by: "3db2"
 claimed_at: 2026-08-24T04:46:49Z
 touches:
+  - .claude/backlog/items/0028-soft-goal-for-reference-files.md
+  - .claude/backlog/FINDINGS.md
 ---
 
 ## Problem
