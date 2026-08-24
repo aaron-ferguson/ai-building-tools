@@ -194,3 +194,39 @@ the comparison says about the suite as it then stands. `0037` carries the forwar
 - FR5 exists because a measurement whose verdict is only recorded when favourable is not a measurement.
   `measurement-conventions.md` already requires the verdict be recorded even when it is "it didn't
   work"; this FR is the citation, not a new rule.
+
+### Built 2026-08-24 — what the measurement turned on
+
+- **A turn is a distinct `message.id`, not a transcript line, and this is the whole ballgame.** One
+  API response is written as several lines — one per content block — and **every line repeats the
+  same complete `usage` object**. Summing lines overcounts by about 2.2x on a real session, and it
+  fails silently: the shape of the answer stays plausible. `tests/measurement.test.sh` feeds the
+  script a three-line response and asserts the deduplicated total, because nothing else catches it.
+- **This is also what matched the baseline.** Session `2ce6bc83` was described in this ticket as
+  "the 328-turn one". 328 is its **line** count; deduplicated it is 158 turns, and its 2026-08-22
+  portion is **98** — against the published 95. The published figure was reachable only after the
+  dedup rule was found.
+- **The published $15.11 and 191,752 are not reproducible from that transcript.** Recomputed they
+  are $11.79 and 151,669, both about 78% of published, and no variant tried closed the gap:
+  per-line summation, pricing every cache write at the 1-hour rate, or folding in the other Opus
+  session of that day. So the verdict compares recomputed against recomputed, which is like for
+  like, and keeps the published pair labelled as published. FR2 explicitly allows this.
+- **The command marker is not where prose suggests.** It arrives as `<command-message>` *then*
+  `<command-name>` for a plugin skill and the reverse for a built-in, and a session opens `/clear`
+  on its own message first. Anchoring on `<command-name>` at position 0 attributed **all 30
+  sessions to `unmarked`** — a complete harvest, no per-skill figures, and nothing failing. The
+  guard now carries both orderings and a marker quoted inside prose that must *not* count.
+- **The transcript store is live, and a harvest taken from inside it is not stable.** Mid-session
+  the session count moved 30 -> 31 because another window started a `design` session. Figures are
+  pinned by excluding the in-flight sessions and recording which — `--exclude` exists for that.
+- **`tests/batching.test.sh` asserts `0026` is named in develop's batching paragraph.** The
+  placeholder was therefore rewritten to name this ticket as the source of the *answer* — that no
+  batched session exists to measure — rather than deleted. The QA plan's "grep -c 0026 is zero" is
+  qualified as *for the pending-placeholder sentences*, and that is how it was read: the deferral
+  phrasing is gone from both skills, the provenance is not.
+- **The result is unwelcome and is recorded as it came out.** Cost per turn fell 14.5%, not the
+  ~66% the effort was justified by, and the modelled ~$5.09 assumed a 60k average context against
+  an observed 106,139. The mechanism is in `MEASUREMENT.md`: isolation swaps cache reads at 0.1x
+  input for cache writes at 1.25x-2x, so writes per turn *rose* 22.8% while context per turn fell 30%.
+- **0016's deferred kill criterion is settled and did not fire.** No isolated retro came in under
+  $1.50 — the cheapest retro-only session was $4.00 — so the approval-gate reorder stays.
