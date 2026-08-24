@@ -2,7 +2,7 @@
 id: "0030"
 title: Remove Notion from the base tool suite and make it profile-wired
 type: debt
-next: develop
+next: verify
 status: ready
 qa_level: verify
 size: m
@@ -15,16 +15,9 @@ expects:
   - references/NOTION.md
   - references/TRACKER.md
   - README.md
-claimed_by: "1446"
-claimed_at: 2026-08-24T04:02:17Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/SKILL.md
-  - skills/queue/templates/config.yml
-  - skills/queue/templates/item.md
-  - references/NOTION.md
-  - references/TRACKER.md
-  - README.md
-  - references/EXTERNAL-FEEDBACK.md   # new file, created by this ticket (FR5)
 ---
 
 ## Problem
@@ -115,3 +108,40 @@ baked than that: it is named in the skill's own prose and in its description met
   second pattern.
 - Why this ranks above the locally-painful tooling tickets: blast radius. Every project scaffolded
   by this suite inherits the Notion default, which is tie-breaker 1 (all projects > one project).
+
+### Built 2026-08-24 (claim 1446)
+
+- **FR4 resolved to delete, not move, and this is the decision the FR asked to have recorded.** The
+  base suite has no profile mechanism to move the file *into* — building one is this ticket's own
+  *Out of scope* — so a "move" would have meant inventing the destination the ticket forbids
+  inventing. `references/NOTION.md` is therefore removed, and the Notion-specific procedure (the MCP
+  data-source call, the page-id log, the property mapping) survives verbatim in git history.
+  `EXTERNAL-FEEDBACK.md` names the retrieval command — `git log --diff-filter=D --
+  references/NOTION.md` — so the port into a profile is a lookup, not a reconstruction from memory.
+  That is what discharges the deprecation NFR: the replacement path is stated in the same change
+  that stops the base suite reading `notion:`, not after it.
+- **`expects:` named four files; the code had six.** `references/TRACKER.md:33` cited the Notion
+  import as the shape a tracker's reverse import follows, and `templates/item.md:26` used
+  `notion:<page-id>` as the `source:` example. FR6 had predicted `item.md` in prose without it
+  reaching the frontmatter list, and nothing predicted `TRACKER.md` — a cross-reference from an
+  unrelated file is exactly what a ticket written weeks earlier cannot enumerate. Both are promoted
+  into `touches:`. Calibration for the next capture: grep the product name, do not reason about
+  which files "own" the integration.
+- **Removing an integration made the skill file bigger, not smaller — 24,486 → 24,652 bytes.** This
+  is counter-intuitive enough to be worth stating before someone treats it as a defect: a
+  product-specific procedure is short because the product supplies the nouns, whereas a generic
+  extension point has to explain the indirection itself (*which* product is a profile question, why
+  the default is absence, where the shape is documented). The saving is real but lands in the
+  conditionally-read `references/` file, which is the "pointer, not a cut" move `skill-size.test.sh`
+  recommends — it just does not show up as a smaller SKILL.md. `queue`'s recorded justification in
+  that guard still holds; the file was 4.3KB over the goal before this ticket and remains so.
+- **The guard is a grep for the product name, not for the config key.** The likely regression here is
+  not a deliberate reversal but a helpful later session adding "e.g. Notion" as an illustration — a
+  key-shaped check would pass straight through that. `tests/external-feedback.test.sh` exempts
+  exactly one path, `references/EXTERNAL-FEEDBACK.md`, because an extension point with no named
+  example of a source is an abstraction nobody can implement against; a fixture case asserts the
+  exemption is that one path and not "any file that mentions it".
+- **Scope held, with one deliberate exception.** The prose added for the generic extension point was
+  tightened after it measured larger than what it replaced. That is not scope creep into a
+  refactor — it is the context-rent rule in `CONVENTIONS_CORE.md` applied to the lines this ticket
+  itself wrote.
