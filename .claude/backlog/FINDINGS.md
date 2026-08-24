@@ -29,6 +29,34 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-24 — **`queue` has no procedure for splitting a ticket, and splitting is neither of its two
+  no-new-ID cases.** Step 1 offers *re-specify* (a bounce-back at `next: queue`, keeps its rank, skips
+  Step 3) and *amend* (a new FR on an unclaimed ticket, re-check size/ACs/scope). Narrowing a ticket
+  and moving the removed scope to a new one is **both at once**: an amend on the original with no ID
+  claim and its rank kept, plus a full Step 2 + Step 3 Add for the remainder — and the two halves have
+  opposite rules about the ID claim and the rank. Composed by hand for 0026 → 0037; the risk in
+  getting it wrong is re-ranking the original, which is the thing both existing cases are careful not
+  to do (pointer: skills/queue/SKILL.md Step 1 table, items/0026, items/0037).
+- 2026-08-24 — **The skill and `CONCURRENCY.md` disagree about whether a `QUEUE.md` row edit needs the
+  lock.** Step 2 says *"Release in the same turn; the item file, ranking and the row are all
+  unlocked"*, and Step 3 has the insert as a bare single `Edit`. `CONCURRENCY.md`'s *Lock every write
+  to `QUEUE.md`* says **"Every write, no exemptions"** and lists only three write sites, none of them
+  a capture-time insert. Resolved this session by taking the lock, which satisfies both, but a reader
+  following the skill alone inserts unlocked. One of the two is wrong and it is not obvious which:
+  `Edit`'s fail-on-mismatch may be the intended substitute for the lock on a single row, in which case
+  `CONCURRENCY.md`'s "no exemptions" is what needs the caveat (pointer: skills/queue/SKILL.md Step 2
+  and Step 3, references/CONCURRENCY.md *Lock every write to `QUEUE.md`* and *Never rewrite `QUEUE.md`
+  by hand*).
+- 2026-08-24 — **A non-takeable row 1 reads as an instruction, and bare `./next` is what makes it
+  read that way.** 0026 sat at row 1 as `waiting` for a day and was read as "the next thing to do" —
+  the user asked why we would run that test now. The rank was correct (a waiting ticket keeps its
+  rank, deliberately) and `./next develop` correctly stepped over it, but bare `./next` prints
+  `ROW 1: … | waiting` with no indication that nothing can take it, right beside the counts. It cost
+  a session to explain rather than a script to answer. Candidate: have bare `./next` print the
+  topmost *takeable* row alongside row 1 when they differ, which is the question a reader is actually
+  asking (pointer: .claude/backlog/next, QUEUE.md's *a blocked or waiting ticket keeps its rank*,
+  RANKING.md 2026-08-24 section).
+
 - 2026-08-24 — **`claim`'s success message is stage-blind: it tells every claimant to set `touches:`,
   which is `develop`'s field.** A `verify` claim holds no `touches:` — it reads and runs, it does not
   open a file scope — but the script prints "now set touches: ... before you open anything" regardless.
