@@ -87,6 +87,7 @@ def text_of(content):
 
 
 def cost_of(usage, model):
+    """(total, output-only) cost in dollars, or None on a model with no published rate."""
     rates = RATES.get(model)
     if rates is None:
         return None
@@ -99,19 +100,33 @@ def cost_of(usage, model):
     # should understate a cost it cannot see rather than invent the expensive half.
     if w1h + w5m == 0:
         w5m = total_creation
-    return (
+    output_cost = (usage.get("output_tokens", 0) or 0) * outp / M
+    input_cost = (
         (usage.get("input_tokens", 0) or 0) * inp
         + (usage.get("cache_read_input_tokens", 0) or 0) * inp * CACHE_READ_MULT
         + w5m * inp * CACHE_WRITE_5M_MULT
         + w1h * inp * CACHE_WRITE_1H_MULT
-        + (usage.get("output_tokens", 0) or 0) * outp
     ) / M
+    return input_cost + output_cost, output_cost
 
 
 def context_of(usage):
     return ((usage.get("input_tokens", 0) or 0)
             + (usage.get("cache_read_input_tokens", 0) or 0)
             + (usage.get("cache_creation_input_tokens", 0) or 0))
+
+
+def marker_skill(message):
+    """The skill a command-block user message invokes, or None if it is not one."""
+    body = WRAPPER.sub("", text_of(message.get("content"))).strip()
+    if not body or not CMD_ONLY.match(body):
+        return None
+    # Last marker wins: a session opens `/clear` and then the skill, in that order.
+    for name in reversed(CMD_NAME.findall(body)):
+        skill = skill_from(name)
+        if skill:
+            return skill
+    return None
 
 
 def parse_args(argv):
@@ -148,18 +163,13 @@ def harvest_session(path, opts):
         try:
             d = json.loads(line)
         except ValueError:
+            # A transcript being written to right now ends in a partial line. Skipping it loses
+            # at most the turn in flight, which is excluded from a pinned harvest anyway; raising
+            # would make every harvest of a live store fail.
             continue
         kind = d.get("type")
         if kind == "user":
-            body = WRAPPER.sub("", text_of(d.get("message", {}).get("content"))).strip()
-            if body and CMD_ONLY.match(body):
-                names = CMD_NAME.findall(body)
-                # Last marker wins: a session opens `/clear` then the skill, in that order.
-                for name in reversed(names):
-                    s = skill_from(name)
-                    if s:
-                        current = s
-                        break
+            current = marker_skill(d.get("message", {})) or current
             continue
         if kind != "assistant":
             continue
@@ -180,10 +190,11 @@ def harvest_session(path, opts):
         if cost is None:
             unpriced += 1
             continue
-        row = per_skill.setdefault(current, {"turns": 0, "cost": 0.0, "ctx": 0, "out": 0,
-                                             "read": 0, "write": 0, "days": set()})
+        total_cost, output_cost = cost
+        row = per_skill.setdefault(current, blank())
         row["turns"] += 1
-        row["cost"] += cost
+        row["cost"] += total_cost
+        row["outcost"] += output_cost
         row["ctx"] += context_of(usage)
         row["out"] += usage.get("output_tokens", 0) or 0
         row["read"] += usage.get("cache_read_input_tokens", 0) or 0
@@ -194,13 +205,14 @@ def harvest_session(path, opts):
 
 
 def blank():
-    return {"turns": 0, "cost": 0.0, "ctx": 0, "out": 0, "read": 0, "write": 0,
+    return {"turns": 0, "cost": 0.0, "outcost": 0.0, "ctx": 0, "out": 0, "read": 0, "write": 0,
             "days": set(), "sessions": 0}
 
 
-def add(dst, src):
-    for k in ("turns", "cost", "ctx", "out", "read", "write"):
-        dst[k] += src[k]
+def add_into(dst, src):
+    """Accumulate src into dst. Named for the mutation because it is the point of the function."""
+    for key in ("turns", "cost", "outcost", "ctx", "out", "read", "write"):
+        dst[key] += src[key]
     dst["days"] |= src["days"]
 
 
@@ -226,11 +238,11 @@ for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
         continue
     merged = blank()
     for name, r in per_skill.items():
-        add(merged, r)
-        s = by_skill.setdefault(name, blank())
-        add(s, r)
-        s["sessions"] += 1
-    add(totals, merged)
+        add_into(merged, r)
+        skill_row = by_skill.setdefault(name, blank())
+        add_into(skill_row, r)
+        skill_row["sessions"] += 1
+    add_into(totals, merged)
     totals["sessions"] += 1
     merged["sessions"] = 1
     session_rows.append((sid, "/".join(sorted(per_skill)), merged))
@@ -260,7 +272,7 @@ for name in sorted(by_skill, key=lambda n: -by_skill[n]["cost"]) + ["TOTAL"]:
     cost_usd = r["cost"] or 1.0
     print("%-10s| %12d | %12d | %12d | %7.1f%% | %7.1f%%"
           % (name[:10], r["read"], r["write"], r["out"],
-             100.0 * r["read"] / ctx_tok, 100.0 * (r["out"] * 25.0 / M) / cost_usd))
+             100.0 * r["read"] / ctx_tok, 100.0 * r["outcost"] / cost_usd))
 
 if opts["sessions"]:
     print("")
