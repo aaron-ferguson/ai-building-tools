@@ -29,6 +29,32 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-24 — **handing a ticket from one stage to the next is the one backlog operation with no
+  script, and it half-applied.** `./claim` takes a row and `./close` finishes one, but the handoff —
+  set `next:`, set `status:`, clear `claimed_by:`/`claimed_at:`, edit the row, commit, release — is a
+  by-hand lock operation in `design` Step 4 and `develop` Step 5 both. Settling 0036 it *did* half
+  apply: the `QUEUE.md` row reached `develop | ready` while the item frontmatter was still
+  `design | in-progress`, and the lock had already been released by the trap, so for a moment the row
+  and its item disagreed with nobody holding either. `CONCURRENCY.md`'s own argument for why `claim`
+  and `close` are scripts — "a script cannot forget" — applies unchanged to the handoff, which is the
+  one that mutates four fields across two files instead of two. (pointer: `references/CONCURRENCY.md`
+  *The three scripts*, `skills/design/SKILL.md` Step 4, `skills/develop/SKILL.md` Step 5)
+
+- 2026-08-24 — **`claim` writes `claimed_by:` quoted and the template shows it bare, so a matcher
+  written against either form silently misses the other.** The template has `claimed_by:`, `./claim`
+  wrote `claimed_by: "09e4"`, and an edit anchored on the unquoted spelling matched nothing — which is
+  what caused the half-applied handoff above. It fails silently rather than loudly: a
+  find-and-replace that matches zero times looks identical to one already in the desired state. Same
+  family as 0031's comment-blind `fm_list` but a different cause — quoting, not comments — so the
+  fix there will not cover it. (pointer: `.claude/backlog/claim`, `skills/queue/templates/item.md`,
+  item 0031)
+
+- 2026-08-24 — **`./claim --help` and `./close --help` treat the flag as a ticket id.** `./claim
+  --help` answers `no row for --help in QUEUE.md`. `./next --help` works and documents every mode, so
+  the inconsistency reads as "this script has no help" rather than "you passed a bad id", and the
+  scripts are the interface the skills tell every session to use. (pointer: `.claude/backlog/claim`,
+  `.claude/backlog/close`)
+
 - 2026-08-24 — **`develop` Step 5 tells a session to run the whole suite, but nothing tells it the
   suite may be measuring a moving target.** 0026's harvest reads a live transcript store, and the
   session count moved 30 -> 31 mid-run because another window opened a session. Any ticket whose
