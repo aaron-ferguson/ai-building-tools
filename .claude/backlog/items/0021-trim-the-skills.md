@@ -3,7 +3,7 @@ id: "0021"
 title: Hold the skills to the conventions' own context-rent rule
 type: chore
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -18,9 +18,10 @@ expects:
   - tests/skill-size.test.sh
   - references/NOTION.md       # queue's opt-in Notion block moved here
   - README.md
-claimed_by: e0c1
-claimed_at: 2026-08-23
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-08-23
 ---
 
 ## Problem
@@ -69,19 +70,19 @@ even within a single run.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `wc -c skills/*/SKILL.md`, when each count is compared to 20,190, then every
+- [x] AC1 — Given `wc -c skills/*/SKILL.md`, when each count is compared to 20,190, then every
       file is at or under it, or appears in the FR6 exemption list carrying the evidence FR6
       requires. No percentage and no baseline: the number is absolute.
-- [ ] AC2 — Given the `##` and `###` headings captured from all six files immediately before this
+- [x] AC2 — Given the `##` and `###` headings captured from all six files immediately before this
       pass, when the same headings are grepped for afterwards, then every one is still present.
       Diffed against the captured list, never counted — a count stays green if one rule is dropped
       and another duplicated.
-- [ ] AC3 — Given this ticket's notes, when read, then before and after byte counts for all six
+- [x] AC3 — Given this ticket's notes, when read, then before and after byte counts for all six
       files are recorded for this pass, alongside the previous pass's table.
-- [ ] AC4 — Given `tests/skill-size.test.sh`, when a copy of a compliant `SKILL.md` is padded past
+- [x] AC4 — Given `tests/skill-size.test.sh`, when a copy of a compliant `SKILL.md` is padded past
       the ceiling, then the test fails and names that file; when the tree is unmodified, it passes.
       A guard only ever seen passing is indistinguishable from one wired to nothing.
-- [ ] AC5 — Given `README.md`, when its test list is read, then `tests/skill-size.test.sh` appears
+- [x] AC5 — Given `README.md`, when its test list is read, then `tests/skill-size.test.sh` appears
       beside the existing entries.
 
 ## QA plan
@@ -372,3 +373,48 @@ the exemption path against a fixture — over the ceiling but under its floor (p
   two of the four existing guards, so a session following it ran neither `next.test.sh` nor
   `batching.test.sh`. Fixed in the same commit per the documentation rule that a change contradicting a
   documented rule updates it.
+
+### Verified (2026-08-23, `verify`, token `e0c1`) — PASS
+
+Baseline for the diff was **`b6d83d5`**, the parent of the first trim commit; its six byte counts
+match this ticket's "this pass, before" column exactly, which is what makes the recorded table
+auditable rather than asserted.
+
+| AC | How it was checked | Result |
+|---|---|---|
+| AC1 | `wc -c skills/*/SKILL.md` against the fixed 20,190; `develop` 20,081 (under by 109), `prototype` 23,394 and `queue` 21,789 at their recorded floors | pass |
+| AC2 | 74 `##`/`###` headings captured from `b6d83d5`, diffed (not counted) against HEAD — sole removal `prototype: ## Key Behaviors`; all seven of its bullets located in their mapped destinations | pass |
+| AC3 | this pass's before/after table present and appended below the two earlier tables; every cell reproduced from git | pass |
+| AC4 | proven able to fail **against the real tree**, not only its fixtures — three mutations, each restored by the mutated path alone | pass |
+| AC5 | `README.md` lists all five guards, and the stale "only thing with a test" claim is gone | pass |
+
+**The mutations, because the guard's own fixtures could not establish this.** Padding
+`skills/design/SKILL.md` past the ceiling → `over the 20190 ceiling by 607`; `queue` +1 byte →
+`over its exempt floor of 21789`; `prototype` truncated to 20,000 → `under the 20190 ceiling —
+remove its stale exemption`. Both exemption directions and the plain ceiling all red on the real
+tree.
+
+**FR6's evidence recomputes exactly.** Every section byte count in both exemption tables was
+reproduced by splitting each file on its `##` boundaries: `queue`'s eleven rows match individually
+and sum to 21,789; `prototype`'s grouped rows reconcile too, including Step 5's 11,690 as 10,205
+plus the 1,485-byte `## Screen:` template nested inside it.
+
+**FR2 held where it was most at risk.** `queue`'s cut restatements of `testing-conventions.md`
+(*Test Levels*) and `CONCURRENCY.md` were confirmed present in those files, with the mapping queue
+adds — where each level lands — kept. The scaffold's "copy the templates, `chmod +x` the three
+scripts" survived, consolidated into Step 0. The Notion block's move to `references/NOTION.md`
+satisfies the out-of-scope carve-out: it is read only under `notion.enabled: true`, so the cost
+falls rather than moves.
+
+Full suite green — 118 assertions across five guards. `batching.test.sh` matters here: its grep
+assertions target `develop`, which was re-wrapped, and the reflow hazard this ticket's own notes
+record did not recur.
+
+**Two things a reader should know, neither of them an AC failure.**
+
+- **Committed is not live.** The trim is not in the installed plugin: `0.9.2` was cut at `b83ffb6`,
+  before the trims, so its `develop`/`prototype`/`queue` are still the pre-trim copies and a session
+  today loads 110,470 bytes, not 104,551. The repo is the authority and the repo is correct; the
+  version bump is what makes it real.
+- **The guard's fixtures are coupled to the real tree** and can red a compliant one. Parked as a
+  finding with the measured threshold; it does not affect any AC today.

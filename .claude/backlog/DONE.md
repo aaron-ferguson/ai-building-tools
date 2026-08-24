@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0021 | Hold the skills to the conventions' own context-rent rule | chore | verify | 2026-08-23 | [items/0021-trim-the-skills.md](items/0021-trim-the-skills.md) |
 | 0025 | Name the batching case for develop, not just for capture | chore | verify | 2026-08-23 | [items/0025-batching-for-develop.md](items/0025-batching-for-develop.md) |
 | 0023 | Add a close script mirroring claim | chore | verify | 2026-08-23 | [items/0023-close-script.md](items/0023-close-script.md) |
 | 0024 | Derive the blocked status from the graph rather than the column | bug | verify | 2026-08-23 | [items/0024-blocked-derived-from-graph.md](items/0024-blocked-derived-from-graph.md) |
