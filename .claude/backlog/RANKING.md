@@ -142,3 +142,45 @@ saving into silent information loss. 0013 (verify closes) preceded the rest of g
 rule the others would have had to work around, and a section 0020 would otherwise have compressed. 0021
 went last because every other ticket rewrites the files it compresses — correct as far as it went, and the
 reason it could not close is that those rewrites also *grew* them by 18%.
+
+## 0036 — the supervising session, 2026-08-24
+
+Aaron's own request, captured the same day, and placed **Tier 4: value** — above 0035, below 0034.
+The reasoning is recorded at length because the placement is the one a later reader is most likely to
+think wrong.
+
+**Why Tier 4 and not Tier 2.** Nothing degrades while it sits. The hand-driven loop is a *recurring*
+cost, not a *compounding* one: the fix does not get more expensive each day, no wrong pattern is
+being copied into new code, and the ticket is fully specified so there is no knowledge to lose
+(tie-breaker 3 does not apply). What is true is that every cycle the human drives is a cycle where a
+step can be dropped — but that argument belongs to **0027**, which makes the mechanism forgettable,
+not to the supervisor, whose value is throughput.
+
+**The promotion argument, considered and rejected.** A supervisor makes every ticket below it cheaper
+to work, which reads like the prerequisite rule ("A makes B materially cheaper, so A goes above B").
+It was rejected because it proves too much: *any* tooling improvement makes all later work cheaper,
+and admitting that as a promotion would put tooling permanently above product. The prerequisite rule
+is for work that makes another ticket **possible**, and nothing on this queue is blocked on 0036.
+
+**Why below 0034.** 0034 is Tier 2 — a complete `verify` pass that cannot close currently leaves no
+record it ran at all, which is the silent information loss this whole backlog has been spending
+tickets to stop. It is also an `m` against an `l`.
+
+**Why above 0035.** Both are Tier 4/5 design tickets with no decay. Tie-breaker 1, blast radius:
+0036 changes how every project running this suite is operated; 0035 decides where prose lives in the
+skill files. Neither blocks anything.
+
+**Why not `blocked_by: 0026` or `blocked_by: 0027`,** both of which it genuinely depends on:
+
+- **0026** produces the observed baseline 0036's Performance NFR measures against, and it is
+  `waiting` on a person. This follows the 0025 precedent above — blocking correct work on an
+  unscheduled measurement is how it waits forever. Recorded in 0036's notes with an instruction to
+  fold the figure in.
+- **0027** installs the three scripts that *are* the supervisor's entire interface, and this repo's
+  backlog still lacks them. The design pass does not need them; a build exercised end-to-end here
+  does. Ranked above 0036 already, so the dependency and the order agree without a `blocked_by`.
+
+**It may come back here as an effort.** At `size: l` with an open mechanism question, the slicing
+depends on the answer — so children invented now would be slices ranked against a mechanism nobody
+has chosen. If `/design` returns multi-session work, 0036 returns to `next: queue` for slicing, per
+the 0021 precedent.
