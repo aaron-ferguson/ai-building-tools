@@ -38,7 +38,8 @@ in one component, unwarned.
 - **`queue` writes `expects:`** (predicted, code open); **`develop` writes `touches:` on claim**
   (actual, checked against the code, never copied). Why two fields: `CONCURRENCY-INCIDENTS.md`.
 - **Widen `touches:` as the work reaches further**, and read an **empty `touches:` on an `in-progress`
-  row as "held"** — silence is not permission.
+  row as *its files are held*** — silence is not permission. That is a statement about file scope; who
+  holds the *row* is the item's token alone (*A stage writes only the ticket it holds*).
 - **`verify` marks its verdict advisory** on changes outside the ticket.
 
 ## A claim must be durable the moment it is made
@@ -55,7 +56,10 @@ claim stays invisible until something is written inside it.
   you write; write only that row and its item file. **One narrow exception:** closing a ticket also
   reconciles the tickets naming it in `blocked_by`, in the closing commit — `blocked` is derived, so
   the close is the only event that can clear them. Reconcile only a dependent whose `status:` is
-  `blocked`, never one that is held — ownership is `claimed_by:`, not the row; report those.
+  `blocked`, never one that is **held** — and this is the one place *held* is defined: **a non-empty
+  `claimed_by:` in the item, and nothing else.** A row reading `in-progress` over a tokenless item is
+  drift, not ownership — `./next --drift` reports it, and no reader treats it as a claim. Report every
+  dependent you skip.
 - **A stage finding a ticket at another stage refuses it** — `develop` skips `next: design`, `verify`
   refuses anything not `next: verify`. That field keeps two stages off one ticket.
 - **`verify` owns closing**, holding the verdict when it acts, so no green goes stale.

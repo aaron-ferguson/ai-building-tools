@@ -167,8 +167,21 @@ claim, `claimed_by:` left intact. The guard consulted the one place *Claim token
 does not live.
 
 So the rule now selects on the dependent's own `status:` reading `blocked` rather than on
-`blocked_by` alone, and tests ownership in the item. It still checks the row too: an `in-progress`
-row carrying no token reads as held, per *The working tree is shared too*.
+`blocked_by` alone, and tests ownership in the item.
+
+**The row clause it also grew, and why that lost (0029).** The same fix added a second test: an
+`in-progress` row carrying no token *also* read as held, on *The working tree is shared too*'s
+"silence is not permission" — a session that had edited the row but not yet written its token would
+otherwise be written over. That is a real window, and the argument is kept here rather than deleted
+because a rule that looks arbitrary gets re-added by the next session that meets the case.
+
+It lost on **one definition beating two**. The rule and `verify`'s hand-close defined *held* as the
+item's token alone; only the script carried the extra clause, so the documented fallback wrote a
+dependent the script left alone — two paths, one close, different results. That is the defect shape,
+whichever half is right. The window it guarded also closed on its own: `./claim` writes the row and
+the token under one lock in one commit, so the untokened `in-progress` row is no longer a state a
+live session passes through — it is drift, and 0024 built `./next --drift` so drift is reported
+rather than silently honoured by every reader in turn.
 
 The wider lesson is about the ACs, not the script. The verification that found this had eight
 criteria and all eight passed; every dependent in every fixture had a row, so no criterion could

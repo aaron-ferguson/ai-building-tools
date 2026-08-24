@@ -210,8 +210,9 @@ installed:
    `done`, set its row and its item `status:` to `ready` (or `waiting`, if its `## Waiting on` section
    says a person is needed). **Two of those you must not write**, and neither has to have a row —
    `blocked_by` is never cleared, so a `done` dependent still names you and reconciling it resurrects
-   a closed ticket; and a dependent anything holds is reported, not written, where *held* means a
-   non-empty `claimed_by:` in the item, `CONCURRENCY.md`'s *Claim tokens* being where ownership lives.
+   a closed ticket; and a dependent that is held is reported, not written — *held* is defined
+   once, in `CONCURRENCY.md`'s *A stage writes only the ticket it holds*, and a row reading
+   `in-progress` over a tokenless item is not it.
    Skip anything whose own `status:` does not read `blocked`. Then run `./next --drift` and expect
    zero **for the rows you reconciled**, not for the file:
    drift an earlier close left behind names no ticket you hold, so reconciling it is forbidden and a
