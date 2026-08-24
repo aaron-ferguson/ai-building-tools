@@ -2,7 +2,7 @@
 id: "0027"
 title: Instantiate next, claim and close in this repo's own backlog
 type: chore
-next: develop
+next: verify
 status: ready
 qa_level: verify
 size: s
@@ -13,17 +13,9 @@ expects:
   - .claude/backlog/claim
   - .claude/backlog/close
   - .claude/backlog/QUEUE.md
-claimed_by: 8e08
-claimed_at: 2026-08-24T04:16:00Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/next
-  - .claude/backlog/claim
-  - .claude/backlog/close
-  - .claude/backlog/QUEUE.md
-  - .claude/backlog/items/0027-install-the-three-scripts-here.md
-  - .gitignore
-  - skills/queue/SKILL.md
-  - tests/backlog-scripts-installed.test.sh
 ---
 
 ## Problem
@@ -117,3 +109,33 @@ remove it. All three land together or none do.
 - Why not simply symlink the templates: the templates are the shipped artifact and a symlink would
   make this backlog's behaviour change silently whenever a template edit lands mid-session. Copies
   plus AC2's identity check makes the coupling explicit and auditable.
+
+### Develop pass, 2026-08-23 (claim 8e08)
+
+- **FR2 needed a permanent guard, not a one-time check.** AC2's three `diff`s are true at the
+  install commit and say nothing the day after: the next template edit diverges the copies silently,
+  in the one direction no failure ever points at. `tests/backlog-scripts-installed.test.sh` holds
+  AC1, AC2, AC6, AC7 and the `/bin/sh` NFR, so the identity is asserted on every suite run. Written
+  first, confirmed red on all twelve install assertions, then green.
+- **Table drift is deliberately *not* asserted in that suite.** `./next --drift` is the gate FR4
+  names, and it reads live backlog state — a suite assertion over it would go red on any unrelated
+  ticket's close, and this ticket is not the place to adopt a fragile check.
+- **FR4 needed no fixing: `--drift` exited zero on the first run.** All four modes agree with a
+  by-hand read — `develop` skipped 0026 (`waiting`) and this row (`in-progress`) and offered 0028;
+  `verify` correctly found nothing takeable; `--waiting` printed 0026's question.
+- **`claim` and `close` were exercised only on their refusal paths here.** No-args, unknown id,
+  a `waiting` row, a missing token, and a `develop`-stage close all refused with the right exit code
+  and leaked no `.lock/`. AC5's live claim on a scratch row is left to `verify` rather than
+  manufactured against the real table; the identity guard is what carries `tests/claim.test.sh`'s
+  and `tests/close.test.sh`'s coverage onto the installed copies.
+- **TDD order was clean for FR1/FR2/FR5 and inverted for FR6.** The Step 0 prose was written before
+  its AC7 assertion; the assertion was then proved red against `git show HEAD:skills/queue/SKILL.md`
+  rather than assumed. Recorded because the diff cannot show it.
+- **An inline YAML comment in `touches:` would have poisoned `./next`'s own overlap report.** The
+  develop skill says to mark a file you are about to create as new, inline; `fm_list` does not strip
+  `#` comments (0031), so doing that here would feed the comment text to the very reader this ticket
+  installs. The three new files are named in prose instead. 0031 owns the fix.
+- **The `skills/queue/SKILL.md` overlap resolved itself mid-session.** 0030 held that file in
+  `touches:` when this row was claimed, so FR1–FR5 were built first and FR6 deferred; 0030 closed at
+  22:18 and released it. Ordering a ticket's FRs around another session's file scope, rather than
+  stepping over the row, is what made the whole ticket deliverable in one pass.
