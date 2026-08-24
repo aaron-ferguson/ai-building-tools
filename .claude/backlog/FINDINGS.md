@@ -56,6 +56,21 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   worktree at *my last commit*, which is a verdict about a tree that actually exists. The skill
   could say to check the tree is clean before believing any full-suite result.
 
+- 2026-08-23 — **a vocabulary rename has no shape the backlog can hold.** Renaming the container
+  ticket type effort→project touched 27 files across `QUEUE.md`, the item template, two skills, three
+  test suites and 21 closed tickets. No `touches:` list can usefully declare that, no single ticket
+  owns it, and `claim` protects one row at a time — so a cross-cutting rename is invisible to every
+  concurrency mechanism the repo has, which is how it reddened `0005`'s held guard mid-pass. Either
+  such a change needs its own convention (announce, land in one commit, re-run the whole suite) or
+  the repo should accept that vocabulary is changed only when nothing is claimed (pointer:
+  references/CONCURRENCY.md, items/0001 *Notes & decisions* 2026-08-23).
+- 2026-08-23 — **the term the repo argued itself into was the one nobody used.** 0001 rejected
+  "project" on a collision argument — repo, Jira project key — and coined "effort" instead. The
+  collision was real and the reasoning sound, and it was still the wrong trade: a coined term is
+  misread by every reader who did not read the decision, while an overloaded real term is
+  disambiguated by context for free. Worth a rule somewhere: prefer the real-world word and qualify
+  it at the collision points, rather than inventing a word to avoid qualifying (pointer: items/0001
+  *Notes & decisions* 2026-08-18 and 2026-08-23).
 - 2026-08-24 — **every guard in this repo greps prose, and prose wraps — so a phrase that straddles
   a line break cannot be asserted at all.** Writing 0005's guard, `never its dependents` red against
   a template that plainly contained it: the sentence wrapped, so the phrase existed only as
