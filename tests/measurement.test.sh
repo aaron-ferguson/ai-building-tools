@@ -228,5 +228,24 @@ if [ -f "$REC" ]; then
   fi
 fi
 
+echo "Privacy & data NFR — no home-directory path in any tracked file"
+# The repo is public, so a path belonging to the machine that built it is an egress of exactly
+# what the NFR row puts out of bounds: a path outside this repo. This is a guard rather than a
+# review note because 0026 shipped four such strings with all nine of its ACs green.
+#
+# Two spellings, one rule: the absolute filesystem path, and the dash-separated slug the
+# transcript store makes of it. Both platforms are covered — a contributor on Linux leaks the
+# same fact. Neither form is written out anywhere in this file, and the pattern puts a bracket
+# before the word, so the guard cannot match its own text and report the repo dirty.
+HOME_PATH_PAT='[-/](Users|home)[-/]'
+if ! git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+  bad "Privacy & data NFR — cannot check: $ROOT is not a git repository, so the tracked set is unknown"
+elif leaked=$(git -C "$ROOT" grep -nE "$HOME_PATH_PAT"); then
+  bad "Privacy & data NFR — a tracked file publishes a home-directory path:
+$leaked"
+else
+  ok "no tracked file publishes a home-directory path, in either spelling"
+fi
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]

@@ -45,11 +45,11 @@ assistant turn, a `usage` object with `cache_read_input_tokens`, `cache_creation
 `output_tokens` and `output_tokens_details.thinking_tokens`, plus the `model` for that turn — and a
 `<command-name>` marker naming the skill that opened the session. Verified 2026-08-24:
 
-- **The isolated side.** `-Users-aaronferguson-Documents-AI-ai-building-tools` holds **30 skill
+- **The isolated side.** This repository's own transcript store holds **30 skill
   sessions** dated 2026-08-23 and 2026-08-24: `develop` 12, `verify` 9, `queue` 4, `retro` 2, plus
   three unmarked. This is the run that closed eleven of 0009's tasks.
 - **The baseline side.** Five sessions touching **2026-08-22** live in
-  `-Users-aaronferguson-Documents-AI`; the 328-turn one is the candidate for the $15.11 run, which
+  the parent workspace's transcript store; the 328-turn one is the candidate for the $15.11 run, which
   `README.md` records as 95 turns at an average 191,752 tokens per turn.
 
 That makes this an **observed-against-observed** comparison rather than observed-against-modelled,
@@ -240,8 +240,8 @@ the comparison says about the suite as it then stands. `0037` carries the forwar
   two tickets, so FR8's stated absence is right. 19 closed rows, all `qa_level: verify`, confirm
   $6.01 and $4.45 per closed ticket.
 - **What fails is the Privacy & data row, and it fails inside this file.** Lines 43 and 47 of
-  *Problem* publish two literal transcript-store slugs — `-Users-aaronferguson-Documents-AI-ai-building-tools`
-  and `-Users-aaronferguson-Documents-AI` — in a repo that same NFR row calls public. The row's own
+  *Problem* publish two literal transcript-store slugs — one for this repository, one for the
+  parent workspace — in a repo that same NFR row calls public. The row's own
   words are "no paths outside this repo, and no other project's name"; the second slug is both, and
   both encode the machine's home path. The **deliverables are clean**: `git grep` finds the string in
   no other tracked file, `MEASUREMENT.md` writes "the parent workspace's transcript store" and
