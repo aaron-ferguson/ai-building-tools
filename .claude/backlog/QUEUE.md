@@ -63,14 +63,13 @@ by the next commit. This paragraph described that design as current fact and was
 |------|-------|------|--------|--------|
 | 0026 | Measure the isolated workflow from the recorded sessions and record the verdict | verify | ready | 0009 |
 | 0029 | Reconcile close's definition of held with CONCURRENCY.md's | develop | ready | — |
-| 0005 | Add the graph fields to the ticket template and QUEUE.md | verify | in-progress | 0002 |
 | 0031 | Strip YAML comments in next and claim's fm_list | develop | ready | — |
 | 0032 | Terminate batching.test.sh's paragraph window on a blank line | develop | ready | — |
 | 0033 | Guard against stale rule-name citations across the references | develop | ready | — |
 | 0034 | Derive the advisory label from the paths the verdict rested on | develop | ready | — |
 | 0036 | Orchestrate the isolated stage sessions from one supervising session | develop | ready | — |
 | 0035 | Decide where conditionally-needed skill detail lives | design | ready | — |
-| 0007 | Replace the Owner column with claim directories | develop | blocked | 0002 |
+| 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |
 | 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |
 | 0008 | Add the graph rules to queue, develop, and verify | develop | blocked | 0002 |
 | 0003 | Phase 2 — the readiness gate and outcome reviews | develop | blocked | 0001 |

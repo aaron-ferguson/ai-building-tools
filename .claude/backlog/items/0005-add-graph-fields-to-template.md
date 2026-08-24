@@ -3,7 +3,7 @@ id: "0005"
 title: Add the graph fields to the ticket template and QUEUE.md
 type: chore
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: s
 created: 2026-08-18
@@ -11,8 +11,9 @@ parent: "0002"
 blocked_by: []
 relates: []
 touches:
-claimed_by: "f549"
-claimed_at: 2026-08-24T05:49:28Z
+claimed_by:
+claimed_at:
+closed: 2026-08-24
 ---
 
 ## Problem
@@ -48,11 +49,11 @@ header, and 0008 writes rules that cite it.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `templates/item.md`, when the frontmatter is read, then `parent`, `blocked_by`,
+- [x] AC1 — Given `templates/item.md`, when the frontmatter is read, then `parent`, `blocked_by`,
   and `relates` are present with direction comments.
-- [ ] AC2 — *Struck with FR3 — 0010 asserts the header row.*
-- [ ] AC3 — Given the plugin tree, when `epics/` or `EPICS.md` is searched for, then neither exists.
-- [ ] AC4 — Given `README.md`, when the storage-layout block is read, then it shows no `epics/`
+- [x] AC2 — *Struck with FR3 — 0010 asserts the header row.*
+- [x] AC3 — Given the plugin tree, when `epics/` or `EPICS.md` is searched for, then neither exists.
+- [x] AC4 — Given `README.md`, when the storage-layout block is read, then it shows no `epics/`
   directory and no `Owner` column.
 
 ## QA plan
