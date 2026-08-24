@@ -37,6 +37,23 @@ moment, so a genuine holder will be gone. Still held, then read `held-by`:
 Always release with `rm -rf` in the turn you took it, including on the path where you decide *not* to
 make the change. A script releases on its failure paths via a `trap`.
 
+**Three things bite a by-hand lock, and all three fail silently.**
+
+- **Resolve `$BACKLOG` to an absolute path.** A `trap 'rm -rf "$BACKLOG/.lock"' EXIT` resolves against
+  the shell's cwd *at trap time*, so a sequence that `cd`s to the repo root — the natural shape, since
+  the commit needs repo-relative pathspecs — deletes a `.lock` that isn't there and exits reporting
+  success. The lock stays held. One session held it for ~8 minutes across a whole implementation and
+  found out only when its own handoff hit a busy lock carrying its own token.
+- **A `trap ... EXIT` fires when each shell invocation exits, not when your turn ends.** A lock taken in
+  one tool call is already released by the next, so the claim looks held and is not. Either run the whole
+  sequence (lock, re-read, row edit, frontmatter, commit, release) in a **single** invocation, or **drop
+  the trap** and release with an explicit `rm -rf` at the end. Dropping it is what a `verify` close needs,
+  since its row edits go through `Edit` for single-row safety and cannot be one shell call — the cost is
+  a lock held for minutes, so keep every edit that is not to `QUEUE.md` outside it.
+- **A busy-lock report should say when the holder is you.** It prints the token and timestamp, which
+  diagnoses the leak above only if the reader remembers minting that token. Compare it against the token
+  you hold and say so.
+
 ### A scope overlap — rule: *The working tree is shared too*
 
 Take the next `ready` row whose scope is clear, and name both the row you stepped over and the scope

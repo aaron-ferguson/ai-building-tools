@@ -86,8 +86,9 @@ decide *not* to change anything; scripts release on failure paths via a `trap`. 
 operation, never an implementation.
 
 **The lock is `.claude/backlog/.lock/`, a directory, because `mkdir` is atomic on POSIX.** Put `$CLAIM`
-and a UTC timestamp in `.lock/held-by`, so a busy lock says who holds it; release with `rm -rf`,
-never commit it. **Snippet and the busy/stale paths: `CONCURRENCY-INCIDENTS.md`.**
+and a UTC timestamp in `.lock/held-by`, so a busy lock says who holds it; release with `rm -rf` at an
+**absolute** path, never commit it. **Snippet, the busy/stale paths, and the three ways a by-hand lock
+leaks silently: `CONCURRENCY-INCIDENTS.md`.**
 
 ## Claim tokens
 

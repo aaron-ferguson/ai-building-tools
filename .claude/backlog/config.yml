@@ -20,8 +20,11 @@ routing:
 
 # Commands verify runs per level. This project is markdown skills with no test runner, so
 # most tickets are qa_level: verify and name a scripted assertion of their own.
+# This project has no test runner: the suite is the shell scripts in tests/, each self-contained
+# and each printing its own "N passed, M failed" tally. `unit` runs all of them, which is what
+# develop Step 5's "the project's whole test suite" means here — there is nothing else to run.
 commands:
-  unit:
+  unit: for t in tests/*.test.sh; do "$t" || exit 1; done
   integration:
   e2e:
   lint:
