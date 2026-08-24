@@ -475,3 +475,23 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   carried into the handoff, not just the sentence "not mine". Worth a named case: a red the tree is
   *supposed* to have right now (pointer: skills/develop Step 5, skills/verify Step 2, items/0029
   notes).
+- 2026-08-24 — **0031 fixed the comment-blind *list* reader; the *scalar* readers are still
+  comment-blind, in both scripts.** `next`'s `fm()` and `close`'s `fm_value()` take everything after
+  `key:` and strip only surrounding quotes, so `claimed_by: "f0c3" # mine` returns `f0c3" # mine` —
+  and `close` compares that against the token it was given before it will close anything. The same
+  instruction that produced 0031 (develop Step 1: annotate the entry inline) invites it on any
+  frontmatter field, and there is now an asymmetry a reader will not expect: a comment on `touches:`
+  is handled, a comment on `claimed_by:` or `size:` is not. `decomment` in `next:117` is already the
+  fix — it needs lifting out of `fm_list` and applying in `fm()`, and giving to `close` along with
+  `fm_list` (which the 2026-08-24 block-list finding above already asks for). Out of scope for 0031,
+  whose FRs are lists only (pointer: skills/queue/templates/next `fm()`, skills/queue/templates/close
+  `fm_value()`, items/0031, develop Step 1).
+- 2026-08-24 — **"diff the mutation before believing either colour" silently gives you nothing when
+  the implementation is not committed yet.** `testing-conventions.md` says to confirm a mutation
+  landed by diffing the file, and the reflex is `git diff -- <path>`. On the TDD path that diff is
+  against HEAD, which still holds the *pre-fix* code, so the mutated line never existed there and the
+  grep for it comes back empty — an empty diff that looks exactly like a mutation that failed to
+  apply, on a run that was in fact correctly red. It happened here and cost a second pass. The fix is
+  cheap and worth naming in the rule: copy the file aside before mutating and `diff` against that
+  copy, never against HEAD, whenever the code under mutation is uncommitted (pointer:
+  ai-building-conventions/testing-conventions.md "Prove a new guard fails", skills/develop Step 5).
