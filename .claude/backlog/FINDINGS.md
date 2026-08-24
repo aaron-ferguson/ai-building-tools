@@ -190,3 +190,26 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   a defect — but it means a third reference file is about to need either a relocation or a recorded
   reason, and better to decide that deliberately than at a red (pointer: references/TRACKER.md,
   tests/reference-size.test.sh, items/0028).
+- 2026-08-24 — **`close`'s reconcile silently skips a dependent whose `blocked_by` is a YAML block
+  list, and closing 0028 hit it.** `close` reads the field with `fm_value`, which returns only what
+  sits after the colon on the key's own line, so `blocked_by:` followed by `  - "0028"` parses as
+  empty, the `case "$blockers" in *"$ID"*)` test misses, and the loop `continue`s. 0028 closed
+  reporting no reconcile at all; 0029 stayed `blocked` in both the item and the row, and
+  `./next --drift` exited 1 — the stale-cache failure `close`'s own header calls the reason the
+  reconcile is part of the close. Reconciled by hand under the lock afterwards. `next` already
+  handles both forms via `fm_list` (next:100, used at next:118); `close` never got that parser.
+  Blast radius today is one ticket — 24 of 25 items use the inline `blocked_by: ["0002"]` form that
+  `fm_value` reads correctly, and 0029 is the only block-list one — but the form is unstandardised
+  because the shipped template carries no `blocked_by` field at all (that is 0005, still open), so
+  both forms will keep appearing. Two fixes, and the second is the load-bearing one: give `close`
+  `fm_list`, and standardise the field in the template (pointer: .claude/backlog/close `fm_value`
+  and `other_blockers_all_done`, .claude/backlog/next:100, skills/queue/templates/item.md,
+  items/0005, items/0029, items/0028 verify notes).
+- 2026-08-24 — **`tests/close.test.sh` passes 62 assertions over the reconcile and could not have
+  caught the bug above: every one of its `blocked_by` fixtures is the inline flow form.** `mkitem` is
+  called as `mkitem 0008 develop blocked '' '["0007"]'`, so the block-list shape the parser cannot
+  read is never fed to it. The guard is green against a shape the tree also mostly holds, which is
+  why this reads as covered rather than untested — the same fixture-realism trap 0028's own FR4 was
+  written about, one level up: not a fixture copied from the tree, but a fixture that encodes only
+  one of the two shapes the tree actually contains. A reconcile case in the block-list form is the
+  missing assertion (pointer: tests/close.test.sh:61-72 `mkitem`, :238-262, items/0028 FR4).
