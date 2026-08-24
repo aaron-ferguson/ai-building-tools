@@ -76,6 +76,56 @@ touches:
 ITEM
 }
 
+# A held item whose frontmatter lists are written out verbatim, so a case can put a YAML comment,
+# a quoted path or a comment-only entry where a real session would. `add_item`'s fixed blocks
+# cannot express any of those, and the comment handling is the whole subject of 0031.
+#
+# $1 id, $2 status, $3 blocked_by value (inline, e.g. '[]'), $4 the touches block body — a
+# leading newline then `  - ` entries, or empty for none.
+add_item_lists() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: develop
+status: $2
+qa_level: unit
+size: s
+blocked_by: $3
+expects:
+  - some/file.md
+claimed_by: "aa11"
+claimed_at: 2026-08-24T00:00:00Z
+touches:$4
+---
+
+## Problem
+ITEM
+}
+
+# The same, with `blocked_by` written as a block so an entry can carry an inline comment.
+# $1 id, $2 status, $3 the blocked_by block body.
+add_item_blocked_block() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: develop
+status: $2
+qa_level: unit
+size: s
+blocked_by:$3
+expects:
+  - some/file.md
+claimed_by:
+claimed_at:
+touches:
+---
+
+## Problem
+ITEM
+}
+
 seal() {
   git -C "$FIX" add -A
   git -C "$FIX" commit -q -m "fixture"
@@ -190,6 +240,94 @@ out="$(run_next develop)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0
 assert_contains "skips it" "$out" 'SKIP      0001'
 assert_not_contains "offers nothing" "$out" 'TAKE'
+
+# --- 0031 — fm_list and YAML comments ----------------------------------------------------------
+# The overlap check that keeps two windows out of one file runs on these lists, so prose returned
+# as a path is not cosmetic: `develop` Step 1 compares `expects:` against every in-progress
+# `touches:`, and a comment or a trailing space makes a real collision compare unequal.
+
+# One CLAIMED FILES line, whole, for the given id — asserted entire rather than by cell, so a
+# stray comment or an extra space cannot hide behind a substring match.
+claimed_line() { printf '%s\n' "$1" | grep "^  $2 \[" || true; }
+
+echo "AC1 — an inline comment on a touches entry is not printed as a claimed file"
+scaffold
+add_row 0001 'A free row' develop ready 0000
+add_row 0002 'A held row' develop in-progress 0000
+add_item 0001 ready '[]'
+add_item_lists 0002 in-progress '[]' "$(printf '\n  - skills/queue/templates/next # new file')"
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+assert_contains     "names the claimed path"      "$(claimed_line "$out" 0002)" 'skills/queue/templates/next'
+assert_not_contains "prints no comment marker"    "$(claimed_line "$out" 0002)" '#'
+assert_not_contains "prints no comment text"      "$(claimed_line "$out" 0002)" 'new file'
+
+echo "AC2 — a # inside a quoted path is part of the path, not a comment"
+scaffold
+add_row 0001 'A free row' develop ready 0000
+add_row 0002 'A held row' develop in-progress 0000
+add_item 0001 ready '[]'
+add_item_lists 0002 in-progress '[]' "$(printf '\n  - "docs/a#b.md"')"
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+assert_contains "keeps the whole path" "$(claimed_line "$out" 0002)" 'docs/a#b.md'
+
+echo "AC3 — an entry that is only a comment yields no element"
+scaffold
+add_row 0001 'A free row' develop ready 0000
+add_row 0002 'A held row' develop in-progress 0000
+add_item 0001 ready '[]'
+add_item_lists 0002 in-progress '[]' "$(printf '\n  - # just a note\n  - a/real/path.md')"
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+line="$(claimed_line "$out" 0002)"
+assert_contains     "keeps the real path"    "$line" 'a/real/path.md'
+assert_not_contains "drops the note"         "$line" 'just a note'
+# The comment-only entry must vanish, not become an empty element: an empty element shows up as a
+# doubled separator, which is invisible to a substring assertion on the path alone.
+assert_not_contains "leaves no empty element" "$line" '  a/real/path.md'
+
+echo "AC3b — a standalone comment line inside the block does not truncate the list"
+scaffold
+add_row 0001 'A free row' develop ready 0000
+add_row 0002 'A held row' develop in-progress 0000
+add_item 0001 ready '[]'
+add_item_lists 0002 in-progress '[]' "$(printf '\n  - a/one.md\n  # a note about the next one\n  - a/two.md')"
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+line="$(claimed_line "$out" 0002)"
+assert_contains "keeps the entry before the note" "$line" 'a/one.md'
+assert_contains "keeps the entry after the note"  "$line" 'a/two.md'
+
+echo "AC4 — stripping a comment leaves no trailing whitespace to defeat a path comparison"
+scaffold
+add_row 0001 'A free row' develop ready 0000
+add_row 0002 'A held row' develop in-progress 0000
+add_item 0001 ready '[]'
+add_item_lists 0002 in-progress '[]' "$(printf '\n  - a/one.md   # a note\n  - a/two.md')"
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+line="$(claimed_line "$out" 0002)"
+# Single space between the two paths. Untrimmed, the line reads `a/one.md   a/two.md`, which still
+# contains each path — so only the join pins FR4.
+assert_contains "the two paths join on one space" "$line" 'a/one.md a/two.md'
+
+echo "AC5 — an inline comment on a blocked_by entry does not become a phantom open blocker"
+scaffold
+add_row 0001 'A dependent row' develop ready 0000
+add_item_blocked_block 0001 ready "$(printf '\n  - "0002" # the one that has to land first')"
+add_item 0002 done '[]'
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc       "drift exits 0" "$rc" 0
+assert_contains "reports no drift" "$out" 'no drift'
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc           "develop exits 0"          "$rc" 0
+assert_contains     "offers the row"           "$out" 'TAKE      0001'
+assert_not_contains "invents no missing ticket" "$out" 'no item file'
 
 # --- result -----------------------------------------------------------------------------------
 echo

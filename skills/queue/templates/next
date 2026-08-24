@@ -97,17 +97,55 @@ fm() {
 }
 
 # One frontmatter list, flattened to a line: inline `["0010"]` or a block of `- ` entries.
+#
+# Entries may carry YAML comments, because `develop` Step 1 tells a session to declare a file it is
+# about to create and say inline that it is new. A comment returned as part of an entry is not
+# cosmetic: these lists are what the scope-overlap check compares, so prose in the list reads as a
+# claimed path and a trailing space makes a real collision compare unequal — it fails open, and both
+# windows land in one file.
+#
+# `sub(/#.*/, "")` is the obvious form and it is wrong twice, so do not simplify it back:
+#   - `- "docs/a#b.md"` is a legal quoted path, and the naive form truncates it to `docs/a`;
+#   - in YAML a `#` only opens a comment at the start of a value or after whitespace, so `a#b`
+#     unquoted is one token too.
+# Hence `decomment`: a quote only quotes when it is the entry's first character (mid-value it is a
+# literal, so `it's/a/path.md` keeps its apostrophe), and a `#` only cuts when it opens the value or
+# follows a space or tab.
 fm_list() {
   [ -n "$1" ] || return 0
   awk -v key="$2" '
+    function decomment(s,   i, ch, quote, out, start) {
+      sub(/^[ \t]+/, "", s)
+      start = 1
+      ch = substr(s, 1, 1)
+      if (ch == "\"" || ch == "'"'"'") { quote = ch; start = 2 }
+      for (i = start; i <= length(s); i++) {
+        ch = substr(s, i, 1)
+        if (quote != "" && ch == quote) { quote = ""; continue }
+        if (quote != "")                { out = out ch; continue }
+        if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
+        out = out ch
+      }
+      sub(/[ \t]+$/, "", out)
+      return out
+    }
     NR == 1 && /^---$/ { fm = 1; next }
     fm && /^---$/ { exit }
     fm && $0 ~ "^" key ":" {
       rest = $0; sub("^" key ": *", "", rest)
+      rest = decomment(rest)
       if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
       inside = 1; next
     }
-    inside && /^  *- / { sub(/^ *- */, ""); gsub(/"/, ""); printf "%s ", $0; next }
+    # A comment on its own line is skipped rather than ending the block. Falling through to the
+    # `exit` below would silently truncate the list at the note, which is worse than printing it.
+    inside && /^[ \t]*#/ { next }
+    inside && /^  *- / {
+      sub(/^ *- */, "")
+      entry = decomment($0)
+      if (entry != "") printf "%s ", entry
+      next
+    }
     inside { exit }
   ' "$1"
 }
