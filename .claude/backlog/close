@@ -1,0 +1,291 @@
+#!/bin/sh
+#
+# Close a backlog row: lock → re-read → tick the ACs → move the row to DONE.md → reconcile the rows
+# this ticket was blocking → commit → unlock, as one atomic step.
+#
+# **The commit is why this is a script**, the same reason as `claim`: a close edits QUEUE.md and
+# DONE.md, and until something commits those edits they sit dirty in the tree both windows share, so
+# the next window to commit either carries the close off under its own message. A session under load
+# forgets the commit; a script cannot.
+#
+# Usage:  .claude/backlog/close <id> <token>
+#
+# The token is not optional and is not minted here. `claim` mints it; `close` must be *given* it,
+# because there is no ambient session id and the ownership test is memory — a ticket is yours only
+# if you minted its token in this conversation. A script cannot check memory, so the argument is how
+# the session proves it. A wrong token must fail loudly rather than close someone else's ticket.
+#
+# **Columns are resolved by header name, never by position** — the table's shape is not a contract,
+# and a fixed-index parser is exactly the defect 0022 found in `claim`.
+#
+# **The reconcile is part of the close, not a follow-up.** `blocked` is derived from the graph, so
+# closing this ticket is the only event that can clear a row naming it in `blocked_by`. Leaving them
+# is a queue that lies about what is takeable, which once cost a whole session.
+#
+# See references/CONCURRENCY.md — 'The three scripts' and 'Lock every write to QUEUE.md'.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+QUEUE="$DIR/QUEUE.md"
+DONE="$DIR/DONE.md"
+LOCK="$DIR/.lock"
+
+ID="${1:-}"
+TOKEN="${2:-}"
+[ -n "$ID" ] && [ -n "$TOKEN" ] || {
+  echo "usage: close <id> <token>" >&2
+  echo "the token is the item's claimed_by: — a close is only yours if you hold the claim" >&2
+  exit 2
+}
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+[ -f "$DONE" ]  || { echo "no DONE.md at $DONE — nowhere to move the row to" >&2; exit 1; }
+
+TODAY="$(date -u +%Y-%m-%d)"
+
+# Anything already dirty in the two shared files will ride along on our commit. Say which rows
+# rather than letting it happen silently.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- "$QUEUE" "$DONE"; then
+  echo "WARNING: QUEUE.md/DONE.md already have uncommitted changes; this commit will carry them:" >&2
+  git -C "$DIR" diff -U0 -- "$QUEUE" "$DONE" | awk '/^[+-]\| / { print "  " $0 }' >&2
+fi
+
+# --- lock -------------------------------------------------------------------------------------
+mkdir "$LOCK" 2>/dev/null || {
+  echo "backlog is locked by: $(cat "$LOCK/held-by" 2>/dev/null || echo unknown)" >&2
+  exit 1
+}
+printf 'close %s by %s\n%s\n' "$ID" "$TOKEN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK/held-by"
+# Release however we leave, so a failed close never strands the other window.
+trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+# --- resolve the columns by name, under the lock ----------------------------------------------
+header_of() {
+  awk -F'|' '/^\|/ {
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
+  }' "$1"
+}
+column_in() {
+  printf '%s' "$1" | awk -F'|' -v want="$2" '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
+  }'
+}
+
+QHEAD="$(header_of "$QUEUE")"
+[ -n "$QHEAD" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
+
+missing=""
+for want in ID Title Next Status; do
+  [ -n "$(column_in "$QHEAD" "$want")" ] || missing="$missing $want"
+done
+[ -z "$missing" ] || {
+  echo "QUEUE.md's table is missing the column(s):$missing" >&2
+  echo "header found: $QHEAD" >&2
+  echo "a shape this script cannot read is an error, never a refusal that looks like a closed ticket" >&2
+  exit 1
+}
+
+Q_ID="$(column_in "$QHEAD" ID)"
+Q_TITLE="$(column_in "$QHEAD" Title)"
+Q_NEXT="$(column_in "$QHEAD" Next)"
+Q_STATUS="$(column_in "$QHEAD" Status)"
+
+read_cell() { printf '%s' "$1" | awk -F'|' -v c="$2" '{ v = $c; gsub(/^ +| +$/, "", v); print v }'; }
+
+# --- re-read the row under the lock -----------------------------------------------------------
+row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
+[ -n "$row" ] || { echo "no row for $ID in QUEUE.md" >&2; exit 1; }
+
+next_field="$(read_cell "$row" "$Q_NEXT")"
+[ "$next_field" = "verify" ] || {
+  echo "$ID is at stage '$next_field', not 'verify' — only a verified ticket is closable" >&2
+  echo "verify owns closing, and it holds the verdict when it acts; nothing else may close a row" >&2
+  exit 1
+}
+title="$(read_cell "$row" "$Q_TITLE")"
+
+# --- the ownership test -----------------------------------------------------------------------
+item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
+[ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
+item_rel="items/$(basename "$item")"
+
+fm_value() {
+  awk -v key="$2" '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && index($0, key ":") == 1 {
+      v = substr($0, length(key) + 2); gsub(/^[ \t]+|[ \t]+$/, "", v); gsub(/^"|"$/, "", v)
+      print v; exit
+    }
+  ' "$1"
+}
+
+held_by="$(fm_value "$item" claimed_by)"
+[ -n "$held_by" ] || {
+  echo "$ID records no claimed_by: — nothing holds it, so there is no claim to close under" >&2
+  echo "claim it first: ./claim $ID" >&2
+  exit 1
+}
+[ "$held_by" = "$TOKEN" ] || {
+  echo "$ID is held by token '$held_by', not '$TOKEN' — refusing to close another session's ticket" >&2
+  echo "a ticket is yours only if you minted its token in this conversation; ask, never take over" >&2
+  exit 1
+}
+
+item_type="$(fm_value "$item" type)"
+item_qa="$(fm_value "$item" qa_level)"
+
+# --- the item file: tick the ACs, mark it done, release the claim ------------------------------
+# `touches:` is cleared with its list entries: a closed ticket that keeps reserving files reads as
+# held to the other window (CONCURRENCY.md, 'The working tree is shared too').
+tmp="$(mktemp)"
+awk -v today="$TODAY" '
+  NR == 1 && /^---$/ { fm = 1; print; next }
+  fm && /^---$/ {
+    if (!closed_seen) print "closed: " today
+    fm = 0; print; next
+  }
+  fm {
+    if ($0 ~ /^status:/)     { print "status: done"; next }
+    if ($0 ~ /^closed:/)     { print "closed: " today; closed_seen = 1; next }
+    if ($0 ~ /^claimed_by:/) { print "claimed_by:"; next }
+    if ($0 ~ /^claimed_at:/) { print "claimed_at:"; next }
+    if ($0 ~ /^touches:/)    { print "touches:"; skiplist = 1; next }
+    if (skiplist && $0 ~ /^[ \t]+-/) { next }
+    skiplist = 0
+    print; next
+  }
+  /^## / { in_ac = ($0 ~ /^## Acceptance criteria/) }
+  in_ac && /^- \[ \]/ { sub(/^- \[ \]/, "- [x]") }
+  { print }
+' "$item" > "$tmp"
+mv "$tmp" "$item"
+
+# --- QUEUE.md: delete the row -----------------------------------------------------------------
+tmp="$(mktemp)"
+awk -F'|' -v id="$ID" -v c="$Q_ID" '
+  /^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) next }
+  { print }
+' "$QUEUE" > "$tmp"
+mv "$tmp" "$QUEUE"
+
+# --- DONE.md: prepend the row, by that table's own column names -------------------------------
+# Built from the QUEUE row's title plus the item's frontmatter, so the two files cannot disagree
+# about what a ticket was called.
+DHEAD="$(header_of "$DONE")"
+[ -n "$DHEAD" ] || { echo "no table header in $DONE — expected a row with an 'ID' cell" >&2; exit 1; }
+
+done_row="$(printf '%s' "$DHEAD" | awk -F'|' \
+  -v id="$ID" -v title="$title" -v type="$item_type" -v qa="$item_qa" -v today="$TODAY" -v rel="$item_rel" '
+  {
+    out = "|"
+    for (i = 2; i < NF; i++) {
+      v = $i; gsub(/^ +| +$/, "", v)
+      if      (v == "ID")     val = id
+      else if (v == "Title")  val = title
+      else if (v == "Type")   val = type
+      else if (v == "QA")     val = qa
+      else if (v == "Closed") val = today
+      else if (v == "Item")   val = "[" rel "](" rel ")"
+      else                    val = ""
+      out = out " " val " |"
+    }
+    print out
+  }')"
+
+hdr_line="$(awk -v h="$DHEAD" '$0 == h { print NR; exit }' "$DONE")"
+tmp="$(mktemp)"
+awk -v at="$hdr_line" -v row="$done_row" 'NR == at + 1 { print; print row; next } { print }' "$DONE" > "$tmp"
+mv "$tmp" "$DONE"
+
+# --- reconcile the tickets this ticket was blocking --------------------------------------------
+# Only dependents that are *currently blocked* and that nothing holds. Three guards, and the
+# selection is deliberately not `blocked_by` alone: nothing clears `blocked_by` at close, so a
+# closed ticket names its blockers for ever and selecting on it resurrects one.
+# Every blocker other than the one being closed. A blocker with no item file counts as open:
+# unrecognised is not the safe default, and freeing a row on a missing file is the wrong direction.
+other_blockers_all_done() {
+  for b in $(printf '%s' "$1" | tr -d '[]"' | tr ',' ' '); do
+    [ "$b" != "$ID" ] || continue
+    bfile="$(ls "$DIR/items/$b-"*.md 2>/dev/null | head -1 || true)"
+    [ -n "$bfile" ] && [ "$(fm_value "$bfile" status)" = "done" ] || return 1
+  done
+  return 0
+}
+
+FREED=""
+SKIPPED=""
+RECONCILED_PATHS=""
+for dep in "$DIR"/items/*.md; do
+  [ -f "$dep" ] || continue
+  [ "$dep" != "$item" ] || continue
+  blockers="$(fm_value "$dep" blocked_by)"
+  case "$blockers" in *"$ID"*) ;; *) continue ;; esac
+  dep_id="$(fm_value "$dep" id)"
+  [ -n "$dep_id" ] || continue
+  other_blockers_all_done "$blockers" || continue
+
+  # A person is needed → waiting, not ready. The section is the authority (`## Waiting on`).
+  if grep -q '^## Waiting on' "$dep"; then new_status=waiting; else new_status=ready; fi
+
+  dep_row="$(awk -F'|' -v id="$dep_id" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
+
+  # Held by someone → report it, never write it. The item's `claimed_by:` is where ownership
+  # lives ('Claim tokens'); the row is checked too because an `in-progress` row with no token
+  # still reads as held — silence is not permission. A dependent may have no row at all, which
+  # is why the row can never be the only test.
+  if [ -n "$(fm_value "$dep" claimed_by)" ] ||
+     { [ -n "$dep_row" ] && [ "$(read_cell "$dep_row" "$Q_STATUS")" = "in-progress" ]; }; then
+    SKIPPED="$SKIPPED $dep_id"
+    continue
+  fi
+
+  # Not blocked → there is nothing to free, and writing anyway is how a `done` dependent comes
+  # back to life. Silent: every ticket this one ever blocked and that has since closed lands
+  # here, and that is the normal case, not an anomaly.
+  [ "$(fm_value "$dep" status)" = "blocked" ] || continue
+
+  tmp="$(mktemp)"
+  awk -v s="$new_status" '
+    NR == 1 && /^---$/ { fm = 1; print; next }
+    fm && /^---$/      { fm = 0; print; next }
+    fm && /^status:/   { print "status: " s; next }
+    { print }
+  ' "$dep" > "$tmp"
+  mv "$tmp" "$dep"
+
+  if [ -n "$dep_row" ]; then
+    tmp="$(mktemp)"
+    awk -F'|' -v OFS='|' -v id="$dep_id" -v idc="$Q_ID" -v c="$Q_STATUS" -v s="$new_status" '
+      /^\|/ { v = $idc; gsub(/^ +| +$/, "", v); if (v == id) $c = " " s " " }
+      { print }
+    ' "$QUEUE" > "$tmp"
+    mv "$tmp" "$QUEUE"
+  fi
+
+  FREED="$FREED $dep_id"
+  RECONCILED_PATHS="$RECONCILED_PATHS $DIR/items/$(basename "$dep")"
+done
+
+# --- commit, by pathspec, in the same breath as the edits --------------------------------------
+# An uncommittable repo is fatal here, not a skip: the commit is the entire reason this is a script,
+# so a close that silently leaves both shared files dirty is the failure it exists to prevent.
+git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
+  echo "not a git repository ($DIR) — QUEUE.md, DONE.md and the item are edited but uncommitted" >&2
+  echo "commit them by pathspec yourself before anything else touches those files" >&2
+  exit 1
+}
+# Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
+n=0
+# shellcheck disable=SC2086
+until git -C "$DIR" commit -q -m "Close $ID [$TOKEN]" -- "$QUEUE" "$DONE" "$item" $RECONCILED_PATHS 2>/dev/null; do
+  n=$((n + 1))
+  [ "$n" -lt 30 ] || {
+    echo "could not commit the close (git busy) — the files are edited but uncommitted" >&2
+    exit 1
+  }
+done
+
+echo "closed $ID — $title"
+[ -z "$FREED" ]   || echo "reconciled (no longer blocked):$FREED"
+[ -z "$SKIPPED" ] || echo "left alone, held by another session:$SKIPPED"

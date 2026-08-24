@@ -1,0 +1,291 @@
+#!/bin/sh
+#
+# What a session needs to start work, in a fixed handful of lines.
+#
+# Reading QUEUE.md whole costs more context every time the queue grows, and the queue is the
+# file both windows edit most — so it is also the file the harness re-echoes most often. This
+# answers the three questions almost every read actually has: what may I take for my stage, what
+# is waiting on a person, and which files another session has claimed. Its output is the same size
+# whether the queue holds ten rows or three hundred.
+#
+# It is a reader and nothing else: it never writes, never takes the lock, and never decides.
+# Claiming a row is `./claim <id>`, which locks, edits, commits and unlocks in one step — see
+# references/CONCURRENCY.md for why the commit is the part that matters.
+#
+# Read the whole file when you genuinely need the whole file — a re-rank, a themes pass, or any
+# judgement about *order* rather than about what to do next.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+QUEUE="$DIR/QUEUE.md"
+
+usage() {
+  cat <<'USAGE'
+usage: ./next [<stage> | --waiting | --drift | --help]
+
+  ./next             counts by stage and by status, plus anything another session holds
+  ./next <stage>     the first takeable row for that stage, and its size
+                     stages: queue | design | develop | verify
+  ./next --waiting   every waiting row with the question it is waiting on
+  ./next --drift     every row whose Status column disagrees with its blocked_by; exits 1 if any
+  ./next --help      this
+
+Takeable means: `next` matches the stage and no `blocked_by` entry is still open. `blocked` is
+DERIVED from `blocked_by`, so the column is a cache of that answer and never the authority — a
+row is offered on the graph's answer whatever the column says, and the disagreement is reported.
+USAGE
+}
+
+case "${1:-}" in
+  -h|--help|help) usage; exit 0 ;;
+esac
+
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------------------------
+# The table shape. Columns are fixed at: 2 ID, 3 Title, 4 Next, 5 Status, 6 Parent.
+#
+# Fixed indices are checked rather than assumed, because the failure mode of a silently wrong
+# index is the worst one available: this script prints "0 ready of 2 rows" against a table it
+# cannot read, and a session concludes the backlog is empty rather than that the parser is wrong.
+# That happened once already. Parsing by header *name* — so any column order works — is a
+# separate change; refusing to run against a shape we cannot read is the floor.
+# ---------------------------------------------------------------------------------------------
+header="$(awk '/^\| *ID *\|/ { print; exit }' "$QUEUE")"
+[ -n "$header" ] || { echo "no table header in $QUEUE — expected a row starting '| ID |'" >&2; exit 1; }
+shape="$(printf '%s' "$header" | awk -F'|' '{
+  for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); printf "%s%s", (i > 2 ? "/" : ""), v }
+}')"
+[ "$shape" = "ID/Title/Next/Status/Parent" ] || {
+  echo "unexpected table shape: $shape" >&2
+  echo "this reader parses ID/Title/Next/Status/Parent by position; fix the table or the reader" >&2
+  exit 1
+}
+
+ID=2; TITLE=3; NEXT=4; STATUS=5
+
+rows() {
+  awk -F'|' '/^\|/ {
+    id = $2; gsub(/^ +| +$/, "", id)
+    if (id == "ID" || id ~ /^-+$/ || id == "") next
+    print
+  }' "$QUEUE"
+}
+
+field() { printf '%s' "$1" | awk -F'|' -v n="$2" '{ v = $n; gsub(/^ +| +$/, "", v); print v }'; }
+
+row_for() { rows | awk -F'|' -v id="$1" '{ v = $2; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }'; }
+
+# Ids whose row matches a column value. Ids carry no whitespace, so callers can iterate them with a
+# plain `for` — which keeps the loop in this shell rather than a pipeline subshell, where a counter
+# set inside would be discarded and every "did anything match?" test would read false.
+ids_where() { rows | awk -F'|' -v n="$1" -v want="$2" '{ v = $n; gsub(/^ +| +$/, "", v); if (v == want) { id = $2; gsub(/^ +| +$/, "", id); print id } }'; }
+
+all_ids() { rows | awk -F'|' '{ v = $2; gsub(/^ +| +$/, "", v); print v }'; }
+
+item_for() { ls "$DIR/items/$1-"*.md 2>/dev/null | head -1 || true; }
+
+# One scalar out of an item's frontmatter.
+fm() {
+  [ -n "$1" ] || return 0
+  awk -v key="$2" '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && $0 ~ "^" key ":" { sub("^" key ": *", ""); gsub(/^"|"$/, ""); print; exit }
+  ' "$1"
+}
+
+# One frontmatter list, flattened to a line: inline `["0010"]` or a block of `- ` entries.
+fm_list() {
+  [ -n "$1" ] || return 0
+  awk -v key="$2" '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && $0 ~ "^" key ":" {
+      rest = $0; sub("^" key ": *", "", rest)
+      if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
+      inside = 1; next
+    }
+    inside && /^  *- / { sub(/^ *- */, ""); gsub(/"/, ""); printf "%s ", $0; next }
+    inside { exit }
+  ' "$1"
+}
+
+# An entry in `blocked_by` is OPEN unless the ticket it names is done. A named ticket with no item
+# file is open and said so out loud: a blocker nobody can find is not a blocker anybody cleared.
+open_blockers_of() {
+  bl="$(fm_list "$(item_for "$1")" blocked_by)"
+  for b in $bl; do
+    bi="$(item_for "$b")"
+    if [ -z "$bi" ]; then printf '%s(no item file) ' "$b"; continue; fi
+    [ "$(fm "$bi" status)" = "done" ] || printf '%s ' "$b"
+  done
+}
+
+# `blocked` is derived, never authored: a row is blocked if and only if `blocked_by` names at least
+# one ticket that is not done. The Status column caches that answer and nothing kept the cache in
+# step — a ticket closed and four rows naming it stayed `blocked` for the rest of a session. So
+# every read here asks the graph, and `--drift` reports the cache lines that have gone stale.
+derived_of() {
+  if [ -n "$(open_blockers_of "$1")" ]; then printf 'blocked'; else printf 'ready'; fi
+}
+
+# The first line of an item's `## Waiting on` section — the question, without opening the ticket.
+waiting_on() {
+  [ -n "$1" ] || return 0
+  awk '
+    /^## Waiting on/ { inside = 1; next }
+    inside && /^## / { exit }
+    inside && NF { print; exit }
+  ' "$1"
+}
+
+# --- shared tails -----------------------------------------------------------------------------
+# An uncommitted queue is a claim only one session can see: whoever commits QUEUE.md next carries
+# these rows under their own message, and the first anyone notices is a confusing diff.
+warn_dirty() {
+  if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- "$QUEUE"; then
+    printf 'WARNING: QUEUE.md has uncommitted row changes — commit yours now, and do not commit rows\n'
+    printf '         you did not claim (references/CONCURRENCY.md). Changed rows:\n'
+    git -C "$DIR" diff -U0 -- "$QUEUE" | awk -F'|' -v s="$STATUS" -v n="$NEXT" '
+      /^[+-]\| / {
+        id = $2; gsub(/^[+-] *| *$/, "", id)
+        nx = $n; gsub(/^ +| +$/, "", nx)
+        st = $s; gsub(/^ +| +$/, "", st)
+        printf "         %s %s | %s | %s\n", substr($0, 1, 1), id, nx, st
+      }'
+  fi
+}
+
+# Files another session holds. This is the check that stops two windows in one file, and it is why
+# the script reads item frontmatter rather than only the table: `touches:` is a claim on files.
+show_claimed() {
+  busy="$(rows | awk -F'|' -v s="$STATUS" '{ v = $s; gsub(/^ +| +$/, "", v); if (v == "in-progress") print }')"
+  [ -n "$busy" ] || return 0
+  printf 'CLAIMED FILES — another session owns these; take a row that avoids them:\n'
+  printf '%s\n' "$busy" | while IFS= read -r row; do
+    id="$(field "$row" "$ID")"
+    it="$(item_for "$id")"
+    tok="$(fm "$it" claimed_by)"
+    tou="$(fm_list "$it" touches)"
+    # An empty `touches:` on an in-progress row is ambiguous — not yet declared, or released as it
+    # closes — and nothing here can tell them apart, so say so rather than implying it is free.
+    printf '  %s [%s] %s\n' "$id" "${tok:-no token}" "${tou:-none declared — assume held, ask}"
+  done
+}
+
+# --- --waiting --------------------------------------------------------------------------------
+# A `waiting` row says a person is needed and not what for. Without this, finding out means opening
+# the ticket — the exact cost the pared table exists to remove.
+if [ "${1:-}" = "--waiting" ]; then
+  bad=0
+  any=0
+  for id in $(ids_where "$STATUS" waiting); do
+    any=1
+    row="$(row_for "$id")"
+    q="$(waiting_on "$(item_for "$id")")"
+    if [ -n "$q" ]; then
+      printf 'WAITING   %s | %s\n          %s\n' "$id" "$(field "$row" "$TITLE")" "$q"
+    else
+      # Reported as a defect in the row, never skipped: a `waiting` row with no question is
+      # indistinguishable from a forgotten one, and only the person named can clear either.
+      printf 'MALFORMED %s | %s\n          status is waiting with no "## Waiting on" section\n' \
+        "$id" "$(field "$row" "$TITLE")"
+      bad=1
+    fi
+  done
+  [ "$any" -eq 1 ] || printf 'nothing is waiting on a person\n'
+  exit "$bad"
+fi
+
+# --- --drift ----------------------------------------------------------------------------------
+# The Status column and `blocked_by` are two answers to one question, and only one of them is
+# authoritative. This names every row where they disagree, in both directions, so the staleness is
+# visible without opening a ticket. It exits non-zero on any drift: a report that prints and exits
+# zero is invisible to anything scripted around it, which is the same silent failure it exists to
+# remove. Nothing here writes — reconciling the column belongs to whatever closed the blocker.
+if [ "${1:-}" = "--drift" ]; then
+  drifted=0
+  for id in $(all_ids); do
+    row="$(row_for "$id")"
+    written="$(field "$row" "$STATUS")"
+    derived="$(derived_of "$id")"
+
+    # Only `blocked` is derived. `waiting` is cleared by a person and `in-progress` by a claim, so
+    # neither can drift against the graph — but a row sitting at either WITH an open blocker is
+    # still a lie about takeability, and that direction is reported.
+    if [ "$written" = "blocked" ] && [ "$derived" = "ready" ]; then
+      printf 'DRIFT     %s | written blocked, derived ready — no blocked_by entry is still open\n' "$id"
+      drifted=1
+    elif [ "$written" != "blocked" ] && [ "$derived" = "blocked" ]; then
+      printf 'DRIFT     %s | written %s, derived blocked — blocked_by still open: %s\n' \
+        "$id" "$written" "$(open_blockers_of "$id")"
+      drifted=1
+    fi
+  done
+  [ "$drifted" -eq 1 ] || printf 'no drift: every Status column agrees with its blocked_by\n'
+  exit "$drifted"
+fi
+
+# --- ./next <stage> ---------------------------------------------------------------------------
+if [ -n "${1:-}" ]; then
+  stage="$1"
+  case "$stage" in
+    queue|design|develop|verify) : ;;
+    *) echo "unknown stage: $stage" >&2; usage >&2; exit 2 ;;
+  esac
+
+  took=0
+  for id in $(ids_where "$NEXT" "$stage"); do
+    row="$(row_for "$id")"
+    written="$(field "$row" "$STATUS")"
+    # `ready` and `blocked` are both candidates, because `blocked` is derived and the column only
+    # caches it. Trusting the cache is the asymmetric half of the defect: a stale `blocked` hides
+    # takeable work and no reader ever notices, where a stale `ready` is caught one line below.
+    # `waiting` and `in-progress` are NOT derived — a person and a claim clear those — so they
+    # stay authoritative and a row at either is skipped here as before.
+    case "$written" in
+      ready|blocked) : ;;
+      *) continue ;;
+    esac
+    ob="$(open_blockers_of "$id")"
+    if [ -n "$ob" ]; then
+      printf 'SKIP      %s | blocked_by still open: %s\n' "$id" "$ob"
+      continue
+    fi
+    if [ "$written" = "blocked" ]; then
+      printf 'DRIFT     %s | column says blocked, no blocked_by entry is still open\n' "$id"
+    fi
+    it="$(item_for "$id")"
+    printf 'TAKE      %s | %s | size %s | qa %s\n' \
+      "$id" "$(field "$row" "$TITLE")" "$(fm "$it" size)" "$(fm "$it" qa_level)"
+    exp="$(fm_list "$it" expects)"
+    printf 'EXPECTS   %s\n' "${exp:-not predicted — check this one by hand}"
+    took=1
+    break
+  done
+  # An empty stage is not an error; a session asking "anything for me?" gets a plain no and a zero.
+  [ "$took" -eq 1 ] || printf 'nothing is takeable at stage %s\n' "$stage"
+  show_claimed
+  warn_dirty
+  exit 0
+fi
+
+# --- ./next (no argument) ---------------------------------------------------------------------
+printf 'BY STAGE:  '
+for s in queue design develop verify; do
+  printf '%s %s  ' "$s" "$(rows | awk -F'|' -v n="$NEXT" -v w="$s" '{ v=$n; gsub(/^ +| +$/,"",v); if (v==w) c++ } END { print c+0 }')"
+done
+printf '\n'
+printf 'BY STATUS: '
+for s in ready waiting blocked in-progress; do
+  printf '%s %s  ' "$s" "$(rows | awk -F'|' -v n="$STATUS" -v w="$s" '{ v=$n; gsub(/^ +| +$/,"",v); if (v==w) c++ } END { print c+0 }')"
+done
+printf '\n'
+printf 'ROWS:      %s\n' "$(rows | wc -l | tr -d ' ')"
+printf 'ROW 1:     %s | %s | %s | %s\n' \
+  "$(field "$(rows | head -1)" "$ID")" "$(field "$(rows | head -1)" "$TITLE")" \
+  "$(field "$(rows | head -1)" "$NEXT")" "$(field "$(rows | head -1)" "$STATUS")"
+show_claimed
+warn_dirty
