@@ -29,6 +29,22 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-24 — **the lock protocol cannot be satisfied by hand, because a lock cannot be held across
+  tool calls.** `CONCURRENCY.md` *Lock every write to `QUEUE.md`* requires the lock to be held "for the
+  read, the write and the commit". A shell `trap` releases it when the Bash call exits, so a by-hand
+  insert is two separate acquisitions with an **uncommitted `QUEUE.md` edit sitting unlocked between
+  them**; omitting the trap instead leaks the lock on any failure path. `claim` and `close` satisfy the
+  rule because each is one process — but **`queue` has no script for the row insert**, so the one
+  operation this skill performs on `QUEUE.md` is the one with no compliant path. Either the insert
+  earns a fourth script or the rule needs a documented by-hand form (pointer: references/CONCURRENCY.md
+  *Lock every write*, skills/queue Step 3, items/0027).
+- 2026-08-24 — **dates in the backlog have no stated timezone, and this file's stated order is not the
+  order it is in.** `claimed_at:` is specified as ISO-8601 UTC but `created:` and these entries are bare
+  dates: at 2026-08-23 local / 2026-08-24 UTC, two sessions working the same hour wrote different dates,
+  and both are defensible. Separately, the header here says "newest at the top" while every entry so far
+  was appended at the bottom — which matters because `retro` Step 1 expires "anything older than about
+  two weeks" and reads the file in order (pointer: skills/queue/templates/item.md `created:`, this
+  file's header, skills/retro Step 1).
 - 2026-08-23 — **the installed plugin and the source tree can differ at the same version number, and
   nothing says so.** `0.9.2`'s installed `prototype/SKILL.md` is 26,262 bytes; source is 23,394 — the
   pre-0021 copy, so that trim was committed and never released. The installed `references/` is also
