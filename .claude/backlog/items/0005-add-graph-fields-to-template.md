@@ -11,6 +11,8 @@ parent: "0002"
 blocked_by: []
 relates: []
 touches:
+  - skills/queue/templates/item.md
+  - tests/graph-fields.test.sh   # new file, created by this ticket
 claimed_by: "cae7"
 claimed_at: 2026-08-24T05:25:50Z
 ---
