@@ -61,7 +61,7 @@ by the next commit. This paragraph described that design as current fact and was
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0026 | Re-run the measured end-to-end exercise and record the verdict | develop | waiting | 0009 |
+| 0026 | Measure the isolated workflow from the recorded sessions and record the verdict | develop | ready | 0009 |
 | 0029 | Reconcile close's definition of held with CONCURRENCY.md's | develop | ready | — |
 | 0005 | Add the graph fields to the ticket template and QUEUE.md | develop | ready | 0002 |
 | 0031 | Strip YAML comments in next and claim's fm_list | develop | ready | — |
@@ -75,6 +75,7 @@ by the next commit. This paragraph described that design as current fact and was
 | 0008 | Add the graph rules to queue, develop, and verify | develop | blocked | 0002 |
 | 0003 | Phase 2 — the readiness gate and outcome reviews | develop | blocked | 0001 |
 | 0004 | Phase 3 — extend tracker mirroring with hierarchy and standards | develop | blocked | 0001 |
+| 0037 | Run the fresh-project end-to-end exercise against the settled configuration | develop | blocked | 0009 |
 
 `develop` takes the topmost row that is `next: develop` and takeable — `ready`, or `blocked` with
 nothing left open in `blocked_by`, since the column is only a cache of the graph. If a higher row

@@ -184,3 +184,55 @@ skill files. Neither blocks anything.
 depends on the answer — so children invented now would be slices ranked against a mechanism nobody
 has chosen. If `/design` returns multi-session work, 0036 returns to `next: queue` for slicing, per
 the 0021 precedent.
+
+---
+
+## 0026 split into 0026 + 0037 — 2026-08-24
+
+**Aaron's decision, prompted by the right question: why would we run that test now, with the tooling
+work still open?** 0026 had sat at row 1 as `waiting` since 2026-08-23, and both halves of the answer
+turned out to be wrong in different directions.
+
+**Nothing was in fact asking for it.** Row 1 is a rank, not a takeability claim: `./next develop`
+stepped over 0026 and offered 0005. The row was correct and read as an instruction anyway, which is
+worth noting as a cost of a `waiting` ticket holding row 1 — the rule is still right (sinking it
+means rediscovering why it mattered) but the display invites the misreading.
+
+**The substantive objection was right, and stronger than the ticket recorded.** 0026 measures context
+tokens per turn. `0028` (reference-file size regime) and `0035` (whether conditional skill detail
+moves behind pointers) both change exactly that, and `0036` changes the shape of a run outright. A
+fresh-project run measured on 2026-08-24 would have measured a configuration this repo is part-way
+through replacing. The knowledge-freshness argument that put 0026 at row 1 pushed the other way, but
+it is the weaker of the two: 0026's own FR9 handles drift by **disclosure** — record what was not
+held constant — whereas measuring a configuration about to change is not fixable by a caveat.
+
+**The split.**
+
+- **0026 keeps its rank at row 1**, amended rather than re-specified: its FR1 relaxes from *a fresh
+  project* to *an observed multi-session run*, measured from the transcripts already on disk. This is
+  not a scope reduction dressed up — it is a **better** measurement than 0009 committed to, because
+  both sides are observed rather than one side modelled. The 2026-08-22 baseline session and the 30
+  isolated sessions of 2026-08-23/24 are both recorded, with per-turn `usage` and a skill marker.
+- **It also clears the `waiting` state**, which was the actual blocker: FR1 needed three sessions sat
+  in sequence and no stage can execute that. A harvest needs nobody. The `## Waiting on` section is
+  deleted and the status is `ready`.
+- **0037 takes the fresh-project run, ranked last.** Tie-breaker 2 decides it: nothing on the queue
+  depends on 0037, while every graph ticket above it releases queued work. The freshness argument is
+  spent, because 0026 now delivers the observed figure the decaying baseline was needed for. **Its
+  value comes from running late** — after the size regime settles — which is the opposite of urgency,
+  and the first ticket in this backlog whose correct position is derived from that.
+- **0037 is `blocked_by: ["0028", "0035"]`,** so the column is derived rather than a judgement. This
+  is a deliberate departure from the 0025/0026 precedent of *not* blocking work on an unscheduled
+  dependency: here the ordering **is** the deliverable, since the whole point is to measure the
+  settled configuration. `0028` closed mid-capture on 2026-08-24, leaving `0035` the sole open entry.
+- **0037 is not blocked on 0036**, which would let a supervisor drive its sessions rather than a
+  person sitting three windows. That follows the 0025 precedent after all — 0036 is `size: l` with an
+  open design question — and 0037's FR9 handles either case by recording which way it was driven.
+
+**What this unblocks immediately.** 0036's Performance NFR measures cost per closed ticket against
+0026's observed baseline. Holding 0026 for the fresh run would have left 0036 building against
+nothing; the harvest gives it a real number now, which is the ordering argument that made the split
+better than simply deferring 0026.
+
+**0021's fate is now settled by 0026 as amended.** Its re-spec was noted above as possibly mooted by
+0026's result. That still holds, and the result now arrives without waiting on a fresh project.
