@@ -101,3 +101,26 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   the whole file can, and the rule as written reads as being about `Write` and read-rebuild-write.
   Repaired in the next commit. This is the strongest argument yet for 0027 (pointer:
   references/CONCURRENCY.md *Never rewrite `QUEUE.md` by hand*, items/0027, commits 7d5ce6f/1850ef2).
+- 2026-08-24 — **`develop`'s "say inline that it is new" instruction poisons the reader it installs.**
+  Step 1 says to declare a file you will create in `touches:` and mark it new inline. `fm_list` in
+  `next` and `claim` does not strip YAML `#` comments (0031), so an inline comment there is emitted
+  verbatim in `./next`'s CLAIMED FILES block as though it were a path. The two instructions are
+  individually right and jointly wrong, and nothing in either flags the other. Either the skill says
+  where the "it is new" note goes instead, or 0031 lands first (pointer: skills/develop Step 1,
+  items/0031).
+- 2026-08-24 — **`tests/skill-size.test.sh`'s exception registry cites a ticket that never accepted
+  the cost.** `skills/develop/SKILL.md`'s entry reads `0027 — carries the re-entry and staleness
+  rules`, but 0027 is the script install and never touched that file; the described work ("its
+  anecdotes are the relocation candidates") is 0035's question. The registry's own contract is "the
+  ticket that accepted the cost", and a wrong ID there is invisible because the test passes either
+  way — the reason is the control, not a number, so nothing ever checks the citation resolves. Same
+  failure class as 0033 but for ticket IDs rather than rule names (pointer:
+  tests/skill-size.test.sh:39, items/0033, items/0035).
+- 2026-08-24 — **this project has no `CLAUDE.md`, so no session reads its Profile.**
+  `CONVENTIONS_CORE.md` requires every project to declare `collaboration`, `company` and `release` in
+  its own `CLAUDE.md`, and the precedence chain names it as the top override. There is none at the
+  repo root, so a session inherits `~/Documents/AI/CLAUDE.md` — a personal memory file for a
+  different purpose — and `release:` is absent, which the conventions say resolves to `released`. Both
+  `queue` Step 0 and `develop` Step 3 tell a session to read the project's `CLAUDE.md`; here that
+  read silently finds a parent (pointer: CONVENTIONS_CORE.md *Profiles & How Overrides Work*,
+  skills/develop Step 3).
