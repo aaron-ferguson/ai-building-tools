@@ -29,6 +29,31 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-24 — **`claim`'s success message is stage-blind: it tells every claimant to set `touches:`,
+  which is `develop`'s field.** A `verify` claim holds no `touches:` — it reads and runs, it does not
+  open a file scope — but the script prints "now set touches: ... before you open anything" regardless.
+  The consequence is not cosmetic: `./next` then reports the row to every other session as
+  `0027 [b8d3] none declared — assume held, ask`, so a correct `verify` claim is indistinguishable from
+  an under-specified `develop` one, and CONCURRENCY's *read an empty `touches:` as held* makes that the
+  safe-but-wrong reading (pointer: .claude/backlog/claim success path, references/CONCURRENCY.md
+  *The working tree is shared too*, items/0027 AC5).
+
+- 2026-08-24 — **`verify` has no correct answer for exercising a write-script when another session
+  holds the backlog.** 0027 AC5 asks for a live `./claim` on "a scratch row", which means inserting and
+  then removing a row in the shared `QUEUE.md` — while a `develop` session was mid-ticket on 0028 in the
+  same table. Neither Step 2 (which forbids tidying another session's tree) nor Step 5 covers the case.
+  Resolved by cloning the repo to the scratchpad and exercising `claim` and `close` there, which tests
+  the same bytes without touching a live table; the skill should either name that as the method or AC5s
+  should stop asking for a live row (pointer: skills/verify Step 2/Step 3, items/0027 AC5).
+
+- 2026-08-24 — **the templates↔copies identity now has a permanent guard; repo↔installed-plugin
+  identity still has none.** 0027 added `tests/backlog-scripts-installed.test.sh` so a drifted copy
+  fails a suite run. The same failure one level up is unreported: the installed plugin at
+  `~/.claude/plugins/cache/.../0.9.3/` is behind this repo by two merged tickets (0030's
+  `notion`→`external_feedback` rename and 0027's own Step 0 edit), so the sessions running these skills
+  are executing prose the repo no longer contains, and nothing points at it. `SOURCE` explains why the
+  cache is disposable but gates nothing (pointer: SOURCE, skills/verify Step 2 *check which copy*).
+
 - 2026-08-24 — **the lock protocol cannot be satisfied by hand, because a lock cannot be held across
   tool calls.** `CONCURRENCY.md` *Lock every write to `QUEUE.md`* requires the lock to be held "for the
   read, the write and the commit". A shell `trap` releases it when the Bash call exits, so a by-hand
