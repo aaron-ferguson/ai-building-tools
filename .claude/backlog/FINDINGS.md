@@ -77,3 +77,27 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   could only answer "not here"; it deleted the file and pointed at git history instead. Every future
   "move X behind a profile" ticket hits the same wall (pointer: items/0030 FR4, CONVENTIONS_CORE.md
   "Profiles & How Overrides Work").
+- 2026-08-24 — **`verify` Step 2's advisory trigger has no answer when the only dirty paths are the
+  backlog's own coordination files.** Step 2 says any change outside the ticket makes the verdict
+  advisory, and Step 7 says an advisory PASS does not close. But a concurrent `queue` session leaves
+  `QUEUE.md` modified and an item file untracked — dirt that provably cannot influence a verdict
+  (0030's own guard excludes `.claude/` by design), while the literal rule would forbid closing
+  whenever another window is queueing, which is the concurrency the suite is built for. The
+  distinction the rule wants is "dirty *under test*", not "dirty anywhere" (pointer: skills/verify
+  Steps 2 and 7, items/0034).
+- 2026-08-24 — **the busy-lock procedure is written for a claim and strands a close.**
+  `CONCURRENCY-INCIDENTS.md` says a lock under 5 minutes old means "report it to the user and stop,
+  do not break it". At claim time stopping costs nothing. At *close* time the verdict already exists
+  and lives only in the session holding it, so stopping leaves the row `in-progress` under a token
+  whose session is ending — the failure `verify` owns closing to prevent. Hit live this session: the
+  lock was held by another window at close time, and the only safe move (wait, then retry) is
+  nowhere in the procedure (pointer: references/CONCURRENCY-INCIDENTS.md *A busy or stale lock*,
+  skills/verify Step 5, items/0034).
+- 2026-08-24 — **"never rewrite `QUEUE.md` by hand" needs to name stream editors, not just `Write`.**
+  Closing 0030 without the scripts, a stray `perl -i -ne` invocation left in the script with an
+  unset variable expanded its match to `"\n"` and deleted **every blank line in the file** — the row
+  removal itself was correct, so the commit's diffstat (14 deletions for a one-row close) was the
+  only signal. `Edit`'s uniqueness check cannot produce this class of damage; an in-place regex over
+  the whole file can, and the rule as written reads as being about `Write` and read-rebuild-write.
+  Repaired in the next commit. This is the strongest argument yet for 0027 (pointer:
+  references/CONCURRENCY.md *Never rewrite `QUEUE.md` by hand*, items/0027, commits 7d5ce6f/1850ef2).
