@@ -11,11 +11,20 @@ source: user
 expects:
   - skills/queue/SKILL.md
   - skills/queue/templates/config.yml
+  - skills/queue/templates/item.md
   - references/NOTION.md
+  - references/TRACKER.md
   - README.md
-claimed_by:
-claimed_at:
+claimed_by: "1446"
+claimed_at: 2026-08-24T04:02:17Z
 touches:
+  - skills/queue/SKILL.md
+  - skills/queue/templates/config.yml
+  - skills/queue/templates/item.md
+  - references/NOTION.md
+  - references/TRACKER.md
+  - README.md
+  - references/EXTERNAL-FEEDBACK.md   # new file, created by this ticket (FR5)
 ---
 
 ## Problem
