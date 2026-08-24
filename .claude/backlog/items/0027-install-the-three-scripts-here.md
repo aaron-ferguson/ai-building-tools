@@ -139,3 +139,33 @@ remove it. All three land together or none do.
   `touches:` when this row was claimed, so FR1–FR5 were built first and FR6 deferred; 0030 closed at
   22:18 and released it. Ordering a ticket's FRs around another session's file scope, rather than
   stepping over the row, is what made the whole ticket deliverable in one pass.
+
+### Verify pass, 2026-08-24 (claim b8d3) — PASS
+
+- **Every green check was proved capable of red.** Five mutations, each restored by the single path
+  mutated: a line appended to `.claude/backlog/next` (AC2 red), `chmod -x` on `close` (AC1 red), the
+  `.gitignore` line removed (AC6 red), the Step 0 paragraph deleted (AC7 red on both assertions).
+- **The fifth mutation is the one worth keeping.** AC7's assertion greps *inside* an `awk`-extracted
+  Step 0 range, so the paragraph was **moved out of Step 0 to the end of the file** rather than deleted:
+  still present file-wide, still red. That distinguishes a scoped check from a file-wide grep that would
+  have passed on the neighbouring scaffold prose — the adjacent-measurement failure mode.
+- **AC5 was exercised in a clone, not the live table.** A `develop` session claimed 0028 (token 3882)
+  ninety seconds after this claim, so inserting and removing a scratch row in the shared `QUEUE.md` was
+  not safe. `git clone` to the scratchpad, scratch row 0099, then `./claim` → committed as one commit over
+  both paths with `.lock/` gone and nothing uncommitted; `./close` refused on a wrong stage, then on a
+  wrong token, then closed cleanly. Same bytes, no live table touched. Parked as a finding: AC5's wording
+  asks for something the concurrency rules can forbid.
+- **AC6's silence was controlled for.** A lock was held while `git status --porcelain` printed nothing,
+  then an *unignored* file in the same directory was shown to appear — so the silence is the ignore rule
+  working, not git being blind to the path.
+- **`--drift`'s zero was re-derived by hand, and the first attempt was wrong.** A block-list `awk`
+  extraction read five `blocked` items as having empty `blocked_by`, which looked like drift; they use the
+  inline `blocked_by: ["0002"]` form. Every `blocked` row does name an open dependency. The lesson is
+  about the frontmatter carrying two list syntaxes, which 0031's `fm_list` work will meet again.
+- **Newly-reachable pass:** the install makes `close`'s destructive path — deleting a row from `QUEUE.md`
+  — runnable in this repo for the first time. Nothing auto-invokes it (no hook or setting references the
+  three scripts), and both write-scripts commit by pathspec (`git commit -q -m … -- <paths>`, no `add`,
+  no `stash`, no `-a`) and never remove `.git/index.lock`.
+- **The verifying session was not running the code under test**, as `verify` Step 2 predicts: the
+  installed plugin is two merged tickets behind this repo. The repo copy was taken as authority and the
+  cache confirmed to hold no local edits of its own.
