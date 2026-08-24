@@ -241,3 +241,22 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   written about, one level up: not a fixture copied from the tree, but a fixture that encodes only
   one of the two shapes the tree actually contains. A reconcile case in the block-list form is the
   missing assertion (pointer: tests/close.test.sh:61-72 `mkitem`, :238-262, items/0028 FR4).
+- 2026-08-23 — **`design` writes `QUEUE.md` but never mentions the lock.** Step 4 tells a session
+  holding an unclaimed ticket to set `next: develop` / `status: ready` and "commit by pathspec in
+  the same turn" — that row edit is a `QUEUE.md` write, and `CONCURRENCY.md` says every write to it
+  is locked, "every write, no exemptions". `verify` Step 5 and `develop` both spell the lock out;
+  `design` is the one writing stage whose instructions omit it, so a session that has not
+  independently read `CONCURRENCY.md` writes the row unlocked and nothing tells it otherwise.
+  Settling 0034 this session, the lock was taken only because that file had been read for the
+  decision itself (pointer: skills/design Step 4, references/CONCURRENCY.md *Lock every write to
+  `QUEUE.md`*).
+- 2026-08-23 — **a ticket's `## Out of scope` can foreclose the only answer to its own `## Open
+  design question`, and `design` has no procedure for it.** 0034 asked whether an advisory PASS
+  closes or banks a verdict, while its out-of-scope line said "Step 2's trigger is not in question"
+  — but no answer to the question exists without moving where the advisory label is decided, so the
+  contract Step 1 says to answer and the fence Step 3 must respect disagreed. The skill says answer
+  *that* question and not a broader one, which reads as "obey the fence"; taken literally it makes
+  the ticket unanswerable. Resolved here by narrowing the out-of-scope line in the same edit and
+  saying so explicitly, but that move is invented rather than instructed — `design` should say
+  whether a design answer may narrow a scope line written at queue time, and how to record it
+  (pointer: skills/design Steps 1 and 3, items/0034 *Out of scope*).
