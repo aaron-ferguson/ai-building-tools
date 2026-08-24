@@ -39,8 +39,10 @@ correct outcome rather than a silent overwrite.
 - FR2 — Claiming takes no lock. The `mkdir` succeeding *is* the claim; failing means another
   session holds it.
 - FR3 — Releasing is `rm -rf claims/<id>/`, done in the same turn as setting the row's status.
-- FR4 — `CONCURRENCY.md` Rule 3 states one remaining lock case (claiming an ID) rather than two,
-  and Rule 4 defines ownership by the claim directory rather than the `Owner` column.
+- FR4 — `CONCURRENCY.md` *Lock every write to `QUEUE.md`* states one remaining lock case (claiming
+  an ID) rather than two, and *Claim tokens* defines ownership by the claim directory rather than by
+  a minted token. (Citations corrected 2026-08-23: 0020 replaced the numbered rules with named ones,
+  so "Rule 3" and "Rule 4" no longer resolve.)
 - FR5 — A claim carries an expiry; a claim older than it is reported as stale with its timestamp,
   never silently reclaimed.
 - FR6 — `.claude/backlog/claims/` is gitignored in this repo and named in the README's ignore note

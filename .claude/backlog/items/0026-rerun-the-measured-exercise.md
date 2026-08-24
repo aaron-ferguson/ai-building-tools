@@ -3,7 +3,7 @@ id: "0026"
 title: Re-run the measured end-to-end exercise and record the verdict
 type: chore
 next: develop
-status: ready
+status: waiting
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -33,6 +33,26 @@ different claims.
 There is a second reason this cannot wait long: the comparison is against a specific run on **2026-08-22**
 against a specific project. Every week of drift in the skills, the conventions and the model makes that
 baseline a weaker control, and the comparison is the entire deliverable.
+
+## Waiting on
+
+- **Question:** who drives the fresh-project run, and when? FR1 requires a fresh project taken
+  through `queue → develop → verify` **with each skill in its own session**, and a session cannot
+  create sessions — so no stage can execute this row however its `Next` column reads. It needs a
+  person to sit the three sessions, or FR1 relaxed.
+- **Who can answer:** Aaron.
+
+Two things found while checking this on 2026-08-23, both recorded so the next reader does not
+re-derive them:
+
+- Its `blocked` was **stale** — the sole blocker 0022 is `done`. The column now reads `waiting`,
+  which is the honest state.
+- **The observed data FR2 wants already exists on disk.** `~/.claude/projects/<slug>/*.jsonl`
+  carry per-turn `usage` (cache read, cache creation, output) plus a `<command-name>` marker naming
+  the skill, so today's isolated sessions are already measurable per skill per turn. That satisfies
+  FR2–FR7 against *this* project's history but not FR1, which asks for a fresh one. If FR1 relaxes
+  to "an observed multi-session run" rather than "a fresh project", this ticket is largely already
+  answered and becomes a reporting job.
 
 ## Functional requirements
 

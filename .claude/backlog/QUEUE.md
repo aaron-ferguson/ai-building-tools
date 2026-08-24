@@ -61,8 +61,17 @@ by the next commit. This paragraph described that design as current fact and was
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0026 | Re-run the measured end-to-end exercise and record the verdict | develop | ready | 0009 |
+| 0026 | Re-run the measured end-to-end exercise and record the verdict | develop | waiting | 0009 |
+| 0030 | Remove Notion from the base tool suite and make it profile-wired | develop | ready | — |
+| 0027 | Instantiate next, claim and close in this repo's own backlog | develop | ready | — |
+| 0028 | Replace the reference files' hard token ceiling with a soft goal and a gate | develop | ready | — |
+| 0029 | Reconcile close's definition of held with CONCURRENCY.md's | develop | blocked | — |
 | 0005 | Add the graph fields to the ticket template and QUEUE.md | develop | ready | 0002 |
+| 0031 | Strip YAML comments in next and claim's fm_list | develop | ready | — |
+| 0032 | Terminate batching.test.sh's paragraph window on a blank line | develop | ready | — |
+| 0033 | Guard against stale rule-name citations across the references | develop | ready | — |
+| 0034 | Give a complete-but-unclosable verify verdict somewhere durable | design | ready | — |
+| 0035 | Decide where conditionally-needed skill detail lives | design | ready | — |
 | 0007 | Replace the Owner column with claim directories | develop | blocked | 0002 |
 | 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |
 | 0008 | Add the graph rules to queue, develop, and verify | develop | blocked | 0002 |

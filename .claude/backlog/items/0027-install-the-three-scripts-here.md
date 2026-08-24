@@ -1,0 +1,111 @@
+---
+id: "0027"
+title: Instantiate next, claim and close in this repo's own backlog
+type: chore
+next: develop
+status: ready
+qa_level: verify
+size: s
+created: 2026-08-23
+source: agent
+expects:
+  - .claude/backlog/next
+  - .claude/backlog/claim
+  - .claude/backlog/close
+  - .claude/backlog/QUEUE.md
+claimed_by:
+claimed_at:
+touches:
+---
+
+## Problem
+
+This repo ships `next`, `claim` and `close` as `skills/queue/templates/` and instantiates them
+into a *new* project's backlog at `queue` Step 0. This backlog predates that step, so the one
+project developing the scripts is the only project without them.
+
+Six separate sessions hit it on 2026-08-23, which is why it is a ticket rather than a nuisance:
+
+- `develop` Step 1 opens *"Run `./next develop` rather than reading `QUEUE.md`"* — the largest
+  avoidable context cost the step names, unavoidable here.
+- `verify` Step 1 has the identical gap: `./next verify` and `./claim <id>` are both absent.
+- The documented fallback was taken and went wrong in the way the scripts exist to prevent: a
+  session read 0026 as `blocked`, skipped it, and the template reader run afterwards offered
+  `TAKE 0026`.
+- `.claude/backlog/QUEUE.md`'s header documents `./next --drift` as the gate on a backlog where
+  that command does not run.
+- `close` landed as a template while this backlog had none of the three installed, so the `verify`
+  session closing the ticket that *built* `close` could not use it.
+- Claims here are made by hand under `.lock`, against precisely the rules the scripts exist to
+  remember — and a by-hand lock has three silent failure modes now recorded in
+  `CONCURRENCY-INCIDENTS.md`.
+
+Instantiating one script alone would be worse than none: it would hide the asymmetry rather than
+remove it. All three land together or none do.
+
+## Functional requirements
+
+- FR1 — `.claude/backlog/` contains `next`, `claim` and `close`, copied from
+  `skills/queue/templates/`, each executable (`chmod +x`).
+- FR2 — the copies are byte-identical to the templates at the commit that installs them. Any
+  divergence this backlog needs is a defect in the template, fixed there and re-copied — a local
+  edit is the two-conventions defect 0024 exists to forbid.
+- FR3 — `./next develop`, `./next verify`, `./next --waiting` and `./next --drift` all run against
+  this backlog's real table and produce output consistent with reading it by hand.
+- FR4 — `./next --drift` exits zero, or every disagreement it reports is fixed in this ticket and
+  named in the notes. Installing a drift gate on a drifted table is how the gate gets ignored.
+- FR5 — `.gitignore` excludes `.claude/backlog/.lock/` so a transient lock cannot be committed
+  (`CONCURRENCY.md`, *Lock every write to `QUEUE.md`*). Confirm rather than assume; this backlog
+  has been locked by hand repeatedly.
+- FR6 — the install is recorded where the next reader of the templates will see it: `queue` Step 0
+  instantiates into a *new* backlog, and nothing instantiates into one that predates the scripts.
+  Give Step 0 that second case so the next project in this position is not a sixth finding.
+
+## Non-functional requirements
+
+| Dimension | Requirement for this item | Convention |
+|---|---|---|
+| Documentation | Record that the templates and this backlog's copies must stay identical, and which direction a fix flows | `documentation-conventions.md` |
+| Dependencies | The scripts must run on this machine's `/bin/sh` with no new dependency — they already declare `sh`, `awk`, `wc` | `dependency-conventions.md` |
+
+## Acceptance criteria
+
+- [ ] AC1 — Given `.claude/backlog/`, when `ls -l next claim close` runs, then all three exist and
+  all three are executable.
+- [ ] AC2 — Given the installed copies, when each is diffed against its template
+  (`diff .claude/backlog/next skills/queue/templates/next`, and the same for `claim` and `close`),
+  then every diff is empty.
+- [ ] AC3 — Given this backlog's table, when `.claude/backlog/next develop` runs, then it names the
+  topmost takeable `next: develop` row, and that row is the same one a by-hand read of the table
+  selects under the `blocked_by`-not-`Status` rule.
+- [ ] AC4 — Given this backlog, when `.claude/backlog/next --drift` runs, then it exits zero.
+- [ ] AC5 — Given a claim taken with `.claude/backlog/claim <id>` on a scratch row, when
+  `git log -1 --name-only` is read, then the claim is already committed, and `.lock/` is gone.
+- [ ] AC6 — Given `.gitignore`, when it is read, then `.claude/backlog/.lock/` is ignored, and
+  `git status --porcelain` shows nothing for it while a lock is held.
+- [ ] AC7 — Given `queue` Step 0, when it is read, then it covers instantiating the scripts into an
+  existing backlog that lacks them, not only scaffolding a new one.
+
+## QA plan
+
+- **Level:** verify — shell scripts with no runner, plus documentation.
+- **Why this level:** the scripts have their own suites already (`tests/claim.test.sh`,
+  `tests/close.test.sh`, `tests/next.test.sh`); what this ticket adds is *installation*, which is a
+  file-presence and file-identity check plus one live run of each mode.
+- **Specific checks:** the three `diff`s from AC2; `./next develop`, `./next verify`, `./next
+  --waiting`, `./next --drift` executed with output shown; a claim and release on a scratch row
+  with `git log` inspected; `tests/*.test.sh` still green afterwards.
+
+## Out of scope
+
+- Changing what the scripts *do*. 0006 rewrites `next`'s parsing and 0007 replaces the ownership
+  mechanism; this ticket installs what exists today.
+- Fixing `fm_list`'s YAML comment handling — that is 0031, and installing the current behaviour
+  first is what makes 0031 testable here.
+- Reconciling `close`'s definition of *held* with `CONCURRENCY.md` — that is 0029.
+
+## Notes & decisions
+
+- Why not simply symlink the templates: the templates are the shipped artifact and a symlink would
+  make this backlog's behaviour change silently whenever a template edit lands mid-session. Copies
+  plus AC2's identity check makes the coupling explicit and auditable.
