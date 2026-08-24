@@ -3,7 +3,7 @@ id: "0036"
 title: Orchestrate the isolated stage sessions from one supervising session
 type: feature
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-24
@@ -21,8 +21,8 @@ expects:
   - tests/next.test.sh
   - README.md
   - .claude-plugin/plugin.json
-claimed_by:
-claimed_at:
+claimed_by: "09e4"
+claimed_at: 2026-08-24T05:12:29Z
 touches:
 ---
 

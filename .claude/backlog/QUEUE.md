@@ -68,7 +68,7 @@ by the next commit. This paragraph described that design as current fact and was
 | 0032 | Terminate batching.test.sh's paragraph window on a blank line | develop | ready | — |
 | 0033 | Guard against stale rule-name citations across the references | develop | ready | — |
 | 0034 | Derive the advisory label from the paths the verdict rested on | develop | ready | — |
-| 0036 | Orchestrate the isolated stage sessions from one supervising session | design | ready | — |
+| 0036 | Orchestrate the isolated stage sessions from one supervising session | design | in-progress | — |
 | 0035 | Decide where conditionally-needed skill detail lives | design | ready | — |
 | 0007 | Replace the Owner column with claim directories | develop | blocked | 0002 |
 | 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |
