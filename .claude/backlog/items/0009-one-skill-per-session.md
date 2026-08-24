@@ -58,10 +58,10 @@ here — it converts a measurable saving into silent information loss.
 
 ## Cross-cutting commitments
 
-- **No rule is dropped anywhere in this effort.** Every change is to workflow, placement or
+- **No rule is dropped anywhere in this project.** Every change is to workflow, placement or
   wording. The rigour that produced the defects the measured run caught — mutation testing, the
   separate NFR pass, the `design` gate, TDD — stays exactly as it is.
-- **Nothing here is measured by feel.** The effort opened with a measurement and closes with one:
+- **Nothing here is measured by feel.** The project opened with a measurement and closes with one:
   re-run the same end-to-end exercise against a fresh project and compare cost per turn and
   context per turn, not just the total.
 - **`RANKING.md` becomes load-bearing** the moment 0010 lands, because the pared table can no
@@ -69,10 +69,10 @@ here — it converts a measurable saving into silent information loss.
 
 ## Out of scope
 
-- Changing what any skill checks for. This effort moves work between sessions; it does not
+- Changing what any skill checks for. This project moves work between sessions; it does not
   relax a standard.
 - `prototype`. It stays human-invoked and is not a lifecycle stage.
-- The nested-work effort (0002) and its tasks, beyond the one FR handoff recorded in 0010.
+- The nested-work project (0002) and its tasks, beyond the one FR handoff recorded in 0010.
 
 ## Notes & decisions
 
@@ -115,16 +115,16 @@ what surprised it before reporting.
   turn, 14.5% off cost per turn, $6.01 per closed ticket, against a modelled ~$5.09 that assumed a 60k
   context this run never had. `MEASUREMENT.md` carries it, including what the run caught, what it missed,
   and the five things the two runs did not hold constant.
-- **`RANKING.md` is load-bearing** and was rewritten for the shape this effort left, including a table of
+- **`RANKING.md` is load-bearing** and was rewritten for the shape this project left, including a table of
   what each of 0002's tasks must re-specify against it.
 
-### What this effort did *not* do
+### What this project did *not* do
 
 - **Re-run the measured exercise against a fresh project.** `0026` closed the commitment from the
   recorded sessions instead, which is a stronger comparison in one way — both sides observed — and a
   weaker one in another: it measures this repository, not a greenfield project, and the run edited the
   very skills it was running. **`0037` carries the fresh-project run**, deliberately sequenced behind
   `0028` and `0035`.
-- **Reduce the six skills by 30%.** They fell 22% from where this effort had grown them, and 8% from
+- **Reduce the six skills by 30%.** They fell 22% from where this project had grown them, and 8% from
   where they started before it. `verify` and `design` are still larger than they were on 2026-08-22.
 - **Fix `claim`.** The pared table still breaks it on a newly scaffolded project — 0022, ranked first.

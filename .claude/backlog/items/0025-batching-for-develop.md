@@ -30,7 +30,7 @@ and the same arithmetic applies with more force — a develop session pays for t
 project's `CLAUDE.md`, `CONCURRENCY.md`, the codebase orientation and the skill file itself before it
 writes a line, and every one of those is a shared cost across tickets that touch the same files.
 
-The gap is not theoretical. On 2026-08-23 one session took eleven tickets from a single effort, because
+The gap is not theoretical. On 2026-08-23 one session took eleven tickets from a single project, because
 running eleven sessions would have re-paid that whole startup eleven times over tickets that rewrote the
 same six files. It was the right call and **no rule sanctioned it**. That leaves two bad outcomes
 available and no way to tell which one a reader will pick: a session that isolates per ticket and pays
@@ -47,7 +47,7 @@ prohibition, and is the sentence a careful reader would follow into the expensiv
   or a slice.
 - FR2 — It gives the test for what may be batched, rather than leaving it to judgement: tickets that
   **share a file scope** (their `expects:` overlap) or **share a parent slice**, and that are all
-  `next: develop` and takeable. Tickets from unrelated efforts do not batch — the shared cost is not
+  `next: develop` and takeable. Tickets from unrelated projects do not batch — the shared cost is not
   shared.
 - FR3 — It names the two guardrails batching needs, both of which today's run needed: **claim and close
   each ticket individually** — the row is the unit of ownership whatever the session is — and **stop at

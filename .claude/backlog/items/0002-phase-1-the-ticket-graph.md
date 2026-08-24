@@ -30,7 +30,7 @@ In dependency order: **0005** (fields) → **0007** (claims) → **0006** (reade
 
 - **Readers tolerate both shapes.** `next` resolves columns from the header row by name, never by
   index, so a backlog that has not migrated still works. This is the commitment every task in this
-  effort must satisfy.
+  project must satisfy.
 - **No full-file writes to `QUEUE.md`.** Every change here is a single-row edit
   (`CONCURRENCY.md` Rule 1), including the one-time column migration, which touches the header and
   each row separately.

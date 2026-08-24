@@ -78,7 +78,7 @@ An optional habit at the end of a long session is not a mechanism.
 - **Applied to six skills, not five.** The ACs say "the five `SKILL.md` files" but the scripted
   assertion globs `skills/*/SKILL.md`, which is six — `prototype` is a skill that runs in a
   session and can be surprised by its tooling like any other, so covering it is the reading that
-  makes the assertion and the prose agree. Every ticket in this effort with a `skills/*` glob is
+  makes the assertion and the prose agree. Every ticket in this project with a `skills/*` glob is
   applied the same way.
 - `retro` empties this buffer and also writes to it. Said so explicitly in its step rather than
   leaving a reader to decide the two rules contradict each other.

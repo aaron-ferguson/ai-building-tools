@@ -28,7 +28,7 @@ HARVEST="$ROOT/tools/harvest-usage.sh"
 DEV="$ROOT/skills/develop/SKILL.md"
 VER="$ROOT/skills/verify/SKILL.md"
 RME="$ROOT/README.md"
-EFFORT="$ROOT/.claude/backlog/items/0009-one-skill-per-session.md"
+PROJECT="$ROOT/.claude/backlog/items/0009-one-skill-per-session.md"
 
 # README's `modelled` count BEFORE this ticket, measured 2026-08-23. The assertion is that the
 # count went DOWN: a stale "modelled" left in place next to a new observed figure is the quiet
@@ -186,7 +186,7 @@ echo "AC4 — every place the claim was made now carries the observed figure"
 absent "develop no longer defers the develop-side figure to this ticket" "$DEV" "fold it in when it lands"
 absent "verify no longer defers its figure to this ticket" "$VER" "produces the one for this side of the gate"
 absent "the READMEs modelled sentence is gone" "$RME" "Modelled at a 60k average"
-absent "0009's Outcome no longer says the figure is unobserved" "$EFFORT" "remains modelled rather than observed"
+absent "0009's Outcome no longer says the figure is unobserved" "$PROJECT" "remains modelled rather than observed"
 n=$(grep -ci "modelled" "$RME" || true)
 if [ "$n" -lt "$PRE_MODELLED" ]; then
   ok "README's 'modelled' count fell from $PRE_MODELLED to $n"
@@ -195,7 +195,7 @@ else
 fi
 presenti "develop carries an observed figure" "$DEV" "observed"
 presenti "verify carries an observed figure" "$VER" "observed"
-present "0009 points at the record that holds the observed figures" "$EFFORT" "MEASUREMENT.md"
+present "0009 points at the record that holds the observed figures" "$PROJECT" "MEASUREMENT.md"
 
 echo "AC5 — the verdict is stated explicitly, against the modelled figure"
 present "the record names the modelled figure it is judged against" "$REC" "5.09"

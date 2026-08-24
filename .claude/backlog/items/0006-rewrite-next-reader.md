@@ -43,12 +43,12 @@ and is the rank consistent with the dependencies.
 - FR2 — Both the seven-column (`Owner`, no `Parent`) and eight-column (`Parent`, no `Owner`) tables
   parse correctly.
 - FR3 — Output stays fixed-size regardless of backlog length: `ROW 1`, `TAKE`, `COUNTS`, plus an
-  `EFFORT` line for the take row's immediate parent when it has one, and a `DUE` line only when
+  `PROJECT` line for the take row's immediate parent when it has one, and a `DUE` line only when
   `SCHEDULED.md` holds a woken row.
 - FR4 — `--tree <id>` prints the subtree of one ticket. This is the only mode whose output grows.
 - FR5 — `--check` reports, without writing anything: rank inversions (a blocker ranked below what
   it blocks), `ready` rows with an open blocker, dependency cycles, `Parent` cells disagreeing with
-  the ticket's `parent:` frontmatter, and `ships: together` efforts with closed tasks and stranded
+  the ticket's `parent:` frontmatter, and `ships: together` projects with closed tasks and stranded
   siblings.
 - FR6 — Claimed tickets are read from `claims/`, not from a table column.
 - FR7 — The script writes nothing, takes no lock, and decides nothing.
@@ -75,7 +75,7 @@ and is the rank consistent with the dependencies.
   it reports the same fields correctly and does not error.
 - [ ] AC3 — Given a fixture with a column inserted in an unexpected position, when `next` runs,
   then output is unchanged.
-- [ ] AC4 — Given a take row whose `parent:` is set, when `next` runs, then an `EFFORT` line names
+- [ ] AC4 — Given a take row whose `parent:` is set, when `next` runs, then a `PROJECT` line names
   the parent and its done/total child counts.
 - [ ] AC5 — Given a fixture where a blocker is ranked below the ticket it blocks, when
   `next --check` runs, then the inversion is reported with both IDs.

@@ -72,6 +72,6 @@ makes it stick.
 - **"States it once" had to be enforced, not just added.** `develop` and `retro` already used the
   phrase incidentally mid-file, so a bare `grep -q` would have passed on them without a header
   statement existing. Both incidental mentions were removed and the assertion counts occurrences,
-  because a rule stated twice in one file is the drift this effort's own trim ticket exists to fix.
+  because a rule stated twice in one file is the drift this project's own trim ticket exists to fix.
 - The figures carry their date inline (`2026-08-22`) rather than in a footnote, so a later reader
   can tell a measurement from an assertion without following a link.

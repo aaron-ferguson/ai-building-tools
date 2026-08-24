@@ -29,7 +29,7 @@ $0.1203 at 151,669 — context per turn down 30%, cost 14.5%, short of the proje
 
 **One gate per invocation, not one ticket.** The unit is a gate: **one gate per session, not one
 ticket per session** — a set of tickets that share a file scope (their `expects:` overlap) or share a
-parent slice, all `next: develop` and takeable. Tickets from unrelated efforts do not batch, because
+parent slice, all `next: develop` and takeable. Tickets from unrelated projects do not batch, because
 what a batch saves is the startup a session pays before it writes a line — the conventions, the
 project's `CLAUDE.md`, `CONCURRENCY.md`, this file, the orientation in the code — and that is only
 shared where the files are. Two guardrails, both of which a real eleven-ticket run needed:

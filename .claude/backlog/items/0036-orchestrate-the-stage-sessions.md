@@ -28,7 +28,7 @@ touches:
 
 ## Problem
 
-Effort 0009 split the suite into one skill per session and moved the handoff onto disk. That
+Project 0009 split the suite into one skill per session and moved the handoff onto disk. That
 removed the context cost — and moved it onto **the human**, who is now the only thing that knows a
 `develop` session has stopped, that the ticket is sitting at `next: verify`, that the buffer has
 filled, and that a retro is due. Nothing in the suite drives the loop; `develop` Step 8 and
@@ -502,7 +502,7 @@ supervised run spends more on retros than on tickets.
 - **`relates: 0027`, also not a blocker.** The supervisor's whole interface is `./next`, `./claim`
   and `./close`, and this repo's own backlog does not have them installed yet — 0027 does that. The
   design pass does not need them; a build exercised end-to-end here does.
-- **This ticket may come back to `queue` as an effort.** If the answer to the design question is
+- **This ticket may come back to `queue` as a project.** If the answer to the design question is
   multi-session work — plausible at `size: l` — the slicing depends entirely on that answer, so
   inventing children now would rank slices against a mechanism nobody has chosen. The precedent for
   the return is 0021.

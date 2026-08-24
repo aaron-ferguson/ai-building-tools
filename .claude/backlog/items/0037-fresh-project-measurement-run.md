@@ -22,7 +22,7 @@ touches:
 
 ## Problem
 
-`0026` opened as effort 0009's closing commitment: *"re-run the same end-to-end exercise against a
+`0026` opened as project 0009's closing commitment: *"re-run the same end-to-end exercise against a
 fresh project and compare cost per turn and context per turn."* On 2026-08-24 it was amended to
 measure the sessions that **already ran**, because both sides of that comparison were already on
 disk and because a fresh run measured that day would have measured a configuration this repo is
@@ -38,7 +38,7 @@ limits that no amount of analysis removes:
    hard token ceiling for a soft goal and a gate — closed on 2026-08-24, after the sessions `0026`
    measures. `0035` — whether conditionally-needed skill detail moves behind pointers — is still
    open, and `prototype` and `develop` are both over the size goal today. Both tickets change how
-   much context a session loads on every run of every project, which is the number the whole effort
+   much context a session loads on every run of every repo, which is the number 0009
    is justified by, and neither change is inside `0026`'s figures.
 
 So the observed figure `0026` produces is real and is the right thing to publish today, and it is

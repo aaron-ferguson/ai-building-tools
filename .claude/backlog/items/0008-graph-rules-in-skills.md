@@ -25,10 +25,10 @@ advisory output.
 
 ## Functional requirements
 
-- FR1 — `queue` refuses to rank a ticket that has children, and says why: an effort has no single
+- FR1 — `queue` refuses to rank a ticket that has children, and says why: a project has no single
   position, and forcing one hides both ends of its range.
 - FR2 — `queue` asks the exhaustiveness question at decomposition: *is there anything in this
-  ticket that is not in a child?* Work left in an effort is never built, because nothing ranks it.
+  ticket that is not in a child?* Work left in a project is never built, because nothing ranks it.
 - FR3 — Decomposition removes the parent's row from `QUEUE.md` and ranks each child individually
   against row 1. Decomposing an `in-progress` ticket requires releasing the claim first.
 - FR4 — `queue` rejects an edge that would create a cycle, naming the path.

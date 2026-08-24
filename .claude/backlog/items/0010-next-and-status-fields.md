@@ -105,7 +105,7 @@ rewrites. A row is ~175 characters today and ~95 after; at a hundred rows that i
   it is already recorded in `RANKING.md`, and that file is read at exactly that moment. Adding a
   permanent column to serve an occasional read is the mistake this ticket is undoing.
 - Once this lands the pared table cannot answer a re-rank on its own, so `RANKING.md` must be
-  written on every insert. That obligation is recorded in effort 0009.
+  written on every insert. That obligation is recorded in project 0009.
 
 ### What this item ran into
 

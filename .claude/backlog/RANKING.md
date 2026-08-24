@@ -4,11 +4,11 @@ Standing reasoning. Read on a re-rank, not on every claim.
 
 ## Current shape
 
-**Effort 0009 — one skill per session — is complete except 0021**, which is back at `next: queue`. Eleven
+**Project 0009 — one skill per session — is complete except 0021**, which is back at `next: queue`. Eleven
 of its twelve tasks closed on 2026-08-23 (0010 earlier the same day, then 0011–0020). Nothing in the
-effort is blocked any more.
+project is blocked any more.
 
-**0002 — the ticket graph** is phase 1 of the nested-work design (effort 0001) and is now the live effort.
+**0002 — the ticket graph** is phase 1 of the nested-work design (project 0001) and is now the live project.
 Its tasks are unchanged in intent but **two of them need re-specifying against what 0009 left behind** —
 see *What 0009 changed underneath 0002* below.
 
@@ -18,7 +18,7 @@ see *What 0009 changed underneath 0002* below.
    newly scaffolded five-column table, silently. 0011 fixed the same defect in `next` (which now refuses
    an unparseable shape loudly rather than reporting an empty backlog) and left `claim` to this ticket.
    Tier 1: a new project cannot claim a row at all until it lands, and **0026 cannot run without it.**
-2. **0026** — re-run the measured exercise. 0009's own closing commitment, and the reason the effort's
+2. **0026** — re-run the measured exercise. 0009's own closing commitment, and the reason the project's
    headline number is still *modelled* rather than observed. Ranked this high on **knowledge freshness**:
    the control is a specific run on 2026-08-22, and every week of drift in the skills, conventions and
    model makes that baseline a weaker comparison. It is also the ticket most likely to change what is
@@ -39,7 +39,7 @@ see *What 0009 changed underneath 0002* below.
    with no cost behind it gets dropped under pressure. **Deliberately not `blocked` on it** — blocking a
    correct rule on an unscheduled measurement is how it waits forever.
 6. **0021** — at `next: queue`, not `develop`. Its AC1 (each skill at least 25% smaller) and its FR2 (no
-   rule dropped) conflict on four of six files, because effort 0009 added ~20,300 bytes of AC-mandated
+   rule dropped) conflict on four of six files, because project 0009 added ~20,300 bytes of AC-mandated
    content to those files before this ticket ran. Two files met the floor, four did not, and the ticket
    records the numbers and a proposed re-spec. `queue` decides which; 0026's result may moot it.
 7. **0005, 0007, 0006, 0008** — phase 1 of the graph, in their original order, with the re-specs below.
@@ -81,7 +81,7 @@ above records.
   and says why. It is not sunk to the bottom: the work is worth what it was worth, and a ticket back at
   `queue` keeps its rank (see `QUEUE.md`).
 - **0009's tasks above 0002's** was an explicit owner decision on 2026-08-23, recorded so a later reader
-  does not read it as drift. It is now spent — the effort is done.
+  does not read it as drift. It is now spent — the project is done.
 
 ## The retro sweep of 2026-08-23 — 0027 to 0035
 
@@ -134,7 +134,7 @@ standing rules:
 Kept because the reasoning explains the shape of the eleven closed tickets, not because it affects the
 current order.
 
-The effort came out of a measured end-to-end run costing $15.11 over 95 turns, of which 85% was context
+The project came out of a measured end-to-end run costing $15.11 over 95 turns, of which 85% was context
 handling and 15% output. Gate A (the field model) went first because everything else reads or writes
 `next` and `status`, so landing it late meant rewriting the same paragraphs twice. 0012 (parking findings)
 came before any invocation was removed, because removing them first would have converted a measurable
@@ -180,7 +180,7 @@ skill files. Neither blocks anything.
   backlog still lacks them. The design pass does not need them; a build exercised end-to-end here
   does. Ranked above 0036 already, so the dependency and the order agree without a `blocked_by`.
 
-**It may come back here as an effort.** At `size: l` with an open mechanism question, the slicing
+**It may come back here as a project.** At `size: l` with an open mechanism question, the slicing
 depends on the answer — so children invented now would be slices ranked against a mechanism nobody
 has chosen. If `/design` returns multi-session work, 0036 returns to `next: queue` for slicing, per
 the 0021 precedent.

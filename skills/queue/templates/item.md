@@ -14,7 +14,7 @@ next: queue | design | develop | verify
 # `waiting` and `blocked` are not one value because
 # different things clear them: a person answering, versus another ticket closing. Merged,
 # telling which would mean opening the ticket. Two values sit off the stack rank and so out of
-# this list: an effort is `active` (see `parent:` below — its `next:` stays empty), and a dormant
+# this list: a project is `active` (see `parent:` below — its `next:` stays empty), and a dormant
 # ticket in `SCHEDULED.md` is `scheduled` with a `wake:` date.
 status: ready | waiting | blocked | in-progress | done
 qa_level: verify | unit | integration | e2e
@@ -26,10 +26,10 @@ source: user | agent | external:<report-id>
 # The graph. `parent:` points UP at the ticket this one belongs to — 0 or 1 id, never a list, and
 # the only stored edge in the hierarchy. Children are DERIVED, never stored: one `grep` over
 # `items/` finds them, and a stored reverse edge is a second place to update and the one that
-# goes stale. A ticket with children is an EFFORT — it holds the outcome, the scope and the
+# goes stale. A ticket with children is a PROJECT — it holds the outcome, the scope and the
 # measure, and it is never ranked, claimed, or built, because its children carry the stages and
 # its row leaves `QUEUE.md`. A ticket with no children is a TASK, and tasks are where all the
-# work lives; a task becomes an effort the moment it gains a child.
+# work lives; a task becomes a project the moment it gains a child.
 parent:
 # The tickets that must close FIRST — a list of ids. These are this ticket's dependencies, and
 # never its dependents. This is what DERIVES `status: blocked` above, so an entry naming a ticket

@@ -18,7 +18,7 @@ measure:
   on_success:
     - capture: write up what the model got right and offer it to anyone else running the plugin
       owner: Aaron Ferguson
-    - queue: decompose phase 3 against a real ACT effort
+    - queue: decompose phase 3 against a real project in ACT
       owner: agent
   on_failure:
     - queue: cut the dependency graph back to hierarchy alone, keeping parent/child only
@@ -42,7 +42,7 @@ alternatives are in the design plan — see **Notes & decisions**.
 
 ## Non-goals
 
-- Ranking efforts. Only tasks are ranked; an effort has no single position and forcing one hides
+- Ranking projects. Only tasks are ranked; a project has no single position and forcing one hides
   both ends of its range.
 - Two-way field sync with Jira. One owner per field, always.
 - A distributed lock for multiple people. Jira already owns assignment; see phase 3.
@@ -55,7 +55,7 @@ alternatives are in the design plan — see **Notes & decisions**.
 - **0004** — phase 3, extending `references/TRACKER.md`. Not decomposed yet.
 
 Phases 1 and 2 are exercisable in this repo. **Phase 3 is not** — this project is
-`routing.default: local`, so testing the bridge needs a company effort in the Court family.
+`routing.default: local`, so testing the bridge needs a company project in the Court family.
 
 ## Cross-cutting commitments
 
@@ -77,7 +77,7 @@ Phases 1 and 2 are exercisable in this repo. **Phase 3 is not** — this project
 
 At 2026-10-17, all five must hold:
 
-1. Every `ships: together` effort has completed or been explicitly abandoned.
+1. Every `ships: together` project has completed or been explicitly abandoned.
 2. Zero scheduled reviews overdue by more than a week.
 3. Zero `ready` tickets with an unowned declared trigger.
 4. No `next --check` rank inversion surviving a week.
@@ -85,14 +85,23 @@ At 2026-10-17, all five must hold:
 
 ## Notes & decisions
 
-- **2026-08-18** — Vocabulary: a ticket with children is an **effort**, one without is a **task**.
-  "Project" was proposed and rejected: it already means the repo (`config.yml: project:`, and the
-  conventions repo's "every project declares two things in its CLAUDE.md") and it means a Jira
-  project key (ACT, AAT). A third meaning collides in the exact section where precision matters.
+- **2026-08-18, superseded 2026-08-23** — Vocabulary: a ticket with children is an **effort**, one
+  without is a **task**. "Project" was proposed and rejected: it already means the repo
+  (`config.yml: project:`, and the conventions repo's "every project declares two things in its
+  CLAUDE.md") and it means a Jira project key (ACT, AAT). A third meaning collides in the exact
+  section where precision matters.
+- **2026-08-23** — **Reversed. Every row is a *ticket*; a ticket with no children is a *task*, and a
+  ticket with children is a *project*.** "Effort" was not a word anyone used for the thing, and a
+  coined term costs more in misreading than an overloaded real one. The collision above is accepted,
+  not solved: a project is either work that decomposes into more than one smaller task, or a
+  directory with a `CLAUDE.md` at its root, and context separates them. A **Jira** project is a
+  Jira feature and factors out entirely except where this backlog writes to Jira — phase 3 (`0004`),
+  where the qualified term *Jira project* is required. Revisit if the distinction starts costing
+  real time.
 - **2026-08-18** — One parent maximum. Multiple parents make `ships: together` contradictory (a
   child in two release units — does its code go live when the first ships?), give a ticket two
   competing critical-path dates, and cannot be represented in Jira.
-- **2026-08-18** — Efforts get no status of their own and no rank. A half-finished coupled effort
+- **2026-08-18** — Projects get no status of their own and no rank. A half-finished coupled project
   is a ranking failure, not a state to model: if its tasks are ranked honestly it completes, and
   if they are not it correctly does not ship. `next --check` reports stranded siblings so the
   failure is visible; nothing promotes automatically.

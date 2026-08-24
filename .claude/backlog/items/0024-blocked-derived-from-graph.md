@@ -30,7 +30,7 @@ touches:
 Nothing clears a `blocked_by` entry when the ticket it names closes, so the `Status` column goes stale
 silently and stays stale.
 
-Observed on 2026-08-23: ticket 0010 closed, and **four of effort 0009's tasks sat at `status: blocked`
+Observed on 2026-08-23: ticket 0010 closed, and **four of project 0009's tasks sat at `status: blocked`
 for the remainder of the session** with nothing left blocking them. They were only found because a
 session read every item file by hand. A reader of `QUEUE.md` — which is the file the whole design points
 people at — would have concluded that four takeable tickets were not takeable.

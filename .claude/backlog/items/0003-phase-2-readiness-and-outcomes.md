@@ -35,8 +35,8 @@ Both gaps have the same shape — a commitment made now with nothing holding it 
 - FR4 — `measure:` with `review_at`, `review_owner`, and `on_success` / `on_failure` branches, each
   branch action carrying an owner. Owner is a role by default, a person only when the commitment is
   genuinely personal.
-- FR5 — Rollup close: the last child closing marks its effort done, cascading upward.
-- FR6 — On rollup close of an effort carrying a `measure`, a scheduled review ticket is created in
+- FR5 — Rollup close: the last child closing marks its project done, cascading upward.
+- FR6 — On rollup close of a project carrying a `measure`, a scheduled review ticket is created in
   `SCHEDULED.md` dated `review_at`. Dormant tickets hold no rank; `next` prints `DUE:` on waking.
 - FR7 — Branch routing: `queue:` actions to this backlog, `capture:` actions to the personal task
   tool via an optional config key, absent by default so the plugin never hard-depends on its sibling.
@@ -74,7 +74,7 @@ Anything Jira-writing. The gate *reads* the rubrics; pushing tickets is 0004.
      lists but never asks whether the children cover the In Scope list. Jira knows the children, so
      this is checkable.
   5. **`missing_measurement_framework` triggers only on "new user-facing capability."** Under this
-     design any effort declaring an outcome needs a measure and a review date, including internal
+     design any project declaring an outcome needs a measure and a review date, including internal
      ones.
 - Gaps 1, 2 and 4 are candidates for `ai-building-conventions` (true without Jira); 3 and 5 are
   rubric trigger changes. Either way that is a change in another repo — sequence it before 0004.

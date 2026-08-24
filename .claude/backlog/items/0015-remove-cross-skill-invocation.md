@@ -69,7 +69,7 @@ and it is why the measured run reached an average of 191,752 context tokens per 
 - **The step numbers in AC2 moved.** 0013 deleted `develop`'s close step, so what the AC calls
   "Steps 5 and 7" are now Steps 5 and 6. Asserted by name (the verify stop, the retro step) rather
   than by number, since a renumber is not a regression and pinning the digit would make every later
-  ticket in this effort fail this one's assertion.
+  ticket in this project fail this one's assertion.
 - **0013 landed FR1 already.** A step that stops at `next: verify` cannot also invoke `verify`, so
   that half went with the ticket that made it true. This ticket owns FR2, FR4, FR5 and the
   tree-wide grep.

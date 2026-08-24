@@ -112,25 +112,25 @@ even within a single run.
 
 ## Notes & decisions
 
-- **Last on purpose.** Every other ticket in effort 0009 rewrites paragraphs in these files.
+- **Last on purpose.** Every other ticket in project 0009 rewrites paragraphs in these files.
   Trimming first means trimming text that is about to change, and then trimming again.
-- Blocked by the whole effort rather than by one ticket, which is unusual and correct: the
+- Blocked by the whole project rather than by one ticket, which is unusual and correct: the
   blocker is not a dependency on any single outcome but on the files settling.
 
 ## Outcome — AC1 not met on four of six files; sent back to `queue`
 
 **The trim was done to the limit FR2 allows and stopped there.** FR2 ("no rule is dropped") is
-non-negotiable, and 0009 restates it as a cross-cutting commitment for the whole effort. AC1's 25% floor
+non-negotiable, and 0009 restates it as a cross-cutting commitment for the whole project. AC1's 25% floor
 and FR2 conflict on four files, so FR2 won and this ticket does not close.
 
 ### FR3 — before and after, all six files
 
 Two baselines are recorded because they answer different questions. The **0021 baseline** is the size
 when this ticket started, which is the right one: this ticket is last *on purpose* because every other
-ticket in 0009 rewrites these files. The **pre-effort** column is the size before 0009 began, and it is
+ticket in 0009 rewrites these files. The **pre-0009** column is the size before 0009 began, and it is
 the figure the problem statement was written against.
 
-| File | pre-effort | 0021 baseline | after | vs baseline | vs pre-effort | AC1 |
+| File | pre-0009 | 0021 baseline | after | vs baseline | vs pre-0009 | AC1 |
 |---|---|---|---|---|---|---|
 | `design` | 7,118 | 10,983 | 8,797 | −19.9% | +23.6% | **not met** |
 | `develop` | 25,136 | 27,661 | 19,171 | −30.7% | −23.7% | met |
@@ -145,7 +145,7 @@ cycle's mandated reading fell further than this table alone shows.
 
 ### Why AC1 and FR2 conflict
 
-**This effort added roughly 20,300 bytes of AC-mandated content to these six files before this ticket
+**This project added roughly 20,300 bytes of AC-mandated content to these six files before this ticket
 ran** — 0012's closing step in each, 0017's session header in each, 0018's routing section, 0019's
 taste/fact escalation, 0013's close step in `verify` and stop in `develop`, 0016's cadence. Every byte of
 it is required by an acceptance criterion that is now ticked. Then this ticket asks for 30% off the
@@ -170,7 +170,7 @@ than counted — a count stays green if one rule is dropped and another duplicat
    evidence is in the table: narrative-heavy files compress by a third, rule-dense files by a fifth.
 2. **An absolute budget per skill** — say 5,000 tokens for a lifecycle skill — which is what actually
    matters at read time and does not move when another ticket adds a mandated paragraph.
-3. **A floor measured against the pre-effort baseline**, making the mandated additions visible as the
+3. **A floor measured against the pre-0009 baseline**, making the mandated additions visible as the
    cost they are rather than as headroom to cut.
 
 Option 2 is the recommendation: a percentage off a moving baseline is un-auditable, and the reason this
@@ -183,7 +183,7 @@ ticket cannot close is that its baseline moved 18% while it sat blocked behind e
   What the ordering did not anticipate is that those rewrites would *grow* the files by 18%, which is
   what makes the percentage target unreachable.
 - **Six files, not five.** The ACs say five but the assertion globs `skills/*/SKILL.md`. `prototype` was
-  trimmed and recorded with the rest — same reading applied throughout this effort.
+  trimmed and recorded with the rest — same reading applied throughout this project.
 - **Word-shaving is nearly free of effect; deciding what leaves is the whole thing.** Measured on
   `CONCURRENCY.md` under 0020: five passes of tighter prose moved 1,100 bytes, and naming a category to
   move — live-conflict procedures, design rationale, incident narrative — moved 11,000. The same held
@@ -191,7 +191,7 @@ ticket cannot close is that its baseline moved 18% while it sat blocked behind e
   adjacent sentence, and **rules the skills restated from `CONCURRENCY.md`** — that last one is where
   `develop` found most of its 30%, and it is a rule the skills were breaking about themselves.
 - **Re-wrapping breaks grep-based assertions, repeatedly.** Compressing a paragraph moves a phrase across
-  a line break, and every `verify`-level assertion in this effort greps single lines. It caught 0012,
+  a line break, and every `verify`-level assertion in this project greps single lines. It caught 0012,
   0015, 0016 and 0019 during this trim. Worth a rule somewhere: a scripted assertion on prose should
   match a phrase short enough to survive reflow, or the file should be read with newlines collapsed.
 
@@ -201,7 +201,7 @@ ticket cannot close is that its baseline moved 18% while it sat blocked behind e
 percentage, and a percentage is the defect — the previous pass could not close because its baseline
 moved 18% while it sat blocked behind eight tickets. `queue`'s own rule now states this directly:
 *state any size or budget target absolutely — bytes, a count, a ceiling — never as a percentage of a
-baseline a sibling ticket in the same effort is still moving.* That rule was written out of this
+baseline a sibling ticket in the same project is still moving.* That rule was written out of this
 ticket's failure, so applying it here is mandated rather than merely recommended.
 
 **20,190 bytes = ~5,000 tokens**, the figure the outcome recommended. Measured in bytes because
@@ -232,8 +232,8 @@ recorded when `CONCURRENCY.md` landed 7 tokens under its own. 0025 adds mandated
 this repo's established `tests/*.test.sh` pattern, and the conventions already say a rule belongs in
 a test that fails. Unfamiliar is not undecided; there is no surface and no open question.
 
-**`blocked_by` now names tickets instead of an effort.** The original note said this ticket was
-"blocked by the whole effort rather than by one ticket" while frontmatter carried `blocked_by: []`
+**`blocked_by` now names tickets instead of a project.** The original note said this ticket was
+"blocked by the whole project rather than by one ticket" while frontmatter carried `blocked_by: []`
 and `status: ready` — a `blocked` nothing could derive, which is exactly what the queue's own rule
 forbids. The two open tickets that edit files this ticket must measure are **0023** (in-progress,
 `skills/queue/SKILL.md` — a trim target) and **0025** (`skills/develop/SKILL.md` — which consumes
@@ -259,7 +259,7 @@ Appended to the two tables above rather than replacing them. The "0021 re-spec" 
 own baseline; "this pass, before" is the working tree when this session claimed the ticket, and the two
 differ only where a sibling ticket landed in between.
 
-| File | pre-effort | first pass | 0021 re-spec | this pass, before | after | vs ceiling |
+| File | pre-0009 | first pass | 0021 re-spec | this pass, before | after | vs ceiling |
 |---|---|---|---|---|---|---|
 | `design` | 7,118 | 8,797 | 8,797 | 8,797 | 8,797 | under by 11,393 |
 | `develop` | 25,136 | 19,171 | 19,645 | 20,762 | **20,081** | under by 109 |
@@ -270,7 +270,7 @@ differ only where a sibling ticket landed in between.
 | **total** | **112,842** | **103,794** | **108,109** | **110,470** | **104,551** | — |
 
 A compliant cycle is now **104,551 bytes / ~25,893 tokens** of skill instructions, against the problem
-statement's 44,090 tokens for five skills. `develop` alone went 25,136 → 20,081 across the effort.
+statement's 44,090 tokens for five skills. `develop` alone went 25,136 → 20,081 across the project.
 
 ### FR6 — two exemptions, with the evidence
 

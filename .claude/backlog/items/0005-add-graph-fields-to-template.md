@@ -28,7 +28,7 @@ header, and 0008 writes rules that cite it.
 
 - FR1 — `templates/item.md` frontmatter carries `parent:` (0 or 1 id), `blocked_by:` (list),
   and `relates:` (list), each with a comment stating the stored direction.
-- FR2 — The template's prose states the container/task rule: a ticket with children is an effort,
+- FR2 — The template's prose states the container/task rule: a ticket with children is a project,
   is never ranked or claimed, and holds outcome and scope; a ticket without children is a task.
 - FR3 — *Struck. The header row is now set by 0010, which pares the table to
   `ID | Title | Next | Status | Parent` as part of splitting `Status` into two fields. Both
@@ -36,7 +36,7 @@ header, and 0008 writes rules that cite it.
   twice. This ticket keeps the `Parent` column requirement only insofar as 0010 preserves it.*
 - FR4 — The template's prose states that children are derived (one `grep`), never stored, and why:
   a stored reverse edge is a second place to update and the one that goes stale.
-- FR5 — `epics/`, `EPICS.md`, and any separate effort template are explicitly *not* introduced.
+- FR5 — `epics/`, `EPICS.md`, and any separate project template are explicitly *not* introduced.
   One `items/` directory and one file format covers both states.
 
 ## Non-functional requirements
@@ -71,8 +71,8 @@ Any behaviour. This ticket ships the shape; 0006 reads it and 0008 enforces it.
 ## Notes & decisions
 
 - **Built 2026-08-24** (token `cae7`). FR1, FR2 and FR4 all land in **one comment block above
-  `parent:`** rather than in a separate prose section. The effort/task rule and the derived-children
-  rule are what `parent:` *means* — a reader who has the field without them ranks an effort — and a
+  `parent:`** rather than in a separate prose section. The project/task rule and the derived-children
+  rule are what `parent:` *means* — a reader who has the field without them ranks a project — and a
   template that documents fourteen keys is read key by key, not front to back.
 
 - **AC3 and AC4 were already satisfied and needed no edit.** No `epics/` or `EPICS.md` has ever
@@ -82,8 +82,8 @@ Any behaviour. This ticket ships the shape; 0006 reads it and 0008 enforces it.
   than produced. The suite carries both assertions so a later edit cannot quietly undo them.
 
 - **The template contradicted itself and the change had to fix that, not just add to it.** The
-  `status:` comment described an effort as a *container ticket*, wording the project moved off when
-  `QUEUE.md` settled on effort/task. Adding `parent:` with the effort/task rule while leaving
+  `status:` comment described a project as a *container ticket*, wording this repo moved off when
+  `QUEUE.md` settled on the container/task rule. Adding `parent:` with that rule while leaving
   "container" in place would have left one file naming the same concept two ways. Reconciled in the
   same commit per `documentation-conventions.md`; the suite greps for the retired wording.
 
@@ -92,7 +92,7 @@ Any behaviour. This ticket ships the shape; 0006 reads it and 0008 enforces it.
   matched the `expects:` comment, which is about `expects:` going stale and nothing to do with
   reverse edges. A whole-file grep over a file this dense is close to vacuous. Every phrase
   assertion was rescoped to the **comment block above the key that must carry it**, and the scoping
-  was then proved by mutation: moving the effort/task sentence into the `type:` comment — still
+  was then proved by mutation: moving the project/task sentence into the `type:` comment — still
   present in the file — reds four assertions. This is the `testing-conventions.md` "wired and still
   cannot fail" case, and the file's own density is what produced it.
 
@@ -115,12 +115,13 @@ Any behaviour. This ticket ships the shape; 0006 reads it and 0008 enforces it.
   reds, dropping `source:` reds. The migration NFR was checked by stripping all three graph fields
   from this item and confirming `./next` and `./next --drift` still parse it.
 
-- **Left at `next: verify` because the tree stopped being clean mid-pass.** Session `ebff` is renaming
-  the effort/task concept to project/task and has half-applied it: `tests/graph-fields.test.sh` — a
-  file inside this ticket's committed `touches:` — now asserts `a ticket with children is a project`
-  while `skills/queue/templates/item.md` still says `effort`, so this ticket's own guard is red
-  against a contract 0005 never agreed to. Nothing was reverted. **To close:** re-run once that
-  rename has landed on both files, or once the guard is back to the effort wording.
+- **Left at `next: verify` because the tree stopped being clean mid-pass — since resolved.** Session
+  `ebff` was renaming the effort/task concept to project/task and had half-applied it:
+  `tests/graph-fields.test.sh` — a file inside this ticket's committed `touches:` — asserted
+  `a ticket with children is a project` while `skills/queue/templates/item.md` still said `effort`,
+  so this ticket's own guard was red against a contract 0005 never agreed to. Nothing was reverted.
+  **Resolved 2026-08-23:** the rename landed on both files and the guard is green. FR2 now reads
+  *project* where it read *effort*; the requirement itself is unchanged.
 
 - **AC3's guard is narrower than AC3 states.** The `find` covers `skills/`, `references/` and `tests/`
   only, so an `EPICS.md` at the repo root or under `tools/` passes green — confirmed by planting both.

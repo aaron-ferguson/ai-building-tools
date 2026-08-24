@@ -29,14 +29,14 @@ touches:
 
 ## Problem
 
-Effort 0009 opened with a measurement and committed to closing with one: *"re-run the same end-to-end
+Project 0009 opened with a measurement and committed to closing with one: *"re-run the same end-to-end
 exercise against a fresh project and compare cost per turn and context per turn, not just the total."*
 Eleven of its twelve tasks closed on 2026-08-23. **The comparison has not been made.**
 
-So the number the whole effort was justified by — **~$5.09 against $15.11** — is still modelled, not
-observed. Every ticket in the effort cited it. Three places now carry a placeholder pointing at this
+So the number the whole project was justified by — **~$5.09 against $15.11** — is still modelled, not
+observed. Every ticket in the project cited it. Three places now carry a placeholder pointing at this
 ticket for the observed figure: `README.md`, `skills/develop/SKILL.md` and `skills/verify/SKILL.md`.
-Until it lands, the honest status of the effort is "the workflow changed as designed" and not "the
+Until it lands, the honest status of the project is "the workflow changed as designed" and not "the
 workflow is cheaper", and those are different claims.
 
 **Both sides of the comparison are already on disk**, which is what this ticket was re-specified
@@ -222,7 +222,7 @@ the comparison says about the suite as it then stands. `0037` carries the forwar
   qualified as *for the pending-placeholder sentences*, and that is how it was read: the deferral
   phrasing is gone from both skills, the provenance is not.
 - **The result is unwelcome and is recorded as it came out.** Cost per turn fell 14.5%, not the
-  ~66% the effort was justified by, and the modelled ~$5.09 assumed a 60k average context against
+  ~66% the project was justified by, and the modelled ~$5.09 assumed a 60k average context against
   an observed 106,139. The mechanism is in `MEASUREMENT.md`: isolation swaps cache reads at 0.1x
   input for cache writes at 1.25x-2x, so writes per turn *rose* 22.8% while context per turn fell 30%.
 - **0016's deferred kill criterion is settled and did not fire.** No isolated retro came in under
@@ -250,6 +250,42 @@ the comparison says about the suite as it then stands. `0037` carries the forwar
 - **The fix is a redaction, not a re-measurement.** Replace the two slugs with the wording
   `MEASUREMENT.md` already uses. Nothing is pushed yet, so this is the cheap moment — after a push it
   is a history rewrite. ACs 1-9 need no rework; re-ticking them is a re-read, not a re-run.
+### Redacted 2026-08-24 — the privacy fix, and what the redaction turned up
+
+- **The verdict re-published the payload it flagged, so the fix was four occurrences and not two.**
+  It named lines 43 and 47 of *Problem*, and it was right about both — but explaining the failure
+  meant quoting each slug again, so the verdict section carried its own copy of the leak. A privacy
+  verdict written this way doubles the exposure it reports, and following it literally leaves the
+  repo dirty while every named line reads clean. The rule that falls out: **a verdict on a leaked
+  string describes the string, never quotes it** — "one for this repository, one for the parent
+  workspace" is what stands there now, and it identifies the defect just as precisely.
+- **A guard against a string must not contain that string**, which is not a difficulty so much as a
+  thing to notice once. `tests/measurement.test.sh` matches `[-/](Users|home)[-/]`: bracketing the
+  separators means the pattern cannot match its own text, so the guard does not report the repo
+  dirty on account of itself, and no example of either spelling is written anywhere in the file.
+  Both platform spellings are covered because a contributor on Linux leaks the identical fact and a
+  guard covering one of two callers is worse than none (`coding-conventions.md`, *Fail Loudly*).
+- **The guard was proved red against the real defect before the fix** — it printed all four lines,
+  and the run exited 1 — because a privacy check only ever seen green is indistinguishable from one
+  wired to nothing (`testing-conventions.md`, *Prove a new guard fails*). It is a repo-wide check
+  over `git ls-files`, not a check of this ticket's deliverables, since the invariant belongs to the
+  repo being public rather than to 0026.
+- **The corrected findings count was stale again before it was written, and that is the real lesson.**
+  The verdict called 28 the true count; it was 42 by the time the fix landed, because `FINDINGS.md`
+  is a live buffer that later sessions keep appending to. Chasing the number is not a fix, so
+  `MEASUREMENT.md` now pins it **as at** an instant, the same discipline `--exclude` gives the token
+  figures, and records the undercount mechanism: two entries carry the date inside the bold marker,
+  so the obvious `^- 2026-` grep misses exactly those two. Both earlier numbers, 26 and 28, came
+  from that grep.
+- **Two suite reds were another session's half-landed rename, not this ticket's.**
+  `tests/batching.test.sh` and `tests/graph-fields.test.sh` failed inside a full-suite loop and
+  passed on every one of three re-runs immediately after. The cause was not flakiness: a concurrent
+  session had ~30 files dirty in the shared working tree, mid-rename of *effort* to *project*. Both
+  runners are green at this ticket's last commit and at `HEAD`, each confirmed in a throwaway
+  worktree. **A full-suite run taken while another window is mid-edit is a verdict about a tree that
+  never existed as a commit** — the worktree is what makes it answerable, and the comparison to make
+  is against a commit, not against the tree.
+
 - **Two non-blocking corrections while the file is open.** (1) `MEASUREMENT.md`'s effectiveness
   section says "26 findings were parked ... 4 on 2026-08-23 and 22 on 2026-08-24" and then "grown to
   28 entries"; 28 is the true count and the gap is two entries formatted `- **2026-08-24 —` instead

@@ -17,7 +17,7 @@ touches:
 ## Problem
 
 A session that spots work it should not do now has nowhere to put it. Calling `queue` is the
-thing this effort removes, and writing a ranked row itself means doing queue's hardest job —
+thing this project removes, and writing a ranked row itself means doing queue's hardest job —
 specification and ranking — badly and in the wrong session.
 
 ## Functional requirements

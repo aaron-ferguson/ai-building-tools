@@ -69,7 +69,7 @@ Three gaps remain, and one of them is a correctness problem in a company project
 ## Open design question
 
 - **Question:** which Jira project is the test case, and does a standalone probation product warrant
-  its own project key or an effort inside an existing Court-family project?
+  its own Jira project key, or a ticket-graph project inside an existing Court-family one?
 - **Why it blocks specification:** FR3's chain validation and FR6's claim protocol both depend on
   the target project's issue types and workflow statuses, which vary per project — AAT does not
   match ACT, and JUS matches neither.

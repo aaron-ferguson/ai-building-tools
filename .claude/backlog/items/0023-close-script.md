@@ -126,7 +126,7 @@ open side automated and is left to infer that the close side is hand-work by cho
   ("yours only if you minted its token in this conversation"). A script cannot check memory, so the token
   argument is how the session proves it. Passing the wrong one must fail loudly rather than close someone
   else's ticket.
-- Parented under 0002 rather than 0009: it is scaffold tooling, which is that effort's subject. 0009 is
+- Parented under 0002 rather than 0009: it is scaffold tooling, which is that project's subject. 0009 is
   finished bar 0021.
 
 ### Learned while building (2026-08-23)

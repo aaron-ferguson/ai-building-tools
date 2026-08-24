@@ -9,9 +9,9 @@ would have to be renumbered on every insert and every close — turning each one
 a full-file rewrite, which is how two sessions working this backlog at once silently overwrite
 each other. Do not add one.
 
-**Only tasks appear here.** A ticket with children is an *effort*: it holds the outcome, the
+**Only tasks appear here.** A ticket with children is a *project*: it holds the outcome, the
 scope, the measure and the coupling, and it is never ranked, claimed, or built. A ticket with no
-children is a *task*, and tasks are where all the work lives. A task becomes an effort the moment
+children is a *task*, and tasks are where all the work lives. A task becomes a project the moment
 it gains a child, and its row leaves this file.
 
 **Two columns, because they answer different questions.** `Next` is the *stage* — which skill

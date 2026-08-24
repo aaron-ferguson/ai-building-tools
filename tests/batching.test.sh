@@ -56,7 +56,7 @@ counted "the rule appears exactly once, lowercase, as the QA plan greps for" \
   "$DEV" "one gate per session" 1
 present "the shared-file-scope half of the test, in the paragraph" "$PARA" "expects:"
 present "the shared-slice half of the test, in the paragraph" "$PARA" "parent slice"
-present "unrelated efforts do not batch" "$PARA" "Tickets from unrelated efforts do not batch"
+present "unrelated projects do not batch" "$PARA" "Tickets from unrelated projects do not batch"
 
 echo "AC2 — the prohibition is replaced, not annotated"
 absent "no 'One item per invocation' left in develop" "$DEV" "One item per invocation"

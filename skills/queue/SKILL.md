@@ -196,7 +196,7 @@ provable within the ticket's own scope** — one whose reproduction needs someth
 to *Out of scope* cannot be met, and `verify` is right to fail it, leaving a finished ticket stuck between
 a red it cannot fix and a scope it must not grow. Write that as the observation it is ("the run reports
 X, whose fix is ticket NNNN"). **State any size or budget target absolutely** — bytes, a count, a
-ceiling — never as a percentage of a baseline a sibling ticket in the same effort is still moving: two
+ceiling — never as a percentage of a baseline a sibling ticket in the same project is still moving: two
 independently-written targets over a shifting baseline leave the second one unclosable.
 
 If the report genuinely doesn't contain enough to write FRs or ACs, ask — once, batched, with your

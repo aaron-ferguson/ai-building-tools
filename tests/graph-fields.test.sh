@@ -16,9 +16,9 @@
 #   * The reverse edge gets stored. Writing `children:` is the obvious next helpful edit, and it is
 #     the one that rots: two places to update, and the derived one is always the stale one.
 #
-# The effort/task rule is asserted in the same file because it is what `parent:` MEANS — a ticket
+# The project/task rule is asserted in the same file because it is what `parent:` MEANS — a ticket
 # with children is never ranked or claimed, and a template that adds the field without the rule
-# invites a session to rank an effort.
+# invites a session to rank a project.
 #
 # Usage:  tests/graph-fields.test.sh
 #
@@ -106,10 +106,10 @@ in_block "relates: is undirected and carries no scheduling meaning" \
   "$RELATES" "no scheduling meaning"
 
 echo
-echo "FR2 — the effort/task rule, in \`parent:\`'s own block, so the field is not added without what it means"
-in_block "a ticket with children is an effort" "$PARENT" "a ticket with children is an effort"
-in_block "an effort is never ranked, claimed, or built" "$PARENT" "never ranked, claimed, or built"
-in_block "an effort holds the outcome and the scope" "$PARENT" "holds the outcome"
+echo "FR2 — the project/task rule, in \`parent:\`'s own block, so the field is not added without what it means"
+in_block "a ticket with children is a project" "$PARENT" "a ticket with children is a project"
+in_block "a project is never ranked, claimed, or built" "$PARENT" "never ranked, claimed, or built"
+in_block "a project holds the outcome and the scope" "$PARENT" "holds the outcome"
 in_block "a ticket with no children is a task" "$PARENT" "a ticket with no children is a task"
 
 echo
@@ -120,7 +120,7 @@ in_block "the why: a second place to update goes stale" "$PARENT" "goes stale"
 absent   "no \`children:\` key was added alongside \`parent:\`" "$ITEM" "children:"
 
 echo
-echo "FR2 — and the template does not still call an effort a container"
+echo "FR2 — and the template does not still call a project a container"
 absent "the superseded \`container ticket\` wording is gone" "$ITEM" "container ticket"
 
 echo
@@ -134,17 +134,17 @@ for key in id title type next status qa_level size created source expects claime
 done
 
 echo
-echo "FR5/AC3 — no epics/, no EPICS.md, no second template for efforts"
+echo "FR5/AC3 — no epics/, no EPICS.md, no second template for projects"
 found=""
 for d in "$ROOT/skills" "$ROOT/references" "$ROOT/tests"; do
   [ -d "$d" ] || continue
-  hit="$(find "$d" \( -iname 'epics' -o -iname 'EPICS.md' -o -iname 'effort.md' \) -print 2>/dev/null || true)"
+  hit="$(find "$d" \( -iname 'epics' -o -iname 'EPICS.md' -o -iname 'effort.md' -o -iname 'project.md' \) -print 2>/dev/null || true)"
   [ -n "$hit" ] && found="$found $hit"
 done
 if [ -z "$found" ]; then
   ok "one items/ directory and one file format covers both states"
 else
-  bad "FR5 — a separate effort container exists:$found"
+  bad "FR5 — a separate project container exists:$found"
 fi
 
 echo
