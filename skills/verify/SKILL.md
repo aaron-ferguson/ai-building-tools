@@ -15,9 +15,10 @@ Verify that a change satisfies what was promised. `/code-review` hunts defects i
 change against a **written contract**.
 
 **One skill per session.** Run this skill in its own conversation; the backlog carries the handoff — the
-ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of $15.11
-went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09** isolated. **No standard
-is relaxed** — the rigour is all in the 15% that was output.
+ticket's `next` field and `FINDINGS.md`, never a conversation. **Observed 2026-08-23/24** over 30 isolated
+sessions: a `verify` turn is the suite's cheapest at **$0.0946 and 97,965 context tokens**, against a
+baseline $0.1203 at 151,669 (`MEASUREMENT.md`). **No standard is relaxed** — the rigour is all in the
+fifth of spend that is output.
 
 **One gate per invocation, not one ticket.** The same batching case applies for the same reason:
 **one gate per session, not one ticket per session** — tickets that share a file scope or a parent
@@ -27,7 +28,8 @@ covering several tickets.** Each ticket closes on its **own acceptance criteria*
 `qa_level`, and a failing AC fails that ticket alone — never the batch, and never the reverse: one
 green ticket does not carry its neighbours. Claim and close each row individually
 (`CONCURRENCY.md`, *A stage writes only the ticket it holds*). The dated figure is capture-side,
-**2026-08-22**; **0026** produces the one for this side of the gate.
+**2026-08-22**; the recorded 2026-08-23/24 run held no batched session, so the figure for this side of
+the gate is still unmeasured (`MEASUREMENT.md`).
 
 **`verify` closes the ticket.** On green it ticks the ACs, sets it done, moves the row to `DONE.md` and
 releases its claim. `develop` closes nothing: a verdict that must travel from the session producing it

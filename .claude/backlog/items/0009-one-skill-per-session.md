@@ -25,7 +25,13 @@ average of 191,752 tokens per turn.
 
 The suite is already built for separate windows — that is what `CONCURRENCY.md` is for, and every
 skill already takes a complete file-based input. Running all five in one conversation is what
-made it expensive. Modelled at a 60k average context, the same run costs ~$5.09.
+made it expensive. Modelled at a 60k average context, the same run would cost ~$5.09.
+
+**Observed 2026-08-24, and the projection did not hold.** 30 isolated sessions on 2026-08-23/24 ran
+at **$0.1028 per turn and 106,139 context tokens per turn**, against a recomputed baseline of
+$0.1203 and 151,669 — context per turn down 30%, cost per turn 14.5%, not the two-thirds modelled.
+The 60k premise was wrong: isolation resets context per *session*, not per *turn*. Figures, method,
+caveats and the effectiveness read: `MEASUREMENT.md`.
 
 Effectiveness is not the problem and must not be traded for cost. The same run caught a real
 zip-bomb vulnerability that every acceptance criterion passed over, and a test that stayed green
@@ -103,17 +109,22 @@ what surprised it before reporting.
   survive. The one rule that *changed* is *`verify` never writes the queue* → *A stage writes only the
   ticket it holds*, which 0013 owns and which replaced a workaround with what it always meant.
 - **Nothing was measured by feel** for the parts that could be measured: byte and token counts are
-  recorded per file in 0020 and 0021. **The closing measurement is not done** — the effort opened with an
-  end-to-end run against a fresh project and closes with one, and that run has not happened. Until it
-  does, the ~$5.09 figure remains modelled rather than observed.
+  recorded per file in 0020 and 0021. **The closing measurement landed on 2026-08-24 as 0026**, and it is
+  observed on both sides rather than observed against modelled: the recorded sessions were measured
+  directly, so no fresh run had to be sat. The verdict is **partly materialised** — 30% off context per
+  turn, 14.5% off cost per turn, $6.01 per closed ticket, against a modelled ~$5.09 that assumed a 60k
+  context this run never had. `MEASUREMENT.md` carries it, including what the run caught, what it missed,
+  and the five things the two runs did not hold constant.
 - **`RANKING.md` is load-bearing** and was rewritten for the shape this effort left, including a table of
   what each of 0002's tasks must re-specify against it.
 
 ### What this effort did *not* do
 
-- **Re-run the measured exercise.** The single most valuable remaining piece of work, and it is not a
-  ticket yet: an end-to-end run against a fresh project under one-skill-per-session, compared on cost per
-  turn and context per turn rather than total.
+- **Re-run the measured exercise against a fresh project.** `0026` closed the commitment from the
+  recorded sessions instead, which is a stronger comparison in one way — both sides observed — and a
+  weaker one in another: it measures this repository, not a greenfield project, and the run edited the
+  very skills it was running. **`0037` carries the fresh-project run**, deliberately sequenced behind
+  `0028` and `0035`.
 - **Reduce the six skills by 30%.** They fell 22% from where this effort had grown them, and 8% from
   where they started before it. `verify` and `design` are still larger than they were on 2026-08-22.
 - **Fix `claim`.** The pared table still breaks it on a newly scaffolded project — 0022, ranked first.

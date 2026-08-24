@@ -22,9 +22,10 @@ verdict has to survive a session boundary in conversation. Your last act is the 
 commit plus `next: verify, status: ready`.
 
 **One skill per session.** Run this skill in its own conversation; the backlog carries the handoff —
-the ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of
-$15.11 went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09** isolated.
-**No standard is relaxed** — the rigour is all in the 15% that was output.
+the ticket's `next` field and `FINDINGS.md`, never a conversation. **Observed 2026-08-23/24** over 30
+isolated sessions: a `develop` turn costs **$0.1044 at 109,750 context tokens**, against a baseline
+$0.1203 at 151,669 — context per turn down 30%, cost 14.5%, short of the projected two-thirds
+(`MEASUREMENT.md`). **No standard is relaxed** — the rigour is all in the fifth of spend that is output.
 
 **One gate per invocation, not one ticket.** The unit is a gate: **one gate per session, not one
 ticket per session** — a set of tickets that share a file scope (their `expects:` overlap) or share a
@@ -37,7 +38,8 @@ is, and a batch holding rows it is not yet working on is the scope reservation `
 forbids — and **Stop at the first ticket whose contract turns out wrong** rather than carrying a bad
 assumption into the rest of the batch. The figure behind this is capture-side and dated
 **2026-08-22**: five related tickets in one session cost measurably less per ticket than five
-sessions would have. **0026** produces the develop-side one; fold it in when it lands.
+sessions would have. **0026** looked for the develop-side figure in the 2026-08-23/24 sessions and
+found no batched session to measure; producing it needs a run designed for it.
 
 **Another session may be working this same backlog.** Read `references/CONCURRENCY.md` at the plugin root
 (`../../references/CONCURRENCY.md` from this file) before touching any backlog file.

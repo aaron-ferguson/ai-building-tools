@@ -44,6 +44,11 @@ bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
 present() {
   if [ -f "$2" ] && grep -qF "$3" "$2"; then ok "$1"; else bad "$1 — expected to find in $(basename "$2"): $3"; fi
 }
+# presenti <label> <file> <fixed-string> — case-insensitive; for a word whose capitalisation
+# depends only on where it lands in a sentence.
+presenti() {
+  if [ -f "$2" ] && grep -qiF "$3" "$2"; then ok "$1"; else bad "$1 — expected to find in $(basename "$2"): $3"; fi
+}
 # absent <label> <file> <fixed-string>
 absent() {
   if [ -f "$2" ] && grep -qF "$3" "$2"; then bad "$1 — expected NOT to find in $(basename "$2"): $3"; else ok "$1"; fi
@@ -188,8 +193,8 @@ if [ "$n" -lt "$PRE_MODELLED" ]; then
 else
   bad "AC4 — README still says 'modelled' $n time(s), was $PRE_MODELLED before this ticket"
 fi
-present "develop carries an observed figure" "$DEV" "observed"
-present "verify carries an observed figure" "$VER" "observed"
+presenti "develop carries an observed figure" "$DEV" "observed"
+presenti "verify carries an observed figure" "$VER" "observed"
 present "0009 points at the record that holds the observed figures" "$EFFORT" "MEASUREMENT.md"
 
 echo "AC5 — the verdict is stated explicitly, against the modelled figure"

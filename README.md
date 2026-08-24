@@ -42,8 +42,15 @@ ends.
 **2026-08-22** cost **$15.11** over 95 turns. **85% of that was context handling** — 59%
 re-reading context, 26% loading it — and only 15% was output. The price of a turn doubled across
 the run, $0.12 in `queue` to $0.25 in `retro`, for work of the same kind: nothing got harder, the
-context got bigger, reaching an average of **191,752 tokens per turn**. Modelled at a 60k average
-context, the same run costs **~$5.09**.
+context got bigger, reaching an average of **191,752 tokens per turn**.
+
+**Measured again, isolated, and the saving is real but partial.** 30 one-skill sessions over
+**2026-08-23/24** closed 19 tickets at **$0.1028 per turn and 106,139 context tokens per turn**,
+against a recomputed baseline of $0.1203 and 151,669: **context per turn fell 30%, cost per turn
+14.5%**. The projection of a two-thirds cut assumed a 60k average context and did not survive
+contact — isolation resets context per *session*, not per *turn*, and a cheap cache read at 0.1x
+input is replaced by a fresh cache write at 1.25x to 2x. Full figures, method and caveats:
+[MEASUREMENT.md](MEASUREMENT.md).
 
 **One skill per session, not one ticket per session.** This is the counter-intuitive half and the
 one most easily lost. A `queue` session should batch every related ticket it can: the expensive
@@ -58,8 +65,9 @@ before it writes a line, and every one of those is shared across tickets that to
 files. So the unit there is a **gate** — tickets whose `expects:` overlap or that share a parent
 slice — and not a ticket. What does *not* batch is ownership or judgement: each row is claimed and
 closed on its own, each ticket closes on its own acceptance criteria, and the batch stops at the
-first ticket whose contract turns out wrong. The figure above is capture-side; `0026` produces the
-develop-side one.
+first ticket whose contract turns out wrong. The figure above is capture-side. No batched `develop`
+or `verify` session exists to measure yet — `0026` looked and found none, and named the run that
+would produce one.
 
 **What does not change.** No standard is relaxed and no quality gate is removed — TDD, the separate NFR
 pass, mutation testing in `verify`, the `design` gate, `qa_level` chosen at queue time. That
@@ -67,7 +75,8 @@ rigour is what caught a real zip-bomb vulnerability every acceptance criterion i
 passed over, and a test that stayed green with the guard it existed for deleted. Both live in the
 15% of spend that was output. What moved is *where* work happens, not what is required of it.
 
-Full reasoning and figures: *The Context Tax* and *Splitting the Suite* (2026-08-22/23).
+Full reasoning: *The Context Tax* and *Splitting the Suite* (2026-08-22/23). Observed figures and
+the verdict: [MEASUREMENT.md](MEASUREMENT.md).
 
 ---
 
@@ -201,6 +210,7 @@ tests/batching.test.sh     # develop and verify state the batching rule, not the
 tests/skill-size.test.sh   # every skills/*/SKILL.md within its byte goal, or over it with a reason
 tests/reference-size.test.sh     # the same soft goal over references/*.md
 tests/external-feedback.test.sh  # no shipped file names a specific feedback product
+tests/measurement.test.sh        # the harvest arithmetic, and what MEASUREMENT.md must state
 ```
 
 Each case scaffolds a throwaway git repo with one `QUEUE.md` shape, runs the script against it,
