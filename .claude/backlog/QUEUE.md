@@ -63,7 +63,7 @@ by the next commit. This paragraph described that design as current fact and was
 |------|-------|------|--------|--------|
 | 0026 | Measure the isolated workflow from the recorded sessions and record the verdict | verify | ready | 0009 |
 | 0029 | Reconcile close's definition of held with CONCURRENCY.md's | develop | ready | — |
-| 0005 | Add the graph fields to the ticket template and QUEUE.md | verify | ready | 0002 |
+| 0005 | Add the graph fields to the ticket template and QUEUE.md | verify | in-progress | 0002 |
 | 0031 | Strip YAML comments in next and claim's fm_list | develop | ready | — |
 | 0032 | Terminate batching.test.sh's paragraph window on a blank line | develop | ready | — |
 | 0033 | Guard against stale rule-name citations across the references | develop | ready | — |
