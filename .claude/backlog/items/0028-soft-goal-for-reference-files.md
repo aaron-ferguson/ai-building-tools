@@ -9,13 +9,19 @@ size: m
 created: 2026-08-23
 source: user
 expects:
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
+  # corrected on claim: no references/*.md needs an edit — AC7's grep is already clean, the
+  # ceiling was only ever asserted in the two closed tickets. README.md and 0023 were missed.
   - tests/reference-size.test.sh
+  - README.md
   - .claude/backlog/items/0020-split-concurrency-rules-from-incidents.md
+  - .claude/backlog/items/0023-close-script.md
 claimed_by: "3882"
 claimed_at: 2026-08-24T04:28:00Z
 touches:
+  - tests/reference-size.test.sh          # new
+  - README.md
+  - .claude/backlog/items/0020-split-concurrency-rules-from-incidents.md
+  - .claude/backlog/items/0023-close-script.md
 ---
 
 ## Problem
