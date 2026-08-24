@@ -3,7 +3,7 @@ id: "0031"
 title: Strip YAML comments in next and claim's fm_list
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -12,8 +12,8 @@ expects:
   - skills/queue/templates/next
   - skills/queue/templates/claim
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "f0c3"
+claimed_at: 2026-08-24T14:42:17Z
 touches:
 ---
 
