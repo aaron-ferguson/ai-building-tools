@@ -275,3 +275,18 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   over the rules, not the containers** — capture the bolded rule statements, or allow a removed heading
   when accompanied by a stated destination for each rule it held (pointer: items/0021 AC2, its Outcome
   table mapping the seven bullets, skills/prototype).
+- 2026-08-23 — **the skill-size guard's own fixtures are coupled to the real tree, so a compliant
+  tree can red it.** `tests/skill-size.test.sh` builds its FR6 fixtures from `SMALLEST="$(ls -S
+  skills/*/SKILL.md | tail -1)"` — the smallest *real* skill file — then pads it by 14,000 bytes
+  against a fixture floor of 25,000. That passes only while the smallest real file is under 11,000
+  bytes. It is `design` at 8,797, leaving 2,203 bytes of headroom, and `design` was **10,983 bytes
+  earlier in this same effort** — 17 bytes from a spurious FAIL on a tree where every file is
+  within its ceiling. Verified by growing `design` to 11,001 bytes: AC1 stays green and correctly
+  names the two exempt files, while FR6 reports `skills/exempt/SKILL.md is 25001 bytes, over its
+  exempt floor of 25000`. The same coupling makes any padding mutation on the real smallest file
+  produce a second, unrelated red, which is what surfaced it. A guard whose reds can be artefacts
+  of unrelated growth trains sessions to discount its reds — the failure the "prove a new guard
+  fails" rule exists to prevent, arriving from the other direction. The fixture should generate
+  its own base file at a fixed size rather than copying one under test, so the fixture cases are
+  independent of the tree they run beside (pointer: tests/skill-size.test.sh line 103 `SMALLEST=`,
+  its FR6 block, items/0021 AC4, testing-conventions.md *Prove a new guard fails*).
