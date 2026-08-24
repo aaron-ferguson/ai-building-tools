@@ -443,3 +443,18 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   non-empty `claimed_by:`, and the close-reconcile rule refuses to write a held dependent. A stale
   token on a closed ticket is therefore a row a future reconcile will silently skip and report as
   someone else's (pointer: items/0010 frontmatter, references/CONCURRENCY.md *Claim tokens*).
+- 2026-08-24 — **a ticket was handed to `verify` with part of its own work uncommitted.** `0026` was
+  set to `next: verify` by `e604703`, but the tail of the effort→project rename it depends on —
+  two words in `MEASUREMENT.md`, the file that ticket is *about* — is still sitting in the working
+  tree. The next `verify` session opens on a dirty tree on the one file its assertions read, which
+  by Step 2 makes its verdict advisory before it has run anything, and puts an uncommitted change
+  one careless `git add` away from landing under someone else's message. Handing a ticket on is the
+  moment to check `git status --porcelain` is clean of your own paths, and no stage says so
+  (pointer: skills/develop Step 5, skills/verify Step 2, MEASUREMENT.md).
+- 2026-08-24 — **`./close` leaves `next:` set on a ticket it marks `done`.** After closing 0005 the
+  item reads `status: done`, `closed: 2026-08-24`, `next: verify`; 0010, closed by hand before the
+  script existed, reads `next:` empty. The two close paths disagree about the same field. It is
+  currently harmless only because the row leaves `QUEUE.md` and `./next` reads the row — but the
+  item file is left saying a closed ticket is still due at a stage, which is exactly the
+  field-and-status disagreement the `next`/`status` split was made to prevent (pointer:
+  .claude/backlog/close, items/0005 and items/0010 frontmatter, items/0010 FR).
