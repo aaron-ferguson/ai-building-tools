@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0027 | Instantiate next, claim and close in this repo's own backlog | chore | verify | 2026-08-24 | [items/0027-install-the-three-scripts-here.md](items/0027-install-the-three-scripts-here.md) |
 | 0030 | Remove Notion from the base tool suite and make it profile-wired | debt | verify | 2026-08-24 | [items/0030-notion-out-of-base-suite.md](items/0030-notion-out-of-base-suite.md) |
 | 0021 | Hold the skills to the conventions' own context-rent rule | chore | verify | 2026-08-23 | [items/0021-trim-the-skills.md](items/0021-trim-the-skills.md) |
 | 0025 | Name the batching case for develop, not just for capture | chore | verify | 2026-08-23 | [items/0025-batching-for-develop.md](items/0025-batching-for-develop.md) |

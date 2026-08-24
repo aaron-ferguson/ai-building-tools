@@ -3,7 +3,7 @@ id: "0027"
 title: Instantiate next, claim and close in this repo's own backlog
 type: chore
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -13,9 +13,10 @@ expects:
   - .claude/backlog/claim
   - .claude/backlog/close
   - .claude/backlog/QUEUE.md
-claimed_by: "b8d3"
-claimed_at: 2026-08-24T04:27:07Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-08-24
 ---
 
 ## Problem
@@ -70,20 +71,20 @@ remove it. All three land together or none do.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `.claude/backlog/`, when `ls -l next claim close` runs, then all three exist and
+- [x] AC1 — Given `.claude/backlog/`, when `ls -l next claim close` runs, then all three exist and
   all three are executable.
-- [ ] AC2 — Given the installed copies, when each is diffed against its template
+- [x] AC2 — Given the installed copies, when each is diffed against its template
   (`diff .claude/backlog/next skills/queue/templates/next`, and the same for `claim` and `close`),
   then every diff is empty.
-- [ ] AC3 — Given this backlog's table, when `.claude/backlog/next develop` runs, then it names the
+- [x] AC3 — Given this backlog's table, when `.claude/backlog/next develop` runs, then it names the
   topmost takeable `next: develop` row, and that row is the same one a by-hand read of the table
   selects under the `blocked_by`-not-`Status` rule.
-- [ ] AC4 — Given this backlog, when `.claude/backlog/next --drift` runs, then it exits zero.
-- [ ] AC5 — Given a claim taken with `.claude/backlog/claim <id>` on a scratch row, when
+- [x] AC4 — Given this backlog, when `.claude/backlog/next --drift` runs, then it exits zero.
+- [x] AC5 — Given a claim taken with `.claude/backlog/claim <id>` on a scratch row, when
   `git log -1 --name-only` is read, then the claim is already committed, and `.lock/` is gone.
-- [ ] AC6 — Given `.gitignore`, when it is read, then `.claude/backlog/.lock/` is ignored, and
+- [x] AC6 — Given `.gitignore`, when it is read, then `.claude/backlog/.lock/` is ignored, and
   `git status --porcelain` shows nothing for it while a lock is held.
-- [ ] AC7 — Given `queue` Step 0, when it is read, then it covers instantiating the scripts into an
+- [x] AC7 — Given `queue` Step 0, when it is read, then it covers instantiating the scripts into an
   existing backlog that lacks them, not only scaffolding a new one.
 
 ## QA plan
