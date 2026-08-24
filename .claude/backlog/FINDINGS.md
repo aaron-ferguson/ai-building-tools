@@ -171,3 +171,7 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   the diff was non-empty in both the valid and the invalid attempt, so the diff alone does not
   separate them (pointer: skills/develop Step 5, testing-conventions.md *Prove a new guard fails*,
   items/0028 develop-pass notes).
+- 2026-08-24 — **`tests/backlog-scripts-installed.test.sh` is not in README's guard list**, so the
+  block README offers as "run every guard" runs seven of eight. Noticed from 0028 while adding the
+  eighth line beside it; left for whoever owns 0027's tail rather than fixed, since that file landed
+  in a session running concurrently with this one (pointer: README.md *Testing*, items/0027).
