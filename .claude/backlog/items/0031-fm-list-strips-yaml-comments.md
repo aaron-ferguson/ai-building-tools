@@ -2,8 +2,8 @@
 id: "0031"
 title: Strip YAML comments in next and claim's fm_list
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -12,12 +12,9 @@ expects:
   - skills/queue/templates/next
   - skills/queue/templates/claim
   - tests/next.test.sh
-claimed_by: "f0c3"
-claimed_at: 2026-08-24T14:42:17Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next
-  - .claude/backlog/next
-  - tests/next.test.sh
 ---
 
 ## Problem
@@ -94,3 +91,32 @@ Found on 0024.
   `expects:` against every `in-progress` `touches:`, and a trailing space or an appended comment
   makes a real collision compare unequal. It fails open — the session takes the row and both
   windows land in one file.
+
+### Built 2026-08-24 [f0c3]
+
+- **FR1's `claim` half is vacuous — `claim` has no `fm_list` and parses no frontmatter list at
+  all.** It reads three scalars (`status`, `claimed_by`, `claimed_at`) with its own inline `awk`
+  and writes them back; `fm_list` exists only in `next` (and its installed copy). Nothing was
+  changed in `claim`, and `expects:` naming it was the prediction, not the code. The helper the FR
+  was probably reaching for is `close`'s `fm_value`, which is a different function with a different
+  defect — see the parked finding below.
+- **A second defect in the same helper, not named by the ticket: a comment on its own line inside a
+  block *truncated* the list.** `inside { exit }` ended the block at the first line that was not a
+  `- ` entry, so `touches:` with a note between two paths returned only the first. That is worse
+  than the reported symptom — the reported one prints noise, this one silently drops a claimed
+  file, which is the fail-open the ticket is about. Fixed here because it is the same one-line
+  reading of the same block; covered by AC3b.
+- **Behaviour change worth knowing at review: block entries no longer have *every* double quote
+  stripped.** The old line ran `gsub(/"/, "")` over the whole entry, so `- foo"bar` yielded
+  `foobar`. `decomment` consumes only a quote that opens the entry and its partner, so that entry
+  now yields `foo"bar`. More correct, and nothing in the tree relies on the old form.
+- **AC6's mutation, run twice and diffed both times.** Deleting the `#` cut reds 8 of 39
+  assertions (AC1 ×2, AC3 ×1, AC4 ×1, AC5 ×4). Deleting the quote-mode line instead reds 4 — all of
+  them AC5's, because `blocked_by: - "0002"` then parses as `"0002"` and matches no item file — so
+  the quote handling is load-bearing well beyond AC2.
+- **AC2 does not red against a *partially* naive implementation, and a verify session should not
+  expect it to.** With quote-mode removed but the whitespace rule kept, `docs/a#b.md` still
+  survives: in YAML a `#` mid-token is not a comment, so the whitespace rule alone protects the
+  unquoted case. AC2 only reds against the fully naive `sub(/#.*/, "")` form FR2 actually names —
+  both the quote-mode line and the whitespace guard removed, which was the third mutation run here
+  and gave `"docs/a`. Mutate both, or the guard reads as unwired.
