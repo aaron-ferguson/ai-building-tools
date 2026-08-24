@@ -2,8 +2,8 @@
 id: "0026"
 title: Measure the isolated workflow from the recorded sessions and record the verdict
 type: chore
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -19,12 +19,9 @@ expects:
   - skills/verify/SKILL.md
   - tests/measurement.test.sh
   - tools/harvest-usage.sh
-claimed_by: "ebff"
-claimed_at: 2026-08-24T05:36:08Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/items/0026-measure-the-recorded-sessions.md
-  - MEASUREMENT.md
-  - tests/measurement.test.sh
 ---
 
 ## Problem
