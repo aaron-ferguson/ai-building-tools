@@ -29,6 +29,33 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-24 — **a verify verdict that quotes the string it is failing the ticket for re-publishes
+  it, and the fix then reads as complete while the repo is still dirty.** 0026 failed on its privacy
+  NFR for two transcript-store slugs at named lines; explaining the failure quoted both again, so the
+  leak was four occurrences and the two the verdict itself added were in the section a reader trusts
+  most. Redacting only the lines it named would have left the repo failing its own guard. `verify`
+  should say it: describe a leaked value, never quote it — "one for this repository, one for the
+  parent workspace" identified the defect exactly as precisely. Possible one-line rule in the verify
+  skill's verdict step.
+
+- 2026-08-24 — **this file's own entries are formatted two ways, so every count taken from it is
+  low.** Most read `- <date> — **lead.**` but at least two read `- **<date> — lead.**`, and the
+  obvious `^- 2026-` grep misses exactly those. `MEASUREMENT.md` published 26 in one sentence and 28
+  in the next off that grep; the format-tolerant count was 42, and 45 an hour later. Both sweepers
+  read this file by line shape, so the same undercount is available to `queue` and `retro` — an entry
+  whose date sits inside the bold marker can be skipped by a sweep and never noticed. Either the
+  header pins one format and a guard enforces it, or every reader has to match `^- (\*\*)?`.
+
+- 2026-08-24 — **`develop` Step 5 has no answer for a full-suite run taken while another session has
+  the shared tree dirty, and its "whose red is it" fork silently assumes the other window's work is
+  committed.** Two runners red in one loop and green on three immediate re-runs; the cause was
+  neither mine nor flake but ~30 files mid-rename in the shared working tree. Step 5's fork —
+  falsified versus exposed, settled by a worktree at the commit before mine — cannot classify a red
+  whose cause is uncommitted and someone else's, and the repeat-both-sides advice for a re-rolling
+  check points at the wrong diagnosis here. What worked: `git status` first, then the suite in a
+  worktree at *my last commit*, which is a verdict about a tree that actually exists. The skill
+  could say to check the tree is clean before believing any full-suite result.
+
 - 2026-08-24 — **every guard in this repo greps prose, and prose wraps — so a phrase that straddles
   a line break cannot be asserted at all.** Writing 0005's guard, `never its dependents` red against
   a template that plainly contained it: the sentence wrapped, so the phrase existed only as
