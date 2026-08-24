@@ -3,7 +3,7 @@ id: "0028"
 title: Replace the reference files' hard token ceiling with a soft goal and a gate
 type: debt
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -15,11 +15,10 @@ expects:
   - README.md
   - .claude/backlog/items/0020-split-concurrency-rules-from-incidents.md
   - .claude/backlog/items/0023-close-script.md
-claimed_by: "3db2"
-claimed_at: 2026-08-24T04:46:49Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/items/0028-soft-goal-for-reference-files.md
-  - .claude/backlog/FINDINGS.md
+closed: 2026-08-24
 ---
 
 ## Problem
@@ -85,21 +84,21 @@ same mechanism and retires the hard number.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the shipped tree, when the new gate runs, then it passes, and its pass line names
+- [x] AC1 — Given the shipped tree, when the new gate runs, then it passes, and its pass line names
   every reference file recorded as over the goal together with that file's size and reason.
-- [ ] AC2 — Given a reference file padded past the goal with no recorded reason, when the gate runs,
+- [x] AC2 — Given a reference file padded past the goal with no recorded reason, when the gate runs,
   then it fails, names that file, and reports its overage in bytes.
-- [ ] AC3 — Given a reference file recorded as over the goal, when it is padded far beyond that
+- [x] AC3 — Given a reference file recorded as over the goal, when it is padded far beyond that
   point, then the gate still passes — the recorded reason carries no upper bound.
-- [ ] AC4 — Given a reference file with a recorded reason that is now under the goal, when the gate
+- [x] AC4 — Given a reference file with a recorded reason that is now under the goal, when the gate
   runs, then it fails and says the entry is stale.
-- [ ] AC5 — Given the mutation used to prove AC2, when it is diffed before the gate is run, then the
+- [x] AC5 — Given the mutation used to prove AC2, when it is diffed before the gate is run, then the
   diff is non-empty; a green from an unapplied mutation is reported as a defect, not a pass.
-- [ ] AC6 — Given the gate's fixtures, when they are read, then their base file is generated at a
+- [x] AC6 — Given the gate's fixtures, when they are read, then their base file is generated at a
   stated fixed size and no fixture is copied from `references/`.
-- [ ] AC7 — Given `grep -rn "1,500\|1500 token" references/ skills/`, when it runs, then it returns
+- [x] AC7 — Given `grep -rn "1,500\|1500 token" references/ skills/`, when it runs, then it returns
   no live assertion of the retired hard ceiling.
-- [ ] AC8 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then every
+- [x] AC8 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then every
   suite passes, the new gate included.
 
 ## QA plan
