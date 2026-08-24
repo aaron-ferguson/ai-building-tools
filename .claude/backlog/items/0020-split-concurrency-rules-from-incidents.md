@@ -95,3 +95,13 @@ not meeting: cut the reasoning that convinced you, keep the rule and the failure
   statement estimated: 2/5 of 16,928 is ~10,150 bytes, still 2,500 tokens. The operational
   procedures had to go too, which is why the appendix is *conflict procedures plus* incidents rather
   than incidents alone.
+
+### Superseded (2026-08-24, by 0028)
+
+- **FR4's hard ceiling of 1,500 tokens on the always-read half is retired**, on Aaron's call of
+  2026-08-23: if there are more principles than fit, the principles are held and the number moves.
+  FR4 and AC1 above are left exactly as written — they were true when this ticket closed, and
+  rewriting a closed requirement would hide that a decision was taken. The standard is now the soft
+  goal in `tests/reference-size.test.sh`: over it is allowed **with a recorded reason**, and the
+  first move for a file over it is a pointer, not a cut. This ticket's own split is that gate's
+  worked instance.

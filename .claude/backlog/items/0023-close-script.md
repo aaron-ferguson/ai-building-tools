@@ -323,3 +323,12 @@ at all.
 - Parked rather than fixed: `close` treats an `in-progress` row with no token as held, and the rule
   and hand-close fallback now define *held* as `claimed_by:` alone, so the script is stricter than
   the rule it encodes. The AC7 ceiling has no margin to state it (`FINDINGS.md`, this date).
+
+### Superseded (2026-08-24, by 0028)
+
+- **AC7's hard ceiling of 1,500 tokens is retired**, on Aaron's call of 2026-08-23 — see 0020's
+  matching note for the reasoning. AC7 and FR6 above stand as written and stay ticked. What replaces
+  the number is `tests/reference-size.test.sh`: a 6,057-byte goal (the same 1,500 tokens at 4.038
+  bytes/token) that an over-goal file passes with a recorded reason.
+- The parked finding in the last note — `close` stricter than the rule about what *held* means — is
+  now 0029, and the ceiling that left it no margin to state is what this supersession removes.
