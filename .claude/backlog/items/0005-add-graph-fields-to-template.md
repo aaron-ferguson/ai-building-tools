@@ -2,8 +2,8 @@
 id: "0005"
 title: Add the graph fields to the ticket template and QUEUE.md
 type: chore
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-18
@@ -11,10 +11,8 @@ parent: "0002"
 blocked_by: []
 relates: []
 touches:
-  - skills/queue/templates/item.md
-  - tests/graph-fields.test.sh   # new file, created by this ticket
-claimed_by: "cae7"
-claimed_at: 2026-08-24T05:25:50Z
+claimed_by:
+claimed_at:
 ---
 
 ## Problem
@@ -71,6 +69,37 @@ header, and 0008 writes rules that cite it.
 Any behaviour. This ticket ships the shape; 0006 reads it and 0008 enforces it.
 
 ## Notes & decisions
+
+- **Built 2026-08-24** (token `cae7`). FR1, FR2 and FR4 all land in **one comment block above
+  `parent:`** rather than in a separate prose section. The effort/task rule and the derived-children
+  rule are what `parent:` *means* — a reader who has the field without them ranks an effort — and a
+  template that documents fourteen keys is read key by key, not front to back.
+
+- **AC3 and AC4 were already satisfied and needed no edit.** No `epics/` or `EPICS.md` has ever
+  existed, and 0010 had already removed the `Owner` column from `README.md`. This matters beyond
+  bookkeeping: **`README.md` is inside 0026's held file scope right now**, so a ticket whose
+  Documentation NFR names the README turned out to require no write to it. AC4 is asserted rather
+  than produced. The suite carries both assertions so a later edit cannot quietly undo them.
+
+- **The template contradicted itself and the change had to fix that, not just add to it.** The
+  `status:` comment described an effort as a *container ticket*, wording the project moved off when
+  `QUEUE.md` settled on effort/task. Adding `parent:` with the effort/task rule while leaving
+  "container" in place would have left one file naming the same concept two ways. Reconciled in the
+  same commit per `documentation-conventions.md`; the suite greps for the retired wording.
+
+- **Both FR2 phrases passed against the *unmodified* template on the first run of the new test** —
+  `never ranked, claimed, or built` matched the old `container ticket` comment, and `goes stale`
+  matched the `expects:` comment, which is about `expects:` going stale and nothing to do with
+  reverse edges. A whole-file grep over a file this dense is close to vacuous. Every phrase
+  assertion was rescoped to the **comment block above the key that must carry it**, and the scoping
+  was then proved by mutation: moving the effort/task sentence into the `type:` comment — still
+  present in the file — reds four assertions. This is the `testing-conventions.md` "wired and still
+  cannot fail" case, and the file's own density is what produced it.
+
+- **A phrase that wraps across a comment line cannot be grepped.** `never its dependents` split
+  over two `# ` lines and the assertion red on text that was plainly there. Assertions against
+  wrapped prose have to sit inside one line; the fix was rewrapping the sentence, not loosening the
+  check.
 
 - **FR3 and AC2 handed to 0010** (2026-08-23). 0010 splits `Status` into `Next` + `Status` and
   pares the table in the same edit, so the header row has one owner rather than two tickets
