@@ -29,6 +29,33 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-24 — **every guard in this repo greps prose, and prose wraps — so a phrase that straddles
+  a line break cannot be asserted at all.** Writing 0005's guard, `never its dependents` red against
+  a template that plainly contained it: the sentence wrapped, so the phrase existed only as
+  `never its` + `# dependents` on two lines and `grep` is line-based. The red is indistinguishable
+  from a missing rule, and the tempting fix is loosening the assertion to a shorter fragment —
+  which is exactly how these checks go vacuous. This project has no other kind of test: ten suites,
+  all of them fixed-string greps over markdown that a later editor will rewrap for width. Nothing in
+  the tests, the skills or `testing-conventions.md` warns that assertion phrases must fit one source
+  line, or that rewrapping a paragraph is a breaking change to whatever asserts on it. Candidates: a
+  helper that unwraps comment blocks before matching, or a stated rule that guarded sentences are not
+  rewrapped (pointer: tests/graph-fields.test.sh `in_block`, skills/queue/templates/item.md
+  `blocked_by:` comment, items/0005 *Notes & decisions*).
+
+- 2026-08-24 — **`./next` tells you a row is held but never what it holds, so "avoid the collision"
+  costs an item file read anyway.** `develop` Step 1 says to compare the candidate's `expects:`
+  against every in-progress row's `touches:`, and `./next develop` does print the claimed-files
+  block — but for a row with an empty `touches:` it prints `0026 [b7f1] none declared — assume
+  held, ask` and stops. `assume held` is the right instruction and an unusable one on its own: the
+  only description of that row's scope is its `expects:`, which the script already parses for the
+  row it offers and does not print for the rows it warns about. Deciding 0005 was safe meant opening
+  0026's item file, which is the read Step 1 exists to avoid. Distinct from the stage-blind `claim`
+  message below — that one is about how the empty field arises, this is that the reader is given
+  nothing to put in its place. Candidate: fall back to `expects:` in the claimed-files block, labelled
+  as the weaker field (pointer: .claude/backlog/next claimed-files output, skills/develop/SKILL.md
+  Step 1 *Check the file scope before you claim*).
+
+
 - 2026-08-24 — **a ticket's own prose is outside every guard the ticket writes.** 0026's privacy NFR
   forbade publishing paths outside the repo. Its test asserts the harvest *output* and the *record*
   stay clean, and both do — the two store slugs that breached it sat in the ticket's own Problem
