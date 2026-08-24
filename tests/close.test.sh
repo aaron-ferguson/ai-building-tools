@@ -276,8 +276,10 @@ mkitem 0022 develop done '' '["0020"]'
 # Held by another session, and likewise rowless. Ownership lives in the item's claimed_by:, which
 # is the one place the old guard did not look (CONCURRENCY.md, 'Claim tokens').
 mkitem 0023 develop in-progress '"ff99"' '["0020"]'
-# An `in-progress` row whose item carries no token still reads as held — silence is not permission
-# — so the row is checked as well as the item. No AC pins this branch; FR7 does.
+# An `in-progress` row over an item carrying no token is DRIFT, not ownership (0029). `held` has
+# one definition — a non-empty `claimed_by:` — so this dependent is freed like any other, and
+# `./next --drift` is what reports the stale cell. Asserted below in the same run as 0023, so the
+# suite pins both directions of the definition against each other.
 mkitem 0024 develop blocked '' '["0020"]'
 # Already unblocked and still naming this ticket: there is nothing to free, so it must not be
 # rewritten, reported, or dragged into the close commit. This is what makes the guard an allowlist
@@ -291,21 +293,22 @@ done_dep="$(cat "$FIX/$BL/items/0022-fixture.md")"
 assert_contains  "AC9 — the closed dependent stays done"    "$done_dep" 'status: done'
 refute_contains  "AC9 — it is not reported as freed"        "$out" '0022'
 held_dep="$(cat "$FIX/$BL/items/0023-fixture.md")"
-assert_contains  "AC10 — the held dependent is not rewritten" "$held_dep" 'status: in-progress'
-assert_contains  "AC10 — its claim is intact"                 "$held_dep" 'claimed_by: "ff99"'
-assert_contains  "AC10 — it is reported, not silently skipped" "$out" 'left alone'
-assert_contains  "AC10 — the report names it"                  "$out" '0023'
-rowheld_dep="$(cat "$FIX/$BL/items/0024-fixture.md")"
-assert_contains  "FR7 — an in-progress row with no token is left alone" "$rowheld_dep" 'status: blocked'
-assert_contains  "FR7 — and reported"                                   "$out" '0024'
-assert_line "FR7 — its row is untouched" '| 0024 | Row says in-progress, item carries no token | develop | in-progress | 0000 |' QUEUE.md
+assert_contains  "AC10/0029 AC5 — the held dependent is not rewritten" "$held_dep" 'status: in-progress'
+assert_contains  "AC10/0029 AC5 — its claim is intact"                 "$held_dep" 'claimed_by: "ff99"'
+assert_contains  "AC10/0029 AC5 — it is reported, not silently skipped" "$out" 'left alone'
+assert_contains  "AC10/0029 AC5 — the report names it"                  "$out" '0023'
+rowdrift_dep="$(cat "$FIX/$BL/items/0024-fixture.md")"
+assert_contains  "AC4 — a tokenless dependent is freed however its row reads" "$rowdrift_dep" 'status: ready'
+assert_line "AC4 — and its stale in-progress cell is corrected" '| 0024 | Row says in-progress, item carries no token | develop | ready | 0000 |' QUEUE.md
+refute_contains  "AC4 — it is not reported as held"  "$(printf '%s' "$out" | grep 'left alone' || true)" '0024'
+assert_contains  "AC4 — it is reported as reconciled" "$(printf '%s' "$out" | grep 'reconciled' || true)" '0024'
 unblocked_dep="$(cat "$FIX/$BL/items/0025-fixture.md")"
 assert_contains  "FR7 — an already-unblocked dependent is untouched"     "$unblocked_dep" 'status: ready'
 refute_contains  "FR7 — and not reported as freed"                       "$(printf '%s' "$out" | grep 'reconciled' || true)" '0025'
 paths="$(git -C "$FIX" log -1 --name-only --format= | grep . | sort | tr '\n' ' ')"
-expect="$BL/DONE.md $BL/QUEUE.md $BL/items/0020-fixture.md $BL/items/0021-fixture.md "
-[ "$paths" = "$expect" ] && ok "commits only the row it closed and the row it freed" || {
-  bad "commits only the row it closed and the row it freed"; echo "         expected: $expect"; echo "         got:      $paths"; }
+expect="$BL/DONE.md $BL/QUEUE.md $BL/items/0020-fixture.md $BL/items/0021-fixture.md $BL/items/0024-fixture.md "
+[ "$paths" = "$expect" ] && ok "commits only the row it closed and the rows it freed" || {
+  bad "commits only the row it closed and the rows it freed"; echo "         expected: $expect"; echo "         got:      $paths"; }
 assert_clean "nothing is left uncommitted"
 
 # --- result -----------------------------------------------------------------------------------

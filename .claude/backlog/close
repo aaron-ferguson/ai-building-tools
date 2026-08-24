@@ -230,12 +230,12 @@ for dep in "$DIR"/items/*.md; do
 
   dep_row="$(awk -F'|' -v id="$dep_id" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
 
-  # Held by someone → report it, never write it. The item's `claimed_by:` is where ownership
-  # lives ('Claim tokens'); the row is checked too because an `in-progress` row with no token
-  # still reads as held — silence is not permission. A dependent may have no row at all, which
-  # is why the row can never be the only test.
-  if [ -n "$(fm_value "$dep" claimed_by)" ] ||
-     { [ -n "$dep_row" ] && [ "$(read_cell "$dep_row" "$Q_STATUS")" = "in-progress" ]; }; then
+  # Held by someone → report it, never write it. `held` is defined in exactly one place —
+  # CONCURRENCY.md, 'A stage writes only the ticket it holds' — and this guard implements that
+  # definition with no condition of its own (0029). The row is deliberately not consulted: an
+  # `in-progress` cell over a tokenless item is drift, which `./next --drift` reports, and reading
+  # it as ownership here is the second definition that made the script stricter than the rule.
+  if [ -n "$(fm_value "$dep" claimed_by)" ]; then
     SKIPPED="$SKIPPED $dep_id"
     continue
   fi
