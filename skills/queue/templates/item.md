@@ -23,7 +23,7 @@ qa_level: verify | unit | integration | e2e
 # s = one sitting · m = a focused session · l = multiple sessions or needs a design decision first.
 size: s | m | l
 created: YYYY-MM-DD
-source: user | agent | notion:<page-id>
+source: user | agent | external:<report-id>
 # The files this item is PREDICTED to reach, written by `queue` while the code is already open
 # to write the FRs below — so a session choosing what to take next can spot a collision with an
 # in-progress item's `touches:` without researching every candidate itself. Advisory: it

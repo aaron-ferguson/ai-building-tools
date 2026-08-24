@@ -30,8 +30,9 @@ Three consequences, and they are the reason to write this down rather than infer
   HTTP request inside it strands the other window.
 
 Work humans file *in* the tracker travels the other direction and is a separate,
-explicit import — the same shape as the Notion import in `queue`, where a raw report
-becomes a properly specified item rather than being copied across.
+explicit import — the same shape as `queue`'s external-feedback sweep, where a raw
+report becomes a properly specified item rather than being copied across
+(`references/EXTERNAL-FEEDBACK.md`).
 
 ---
 

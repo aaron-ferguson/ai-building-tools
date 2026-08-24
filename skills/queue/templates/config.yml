@@ -47,14 +47,8 @@ cost_tracking:
   transcript_dir: ""
   effort_ledger: ""          # human hours: usually the dominant cost term by far
 
-# Optional. Only for projects collecting feedback from other humans via Notion.
-# Omit this whole block for solo projects — capture then never touches the network.
-notion:
-  enabled: false
-  data_source_id: ""
-  # Notion property -> what capture reads it as
-  title_property: "Name"
-  type_property: "Type"
-  priority_property: "Priority"
-  # Imported pages are recorded here so a re-run never double-imports.
-  imported_log: imported-notion-ids.txt
+# Optional, and deliberately absent. A project that collects feedback from other humans adds an
+# `external_feedback:` block here — WHICH product holds those reports is a profile preference, so
+# the base suite ships no default. See references/EXTERNAL-FEEDBACK.md for the block's shape and
+# what a source has to provide. With no block, Step 5 sweeps FINDINGS.md and never touches the
+# network.

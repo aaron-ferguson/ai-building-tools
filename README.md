@@ -178,7 +178,9 @@ Full protocol in [`references/CONCURRENCY.md`](references/CONCURRENCY.md), with 
 in [`CONCURRENCY-INCIDENTS.md`](references/CONCURRENCY-INCIDENTS.md); the conventions lookup in
 [`references/CONVENTIONS.md`](references/CONVENTIONS.md). Two more are read only when
 `config.yml` opts in: [`TRACKER.md`](references/TRACKER.md) for mirroring to an external tracker and
-recording cost, [`NOTION.md`](references/NOTION.md) for importing reported feedback.
+recording cost, [`EXTERNAL-FEEDBACK.md`](references/EXTERNAL-FEEDBACK.md) for sweeping feedback
+other people reported. Which product holds those reports is a profile preference, so the suite
+ships no default and prompts for none.
 
 ---
 
@@ -197,6 +199,7 @@ tests/close.test.sh        # ./close — ticking ACs, DONE.md, reconciling depen
 tests/next.test.sh         # ./next — takeability, --waiting, --drift
 tests/batching.test.sh     # develop and verify state the batching rule, not the old prohibition
 tests/skill-size.test.sh   # every skills/*/SKILL.md within its byte ceiling or a recorded floor
+tests/external-feedback.test.sh  # no shipped file names a specific feedback product
 ```
 
 Each case scaffolds a throwaway git repo with one `QUEUE.md` shape, runs the script against it,

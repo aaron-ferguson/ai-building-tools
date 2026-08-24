@@ -6,7 +6,7 @@ description: >
   reports a bug, requests a feature, or says "queue this", "add this to the backlog", "log this
   bug", "we should fix X sometime", "park this for later", or invokes /queue. Also use to
   reorder, inspect, block, or import the backlog — "what's next to build", "show the queue",
-  "move X to the top", "reprioritise", "import feedback from Notion". Use proactively when the
+  "move X to the top", "reprioritise", "sweep the findings". Use proactively when the
   user describes engineering work that is clearly not for right now. The executor is the agent,
   and the artifact is code. NOT for the user's own tasks, meetings, or notes — that is /capture,
   which keeps a personal knowledge base and where the executor is the user. When the input is a
@@ -39,7 +39,7 @@ Resolve them per `references/CONVENTIONS.md`; if none resolve, stop as that file
 
 ```
 .claude/backlog/
-  config.yml     project settings, next_id, conventions path, test commands, optional tracker/cost/Notion
+  config.yml     project settings, next_id, conventions path, test commands, optional tracker/cost blocks
   QUEUE.md       the stack rank — line order IS the rank. Header and table only.
   RANKING.md     why the order is what it is. Standing reasoning, read only for re-ranks.
   FINDINGS.md    what sessions parked and could not place. A buffer, not a second queue.
@@ -69,11 +69,10 @@ point in both cases, and `CONCURRENCY.md`'s *A claim must be durable the moment 
 Find `.claude/backlog/` at the project root. If it doesn't exist, scaffold it by copying every template
 above (`chmod +x` `next`, `claim` and `close`), creating `items/`, and filling `config.yml` from what the repo
 actually uses — read `package.json` scripts (or `Makefile`, `pyproject.toml`) for the real
-test/lint/typecheck commands rather than guessing. Leave `notion:` out unless the user says this project
-collects feedback from other people, and `tracker:` / `cost_tracking:` out unless the project's
-`CLAUDE.md` profile points at a company tracker or the user asks for per-ticket cost attribution
-(`references/TRACKER.md`). Never invent a project key: a ticket mirrored into the wrong project is noise
-on someone else's board.
+test/lint/typecheck commands rather than guessing. Leave `tracker:`, `cost_tracking:` and
+`external_feedback:` out unless the project's `CLAUDE.md` profile wires one in or the user asks
+(`references/TRACKER.md`, `references/EXTERNAL-FEEDBACK.md`). Never invent a project key: a ticket
+mirrored into the wrong project is noise on someone else's board.
 
 **Resolve the conventions now**, per `references/CONVENTIONS.md`, and record the path in `config.yml`
 under `conventions.path` so the next session doesn't re-derive it. If nothing resolves, do not scaffold —
@@ -90,7 +89,7 @@ report the missing wiring and stop. A backlog whose tickets cite no standard can
 | "move X up", "do Y first", "reprioritise" | **Rerank** (Step 4) |
 | "X is blocked on Y" | Record `blocked_by:` in the item file; set the column to `blocked` **because** that derives it, never as a judgement of your own |
 | "X needs an answer from someone" | Set `status: waiting` **and write the `## Waiting on` section** — the question and who can answer it. A `waiting` row with no such section is a defect `./next --waiting` reports, being indistinguishable from a forgotten one |
-| "sweep the findings", "import from Notion" | **Surface parked work** (Step 5) |
+| "sweep the findings", "import the reported feedback" | **Surface parked work** (Step 5) |
 | a ticket sits at `next: queue` — bare `/queue`, or an ID | **Re-specify** it (Step 2), then **skip Step 3**: it already has a rank and keeps it |
 | "add an FR to X", "this ticket also needs Y" | **Amend** an already-specified ticket (Step 2) |
 
@@ -278,7 +277,8 @@ Stop at the first one that separates them; do not average them.
   `develop`'s problem, and `size` informs that without touching the order.
 - **How interesting it is to build**, or **a number** — if two feel equal they aren't, so apply the
   tie-breakers until one wins.
-- **An imported label.** A Notion `Priority: Urgent` is one input to tier selection and nothing more.
+- **An imported label.** A reported `Priority: Urgent` is one input to tier selection and nothing
+  more; whoever set it was not ranking this queue.
 
 ### Procedure
 
@@ -324,7 +324,7 @@ treatment.
 | Source | Availability | What it holds |
 |---|---|---|
 | `.claude/backlog/FINDINGS.md` | always, no config | what a session noticed while working and could not place |
-| Notion | only if `config.yml` has `notion.enabled: true` | what other humans reported |
+| an external feedback source | only if `config.yml` has `external_feedback.enabled: true` | what other humans reported |
 
 ### The buffer — `FINDINGS.md`
 
@@ -346,11 +346,13 @@ For each entry that is a unit of work:
 **Remove only the entries you processed, and commit in the same turn**, by pathspec. Leaving a processed
 entry is re-read by the next sweep; removing an unprocessed one loses `retro`'s half.
 
-### Notion (opt-in)
+### The external source (opt-in)
 
-Only if `config.yml` has `notion.enabled: true`. Most projects won't; skip silently otherwise and never
-prompt to set it up. When it is on, read `references/NOTION.md` — the flow is one-way, Notion → local,
-and that file has the queries, the de-duplication log and the field mapping.
+Only if `config.yml` has `external_feedback.enabled: true`. Most projects won't; **skip silently
+otherwise and never prompt** — *which* product holds other people's reports is a profile question, not
+one this skill answers for every project it scaffolds. When it is on, read
+`references/EXTERNAL-FEEDBACK.md`: the flow is one-way, source → local, and it holds what a source must
+provide, the de-duplication log and the field mapping.
 
 ---
 
