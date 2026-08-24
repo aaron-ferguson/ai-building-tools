@@ -458,3 +458,20 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   item file is left saying a closed ticket is still due at a stage, which is exactly the
   field-and-status disagreement the `next`/`status` split was made to prevent (pointer:
   .claude/backlog/close, items/0005 and items/0010 frontmatter, items/0010 FR).
+- 2026-08-24 — **a template fix is two files, and nothing at claim time says so.** 0029's `expects:`
+  named `skills/queue/templates/close`; 0027 also instantiated that script into this repo's own
+  `.claude/backlog/close`, and `tests/backlog-scripts-installed.test.sh` asserts the copy is
+  byte-identical. Fixing the template alone turns the suite red in a file the ticket never named,
+  and only a `develop` session that happens to read that suite's header learns this before Step 5.
+  Every ticket touching `skills/queue/templates/*` has the same hidden second path — a `touches:`
+  rule, or a step in the size-and-scope check, would catch it once instead of per ticket (pointer:
+  tests/backlog-scripts-installed.test.sh, skills/queue/templates/, develop Step 1 `touches:`).
+- 2026-08-24 — **the green-tree gate has no wording for a concurrent session's red-first TDD.**
+  develop Step 5 says run the whole suite and never hand a red tree to QA. Another window was
+  mid-TDD on 0031 with its failing tests written and its implementation not yet, so
+  `tests/next.test.sh` was *correctly* red and could not be made green by anyone but them. Step 5's
+  attribution procedure resolves it (throwaway worktree, red is theirs, report it) — but the gate
+  reads as a blocker until you get there, and what the next `verify` session needs is the proof
+  carried into the handoff, not just the sentence "not mine". Worth a named case: a red the tree is
+  *supposed* to have right now (pointer: skills/develop Step 5, skills/verify Step 2, items/0029
+  notes).
