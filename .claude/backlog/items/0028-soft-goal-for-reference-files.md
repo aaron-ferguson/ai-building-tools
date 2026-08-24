@@ -172,3 +172,50 @@ same mechanism and retires the hard number.
 - **FR7 confirmed rather than assumed:** `config.yml`'s `unit` is
   `for t in tests/*.test.sh; do "$t" || exit 1; done`, so the new file needed no wiring. Full sweep:
   **8 suites, 153 assertions, 0 failed.**
+
+### Verify pass (2026-08-24, token `3db2`)
+
+**PASS.** All eight ACs met. The gate is the deliverable, so the surface is the terminal: every
+case below was driven by running `tests/reference-size.test.sh` and mutating the real
+`references/` tree, never by calling its functions.
+
+- **Shipped tree: 9 passed, 0 failed, exit 0.** AC1's pass line names both recorded files with
+  sizes and reasons (`CONCURRENCY-INCIDENTS.md` 10,974; `CONCURRENCY.md` 6,121), so an accepted
+  cost stays visible instead of reading as a clean sweep.
+- **AC2 and AC5 re-driven independently of the develop pass.** `references/CONVENTIONS.md` padded
+  by 3,000 bytes, `git diff --stat` non-empty **before** the run, gate red on
+  `over the 6057 goal by 230` naming relocation first, **exit 1**, reverted to an empty diff.
+- **AC3 and AC4 driven on the real tree, not only on fixtures.** `CONCURRENCY.md` truncated to
+  6,000 → `remove its stale justification`; padded to 46,121 (7.6× the goal) → still green. The
+  recorded reason really carries no second number.
+- **AC7 proved it can red**, which the develop pass could not show because AC7 was already clean
+  before the ticket started: appending `Stays under 1,500 tokens.` to a reference file reds the case
+  and exits 1. It is a standing guard, not a one-off grep.
+- **AC8 / FR7:** `config.yml`'s `unit` run verbatim — **8 suites, 153 assertions, 0 failed**, the new
+  gate picked up by the glob. Matches the develop pass exactly.
+- **FR3's reading is accepted, not challenged.** `--numstat` shows 0020 (+10/-0) and 0023 (+9/-0) are
+  purely additive: FR4/AC1 and FR6/AC7 stand verbatim and stay ticked, each ticket carrying a dated
+  `### Superseded (2026-08-24, by 0028)` note. "Recorded rather than edited into them" constrains the
+  requirement statements; an additive note *is* the record, and without it a reader who opens 0020
+  believes a retired rule.
+- **Beyond the ACs, three probes and two edges.** A brand-new unrecorded reference file over the goal
+  reds (the gate covers files that do not exist yet); a file at exactly 6,057 passes unrecorded, so
+  the `-gt` boundary is right; the gate is cwd-independent (`ROOT` off `$0`), which matters given the
+  parked finding that `develop` Step 1 leaves a session inside `.claude/backlog/`.
+- **Edge, cosmetic:** at exactly `GOAL` bytes a recorded file reds with `is 6057 bytes, under the
+  6057 goal`. The behaviour is right — equal is not over, so the reason is stale — only the word
+  "under" is wrong at the single byte where it applies.
+- **Edge, worth knowing: AC7 fails *open*.** Its `grep -rn "1,500\|1500 token"` relies on BRE
+  alternation, so on a `grep` that treated `\|` as a literal the case would green vacuously and look
+  identical to a real pass. Confirmed working here before the case was trusted — `grep` on this
+  machine is ugrep 7.8.4, not GNU or BSD grep, which is exactly why it was worth checking rather
+  than assuming.
+- **Two findings parked** (`FINDINGS.md`, this date): a justification entry whose file no longer
+  exists passes silently in *both* size gates, and `references/TRACKER.md` sits 35 bytes under the
+  goal.
+- **Concurrency:** two sessions overlapped on this ticket's develop pass — token `3882` on 0028 and
+  `b8d3` on 0027, interleaved 22:27–22:35, committing `QUEUE.md` one second apart and `FINDINGS.md`
+  within half a minute. **No conflict materialised and nothing was lost.** The one real collision
+  risk was README's guard list, which both tickets had reason to edit; 0028's session parked the
+  missing line instead of editing it, citing the concurrent session. That is the protocol working,
+  and it is the reason the collision is a `FINDINGS.md` entry rather than an incident.
