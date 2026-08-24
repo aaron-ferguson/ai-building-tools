@@ -3,7 +3,7 @@ id: "0028"
 title: Replace the reference files' hard token ceiling with a soft goal and a gate
 type: debt
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -15,8 +15,8 @@ expects:
   - README.md
   - .claude/backlog/items/0020-split-concurrency-rules-from-incidents.md
   - .claude/backlog/items/0023-close-script.md
-claimed_by:
-claimed_at:
+claimed_by: "3db2"
+claimed_at: 2026-08-24T04:46:49Z
 touches:
 ---
 
