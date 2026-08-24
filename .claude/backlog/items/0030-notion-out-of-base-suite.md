@@ -3,10 +3,11 @@ id: "0030"
 title: Remove Notion from the base tool suite and make it profile-wired
 type: debt
 next: verify
-status: ready
+status: done
 qa_level: verify
 size: m
 created: 2026-08-23
+closed: 2026-08-24
 source: user
 expects:
   - skills/queue/SKILL.md
@@ -15,15 +16,9 @@ expects:
   - references/NOTION.md
   - references/TRACKER.md
   - README.md
-claimed_by: 38ec
-claimed_at: 2026-08-24T04:11:11Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/SKILL.md
-  - skills/queue/templates/config.yml
-  - skills/queue/templates/item.md
-  - references/EXTERNAL-FEEDBACK.md
-  - references/TRACKER.md
-  - tests/external-feedback.test.sh
 ---
 
 ## Problem
@@ -73,19 +68,19 @@ baked than that: it is named in the skill's own prose and in its description met
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the shipped tree, when `grep -ril notion skills/ references/ README.md` runs,
+- [x] AC1 — Given the shipped tree, when `grep -ril notion skills/ references/ README.md` runs,
   then it reports no match outside a file that exists specifically to describe the profile
   extension point.
-- [ ] AC2 — Given `templates/config.yml`, when it is read, then it contains no `notion:` key.
-- [ ] AC3 — Given `skills/queue/SKILL.md`, when its `description:` frontmatter is read, then
+- [x] AC2 — Given `templates/config.yml`, when it is read, then it contains no `notion:` key.
+- [x] AC3 — Given `skills/queue/SKILL.md`, when its `description:` frontmatter is read, then
   "Notion" does not appear in it.
-- [ ] AC4 — Given `queue` Step 5, when it is read, then it names `FINDINGS.md` as its always-
+- [x] AC4 — Given `queue` Step 5, when it is read, then it names `FINDINGS.md` as its always-
   available source and describes any external source by reference to the project's profile,
   without naming a specific product.
-- [ ] AC5 — Given a project whose `config.yml` has no external-feedback block, when `queue` Step 5
+- [x] AC5 — Given a project whose `config.yml` has no external-feedback block, when `queue` Step 5
   runs, then it sweeps `FINDINGS.md` and reports nothing about a missing integration — the current
   "skip silently and never prompt" behaviour is preserved.
-- [ ] AC6 — Given `templates/item.md`, when the `source:` field's comment is read, then it
+- [x] AC6 — Given `templates/item.md`, when the `source:` field's comment is read, then it
   describes a generic external form and does not use `notion:` as its example.
 
 ## QA plan
