@@ -126,3 +126,12 @@ Any behaviour. This ticket ships the shape; 0006 reads it and 0008 enforces it.
 - **AC3's guard is narrower than AC3 states.** The `find` covers `skills/`, `references/` and `tests/`
   only, so an `EPICS.md` at the repo root or under `tools/` passes green — confirmed by planting both.
   AC3 was verified by a direct tree-wide `find` instead. The guard's scope is a separate fix.
+
+- **Re-verified and closed 2026-08-24** (token `f549`). The effort→project rename landed on both
+  files (`267d13f`), so the guard and the template agree again and FR2's own wording was updated
+  with them. `35 passed, 0 failed`. Because the guard itself had been rewritten by another session,
+  the decisive mutations were re-proved against the new copy rather than carried over: removing
+  `parent:` reds 10; stripping `a ticket with children is a PROJECT` from `parent:`'s block while
+  planting it in `relates:`' block — so the phrase is still in the file — reds exactly that one
+  assertion; breaking `blocked_by:`'s direction reds 1; breaking the `goes stale` clause reds 1.
+  Closed with one path dirty and named: `MEASUREMENT.md`, which no assertion of this ticket reads.
