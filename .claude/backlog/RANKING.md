@@ -83,6 +83,52 @@ above records.
 - **0009's tasks above 0002's** was an explicit owner decision on 2026-08-23, recorded so a later reader
   does not read it as drift. It is now spent — the effort is done.
 
+## The retro sweep of 2026-08-23 — 0027 to 0035
+
+Nine tickets out of a 36-entry `FINDINGS.md`. The order among them, and against what was already
+here:
+
+- **0030 (Notion out of the base suite) at the top** on tie-breaker 1, blast radius. Every project
+  this suite scaffolds inherits the Notion default, where the rest of this sweep hurts only this
+  repo. It is also Tier 2: a foundation defect each new project copies.
+- **0027 (install the three scripts) second.** Six separate sessions hit it in one day, which is the
+  strongest multiplicity in the buffer, and it is an `s`. Tier 2 compounding — every session in this
+  repo claims by hand against exactly the rules the scripts exist to remember, and the documented
+  fallback has already produced one wrong take (0026 read as blocked and skipped). Below 0030 only
+  because its blast radius is this project.
+- **0028 (soft goal for the reference files) above 0029** by the prerequisite rule: 0029 was parked
+  *because* correcting the rule cost words the hard ceiling had no margin for. Ranking 0029 higher
+  would put a ticket at row N that cannot be started.
+- **0029 marked `blocked` with `blocked_by: 0028`**, so the column is derived rather than a judgement.
+- **0005 keeps its position** rather than being pushed down by four newer tickets. Nothing in this
+  sweep beats it except on the grounds above, and a queue that reshuffles on every capture stops
+  carrying signal.
+- **0031 to 0033 below 0005**, in tie-breaker 4 order (smaller and more certain first). All three are
+  `s`, all three are guards or parsers whose defects are currently latent rather than live —
+  0032 was verified still failing correctly today, and 0031's damage is a scope-overlap check that
+  fails open.
+- **0034 and 0035 last of the new rows, and not sunk below the old blocked ones.** Both are
+  `next: design`, which is a real stage rather than a euphemism: each has a decision that blocks
+  writing acceptance criteria, and both say so explicitly. A design ticket keeps its rank.
+- **0035 merges two findings deliberately** — `prototype`'s three build procedures and `develop`'s
+  anecdotes. Answered as separate tickets, two sessions would very likely give the same question two
+  different answers, and the inconsistency would be worse than either answer alone.
+- **0026 stays at row 1 while `waiting`.** A waiting ticket keeps its rank; sinking it means
+  rediscovering why it mattered when the person clears it. What changed is only the honest state: its
+  FR1 needs three separate sessions sat by a person, which no stage can execute.
+
+Two decisions by Aaron on 2026-08-23 shaped this sweep and are recorded because they reverse
+standing rules:
+
+- **The hard size ceiling is retired in favour of a soft goal with recorded reasons.** If more
+  principles exist than fit, the principles win; the goal's job is to stop anecdotes and niche cases
+  accreting in a generic tool, and the first response to being over it is relocating detail to a
+  pointer file rather than cutting a rule. This landed the same day for `skills/*/SKILL.md` in
+  `tests/skill-size.test.sh` and is 0028 for the reference files. It supersedes 0020 FR4 and 0023
+  AC7, both of which are closed.
+- **Notion is a profile-specific preference, not a tool default**, and does not belong in the base
+  suite in any form. 0030.
+
 ## Historical — why 0009 was ordered as it was
 
 Kept because the reasoning explains the shape of the eleven closed tickets, not because it affects the
