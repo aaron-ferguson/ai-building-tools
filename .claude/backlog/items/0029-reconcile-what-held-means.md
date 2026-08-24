@@ -18,6 +18,12 @@ expects:
 claimed_by: "1b73"
 claimed_at: 2026-08-24T14:40:59Z
 touches:
+  - skills/queue/templates/close
+  - .claude/backlog/close
+  - references/CONCURRENCY.md
+  - references/CONCURRENCY-INCIDENTS.md
+  - skills/verify/SKILL.md
+  - tests/close.test.sh
 ---
 
 ## Problem
