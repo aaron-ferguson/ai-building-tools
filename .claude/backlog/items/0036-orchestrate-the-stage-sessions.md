@@ -76,10 +76,11 @@ from "bounded across an unbounded run", which nothing can honestly promise, into
 cycles", which a design can be checked against. It also deletes the hardest problem in this ticket:
 **nothing has to survive its own reinstall**, because the run is over before the reinstall happens.
 
-**What it leaves open** is which mechanism that budget then permits — a bounded run may put subagents
-back in scope, which sub-question 1 had assumed it could not — and what a trimmed stage outcome must
-carry to still be enough to orchestrate on. Both remain `/design`'s to settle; this narrows the field
-rather than closing it.
+**What it left open** was which mechanism that budget then permits — a bounded run may put subagents
+back in scope, which the design question had assumed it could not — and what a trimmed stage outcome
+must carry to still be enough to orchestrate on. **Both were settled on 2026-08-24**; the decision,
+what it rejected, and the arithmetic behind it are in *Notes & decisions*, and the mechanism it fixed
+is what every acceptance criterion below is written against.
 
 ## Functional requirements
 
