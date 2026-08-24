@@ -10,7 +10,7 @@ created: 2026-08-18
 parent: "0002"
 blocked_by: []
 relates: []
-touches:
+touches: skills/queue/templates/item.md, tests/graph-fields.test.sh
 claimed_by: "bb6e"
 claimed_at: 2026-08-24T05:34:51Z
 ---
