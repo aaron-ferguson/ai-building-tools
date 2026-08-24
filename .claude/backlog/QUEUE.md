@@ -63,7 +63,7 @@ by the next commit. This paragraph described that design as current fact and was
 |------|-------|------|--------|--------|
 | 0026 | Re-run the measured end-to-end exercise and record the verdict | develop | waiting | 0009 |
 | 0027 | Instantiate next, claim and close in this repo's own backlog | verify | in-progress | — |
-| 0028 | Replace the reference files' hard token ceiling with a soft goal and a gate | develop | ready | — |
+| 0028 | Replace the reference files' hard token ceiling with a soft goal and a gate | develop | in-progress | — |
 | 0029 | Reconcile close's definition of held with CONCURRENCY.md's | develop | blocked | — |
 | 0005 | Add the graph fields to the ticket template and QUEUE.md | develop | ready | 0002 |
 | 0031 | Strip YAML comments in next and claim's fm_list | develop | ready | — |
