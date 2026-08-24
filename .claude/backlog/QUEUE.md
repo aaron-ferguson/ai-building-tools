@@ -48,9 +48,16 @@ The other columns are `ID`, `Title` and `Parent`, and there are no more. `Type`,
 changed no reader's behaviour at read time, and `Item` duplicated `ID` at the cost of most of the
 row's width: **the `ID` resolves to `items/<id>-*.md` by glob.**
 
-Ownership is not a column either. A claim is the directory `claims/<id>/`, created with `mkdir` —
-which either succeeds or fails, so claiming needs no lock. **A claim you did not create in this
-conversation belongs to another session.**
+Ownership is not a column either. **As built, a claim is the token in the item's `claimed_by:`,
+taken under `.lock/` and committed inside it** — `CONCURRENCY.md`, *Claim tokens* and *A claim must
+be durable the moment it is made*. **A token you did not mint in this conversation belongs to
+another session.**
+
+The `claims/<id>/` directory scheme is **0007's target design and is not built** — do not claim
+that way today. `CONCURRENCY.md` warns why the naive form cannot work as stated: git records no
+empty directory, so a bare `mkdir` claim stays invisible to the other session and is carried off
+by the next commit. This paragraph described that design as current fact and was corrected on
+2026-08-23; 0007 owns replacing it.
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
