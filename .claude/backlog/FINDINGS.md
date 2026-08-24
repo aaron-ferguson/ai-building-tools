@@ -29,6 +29,18 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-24 — **two sessions committed under the same claim token, so the audit trail cannot say
+  who did what — and nothing in the protocol can detect it.** While `develop` held 0026 as `ebff`,
+  a concurrent session committed `267d13f` and `2cfc227` tagged `[ebff]` for an unrelated repo-wide
+  rename. Whether that is a 1-in-65536 collision on `head -c2 /dev/urandom` or a token read out of a
+  file and reused, the effect is the same: `CONCURRENCY.md`'s *Claim tokens* says ownership is
+  memory and an unfamiliar token belongs to the other window, which gives a session no way to
+  notice a **familiar** token on work it did not do. The same commit also swept 41 lines of this
+  ticket's uncommitted *Notes & decisions* into its own message — the documented hazard, arriving
+  from the direction the rule does not cover, since the notes were mid-write rather than a claim.
+  Options: widen the token, or have `claim` refuse a token already live in another item's
+  `claimed_by:`, or drop the pretence that a commit tag identifies a session.
+
 - 2026-08-24 — **a verify verdict that quotes the string it is failing the ticket for re-publishes
   it, and the fix then reads as complete while the repo is still dirty.** 0026 failed on its privacy
   NFR for two transcript-store slugs at named lines; explaining the failure quoted both again, so the
