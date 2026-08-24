@@ -81,11 +81,21 @@ PARENT="$(comment_block parent)"
 BLOCKED="$(comment_block blocked_by)"
 RELATES="$(comment_block relates)"
 
+# has_block <key> <block> — the key is declared in the frontmatter and something documents it.
+# Reported separately from the direction cases below so a missing key reads as a missing key
+# rather than as three phrases that happen not to match.
+has_block() {
+  if [ -n "$2" ]; then
+    ok "\`$1:\` is declared in the frontmatter, with a comment"
+  else
+    bad "AC1 — no \`$1:\` with a comment block in the frontmatter"
+  fi
+}
+
 echo "AC1/FR1 — the three graph fields, each with its direction stated on its own comment"
-for pair in "parent:$PARENT" "blocked_by:$BLOCKED" "relates:$RELATES"; do
-  key="${pair%%:*}"
-  [ -n "${pair#*:}" ] || bad "AC1 — no \`$key:\` with a comment block in the frontmatter"
-done
+has_block parent "$PARENT"
+has_block blocked_by "$BLOCKED"
+has_block relates "$RELATES"
 in_block "parent: points UP at the ticket this one belongs to" \
   "$PARENT" "the ticket this one belongs to"
 in_block "parent: takes 0 or 1 id, not a list" "$PARENT" "0 or 1 id"
