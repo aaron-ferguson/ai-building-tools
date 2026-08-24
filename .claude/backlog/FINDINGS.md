@@ -175,3 +175,18 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   block README offers as "run every guard" runs seven of eight. Noticed from 0028 while adding the
   eighth line beside it; left for whoever owns 0027's tail rather than fixed, since that file landed
   in a session running concurrently with this one (pointer: README.md *Testing*, items/0027).
+- 2026-08-24 — **a justification entry whose file no longer exists passes silently, in both size
+  gates.** Removing `references/CONCURRENCY-INCIDENTS.md` while its `case` branch stayed left the
+  gate green at 9/0, exit 0 — the pass line just stops naming it. This is the staleness AC4 exists to
+  catch, from the other direction, and it is a live risk precisely because the gate's own first
+  recommendation is *relocation*, the operation most likely to rename a file out from under its
+  entry. `tests/skill-size.test.sh` has the identical shape (iterate the tree, look up a reason;
+  never the reverse), so a fix wants to land in both — which is the third-instance DRY question the
+  entry above already parks. A `[ -f ]` sweep over the recorded paths closes it in about three lines
+  (pointer: tests/reference-size.test.sh, tests/skill-size.test.sh, items/0028 verify notes).
+- 2026-08-24 — **`references/TRACKER.md` is 6,022 bytes, 35 bytes under the 6,057 goal.** The next
+  sentence added to it reds the new gate under whatever unrelated ticket happens to be editing it,
+  with no reason recorded and the author mid-way through something else. The gate doing its job, not
+  a defect — but it means a third reference file is about to need either a relocation or a recorded
+  reason, and better to decide that deliberately than at a red (pointer: references/TRACKER.md,
+  tests/reference-size.test.sh, items/0028).
