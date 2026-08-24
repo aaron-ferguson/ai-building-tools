@@ -13,13 +13,18 @@ blocked_by: []
 relates: ["0025", "0036", "0037"]
 expects:
   - .claude/backlog/items/0009-one-skill-per-session.md
+  - MEASUREMENT.md
   - README.md
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - tests/measurement.test.sh
+  - tools/harvest-usage.sh
 claimed_by: "ebff"
 claimed_at: 2026-08-24T05:36:08Z
 touches:
+  - .claude/backlog/items/0026-measure-the-recorded-sessions.md
+  - MEASUREMENT.md
+  - tests/measurement.test.sh
 ---
 
 ## Problem
