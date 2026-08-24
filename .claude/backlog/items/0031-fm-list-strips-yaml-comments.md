@@ -15,6 +15,9 @@ expects:
 claimed_by: "f0c3"
 claimed_at: 2026-08-24T14:42:17Z
 touches:
+  - skills/queue/templates/next
+  - .claude/backlog/next
+  - tests/next.test.sh
 ---
 
 ## Problem
