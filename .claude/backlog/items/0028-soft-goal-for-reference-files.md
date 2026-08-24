@@ -131,3 +131,46 @@ same mechanism and retires the hard number.
   landed the same day in `tests/skill-size.test.sh`.
 - The goal's real job is to force a justification, not a deletion. That is why an over-goal file
   passes with a reason and fails without one, and why the failure message names relocation first.
+
+### Develop pass (2026-08-24, token `3882`)
+
+- **The goal is 6,057 bytes** — the retired 1,500 tokens at the 4.038 bytes/token ratio 0021
+  measured, so the line did not move, only its hardness. It lands exactly where the history said it
+  would: 0023 closed with `CONCURRENCY.md` at 6,050 bytes (~1.7 tokens of margin, its own note), and
+  it is 6,121 today. The number was chosen from the prior figure rather than from the current tree
+  precisely so the shipped tree would *not* come out green by construction.
+- **Red was confirmed first, and the first attempt at it was wrong in the way
+  `testing-conventions.md` names.** Mutating the gate by deleting the two `case` branches left a
+  dangling `echo`, so it red on a syntax error — a red that proves only that something is parsed on
+  that line, not that the guard sees the defect. Re-mutated by renaming the two case *labels* to
+  paths that cannot match, which left the file valid and red on exactly the two files: 4,917 and 64
+  bytes over, nothing recorded. **The diff was read before either colour was believed, both times.**
+- **AC5's own mutation was run separately against the real tree** — `references/CONVENTIONS.md`
+  padded by 3,000 bytes to 6,287, `git diff --stat` non-empty *before* the run, gate red naming that
+  file and `over the 6057 goal by 230`, exit 1, then reverted to an empty diff.
+- **AC7 already passed before anything was built.** The 1,500-token ceiling was only ever asserted in
+  0020 FR4 and 0023 AC7 — both closed tickets — so FR3's "any *live* prose stating the ceiling" clause
+  had nothing to correct. That is worth knowing rather than assuming: it means the ceiling was never
+  written into the tool's own prose, only into the two tickets that imposed it. AC7 is now a permanent
+  case inside the gate rather than a one-off grep, so re-asserting it reds a run.
+- **FR3's "recorded rather than edited into them" was read as forbidding changes to the requirement
+  *statements*, not an additive note.** 0020 FR4/AC1 and 0023 FR6/AC7 stand verbatim and stay ticked;
+  each ticket gained a dated `### Superseded (2026-08-24, by 0028)` note under *Notes & decisions*.
+  The reasoning: a reader who opens 0020 sees FR4 and believes it, and nowhere else in the repo would
+  tell them otherwise — which is precisely the decision-versus-erosion risk the NFR names. **If
+  `verify` reads FR3 as "do not touch those files at all", the two notes are the thing to challenge.**
+- **`expects:` was wrong in both directions and has been corrected.** It named
+  `references/CONCURRENCY.md` and `references/CONCURRENCY-INCIDENTS.md`, neither of which needed an
+  edit — the whole change is a gate *about* them. It missed `README.md` (the guard list) and
+  `.claude/backlog/items/0023-close-script.md`.
+- **Two reference files are now permanently recorded over the goal, and that is the mechanism
+  working, not a standing breach.** `CONCURRENCY-INCIDENTS.md` in particular is the *relocation
+  target*, so relocating out of `CONCURRENCY.md` grows it by design; a gate that treated that as a
+  breach would penalise the move it exists to encourage. Its recorded reason says so, which is what
+  stops the next reader from "fixing" it.
+- **DRY: this is the second instance of the `offenders`/`pad`/`ok`/`bad` shape, not the third**, so
+  `coding-conventions.md`'s Tier-2 extraction trigger is not met and the ticket's *Out of scope*
+  ruling stands. A third size gate trips it — parked in `FINDINGS.md`.
+- **FR7 confirmed rather than assumed:** `config.yml`'s `unit` is
+  `for t in tests/*.test.sh; do "$t" || exit 1; done`, so the new file needed no wiring. Full sweep:
+  **8 suites, 153 assertions, 0 failed.**
