@@ -3,7 +3,7 @@ id: "0027"
 title: Instantiate next, claim and close in this repo's own backlog
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -13,8 +13,8 @@ expects:
   - .claude/backlog/claim
   - .claude/backlog/close
   - .claude/backlog/QUEUE.md
-claimed_by:
-claimed_at:
+claimed_by: "b8d3"
+claimed_at: 2026-08-24T04:27:07Z
 touches:
 ---
 
