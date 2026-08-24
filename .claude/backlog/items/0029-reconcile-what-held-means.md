@@ -3,7 +3,7 @@ id: "0029"
 title: Reconcile close's definition of held with CONCURRENCY.md's
 type: bug
 next: develop
-status: ready
+status: in-progress
 blocked_by:
   - "0028"
 qa_level: verify
@@ -15,8 +15,8 @@ expects:
   - references/CONCURRENCY.md
   - skills/verify/SKILL.md
   - tests/close.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "1b73"
+claimed_at: 2026-08-24T14:40:59Z
 touches:
 ---
 
