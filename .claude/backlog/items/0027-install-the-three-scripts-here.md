@@ -22,6 +22,8 @@ touches:
   - .claude/backlog/QUEUE.md
   - .claude/backlog/items/0027-install-the-three-scripts-here.md
   - .gitignore
+  - skills/queue/SKILL.md
+  - tests/backlog-scripts-installed.test.sh
 ---
 
 ## Problem
