@@ -29,6 +29,24 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-24 — **a `/design` pass confirmed its load-bearing flags by running them, and that is not
+  the same as reading what they do.** 0036's design decision rested on `claude -p --bare` and cited
+  `--bare`'s docs for "skills still resolve via `/skill-name`" — true, and the same paragraph also
+  skips **CLAUDE.md auto-discovery** and refuses OAuth. So the settled mechanism was a stage session
+  building with no conventions loaded, on a second billing path, and it would have passed every test
+  in `tests/` because nothing greps a subprocess's context. The pass's own *"no prototype is needed —
+  every input was a checkable fact and was checked"* paragraph is what made it invisible. Possible
+  rule for `design`: a fact taken from a tool's own help text is quoted whole, not summarised to the
+  clause you needed (pointer: 0036 *Review amendment*).
+
+- 2026-08-24 — **an acceptance criterion can be structurally unable to fail, and nothing in the suite
+  looks for that.** 0036's AC13 read "the last cycle's cost is within the stated tolerance of the
+  first" — with ~800 tokens of per-cycle growth against a ~20k per-turn floor, no tolerance anyone
+  would write could catch a regression, so the criterion was a green light dressed as a measurement.
+  It survived a `queue` pass and a `design` pass. `verify` checks whether an AC is *met*; nothing
+  checks whether it *could have failed*. Possible one-line rule in `queue`'s AC step, or a `verify`
+  question: for each AC, name the input that would make it red (pointer: 0036 AC13).
+
 - 2026-08-24 — **two sessions committed under the same claim token, so the audit trail cannot say
   who did what — and nothing in the protocol can detect it.** While `develop` held 0026 as `ebff`,
   a concurrent session committed `267d13f` and `2cfc227` tagged `[ebff]` for an unrelated repo-wide
