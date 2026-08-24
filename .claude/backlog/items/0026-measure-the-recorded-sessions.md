@@ -2,8 +2,8 @@
 id: "0026"
 title: Measure the isolated workflow from the recorded sessions and record the verdict
 type: chore
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -17,8 +17,8 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - tests/measurement.test.sh
-claimed_by: "b7f1"
-claimed_at: 2026-08-24T05:21:17Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -222,3 +222,31 @@ the comparison says about the suite as it then stands. `0037` carries the forwar
   input for cache writes at 1.25x-2x, so writes per turn *rose* 22.8% while context per turn fell 30%.
 - **0016's deferred kill criterion is settled and did not fire.** No isolated retro came in under
   $1.50 — the cheapest retro-only session was $4.00 — so the approval-gate reorder stays.
+
+### Verified 2026-08-24 — FAIL on the Privacy & data NFR; all nine ACs pass
+
+- **The nine acceptance criteria pass and every figure reproduces.** `tests/measurement.test.sh` is
+  39/39. `tools/harvest-usage.sh` re-run against the live store, with the three sessions that
+  postdate the record excluded (`1860b4f4`, `1a2da19b`, and the verifying session), reproduces
+  `MEASUREMENT.md`'s isolated table row for row — 30 sessions, 1,112 turns, $114.27, $0.1028 per
+  turn, 106,139 context tokens per turn, 22.5% output share — and the baseline session reproduces at
+  98 turns, $11.79, $0.1203, 151,669, 19.0%. 328 transcript lines against 158 distinct `message.id`s
+  confirms the 2.08x dedup mechanism independently. No claim token in the run's git history names
+  two tickets, so FR8's stated absence is right. 19 closed rows, all `qa_level: verify`, confirm
+  $6.01 and $4.45 per closed ticket.
+- **What fails is the Privacy & data row, and it fails inside this file.** Lines 43 and 47 of
+  *Problem* publish two literal transcript-store slugs — `-Users-aaronferguson-Documents-AI-ai-building-tools`
+  and `-Users-aaronferguson-Documents-AI` — in a repo that same NFR row calls public. The row's own
+  words are "no paths outside this repo, and no other project's name"; the second slug is both, and
+  both encode the machine's home path. The **deliverables are clean**: `git grep` finds the string in
+  no other tracked file, `MEASUREMENT.md` writes "the parent workspace's transcript store" and
+  `~/.claude/projects/<slug>`, and the pre-amendment 0026 used `<slug>` as well. `106c282`, the
+  amendment, introduced them.
+- **The fix is a redaction, not a re-measurement.** Replace the two slugs with the wording
+  `MEASUREMENT.md` already uses. Nothing is pushed yet, so this is the cheap moment — after a push it
+  is a history rewrite. ACs 1-9 need no rework; re-ticking them is a re-read, not a re-run.
+- **Two non-blocking corrections while the file is open.** (1) `MEASUREMENT.md`'s effectiveness
+  section says "26 findings were parked ... 4 on 2026-08-23 and 22 on 2026-08-24" and then "grown to
+  28 entries"; 28 is the true count and the gap is two entries formatted `- **2026-08-24 —` instead
+  of `- 2026-08-24 — **`, which a date-anchored grep misses. (2) `expects:` omits `MEASUREMENT.md`
+  and `tools/harvest-usage.sh`, the two central deliverables.

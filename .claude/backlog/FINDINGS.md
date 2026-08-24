@@ -29,6 +29,40 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-24 — **a ticket's own prose is outside every guard the ticket writes.** 0026's privacy NFR
+  forbade publishing paths outside the repo. Its test asserts the harvest *output* and the *record*
+  stay clean, and both do — the two store slugs that breached it sat in the ticket's own Problem
+  section, which no AC and no test reads. A privacy NFR wants one `git grep` assertion over the whole
+  change, not one over the deliverable.
+
+- 2026-08-24 — **an absence assertion built on an estimated wrong answer is unreachable.**
+  `tests/measurement.test.sh` names `163.25` as the per-line total that would prove the message-id
+  dedup gone; removing the dedup two different ways produces `165.25`. The guard still reddens, via
+  the generic branch, but the message that would have named the cause can never fire. Compute the
+  wrong answer from the fixture rather than by hand.
+
+- 2026-08-24 — **a verdict assertion that greps for "did not" cannot tell a verdict from prose.**
+  Deleting `MEASUREMENT.md`'s verdict sentence outright left "the record states a verdict" green —
+  "did not" occurs elsewhere in the file — and only the `5.09` assertion reddened. The QA plan
+  asserted AC5 separately because figures-with-no-verdict is the likely failure; that is the one
+  shape the assertion does not catch.
+
+- 2026-08-24 — **a harvest pinned by exclusions is re-runnable only if the exclusions are recorded by
+  id.** `MEASUREMENT.md` names them in prose — "the session that produced this measurement, and one
+  still in flight" — so reproducing its table meant deriving the three session ids by differencing a
+  live store against the published per-skill rows. The `--exclude` flags belong in the *Re-running
+  this* block, which is where FR10's re-runnability actually lands.
+
+- 2026-08-24 — **`/verify` in this repo resolves to the bundled verify skill, not
+  `ai-building-tools:verify`.** The session that verified 0026 loaded the built-in evidence-capture
+  skill; this repo's stage protocol had to be read out of `skills/verify/SKILL.md` by hand. A stage
+  whose name collides with a built-in is a stage that can silently not run.
+
+- 2026-08-24 — **`FINDINGS.md`'s entry format has drifted, and a count of the file disagrees with
+  itself because of it.** Two entries lead with `- **2026-08-24 —` rather than `- 2026-08-24 — **`,
+  so a date-anchored count returns 26 where the file holds 28 — exactly the gap between
+  `MEASUREMENT.md`'s "26 findings parked" and its "grown to 28 entries" two paragraphs later.
+
 - 2026-08-24 — **handing a ticket from one stage to the next is the one backlog operation with no
   script, and it half-applied.** `./claim` takes a row and `./close` finishes one, but the handoff —
   set `next:`, set `status:`, clear `claimed_by:`/`claimed_at:`, edit the row, commit, release — is a
