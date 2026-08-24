@@ -366,3 +366,26 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   saying so explicitly, but that move is invented rather than instructed — `design` should say
   whether a design answer may narrow a scope line written at queue time, and how to record it
   (pointer: skills/design Steps 1 and 3, items/0034 *Out of scope*).
+- 2026-08-24 — **`verify` Step 3 tells you to mutate files the ticket does not hold, and
+  `CONCURRENCY.md` forbids exactly that.** Step 3 requires breaking the check behind each AC and
+  confirming it reds. 0005's AC4 asserts on `README.md`, which is not in 0005's `touches:` — so
+  proving that AC meant editing and `git checkout --`-ing a file another live session (`ebff`)
+  listed in its `expects:`. No work was lost here, but only by luck of timing. The two rules give
+  no way to satisfy both, and the cheap fix is a rule: an AC that asserts on a file outside the
+  ticket's scope must have that file added to `touches:` before the mutation, or be verified by
+  direct observation instead of by mutation (pointer: skills/verify Step 3, references/CONCURRENCY.md
+  *A stage writes only the ticket it holds*, items/0005 AC4).
+- 2026-08-24 — **a committed `touches:` did not stop another session writing the file.** 0005
+  declared and committed `tests/graph-fields.test.sh` in `touches:` at the start of the verify pass;
+  forty minutes later session `ebff` rewrote that same file as part of an effort→project rename,
+  turning the held ticket's own guard red against a contract the ticket never agreed to. `touches:`
+  is advisory by design, but nothing warns either side, and the collision only surfaced because the
+  verifier happened to re-run the suite at the end. A verify pass that had closed on its earlier
+  green would have ticked ACs against a file set that no longer existed (pointer:
+  references/CONCURRENCY.md *The working tree is shared too*, items/0005).
+- 2026-08-24 — **a `done` ticket can keep a live-looking claim token.** 0010 is `status: done`,
+  `closed: 2026-08-23`, and still carries `claimed_by: "1b2e"`. `./close` clears both claim fields,
+  so this is a by-hand close predating the script — but `CONCURRENCY.md` defines *held* as a
+  non-empty `claimed_by:`, and the close-reconcile rule refuses to write a held dependent. A stale
+  token on a closed ticket is therefore a row a future reconcile will silently skip and report as
+  someone else's (pointer: items/0010 frontmatter, references/CONCURRENCY.md *Claim tokens*).
