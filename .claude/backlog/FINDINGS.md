@@ -149,3 +149,25 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   `queue` Step 0 and `develop` Step 3 tell a session to read the project's `CLAUDE.md`; here that
   read silently finds a parent (pointer: CONVENTIONS_CORE.md *Profiles & How Overrides Work*,
   skills/develop Step 3).
+- 2026-08-24 — **a third size gate would trip the DRY trigger that 0028 correctly declined.**
+  `tests/reference-size.test.sh` is the second copy of the `offenders`/`pad`/`ok`/`bad` shape;
+  `coding-conventions.md`'s Tier-2 rule fires on the *third* instance, so 0028's *Out of scope*
+  ruling ("duplicating ~40 lines of `sh` is acceptable here") is right today and expires the moment
+  a third prose directory earns a goal. The two copies have already diverged in one way worth
+  keeping — the reference gate carries an AC7 grep the skill gate has no equivalent of — so the
+  extraction is not a pure lift (pointer: tests/skill-size.test.sh, tests/reference-size.test.sh,
+  items/0028).
+- 2026-08-24 — **`develop` Step 1 tells a session to run `./next develop`, and the run leaves the
+  Bash tool's working directory inside `.claude/backlog/`** for the rest of the session, because the
+  natural way to reach the scripts is `cd .claude/backlog && ./next`. Every later repo-root path then
+  fails with `no such file or directory` — including `.claude/backlog/claim`, which reads as the
+  script being absent rather than the cwd having moved. Two calls were lost to it here. The step
+  could show the invocation from the repo root (pointer: skills/develop Step 1).
+- 2026-08-24 — **`develop` Step 5's mutation rule is stated for the *result* but not for the
+  *mutation's own validity*, and the cheap mutation is the invalid one.** Deleting a `case` branch
+  from a `sh` guard to prove it can fail left a dangling `echo` and red on a syntax error — a red
+  that looks like the guard biting. `testing-conventions.md` names this ("a malformed one reds for
+  the wrong reason"); the skill cites the diff-the-mutation half but not the read-the-red half, and
+  the diff was non-empty in both the valid and the invalid attempt, so the diff alone does not
+  separate them (pointer: skills/develop Step 5, testing-conventions.md *Prove a new guard fails*,
+  items/0028 develop-pass notes).
