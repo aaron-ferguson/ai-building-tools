@@ -2,8 +2,8 @@
 id: "0029"
 title: Reconcile close's definition of held with CONCURRENCY.md's
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 blocked_by:
   - "0028"
 qa_level: verify
@@ -15,15 +15,9 @@ expects:
   - references/CONCURRENCY.md
   - skills/verify/SKILL.md
   - tests/close.test.sh
-claimed_by: "1b73"
-claimed_at: 2026-08-24T14:40:59Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/close
-  - .claude/backlog/close
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
-  - skills/verify/SKILL.md
-  - tests/close.test.sh
 ---
 
 ## Problem
@@ -109,3 +103,34 @@ blocked on it rather than on anything technical.
   A tokenless `in-progress` row is drift, and 0024 built `./next --drift` precisely so drift is
   reported rather than silently honoured by every other reader. Record the counter-argument in
   `CONCURRENCY-INCIDENTS.md` per FR5.
+
+### What this session found
+
+- **The decision went as the note recommended**: *held* is a non-empty `claimed_by:` in the item and
+  nothing else. `close`'s `||` row clause is gone, `CONCURRENCY.md` now states the definition
+  explicitly (including that a tokenless `in-progress` row does *not* count), and `verify` Step 5
+  item 3 now **cites** that rule by name instead of carrying a third copy — which is what the NFR
+  asked for and what AC3 checks.
+- **The row clause's window has closed on its own, which is the argument the ticket did not have.**
+  It guarded a session that had flipped the row but not yet written its token. `./claim` now writes
+  the row *and* the token under one lock in one commit, so no live session passes through that state
+  — it is only ever drift. That, not the "one definition beats two" argument, is what makes dropping
+  it safe rather than merely tidier. Recorded in `CONCURRENCY-INCIDENTS.md` per FR5.
+- **A fourth use of the word *held* existed and was not in the FRs.** *The working tree is shared
+  too* reads an empty `touches:` on an `in-progress` row as "held" — that is about **files**, not the
+  row, so it was never in conflict, but leaving both senses unqualified would have made AC1's "exactly
+  one definition" false on a plain reading. Disambiguated in place, six words.
+- **`skills/queue/templates/close` is not the only copy.** 0027 instantiated the three scripts into
+  this repo's own `.claude/backlog/`, and `tests/backlog-scripts-installed.test.sh` asserts the copy is
+  byte-identical to the template. A template fix is two files, and forgetting the second turns a green
+  suite red in a file the ticket never named. `touches:` carried both.
+- **AC6's mutation was run and diffed**: re-adding the `||` clause made 5 assertions fail
+  (58 passed, 5 failed), so the suite pins the definition rather than the current spelling.
+
+### Full-suite result
+
+Nine of ten suites green. `tests/next.test.sh` is red (30 passed, 9 failed) and it is **not this
+ticket's**: it holds another window's uncommitted red-first tests for 0031 (YAML comments in
+`fm_list`). Proven rather than assumed — the committed `next.test.sh` passes 21/21 in throwaway
+worktrees both at this ticket's HEAD and at the commit before this work began. Deterministic fixture
+suite, no re-rolled input, so one run a side is a valid comparison. Worktrees removed in the same turn.
