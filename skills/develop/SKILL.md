@@ -150,6 +150,13 @@ Report the token, then read the full item file before doing anything else.
 Out loud, in three or four lines: the FRs you're satisfying, the NFR rows that apply, the ACs you'll
 be held to, and the QA level. This is the last cheap moment to catch a misunderstanding.
 
+**First, though: a ticket that has been round the loop carries a second contract, and it is the
+expensive half.** Read *Notes & decisions* for a verdict a previous `verify` wrote — what failed, the
+actual output, which AC, usually the suggested fix. On a re-entry **that section is the specification**:
+the FRs and ACs are what was thought through before anyone tried it, the verdict is what turned out to
+be wrong. A bounced ticket looks identical to a fresh one at Step 1, so nothing but this will tell you
+to look, and the cost of missing it is rediscovering a failure someone already diagnosed.
+
 **If the ticket's real acceptance is a look, get something in front of the author before building it
 properly** — including when its *written* acceptance is entirely numeric. A correctness fix that
 changes an appearance as a side effect has an unwritten AC only the author can settle, and nothing in
@@ -178,6 +185,14 @@ command: `/design <id>`, in its own session.
 
 If the ticket's assumptions have gone stale (the code moved, the bug is fixed, a dependency changed),
 say so and ask before building to a spec that no longer matches reality.
+
+**Staleness also arrives from a sibling ticket, not only from the code.** An FR enumerating how a
+mechanism works goes stale when another ticket *changes that mechanism* after this one was written —
+every file it names still untouched, so nothing in the diff looks wrong. Check what closed since this
+ticket's capture date (`DONE.md`) for anything owning the same mechanism, and treat a literal build of a
+superseded FR as the stale contract it is. One ticket enumerated a five-step procedure that a sibling
+had since made a six-step one; building it as written would have automated the very defect the sibling
+existed to fix.
 
 ---
 

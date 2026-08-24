@@ -35,8 +35,8 @@ to the session acting on it has nowhere to travel once each skill runs alone.
 
 **What keeps two sessions off one ticket is the `next` field, not a read-only rule** — this skill acts
 only on tickets whose `next` is `verify`, and nothing is developing those, so **refuse anything
-addressed to another stage** (Step 1). Read `references/CONCURRENCY.md`, *A stage writes only the ticket
-it holds*, first.
+addressed to another stage** (Step 1). Read `references/CONCURRENCY.md` at the plugin root, *A stage
+writes only the ticket it holds*, first.
 
 **This skill states no standards of its own** — secure, private, accessible and adequately tested are
 cited from the project's conventions, never restated. Resolve them per `references/CONVENTIONS.md`. A unit
@@ -49,6 +49,11 @@ of work you notice goes to `queue`; an unplaceable finding goes in `FINDINGS.md`
 With an ID: read `.claude/backlog/items/<id>-*.md` and take the **Acceptance criteria**,
 **Non-functional requirements** and **QA plan**. With no argument, `./next verify` prints the topmost
 `next: verify` / `status: ready` row.
+
+Without the scripts, read `QUEUE.md` and apply the same rules by hand — and note that
+**`blocked_by` decides takeability, never the `Status` column**, which only caches it. Claim by hand
+under the lock, committed before you release it. The project that *ships* these scripts is the one
+most likely not to have them installed.
 
 **Refuse a ticket whose `next` is not `verify`, and name what you found instead.** A `develop` row is not
 built yet; a `design` row has no acceptance criteria, so a verdict would be issued against a contract you
@@ -81,6 +86,10 @@ be luck.
 - `in-progress` under a token **you did not mint in this conversation** → another session's. Say whose
   it seems to be and stop; Step 1's refusal normally prevents this, so reaching here means the field
   and the claim disagree.
+- **Dirty paths with no `in-progress` row at all are still not necessarily yours.** A skill holding no
+  ticket writes without a claim — `retro` does so by design, editing skills and conventions mid-pass —
+  so the row-and-token check reads perfectly clean while the tree is not. `git status` is the authority
+  here and the row is not; a clean queue is not evidence about the tree.
 
 **And check which *copy* you are executing, when the change under test is a skill or a plugin file.**
 Skills run from the pinned install under `~/.claude/plugins/cache/<plugin>/<version>/`, not from this
@@ -117,6 +126,12 @@ browser you started, this same turn.
 
 Walk each AC and record how you verified it — which test, which behaviour, which screenshot. "Looks right"
 is not a verification, and an AC you cannot verify is a **fail**.
+
+**Never trust a tick you did not write.** A ticket that has been round the loop arrives with ACs
+already ticked by an earlier pass — but a tick is evidence about the contract *as it then stood*, and
+anything that sent the ticket back changed either the contract or the code under it. Re-check every AC
+and re-tick from your own evidence. The opposite reading, that verified stays verified, is how a real
+regression closes unchecked, and `verify` closes on ticked ACs.
 
 **A green check is only evidence if it could have been red, and confirming that is your job rather than
 the implementer's** — they have already convinced themselves, and distrusting that is why this pass is
@@ -199,7 +214,10 @@ installed:
    zero **for the rows you reconciled**, not for the file:
    drift an earlier close left behind names no ticket you hold, so reconciling it is forbidden and a
    non-zero exit here can be entirely someone else's. Diff the report before and after your reconcile,
-   and report what was already there rather than owning it.
+   and report what was already there rather than owning it. **Across a batch, "already there" is
+   measured from the session, not the close** — the second close's before-report contains the first
+   close's effects, which are yours; take the first close's before-report as the session's baseline, or
+   the rule stops separating your drift from anyone else's exactly where a batch made it likely.
 
    **This reverses the previous rule that a close touches "nothing else".** That rule was narrower
    writes, which `CONCURRENCY.md` is right to want — but it left the only event that can clear a

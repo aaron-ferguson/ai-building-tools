@@ -56,7 +56,7 @@ the same thing three times earns the full treatment.
 
 **This skill states no standards of its own.** What is worth documenting, where it belongs, and what must
 never be documented are defined by `documentation-conventions.md` and cited, never restated. Resolve the
-conventions per `references/CONVENTIONS.md` **before Step 1**, and stop if none resolve. **It reviews what
+conventions per `references/CONVENTIONS.md` at the plugin root **before Step 1**, and stop if none resolve. **It reviews what
 sessions recorded, not the decisions taken in them** — a choice the user already made is not a finding.
 
 ---
@@ -193,9 +193,11 @@ An edit that is not committed is a draft, and a skill edit that is not released 
 sessions it was written for.
 
 - **Commit by pathspec**, in the same turn as the edit, per the project's git conventions and
-  `references/CONCURRENCY.md`. A retro often edits several repos at once — the project, the conventions,
-  the tools — so commit each in its own repo with its own message rather than letting one sweep another's
-  staged work.
+  `references/CONCURRENCY.md` at the plugin root. A retro often edits several repos at once — the
+  project, the conventions, the tools — so commit each in its own repo with its own message rather than
+  letting one sweep another's staged work. **This skill holds no ticket, so its writes are invisible to
+  every ownership check built on rows and claim tokens** — a concurrent `verify` sees a clean queue over
+  a dirty tree. Commit promptly rather than accumulating, and name the paths you touched when reporting.
 - **Push per each repo's own rules.** A project may treat a push as a release; the conventions and tools
   repos are the source of truth for other machines, so an unpushed edit there is lost at the next install.
 - **A skill edit has a release chain, and every step is silent when skipped**: push, bump the plugin

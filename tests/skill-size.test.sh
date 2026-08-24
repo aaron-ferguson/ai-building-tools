@@ -36,6 +36,7 @@ justification() {
   case "$1" in
     skills/prototype/SKILL.md) echo "0021 — three build procedures, one used per run; relocating each to a conditional reference is an open design question" ;;
     skills/queue/SKILL.md)     echo "0021 — specification rules read by every other stage" ;;
+    skills/develop/SKILL.md)   echo "0027 — carries the re-entry and staleness rules; its anecdotes are the relocation candidates" ;;
     *) return 0 ;;
   esac
 }

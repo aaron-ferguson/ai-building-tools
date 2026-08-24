@@ -91,9 +91,31 @@ report the missing wiring and stop. A backlog whose tickets cite no standard can
 | "X is blocked on Y" | Record `blocked_by:` in the item file; set the column to `blocked` **because** that derives it, never as a judgement of your own |
 | "X needs an answer from someone" | Set `status: waiting` **and write the `## Waiting on` section** — the question and who can answer it. A `waiting` row with no such section is a defect `./next --waiting` reports, being indistinguishable from a forgotten one |
 | "sweep the findings", "import from Notion" | **Surface parked work** (Step 5) |
+| a ticket sits at `next: queue` — bare `/queue`, or an ID | **Re-specify** it (Step 2), then **skip Step 3**: it already has a rank and keeps it |
+| "add an FR to X", "this ticket also needs Y" | **Amend** an already-specified ticket (Step 2) |
 
-Adding is the default when the intent is ambiguous. Read-only operations don't need the conventions
-resolved; anything that writes a ticket does.
+Adding is the default when the intent is ambiguous — but only where there is something to capture. A
+bare invocation with nothing new to record is the **re-specify** case, not an Add: `next: queue` is the
+one stage this skill owns, and every other stage's skill opens by taking the row at its own stage. Those
+rows exist by design — captured half-baked, or sent back by a later stage that found the contract stale
+— so a session that cannot see them hands the work back to the user to find by hand.
+
+**Re-specifying and amending both reuse Step 2 and both skip the ID claim.** Two things they also
+change, and neither is optional:
+
+- **Re-specify** (a ticket bounced back to `next: queue`): read the stage's recorded reason first — it
+  says which part of the contract failed — and **skip Step 3 entirely**, because the rank is already
+  set and the work is worth what it was worth. **Un-tick every AC the re-specification touches**: a
+  tick is evidence about the contract as it then stood, and a ticket returning with ACs still green
+  from a pass against the *old* contract is how `verify`, which closes on ticked ACs, closes over a
+  real regression.
+- **Amend** (a new FR on an unclaimed, fully-specified ticket): widening the scope invalidates whatever
+  was sized *against* the old scope, so re-check **`size`, the ACs, the QA plan's named checks and
+  *Out of scope*** against the new shape, and record the reason in *Notes & decisions*. That re-check
+  is where the work actually is; the FR itself is the cheap part. Never amend a claimed ticket — its
+  session is building against the contract you are changing.
+
+Read-only operations don't need the conventions resolved; anything that writes a ticket does.
 
 ---
 
@@ -115,6 +137,13 @@ independently verifiable; two vague FRs are worse than one sharp one. Where the 
 something this repo also **ships** — a template, a script, a scaffold — write the FRs *and* the Out of
 scope about the shipped artifact, never about this repo's copy of it. A scope line reasoned from the local
 instance ("ours already has no such column") leaves the template losing whatever that copy lacked.
+
+**An FR stating what a mechanism *is* needs a sibling FR naming the code that implements it.**
+Otherwise the ticket verifies its own documentation: one ticket replacing an ownership protocol
+specified the mechanism, the concurrency reference and the ignore file, but named neither of the two
+scripts that actually implement ownership — so closing it as written would have left the prose
+describing the new protocol and the code still running the old one, the exact defect it existed to
+remove. Where an FR describes a rule, ask what executes it, and give that its own FR.
 
 **Fill the NFR table by elimination, not by default.** Read the conventions core's index first — it names
 which file governs each dimension and when it is triggered — then decide row by row whether it applies to
@@ -141,7 +170,10 @@ where no test runner applies (docs, config, tooling), requiring a **scripted ass
 explicitly — a grep, a path check, a schema validation; if you cannot write one the ticket needs sharper
 ACs, not this level. **A grep over prose must survive reflow** — match a phrase short enough to stay on
 one line, or collapse newlines before matching; rewrapping a paragraph moves a phrase across a line break
-and reds an assertion whose text still says the right thing.
+and reds an assertion whose text still says the right thing. **The same break defeats an `Edit`**,
+which matches literally: a replacement quoting a phrase the file happens to wrap between two words
+matches nothing, and it reads as the text being absent rather than split across a newline. Quote within
+one line, or anchor on a line you have just read.
 
 **Estimate `size`** — `s` one sitting, `m` a focused session, `l` multiple sessions or needs a design
 decision first. Input to tie-breaker 4 only, never moving a ticket between tiers.
