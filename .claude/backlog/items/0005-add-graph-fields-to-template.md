@@ -3,7 +3,7 @@ id: "0005"
 title: Add the graph fields to the ticket template and QUEUE.md
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-18
@@ -11,8 +11,8 @@ parent: "0002"
 blocked_by: []
 relates: []
 touches:
-claimed_by:
-claimed_at:
+claimed_by: "bb6e"
+claimed_at: 2026-08-24T05:34:51Z
 ---
 
 ## Problem
