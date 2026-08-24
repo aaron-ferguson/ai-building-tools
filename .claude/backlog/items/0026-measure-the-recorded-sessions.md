@@ -18,16 +18,8 @@ expects:
   - skills/verify/SKILL.md
   - tests/measurement.test.sh
 claimed_by: "dd10"
-claimed_at: 2026-08-24T04:56:03Z
+claimed_at:
 touches:
-  - .claude/backlog/items/0009-one-skill-per-session.md
-  - .claude/backlog/items/0026-measure-the-recorded-sessions.md
-  - MEASUREMENT.md
-  - README.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - tests/measurement.test.sh
-  - tools/harvest-usage.sh
 ---
 
 ## Problem
