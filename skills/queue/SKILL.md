@@ -74,6 +74,14 @@ test/lint/typecheck commands rather than guessing. Leave `tracker:`, `cost_track
 (`references/TRACKER.md`, `references/EXTERNAL-FEEDBACK.md`). Never invent a project key: a ticket
 mirrored into the wrong project is noise on someone else's board.
 
+**A backlog that already exists can still be missing the scripts.** Check for `next`, `claim` and
+`close` every time you open one, not only when you create one: every backlog predating them has
+none, and the project that develops them was the last to get them — six sessions hit that before it
+became a ticket. Copy the three, `chmod +x`, commit. **The templates are the source and a fix flows
+one way** — a copy that needs to differ is a defect in the template, fixed there and re-copied.
+Editing the copy leaves the project running one set of rules and shipping another, and nothing
+reports it.
+
 **Resolve the conventions now**, per `references/CONVENTIONS.md`, and record the path in `config.yml`
 under `conventions.path` so the next session doesn't re-derive it. If nothing resolves, do not scaffold —
 report the missing wiring and stop. A backlog whose tickets cite no standard cannot be verified later.

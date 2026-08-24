@@ -70,5 +70,20 @@ for s in $SCRIPTS; do
   fi
 done
 
+echo "AC7 — queue Step 0 covers a backlog that predates the scripts"
+STEP0="$(awk '/^## Step 0/,/^## Step 1/' "$ROOT/skills/queue/SKILL.md")"
+# Asserted inside Step 0, not the whole file: the scaffold case already names all three scripts, so
+# a file-wide grep passes on the very prose this case exists to sit beside.
+if printf '%s' "$STEP0" | grep -qF 'already exists can still be missing the scripts'; then
+  ok "Step 0 names the existing-backlog case"
+else
+  bad "Step 0 covers only scaffolding a new backlog, not retrofitting an existing one"
+fi
+if printf '%s' "$STEP0" | grep -qF 'a fix flows'; then
+  ok "Step 0 states which direction a fix flows"
+else
+  bad "Step 0 does not say that a fix flows template -> copy, never the reverse"
+fi
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]
