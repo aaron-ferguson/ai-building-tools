@@ -13,9 +13,15 @@ expects:
   - .claude/backlog/claim
   - .claude/backlog/close
   - .claude/backlog/QUEUE.md
-claimed_by:
-claimed_at:
+claimed_by: 8e08
+claimed_at: 2026-08-24T04:16:00Z
 touches:
+  - .claude/backlog/next
+  - .claude/backlog/claim
+  - .claude/backlog/close
+  - .claude/backlog/QUEUE.md
+  - .claude/backlog/items/0027-install-the-three-scripts-here.md
+  - .gitignore
 ---
 
 ## Problem
