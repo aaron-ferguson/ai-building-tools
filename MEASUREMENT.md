@@ -112,17 +112,24 @@ Every dollar figure here is recomputable from the token counts with that table.
 from the record the run left rather than from memory.
 
 **What the run caught.** 19 tickets closed, all at `qa_level: verify`, and the gate bit at least
-once for real: `0021` was sent back with AC1 unmet on four of six files rather than closed. **26
-findings were parked** across the two days, 4 on 2026-08-23 and 22 on 2026-08-24, against the
-baseline run's 4 — of which two existed only in conversation and would have been lost. That is the
-durable-handoff half of the effort doing exactly what it was for. This measurement itself caught a
-defect no acceptance criterion would have: naive per-line summation of the transcripts overstates
-cost by 2.2x, and the figure would have been published wrong.
+once for real: `0021` was sent back with AC1 unmet on four of six files rather than closed. **42
+findings were parked** across the two days — 4 dated 2026-08-23 and 38 dated 2026-08-24, counted as
+at 2026-08-24 06:00Z — against the baseline run's 4, of which two existed only in conversation and
+would have been lost. That is the durable-handoff half of the effort doing exactly what it was for.
+This measurement itself caught a defect no acceptance criterion would have: naive per-line summation
+of the transcripts overstates cost by 2.2x, and the figure would have been published wrong.
 
 **What it missed.** Its own row: `0026` was read as `blocked` and skipped, leaving four rows
 unavailable for a session, and the stale row survived three separate closes before `0024` fixed the
-derivation. `FINDINGS.md` has grown to 28 entries, which the file's own header calls the finding —
+derivation. `FINDINGS.md` still holds all 42, which the file's own header calls the finding —
 retros are not emptying it.
+
+**Two cautions on that count, because it read 26 in one sentence and 28 in the next until
+2026-08-24.** It is a *live* buffer: sessions that postdate this record keep appending, so the
+figure is as-at rather than final, and it is pinned here the same way the token figures are. And it
+must be counted format-tolerantly — two entries carry the date inside the bold marker rather than
+before it, so the obvious `^- 2026-` grep silently undercounts by exactly those two. Both earlier
+numbers came from that grep.
 
 **The honest caveat on all of it.** The baseline run caught a zip-bomb vulnerability every acceptance
 criterion passed over, and a test left green with the guard it existed for deleted. The isolated run
