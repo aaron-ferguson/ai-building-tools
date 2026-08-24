@@ -13,6 +13,9 @@ relates:
   - "0027"
 expects:
   - skills/orchestrate/SKILL.md
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - skills/retro/SKILL.md
   - skills/queue/templates/next
   - .claude/backlog/next
   - tests/next.test.sh
@@ -58,6 +61,26 @@ holding a summary of *everything* instead of one ticket. Isolation is preserved 
 supervisor reads the same disk signals a fresh session would and never ingests a stage's
 transcript. That constraint is FR7, and it is a design input rather than an optimisation.
 
+**Aaron's direction, 2026-08-24, on revisiting the ticket:**
+
+> What if one of my working sessions involves doing enough development that it results in a full
+> findings and ends with a single retro? That way, there's still a human in the loop to bump the
+> version, reinstall, and start a new session. Part of this would also involve trimming down the
+> output of each agent to only the necessary details. That way, the orchestrator doesn't fill up with
+> unnecessary context and is just getting the status changes to be able to orchestrate effectively.
+
+**This proposes an answer to the design question, and what makes it a good one is arithmetic rather
+than convenience: the findings threshold becomes the supervisor's context budget.** A run is bounded
+at FR3's gate, so the supervisor accumulates a known number of cycles and then ends — which turns FR7
+from "bounded across an unbounded run", which nothing can honestly promise, into "bounded across N
+cycles", which a design can be checked against. It also deletes the hardest problem in this ticket:
+**nothing has to survive its own reinstall**, because the run is over before the reinstall happens.
+
+**What it leaves open** is which mechanism that budget then permits — a bounded run may put subagents
+back in scope, which sub-question 1 had assumed it could not — and what a trimmed stage outcome must
+carry to still be enough to orchestrate on. Both remain `/design`'s to settle; this narrows the field
+rather than closing it.
+
 ## Functional requirements
 
 - **FR1 — Advance develop → verify.** When a stage session leaves a ticket at `next: verify,
@@ -70,20 +93,24 @@ transcript. That constraint is FR7, and it is a design input rather than an opti
 - **FR3 — The findings gate.** When `FINDINGS.md` reaches `retro`'s stated cadence, the supervisor
   starts **no further stage session**, lets any running one finish, and runs a `retro` context. The
   threshold is read from `retro`'s cadence, not restated here, and is configurable per project.
-- **FR4 — The release chain runs to its end, including the restart.** After the retro's edits, the
-  chain `retro` Step 5 names — commit, push, bump the plugin version, update the install, restart —
-  either completes or reports exactly which step it stopped at and why. A step silently skipped here
-  is the failure mode `retro` Step 5 already calls out, and the 2026-08-23 finding on the installed
-  copy diverging from source at the same version number is the receipt.
-- **FR5 — Development resumes.** After the release chain, the supervisor returns to FR2 and the
-  loop continues, on the skill versions that were just installed.
+- **FR4 — The run ends at the retro, and the release chain is handed over as a checklist.** The
+  supervisor runs the `retro` context, sees its edits committed, and stops there. It does not push,
+  bump the plugin version, install, or restart — it reports every remaining step of the chain `retro`
+  Step 5 names, each marked done or outstanding, so no step can go silently missing. The 2026-08-23
+  finding on the installed copy diverging from source at the same version number is why this is a
+  checklist and not a sentence.
+- **FR5 — Development resumes as a new run, started by a human.** There is no automatic resumption
+  across the release. The human bumps, reinstalls and starts a fresh supervised session, which picks
+  up from the backlog and FR10's log with **no conversational handoff** — so the requirement is what
+  the next run needs in order to continue cold, not the resumption itself.
 - **FR6 — The supervisor is interactive throughout.** The user can ask what is happening, redirect
   it to a specific ticket, hold it, or stop it, at any point — including while a stage session is
   running — and gets an answer without waiting for the current cycle to end.
 - **FR7 — The supervisor's own context is bounded, and the bound is a number.** It reads disk
   signals and each stage's short structured outcome; it never ingests a stage session's transcript
   or a stage skill's instruction file. The per-cycle ceiling is stated in the skill and asserted by
-  FR9's test, so a long run costs the same per cycle as a short one.
+  FR9's test — **two ceilings, both numbers: per cycle, and per run.** The second is promisable only
+  because FR3's gate bounds the run, so the last cycle of a run must cost what the first one did.
 - **FR8 — Every escalation is named, and the default is to stop.** The set of conditions the
   supervisor hands back to the human rather than deciding — at minimum: a `verify` bounce, a row at
   `next: design` or `next: queue`, a ticket whose contract turns out stale, a red tree that is not
@@ -105,6 +132,18 @@ transcript. That constraint is FR7, and it is a design input rather than an opti
   on rows and tokens — the same blind spot `retro` Step 5 records for itself.
 - **FR12 — Only one supervisor runs on a backlog at a time**, and a second one says so rather than
   double-driving the queue.
+- **FR13 — Each stage ends with a trimmed, structured outcome, and that outcome is the supervisor's
+  only input from it.** Fields rather than prose: the ticket, the stage, the verdict, the resulting
+  `next:` and `status:`, the commits, and a pointer to where detail was written. It carries a stated
+  size ceiling, `develop`, `verify` and `retro` all emit it in the same shape, and a scripted
+  assertion in `tests/` checks that each stage's final step still does — a contract described in
+  three skill files and implemented in none is exactly the defect `queue` warns about.
+- **FR14 — Trimming the report moves detail to disk; it does not delete it.** Every kind of thing a
+  stage's report carries today that the supervisor will no longer read — the diagnosis behind a
+  bounce, the red that turned out to be another session's, the mechanism that surprised it — has a
+  named durable home first: *Notes & decisions*, `FINDINGS.md`, or the FR10 log. 0015's FR3 is the
+  precedent, and the reason it is quoted here: the invocation went, and every line of reasoning for
+  why the separate pass matters stayed.
 
 ## Non-functional requirements
 
@@ -136,12 +175,18 @@ Sub-questions the decision has to answer:
 1. **Does "its own context window" mean its own *session*?** 0009's measured cost is context per
    turn, which a subagent satisfies — it starts near-empty. What a subagent does not give is
    independence from the supervisor's own growth: N cycles of returned reports accumulate in one
-   place. State the ceiling first, then pick the mechanism that can hold it.
+   place. State the ceiling first, then pick the mechanism that can hold it. **Aaron's bounded-run
+   proposal changes this arithmetic** — N is now known and small, so accumulated reports may be
+   affordable rather than disqualifying. Do the sum against a real FR13 outcome size before ruling
+   either mechanism in or out.
 2. **How does the supervisor survive FR4?** Skills resolve at session start, so a session cannot
    install a new version of the skills it is running and then use them — `retro` Step 5 and
    `README.md`'s fifth step both say the session that writes the change is the last to receive it.
    Either the supervisor's state is a file any new session can resume from (FR10), or the retro gate
-   is where the loop deliberately hands back to the human. Both are defensible; only one gets built.
+   is where the loop deliberately hands back to the human. **Aaron has proposed the second** (see
+   *Problem*), which settles the larger half. What stays open is narrower and still real: what FR10's
+   log must hold for the *next* run to continue cold, and whether a crash mid-run resumes the same way
+   a planned ending does.
 3. **What may the supervisor decide alone?** FR8 names the escalations; the question is where the
    line sits on the two genuinely arguable ones — a `verify` bounce (re-develop automatically, or
    surface it), and a ticket whose contract `develop` finds stale.
@@ -177,12 +222,20 @@ recorded now because they are the ones an implementation is most likely to satis
   its reason rather than quietly dropping to `verify`.
 - **Specific checks:** the whole suite (`for t in tests/*.test.sh`), including a fixture per FR8
   escalation and per gate boundary — the cycle at the threshold, and the one after it. Plus
-  `tests/skill-size.test.sh`, which a new skill file must satisfy or record a reason against.
+  `tests/skill-size.test.sh` — which now covers three **existing** skill files as well as the new
+  one, since FR13 edits `develop`, `verify` and `retro`, and `develop` is already over the goal with a
+  recorded reason. A fixture asserting FR13's outcome shape and its size ceiling belongs in the same
+  suite: until something fails when a stage stops emitting it, FR13 is prose in three files.
 
 ## Out of scope
 
-- **Relaxing any standard, or changing what any stage checks.** This ticket moves *who starts* a
-  session, not what the session must do — 0009's cross-cutting commitment, unchanged.
+- **Relaxing any standard, or changing what any stage *checks*.** 0009's cross-cutting commitment,
+  unchanged. FR13 does change what a stage *reports*, which is a deliberate widening recorded in
+  *Notes & decisions*: the trim is to a stage's closing narrative, never to a check, a test or a
+  standard.
+- **Reducing what a stage writes to disk.** FR13 trims what the supervisor *reads*; FR14 is the guard
+  that the detail lands somewhere durable instead. A ticket's *Notes & decisions*, `FINDINGS.md` and
+  the FR10 log all get *longer* under this change, not shorter.
 - **Making `retro` a lifecycle stage or a `next` value.** FR3 schedules it; it stays a cadence job
   run in its own session, as its own skill states.
 - **Automating a `design` answer, or `prototype`.** A design ticket needs a human decision; the
@@ -221,3 +274,19 @@ recorded now because they are the ones an implementation is most likely to satis
   without the supervisor accumulating, 0009's model holds end to end. If it cannot, that is a real
   finding about the model and not merely a failed feature — which is why FR7 is a requirement with a
   number rather than a performance note.
+- **Amended 2026-08-24 on Aaron's revisit, before any claim.** Two additions: the run is bounded by
+  the findings gate and ends there (FR4, FR5, and the direction quoted in *Problem*), and every stage
+  emits a trimmed structured outcome (FR13, FR14). Re-checked against the new shape per `queue`'s
+  amend rule — **`size` stays `l`**: FR4, FR5 and FR10 all get *cheaper* because nothing has to
+  survive a reinstall, and FR13 spends that saving back by reaching into three existing skill files.
+  **The ACs are still unwritten**, so what moved is the three invariants, the first of which now has a
+  bounded run to be measured over. **The QA plan's named checks grew** by FR13's assertion and the
+  size guard's widened scope. **Out of scope changed materially**, and says so rather than being
+  quietly widened.
+- **The second-order cost of the trim, and the thing to look at first on revisiting.** FR6 asks the
+  supervisor to surface insights; FR13 removes the stage narrative it would most naturally surface
+  them *from*. After this amendment, therefore, **everything the user learns comes from what stages
+  write to disk** — which promotes FR14 from a courtesy to the load-bearing requirement, and makes
+  *Notes & decisions* and `FINDINGS.md` the product surface rather than a byproduct. Built weakly,
+  the loop runs smoothly and quietly teaches the user nothing, which is the one failure mode this
+  suite has no check for: nothing goes red when a session learns less than it could have.
