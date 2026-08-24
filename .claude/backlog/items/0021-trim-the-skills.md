@@ -3,7 +3,7 @@ id: "0021"
 title: Hold the skills to the conventions' own context-rent rule
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -18,8 +18,8 @@ expects:
   - tests/skill-size.test.sh
   - references/NOTION.md       # queue's opt-in Notion block moved here
   - README.md
-claimed_by:
-claimed_at:
+claimed_by: e0c1
+claimed_at: 2026-08-23
 touches:
 ---
 
