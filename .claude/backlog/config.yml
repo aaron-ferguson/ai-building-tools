@@ -7,7 +7,7 @@ conventions:
   path: ../ai-building-conventions
 
 # Monotonic. queue claims this number for a new ticket, then increments it.
-next_id: 37
+next_id: 38
 
 # Where work in this project is tracked.
 #   local — this backlog is the source of truth. May live in a public repo.
