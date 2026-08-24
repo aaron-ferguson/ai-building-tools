@@ -62,7 +62,7 @@ by the next commit. This paragraph described that design as current fact and was
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0026 | Re-run the measured end-to-end exercise and record the verdict | develop | waiting | 0009 |
-| 0030 | Remove Notion from the base tool suite and make it profile-wired | verify | ready | — |
+| 0030 | Remove Notion from the base tool suite and make it profile-wired | verify | in-progress | — |
 | 0027 | Instantiate next, claim and close in this repo's own backlog | develop | ready | — |
 | 0028 | Replace the reference files' hard token ceiling with a soft goal and a gate | develop | ready | — |
 | 0029 | Reconcile close's definition of held with CONCURRENCY.md's | develop | blocked | — |

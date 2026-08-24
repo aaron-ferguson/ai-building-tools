@@ -15,9 +15,15 @@ expects:
   - references/NOTION.md
   - references/TRACKER.md
   - README.md
-claimed_by:
-claimed_at:
+claimed_by: 38ec
+claimed_at: 2026-08-24T04:11:11Z
 touches:
+  - skills/queue/SKILL.md
+  - skills/queue/templates/config.yml
+  - skills/queue/templates/item.md
+  - references/EXTERNAL-FEEDBACK.md
+  - references/TRACKER.md
+  - tests/external-feedback.test.sh
 ---
 
 ## Problem
