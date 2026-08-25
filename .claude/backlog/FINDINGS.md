@@ -764,3 +764,26 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   `mkdir` to `git commit`, or it is not a lock** — which is a fourth silent leak to add to the three
   `CONCURRENCY-INCIDENTS.md` already lists (pointer: references/CONCURRENCY.md *Lock every write*,
   skills/develop Step 5.4).
+- 2026-08-25 — **`queue` has no step and no template for turning a task into a project, which is one
+  of the four things its own Step 1 table routes to it.** Slicing 0036, the operations table sends a
+  row at `next: queue` to *re-specify*, whose instructions assume the output is still a task that
+  keeps its rank — and `templates/item.md` describes a project only as a clause inside the `status:`
+  comment ("a container ticket is `active` … its `next:` stays empty"). There is no template for the
+  Outcome / Why `ships:` / Slices / Cross-cutting commitments shape, no statement that the FRs and ACs
+  **move** rather than copy, and no statement that the parent's row leaves `QUEUE.md`. All of it was
+  reconstructed by reading 0009 and 0002. `develop` and `verify` both refuse a project by stage, and
+  0036's FR8 table already routes "ticket becomes a project; row leaves `QUEUE.md`" as a real
+  transition — so the shape is load-bearing in three places and specified in none. Rule to draw: the
+  conversion is its own operation with its own template, and the two facts a reconstruction is most
+  likely to get wrong are **move, do not copy** and **do not renumber** (pointer: skills/queue
+  SKILL.md Step 1 table and Step 2, templates/item.md `status:` comment, items/0009 and items/0002).
+- 2026-08-25 — **`queue` Step 6's own commit example fails on the file it is committing.** The step
+  shows `git commit -m "Capture 0007: …" -- .claude/backlog/QUEUE.md .claude/backlog/items/0007-*.md`,
+  and `items/0007-*.md` is the brand-new file that capture just wrote — so git rejects the pathspec
+  with *"did not match any file(s) known to git"* and the whole commit fails, queue rows included.
+  `CONCURRENCY.md` states the fix (*"A file git does not know yet needs `git add -N` first, or the
+  pathspec fails"*), so the skill contradicts the reference it cites, in the one snippet a session is
+  most likely to copy verbatim. It costs a retry rather than a corruption, but the retry happens while
+  the lock is held and `QUEUE.md` is dirty, which is the worst moment to be improvising. `./claim` and
+  `./close` never hit it because they only ever commit files git already knows (pointer:
+  skills/queue/SKILL.md Step 6, references/CONCURRENCY.md *The git index is shared*).
