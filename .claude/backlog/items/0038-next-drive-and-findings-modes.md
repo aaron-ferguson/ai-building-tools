@@ -21,6 +21,7 @@ expects:
 claimed_by: "b978"
 claimed_at: 2026-08-25T07:11:18Z
 touches:
+  - tests/next.test.sh
 ---
 
 ## Problem
