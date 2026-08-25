@@ -47,7 +47,8 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   `develop` an `expects:` describing the work the decision rejected. That is not cosmetic: the
   2026-08-25 finding below ("one claim on two shared prose files stalled the whole `develop`
   stage") records exactly that, and this decision's real scope collides with nothing.
-  A design answer is exactly the event that can narrow a scope, and nothing asks for it (pointer: skills/design Step 4, items/0035
+  A design answer is exactly the event that can narrow a scope, and nothing asks for it
+  (pointer: skills/design Step 4, items/0035
   `expects:`, references/CONCURRENCY.md *The working tree is shared too*).
 
 - 2026-08-25 — **`./next <stage>` prints `TAKE` on a row whose `expects:` collides with the files it
