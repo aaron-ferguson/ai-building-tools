@@ -3,7 +3,7 @@ id: "0034"
 title: Derive the advisory label from the paths the verdict rested on
 type: feature
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -11,9 +11,10 @@ source: agent
 expects:
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by: "ccfc"
-claimed_at: 2026-08-25T06:28:54Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-08-25
 ---
 
 ## Problem
@@ -74,24 +75,24 @@ intersection of the dirty paths and the paths the verdict rested on. Nothing is 
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/verify/SKILL.md`, when Step 3 is read, then it requires recording the repo
+- [x] AC1 — Given `skills/verify/SKILL.md`, when Step 3 is read, then it requires recording the repo
       paths each AC's and each checked NFR row's verification read or executed, and states that a
       path in doubt is included in the set.
-- [ ] AC2 — Given `skills/verify/SKILL.md`, when Step 7 is read, then advisory is defined as Step 2's
+- [x] AC2 — Given `skills/verify/SKILL.md`, when Step 7 is read, then advisory is defined as Step 2's
       dirty set intersecting Step 3's evidence set, and no other trigger for the label remains
       anywhere in the file.
-- [ ] AC3 — Given a run whose dirty paths do not intersect the evidence set, when Step 7 is read,
+- [x] AC3 — Given a run whose dirty paths do not intersect the evidence set, when Step 7 is read,
       then it directs a plain PASS closing by Step 5, and requires the verdict to name the excluded
       dirty paths and state that the intersection was empty.
-- [ ] AC4 — Given a run whose dirty paths do intersect the evidence set, when Step 7 is read, then it
+- [x] AC4 — Given a run whose dirty paths do intersect the evidence set, when Step 7 is read, then it
       still forbids the close, and explicitly refuses "both copies agreed" as grounds for closing,
       with the reason.
-- [ ] AC5 — Given `skills/verify/SKILL.md` Step 5, when read, then it still states that no durable
+- [x] AC5 — Given `skills/verify/SKILL.md` Step 5, when read, then it still states that no durable
       verdict file exists or is needed, and carries the reason banking was rejected.
-- [ ] AC6 — Given `references/CONCURRENCY.md`, when read, then its advisory line states the derived
+- [x] AC6 — Given `references/CONCURRENCY.md`, when read, then its advisory line states the derived
       rule, and no line in the file says that a change anywhere outside the ticket makes a verdict
       advisory.
-- [ ] AC7 — Given the recorded case in `FINDINGS.md` dated 2026-08-24 — a concurrent `queue` session
+- [x] AC7 — Given the recorded case in `FINDINGS.md` dated 2026-08-24 — a concurrent `queue` session
       leaving `QUEUE.md` modified and an item file untracked, on a ticket whose ACs rest on skill and
       template files — when Step 7's rule is applied to it by hand, then the run is not advisory and
       the ticket closes.
