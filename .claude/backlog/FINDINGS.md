@@ -862,3 +862,26 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   fine, so it slips through. The general rule worth landing: assert membership ("closing a row still
   takes the lock"), never cardinality (pointer: items/0007 AC2, items/0033, references/CONCURRENCY.md
   *Lock every write to `QUEUE.md`*).
+- 2026-08-25 — **a mutation that leaves the suite green and a mutation applied to the wrong copy of
+  the file produce the same evidence, and `verify` Step 3 has no step that tells them apart.** The
+  test harness runs `skills/queue/templates/next`; this repo's own backlog runs
+  `.claude/backlog/next`, kept byte-identical by `tests/backlog-scripts-installed.test.sh`. Mutating
+  the copy the backlog runs — the obvious one, since it is what `./next` invokes and what the QA
+  session has been reading — returns `134 passed, 0 failed`, which is exactly what a check-that-cannot-fail
+  returns. One reads "this AC is unverified" and the other reads "I tested nothing", and nothing in
+  the run distinguishes them. Step 2 warns about the *installed* copy under `plugins/cache/`; it does
+  not cover a second in-repo copy that the harness prefers over the live one. Cheap fix: Step 3 should
+  say to confirm the mutation reached the file under test — `grep` the mutated line, or read the
+  harness's source variable first (here `NEXT_SRC`, `tests/next.test.sh:23`) (pointer:
+  skills/verify/SKILL.md Step 3, tests/next.test.sh, tests/backlog-scripts-installed.test.sh).
+- 2026-08-25 — **"a check that cannot be made to fail leaves its AC unverified" over-condemns a
+  branch whose removal a later `else` absorbs.** Three branches in `--drive`'s phase-A ladder are
+  mutation-silent — `queue`, `in-progress`, and the verify bounce — because deleting any of them
+  drops through to a final `else` that escalates with the same exit code and a vaguer message. The
+  outcome the AC names is still pinned; only the *reason* is not. Taken literally, Step 3 fails all
+  three, which would push a QA session toward asserting message wording everywhere and make every
+  future rewording a red. The distinction Step 3 is missing: mutate, then ask whether the AC's
+  named outcome changed. If it did, the AC is unverified; if only the message did, that is a
+  message assertion worth adding, not a red. Both cases were live in one ticket, which is what makes
+  the missing distinction expensive rather than academic (pointer: skills/verify/SKILL.md Step 3,
+  items/0038, skills/queue/templates/next `--drive` phase A).
