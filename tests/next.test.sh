@@ -31,6 +31,9 @@ cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
 trap cleanup EXIT INT TERM
 
 # --- fixture ----------------------------------------------------------------------------------
+# $1, optional: the header cells for a table that is NOT the canonical five, e.g.
+# 'Status | ID | Owner | Next | Title'. With no argument the canonical header is written byte for
+# byte as before, so every pre-0038 case scaffolds exactly the table it always did.
 scaffold() {
   cleanup
   FIX="$(mktemp -d)"
@@ -41,8 +44,13 @@ scaffold() {
 
   {
     printf '# Backlog\n\n'
-    printf '| ID | Title | Next | Status | Parent |\n'
-    printf '|------|-------|------|--------|--------|\n'
+    if [ $# -eq 0 ]; then
+      printf '| ID | Title | Next | Status | Parent |\n'
+      printf '|------|-------|------|--------|--------|\n'
+    else
+      printf '| %s |\n' "$1"
+      printf '%s|\n' "$(printf '%s' "$1" | awk -F'|' '{ for (i = 1; i <= NF; i++) printf "|------" }')"
+    fi
   } > "$FIX/.claude/backlog/QUEUE.md"
 
   cp "$NEXT_SRC" "$FIX/.claude/backlog/next"
@@ -125,6 +133,83 @@ touches:
 ## Problem
 ITEM
 }
+
+# --- 0038 fixtures ----------------------------------------------------------------------------
+# The helpers above hardwire `next: develop` in the frontmatter and one `expects:` entry, which the
+# routing cases cannot use: `--drive` routes on the Next column and groups a gate by `parent:` and
+# `expects:`, so every one of those has to vary per row.
+
+# $1 id, $2 next, $3 status, $4 blocked_by inline (e.g. '[]'), $5 parent, $6 one expects path
+add_ticket() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: $2
+status: $3
+qa_level: unit
+size: s
+parent: "$5"
+blocked_by: $4
+expects:
+  - $6
+claimed_by:
+claimed_at:
+touches:
+---
+
+## Problem
+ITEM
+}
+
+# $1 id, $2 the section body including its `## ` heading line
+append_section() {
+  printf '\n%s\n' "$2" >> "$FIX/.claude/backlog/items/$1-fixture.md"
+}
+
+# A project: an item with no row, `next:` blank and `status: active` — the shape a ticket takes the
+# moment it gains a child and its row leaves QUEUE.md.
+add_project() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Project $1
+next:
+status: active
+qa_level: unit
+size: l
+blocked_by: []
+---
+
+## Problem
+ITEM
+}
+
+# $1 id — one DONE.md row, so a closed ticket can be told from a vanished one.
+add_done() {
+  if [ ! -f "$FIX/.claude/backlog/DONE.md" ]; then
+    printf '# Done\n\n| ID | Title | Type | QA | Closed | Item |\n|------|-------|------|----|--------|------|\n' \
+      > "$FIX/.claude/backlog/DONE.md"
+  fi
+  printf '| %s | Fixture %s | feature | unit | 2026-01-01 | items/%s-fixture.md |\n' "$1" "$1" "$1" \
+    >> "$FIX/.claude/backlog/DONE.md"
+}
+
+# $1 the whole findings body, appended under the preamble's `---` rule.
+add_findings() {
+  {
+    printf '# Findings\n\nPreamble, which holds no entries.\n\n---\n\n'
+    printf '%s\n' "$1"
+  } > "$FIX/.claude/backlog/FINDINGS.md"
+}
+
+# $1 the threshold value, written verbatim so a case can supply a non-number.
+set_threshold() {
+  printf 'project: Fixture\nfindings_threshold: %s\n' "$1" > "$FIX/.claude/backlog/config.yml"
+}
+
+# One `| a | b | c |` row, cells verbatim, for a table whose columns are not the canonical five.
+add_row_cells() { printf '| %s |\n' "$1" >> "$FIX/.claude/backlog/QUEUE.md"; }
 
 seal() {
   git -C "$FIX" add -A
@@ -328,6 +413,386 @@ out="$(run_next develop)" && rc=0 || rc=$?
 assert_rc           "develop exits 0"          "$rc" 0
 assert_contains     "offers the row"           "$out" 'TAKE      0001'
 assert_not_contains "invents no missing ticket" "$out" 'no item file'
+
+# ==============================================================================================
+# 0038 — the --drive and --findings modes
+#
+# FR8's table is the specification, and every one of its rows is a fixture below. Exit codes are
+# asserted alongside the printed decision on every case, because FR9 makes them the contract a
+# supervisor routes on: 0 (dispatch) and 3 (run complete) are the pair that used to share one code,
+# and a test asserting only the message would pass against exactly that collision.
+# ==============================================================================================
+
+# --- AC6 — the findings count and the format guard ---------------------------------------------
+# `FINDINGS.md` carries two entry shapes and every count taken off the obvious `^- 2026-` grep is
+# low — MEASUREMENT.md published 26 and 28 against a format-tolerant 42. The fixture holds both
+# shapes in a ratio where a shape-blind count and a shape-A-only count differ, so a reader that
+# sees only the bare-date shape reports 2 rather than 5 and this case fails.
+echo "0038 AC6 — --findings counts both entry shapes"
+scaffold
+set_threshold 3
+add_findings "$(printf -- '- 2026-01-02 — a bare-date entry.\n- **2026-01-03 — a bold-date entry.**\n- 2026-01-04 — another bare-date entry.\n- **2026-01-05 — another bold-date entry.**\n- **2026-01-06 — a third bold-date entry.**')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 0"                       "$rc" 0
+assert_contains "counts all five entries"       "$out" '5'
+assert_contains "names the threshold it read"   "$out" '3'
+assert_not_contains "does not report the bare-date shape alone" "$out" ' 2 entries'
+
+echo "0038 AC6 — a third entry shape fails the format guard rather than being counted silently"
+scaffold
+add_findings "$(printf -- '- 2026-01-02 — a bare-date entry.\n- a bullet with no date at all, which neither shape covers.')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 1 — the count is not trustworthy" "$rc" 1
+assert_contains "names the offending line"               "$out" 'a bullet with no date at all'
+assert_contains "calls it malformed"                     "$out" 'MALFORMED'
+
+echo "0038 AC6 — the threshold defaults to retro's stated cadence when config.yml has no key"
+scaffold
+add_findings "$(printf -- '- 2026-01-02 — one entry.')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 0"                    "$rc" 0
+assert_contains "defaults the threshold to 8" "$out" '8'
+
+echo "0038 AC6 — a non-numeric threshold fails loudly rather than defaulting"
+scaffold
+set_threshold 'about eight'
+add_findings "$(printf -- '- 2026-01-02 — one entry.')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 1"                       "$rc" 1
+assert_contains "names the key and the value"   "$out" 'findings_threshold'
+
+# --- AC9 — every row of FR8's table ------------------------------------------------------------
+
+echo "0038 AC9 — develop wrote verify/ready: dispatch verify"
+scaffold
+add_row 0101 'A built ticket' verify ready 0091
+add_ticket 0101 verify ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"  "$rc" 0
+assert_contains "dispatches verify"   "$out" 'DISPATCH  verify 0101'
+
+echo "0038 AC9 — verify closed the row into DONE.md: dispatch the next gate"
+scaffold
+add_row 0102 'The next ticket' develop ready 0091
+add_ticket 0102 develop ready '[]' 0091 b/two.md
+add_ticket 0101 verify done '[]' 0091 a/one.md
+add_done 0101
+seal
+out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"          "$rc" 0
+assert_contains "says why 0101 has no row"    "$out" 'closed'
+assert_contains "dispatches the next gate"    "$out" 'DISPATCH  develop 0102'
+
+echo "0038 AC9 — verify bounced the ticket back to develop/ready: escalate"
+scaffold
+add_row 0101 'A bounced ticket' develop ready 0091
+add_ticket 0101 develop ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"        "$rc" 4
+assert_contains     "escalates"                 "$out" 'ESCALATE'
+assert_contains     "names the ticket"          "$out" '0101'
+assert_not_contains "dispatches nothing"        "$out" 'DISPATCH'
+
+echo "0038 AC9 — verify found a stale contract and sent it to queue/ready: escalate"
+scaffold
+add_row 0101 'A stale contract' queue ready 0091
+add_ticket 0101 queue ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"  "$rc" 4
+assert_contains     "names next: queue"   "$out" 'queue'
+assert_not_contains "dispatches nothing"  "$out" 'DISPATCH'
+
+# The loop hazard with no precedent in this suite: verify Step 7 leaves an advisory PASS at
+# `next: verify, status: ready` deliberately, so a driver routing on `next:` alone re-verifies the
+# same ticket forever. The assertion that matters is the absence of the dispatch, not the presence
+# of the escalation — an escalation printed alongside `DISPATCH verify 0101` still loops.
+echo "0038 AC9 — an advisory PASS left at verify/ready is escalated, not re-verified"
+scaffold
+add_row 0101 'An advisory PASS' verify ready 0091
+add_ticket 0101 verify ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"                "$rc" 4
+assert_contains     "escalates"                         "$out" 'ESCALATE'
+assert_not_contains "does not print verify 0101 again"  "$out" 'DISPATCH'
+
+echo "0038 AC9 — a row at next: design escalates; a person decides"
+scaffold
+add_row 0101 'An undecided ticket' design ready 0091
+add_ticket 0101 design ready '[]' 0091 a/one.md
+append_section 0101 '## Open design question
+
+Should the control live in the toolbar or the sidebar?'
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 4 — escalate"          "$rc" 4
+assert_contains "escalates"                   "$out" 'ESCALATE'
+assert_contains "carries the design question" "$out" 'toolbar or the sidebar'
+
+echo "0038 AC9 — a row at next: queue escalates"
+scaffold
+add_row 0101 'An unspecified ticket' queue ready 0091
+add_ticket 0101 queue ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate" "$rc" 4
+assert_contains     "escalates"          "$out" 'ESCALATE'
+assert_not_contains "dispatches nothing" "$out" 'DISPATCH'
+
+echo "0038 AC9 — develop handed the ticket to design: escalate carrying the open design question"
+scaffold
+add_row 0101 'Handed back by develop' design ready 0091
+add_ticket 0101 design ready '[]' 0091 a/one.md
+append_section 0101 '## Open design question
+
+Is the threshold per project or per gate?'
+seal
+out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
+assert_rc       "exits 4 — escalate"     "$rc" 4
+assert_contains "carries the question"   "$out" 'per project or per gate'
+
+echo "0038 AC9 — develop could not get the tree green and left it at develop/ready: escalate"
+scaffold
+add_row 0101 'A red tree' develop ready 0091
+add_ticket 0101 develop ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"  "$rc" 4
+assert_contains     "escalates"           "$out" 'ESCALATE'
+assert_not_contains "dispatches nothing"  "$out" 'DISPATCH'
+
+echo "0038 AC9 — develop left the ticket waiting: escalate carrying the Waiting on question"
+scaffold
+add_row 0101 'Waiting on a person' develop waiting 0091
+add_ticket 0101 develop waiting '[]' 0091 a/one.md
+append_section 0101 '## Waiting on
+
+Aaron — which of the two hosts holds the credential?'
+seal
+out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
+assert_rc       "exits 4 — escalate"          "$rc" 4
+assert_contains "carries the waiting question" "$out" 'which of the two hosts'
+
+echo "0038 AC9 — develop gave the ticket a blocked_by: re-derive and take the next takeable row"
+scaffold
+add_row 0101 'Newly blocked' develop ready 0091
+add_row 0102 'Still takeable' develop ready 0092
+add_ticket 0101 develop ready '["0199"]' 0091 a/one.md
+add_ticket 0102 develop ready '[]' 0092 b/two.md
+add_ticket 0199 develop ready '[]' 0093 c/three.md
+seal
+out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"            "$rc" 0
+assert_contains "says 0101 gained a blocker"    "$out" '0101'
+assert_contains "dispatches the next row"       "$out" 'DISPATCH  develop 0102'
+
+echo "0038 AC9 — a close reconciled a dependent from blocked to ready: the row is dispatched"
+scaffold
+add_row 0102 'A stale blocked column' develop blocked 0092
+add_ticket 0102 develop blocked '["0101"]' 0092 b/two.md
+add_ticket 0101 develop done '[]' 0091 a/one.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"        "$rc" 0
+assert_contains "dispatches the re-derived row" "$out" 'DISPATCH  develop 0102'
+
+echo "0038 AC9 — a ticket that became a project left QUEUE.md: not an error and not a loop"
+scaffold
+add_row 0102 'A child slice' develop ready 0101
+add_ticket 0102 develop ready '[]' 0101 b/two.md
+add_project 0101
+seal
+out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
+assert_rc           "exits 0 — dispatch"           "$rc" 0
+assert_not_contains "does not escalate"            "$out" 'ESCALATE'
+assert_contains     "says it became a project"     "$out" 'project'
+assert_contains     "dispatches the child slice"   "$out" 'DISPATCH  develop 0102'
+
+echo "0038 AC9 — nothing takeable at develop is run complete, not an escalation"
+scaffold
+add_row 0102 'Genuinely blocked' develop blocked 0092
+add_ticket 0102 develop blocked '["0199"]' 0092 b/two.md
+add_ticket 0199 develop ready '[]' 0093 c/three.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 3 — run complete" "$rc" 3
+assert_contains     "says the run is complete" "$out" 'COMPLETE'
+assert_not_contains "does not escalate"        "$out" 'ESCALATE'
+assert_not_contains "dispatches nothing"       "$out" 'DISPATCH'
+
+# The general form of the advisory-PASS loop, and the half that stops a naive guard from breaking
+# crash recovery: a supervisor killed after dispatch but before the stage claimed leaves the row
+# `ready`, and re-deriving must dispatch it rather than escalate. So the guard needs the completed
+# outcome, and the same backlog routes two different ways depending on whether one is supplied.
+echo "0038 AC9 — the same stage twice needs a completed outcome in between"
+scaffold
+add_row 0101 'Reached verify twice' verify ready 0091
+add_ticket 0101 verify ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
+assert_rc       "with an outcome supplied, exits 4" "$rc" 4
+assert_contains "escalates"                          "$out" 'ESCALATE'
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "with no outcome supplied, exits 0"  "$rc" 0
+assert_contains "dispatches rather than escalating"  "$out" 'DISPATCH  verify 0101'
+
+# --- AC10 — anything unrecognised stops -------------------------------------------------------
+echo "0038 AC10 — a state matching no routing rule escalates rather than falling through"
+scaffold
+add_row 0101 'An unknown stage' frobnicate ready 0091
+add_ticket 0101 frobnicate ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"      "$rc" 4
+assert_contains     "names the unknown stage" "$out" 'frobnicate'
+assert_not_contains "dispatches nothing"      "$out" 'DISPATCH'
+
+echo "0038 AC10 — a completed ticket with neither a row nor an item file escalates"
+scaffold
+add_row 0102 'A takeable row' develop ready 0092
+add_ticket 0102 develop ready '[]' 0092 b/two.md
+seal
+out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
+assert_rc       "exits 4 — escalate" "$rc" 4
+assert_contains "names the ticket"   "$out" '0101'
+
+# --- AC11 — the exit codes are the named ones, and both modes are documented -------------------
+echo "0038 AC11 — --help lists both new modes"
+scaffold
+seal
+out="$(run_next --help)" && rc=0 || rc=$?
+assert_rc       "exits 0"        "$rc" 0
+assert_contains "lists --drive"    "$out" '--drive'
+assert_contains "lists --findings" "$out" '--findings'
+
+echo "0038 AC11 — the findings gate has its own code, distinct from a dispatch"
+scaffold
+set_threshold 2
+add_row 0101 'A takeable row' develop ready 0091
+add_ticket 0101 develop ready '[]' 0091 a/one.md
+add_findings "$(printf -- '- 2026-01-02 — one entry.\n- **2026-01-03 — two entries.**')"
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 5 — the findings gate" "$rc" 5
+assert_contains "dispatches retro"            "$out" 'retro'
+assert_contains "states the count"            "$out" '2'
+
+# Every pre-existing invocation keeps the code it always returned. `next <stage>` spending 0 on
+# "nothing is takeable" is the collision --drive exists to avoid, and it must NOT be corrected
+# here: three closed tickets and two scripts read that 0.
+echo "0038 AC11 — the pre-existing exit codes are unchanged"
+scaffold
+add_row 0101 'A verify row' verify ready 0091
+add_ticket 0101 verify ready '[]' 0091 a/one.md
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc       "next <stage> still spends 0 on nothing takeable" "$rc" 0
+assert_contains "and still says so"  "$out" 'nothing is takeable at stage develop'
+out="$(run_next --waiting)" && rc=0 || rc=$?
+assert_rc "next --waiting still exits 0 when nothing waits" "$rc" 0
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc "next --drift still exits 0 when nothing drifted" "$rc" 0
+out="$(run_next frobnicate)" && rc=0 || rc=$?
+assert_rc "an unknown stage is still a usage error" "$rc" 2
+out="$(run_next)" && rc=0 || rc=$?
+assert_rc "the no-argument summary still exits 0" "$rc" 0
+assert_contains "and still prints the summary" "$out" 'BY STAGE:'
+
+echo "0038 AC11 — --drive rejects an argument it does not know as a usage error"
+scaffold
+add_row 0101 'A verify row' verify ready 0091
+add_ticket 0101 verify ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive --frobnicate)" && rc=0 || rc=$?
+assert_rc "exits 2 — usage" "$rc" 2
+out="$(run_next --drive --completed)" && rc=0 || rc=$?
+assert_rc "a --completed with no value is a usage error" "$rc" 2
+
+# --- AC28 — the new modes survive a column move -----------------------------------------------
+# 0006 exists because the pre-existing modes read fixed indices and report wrong values when a
+# column moves. This table reorders every column AND adds one the script has never heard of, so an
+# index-based reader cannot pass by luck.
+echo "0038 AC28 — a reordered table with an extra column gives the same decision"
+scaffold 'Status | Owner | ID | Next | Title'
+add_row_cells 'ready | nobody | 0101 | verify | A built ticket'
+add_ticket 0101 verify ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — the same decision as the canonical shape" "$rc" 0
+assert_contains "dispatches verify"  "$out" 'DISPATCH  verify 0101'
+
+echo "0038 AC28 — a table with no Status column fails loudly"
+scaffold 'ID | Title | Next | Parent'
+add_row_cells '0101 | A built ticket | verify | 0091'
+add_ticket 0101 verify ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 1 — malformed"        "$rc" 1
+assert_contains     "names the missing column"   "$out" 'Status'
+assert_not_contains "reads no row as takeable"   "$out" 'DISPATCH'
+
+# --- AC29 — one read answers depth as well as the decision ------------------------------------
+# Two gates rather than two rows: 0101 and 0102 share neither a parent nor a path in `expects:`, so
+# they cannot batch, and the design row below them is what the run would halt on.
+echo "0038 AC29 — one invocation reports the decision and how deep the backlog is"
+scaffold
+add_row 0101 'First gate'  develop ready 0091
+add_row 0102 'Second gate' develop ready 0092
+add_row 0103 'Undecided'   design  ready 0093
+add_ticket 0101 develop ready '[]' 0091 a/one.md
+add_ticket 0102 develop ready '[]' 0092 b/two.md
+add_ticket 0103 design  ready '[]' 0093 c/three.md
+append_section 0103 '## Open design question
+
+Where does the control live?'
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"                 "$rc" 0
+assert_contains "dispatches the first gate"          "$out" 'DISPATCH  develop 0101'
+assert_contains "reports the depth"                  "$out" 'DEPTH     2'
+assert_contains "names what the run would halt on"   "$out" '0103'
+
+echo "0038 FR8 — tickets sharing a parent are one gate, dispatched together"
+scaffold
+add_row 0101 'First slice'  develop ready 0091
+add_row 0102 'Second slice' develop ready 0091
+add_ticket 0101 develop ready '[]' 0091 a/one.md
+add_ticket 0102 develop ready '[]' 0091 b/two.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"       "$rc" 0
+assert_contains "dispatches both as one gate" "$out" 'DISPATCH  develop 0101 0102'
+assert_contains "counts one gate deep"        "$out" 'DEPTH     1'
+
+echo "0038 FR8 — tickets whose expects overlap are one gate even under different parents"
+scaffold
+add_row 0101 'One file'      develop ready 0091
+add_row 0102 'The same file' develop ready 0092
+add_ticket 0101 develop ready '[]' 0091 shared/file.md
+add_ticket 0102 develop ready '[]' 0092 shared/file.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"          "$rc" 0
+assert_contains "dispatches both as one gate" "$out" 'DISPATCH  develop 0101 0102'
+
+echo "0038 FR8 — an in-progress row is stepped over, not taken"
+scaffold
+add_row 0101 'Held by another session' develop in-progress 0091
+add_row 0102 'Free'                    develop ready       0092
+add_ticket 0101 develop in-progress '[]' 0091 a/one.md
+add_ticket 0102 develop ready '[]' 0092 b/two.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"        "$rc" 0
+assert_contains "names the held row"        "$out" '0101'
+assert_contains "dispatches the free row"   "$out" 'DISPATCH  develop 0102'
 
 # --- result -----------------------------------------------------------------------------------
 echo

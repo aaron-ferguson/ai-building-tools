@@ -12,6 +12,11 @@
 # Claiming a row is `./claim <id>`, which locks, edits, commits and unlocks in one step — see
 # references/CONCURRENCY.md for why the commit is the part that matters.
 #
+# Two modes answer a driver rather than a human. `--drive` says what should happen next and spends a
+# distinct exit code per outcome, because a human reading "nothing is takeable" off a zero gets away
+# with it and a loop does not; `--findings` counts the findings buffer, tolerant of both entry
+# shapes it actually carries. Both are documented under `--help` and specified by 0038.
+#
 # Read the whole file when you genuinely need the whole file — a re-rank, a themes pass, or any
 # judgement about *order* rather than about what to do next.
 
@@ -20,20 +25,83 @@ set -eu
 DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 QUEUE="$DIR/QUEUE.md"
 
+CONFIG="$DIR/config.yml"
+FINDINGS="$DIR/FINDINGS.md"
+DONE="$DIR/DONE.md"
+
+# The findings-buffer threshold a driver gates on. It lives in config.yml so a project can raise it
+# without editing this script — this repo's own rate is inflated because its tickets are *about* the
+# tooling, so every one surfaces a tooling defect. The default is `retro`'s stated cadence, and
+# `retro` points at this key rather than carrying a second number.
+FINDINGS_THRESHOLD_DEFAULT=8
+THRESHOLD="$FINDINGS_THRESHOLD_DEFAULT"
+
+# Loud rather than defaulted: a driver silently gating on 8 where the project wrote 20 is the same
+# class of defect as a count that reads low — wrong, and with nothing to notice it by.
+#
+# `sub(/#.*/, "")` is correct here and wrong in `fm_list` below. Do not unify them: a threshold is a
+# number, so a `#` in it can only be a comment, where a `#` in a path can be part of the path.
+read_threshold() {
+  [ -f "$CONFIG" ] || return 0
+  raw="$(awk '/^findings_threshold:/ {
+    v = $0; sub(/^findings_threshold: */, "", v); sub(/#.*/, "", v); gsub(/[ \t]/, "", v)
+    print v; exit
+  }' "$CONFIG")"
+  [ -n "$raw" ] || return 0
+  case "$raw" in
+    *[!0-9]*) echo "findings_threshold in $CONFIG is not a whole number: $raw" >&2; return 1 ;;
+  esac
+  THRESHOLD="$raw"
+}
+
+# Entries in FINDINGS.md, tolerant of both shapes the file carries: `- <date> — lead.` and
+# `- **<date> — lead.**`. The obvious `^- 2026-` grep sees only the first, and MEASUREMENT.md
+# published 26 and 28 in adjacent sentences against a format-tolerant 42. A gate reading a reliably
+# low number fires late, silently, and nothing goes red when it does.
+#
+# A third shape is neither counted nor ignored — it is named, and the caller fails. A count nobody
+# can trust is worse than no count, because it looks like one.
+count_findings() {
+  awk '
+    function dated(s)  { return s ~ /^- [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ }
+    function bolded(s) { return s ~ /^- \*\*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ }
+    # The preamble above the rule is prose about the file, and counting it inflates every read.
+    !body && /^---$/ { body = 1; next }
+    !body { next }
+    /^- / {
+      if (dated($0) || bolded($0)) { n++; next }
+      printf "MALFORMED FINDINGS.md:%d  %s\n", NR, $0
+      bad = 1
+    }
+    END { printf "COUNT %d %d\n", n + 0, bad + 0 }
+  ' "$FINDINGS"
+}
+
 usage() {
   cat <<'USAGE'
-usage: ./next [<stage> | --waiting | --drift | --help]
+usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--completed <stage>[:<id>]]... | --help]
 
   ./next             counts by stage and by status, plus anything another session holds
   ./next <stage>     the first takeable row for that stage, and its size
                      stages: queue | design | develop | verify
   ./next --waiting   every waiting row with the question it is waiting on
   ./next --drift     every row whose Status column disagrees with its blocked_by; exits 1 if any
+  ./next --findings  how many entries FINDINGS.md holds, and the threshold a driver gates on
+  ./next --drive     what should happen next, for a driver rather than a human: one decision line,
+                     how deep the backlog is, and a distinct exit code per outcome.
+                     --completed <stage>[:<id>] says which stage just finished on which ticket.
+                     That input is what tells a verify bounce from a fresh develop row, and a
+                     crash-recovery re-dispatch from a loop; repeat it to pass more than one.
   ./next --help      this
 
 Takeable means: `next` matches the stage and no `blocked_by` entry is still open. `blocked` is
 DERIVED from `blocked_by`, so the column is a cache of that answer and never the authority — a
 row is offered on the graph's answer whatever the column says, and the disagreement is reported.
+
+--drive spends a code per outcome, and they are the contract: 0 dispatch this · 3 run complete,
+nothing takeable · 4 escalate, a person decides · 5 the findings gate is reached, dispatch retro.
+1 (drift, malformed) and 2 (usage error) mean what they mean everywhere else. Every other mode
+still spends 0 on "nothing is takeable", which is why --drive could not reuse it.
 USAGE
 }
 
@@ -41,33 +109,97 @@ case "${1:-}" in
   -h|--help|help) usage; exit 0 ;;
 esac
 
+# --- --findings -------------------------------------------------------------------------------
+# Ahead of the QUEUE.md check on purpose: the buffer's size is not a question about the table, and
+# a driver asking it on a project mid-scaffold should get the count rather than a parse error.
+if [ "${1:-}" = "--findings" ]; then
+  read_threshold || exit 1
+  if [ ! -f "$FINDINGS" ]; then
+    printf 'FINDINGS  0 entries; threshold %s — no FINDINGS.md at %s\n' "$THRESHOLD" "$FINDINGS"
+    exit 0
+  fi
+  report="$(count_findings)"
+  printf '%s\n' "$report" | grep '^MALFORMED' || true
+  fcount="$(printf '%s\n' "$report" | awk '/^COUNT/ { print $2; exit }')"
+  fbad="$(printf '%s\n' "$report" | awk '/^COUNT/ { print $3; exit }')"
+  if [ "$fcount" -ge "$THRESHOLD" ]; then state='at or over the threshold'; else state='under the threshold'; fi
+  printf 'FINDINGS  %s entries; threshold %s (config.yml findings_threshold) — %s\n' \
+    "$fcount" "$THRESHOLD" "$state"
+  [ "$fbad" = 0 ] || {
+    echo "the count above is not trustworthy: an entry matches neither '- <date>' nor '- **<date>'" >&2
+    exit 1
+  }
+  exit 0
+fi
+
 [ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
 
 # ---------------------------------------------------------------------------------------------
-# The table shape. Columns are fixed at: 2 ID, 3 Title, 4 Next, 5 Status, 6 Parent.
+# The table shape, resolved two ways for one reason.
 #
 # Fixed indices are checked rather than assumed, because the failure mode of a silently wrong
 # index is the worst one available: this script prints "0 ready of 2 rows" against a table it
 # cannot read, and a session concludes the backlog is empty rather than that the parser is wrong.
-# That happened once already. Parsing by header *name* — so any column order works — is a
-# separate change; refusing to run against a shape we cannot read is the floor.
+# That happened once already. Refusing to run against a shape we cannot read is the floor.
+#
+# 0038's FR18 raises the floor for the NEW modes only: they resolve columns by header *name*, so a
+# moved column changes nothing, and 0006 still owns converting the pre-existing ones. Writing
+# `--drive` against fixed indices would have handed 0006 a second index-based reader to rewrite and
+# a second chance to be silently wrong until it did.
+#
+# So the pre-existing modes keep the fixed-shape assertion they have always made — verbatim, message
+# included, because three closed tickets and two scripts read what they return — and `--drive` skips
+# it. The by-name resolution below then runs for every mode; on the canonical table it yields the
+# same 2/3/4/5, so nothing that worked reads a different cell.
 # ---------------------------------------------------------------------------------------------
-header="$(awk '/^\| *ID *\|/ { print; exit }' "$QUEUE")"
-[ -n "$header" ] || { echo "no table header in $QUEUE — expected a row starting '| ID |'" >&2; exit 1; }
-shape="$(printf '%s' "$header" | awk -F'|' '{
-  for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); printf "%s%s", (i > 2 ? "/" : ""), v }
-}')"
-[ "$shape" = "ID/Title/Next/Status/Parent" ] || {
-  echo "unexpected table shape: $shape" >&2
-  echo "this reader parses ID/Title/Next/Status/Parent by position; fix the table or the reader" >&2
-  exit 1
+if [ "${1:-}" != "--drive" ]; then
+  header="$(awk '/^\| *ID *\|/ { print; exit }' "$QUEUE")"
+  [ -n "$header" ] || { echo "no table header in $QUEUE — expected a row starting '| ID |'" >&2; exit 1; }
+  shape="$(printf '%s' "$header" | awk -F'|' '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); printf "%s%s", (i > 2 ? "/" : ""), v }
+  }')"
+  [ "$shape" = "ID/Title/Next/Status/Parent" ] || {
+    echo "unexpected table shape: $shape" >&2
+    echo "this reader parses ID/Title/Next/Status/Parent by position; fix the table or the reader" >&2
+    exit 1
+  }
+fi
+
+# `ID` is resolved by name too. Resolving one column by name and another by position would make the
+# promise above false in exactly the case nobody tests: the parser would look order-independent and
+# still read the wrong cell the day a column moves in front of `ID`.
+name_row="$(awk -F'|' '/^\|/ {
+  for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
+}' "$QUEUE")"
+[ -n "$name_row" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
+
+column_named() {
+  printf '%s' "$name_row" | awk -F'|' -v want="$1" '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
+  }'
 }
 
-ID=2; TITLE=3; NEXT=4; STATUS=5
+ID="$(column_named ID)"
+TITLE="$(column_named Title)"
+NEXT="$(column_named Next)"
+STATUS="$(column_named Status)"
 
+# Routing is impossible without these three, and a missing column reads as empty on every row —
+# which presents as "nothing is takeable" rather than as a broken parser. That is the same failure
+# the fixed-shape check refuses, arriving through the new door, so it is refused here too.
+for required in "ID:$ID" "Next:$NEXT" "Status:$STATUS"; do
+  case "$required" in
+    *:) echo "no ${required%%:*} column in the QUEUE.md table — cannot route on a cell that is not there" >&2
+        echo "header found: $name_row" >&2
+        exit 1 ;;
+  esac
+done
+
+# The header and separator rows are recognised by the ID *cell*, not by cell 2 — under a reordered
+# table cell 2 holds something else, and the header would come back as a data row.
 rows() {
-  awk -F'|' '/^\|/ {
-    id = $2; gsub(/^ +| +$/, "", id)
+  awk -F'|' -v n="$ID" '/^\|/ {
+    id = $n; gsub(/^ +| +$/, "", id)
     if (id == "ID" || id ~ /^-+$/ || id == "") next
     print
   }' "$QUEUE"
@@ -75,14 +207,14 @@ rows() {
 
 field() { printf '%s' "$1" | awk -F'|' -v n="$2" '{ v = $n; gsub(/^ +| +$/, "", v); print v }'; }
 
-row_for() { rows | awk -F'|' -v id="$1" '{ v = $2; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }'; }
+row_for() { rows | awk -F'|' -v id="$1" -v n="$ID" '{ v = $n; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }'; }
 
 # Ids whose row matches a column value. Ids carry no whitespace, so callers can iterate them with a
 # plain `for` — which keeps the loop in this shell rather than a pipeline subshell, where a counter
 # set inside would be discarded and every "did anything match?" test would read false.
-ids_where() { rows | awk -F'|' -v n="$1" -v want="$2" '{ v = $n; gsub(/^ +| +$/, "", v); if (v == want) { id = $2; gsub(/^ +| +$/, "", id); print id } }'; }
+ids_where() { rows | awk -F'|' -v n="$1" -v want="$2" -v idc="$ID" '{ v = $n; gsub(/^ +| +$/, "", v); if (v == want) { id = $idc; gsub(/^ +| +$/, "", id); print id } }'; }
 
-all_ids() { rows | awk -F'|' '{ v = $2; gsub(/^ +| +$/, "", v); print v }'; }
+all_ids() { rows | awk -F'|' -v n="$ID" '{ v = $n; gsub(/^ +| +$/, "", v); print v }'; }
 
 item_for() { ls "$DIR/items/$1-"*.md 2>/dev/null | head -1 || true; }
 
@@ -179,6 +311,17 @@ waiting_on() {
   ' "$1"
 }
 
+# The first line of an item's `## Open design question` section — what `--drive` carries to a person
+# when a row is at `next: design`, so they answer in one line rather than opening the ticket.
+design_question() {
+  [ -n "$1" ] || return 0
+  awk '
+    /^## Open design question/ { inside = 1; next }
+    inside && /^## / { exit }
+    inside && NF { print; exit }
+  ' "$1"
+}
+
 # --- shared tails -----------------------------------------------------------------------------
 # An uncommitted queue is a claim only one session can see: whoever commits QUEUE.md next carries
 # these rows under their own message, and the first anyone notices is a confusing diff.
@@ -264,6 +407,240 @@ if [ "${1:-}" = "--drift" ]; then
   done
   [ "$drifted" -eq 1 ] || printf 'no drift: every Status column agrees with its blocked_by\n'
   exit "$drifted"
+fi
+
+# --- --drive ----------------------------------------------------------------------------------
+# What should happen next, for a driver rather than a human. FR8 of 0038 is the specification: the
+# whole space of transitions the three stages can write, each routed, and anything outside it stops
+# rather than falling through to a default.
+#
+# Two things make this a different question from `./next <stage>`, and neither is cosmetic:
+#
+#   - It spends a distinct code per outcome. `./next develop` spends 0 on both "here is a row" and
+#     "nothing is takeable" — a human reading the line gets away with that, a loop cannot.
+#   - It takes the completed outcome as an INPUT (`--completed`) rather than deriving it. A driver
+#     killed after dispatch but before the stage claimed leaves the row `ready`, so a stateless
+#     re-derivation has to re-dispatch it; a guard keyed on "same ticket, same stage" alone would
+#     escalate that recovery. The guard needs an intervening outcome, and only the caller's run log
+#     holds one. Absent it, `--drive` dispatches.
+#
+# The Status COLUMN is the authority for routing, deliberately, because there are two vocabularies:
+# item frontmatter also carries `active` (a project, which has no row) and `done` (a closed ticket).
+# Frontmatter stays the authority for everything else — `parent:`, `expects:`, the two sections.
+#
+# Nothing here writes, takes the lock, or acts. It prints one decision.
+if [ "${1:-}" = "--drive" ]; then
+  read_threshold || exit 1
+  shift
+  COMPLETED=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --completed)
+        shift
+        [ $# -gt 0 ] || { echo "--completed needs <stage>[:<id>]" >&2; usage >&2; exit 2; }
+        COMPLETED="$COMPLETED $1"
+        shift ;;
+      *) echo "unknown argument to --drive: $1" >&2; usage >&2; exit 2 ;;
+    esac
+  done
+
+  # Every takeable `next: develop` row, in rank order — the same predicate `./next develop` applies.
+  takeable_develop() {
+    for tid in $(all_ids); do
+      trow="$(row_for "$tid")"
+      if [ "$(field "$trow" "$NEXT")" != "develop" ]; then continue; fi
+      case "$(field "$trow" "$STATUS")" in in-progress|waiting) continue ;; esac
+      if [ -n "$(open_blockers_of "$tid")" ]; then continue; fi
+      printf '%s ' "$tid"
+    done
+  }
+
+  paths_overlap() {
+    for pa in $1; do
+      for pb in $2; do
+        if [ "$pa" = "$pb" ]; then return 0; fi
+      done
+    done
+    return 1
+  }
+
+  # The gate led by $1 out of the pool $2: the lead, plus every other takeable develop row sharing
+  # its parent or naming one of the same files in `expects:`. That is `develop`'s own batching unit
+  # — the unit is a gate, not a row, because what batching saves is the startup a session pays
+  # before it writes a line, and that is only shared where the parent or the files are.
+  #
+  # One hop from the lead, deliberately not a transitive closure: chaining through shared files
+  # would sweep half a backlog into one gate via a file two unrelated efforts both happen to touch.
+  gate_from() {
+    lead="$1"; pool="$2"
+    lparent="$(fm "$(item_for "$lead")" parent)"
+    lexpects="$(fm_list "$(item_for "$lead")" expects)"
+    printf '%s' "$lead"
+    for gid in $pool; do
+      if [ "$gid" = "$lead" ]; then continue; fi
+      if [ -n "$lparent" ] && [ "$(fm "$(item_for "$gid")" parent)" = "$lparent" ]; then
+        printf ' %s' "$gid"; continue
+      fi
+      if paths_overlap "$lexpects" "$(fm_list "$(item_for "$gid")" expects)"; then printf ' %s' "$gid"; fi
+    done
+  }
+
+  # What the walk would halt on after every takeable gate is spent. Without this a driver's first
+  # run stops at the first `next: design` row and reads as broken rather than as finished.
+  depth_stopper() {
+    for sid in $(all_ids); do
+      srow="$(row_for "$sid")"
+      snext="$(field "$srow" "$NEXT")"
+      sstatus="$(field "$srow" "$STATUS")"
+      if [ "$sstatus" = "in-progress" ]; then continue; fi
+      if [ -n "$(open_blockers_of "$sid")" ]; then continue; fi
+      if [ "$sstatus" = "waiting" ]; then printf '%s (waiting on a person)' "$sid"; return 0; fi
+      case "$snext" in
+        design|queue)   printf '%s (next: %s — a person decides)' "$sid" "$snext"; return 0 ;;
+        develop|verify) continue ;;
+        *)              printf "%s (next: '%s' — no routing rule covers it)" "$sid" "$snext"; return 0 ;;
+      esac
+    done
+    printf 'the end of the queue'
+  }
+
+  # FR17: one read answers both "what now" and "how far does this go", because the read happens
+  # anyway. Gates, not rows — two rows that batch are one session.
+  depth_line() {
+    remaining="$(takeable_develop)"
+    gates=0
+    while [ -n "$remaining" ]; do
+      taken="$(gate_from "$(printf '%s' "$remaining" | awk '{ print $1 }')" "$remaining")"
+      gates=$((gates + 1))
+      kept=""
+      for rid in $remaining; do
+        drop=0
+        for tk in $taken; do if [ "$rid" = "$tk" ]; then drop=1; fi; done
+        if [ "$drop" = 0 ]; then kept="$kept $rid"; fi
+      done
+      remaining="$(printf '%s' "$kept" | awk '{ $1 = $1; print }')"
+    done
+    printf 'DEPTH     %s develop gate(s) takeable; runs dry at %s\n' "$gates" "$(depth_stopper)"
+  }
+
+  # $1 the exit code, $2 the decision. The depth line goes out with every decision, never on its own
+  # invocation — that second read is the cost FR17 exists to avoid.
+  decide() {
+    depth_line
+    printf '%s\n' "$2"
+    exit "$1"
+  }
+
+  # Checked where a NEW gate would be dispatched, and not before a verify: a ticket already built is
+  # finished rather than abandoned for a retro. Evaluating the gate once per run is 0039's.
+  findings_gate() {
+    [ -f "$FINDINGS" ] || return 0
+    greport="$(count_findings)"
+    gcount="$(printf '%s\n' "$greport" | awk '/^COUNT/ { print $2; exit }')"
+    gbad="$(printf '%s\n' "$greport" | awk '/^COUNT/ { print $3; exit }')"
+    if [ "$gbad" != 0 ]; then
+      printf '%s\n' "$greport" | grep '^MALFORMED' || true
+      decide 4 "ESCALATE  FINDINGS.md carries an entry shape the count does not recognise, so the gate cannot be trusted — and a gate reading a low number fires late and silently"
+    fi
+    if [ "$gcount" -ge "$THRESHOLD" ]; then
+      decide 5 "DISPATCH  retro — FINDINGS.md holds $gcount entries against a threshold of $THRESHOLD"
+    fi
+  }
+
+  # --- what the caller says just finished -----------------------------------------------------
+  # Order matters here and is not alphabetical. `waiting`, `design` and `queue` are checked before
+  # the same-stage guard, because develop writing any of those leaves the row where it was and the
+  # specific reason is the thing a person needs. An acquired blocker is checked before it too: that
+  # one is not stuck at all, it is re-derivable.
+  last=""
+  for c in $COMPLETED; do last="$c"; done
+  if [ -n "$last" ]; then
+    lstage="${last%%:*}"
+    lid="${last#*:}"
+    if [ "$lid" = "$lstage" ]; then lid=""; fi
+    if [ -z "$lid" ]; then
+      printf 'NOTE      %s finished with no ticket of its own — choosing the next gate\n' "$lstage"
+    else
+      lrow="$(row_for "$lid")"
+      if [ -z "$lrow" ]; then
+        # A row leaving QUEUE.md is two different events and only one of them is a close. A ticket
+        # becomes a project the moment it gains a child, and its row leaves — not an error, and not
+        # something to loop on.
+        if [ -f "$DONE" ] && [ -n "$(awk -F'|' -v id="$lid" '/^\|/ { v = $2; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$DONE")" ]; then
+          printf 'NOTE      %s closed and left QUEUE.md — choosing the next gate\n' "$lid"
+        elif [ -n "$(item_for "$lid")" ]; then
+          printf 'NOTE      %s has an item but no row — a ticket that became a project; not an error and not a loop\n' "$lid"
+        else
+          decide 4 "ESCALATE  $lid has no row in QUEUE.md and no item file — nothing recognises that state"
+        fi
+      else
+        lnext="$(field "$lrow" "$NEXT")"
+        lstatus="$(field "$lrow" "$STATUS")"
+        lblockers="$(open_blockers_of "$lid")"
+        if [ "$lstatus" = "waiting" ]; then
+          decide 4 "ESCALATE  $lid is waiting on a person after $lstage — only they can clear it
+          $(waiting_on "$(item_for "$lid")")"
+        elif [ "$lstatus" = "in-progress" ]; then
+          decide 4 "ESCALATE  $lid is still in-progress after $lstage completed — the claim was never released"
+        elif [ "$lnext" = "design" ]; then
+          decide 4 "ESCALATE  $lid is at next: design after $lstage — a person decides
+          $(design_question "$(item_for "$lid")")"
+        elif [ "$lnext" = "queue" ]; then
+          decide 4 "ESCALATE  $lid went back to next: queue after $lstage — the contract is stale, and respecifying it is a person's call"
+        elif [ -n "$lblockers" ]; then
+          printf 'NOTE      %s gained a blocker after %s (%s) — re-deriving rather than reading it as stuck\n' \
+            "$lid" "$lstage" "$lblockers"
+        elif [ "$lstage" = "verify" ] && [ "$lnext" = "develop" ]; then
+          decide 4 "ESCALATE  $lid bounced from verify back to next: develop — verify already decided whether the build or the contract was wrong, and re-developing blind spends a stage session rediscovering it"
+        elif [ "$lnext" = "$lstage" ]; then
+          decide 4 "ESCALATE  $lid is still at next: $lstage after a completed $lstage — same ticket, same stage, with an outcome in between"
+        elif [ "$lstage" = "develop" ] && [ "$lnext" = "verify" ] && [ "$lstatus" = "ready" ]; then
+          decide 0 "DISPATCH  verify $lid"
+        else
+          decide 4 "ESCALATE  $lid is at next: $lnext / $lstatus after $lstage, which no routing rule covers"
+        fi
+      fi
+    fi
+  fi
+
+  # --- otherwise, walk the rank ---------------------------------------------------------------
+  # Line order is the rank and the rank is absolute, so the first row anything can act on decides.
+  # `blocked` and `in-progress` are the two the rank legitimately steps over — nobody can act on
+  # either and no person is being asked for anything. Everything else dispatches or stops.
+  for id in $(all_ids); do
+    row="$(row_for "$id")"
+    rnext="$(field "$row" "$NEXT")"
+    rstatus="$(field "$row" "$STATUS")"
+    if [ "$rstatus" = "in-progress" ]; then
+      printf 'NOTE      %s is in-progress — another session holds it; stepping over it\n' "$id"
+      continue
+    fi
+    rblockers="$(open_blockers_of "$id")"
+    if [ -n "$rblockers" ]; then
+      printf 'NOTE      %s is blocked by %s— stepping over it\n' "$id" "$rblockers"
+      continue
+    fi
+    if [ "$rstatus" = "waiting" ]; then
+      decide 4 "ESCALATE  $id is waiting on a person and outranks everything below it
+          $(waiting_on "$(item_for "$id")")"
+    fi
+    case "$rnext" in
+      design)
+        decide 4 "ESCALATE  $id is at next: design and outranks everything below it — a person decides
+          $(design_question "$(item_for "$id")")" ;;
+      queue)
+        decide 4 "ESCALATE  $id is at next: queue — it has no acceptance criteria to build against, and specifying it is a person's call" ;;
+      verify)
+        decide 0 "DISPATCH  verify $id" ;;
+      develop)
+        gate="$(gate_from "$id" "$(takeable_develop)")"
+        findings_gate
+        decide 0 "DISPATCH  develop $gate" ;;
+      *)
+        decide 4 "ESCALATE  $id is at next: '$rnext', which no routing rule covers — stopping rather than falling through to a default" ;;
+    esac
+  done
+  decide 3 "COMPLETE  nothing takeable at develop — every row is done, blocked, or held by another session"
 fi
 
 # --- ./next <stage> ---------------------------------------------------------------------------
