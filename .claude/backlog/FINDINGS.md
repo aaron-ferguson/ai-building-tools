@@ -62,3 +62,23 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   asked for either check. The sharp version: an entry states a fact about the tree, the tree moves,
   and a sweep that specifies faithfully ships a ticket built on a stale premise — which reads
   exactly like a well-specified one (pointer: skills/queue/SKILL.md Step 5, items/0063, items/0064).
+
+- 2026-08-25 — **a claim released in the working tree but not committed reads as neither held nor
+  free, and no mode reports it.** `0037`'s row says `in-progress` in the committed `QUEUE.md` while
+  its item file, dirty and uncommitted, has `claimed_by:` cleared and `status: waiting`.
+  `CONCURRENCY.md`'s *A stage writes only the ticket it holds* defines held as "a non-empty
+  `claimed_by:` in the item, and nothing else", so the item reads free; the row reads taken;
+  `./next develop` printed `0037 [no token] none declared — assume held, ask`; and `./next --drift`
+  said "no drift" because it only compares the Status column against `blocked_by`. The rule that
+  makes a claim durable is stated for the *claim* and not for the *release*, so a release is
+  invisible in exactly the same way a claim would be (pointer: references/CONCURRENCY.md, items/0049,
+  items/0066).
+- 2026-08-25 — **checking "the output is unchanged" needs the HEAD copy of a suite run from inside
+  the repo, and nothing says so.** 0053's AC1 is a byte-comparison against today's output, so the
+  obvious move is `git show HEAD:tests/x.test.sh > $SCRATCH/x.sh && sh $SCRATCH/x.sh`. Every suite
+  resolves `ROOT` from its own location, so the scratch copy exits 2 with "no claim script at
+  …/scratchpad/skills/…" — which is not a red, just a different error, and a session in a hurry
+  reads it as one. The copy has to land inside the repo tree (`tests/.head-x.sh`, dot-prefixed so
+  the `tests/*.test.sh` loop does not pick it up) and be removed in the same turn. Third session in
+  a row to hand-build throwaway comparison scaffolding, which is the finding 0053 itself came from
+  (pointer: skills/develop/SKILL.md Step 5, items/0053).
