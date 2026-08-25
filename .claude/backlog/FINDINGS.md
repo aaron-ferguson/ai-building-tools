@@ -811,3 +811,15 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   closed on its own ACs. Worth deciding whether the condition is meant to be the gate itself
   (any rows at `next: verify`) with scope-sharing merely the common case (pointer: skills/verify
   SKILL.md preamble, *One gate per invocation, not one ticket*).
+- 2026-08-25 — **`./close` ticks nothing when the ACs carry no checkbox, and closes anyway.** 0035's
+  acceptance criteria are written `- **AC1** — Given …`, with no `- [ ]`; 0034's are written
+  `- [ ] AC1 — …`. `close` ticked 0034's seven and silently ticked none of 0035's eight, then closed
+  the ticket, moved the row and reported success identically in both cases. `verify` Step 5 step 1
+  says a close ticks the ACs and the skill states outright that **`verify` closes on ticked ACs** —
+  so on the second format the one durable record that each criterion was checked is simply absent,
+  and `DONE.md` cannot distinguish a ticket verified AC-by-AC from one waved through. The script is
+  documented to refuse rather than guess on three grounds (unreadable table shape, wrong `next:`,
+  wrong token); an AC block it cannot tick is a fourth and is not among them. Both templates are in
+  live use, so this is not a one-off malformed ticket — `templates/item.md` should settle one form
+  and `close` should refuse, or report, when it ticks zero of a non-empty AC list (pointer:
+  .claude/backlog/close, skills/verify/SKILL.md Step 5, items/0035 vs items/0034, templates/item.md).
