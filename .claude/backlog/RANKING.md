@@ -290,3 +290,36 @@ reader is written once against the final column set* **— applies here in rever
 on 0006 would sink the top slice behind a two-hop blocked chain for a few lines of parsing, so
 0038 gained FR18 and AC28 instead: the new modes resolve columns by header name from the start.
 Either order then works, which is the test for `relates` rather than `blocked_by`.
+
+## 0041 — the work-session review — ranked last — 2026-08-25
+
+Aaron's own request, captured the same day, placed **Tier 4: value** and inserted **below 0037**,
+at the bottom of the rank. Nothing degrades while it sits: the transcripts and `DONE.md` are
+permanent, `tools/harvest-usage.sh` is committed and re-runnable, so a run that goes unreported
+loses no data — it can be measured later at the same price. That is what keeps it out of Tier 2.
+
+Three pairwise comparisons decided the position:
+
+- **vs 0039 and 0040 — they win on the prerequisite rule.** 0039's FR10 log is what makes a *work
+  session* a thing on disk with a boundary, a per-stage cost and timestamps; 0040 is ranked directly
+  below it for reasons already recorded. 0041 is buildable without them from `DONE.md` dates and
+  transcript timestamps, so this is "materially cheaper after", not "impossible before" — which is
+  still the prerequisite rule, and is also why 0041 took `relates` rather than `blocked_by`.
+- **vs 0003 / 0004 — they win on tie-breaker 2, unblocks more.** 0003 releases 0004; 0041 releases
+  nothing. Tier does not separate them cleanly (0003's readiness gate carries a compounding
+  argument — a standard that slides session to session — which if anything puts it higher, not
+  lower), and blast radius does not separate them either, since both change every project using the
+  suite.
+- **vs 0037 — 0037 wins, and it is in flight.** It is the forward-looking measurement run, and
+  tie-breaker 3 is decisive: its comparison decays as 0028 and 0035 change how much context a
+  session loads, while 0041's inputs are fixed history.
+
+**Last is a considered position here, not an append.** Every row above it is either Tier 1–2, a
+prerequisite of it, or unblocks work it does not — and there is no row it beats.
+
+**The knowledge-freshness argument was weighed and rejected as a promotion.** 0026's measurement
+method and 0036's log design are both hot right now, which is tie-breaker 3 — but a tie-breaker only
+separates rows already tied on tier and on the earlier tie-breakers, and none of the rows above are.
+What freshness did earn is the *Notes & decisions* inventory in the item: what
+`harvest-usage.sh` already computes, what it does not (elapsed time), and the $6.01 / $4.45
+baseline — written down now so design and develop do not re-derive it in a month.
