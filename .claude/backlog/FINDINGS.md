@@ -925,3 +925,21 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   suite's assertion shape is described: for a ladder, the branch is pinned by its *wording*, and
   only the ladder's last arm is pinned by its outcome (pointer: tests/next.test.sh AC9 block,
   skills/queue/templates/next `--drive` phase A, testing-conventions.md).
+
+- 2026-08-25 — **A collision with a *live `verify` claim* corrupts that session's verdict, which is a
+  strictly worse failure than the commit conflict the file-scope rule is written against — and
+  nothing says so.** `./next develop` offered `TAKE 0007` (the only takeable `develop` row: 0006,
+  0008, 0039, 0040, 0003, 0004 all genuinely blocked, 0037 held) against `0038 [e1cb]
+  touches: skills/queue/templates/next tests/next.test.sh`, claimed ninety seconds earlier. Three of
+  0007's `expects:` are that same scope — both those paths plus `.claude/backlog/next`, which
+  `tests/backlog-scripts-installed.test.sh` AC2 forces byte-identical to the template. The existing
+  stall entries above name the hazard as the pathspec commit carrying the other session's edits;
+  here the held ticket is at **`verify`**, so the hazard lands earlier and harder — a QA pass runs
+  the suite, and edits to `tests/next.test.sh` or the script under it make e1cb's verdict a
+  statement about a tree that was never a commit, with nothing in either session's output revealing
+  it. `CONCURRENCY.md` says `verify` "marks its verdict advisory on changes outside the ticket",
+  which is the reverse case (verify noticing develop's work) and offers develop no rule for this
+  one. Also the second whole-stage stall in a single day on a different file pair, which makes the
+  degenerate stage-wide lock this repo's normal operating mode rather than an incident (pointer:
+  references/CONCURRENCY.md *The working tree is shared too* and *A stage writes only the ticket it
+  holds*, skills/develop Step 1, items/0007, items/0038).
