@@ -236,3 +236,57 @@ better than simply deferring 0026.
 
 **0021's fate is now settled by 0026 as amended.** Its re-spec was noted above as possibly mooted by
 0026's result. That still holds, and the result now arrives without waiting on a fresh project.
+
+---
+
+## 0036 became a project — 0038, 0039, 0040 ranked — 2026-08-25
+
+0036 was routed back to `queue` on its own recommendation (see the item's *Notes & decisions*) and
+is now a project. **Its row has left `QUEUE.md`**; the three slices carry the stages.
+
+**0038 takes 0036's exact slot — below 0034, above 0035 — on the re-specification rule that the
+work is worth what it was worth.** Nothing about the ranking argument recorded above changed;
+the *unit* changed. Slicing produced no new information about the value of the top slice, and
+re-ranking on a re-spec is how a stack rank reshuffles for free.
+
+**The promotion argument for 0038, considered and rejected.** `./next --findings` fixes a count
+this repo already knows is wrong: `MEASUREMENT.md` publishes 26 and 28 in adjacent sentences
+against a format-tolerant 42, so every count taken by hand off the obvious grep is low. That is
+Tier 2 language — a wrong number being copied into new documents. It was rejected for two reasons.
+Nothing consumes the count today, so no gate is mis-firing while it sits; and the wrong figures
+are already published and already known, which makes them a documentation defect with a home
+rather than damage accruing. Recorded rather than dropped, because it is the argument that would
+promote 0038 the moment 0039 exists and something actually gates on the number.
+
+**0039 and 0040 are ranked below 0008 and above 0003.** Three pairwise comparisons decided it:
+
+- **vs 0035** — 0035 wins on tie-breaker 2. It unblocks 0037; 0039 unblocks only 0040. (0035 is
+  `in-progress` under a token this session did not mint, so its line was not moved either way.)
+- **vs 0007** — 0007 wins on tie-breaker 2. Closing it releases 0006 *and* 0008; and this repo's
+  own `QUEUE.md` header still documents the claim-directory scheme as current fact, corrected
+  in place, which 0007 owns removing.
+- **vs 0008** — 0008 wins, and this is the one that is not obvious. 0008 is the last of a
+  `ships: together` group (0002), and 0002's own note is that fields with no reader, a reader with
+  no rules, or rules citing a shape that has not landed each deliver nothing alone. Leaving 0008
+  unshipped strands 0005, 0007 and 0006 in a half-migrated backlog with two sessions reading
+  different conventions — a Tier 2 cost that accrues, against 0039's Tier 4 value.
+- **vs 0003 / 0004** — 0039 wins. Those are Phase 2 and Phase 3 of 0001, whose Phase 1 is not
+  done; 0039 is the capability Aaron asked for, with its design settled and written down today.
+  Tie-breaker 1 does not separate them (both are one project), so tie-breaker 3 decides: 0039's
+  mechanism is fresh and its re-derivation cost is the one thing slicing could not reduce.
+
+**0040 sits directly below 0039, and that placement is an argument rather than dependency order.**
+0039 shipped without 0040 is a runnable unattended loop with no lock policy and a guessed spend
+cap — and a stage killed holding `.claude/backlog/.lock/` blocks every future claim and close in
+the repository, not just the run's. Letting 0040 drift down the queue is the same mistake as
+splitting a fix from the regression guard that stops it returning.
+
+**The 0006 collision was resolved as a requirement, not a `blocked_by`.** 0038 and 0006 overlap on
+`.claude/backlog/next`, `skills/queue/templates/next` and `tests/next.test.sh`, and 0006 exists
+because fixed-index parsing silently reports wrong values when a column moves — so 0038 written
+against fixed indices would add a second reader for 0006 to rewrite and a second chance to be
+silently wrong in the interim. **This repo's own argument for doing 0007 before 0006 —** *the
+reader is written once against the final column set* **— applies here in reverse.** Blocking 0038
+on 0006 would sink the top slice behind a two-hop blocked chain for a few lines of parsing, so
+0038 gained FR18 and AC28 instead: the new modes resolve columns by header name from the start.
+Either order then works, which is the test for `relates` rather than `blocked_by`.

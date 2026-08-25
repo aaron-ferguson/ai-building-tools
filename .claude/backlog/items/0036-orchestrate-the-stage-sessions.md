@@ -2,37 +2,26 @@
 id: "0036"
 title: Orchestrate the isolated stage sessions from one supervising session
 type: feature
-next: queue
-status: in-progress
-qa_level: unit
-size: l
+next:
+status: active
 created: 2026-08-24
 source: user
+parent:
+ships: incrementally
 relates:
   - "0026"
   - "0027"
-expects:
-  - skills/orchestrate/SKILL.md
-  - skills/orchestrate/outcome.schema.json  # new — the single copy of the FR13 shape
-  - skills/verify/SKILL.md                  # AC20 only: relocate the evidence table
-  - skills/retro/SKILL.md                   # FR3 only: point the cadence at the config key
-  - skills/queue/templates/next
-  - skills/queue/templates/config.yml
-  - .claude/backlog/next
-  - .claude/backlog/config.yml
-  - tests/next.test.sh
-  - README.md
-  - .claude-plugin/plugin.json
-# `skills/develop/SKILL.md` was here and came OUT on 2026-08-24: the schema is supplied by the
-# invoker, so no stage skill has to describe the FR13 shape. See *Notes & decisions*, the second
-# amendment. develop is already over the skill-size goal with a recorded reason, so not reaching
-# into it is worth having.
-claimed_by: "3c9f"
-claimed_at: 2026-08-25T06:15:20Z
-touches:
 ---
 
-## Problem
+## Outcome
+
+One supervising session drives a bounded working session end to end. It dispatches `develop` and
+`verify` into their own contexts, advances each ticket on what the previous stage wrote to disk,
+stops at the findings gate to run a `retro`, and hands the release chain back to a human as a
+checklist. It claims no row, decides nothing a person should decide, and **its own context does not
+grow with the length of the run** — which is where 0009's central claim gets tested end to end.
+
+## Why this exists
 
 Project 0009 split the suite into one skill per session and moved the handoff onto disk. That
 removed the context cost — and moved it onto **the human**, who is now the only thing that knows a
@@ -85,468 +74,57 @@ cycles", which a design can be checked against. It also deletes the hardest prob
 back in scope, which the design question had assumed it could not — and what a trimmed stage outcome
 must carry to still be enough to orchestrate on. **Both were settled on 2026-08-24**; the decision,
 what it rejected, and the arithmetic behind it are in *Notes & decisions*, and the mechanism it fixed
-is what every acceptance criterion below is written against.
+is what every acceptance criterion in the three tasks is written against.
 
-## Functional requirements
+## Why `ships: incrementally`
 
-- **FR1 — Advance develop → verify.** When a stage session leaves a ticket at `next: verify,
-  status: ready`, the supervisor starts a **new context** that runs `verify` on that ticket. It does
-  not verify the ticket itself, for the reason `develop` Step 5 already gives: a stage must not
-  self-certify.
-- **FR2 — Advance verify → develop, one *gate* at a time.** When a ticket closes green (its row
-  reaches `DONE.md`), the supervisor starts a new context on the next takeable **gate** — the
-  topmost takeable `next: develop` row plus every other takeable `next: develop` row that shares its
-  `expects:` scope or its parent slice — chosen by the queue's rank and not by the supervisor's
-  judgement. **A gate, not a row**: `develop`'s own opening rule and `README.md`'s *One skill per
-  session* both make the unit a gate, because what a session batches away is the startup it pays
-  before writing a line. One session per row re-pays that per ticket and regresses the saving 0009
-  exists for. Amended from "row" on 2026-08-24 — see *Notes & decisions*.
-- **FR3 — The findings gate, counted by code and evaluated once.** When `FINDINGS.md` reaches the
-  configured threshold, the supervisor starts **no further stage session**, lets any running one
-  finish, and runs a `retro` context. Three things this has to pin that the first draft left as
-  prose, each of which is a way for the gate to be wrong rather than a detail:
-  - **The threshold lives in `config.yml`**, as a key, defaulted to `retro`'s stated cadence and
-    overridable per project. `retro`'s SKILL.md gets a pointer to the key rather than a second
-    number. A driver cannot read "eight entries or more, **or weekly** if the buffer fills slower —
-    whichever comes first": the time half has no fixture and no reading, so **the driver gates on
-    the count only**, and the weekly half stays what it is today, a human's judgement.
-  - **The count is a mode on `next`, not a grep.** `FINDINGS.md` uses two entry formats — `- <date>
-    — **lead.**` and `- **<date> — lead.**` — and the parked 2026-08-24 finding on exactly this says
-    every count taken off the obvious `^- 2026-` grep is low: `MEASUREMENT.md` published 26 and 28 in
-    adjacent sentences against a format-tolerant 42. A gate reading a number that is reliably too
-    low fires late, silently, and there is nothing to notice it with. So the count is `./next
-    --findings`, format-tolerant, and the format is pinned by a guard in the same change.
-  - **The gate is evaluated once per run.** `retro`'s own Step 6 parks findings, so a supervisor
-    that re-derives statelessly after a retro reads a still-over-threshold count and dispatches
-    another retro, which parks more. FR4 ends the run before this bites in the planned case; AC17's
-    resume path reaches it. One evaluation per run, and after the retro the run is over.
-- **FR4 — The run ends at the retro, and the release chain is handed over as a checklist.** The
-  supervisor runs the `retro` context, sees its edits committed, and stops there. It does not push,
-  bump the plugin version, install, or restart — it reports every remaining step of the chain `retro`
-  Step 5 names, each marked done or outstanding, so no step can go silently missing. The 2026-08-23
-  finding on the installed copy diverging from source at the same version number is why this is a
-  checklist and not a sentence.
-- **FR5 — Development resumes as a new run, started by a human.** There is no automatic resumption
-  across the release. The human bumps, reinstalls and starts a fresh supervised session, which picks
-  up from the backlog and FR10's log with **no conversational handoff** — so the requirement is what
-  the next run needs in order to continue cold, not the resumption itself.
-- **FR6 — The supervisor is interactive throughout.** The user can ask what is happening, redirect
-  it to a specific ticket, hold it, or stop it, at any point — including while a stage session is
-  running — and gets an answer without waiting for the current cycle to end.
-- **FR7 — The supervisor's own context is bounded, and the bound is two numbers plus a turn count.**
-  It reads disk signals and each stage's short structured outcome; it never ingests a stage session's
-  transcript or a stage skill's instruction file. **The two numbers are the per-turn floor and the
-  per-cycle growth, and they are not the same kind of thing** — which the first draft's single
-  "per-cycle ceiling" hid:
-  - **The floor** is what every turn re-sends before any run state exists: system prompt and tool
-    schemas, the project's `CLAUDE.md` and whatever it imports, and this skill. Measured
-    2026-08-24 for this repo: `CLAUDE.md` plus the imported `CONVENTIONS_CORE.md` is 2,645 words
-    (~3.4k tokens), the skill at the 20,190-byte size goal is ~5k, and the harness floor is
-    ~10–14k — call it **~20k per turn**, fixed before the first stage runs.
-  - **The growth** is what a cycle adds: one `--drive` decision (~100 tokens), one stage outcome
-    (~80), and the supervisor's own text. **~800 tokens per cycle.**
-  - **The turn count is the actual cost driver, and it is the only one this ticket can move.** Cost
-    is turns × floor. At three turns per cycle — dispatch, notification, report — and N ≈ 4–6, a run
-    is ~15 turns and **~350–400k cumulative input**, of which FR13's entire trim is ~0.1%. One
-    turn removed per cycle saves ~26k, **sixty times the whole trim.** So the requirement is a
-    **stated turns-per-cycle budget**, and the report turn is conditional on a state change rather
-    than automatic. Trimming payloads while paying an unbudgeted turn is optimising the wrong term.
-- **FR8 — Every transition the three stages can write is routed, and the default is to stop.** The
-  table below is the whole space, derived from the stage skills rather than from the happy path, and
-  it is the specification `./next --drive` implements. Anything not in it stops rather than
-  proceeding (FR8 is what AC10 tests).
+The three tasks are independently verifiable and land in dependency order. **0038 ships standing on
+its own**: `./next --drive` and `./next --findings` answer "what should happen next" and "how full
+is the buffer" from the backlog alone, which is useful to a hand-driven session before any
+supervisor exists, and it is testable with fixtures and no subprocess. 0039 consumes that decision,
+and 0040 hardens the loop 0039 creates.
 
-  | From → to | Written by | Supervisor does |
-  |---|---|---|
-  | `develop` → `verify/ready` | develop S5.4 | dispatch `verify` |
-  | `verify` green → row to `DONE.md` | verify S5 / `./close` | dispatch the next gate |
-  | `verify` red → `develop/ready` | verify S5 | **escalate** — the bounce |
-  | stale contract → `queue/ready` | verify S5 | **escalate** |
-  | advisory PASS → stays `verify/ready` | verify S7 | **escalate** — else it re-verifies forever |
-  | row at `next: design` | queue, or develop S4 | **escalate** — a person decides |
-  | row at `next: queue` | verify S5 | **escalate** |
-  | **develop → `design/ready`** | **develop S4** | **escalate**, carrying the *Open design question* |
-  | **develop, tree not green → `develop/ready`** | **develop S5 tail** | **escalate** |
-  | **develop → `waiting`** | **develop S5 tail** | **escalate**, carrying *## Waiting on* |
-  | **develop → gains a `blocked_by`** | **develop S5 tail** | re-derive; `blocked` is never typed |
-  | close reconciles dependents `blocked`→`ready` | verify S5.3 | re-derive — new rows may be takeable |
-  | **ticket becomes a project; row leaves `QUEUE.md`** | queue | not an error, and not a loop |
-  | **nothing takeable at `develop`** | — | **end the run clean** — a success, not an escalation |
-  | foreign red tree · push required · anything unrecognised | — | **escalate** |
+**`incrementally` means each slice is separately verifiable, not that the project may stop
+anywhere.** The one sequencing mistake available here is shipping 0039 and stalling before 0040:
+that leaves a runnable unattended loop with no lock policy and a guessed spend cap — the exact
+hazard 0040 exists for, on a lock whose stranding blocks every claim and close in the repository,
+not just the run's. 0040 is ranked directly below 0039 for that reason and not merely by dependency
+order.
 
-  **The six bolded rows were missing from the first draft**, and five of them are the *unhappy*
-  endings of the stage the supervisor dispatches most. Three land the ticket back at `next: develop`,
-  which trips the same-stage-twice guard below — the correct outcome, and it means **the ordinary
-  red-tree ending halts the run.** Said here rather than discovered on the first run.
+## Slices
 
-  **Which `status:` is authoritative, because there are two vocabularies and nothing pinned one.**
-  `./next` reads Status from the `QUEUE.md` column (`ready|waiting|blocked|in-progress`) and
-  `size`/`qa_level`/`expects` from item frontmatter — where the vocabulary is *different*: `active`
-  appears on projects, which have `next:` blank and no row at all, and `done` appears on closed
-  tickets. **The column is the authority for routing** and `--drive` reads it there; item
-  frontmatter is the authority for everything else. Fixtures and skill prose both say so, or AC9's
-  fixtures get written against one and the skill against the other.
+1. **0038 — `./next --drive` and `./next --findings`, and their fixtures.** FR3's counting half,
+   FR8's routing table, FR9's mode and exit-code contract, FR17's depth data. AC6 (counting half),
+   AC9, AC10, AC11, plus AC28–AC29 added at slicing time. **This is the slice to rank** — it is
+   where every decision that can be wrong the same way twice actually lives, and the rest is
+   instructions.
+2. **0039 — the `orchestrate` skill and `outcome.schema.json`.** FR1, FR2, FR3's gating half,
+   FR4–FR7, FR10–FR14, FR17's reporting half, and the README change. AC1–AC5, AC6's gating half,
+   AC7, AC8, AC12–AC24, AC27. Blocked by 0038 for its routing probe.
+3. **0040 — the lock policy and the budget-kill recovery.** FR15, FR16. AC25, AC26. Hardening on a
+   loop that has to exist first; blocked by 0039.
 
-  **The same-stage-twice guard needs an intervening outcome, or it blocks the resume AC17 promises.**
-  A supervisor killed after dispatch but before the stage claimed leaves the row `ready`; AC17's
-  stateless derivation re-dispatches it; a naive guard then sees the same ticket at the same stage
-  twice and escalates the recovery. So the guard is **same ticket, same stage, with a completed
-  outcome in between** — which is a fact only the FR10 log holds. **This is the one exception to
-  "nothing routes on the log", and it is stated as an exception rather than left to collide:** the
-  log is read for *what already completed*, never for *what to do next*.
-- **FR9 — The code that decides is named and tested, not only described.** The routing rules above
-  are implemented as **`./next --drive`**, a new mode on the existing reader rather than a fourth
-  script: it answers "what should happen next" from the backlog alone, printing one decision with an
-  exit-code contract, and `tests/next.test.sh` drives it against fixtures. An FR describing a rule
-  with no code behind it leaves the prose current and the behaviour absent. **Why a mode and not a
-  script:** `next` already owns takeability, the `blocked_by` graph and the exit-code convention, and
-  0006, 0022 and 0031 are three separate tickets fixing that parsing in one place — a second copy is
-  how the two answers diverge without either being wrong.
+**FR and AC numbers are 0036's throughout and were not renumbered**, so the design decision and the
+review amendment below still resolve against the tasks that carry them.
 
-  **The exit-code contract, named — AC11 asserted it and nothing specified it.** `next` already
-  spends 0 (success, *including* "nothing is takeable"), 1 (drift, malformed) and 2 (usage error).
-  `--drive` needs four outcomes a caller can tell apart, so **"nothing to dispatch" cannot share 0
-  with "dispatch this"** — which is exactly the collision `./next <stage>` already has and gets away
-  with because a human reads the line. Proposed, to be fixed in the build and tested by AC11:
-  `0` dispatch this (the decision is on stdout) · `3` run complete, nothing takeable ·
-  `4` escalate (the reason is on stdout) · `5` findings gate reached, dispatch `retro` ·
-  `1`/`2` unchanged, so every existing caller and test keeps its meaning.
-- **FR10 — The supervisor's state survives its own session, and it survives by not being state.**
-  What it has started, what came back, every gate decision and every escalation land in an
-  append-only log — one JSON line per event, under `.claude/backlog/runs/` — as they happen. But a
-  resuming session derives **what to do next** from `./next --drive` and the backlog, never from the
-  log: the backlog *is* the state, and the only fact not already on disk — how many findings have
-  accrued since the last retro — is `FINDINGS.md`'s own entry count, which is derived rather than
-  stored. **The consequence is the requirement:** a crash mid-run and FR4's planned ending resume by
-  the identical path, and there is no run state that can go stale or disagree with the backlog. The
-  log is provenance and the human's record, and nothing routes on it. The supervising conversation is
-  the one thing in this design guaranteed to end — FR4 ends it deliberately.
-- **FR11 — The supervisor claims nothing and holds no row.** Stage sessions claim and release their
-  own rows, per `CONCURRENCY.md` *Claim tokens*. Two consequences the design must handle rather than
-  discover: a supervisor holding rows it is not working is the scope reservation *The working tree
-  is shared too* forbids, and a supervisor holding none is invisible to every ownership check built
-  on rows and tokens — the same blind spot `retro` Step 5 records for itself.
-- **FR12 — Only one supervisor runs on a backlog at a time**, and a second one says so rather than
-  double-driving the queue.
-- **FR13 — Each stage ends with a trimmed, structured outcome, and that outcome is the supervisor's
-  only input from it.** Fields rather than prose. **The shape is a session envelope wrapping an array
-  of per-ticket outcomes, and it has to be** — the first draft said "*the* ticket" while AC4 puts two
-  or three tickets in one develop session, so a gate where one closes to `verify`, one hits a
-  decision and one leaves the tree red has three verdicts and one stdout object. Singular, it
-  reports one and silently drops two.
-  - **Envelope:** stage, session id, commits, cost, findings-parked count, escalation-or-null.
-  - **Per ticket, one entry each:** id, verdict, resulting `next:` and `status:`, detail pointer.
+## Cross-cutting commitments
 
-  **The schema is supplied by the invoker and lives in exactly one file** —
-  `skills/orchestrate/outcome.schema.json`. A stage is launched with
-  `claude -p --json-schema <that file>`, which validates at the tool-call layer, so stdout is the
-  object or the stage failed. Confirmed by running it, 2026-08-24: a three-field outcome came back as
-  64 bytes of JSON and nothing else.
-
-  **So no stage skill has to describe the shape, and none should** — the scope cut recorded in the
-  second amendment. The first draft had `develop`, `verify` and `retro` all "emit it in the same
-  shape" with a `tests/` assertion per file, which is three copies of a contract and the same
-  divergence FR9 refuses for `next`. One invoker-supplied schema is the single source, AC2 asserts it
-  at runtime where it actually matters, and the edits to three skill files — one of them already over
-  the size goal — do not happen. It also drops AC23's regression surface to nothing: a hand-driven
-  session is passed no schema and emits exactly what it does at 0.9.3.
-- **FR14 — Trimming the report moves detail to disk; it does not delete it.** Every kind of thing a
-  stage's report carries today that the supervisor will no longer read — the diagnosis behind a
-  bounce, the red that turned out to be another session's, the mechanism that surprised it — has a
-  named durable home first: *Notes & decisions*, `FINDINGS.md`, or the FR10 log. 0015's FR3 is the
-  precedent, and the reason it is quoted here: the invocation went, and every line of reasoning for
-  why the separate pass matters stayed.
-
-  **The fourth kind, and the one this list was missing: `verify` Step 7's evidence table.** Each AC
-  and NFR, how it was checked, the actual output. **That is a check, not a narrative** — it is the
-  paragraph that forces enumeration against real output rather than against memory, and it is the
-  largest thing a verify report carries. Replace it with `{"verdict":"pass"}` and the trim has
-  silently lowered what verify *does*, which *Out of scope* forbids and no criterion caught. So it
-  **moves into the item file**, where it belongs anyway as the QA record of a closed ticket, and the
-  FR13 detail pointer points at it. **What is genuinely deleted is the salutation** — the recap of
-  what was built and the closing "now run `/verify 0036` in a new session" — because in a supervised
-  run it is addressed to a human who is not there. In a hand-driven run it stays, untouched (AC23).
-
-- **FR15 — The lock has a policy, and the supervisor never breaks it.** `claim` and `close` take
-  `.claude/backlog/.lock/`, and the supervisor's whole job is launching processes that take it. **A
-  stage killed holding the lock blocks every future claim and close in the repo** — and two parked
-  findings already say the busy-lock procedure strands a close and that the protocol cannot be
-  satisfied by hand. The first draft did not mention the lock at all. The policy: the supervisor
-  takes the lock never, breaks it never, and **escalates on a lock older than a stated age**, naming
-  the process that should have held it from the FR10 log. Anything else has a driver silently
-  stealing a lock from a stage that is still working.
-
-- **FR16 — A stage killed by its own spend cap is a recoverable state, not a discovered one.**
-  `--max-budget-usd` is the blast-radius control AC19 requires, and it **creates** the nastiest
-  failure in this design: a stage killed mid-work leaves a claim held, a tree dirty, possibly the
-  lock taken, and a ticket half-built. AC16 covers the *supervisor* being killed, which is a
-  different and easier case — the tree is clean. So: the cap is **set from `cost_tracking:` history
-  rather than guessed** (this repo's observed figures are $4.45–$6.01 per closed ticket, so a gate of
-  three is not a $1 stage), an over-budget exit is one of FR8's escalations, and the escalation names
-  the claim, the dirty paths and the lock state. Orphan detection is not enough on its own: a dirty
-  tree is not something `./next --drift` can see.
-
-- **FR17 — A pre-flight depth report, before anything is dispatched.** The supervisor reports, in one
-  line and from one `--drive` read, how many takeable gates deep the backlog is and where it runs
-  dry — "two develop gates takeable; the next row after them is `next: design`." This is the honest
-  answer to ask 2 of the original request: it delivers *don't stop mid-session for unfinished design*
-  without automating a design decision, and it costs nothing, because the read happens anyway.
-  Without it the first supervised run halts on the first `next: design` row and reads as broken.
-
-## Non-functional requirements
-
-| Dimension | Requirement for this item | Convention |
-|---|---|---|
-| Security | An unattended loop is standing authority to run this project's configured commands, commit, push and replace the tooling it is running on. It acquires none of that beyond the cycle it is in, and the push and install of FR4 stop for explicit human approval — "ship it" earlier in the session is not that approval | `security-conventions.md` |
-| Observability | Every stage started, every outcome, every gate decision and every escalation lands on disk as it happens, with a timestamp. The supervising conversation is what dies; a decision that reached only the transcript is unrecoverable | `observability-conventions.md` |
-| Performance | FR7's ceiling is a stated number with the instrumentation shipping in the same change, and the measure is **cost per closed ticket** against 0026's observed baseline — not total spend, which a longer run always wins | `measurement-conventions.md` |
-| Dependencies | Whatever host-harness capability the mechanism rests on is a new dependency for a suite that is currently portable markdown and POSIX `sh`. Name it, and say what the suite does where it is unavailable — degrading to the hand-driven loop is an acceptable answer, silently not working is not | `dependency-conventions.md` |
-| Compatibility | Any signal the supervisor reads is a contract between the stages and the driver. Adding one must not change what a hand-driven session does, since the plugin is public at 0.9.3 and installed elsewhere | `api-conventions.md` |
-| Documentation | `README.md`'s *One skill per session* is the canonical statement of how this suite is run, and it currently says a person types the next command. It describes the supervised loop in the same change | `documentation-conventions.md` |
-
-## Acceptance criteria
-
-**Mechanism, fixed by the design decision:** a stage session is a separate `claude -p` process
-launched in the background by the supervisor, returning a `--json-schema`-validated outcome on
-stdout. Every criterion below is written against that mechanism.
-
-**The invocation, corrected 2026-08-24 — `--bare` is disqualifying and the first draft named it.**
-`claude --help` on this machine: *"`--bare` Minimal mode: skip hooks, LSP, plugin sync, attribution,
-auto-memory, background prefetches, keychain reads, and **CLAUDE.md auto-discovery**. Anthropic auth
-is strictly `ANTHROPIC_API_KEY` or `apiKeyHelper` (**OAuth and keychain are never read**)."* Two
-consequences, either one fatal:
-
-- **No CLAUDE.md discovery means no conventions.** `config.yml` makes the conventions path required
-  and says these tools "carry no standards of their own and will stop rather than guess." A `--bare`
-  develop session is a session *building without the conventions* — the single thing this suite
-  exists to prevent — and it would pass every test in `tests/`, because nothing greps a subprocess's
-  loaded context.
-- **Auth becomes an API key in the loop's environment**, on a billing path separate from the
-  supervising session. That breaks AC14's arithmetic (two rate sources under one figure) and puts a
-  secret in the environment of an unattended loop for no gain.
-
-So: **plain `claude -p`, no `--bare`.** Everything AC1 wants — plugin skill resolution, CLAUDE.md,
-OAuth — comes from not passing it. Three flags the invocation does need, all confirmed present:
-`--add-dir ../ai-building-conventions`, or AC19's narrow scoping blocks the stage from reading the
-conventions `config.yml` points it at; `--session-id <uuid>` **pre-assigned at dispatch**, so the
-transcript path is a dispatch-time fact in the FR10 log line rather than something a dead supervisor
-has to go hunting for; and `--setting-sources` stated explicitly rather than inherited.
-
-**AC1 — a stage runs as a separate process, and the skill and the conventions both resolve inside it.**
-Given a backlog with a takeable `next: develop` gate, when the supervisor dispatches it, then a
-`claude -p` process is launched with the `develop` skill invoked by name, it runs to completion in
-its own session, and the ticket it was given is left at `next: verify, status: ready` with its claim
-released. **And the stage's own outcome confirms it resolved the project's conventions** — a stage
-that silently ran without them is the failure `--bare` would have produced, so the schema carries a
-field for it and this AC checks it. *`--bare` appears nowhere in the invocation. This is the one fact
-the design pass could not check without consuming a real ticket, so it is an AC rather than an
-assumption.*
-
-**AC2 — the outcome is schema-validated, it is an envelope over an array, and it is all the supervisor gets.**
-Given a stage process that has finished, when the supervisor reads its result, then stdout parses as a
-single JSON object satisfying `skills/orchestrate/outcome.schema.json` — an envelope (stage, session
-id, commits, cost, findings-parked count, conventions-resolved, escalation-or-null) wrapping **one
-entry per ticket the stage handled** (id, verdict, resulting `next:`, resulting `status:`, detail
-pointer) — and the supervisor reads no transcript, no skill file and no other output of that process.
-**Given a gate of three tickets whose verdicts differ**, when the outcome is read, then all three
-appear with their own verdicts and none is dropped.
-
-**AC3 — a stage that will not produce the shape fails loudly.**
-Given a stage process whose final message does not satisfy the schema, when it exits, then the
-supervisor records an escalation and starts nothing further — it does not parse prose, infer the
-verdict, or proceed on a partial object.
-
-**AC4 — the dispatch unit is a gate.**
-Given three takeable `next: develop` rows of which two share an `expects:` path, when the supervisor
-dispatches develop, then both sharing rows go to **one** stage session and the unrelated row does
-not, and the session claims and closes each of the two individually.
-
-**AC5 — verify follows develop without the supervisor verifying anything.**
-Given a ticket the previous stage left at `next: verify, status: ready`, when the supervisor acts,
-then it dispatches a **new** `claude -p` process running `verify` on that ticket, and the supervisor
-itself runs no test and writes no verdict.
-
-**AC6 — the gate fires on a count that is right, lets the running stage finish, and fires once.**
-Given `FINDINGS.md` at one entry below the threshold in `config.yml` and a stage session running, when
-that stage returns and its parked findings cross the threshold, then the supervisor starts no further
-stage session, dispatches a `retro` process, and the crossing is one line in the run log.
-**Given a fixture holding both entry formats** — `- <date> — **lead.**` and `- **<date> — lead.**` —
-when `./next --findings` counts it, then the count includes both, and a format guard fails on any
-third shape. **Given a completed retro whose own Step 6 parked entries that leave the count still
-above the threshold**, when the supervisor acts, then it does **not** dispatch a second retro: the
-gate is evaluated once per run and the run is over.
-
-**AC7 — the run ends at the retro, as a checklist.**
-Given a `retro` process that has returned with its edits committed, when the supervisor reports, then
-it stops, and its report enumerates every remaining step of `retro` Step 5's release chain each
-marked done or outstanding. No push, no version bump, no install, no restart, and no further stage.
-
-**AC8 — no push and no install without an explicit approval in that session.**
-Given a supervised run of any length, when the run ends, then `git push` has not run, the plugin
-version has not changed and no install has happened — unless the user approved that specific action
-in that session. "Ship it" earlier in the session is not that approval.
-
-**AC9 — every row of FR8's table is routed as the table says, with one fixture each.**
-Given a backlog in each FR8 state in turn — verify bounce, `next: design`, `next: queue`, stale
-contract, foreign red tree, `waiting` top row, genuinely `blocked` top row, **advisory PASS**,
-**develop→`design`**, **develop→`develop` on a red tree**, **develop→`waiting`**,
-**develop→new `blocked_by`**, **a row that left `QUEUE.md` because its ticket became a project**,
-**nothing takeable at `develop`**, and **the same ticket reaching the same stage twice with a
-completed outcome in between** — when `./next --drive` is run against that fixture, then it prints
-the decision FR8's table names and exits with that outcome's code. Specifically: in the
-advisory-PASS case it does **not** print `verify <id>` again; in the nothing-takeable case it exits
-**run-complete and not escalate**; in the became-a-project case it neither errors nor loops; and in
-the same-stage-twice case, **given the same backlog with no completed outcome in the log**, it
-dispatches rather than escalating — the recovery path AC17 promises.
-
-**AC10 — anything unrecognised stops rather than proceeding.**
-Given a backlog state matching no routing rule, when `./next --drive` is run, then it escalates
-rather than falling through to a default action.
-
-**AC11 — the probe is a mode on `next`, the codes are the named ones, and both are tested.**
-Given the fixtures above, when `tests/next.test.sh` runs, then it exercises `./next --drive` for each
-routing outcome and each escalation, asserting the printed decision **and** the exit code against
-FR9's named contract — with `0` (dispatch) and the run-complete code asserted as **distinct**, since
-sharing 0 is the collision that makes "nothing to do" indistinguishable from "do this". Every
-pre-existing `next` exit code still means what it meant, and `./next --help` lists `--drive` and
-`--findings`.
-
-**AC12 — the supervisor stays answerable while a stage runs.**
-Given a stage process running, when the user asks what is happening, redirects the run to a specific
-ticket, holds it, or stops it, then the supervisor answers from the run log and the backlog without
-waiting for that stage to finish and **without polling** — no turn is spent on a check that reports
-no change.
-
-**AC13 — the bound is measured as growth and turns, not as a ratio that cannot go red.**
-Given a completed multi-cycle run, when `tools/harvest-usage.sh` is run over the supervising session's
-transcript, then it reports **three** figures against FR7's stated numbers: the per-turn **floor**,
-the per-cycle **growth**, and **turns per cycle**. *The first draft asserted "the last cycle within
-tolerance of the first", which passes trivially — ~800 tokens of growth against a ~20k floor is
-inside any tolerance anyone would write, so it is a criterion that cannot fail and therefore proves
-nothing about FR13.* Growth is asserted as an absolute figure per cycle, turns per cycle against the
-budget, and all three land in the run log and the ticket's `cost_tracking:`.
-
-**AC14 — cost per closed ticket includes the supervisor's own spend.**
-Given a completed run, when the supervisor reports, then it states cost per closed ticket compared
-against this repo's observed figures — **$6.01 across all stages, $4.45 counting only develop and
-verify** (`MEASUREMENT.md`) — and not total spend, which a longer run always wins. **The
-supervisor's own spend is in the numerator.** It attributes to no ticket's `cost_tracking:`, so a
-figure summed from the stages alone omits the one cost this ticket adds, and would report a win that
-is partly just an unmeasured overhead. Sourced from each stage's `cost_tracking:` **plus** the
-supervising session's own harvest.
-
-**AC15 — the supervisor holds no claim and no row.**
-Given a run at any point, when the item files are inspected, then no `claimed_by:` token was minted
-by the supervisor, and every `in-progress` row corresponds to a stage process that is actually
-running.
-
-**AC16 — a supervisor killed mid-cycle leaves a backlog a hand-driven session can pick up.**
-Given a supervisor killed while a stage runs, when a hand-driven session then runs `./next`, then it
-is offered a takeable row, no claim is orphaned, no row reads `in-progress` with nothing running, and
-`./next --drift` exits zero.
-
-**AC17 — a resuming supervisor derives its position, and does not restore it.**
-Given a run log from a killed run, when a new supervisor starts, then it determines the next action
-from `./next --drive` and the findings count alone, and reads the log only for what already escalated
-and what the run has spent. A log deleted between the two sessions changes the next action not at
-all.
-
-**AC18 — a second supervisor refuses.**
-Given one supervisor active on a backlog, when a second is started on the same backlog, then it says
-so and starts no stage session.
-
-**AC19 — each stage gets the narrowest authority that works, for that stage only.**
-Given a dispatched stage, when its process is launched, then it is scoped to the tools that stage
-needs and given a spend cap, and `--dangerously-skip-permissions` appears nowhere. Authority does not
-outlive the process.
-
-**AC20 — the trim moved the detail, it did not delete it — and the evidence table survives.**
-Given each kind of content a stage's report carries today that the supervisor will no longer read —
-the diagnosis behind a bounce, the red that proved to be another session's, the mechanism that
-surprised it, **and `verify` Step 7's per-AC evidence table** — when the stage finishes, then that
-content is present in *Notes & decisions*, `FINDINGS.md`, or the run log, and the FR13 detail pointer
-points at where. **Specifically for the evidence table:** given a closed ticket, when its item file
-is read, then every AC and NFR appears with how it was checked and the actual output. A verify stage
-that returns a verdict without having written that table fails this criterion — the table is the
-check, and the trim is to the salutation.
-
-**AC21 — the loop surfaces what the run learned.**
-Given a completed cycle, when the supervisor reports it, then the report carries the findings-parked
-count for that cycle. This is the only signal left that the run is learning anything, because FR13
-removed the narrative it would otherwise have come from.
-
-**AC22 — where the CLI cannot be invoked, it degrades visibly, and the probe is a real dispatch.**
-Given a host where the supervisor cannot launch a `claude` subprocess, when it starts, then it says so
-and falls back to naming the commands for a human to run — today's behaviour — rather than appearing
-to drive a loop it is not driving. **The detection is a startup probe that actually dispatches**: a
-trivial `claude -p --json-schema` no-op returning a fixed object, checked before the first real stage.
-`command -v claude` is not the check — the failure modes that matter are an unauthenticated CLI and
-whatever a nested session is or is not permitted to do, and both look like a present binary. **The
-nested-dispatch question is the untested premise under AC1**, so the probe is what makes it fail in
-one cheap second rather than halfway through a real ticket.
-
-**AC23 — a hand-driven session is entirely unaffected.**
-Given the whole change installed, when a session runs `develop` or `verify` by hand with no
-supervisor, then **its behaviour is what it was at 0.9.3**, and every existing test still passes. *The
-first draft said "apart from the FR13 outcome it now also emits"; that clause is gone with FR13's
-scope cut — the schema is invoker-supplied, so a hand-driven session is passed none and emits its
-ordinary report.* The one intended change to a stage skill is `verify` writing its evidence table to
-the item file (AC20), which is a hand-driven improvement rather than a supervised-only one.
-
-**AC25 — the supervisor never takes or breaks the lock.**
-Given a run at any point, when `.claude/backlog/.lock/` is inspected, then it was never created by the
-supervisor and never removed by it. **Given a lock older than the stated age with no live stage
-process**, when the supervisor acts, then it escalates, naming the lock's age and the process from the
-FR10 log that should have held it — and dispatches nothing.
-
-**AC26 — a stage killed by its spend cap leaves a state the escalation describes.**
-Given a stage dispatched with a cap it exceeds mid-work, when it is killed, then the supervisor
-escalates with the ticket's claim token, the dirty paths, and the lock state named — and starts
-nothing further. Given that escalation, when a human follows it, then no information needed to
-recover is only in the dead stage's transcript. **And the cap itself is derived, not guessed:** it is
-set from `cost_tracking:` history for the stage and gate size, and the derivation is stated where the
-number is.
-
-**AC27 — the pre-flight depth report happens before the first dispatch.**
-Given a supervised run starting, when it reports, then it states how many takeable gates deep the
-backlog is and what stops it — in one line, from the `--drive` read it makes anyway, and **before**
-any stage process is launched.
-
-**AC24 — the documentation says how the suite is actually run.**
-Given the change, when `README.md`'s *One skill per session* is read, then it describes the
-supervised loop alongside the hand-driven one, and no longer implies a person typing the next command
-is the only path.
-
-## QA plan
-
-- **Level:** unit — this project's suite is the shell scripts in `tests/`, each self-contained
-  (`config.yml`).
-- **Why this level:** the supervisor's failure mode is **silently driving the wrong thing** — the
-  wrong ticket, past a red, past the findings gate — and prose cannot be red. FR9's routing probe
-  takes a backlog as input and produces one decision, which is exactly the shape `next.test.sh` and
-  `close.test.sh` already drive against fixtures. Setting this level at queue time is a **constraint
-  on the answer, not a prediction of it**: a mechanism whose decisions cannot be exercised by a
-  fixture-driven test is disqualified, and if design concludes otherwise it re-opens this field with
-  its reason rather than quietly dropping to `verify`. **Design confirmed this level rather than
-  re-opening it, 2026-08-24:** the chosen mechanism puts every routing decision in `./next --drive`,
-  which takes a backlog fixture and prints one decision with an exit code — the exact shape
-  `next.test.sh` already drives. The constraint set at queue time did its job: a mechanism whose
-  decisions lived only in the supervisor's judgement would have failed it.
-- **Specific checks:** the whole suite (`for t in tests/*.test.sh`), and specifically —
-  - **A fixture per row of FR8's table**, fifteen of them, each asserting the printed decision and
-    the exit code (AC9, AC11). The four develop-side unhappy endings and the two loop hazards are the
-    ones with no precedent in the existing tests, so they are the ones to write first.
-  - **The gate boundary in both directions**: the cycle at the threshold, the cycle after it, and the
-    post-retro fixture that must *not* re-fire (AC6).
-  - **A `--findings` fixture holding both entry formats**, plus a format guard that fails on a third
-    (AC6). This is the count the whole gate rests on and today it is a grep that under-reports.
-  - **A schema fixture** for `outcome.schema.json`: a gate of three tickets with three different
-    verdicts validates, and a singular object does not (AC2).
-  - **Exit-code regression**: every pre-existing `next` invocation still returns what it returned,
-    since `--drive` adds codes to a script three other tickets already depend on (AC11).
-  - **`tests/skill-size.test.sh` unchanged in scope.** *The first draft widened it to three existing
-    skill files because FR13 edited them; FR13's scope cut removed that, so the guard covers the new
-    skill and the two one-line edits and nothing more.* `develop` is not touched at all.
+- **No rule is dropped anywhere in this project.** 0009's commitment, inherited unchanged. FR13
+  changes what a stage *reports*; the trim is to a stage's closing narrative, never to a check, a
+  test or a standard. `verify` Step 7's evidence table is a check and moves rather than going.
+- **Routing lives in exactly one place.** The FR8 table is implemented by `./next --drive` (0038)
+  and by nothing else. No skill restates a routing rule — the same argument FR9 makes for not
+  writing a fourth script, and the reason `develop`, `verify` and `retro` are untouched.
+- **Nothing routes on the run log**, with one stated exception rather than a collision left to be
+  discovered: 0038's same-stage-twice guard takes *a completed outcome in between* as an input, and
+  only the log holds that fact. The log is read for **what already completed**, never for **what to
+  do next**.
+- **The hand-driven loop keeps working, unchanged, at every slice boundary.** The plugin is public
+  and installed on backlogs that will not migrate on our schedule; a session running `develop` or
+  `verify` by hand behaves as it did at 0.9.3 after each of the three tasks.
+- **The supervisor holds no claim and takes no lock.** Every ownership mechanism in this suite is
+  built on rows and tokens; a driver that holds neither is invisible to all of them, which is a
+  constraint on the design rather than a convenience.
 
 ## Out of scope
 
@@ -924,3 +502,48 @@ under `.lock/`, so `touches:` reserved nothing and no row was held while this wa
 
 **Aaron chose this route on 2026-08-25**, over building the ticket whole in one session, when the
 `develop` session put both options to him at claim time.
+
+### Sliced into three tasks and made a project, 2026-08-25 — by `queue`
+
+Aaron asked for the update; the slicing is the one the review amendment recommended and the routing
+section above names, taken unchanged into **0038**, **0039** and **0040**. What follows is what
+slicing decided that the recommendation did not.
+
+**This ticket is now a project and its row has left `QUEUE.md`.** `next:` is blank, `status:
+active`, and it is never ranked, claimed or built. Its FRs and ACs **moved** into the three tasks
+rather than being copied — a copy left here would drift the first time either side is edited, and
+`verify` would then check the stale one. What stayed is the outcome, the coupling, the cross-cutting
+commitments, the *Out of scope*, and the design record below, all of which the three tasks cite
+rather than restate.
+
+**FR and AC numbers were not renumbered.** Each task carries 0036's numbers and says so, because
+`RANKING.md`, the commit history and the review amendment all reference them; contiguity in a
+task's own list is worth less than a reference that still resolves.
+
+**0038 inherits this ticket's rank exactly** — below 0034, above 0035, Tier 4 — on the
+re-specification rule that the work is worth what it was worth. 0039 and 0040 are ranked below
+0008 on tie-breaker 2, and the argument is in `RANKING.md`.
+
+**Two requirements were added at slicing time and are not in the record above** — 0038's **FR18**
+(the new `next` modes resolve columns by header name, never by index) and its **AC28**. The reason
+is a file-scope fact only slicing surfaced: 0038's `expects:` and **0006**'s overlap on
+`.claude/backlog/next`, `skills/queue/templates/next` and `tests/next.test.sh`, and 0006 is the
+ticket that exists because fixed-index parsing silently reports wrong values when a column moves.
+`RANKING.md`'s existing argument for doing 0007 before 0006 — *"the reader is written once against
+the final column set"* — applies here in reverse. The cheap resolution is a requirement rather than
+a `blocked_by`: written header-name-first, the new modes give 0006 nothing extra to rewrite, and
+0038 does not sink behind a two-hop blocked chain. **`relates: 0006` on 0038, not `blocked_by`** —
+either order works, which is the test.
+
+**0038's AC29 carries FR17's data half** so the pre-flight depth report has a source; it costs
+nothing because the `--drive` read happens anyway.
+
+**0039 is `size: l`, and that is the ceiling rather than a description**, so it is the slice to
+watch. It was not split a fourth way because the recommendation named three and inventing a fourth
+would rank a seam nobody has hit yet — but the seam to try first is recorded in 0039's
+*Notes & decisions*: the schema and dispatch mechanics (AC1–AC5) away from the run-lifecycle
+requirements (FR4–FR7, FR10, AC13–AC18), which is where its QA plan already falls.
+
+**0027 has closed since the note above was written**, so the three scripts are installed in this
+repo's own backlog and 0038 can be exercised here directly. The `relates: 0027` entry stays as
+provenance.
