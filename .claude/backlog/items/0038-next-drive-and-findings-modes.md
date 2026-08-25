@@ -2,8 +2,8 @@
 id: "0038"
 title: Add the drive and findings routing modes to next
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -17,16 +17,10 @@ expects:
   - .claude/backlog/config.yml
   - skills/queue/templates/config.yml
   - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
-claimed_by: "0092"
-claimed_at: 2026-08-25T06:26:46Z
+  - README.md               # not predicted: line 208's test inventory names next's modes
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next          # the implementation; the template is the source
-  - .claude/backlog/next                 # the byte-identical copy, per backlog-scripts-installed
-  - tests/next.test.sh                   # the fixtures
-  - skills/queue/templates/config.yml    # findings_threshold, with the comment naming its reader
-  - .claude/backlog/config.yml           # the same key for this repo
-  - skills/retro/SKILL.md                # FR3: a pointer to the key, not a second number
-  - README.md                            # new to expects: line 208's test inventory names next's modes
 ---
 
 ## Problem
@@ -217,6 +211,48 @@ lives here.
   judgement (FR3).
 
 ## Notes & decisions
+
+### Built 2026-08-25 — what the implementation turned up
+
+- **FR18 is bigger than the index variables, and this is the part `0006` will miss.** Converting a
+  mode to header-name parsing looks like replacing `ID=2; TITLE=3; NEXT=4; STATUS=5` with four
+  `column_named` calls. It is not: `rows()` recognised the header and separator lines by testing
+  whether **cell 2** held `ID`, so under a reordered table it emitted the *header row itself as a
+  data row* — every mode then routes on a row whose Next cell reads `Next`. `row_for`, `all_ids` and
+  `ids_where` had the same literal `$2`. All four now take the resolved column. `0006` inherits a
+  working example; what it must not inherit is the assumption that the indices were the whole job.
+
+- **The advisory-PASS assertion holds with the guard deleted, and that is not a reason to relax it.**
+  `assert_rc 4` + `assert_not_contains DISPATCH` passes against a `--drive` with the
+  `lnext = lstage` branch removed, because the phase-A ladder's final `else` escalates anyway. So
+  those two assertions do not pin the guard — the **pair** does: the same backlog must escalate with
+  `--completed` supplied and dispatch without it. The mutation that proves it is the *naive*
+  implementation (dispatch whenever `lnext = verify`, which is what a driver routing on `next:`
+  alone would do), and against that the case reds on five assertions. This is the conventions'
+  "a guard that is wired and still cannot fail", arriving from the direction where the code is
+  right and the test is merely not evidence. Anyone adding a row to FR8's table will reach for the
+  same assertion shape; assert the pair, and mutate to the plausible wrong implementation rather
+  than to the absent one.
+
+- **Phase A's ladder order is load-bearing and deliberately not alphabetical.** `waiting`, `design`
+  and `queue` are tested *before* the same-stage guard, and an acquired `blocked_by` before it too.
+  Reorder them and `develop` writing `waiting` on a row still at `next: develop` gets reported as
+  "same ticket, same stage" — technically true, and it throws away the `## Waiting on` question that
+  is the only thing a person needs. Same for a row that gained a blocker: that one is not stuck at
+  all, it is re-derivable, and escalating it stops a run that could have continued.
+
+- **Two routing decisions no AC pins, recorded so they read as chosen rather than accidental.**
+  (a) The findings gate is evaluated where a **new develop gate** would be dispatched, never before
+  a `verify` — a ticket already built is finished rather than abandoned mid-flight for a retro.
+  (b) The rank walk **halts** on the first row a person must act on rather than stepping over it the
+  way `./next develop` does. That is the behaviour the design pass already described — "the first run
+  halts on the first `next: design` row and reads as broken" — and AC29's depth line is what makes it
+  read as finished instead. Both belong to 0039 to *act* on; this slice only decides where they sit.
+
+- **A gate is one hop from its lead, not a transitive closure.** Grouping by "shares a parent or
+  overlaps `expects:`" chains: two unrelated efforts that both touch one common file would merge
+  into a single gate, and through it a third, until a gate is most of the backlog. One hop from the
+  lead row keeps the unit the one `develop` describes.
 
 - **The mechanism this implements was settled by `/design` on 2026-08-24 and corrected by Aaron's
   review the same day. Both live in `items/0036-orchestrate-the-stage-sessions.md`,
