@@ -29,6 +29,25 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-25 — **`develop` Step 5.4 tells a session to clear `touches:`, which is where Step 1 told
+  it to record that `expects:` under-predicted.** Building 0038 turned up one file `expects:` had
+  not named (`README.md`); Step 1 says to declare it in `touches:` and say inline that it is new,
+  and Step 5.4 says to clear `touches:` on handoff — so following both deletes the only durable
+  record that the prediction was short, which is the signal Step 1 says "the next capture calibrates
+  on". Nothing in the skill says where it goes instead. This session moved the entry into `expects:`
+  with a `# not predicted` comment; if that is right, Step 5.4 should say so, because the default
+  reading loses it silently and no reader ever notices.
+
+- 2026-08-25 — **a review-checklist fix can change documented behaviour, which re-enters the TDD
+  cycle, and `develop` Step 5 puts the checklist after the tests are green with nothing said about
+  that.** Step 5.1's checklist caught three things 134 green assertions could not on 0038: exit codes
+  spelled at nine call sites, two functions nested three deep, and a flag that accepted a list while
+  reading one element. The first two were pure refactors and stayed green; the third *changed the
+  interface* (a second `--completed` is now a usage error) and therefore needed its own red-first
+  test, written after the "confirm green" step had already passed. Worth one clause in Step 5 saying
+  a checklist finding that changes behaviour goes back through red rather than shipping on the
+  strength of the earlier green.
+
 - 2026-08-25 — **a ticket that quantifies a file it does not own goes stale, and the stale numbers
   shaped its question.** 0035's Problem statement described `prototype` Step 5 as "three build
   procedures", which is the framing its whole design question rested on; re-measured, level 1 is 969
