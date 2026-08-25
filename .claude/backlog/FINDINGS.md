@@ -572,3 +572,15 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   somewhere nearby. Out of scope for 0032, whose FRs are the extraction window only (pointer:
   tests/batching.test.sh "AC4 — the statement carries a dated figure", items/0032,
   ai-building-conventions/testing-conventions.md "a guard that is wired and still cannot fail").
+- 2026-08-24 — **A row can be claimed between `./next develop` printing it and you claiming it, and
+  `develop` Step 1 has no line for that case.** `./next develop` offered `TAKE 0032`; by the time I
+  had read `items/0032-*.md` and started restating its contract, another session held it
+  (`claimed_by: "5864"`, committed). Nothing broke — `./claim` re-reads the row under the lock, which
+  is exactly *Re-read immediately before you write* doing its job — but I only noticed because the
+  harness happened to send a "QUEUE.md changed on disk" reminder. Without that I would have spent
+  Step 2 restating the contract for a ticket I did not hold, and discovered it at `./claim`. Step 1
+  reads as though the row `./next` prints is still there when you get to it; the ordering it should
+  state is **claim first, read the item file second** — the claim is two seconds and the item file is
+  the expensive read. Two sessions were live on this backlog at once when it happened, which is the
+  condition `CONCURRENCY.md` is written for, not an unusual one (pointer: skills/develop Step 1
+  "Select and claim the item", references/CONCURRENCY.md *Re-read immediately before you write*).
