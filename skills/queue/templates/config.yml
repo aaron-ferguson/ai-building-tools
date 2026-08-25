@@ -12,6 +12,14 @@ conventions:
 # Monotonic. capture claims this number for a new item, then increments it.
 next_id: 1
 
+# How many entries FINDINGS.md has to hold before a driver stops dispatching tickets and runs a
+# retro instead. Read by `./next --findings` (which reports it) and `./next --drive` (which gates
+# on it, exit code 5). The default matches retro's stated cadence of about eight entries; raise it
+# on a project whose tickets are about a product rather than about this tooling, where the rate is
+# inflated because every ticket surfaces a tooling defect. Only the COUNT is read — retro's "or
+# weekly if the buffer fills slower" has no fixture and stays a human's judgement.
+findings_threshold: 8
+
 # Commands qa runs per level. Omit a level the project genuinely doesn't have —
 # qa will refuse an item whose qa_level has no command rather than silently skip it.
 commands:

@@ -205,7 +205,7 @@ measure it. Run every guard:
 ```bash
 tests/claim.test.sh        # ./claim — locking, row parsing, refusals
 tests/close.test.sh        # ./close — ticking ACs, DONE.md, reconciling dependents
-tests/next.test.sh         # ./next — takeability, --waiting, --drift
+tests/next.test.sh         # ./next — takeability, --waiting, --drift, --findings, --drive
 tests/batching.test.sh     # develop and verify state the batching rule, not the old prohibition
 tests/skill-size.test.sh   # every skills/*/SKILL.md within its byte goal, or over it with a reason
 tests/reference-size.test.sh     # the same soft goal over references/*.md

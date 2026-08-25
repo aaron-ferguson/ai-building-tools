@@ -9,6 +9,13 @@ conventions:
 # Monotonic. queue claims this number for a new ticket, then increments it.
 next_id: 41
 
+# How many FINDINGS.md entries before a driver runs a retro instead of the next ticket. Read by
+# `./next --findings` and gated on by `./next --drive` (exit 5). Left at retro's stated cadence
+# deliberately, even though this repo's buffer is far past it: the rate here is inflated because
+# these tickets are *about* the tooling, so every one surfaces a tooling defect, and raising the
+# number to make the gate quiet would hide exactly what it exists to show (0036).
+findings_threshold: 8
+
 # Where work in this project is tracked.
 #   local — this backlog is the source of truth. May live in a public repo.
 #   jira  — Jira is the source of truth; this backlog holds a pulled slice, company policy

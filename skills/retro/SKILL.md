@@ -39,8 +39,11 @@ line; the same line from three sessions is a rule. **The system learns *more* un
 four findings in the measured run existed only in conversation.
 
 **It runs on a cadence, and it is not a lifecycle stage.** `retro` is not a `next` value, no skill invokes
-it, and it is not part of the per-ticket loop. Run it when **`FINDINGS.md` holds about
-eight entries or more**, or **weekly** if the buffer fills slower — whichever comes first. Running after
+it, and it is not part of the per-ticket loop. Run it when **`FINDINGS.md` holds
+`findings_threshold` entries or more** — the key in the backlog's `config.yml`, defaulted to about eight
+and read by `./next --findings`, so the number lives in one place rather than here as well — or
+**weekly** if the buffer fills slower, whichever comes first. Only the count is mechanical; "or weekly"
+has no reading and stays your judgement. Running after
 every ticket would mostly find nothing, and the cheapest nothing is the one not run: measured, `retro` cost
 **$5.50**, 36% of the run, at the lowest output per turn of any phase, because it ran last where context
 was largest.
