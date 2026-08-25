@@ -2,8 +2,8 @@
 id: "0038"
 title: Add the drive and findings routing modes to next
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -18,8 +18,8 @@ expects:
   - skills/queue/templates/config.yml
   - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
   - README.md               # not predicted: line 208's test inventory names next's modes
-claimed_by: "7bfd"
-claimed_at: 2026-08-25T06:56:26Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -274,3 +274,60 @@ lives here.
   first, this slice inherits the header-name helper and FR18 is free; if this lands first, 0006
   finds one fewer index-based reader. Either order works, which is the test for `relates` rather
   than `blocked_by`.
+
+### QA 2026-08-25 — FAIL: one of AC9's fifteen fixtures is absent, and the branch it would pin is free to break
+
+The suite is green (134 assertions in `next.test.sh`, 378 across `tests/*.test.sh`) and every other
+AC holds under mutation. One gap, found by the Step 3 mutation pass rather than by reading:
+
+- **The rank-walk `waiting` branch has no fixture.** AC9 names `waiting` top row and
+  `develop→waiting` as two of its fifteen, and they are two different code paths — `--drive` with
+  `--completed` reaches the phase-A branch (`next` line ~599), `--drive` with no completed outcome
+  reaches the rank-walk branch (~643). Only the phase-A one is tested (`next.test.sh:571`, which
+  supplies `--completed develop:0101`).
+
+  The mutation:
+
+  ```
+  -    if [ "$rstatus" = "waiting" ]; then
+  +    if false; then
+  ```
+
+  **`134 passed, 0 failed`.** Against a fixture with a `waiting` top row and a takeable row below it,
+  that mutation turns
+
+  ```
+  ESCALATE  0101 is waiting on a person and outranks everything below it
+            Aaron — which host holds the credential?      rc=4
+  ```
+
+  into `DISPATCH  develop 0101`, rc=0 — a driver dispatching a stage onto a row whose whole state
+  means a person has been asked a question. This is the ticket's own "a check that cannot be made to
+  fail leaves its AC unverified", so AC9 and AC11 (*each routing outcome and each escalation*) are
+  both unmet.
+
+  **The code is right; only the evidence is missing.** Both paths carry `## Waiting on` correctly —
+  verified by hand against a fixture. The fix is one fixture in the AC9 block: a `waiting` top row,
+  a takeable row beneath it, `--drive` with **no** `--completed`, asserting rc 4, `ESCALATE`, the
+  waiting question, and `assert_not_contains DISPATCH`. Assert the last one: without it the case
+  still passes with the branch deleted, because the rank walk would dispatch and `ESCALATE` would
+  simply be absent rather than wrong.
+
+- **Also resolve AC9's `foreign red tree`, which no fixture can express.** It is listed among the
+  fifteen, but a red tree is git state and `--drive` reads none — *Out of scope* is explicit that
+  nothing here launches a process or reads a stage's outcome. FR8's table groups it with
+  `push required · anything unrecognised`, and only that third clause is implementable here (AC10,
+  tested, red under mutation). Either add nothing and **amend AC9 to hand the first two clauses to
+  0039**, or say why they belong here. Left as-is, the next QA pass rediscovers the same ambiguity.
+
+**Not defects, recorded so the next pass does not re-derive them.** Three branches are also
+mutation-silent but preserve behaviour when removed, because a later `else` escalates anyway with a
+less specific message: phase-A `queue` (~608), phase-A `in-progress` (~603), and the verify-bounce
+branch (~613). Only the bounce is an FR8 row of its own, and `next.test.sh:491` does pin its outcome
+(rc 4 + `ESCALATE`) — just not its reason. Worth an `assert_contains` on the bounce wording next time
+that block is open; not worth a red on its own.
+
+**Copies:** `tests/next.test.sh` executes `skills/queue/templates/next`, and
+`.claude/backlog/next` is byte-for-byte identical to it — checked, so this repo's own backlog runs
+what was tested. The installed plugin at `0.9.3` still carries the pre-0038 script; releasing it is
+not this ticket's contract.
