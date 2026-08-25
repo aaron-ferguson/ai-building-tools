@@ -61,7 +61,7 @@ by the next commit. This paragraph described that design as current fact and was
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0026 | Measure the isolated workflow from the recorded sessions and record the verdict | verify | ready | 0009 |
+| 0026 | Measure the isolated workflow from the recorded sessions and record the verdict | verify | in-progress | 0009 |
 | 0029 | Reconcile close's definition of held with CONCURRENCY.md's | verify | ready | — |
 | 0031 | Strip YAML comments in next and claim's fm_list | verify | ready | — |
 | 0032 | Terminate batching.test.sh's paragraph window on a blank line | develop | in-progress | — |
