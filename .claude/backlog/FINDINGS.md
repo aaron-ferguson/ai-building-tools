@@ -1005,3 +1005,23 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   share, or records that design must set it** — and either way the skill should say which, because a
   cold session will otherwise guess and the guess is invisible (pointer: skills/queue Step 2 *Set
   `qa_level` now*, skills/queue/templates/item.md `qa_level:`, items/0041 QA plan).
+
+- 2026-08-25 — **The parked "mutate away as well as wrong" rule fixed *what* to mutate and left
+  *how the branch list is built* unfixed — so a loop-driven sweep still missed two decision sites,
+  both outside the list rather than inside it.** Enumerating `--drive`'s branches by reading its two
+  `if/elif/else` ladders gives eighteen and misses `findings_gate`, which calls `decide` twice from a
+  *helper above* the ladder: deleting its format guard leaves `147 passed, 0 failed` while a driver
+  dispatches on a count the script has already established is low — this ticket's own problem
+  statement, arriving through the driver path instead of the reporting one. Build the branch list
+  from **every call site of `decide`** plus every `NOTE`-and-continue, which is the set FR8's table
+  maps onto; control flow adjacency is not the criterion. **And the sweep needs a control, because a
+  failure count is evidence about the mutation before it is evidence about the test.** Two of my
+  twenty-six came back silent for no interesting reason — `STATUS="$(column_named Status || echo 5)"`
+  never fires the `||`, since awk exits 0 printing nothing, and renaming the modes on `usage()`'s
+  description lines leaves them in its synopsis line — both false gaps, caught only by re-running
+  the intended mutation. Symmetrically the previous pass recorded phase A's no-ticket branch as
+  pinned at "89 failures", which is a script that stopped parsing rather than a branch that was
+  deleted: a false confirmation, and it is why that branch reached a fourth pass unfixtured. Run one
+  no-op mutation as a control, and treat a zero or an implausibly large count as a claim about the
+  mutation until the behaviour is probed by hand (pointer: items/0038 *QA 2026-08-25 (third pass)*,
+  the mutate-away entry above it, testing-conventions.md *Prove a new guard fails*).
