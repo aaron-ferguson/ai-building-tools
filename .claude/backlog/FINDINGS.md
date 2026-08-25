@@ -29,6 +29,20 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-25 — **`verify` Step 1 has no outcome for "every row at my stage is already held", and
+  batching makes that a designed-for case rather than a rare one.** `./next verify` offered
+  `TAKE 0026`; about ninety seconds later all five `next: verify` rows were held by a single batched
+  pass that minted one token per row (`1a06c11`, five tokens in one commit subject). Nothing was at
+  risk: `./next` degraded well, printing `nothing is takeable at stage verify` above the CLAIMED
+  FILES block, and `./claim` re-reads under the lock and refuses an `in-progress` row. But Step 1
+  reads as though a row is always waiting — it covers refusing a row at the *wrong stage*, and
+  having *no backlog at all*, and this is neither. Stopping and reporting is the only correct move
+  and it is inferred, not written. Distinct from the 2026-08-24 `develop` entry at the foot of this
+  file, which is the *race* between offer and claim; this is the *empty stage* a correctly-batched
+  neighbour produces by design, and the harder the suite pushes batching the more often a second
+  verify session opens onto nothing (pointer: skills/verify Step 1, .claude/backlog/next,
+  references/CONCURRENCY.md *A stage writes only the ticket it holds*).
+
 - 2026-08-25 — **the `Co-Authored-By` trailer collapsed exactly when the skill-driven lifecycle took
   over the commit volume, and nothing noticed.** `git-conventions.md` requires the trailer in *all*
   AI-assisted commits. Every one of the 28 commits through 2026-08-20 carries it; of the 229 since
