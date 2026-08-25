@@ -3,7 +3,7 @@ id: "0034"
 title: Derive the advisory label from the paths the verdict rested on
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -11,8 +11,8 @@ source: agent
 expects:
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by:
-claimed_at:
+claimed_by: "ccfc"
+claimed_at: 2026-08-25T06:28:54Z
 touches:
 ---
 

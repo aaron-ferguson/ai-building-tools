@@ -61,7 +61,7 @@ by the next commit. This paragraph described that design as current fact and was
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0034 | Derive the advisory label from the paths the verdict rested on | verify | ready | — |
+| 0034 | Derive the advisory label from the paths the verdict rested on | verify | in-progress | — |
 | 0038 | Add the drive and findings routing modes to next | develop | in-progress | 0036 |
 | 0035 | Decide where conditionally-needed skill detail lives | verify | ready | — |
 | 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |
