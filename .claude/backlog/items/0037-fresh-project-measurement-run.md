@@ -3,7 +3,7 @@ id: "0037"
 title: Run the fresh-project end-to-end exercise against the settled configuration
 type: chore
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: l
 created: 2026-08-24
@@ -15,8 +15,8 @@ expects:
   - README.md
   - .claude/backlog/items/0009-one-skill-per-session.md
   - tests/measurement.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "a1aa"
+claimed_at: 2026-08-25T07:07:57Z
 touches:
 ---
 

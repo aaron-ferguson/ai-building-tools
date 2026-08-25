@@ -69,7 +69,7 @@ by the next commit. This paragraph described that design as current fact and was
 | 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
 | 0003 | Phase 2 — the readiness gate and outcome reviews | develop | blocked | 0001 |
 | 0004 | Phase 3 — extend tracker mirroring with hierarchy and standards | develop | blocked | 0001 |
-| 0037 | Run the fresh-project end-to-end exercise against the settled configuration | develop | ready | 0009 |
+| 0037 | Run the fresh-project end-to-end exercise against the settled configuration | develop | in-progress | 0009 |
 
 `develop` takes the topmost row that is `next: develop` and takeable — `ready`, or `blocked` with
 nothing left open in `blocked_by`, since the column is only a cache of the graph. If a higher row
