@@ -14,6 +14,8 @@ expects:
 claimed_by: "c2e9"
 claimed_at: 2026-08-25T02:36:40Z
 touches:
+  - skills/verify/SKILL.md
+  - references/CONCURRENCY.md
 ---
 
 ## Problem
