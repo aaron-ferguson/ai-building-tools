@@ -79,7 +79,7 @@ count_findings() {
 
 usage() {
   cat <<'USAGE'
-usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--completed <stage>[:<id>]]... | --help]
+usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--completed <stage>[:<id>]] | --help]
 
   ./next             counts by stage and by status, plus anything another session holds
   ./next <stage>     the first takeable row for that stage, and its size
@@ -91,7 +91,7 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--completed
                      how deep the backlog is, and a distinct exit code per outcome.
                      --completed <stage>[:<id>] says which stage just finished on which ticket.
                      That input is what tells a verify bounce from a fresh develop row, and a
-                     crash-recovery re-dispatch from a loop; repeat it to pass more than one.
+                     crash-recovery re-dispatch from a loop. Give it at most once.
   ./next --help      this
 
 Takeable means: `next` matches the stage and no `blocked_by` entry is still open. `blocked` is
@@ -430,6 +430,14 @@ fi
 #
 # Nothing here writes, takes the lock, or acts. It prints one decision.
 if [ "${1:-}" = "--drive" ]; then
+  # The four outcomes, named because a bare `decide 3` where `decide 4` was meant is a silent
+  # routing bug: a driver reads "run complete" and stops instead of asking a person. `--help`
+  # publishes the same numbers — that block and these four lines are the contract.
+  DISPATCH=0
+  RUN_COMPLETE=3
+  ESCALATE=4
+  FINDINGS_GATE=5
+
   read_threshold || exit 1
   shift
   COMPLETED=""
@@ -438,7 +446,11 @@ if [ "${1:-}" = "--drive" ]; then
       --completed)
         shift
         [ $# -gt 0 ] || { echo "--completed needs <stage>[:<id>]" >&2; usage >&2; exit 2; }
-        COMPLETED="$COMPLETED $1"
+        # One only. The guard needs *an* intervening outcome, not a history, and accepting a list
+        # while reading a single element is a trap for the caller. 0039 widens it if its run log
+        # ever needs to pass more.
+        [ -z "$COMPLETED" ] || { echo "--completed takes one <stage>[:<id>]; got a second: $1" >&2; exit 2; }
+        COMPLETED="$1"
         shift ;;
       *) echo "unknown argument to --drive: $1" >&2; usage >&2; exit 2 ;;
     esac
@@ -455,13 +467,26 @@ if [ "${1:-}" = "--drive" ]; then
     done
   }
 
+  # Is $1 one of the space-separated words in $2? The padding is what makes it exact — without it
+  # `docs/a` matches `docs/ab`. Ids and the paths in `expects:` carry no whitespace, which is what
+  # lets every list in this script be space-separated in the first place.
+  contains_word() {
+    case " $2 " in *" $1 "*) return 0 ;; esac
+    return 1
+  }
+
   paths_overlap() {
     for pa in $1; do
-      for pb in $2; do
-        if [ "$pa" = "$pb" ]; then return 0; fi
-      done
+      if contains_word "$pa" "$2"; then return 0; fi
     done
     return 1
+  }
+
+  # $1 minus $2. sh has no set type, so the difference is a loop rather than an operator.
+  without() {
+    for wid in $1; do
+      if ! contains_word "$wid" "$2"; then printf '%s ' "$wid"; fi
+    done
   }
 
   # The gate led by $1 out of the pool $2: the lead, plus every other takeable develop row sharing
@@ -512,13 +537,7 @@ if [ "${1:-}" = "--drive" ]; then
     while [ -n "$remaining" ]; do
       taken="$(gate_from "$(printf '%s' "$remaining" | awk '{ print $1 }')" "$remaining")"
       gates=$((gates + 1))
-      kept=""
-      for rid in $remaining; do
-        drop=0
-        for tk in $taken; do if [ "$rid" = "$tk" ]; then drop=1; fi; done
-        if [ "$drop" = 0 ]; then kept="$kept $rid"; fi
-      done
-      remaining="$(printf '%s' "$kept" | awk '{ $1 = $1; print }')"
+      remaining="$(without "$remaining" "$taken" | awk '{ $1 = $1; print }')"
     done
     printf 'DEPTH     %s develop gate(s) takeable; runs dry at %s\n' "$gates" "$(depth_stopper)"
   }
@@ -540,10 +559,10 @@ if [ "${1:-}" = "--drive" ]; then
     gbad="$(printf '%s\n' "$greport" | awk '/^COUNT/ { print $3; exit }')"
     if [ "$gbad" != 0 ]; then
       printf '%s\n' "$greport" | grep '^MALFORMED' || true
-      decide 4 "ESCALATE  FINDINGS.md carries an entry shape the count does not recognise, so the gate cannot be trusted — and a gate reading a low number fires late and silently"
+      decide "$ESCALATE" "ESCALATE  FINDINGS.md carries an entry shape the count does not recognise, so the gate cannot be trusted — and a gate reading a low number fires late and silently"
     fi
     if [ "$gcount" -ge "$THRESHOLD" ]; then
-      decide 5 "DISPATCH  retro — FINDINGS.md holds $gcount entries against a threshold of $THRESHOLD"
+      decide "$FINDINGS_GATE" "DISPATCH  retro — FINDINGS.md holds $gcount entries against a threshold of $THRESHOLD"
     fi
   }
 
@@ -571,33 +590,33 @@ if [ "${1:-}" = "--drive" ]; then
         elif [ -n "$(item_for "$lid")" ]; then
           printf 'NOTE      %s has an item but no row — a ticket that became a project; not an error and not a loop\n' "$lid"
         else
-          decide 4 "ESCALATE  $lid has no row in QUEUE.md and no item file — nothing recognises that state"
+          decide "$ESCALATE" "ESCALATE  $lid has no row in QUEUE.md and no item file — nothing recognises that state"
         fi
       else
         lnext="$(field "$lrow" "$NEXT")"
         lstatus="$(field "$lrow" "$STATUS")"
         lblockers="$(open_blockers_of "$lid")"
         if [ "$lstatus" = "waiting" ]; then
-          decide 4 "ESCALATE  $lid is waiting on a person after $lstage — only they can clear it
+          decide "$ESCALATE" "ESCALATE  $lid is waiting on a person after $lstage — only they can clear it
           $(waiting_on "$(item_for "$lid")")"
         elif [ "$lstatus" = "in-progress" ]; then
-          decide 4 "ESCALATE  $lid is still in-progress after $lstage completed — the claim was never released"
+          decide "$ESCALATE" "ESCALATE  $lid is still in-progress after $lstage completed — the claim was never released"
         elif [ "$lnext" = "design" ]; then
-          decide 4 "ESCALATE  $lid is at next: design after $lstage — a person decides
+          decide "$ESCALATE" "ESCALATE  $lid is at next: design after $lstage — a person decides
           $(design_question "$(item_for "$lid")")"
         elif [ "$lnext" = "queue" ]; then
-          decide 4 "ESCALATE  $lid went back to next: queue after $lstage — the contract is stale, and respecifying it is a person's call"
+          decide "$ESCALATE" "ESCALATE  $lid went back to next: queue after $lstage — the contract is stale, and respecifying it is a person's call"
         elif [ -n "$lblockers" ]; then
           printf 'NOTE      %s gained a blocker after %s (%s) — re-deriving rather than reading it as stuck\n' \
             "$lid" "$lstage" "$lblockers"
         elif [ "$lstage" = "verify" ] && [ "$lnext" = "develop" ]; then
-          decide 4 "ESCALATE  $lid bounced from verify back to next: develop — verify already decided whether the build or the contract was wrong, and re-developing blind spends a stage session rediscovering it"
+          decide "$ESCALATE" "ESCALATE  $lid bounced from verify back to next: develop — verify already decided whether the build or the contract was wrong, and re-developing blind spends a stage session rediscovering it"
         elif [ "$lnext" = "$lstage" ]; then
-          decide 4 "ESCALATE  $lid is still at next: $lstage after a completed $lstage — same ticket, same stage, with an outcome in between"
+          decide "$ESCALATE" "ESCALATE  $lid is still at next: $lstage after a completed $lstage — same ticket, same stage, with an outcome in between"
         elif [ "$lstage" = "develop" ] && [ "$lnext" = "verify" ] && [ "$lstatus" = "ready" ]; then
-          decide 0 "DISPATCH  verify $lid"
+          decide "$DISPATCH" "DISPATCH  verify $lid"
         else
-          decide 4 "ESCALATE  $lid is at next: $lnext / $lstatus after $lstage, which no routing rule covers"
+          decide "$ESCALATE" "ESCALATE  $lid is at next: $lnext / $lstatus after $lstage, which no routing rule covers"
         fi
       fi
     fi
@@ -621,26 +640,26 @@ if [ "${1:-}" = "--drive" ]; then
       continue
     fi
     if [ "$rstatus" = "waiting" ]; then
-      decide 4 "ESCALATE  $id is waiting on a person and outranks everything below it
+      decide "$ESCALATE" "ESCALATE  $id is waiting on a person and outranks everything below it
           $(waiting_on "$(item_for "$id")")"
     fi
     case "$rnext" in
       design)
-        decide 4 "ESCALATE  $id is at next: design and outranks everything below it — a person decides
+        decide "$ESCALATE" "ESCALATE  $id is at next: design and outranks everything below it — a person decides
           $(design_question "$(item_for "$id")")" ;;
       queue)
-        decide 4 "ESCALATE  $id is at next: queue — it has no acceptance criteria to build against, and specifying it is a person's call" ;;
+        decide "$ESCALATE" "ESCALATE  $id is at next: queue — it has no acceptance criteria to build against, and specifying it is a person's call" ;;
       verify)
-        decide 0 "DISPATCH  verify $id" ;;
+        decide "$DISPATCH" "DISPATCH  verify $id" ;;
       develop)
         gate="$(gate_from "$id" "$(takeable_develop)")"
         findings_gate
-        decide 0 "DISPATCH  develop $gate" ;;
+        decide "$DISPATCH" "DISPATCH  develop $gate" ;;
       *)
-        decide 4 "ESCALATE  $id is at next: '$rnext', which no routing rule covers — stopping rather than falling through to a default" ;;
+        decide "$ESCALATE" "ESCALATE  $id is at next: '$rnext', which no routing rule covers — stopping rather than falling through to a default" ;;
     esac
   done
-  decide 3 "COMPLETE  nothing takeable at develop — every row is done, blocked, or held by another session"
+  decide "$RUN_COMPLETE" "COMPLETE  nothing takeable at develop — every row is done, blocked, or held by another session"
 fi
 
 # --- ./next <stage> ---------------------------------------------------------------------------

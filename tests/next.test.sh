@@ -714,6 +714,11 @@ out="$(run_next --drive --frobnicate)" && rc=0 || rc=$?
 assert_rc "exits 2 — usage" "$rc" 2
 out="$(run_next --drive --completed)" && rc=0 || rc=$?
 assert_rc "a --completed with no value is a usage error" "$rc" 2
+# The guard needs an intervening outcome, not a history. Accepting a list while reading one element
+# of it is a trap for the caller, so a second is refused rather than silently dropped.
+out="$(run_next --drive --completed develop:0101 --completed verify:0101)" && rc=0 || rc=$?
+assert_rc       "a second --completed is a usage error" "$rc" 2
+assert_contains "and says which one it refused"         "$out" 'verify:0101'
 
 # --- AC28 — the new modes survive a column move -----------------------------------------------
 # 0006 exists because the pre-existing modes read fixed indices and report wrong values when a
