@@ -370,9 +370,15 @@ provide, the de-duplication log and the field mapping.
 `.claude/backlog/`** — enforced by what you stage, not by what you believe you edited:
 
 ```bash
+git add -N .claude/backlog/items/0007-*.md          # a file git does not know yet
 git commit -m "Capture 0007: <title>" -- \
   .claude/backlog/QUEUE.md .claude/backlog/items/0007-*.md .claude/backlog/config.yml
 ```
+
+**The `git add -N` is not optional**: the item file is the one capture just wrote, and a pathspec
+naming a path git has never seen fails the *whole* commit — queue rows included — with *"did not match
+any file(s) known to git"* (`CONCURRENCY.md`, *The git index is shared*). The retry happens while the
+lock is held and `QUEUE.md` is dirty, which is the worst moment to be improvising.
 
 The `--` and the explicit paths are the whole safety feature; **`git add` then a bare `git commit` is not
 a substitute** (`CONCURRENCY.md`, *The git index is shared*). It matters most here because capture
