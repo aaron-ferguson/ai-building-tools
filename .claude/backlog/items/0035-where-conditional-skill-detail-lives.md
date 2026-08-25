@@ -2,8 +2,8 @@
 id: "0035"
 title: Decide where conditionally-needed skill detail lives
 type: debt
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -11,8 +11,8 @@ source: agent
 expects:
   - tests/skill-size.test.sh
   - tests/reference-size.test.sh
-claimed_by: "5bec"
-claimed_at: 2026-08-25T06:11:29Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -44,10 +44,14 @@ direction stands; what was missing was the arithmetic that says where it applies
 - **FR1 — state the payback test once, in `tests/skill-size.test.sh`.** A block of `B` bytes carried
   in context for an `N`-turn session costs one cache write plus `N-1` cache reads; following a
   pointer instead costs one extra turn. With this repo's measured figures — 4.038 bytes/token,
-  $6.25/MTok cache write, $0.50/MTok cache read, $0.1028 per turn, ~30 turns per session
-  (`MEASUREMENT.md`) — one skipped read only pays for one fetch at **B ≈ 20,000 bytes**, and the
-  break-even share of runs that never follow the pointer is **p = 1 / (1 + B/20,000)**. Record the
+  $6.25/MTok cache write, $0.50/MTok cache read, $0.1028 per turn, ~37 turns per session
+  (`MEASUREMENT.md`) — one skipped read only pays for one fetch at **B ≈ 17,000 bytes**, and the
+  break-even share of runs that never follow the pointer is **p = 1 / (1 + B/17,000)**. Record the
   constant's derivation, not just its value, so it can be recomputed when turns or rates move.
+  **Corrected at build time, 2026-08-25, from `~30 turns per session` and `B ≈ 20,000`:**
+  `MEASUREMENT.md`'s "30" is its *session* count — it records 1,112 turns across 30 sessions, and
+  states at line 24 that a develop session averages 39 turns. The design pass read the session count
+  as the turn count. See *Notes & decisions*; the constant moved and no conclusion did.
 - **FR2 — state the two non-cost conditions alongside it.** Relocate only when (a) the estimated
   share of runs that skip the branch clears `p`, **and** (b) the content is not *mandatory* once its
   branch is taken. A mandatory step behind a pointer is a step that gets skipped, and no byte count
@@ -62,15 +66,17 @@ direction stands; what was missing was the arithmetic that says where it applies
   was considered and why it was rejected, per FR4:
   - `prototype` — Step 5's mass is not three equal procedures: level 1 is 969 bytes, level 2 is
     5,859, level 3 is 1,427, and the field reference 3,416. Relocating level 2+3+field reference
-    (10,702 bytes) needs p ≥ 0.65, the level split is unmeasured, and every byte of it is mandatory
-    once its branch is taken. Rejected on (a) and (b).
+    (over half the file) needs p ≥ 0.61, the level split is unmeasured, and every byte of it is
+    mandatory once its branch is taken. Rejected on (a) and (b).
   - `develop` — its anecdotes are already one-clause statements of *the failure each rule prevents*,
     which is the half the `CONCURRENCY.md` split deliberately kept in the rules file. At their size
-    p would have to clear 0.9, and they are read on 100% of runs. Rejected on cost and on FR2(b).
+    p would have to clear 0.92, and they are read on 100% of runs. Rejected on cost and on FR2(b).
   - `queue` — specification rules read by every other stage: p = 0. Rejected on (a).
 - **FR6 — no justification line carries a byte count.** The guard prints the live number; a number in
   the reason is stale the next time the file is edited (this ticket's own Problem statement carried
-  one that had already drifted by 219 bytes).
+  one that had already drifted by 219 bytes). **FR6 governs the shipped line and FR5 does not:** FR5's
+  bullets quote byte counts because they are the *reasoning* an entry must convey, not text to copy
+  into it. Where the two read as conflicting, FR6 wins and AC4 is what tests it.
 - **FR7 — no skill file is modified.** The decision is that nothing moves; a diff under `skills/` is
   this ticket exceeding its own answer.
 
@@ -84,9 +90,11 @@ direction stands; what was missing was the arithmetic that says where it applies
 ## Acceptance criteria
 
 - **AC1** — Given `tests/skill-size.test.sh`, when its header is read, then it states the payback
-  test: the `p = 1 / (1 + B/20,000)` break-even, the derivation of the 20,000 constant from the
+  test: the `p = 1 / (1 + B/17,000)` break-even, the derivation of the 17,000 constant from the
   bytes/token ratio, the cache-write and cache-read rates, the per-turn cost and the turns-per-session
-  figure, and a citation of `MEASUREMENT.md` as their source.
+  figure, and a citation of `MEASUREMENT.md` as their source. **The constant was 20,000 when this AC
+  was written**; see FR1 for why it moved and *Notes & decisions* for why no conclusion moved with
+  it.
 - **AC2** — Given the same header, when the "first move is a POINTER" sentence is read, then it is
   qualified by the two non-cost conditions of FR2 rather than stated unconditionally.
 - **AC3** — Given `tests/reference-size.test.sh`, when its `RELOCATE` block is read, then it names
@@ -206,3 +214,47 @@ detail it will not use. The *attention* cost of that — a long file diluting wh
 follows — is real and unmeasured, and it is the honest reason someone could overturn this. Two facts
 would do it: a measured level-split for `prototype` showing level-1 runs above 65%, or evidence that
 step compliance falls with file length. Neither exists today, and the second would beat the first.
+
+### Build notes, 2026-08-25 — `develop`, claim `5bec`
+
+**The constant was wrong and the decision was not.** FR1 sourced `~30 turns per session` to
+`MEASUREMENT.md`, which does not say it: that file's `30` is its **session** count — 1,112 turns
+across 30 sessions, ~37 per session — and it states outright at line 24 that "a develop session still
+averages 39 turns". `B0` falls straight out of `N`, so the misread carried all the way to the
+published 20,000. Recomputed at N = 37 it is **17,118**, shipped as ~17,000; at develop's own N = 39
+it is 16,439.
+
+**Every conclusion survives, which is the interesting part rather than a relief.** prototype's
+level-2+3+field-reference block needs p ≥ 0.61 rather than 0.65; `develop`'s anecdotes need 0.92
+rather than 0.9 against an actual p of 0; `queue` is p = 0 either way; and the retro-prediction still
+works — `CONCURRENCY-INCIDENTS.md` breaks even at 0.59 and is read by well under a third of sessions.
+A test whose answers do not move when its constant moves 15% is a test being used for the right thing:
+it separates "nearly the whole file, read on every run" from "half the file, read on a third of runs",
+and nothing in this repo sits near the boundary. **That is now written into the header** as the reason
+to recompute rather than to trust — the derivation is the durable half.
+
+**The correction was made rather than escalated because it is a fact.** The design pass's own recorded
+rule, quoted above, is that a question turning entirely on measured rates and byte counts gets decided.
+The same rule applies to correcting one.
+
+**FR5 and FR6 contradict each other as written, and FR6 has to win.** FR5 spells out byte counts for
+prototype's four sub-blocks; FR6 forbids a byte count in a justification line. Read as text-to-copy,
+FR5 breaches FR6 in the same ticket. Read as reasoning-to-convey, they agree. The shipped lines carry
+the judgement and no numbers, which is also what AC4 tests — but the ticket said both things and only
+the AC disambiguated them. Written back into FR6.
+
+**The guards now assert their own headers, which the ACs did not ask for.** AC1–AC5 were specified as
+reads — QA plan: "read both headers against AC1–AC3, AC5". A read passes once and then nothing holds
+it: the NFR's whole argument for putting the test in the guard rather than a decision record is that
+the guard is what an author opens when it goes red, and that argument fails the moment the arithmetic
+can be deleted silently. So each is a case in the file it describes. This is a deliberate widening of
+*how* the ACs are met, not of what they require, and it leaves `verify` a stronger check than a read.
+
+**A guard that asserts against its own text can be fooled by the edit that breaks it.** Proving the
+new AC5 cases could go red, the first attempt `sed`-ed the RELOCATE wording across a throwaway copy —
+and the suite stayed green, because the same `sed` rewrote the assertion's own literal. Both sides
+moved together and the check compared a string to itself. Re-proved by editing only the `RELOCATE=`
+definition line: two reds, each naming its half. **The general form: when the expected value and the
+code under test are the same string in the same file, a whole-file substitution is not a valid red
+proof.** Every 0035 assertion was then re-proved this way, including FR6's byte-count detector, which
+catches a `25255` reinserted into a justification.
