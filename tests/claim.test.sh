@@ -65,20 +65,31 @@ ITEM
 run_claim() { (cd "$FIX" && .claude/backlog/claim "$1" tok0 2>&1); }
 
 # --- assertions -------------------------------------------------------------------------------
+# Every assertion reports the text it matched against: always on FAIL, and on a pass only when
+# SHOW_MATCHED is set in the environment. A green run therefore stays one line per case plus the
+# tally (`testing-conventions.md`, lean by default), and a mutation sweep sets SHOW_MATCHED=1 for
+# one run to see what a case that stayed green matched instead — the question this harness could
+# not answer before, so each sweep hand-built a fixture outside the suite to ask it.
+#
+# tests/next.test.sh, tests/close.test.sh and tests/claim.test.sh each carry this pair, because a
+# suite here is self-contained and sources nothing (`CLAUDE.md`). Change one, change all three.
+saw()         { printf '%s\n' "$1" | sed '1s/^/         saw: /; 1!s/^/              /'; }
+saw_on_pass() { [ -n "${SHOW_MATCHED:-}" ] && saw "$1"; return 0; }
+
 ok()   { PASS=$((PASS + 1)); echo "  ok   — $1"; }
 bad()  { FAIL=$((FAIL + 1)); echo "  FAIL — $1"; }
 
 assert_contains() {
   case "$2" in
-    *"$3"*) ok "$1" ;;
-    *)      bad "$1"; echo "         expected to contain: $3"; echo "         got: $2" ;;
+    *"$3"*) ok "$1"; saw_on_pass "$2" ;;
+    *)      bad "$1"; echo "         expected to contain: $3"; saw "$2" ;;
   esac
 }
 
 assert_not_contains() {
   case "$2" in
-    *"$3"*) bad "$1"; echo "         expected NOT to contain: $3"; echo "         got: $2" ;;
-    *)      ok "$1" ;;
+    *"$3"*) bad "$1"; echo "         expected NOT to contain: $3"; saw "$2" ;;
+    *)      ok "$1"; saw_on_pass "$2" ;;
   esac
 }
 
@@ -86,13 +97,14 @@ assert_not_contains() {
 # parser under test passes and fails with it, and this one did — it reported a correct claim as a
 # missing row because it was still finding the id in column 2.
 assert_row() {
+  table="$(sed -n '/^|/p' "$FIX/.claude/backlog/QUEUE.md")"
   if grep -Fxq "$2" "$FIX/.claude/backlog/QUEUE.md"; then
     ok "$1"
+    saw_on_pass "$table"
   else
     bad "$1"
     echo "         expected row: $2"
-    echo "         table now:"
-    sed -n '/^|/p' "$FIX/.claude/backlog/QUEUE.md" | sed 's/^/           /'
+    saw "$table"
   fi
 }
 
