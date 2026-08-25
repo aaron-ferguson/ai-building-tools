@@ -3,7 +3,7 @@ id: "0029"
 title: Reconcile close's definition of held with CONCURRENCY.md's
 type: bug
 next: verify
-status: in-progress
+status: done
 blocked_by:
   - "0028"
 qa_level: verify
@@ -15,14 +15,10 @@ expects:
   - references/CONCURRENCY.md
   - skills/verify/SKILL.md
   - tests/close.test.sh
-claimed_by: "a79a"
-claimed_at: 2026-08-25T02:13:10Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/close
-  - references/CONCURRENCY.md
-  - skills/verify/SKILL.md
-  - tests/close.test.sh
-  - .claude/backlog/items/0029-reconcile-what-held-means.md
+closed: 2026-08-25
 ---
 
 ## Problem
@@ -69,22 +65,22 @@ blocked on it rather than on anything technical.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `references/CONCURRENCY.md`, when *A stage writes only the ticket it holds* is
+- [x] AC1 — Given `references/CONCURRENCY.md`, when *A stage writes only the ticket it holds* is
   read, then *held* has exactly one definition and it states whether a tokenless `in-progress` row
   counts.
-- [ ] AC2 — Given `skills/queue/templates/close`, when its reconcile guard is read, then its
+- [x] AC2 — Given `skills/queue/templates/close`, when its reconcile guard is read, then its
   condition matches AC1's definition with no extra clause.
-- [ ] AC3 — Given `skills/verify/SKILL.md` Step 5 item 3, when it is read, then its description of
+- [x] AC3 — Given `skills/verify/SKILL.md` Step 5 item 3, when it is read, then its description of
   *held* matches AC1's definition word for word in substance.
-- [ ] AC4 — Given a backlog where a dependent's item has an empty `claimed_by:` and its row reads
+- [x] AC4 — Given a backlog where a dependent's item has an empty `claimed_by:` and its row reads
   `in-progress`, when `close` runs on its blocker, then the dependent is treated per AC1's
   definition, and `tests/close.test.sh` asserts that outcome explicitly.
-- [ ] AC5 — Given a backlog where a dependent's item has a non-empty `claimed_by:`, when `close`
+- [x] AC5 — Given a backlog where a dependent's item has a non-empty `claimed_by:`, when `close`
   runs on its blocker, then the dependent is reported and not written.
-- [ ] AC6 — Given `tests/close.test.sh`, when the reconcile guard's condition is mutated to the
+- [x] AC6 — Given `tests/close.test.sh`, when the reconcile guard's condition is mutated to the
   *other* definition, then the suite goes red — and the mutation is diffed first to confirm it
   landed (`testing-conventions.md`).
-- [ ] AC7 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then all
+- [x] AC7 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then all
   suites pass.
 
 ## QA plan

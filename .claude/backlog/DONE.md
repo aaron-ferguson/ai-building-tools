@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0029 | Reconcile close's definition of held with CONCURRENCY.md's | bug | verify | 2026-08-25 | [items/0029-reconcile-what-held-means.md](items/0029-reconcile-what-held-means.md) |
 | 0026 | Measure the isolated workflow from the recorded sessions and record the verdict | chore | verify | 2026-08-25 | [items/0026-measure-the-recorded-sessions.md](items/0026-measure-the-recorded-sessions.md) |
 | 0005 | Add the graph fields to the ticket template and QUEUE.md | chore | verify | 2026-08-24 | [items/0005-add-graph-fields-to-template.md](items/0005-add-graph-fields-to-template.md) |
 | 0028 | Replace the reference files' hard token ceiling with a soft goal and a gate | debt | verify | 2026-08-24 | [items/0028-soft-goal-for-reference-files.md](items/0028-soft-goal-for-reference-files.md) |
