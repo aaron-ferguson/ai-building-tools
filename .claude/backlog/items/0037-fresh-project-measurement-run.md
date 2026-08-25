@@ -3,7 +3,7 @@ id: "0037"
 title: Run the fresh-project end-to-end exercise against the settled configuration
 type: chore
 next: develop
-status: blocked
+status: ready
 qa_level: verify
 size: l
 created: 2026-08-24

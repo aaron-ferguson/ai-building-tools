@@ -62,7 +62,6 @@ by the next commit. This paragraph described that design as current fact and was
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0038 | Add the drive and findings routing modes to next | develop | in-progress | 0036 |
-| 0035 | Decide where conditionally-needed skill detail lives | verify | in-progress | — |
 | 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |
 | 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |
 | 0008 | Add the graph rules to queue, develop, and verify | develop | blocked | 0002 |
@@ -70,7 +69,7 @@ by the next commit. This paragraph described that design as current fact and was
 | 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
 | 0003 | Phase 2 — the readiness gate and outcome reviews | develop | blocked | 0001 |
 | 0004 | Phase 3 — extend tracker mirroring with hierarchy and standards | develop | blocked | 0001 |
-| 0037 | Run the fresh-project end-to-end exercise against the settled configuration | develop | blocked | 0009 |
+| 0037 | Run the fresh-project end-to-end exercise against the settled configuration | develop | ready | 0009 |
 
 `develop` takes the topmost row that is `next: develop` and takeable — `ready`, or `blocked` with
 nothing left open in `blocked_by`, since the column is only a cache of the graph. If a higher row

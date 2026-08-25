@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0035 | Decide where conditionally-needed skill detail lives | debt | verify | 2026-08-25 | [items/0035-where-conditional-skill-detail-lives.md](items/0035-where-conditional-skill-detail-lives.md) |
 | 0034 | Derive the advisory label from the paths the verdict rested on | feature | verify | 2026-08-25 | [items/0034-derive-the-advisory-label.md](items/0034-derive-the-advisory-label.md) |
 | 0033 | Guard against stale rule-name citations across the references | debt | verify | 2026-08-25 | [items/0033-guard-stale-rule-citations.md](items/0033-guard-stale-rule-citations.md) |
 | 0032 | Terminate batching.test.sh's paragraph window on a blank line | bug | verify | 2026-08-25 | [items/0032-terminate-the-paragraph-window.md](items/0032-terminate-the-paragraph-window.md) |

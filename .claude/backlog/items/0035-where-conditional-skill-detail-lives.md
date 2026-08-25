@@ -3,7 +3,7 @@ id: "0035"
 title: Decide where conditionally-needed skill detail lives
 type: debt
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -11,9 +11,10 @@ source: agent
 expects:
   - tests/skill-size.test.sh
   - tests/reference-size.test.sh
-claimed_by: "b0be"
-claimed_at: 2026-08-25T06:28:58Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-08-25
 ---
 
 ## Problem
