@@ -18,6 +18,12 @@
 # **Columns are resolved by header name, never by position** — the table's shape is not a contract,
 # and a fixed-index parser is exactly the defect 0022 found in `claim`.
 #
+# **It refuses rather than guesses, on four grounds**: a row that is not at `verify`; a table shape
+# it cannot read; a token that is not the one the item records; and an acceptance-criteria list it
+# cannot tick. The fourth is the newest and the quietest — `verify` closes on ticked ACs, so a
+# ticket whose criteria are written `- **AC1** —` rather than `- [ ] AC1 —` had zero of eight
+# ticked, was closed, and reported success in the same words as a real close (0044).
+#
 # **The reconcile is part of the close, not a follow-up.** `blocked` is derived from the graph, so
 # closing this ticket is the only event that can clear a row naming it in `blocked_by`. Leaving them
 # is a queue that lies about what is takeable, which once cost a whole session.
@@ -109,14 +115,74 @@ item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
 [ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
 item_rel="items/$(basename "$item")"
 
+# YAML's comment rule, as awk source text injected into both readers below. awk has no include, so
+# a shared implementation is a string rather than a file; `next` carries this same block for its own
+# two readers, and the two scripts are separate files by install contract
+# (`tests/backlog-scripts-installed.test.sh` AC2). Change one, change both.
+#
+# It applies to SCALARS as much as to lists: `develop` Step 1 invites an inline annotation, and an
+# annotated `claimed_by: "f0c3" # mine` used to come back as `f0c3" # mine` — which this script then
+# compares against the token it was given, refusing the holder's own close (0044).
+#
+# `sub(/#.*/, "")` is the obvious form and it is wrong twice, so do not simplify it back:
+#   - `- "docs/a#b.md"` is a legal quoted path, and the naive form truncates it to `docs/a`;
+#   - in YAML a `#` only opens a comment at the start of a value or after whitespace, so `a#b`
+#     unquoted is one token too.
+# `"\047"` is an apostrophe — this block is single-quoted shell.
+DECOMMENT='
+function decomment(s,   i, ch, quote, out, start) {
+  sub(/^[ \t]+/, "", s)
+  start = 1
+  ch = substr(s, 1, 1)
+  if (ch == "\"" || ch == "\047") { quote = ch; start = 2 }
+  for (i = start; i <= length(s); i++) {
+    ch = substr(s, i, 1)
+    if (quote != "" && ch == quote) { quote = ""; continue }
+    if (quote != "")                { out = out ch; continue }
+    if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
+    out = out ch
+  }
+  sub(/[ \t]+$/, "", out)
+  return out
+}
+'
+
 fm_value() {
-  awk -v key="$2" '
+  awk -v key="$2" "$DECOMMENT"'
     NR == 1 && /^---$/ { fm = 1; next }
     fm && /^---$/      { exit }
     fm && index($0, key ":") == 1 {
-      v = substr($0, length(key) + 2); gsub(/^[ \t]+|[ \t]+$/, "", v); gsub(/^"|"$/, "", v)
-      print v; exit
+      print decomment(substr($0, length(key) + 2)); exit
     }
+  ' "$1"
+}
+
+# One frontmatter LIST, flattened to a space-separated line: inline `["0010"]` or a block of `- `
+# entries. `fm_value` returns only what sits after the colon on the key's own line, so it read the
+# block form as empty — the reconcile's `case` missed, and closing 0028 left 0029 blocked in both
+# the item and the row while reporting no reconcile at all. `next` has read both forms since 0031;
+# this is that parser, so the two scripts answer "what blocks this?" identically (0044 FR1).
+fm_list() {
+  [ -n "$1" ] || return 0
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && $0 ~ "^" key ":" {
+      rest = $0; sub("^" key ": *", "", rest)
+      rest = decomment(rest)
+      if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
+      inside = 1; next
+    }
+    # A comment on its own line is skipped rather than ending the block: falling through to the
+    # `exit` below would silently truncate the list at the note.
+    inside && /^[ \t]*#/ { next }
+    inside && /^  *- / {
+      sub(/^ *- */, "")
+      entry = decomment($0)
+      if (entry != "") printf "%s ", entry
+      next
+    }
+    inside { exit }
   ' "$1"
 }
 
@@ -135,6 +201,26 @@ held_by="$(fm_value "$item" claimed_by)"
 item_type="$(fm_value "$item" type)"
 item_qa="$(fm_value "$item" qa_level)"
 
+# --- the fourth refusal: criteria this script cannot tick --------------------------------------
+# Counted BEFORE anything is written, so the refusal leaves the tree exactly as it found it. An
+# EMPTY criteria section is not this defect and still closes: nothing to tick is not the same as
+# criteria that cannot be ticked, and refusing there would block every chore written without ACs.
+ac_counts="$(awk '
+  /^## / { in_ac = ($0 ~ /^## Acceptance criteria/); next }
+  in_ac && /^- / { bullets++; if ($0 ~ /^- \[[ xX]\]/) boxes++ }
+  END { print bullets + 0, boxes + 0 }
+' "$item")"
+ac_bullets="${ac_counts% *}"
+ac_boxes="${ac_counts#* }"
+
+if [ "$ac_bullets" -gt 0 ] && [ "$ac_boxes" -eq 0 ]; then
+  echo "$ID lists $ac_bullets acceptance criteria and not one of them is a checkbox" >&2
+  echo "this script ticks '- [ ] AC1 — …' and nothing else, so closing here would record that none" >&2
+  echo "of the $ac_bullets was checked — and DONE.md could not tell this ticket from one waved through" >&2
+  echo "rewrite the criteria in the '- [ ]' form (skills/queue/templates/item.md) and close again" >&2
+  exit 1
+fi
+
 # --- the item file: tick the ACs, mark it done, release the claim ------------------------------
 # `touches:` is cleared with its list entries: a closed ticket that keeps reserving files reads as
 # held to the other window (CONCURRENCY.md, 'The working tree is shared too').
@@ -147,6 +233,10 @@ awk -v today="$TODAY" '
   }
   fm {
     if ($0 ~ /^status:/)     { print "status: done"; next }
+    # A done ticket is due at no stage. The by-hand closes that predate this script cleared it;
+    # leaving `next: verify` on a `status: done` item is the field-and-status disagreement the
+    # next/status split exists to prevent (0044 FR4).
+    if ($0 ~ /^next:/)       { print "next:"; next }
     if ($0 ~ /^closed:/)     { print "closed: " today; closed_seen = 1; next }
     if ($0 ~ /^claimed_by:/) { print "claimed_by:"; next }
     if ($0 ~ /^claimed_at:/) { print "claimed_at:"; next }
@@ -205,7 +295,7 @@ mv "$tmp" "$DONE"
 # Every blocker other than the one being closed. A blocker with no item file counts as open:
 # unrecognised is not the safe default, and freeing a row on a missing file is the wrong direction.
 other_blockers_all_done() {
-  for b in $(printf '%s' "$1" | tr -d '[]"' | tr ',' ' '); do
+  for b in $1; do
     [ "$b" != "$ID" ] || continue
     bfile="$(ls "$DIR/items/$b-"*.md 2>/dev/null | head -1 || true)"
     [ -n "$bfile" ] && [ "$(fm_value "$bfile" status)" = "done" ] || return 1
@@ -219,8 +309,14 @@ RECONCILED_PATHS=""
 for dep in "$DIR"/items/*.md; do
   [ -f "$dep" ] || continue
   [ "$dep" != "$item" ] || continue
-  blockers="$(fm_value "$dep" blocked_by)"
-  case "$blockers" in *"$ID"*) ;; *) continue ;; esac
+  blockers="$(fm_list "$dep" blocked_by)"
+  # Whole ids, never a substring: `fm_list` flattens both forms to bare space-separated entries,
+  # and `case "$blockers" in *"$ID"*` would read `0044` as naming `004`.
+  names_this=no
+  for b in $blockers; do
+    if [ "$b" = "$ID" ]; then names_this=yes; break; fi
+  done
+  [ "$names_this" = yes ] || continue
   dep_id="$(fm_value "$dep" id)"
   [ -n "$dep_id" ] || continue
   other_blockers_all_done "$blockers" || continue

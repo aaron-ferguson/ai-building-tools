@@ -218,13 +218,48 @@ all_ids() { rows | awk -F'|' -v n="$ID" '{ v = $n; gsub(/^ +| +$/, "", v); print
 
 item_for() { ls "$DIR/items/$1-"*.md 2>/dev/null | head -1 || true; }
 
+# YAML's comment rule, as awk source text injected into every frontmatter reader below. awk has no
+# include, so a shared implementation is a string rather than a file; `close` carries this same
+# block for its own two readers, and the two scripts are separate files by install contract
+# (`tests/backlog-scripts-installed.test.sh` AC2). Change one, change both.
+#
+# It applies to SCALARS as much as to lists, and that asymmetry was the defect: 0031 taught the
+# list reader to strip comments while `fm` kept returning `aa11" # mine` for an annotated token —
+# and `close` compares exactly that string against the token it is given before it will close
+# anything (0044).
+#
+# `sub(/#.*/, "")` is the obvious form and it is wrong twice, so do not simplify it back:
+#   - `- "docs/a#b.md"` is a legal quoted path, and the naive form truncates it to `docs/a`;
+#   - in YAML a `#` only opens a comment at the start of a value or after whitespace, so `a#b`
+#     unquoted is one token too.
+# Hence: a quote only quotes when it is the value's first character (mid-value it is a literal, so
+# `it's/a/path.md` keeps its apostrophe), and a `#` only cuts when it opens the value or follows a
+# space or tab. `"\047"` is that apostrophe — this block is single-quoted shell.
+DECOMMENT='
+function decomment(s,   i, ch, quote, out, start) {
+  sub(/^[ \t]+/, "", s)
+  start = 1
+  ch = substr(s, 1, 1)
+  if (ch == "\"" || ch == "\047") { quote = ch; start = 2 }
+  for (i = start; i <= length(s); i++) {
+    ch = substr(s, i, 1)
+    if (quote != "" && ch == quote) { quote = ""; continue }
+    if (quote != "")                { out = out ch; continue }
+    if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
+    out = out ch
+  }
+  sub(/[ \t]+$/, "", out)
+  return out
+}
+'
+
 # One scalar out of an item's frontmatter.
 fm() {
   [ -n "$1" ] || return 0
-  awk -v key="$2" '
+  awk -v key="$2" "$DECOMMENT"'
     NR == 1 && /^---$/ { fm = 1; next }
     fm && /^---$/ { exit }
-    fm && $0 ~ "^" key ":" { sub("^" key ": *", ""); gsub(/^"|"$/, ""); print; exit }
+    fm && $0 ~ "^" key ":" { sub("^" key ": *", ""); print decomment($0); exit }
   ' "$1"
 }
 
@@ -234,33 +269,10 @@ fm() {
 # about to create and say inline that it is new. A comment returned as part of an entry is not
 # cosmetic: these lists are what the scope-overlap check compares, so prose in the list reads as a
 # claimed path and a trailing space makes a real collision compare unequal — it fails open, and both
-# windows land in one file.
-#
-# `sub(/#.*/, "")` is the obvious form and it is wrong twice, so do not simplify it back:
-#   - `- "docs/a#b.md"` is a legal quoted path, and the naive form truncates it to `docs/a`;
-#   - in YAML a `#` only opens a comment at the start of a value or after whitespace, so `a#b`
-#     unquoted is one token too.
-# Hence `decomment`: a quote only quotes when it is the entry's first character (mid-value it is a
-# literal, so `it's/a/path.md` keeps its apostrophe), and a `#` only cuts when it opens the value or
-# follows a space or tab.
+# windows land in one file. `decomment` is defined once, above.
 fm_list() {
   [ -n "$1" ] || return 0
-  awk -v key="$2" '
-    function decomment(s,   i, ch, quote, out, start) {
-      sub(/^[ \t]+/, "", s)
-      start = 1
-      ch = substr(s, 1, 1)
-      if (ch == "\"" || ch == "'"'"'") { quote = ch; start = 2 }
-      for (i = start; i <= length(s); i++) {
-        ch = substr(s, i, 1)
-        if (quote != "" && ch == quote) { quote = ""; continue }
-        if (quote != "")                { out = out ch; continue }
-        if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
-        out = out ch
-      }
-      sub(/[ \t]+$/, "", out)
-      return out
-    }
+  awk -v key="$2" "$DECOMMENT"'
     NR == 1 && /^---$/ { fm = 1; next }
     fm && /^---$/ { exit }
     fm && $0 ~ "^" key ":" {
