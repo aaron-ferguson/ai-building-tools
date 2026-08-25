@@ -3,7 +3,7 @@ id: "0026"
 title: Measure the isolated workflow from the recorded sessions and record the verdict
 type: chore
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -19,16 +19,10 @@ expects:
   - skills/verify/SKILL.md
   - tests/measurement.test.sh
   - tools/harvest-usage.sh
-claimed_by: "35a8"
-claimed_at: 2026-08-25T02:13:10Z
+claimed_by:
+claimed_at:
 touches:
-  - MEASUREMENT.md
-  - README.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - tests/measurement.test.sh
-  - tools/harvest-usage.sh
-  - .claude/backlog/items/0026-measure-the-recorded-sessions.md
+closed: 2026-08-25
 ---
 
 ## Problem
@@ -113,26 +107,26 @@ the comparison says about the suite as it then stands. `0037` carries the forwar
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the recorded result, when read, then it reports cost per turn and context tokens per
+- [x] AC1 — Given the recorded result, when read, then it reports cost per turn and context tokens per
       turn broken down by skill, for the isolated multi-session run.
-- [ ] AC2 — Given the recorded result, when read, then it reports the same two figures for the
+- [x] AC2 — Given the recorded result, when read, then it reports the same two figures for the
       2026-08-22 baseline and states how that session was matched to the published figures, or that it
       could not be.
-- [ ] AC3 — Given the recorded result, when read, then it states the per-model rates used and their
+- [x] AC3 — Given the recorded result, when read, then it states the per-model rates used and their
       source, such that the dollar figures can be recomputed from the token counts.
-- [ ] AC4 — Given `0009`, `README.md`, `skills/develop/SKILL.md` and `skills/verify/SKILL.md`, when
+- [x] AC4 — Given `0009`, `README.md`, `skills/develop/SKILL.md` and `skills/verify/SKILL.md`, when
       read, then each carries the observed figure and none of them still describes it as modelled or
       still points at this ticket as pending.
-- [ ] AC5 — Given the recorded result, when read, then it states the verdict explicitly —
+- [x] AC5 — Given the recorded result, when read, then it states the verdict explicitly —
       materialised, partly, or not — against ~$5.09, and says what the run caught and what it missed.
-- [ ] AC6 — Given the recorded result, when read, then it carries cost per closed ticket for the
+- [x] AC6 — Given the recorded result, when read, then it carries cost per closed ticket for the
       isolated run.
-- [ ] AC7 — Given the recorded result, when read, then it either carries the per-gate batching figure
+- [x] AC7 — Given the recorded result, when read, then it either carries the per-gate batching figure
       or states that the recorded sessions contain no batched session and names the run that would
       produce it.
-- [ ] AC8 — Given the recorded result, when read, then it names at least two things the two runs did
+- [x] AC8 — Given the recorded result, when read, then it names at least two things the two runs did
       not hold constant.
-- [ ] AC9 — Given the harvest script, when run against the transcript directory, then it reproduces
+- [x] AC9 — Given the harvest script, when run against the transcript directory, then it reproduces
       the reported per-skill figures, and its output contains no transcript message content.
 
 ## QA plan
