@@ -497,6 +497,9 @@ out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
 assert_rc           "exits 4 — escalate"        "$rc" 4
 assert_contains     "escalates"                 "$out" 'ESCALATE'
 assert_contains     "names the ticket"          "$out" '0101'
+# The reason, not just the outcome: with the bounce branch deleted the final `else` escalates
+# anyway, so rc and ESCALATE alone are green against code that has lost this FR8 row entirely.
+assert_contains     "names it as the bounce"    "$out" 'bounced from verify'
 assert_not_contains "dispatches nothing"        "$out" 'DISPATCH'
 
 echo "0038 AC9 — verify found a stale contract and sent it to queue/ready: escalate"
@@ -579,6 +582,28 @@ seal
 out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
 assert_rc       "exits 4 — escalate"          "$rc" 4
 assert_contains "carries the waiting question" "$out" 'which of the two hosts'
+
+# The same routing decision reached down the other code path. `develop` writing `waiting` is
+# routed by the completed-outcome ladder above; a `waiting` row that simply outranks everything
+# below it is routed by the rank walk, and only that branch stops a driver from dispatching a
+# stage onto a row whose whole state is that a person has been asked a question. Assert the
+# absent DISPATCH, not just the present ESCALATE: with the branch deleted the walk falls through
+# to the row beneath and `ESCALATE` is merely missing rather than wrong.
+echo "0038 AC9 — a waiting top row outranks the rank walk: escalate, with no completed outcome"
+scaffold
+add_row 0101 'Waiting on a person' develop waiting 0091
+add_row 0102 'Takeable underneath' develop ready 0092
+add_ticket 0101 develop waiting '[]' 0091 a/one.md
+add_ticket 0102 develop ready '[]' 0092 b/two.md
+append_section 0101 '## Waiting on
+
+Aaron — which of the two hosts holds the credential?'
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"           "$rc" 4
+assert_contains     "escalates"                    "$out" 'ESCALATE'
+assert_contains     "carries the waiting question" "$out" 'which of the two hosts'
+assert_not_contains "dispatches nothing"           "$out" 'DISPATCH'
 
 echo "0038 AC9 — develop gave the ticket a blocked_by: re-derive and take the next takeable row"
 scaffold
