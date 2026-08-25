@@ -4,6 +4,12 @@ Standing reasoning behind `QUEUE.md`. Read on a re-rank, not on every claim — 
 reason it is a separate file. `QUEUE.md` is rewritten on every claim and every close, by every
 window, so prose parked there is re-read on each of those edits while changing perhaps once a week.
 
+**Keep this file about the order as it stands now.** A re-rank is the reader, and a reader
+reconstructing the current argument out of dated entries about closed tickets pays for all of them.
+Once the dated narratives outweigh the current-state sections, move them to `RANKING-HISTORY.md` and
+point at it by heading — the same split as `CONCURRENCY.md` → `CONCURRENCY-INCIDENTS.md`. Do not
+delete them: a placement nobody can argue with is one the next re-rank makes again from nothing.
+
 Record the reasoning that a row cannot carry: why a tier was chosen, which tie-breaker separated
 two items, and which orderings are dependency rather than importance. A rank you cannot justify in
 one sentence means the item's problem statement is too vague to rank.

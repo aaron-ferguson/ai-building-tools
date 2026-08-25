@@ -41,7 +41,8 @@ Resolve them per `references/CONVENTIONS.md`; if none resolve, stop as that file
 .claude/backlog/
   config.yml     project settings, next_id, conventions path, test commands, optional tracker/cost blocks
   QUEUE.md       the stack rank — line order IS the rank. Header and table only.
-  RANKING.md     why the order is what it is. Standing reasoning, read only for re-ranks.
+  RANKING.md     why the order is what it is NOW. Standing reasoning, read only for re-ranks.
+  RANKING-HISTORY.md  optional; the dated narrative, once it outgrows RANKING.md's current-state head
   FINDINGS.md    what sessions parked and could not place. A buffer, not a second queue.
   next           reader: `next <stage>` the takeable row · `next --waiting` who is waited on
   claim          claims a row: lock, edit, write frontmatter, commit, unlock — one atomic step
