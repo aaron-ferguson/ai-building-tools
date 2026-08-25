@@ -34,6 +34,10 @@ parent:
 # The tickets that must close FIRST — a list of ids. These are this ticket's dependencies, and
 # never its dependents. This is what DERIVES `status: blocked` above, so an entry naming a ticket
 # already `done` blocks nothing, and whatever closes a ticket reconciles every ticket naming it.
+# ONE form: the inline flow list below, `[]` when empty and `["0002", "0007"]` when not. Both
+# readers accept a `- ` block too, and neither did until 0044 — closing a ticket whose dependent
+# used the block form reconciled nothing and reported nothing. Two shapes for one field is what
+# made that possible, so write this one.
 blocked_by: []
 # Undirected, and carries NO scheduling meaning: neither ticket waits on the other and nothing
 # derives from it. Use it for "read these together"; "do that one first" is `blocked_by:`.
@@ -128,6 +132,10 @@ Delete this section when the item moves to `next: develop`, and record the answe
 ## Acceptance criteria
 
 Given / when / then. `verify` checks these literally and will not close the item without them.
+
+**ONE form: every criterion is a `- [ ] ACn — ` checkbox**, and `./close` ticks exactly that.
+Written any other way — `- **AC1** —` is the one that happened — it ticks none of them, and until
+0044 it closed the ticket anyway, leaving no record that anything was checked.
 
 - [ ] AC1 —
 - [ ] AC2 —

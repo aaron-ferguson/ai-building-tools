@@ -200,9 +200,14 @@ earlier pass mutated the right behaviour and saw it go red.
 ```
 
 It does the whole sequence below under the lock and **commits it**, which is the step a session under
-load forgets (`CONCURRENCY.md`, *The three scripts*). It refuses rather than guessing on three grounds:
-a table shape it cannot read, a row not at `next: verify`, and a token that is not the one holding the
-claim — you pass the token because ownership is memory and no script can check memory.
+load forgets (`CONCURRENCY.md`, *The three scripts*). It refuses rather than guessing on four grounds:
+a table shape it cannot read, a row not at `next: verify`, a token that is not the one holding the
+claim — you pass the token because ownership is memory and no script can check memory — and **an
+acceptance-criteria list it cannot tick**. That last one is yours to fix before you can close:
+`close` ticks `- [ ] AC1 — …` and nothing else, so a ticket whose criteria are written
+`- **AC1** —` once closed with zero of eight ticked, and the record that each criterion was checked
+was simply absent. Rewrite them in the checkbox form and close again — never hand-tick around it,
+because the tick is the evidence your run produced.
 
 By hand, under the lock, committed before you release it — the fallback where the script is not
 installed:

@@ -427,15 +427,19 @@ assert_contains "the inline dependent is freed as before" "$(cat "$FIX/$BL/items
 assert_clean "both reconciles landed in the close commit"
 
 # --- 0044 AC1 — a block-list entry that is NOT this ticket still blocks --------------------------
-# The cheap way to pass the case above is to treat an unreadable `blocked_by` as "names me". That
-# frees every dependent of every close, so the parser is pinned from both directions.
+# The cheap way to pass the case above is to treat every dependent as naming the closing ticket,
+# which frees every dependent of every close. That mutation survives a fixture whose other blocker
+# is merely unresolvable — `other_blockers_all_done` refuses it first and the name match is never
+# what held. So 0034's blocker is DONE: nothing but the id comparison stands between it and a
+# reconcile it has no business getting.
 echo "0044 AC1 — a block list naming another ticket is not freed"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" \
   '| 0033 | The blocker | verify | in-progress | 0000 |' \
   '| 0034 | Blocked by someone else entirely | develop | blocked | 0000 |'
 mkitem 0033 verify in-progress '"ab12"' '[]'
 mkitem 0034 develop blocked '' '
-  - "0099"'
+  - "0098"'
+mkitem 0098 develop done '' '[]'
 commit_fixture
 out="$(run_close 0033 ab12)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
