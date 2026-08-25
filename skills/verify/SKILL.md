@@ -82,7 +82,9 @@ file set that never existed as a coherent state: its red may belong to work half
 be luck.
 
 - Changes confined to the ticket → proceed.
-- Changes outside it → **still run**, but label the result **advisory** and name the unrelated paths.
+- Changes outside it → **still run**, and **record the unrelated paths as a set**. The label is not
+  decided here: Step 7 derives it against the paths the verdict actually rested on, because at this
+  point the pass does not yet know which files its ACs rest on.
   **Do not stash, revert or check out to tidy** — destroying another session's work is far worse than an
   imprecise verdict.
 - `in-progress` under a token **you did not mint in this conversation** → another session's. Say whose
@@ -126,8 +128,11 @@ browser you started, this same turn.
 
 ## Step 3 — Check the acceptance criteria literally
 
-Walk each AC and record how you verified it — which test, which behaviour, which screenshot. "Looks right"
-is not a verification, and an AC you cannot verify is a **fail**.
+Walk each AC and record how you verified it — which test, which behaviour, which screenshot — **and
+where**: the repo paths that verification read or executed, the files asserted over, the fixture, the
+script run. Those paths are the run's **evidence set**, and Step 7 derives the advisory label from
+them; **a path in doubt is in the set**, because a missed one costs a re-run and the other direction is
+a wrong close. "Looks right" is not a verification, and an AC you cannot verify is a **fail**.
 
 **Never trust a tick you did not write.** A ticket that has been round the loop arrives with ACs
 already ticked by an earlier pass — but a tick is evidence about the contract *as it then stood*, and
@@ -167,7 +172,7 @@ every written AC passing.
 
 For each filled NFR row, confirm the requirement holds and **load the cited convention file** — the row
 says what this ticket must satisfy, the convention says what the rule is, and you check against the
-rule.
+rule. Record each checked row's paths into Step 3's evidence set on the same terms.
 
 Then the always-on pass regardless of the table: **read `CONVENTIONS_CORE.md` for the current always-on
 rules and check the diff against them.** This skill deliberately does not list them; a copy here would
@@ -184,7 +189,9 @@ not permission to skip the check.
 ## Step 5 — Act on the verdict
 
 This is the stage that closes, and it happens in the session that produced the verdict — so no durable
-verdict file exists or is needed.
+verdict file exists or is needed. **Banking one was considered and rejected**: a banked verdict is a
+tick the next session did not write, and a file hash certifies which bytes were read, never that the
+earlier pass mutated the right behaviour and saw it go red.
 
 **On green, close it with `./close`** — one step, and the supported path:
 
@@ -267,9 +274,16 @@ uncommitted it is one `git stash` from gone. Anything whose home is obvious goes
 State **PASS** or **FAIL** plainly, then the evidence table: each AC and NFR row, how it was checked, the
 result, with the actual failure output for anything red.
 
-If Step 2 found unrelated changes, mark it **advisory** and name what made it so. **An advisory PASS does
-not close the ticket** — leave the row at `next: verify, status: ready`, release the claim, and say what
-has to be clean.
+**Advisory is derived, never authored:** intersect Step 2's dirty set with Step 3's evidence set. No
+session applies the label as a judgement about whether the dirt *looks* relevant.
+
+- **Empty intersection → not advisory.** A plain PASS, closing by Step 5's normal path. The verdict
+  names the dirty paths it excluded and states that the intersection was empty.
+- **Non-empty intersection → advisory, and it does not close the ticket.** Leave the row at `next:
+  verify, status: ready`, release the claim, and name the intersecting paths. **"I checked both the
+  committed and the working copy and they agreed" is not grounds to close** — agreement across two
+  snapshots is not independence, because the other session's edit is unfinished and the state it will
+  commit does not exist yet.
 
 A partial pass is a FAIL with a list. Never soften a red or report a skipped check as though it ran. State
 what Step 5 did — closed, or sent back to `develop` or `queue` — and name the commit. Unrelated problems

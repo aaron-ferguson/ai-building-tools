@@ -40,7 +40,8 @@ in one component, unwarned.
 - **Widen `touches:` as the work reaches further**, and read an **empty `touches:` on an `in-progress`
   row as *its files are held*** — silence is not permission. That is a statement about file scope; who
   holds the *row* is the item's token alone (*A stage writes only the ticket it holds*).
-- **`verify` marks its verdict advisory** on changes outside the ticket.
+- **`verify` derives *advisory*** from the dirty paths that intersect the evidence its verdict rested
+  on — dirty **under test**, not dirty anywhere. Empty intersection: a plain PASS that closes.
 
 ## A claim must be durable the moment it is made
 
