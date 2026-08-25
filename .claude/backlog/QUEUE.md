@@ -61,6 +61,16 @@ by the next commit. This paragraph described that design as current fact and was
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
+| 0044 | Close the gaps in the close script's read and write contract | develop | ready |  |
+| 0042 | Anchor the vocabulary-pinning guards to the claims they make | develop | ready |  |
+| 0046 | Make the README guard list provably complete | develop | ready |  |
+| 0051 | Pin the measurement record's denominator and make its recipe reproduce | develop | blocked |  |
+| 0047 | Give the busy-lock procedure a close-time path | develop | ready |  |
+| 0045 | Cross the take loop against the held file set in next | develop | ready |  |
+| 0050 | Decide how file scope works when the prose files are the product | design | ready |  |
+| 0048 | Decide which remaining backlog write sites become scripts | design | ready |  |
+| 0049 | Decide what a claim token guarantees and what enforces it | design | ready |  |
+| 0043 | Make the two size gates fail on a registry entry that no longer resolves | develop | ready |  |
 | 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
 | 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |
 | 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |

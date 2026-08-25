@@ -323,3 +323,63 @@ separates rows already tied on tier and on the earlier tie-breakers, and none of
 What freshness did earn is the *Notes & decisions* inventory in the item: what
 `harvest-usage.sh` already computes, what it does not (elapsed time), and the $6.01 / $4.45
 baseline — written down now so design and develop do not re-derive it in a month.
+
+## The findings sweep of 2026-08-25 — ten rows inserted above 0038
+
+`FINDINGS.md` had reached 86 entries and 78KB. The file's own header says a grown buffer *is* the
+finding; the 2026-08-25 retro processed 16 and recorded that almost all of the remainder are units
+of work only `queue` can take. This sweep took the **Tier 1 and Tier 2 clusters only** — ten
+tickets bundled by root cause rather than by file — and left the ~22 skill-prose clusters parked.
+That was a scoping decision, and it is why the buffer is still over `findings_threshold`.
+
+**All ten rank above the previous row 1 (0038), so the whole existing queue shifted down.** That
+is a large claim and it was checked against the recency trap deliberately: these are not new ideas,
+they are defect reports that accumulated in a buffer for three days while the top of the queue held
+Tier 3 and Tier 4 project slices from 0036 and 0001. Tier 1 and Tier 2 beat Tier 3, and none of the
+four tier-overrides applies — 0038 is a prerequisite of 0039 and 0040, but of nothing inserted here.
+
+### Tier 1 — output that is silently wrong, today
+
+- **0044 first, on tie-breaker 1 (blast radius).** It is the only Tier 1 row that ships to *every
+  project* installing this plugin: `./close` silently skips a block-list reconcile (it did, closing
+  0028, leaving 0029 blocked and `--drift` red) and closes a ticket reporting success while ticking
+  zero acceptance criteria (it did, on 0035). Both corrupt the backlog's own record of what was
+  verified. The other three Tier 1 rows are this repo's files.
+- **0042 above 0046 and 0051 on tie-breaker 2 (unblocks more)** — it is 0051's `blocked_by`.
+  Repairing `MEASUREMENT.md`'s figures while the assertions over them cannot fail would leave no
+  evidence the repair held, which is the whole defect one level up.
+- **0046 above 0051 on tie-breaker 4.** Both are this repo, neither unblocks anything, both are
+  fresh; 0046 is `s` and entirely certain. It is Tier 1 rather than Tier 5 because `README.md`
+  offers its block as "run every guard" and it runs 8 of 11 — a contributor following it right now
+  gets a false green, including on the guard that catches installed-script drift.
+
+### Tier 2 — compounding
+
+Ordered by the regret operator where the tie-breakers did not separate, and that is recorded
+because it is the place this ranking is most arguable:
+
+- **0047 top of the tier.** Two paragraphs, fully specified, and what it prevents is the loss of a
+  QA verdict that exists nowhere but in the session about to end.
+- **0045 next.** `./next` prints `TAKE` on a row whose expected files are held, with the proof four
+  lines below in the same output. Three instances on 2026-08-25 alone.
+- **0050 and 0048 above 0049**, against tie-breaker 4, which would have put `m` above `l`. Both
+  compound on *every ticket* — 0050's stall fired twice in one day on different file pairs, and
+  0048's handoff is traversed twice per ticket and has already half-applied — while 0049's two
+  instances are isolated. Preferring the compounding rate over size here is a judgement, not a
+  rule, and a later re-rank is entitled to disagree with it.
+- **0043 last in the tier.** Its registry entries all resolve *today* (the wrong ticket id the
+  finding named was corrected by 0035 before this sweep read it), so the damage is latent rather
+  than accruing. It stays Tier 2 rather than Tier 5 because the gates' own first recommendation is
+  relocation — the operation most likely to break an entry — so the trigger is built into the
+  advice.
+
+### What was deliberately not promoted
+
+- **0050 did not go above 0045**, though tie-breaker 3 (knowledge freshness) initially argued for
+  it. That argument dissolved on inspection: what was decaying was the evidence — the four
+  candidate shapes and the two stall instances — and writing it into the item is what freshness
+  buys. Once captured it stops decaying, so the tie-breaker no longer separates them, and the
+  regret operator does: a tool that gives an actively wrong verdict beats better guidance about a
+  stall the tool would then report honestly.
+- **0051 kept its rank while `blocked`**, per the standing rule. Sinking it would mean
+  rediscovering why a published figure was wrong once 0042 clears.
