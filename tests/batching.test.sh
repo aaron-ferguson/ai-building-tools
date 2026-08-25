@@ -47,9 +47,39 @@ counted() {
 
 # The batching paragraph itself, not the whole file: every assertion below about the *test* for
 # batchability has to hold inside that paragraph, or it passes on unrelated prose elsewhere.
+#
+# The window ends on the paragraph's own blank line, never on a line count — do not "simplify" it
+# back to a count. A count is a guess at how long the prose is, and it goes wrong silently in both
+# directions: too short and the assertions scan a window missing the lines they exist to pin, too
+# long and every "present" assertion can be satisfied by the paragraph that follows, which this
+# guard does not govern. The second was live here until 0032 — a 15-line count over a 13-line
+# paragraph read three lines of the next one. A blank line is where the paragraph actually ends,
+# so it cannot drift as the prose is edited.
 PARA="$(mktemp)"
 trap 'rm -f "$PARA"' EXIT INT TERM
-awk '/one gate per session/{f=1} f{print; if (++n>14) exit}' "$DEV" > "$PARA"
+awk '/one gate per session/{f=1} f && /^[[:space:]]*$/{exit} f{print}' "$DEV" > "$PARA"
+
+if [ ! -s "$PARA" ]; then
+  echo "extraction failed: no line matching /one gate per session/ in $DEV" >&2
+  echo "every assertion scoped to the paragraph would then pass or fail for the wrong reason" >&2
+  exit 2
+fi
+
+echo "Window integrity — the extraction is the batching paragraph and nothing adjacent"
+WIN_START=$(grep -nF 'one gate per session' "$DEV" | head -1 | cut -d: -f1)
+WIN_LEN=$(wc -l < "$PARA" | tr -d ' ')
+WIN_AFTER=$((WIN_START + WIN_LEN))
+DEV_LEN=$(wc -l < "$DEV" | tr -d ' ')
+if grep -q '^[[:space:]]*$' "$PARA"; then
+  bad "the window holds a blank line, so it has run past its own paragraph into the next"
+else
+  ok "the window holds no blank line, so it cannot reach a neighbouring paragraph"
+fi
+if [ "$WIN_AFTER" -gt "$DEV_LEN" ] || [ -z "$(sed -n "${WIN_AFTER}p" "$DEV" | tr -d '[:space:]')" ]; then
+  ok "the window ends where the paragraph ends — the next line of develop is blank or EOF"
+else
+  bad "the window stops short or overruns — line $WIN_AFTER of develop is non-blank, not the paragraph break"
+fi
 
 echo "AC1 — develop states the batching case and its test"
 counted "the rule appears exactly once, lowercase, as the QA plan greps for" \
