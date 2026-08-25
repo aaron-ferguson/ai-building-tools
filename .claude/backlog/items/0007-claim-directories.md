@@ -3,7 +3,7 @@ id: "0007"
 title: Replace the Owner column with claim directories
 type: chore
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-18
@@ -18,6 +18,8 @@ expects:
   - .gitignore
   - README.md
 touches:
+claimed_by: "c7a9"
+claimed_at: 2026-08-25T06:58:28Z
 ---
 
 ## Problem
