@@ -2,24 +2,17 @@
 id: "0033"
 title: Guard against stale rule-name citations across the references
 type: debt
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-23
 source: agent
 expects:
   - tests/citations.test.sh
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
-claimed_by: "8c99"
-claimed_at: 2026-08-25T01:59:06Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/citations.test.sh
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
-  - .claude/backlog/items/0033-guard-stale-rule-citations.md
-  - .claude/backlog/QUEUE.md
 ---
 
 ## Problem
@@ -98,3 +91,53 @@ fails.
 
 - Fixtures are authored trees in a temp directory, never the live `references/`. A guard that
   mutates the files it also measures is the coupling `testing-conventions.md` warns about.
+
+### Built 2026-08-24 [0033]
+
+**`expects:` over-predicted by two files, and the correction is above.** It named
+`references/CONCURRENCY.md` and `references/CONCURRENCY-INCIDENTS.md` because *Out of scope* said
+the two citations broken by the 2026-08-23 rename "should be fixed by this ticket if still
+present". They are not present — `grep -rn "two scripts"` over `references/`, `skills/` and
+`QUEUE.md` returns nothing, so 0023's close already fixed them. Nothing outside `tests/` changed.
+Left as claimed, those two files would have reserved `references/CONCURRENCY.md` against 0034,
+which is the next `develop` row and genuinely needs it.
+
+**The recognition rule lives in the guard's header, not here** — it is the thing a later author
+has to read, and a second copy would drift. Two mechanisms behind it were not obvious and cost
+real time:
+
+- **Strip the bold DELIMITERS, not the bold SPANS.** The obvious first move is
+  `gsub(/\*\*[^*]*\*\*/, "")` to clear bold before matching italics. It fails on this corpus:
+  `CONCURRENCY.md` line 41 nests an italic at the *end* of a bold
+  (`**...row as *its files are held***`), which that pattern cannot match, so it leaves an
+  unpaired asterisk behind that then pairs with the next one and swallows half a paragraph. Three
+  citations came out as sentence fragments. Removing only the `**` markers and keeping their text
+  resolves `***` correctly and needs no special case.
+- **Scope the scan to the markdown paragraph (`RS=""`), not to the file.** Flattening the whole
+  file lets an anchor at the end of one paragraph reach a span at the start of the next. That is
+  not hypothetical here: `CONCURRENCY-INCIDENTS.md` line 141 is a `rule:` heading and line 143
+  opens the next paragraph with the *deleted* rule name `*`verify` never writes the queue*` in
+  narrative prose. Whole-file flattening reported it as a stale citation — a false failure on the
+  exact case FR5 exists to spare. This is 0032's finding arrived at from the other end: a window
+  that does not terminate on the document's own boundary measures its neighbour.
+
+**A theory that was wrong.** The first plan was to recognise a citation as "any italicised span",
+per FR3's reading of the convention. That yields ~80 hits, almost all emphasis, because these
+files italicise constantly. The check has to run cited → defined (a stale name matches no
+definition by construction, so it cannot be filtered by matching the definitions), which means
+false positives are false *failures*. Anchoring is what makes FR5 achievable without the
+exemption list FR5 would rather avoid.
+
+**Known false negative, documented in the header and deliberately not fixed.** An unanchored
+citation is not checked. `CONCURRENCY-INCIDENTS.md` has a real one: "the one place *Claim tokens*
+says ownership does not live." Distinguishing it from the emphasis around it requires already
+knowing the set of rule names, which is what the guard is computing — so no widening of the
+anchor can reach it. The cover that remains was measured: renaming *The three scripts* in a
+`git archive` copy of the tree fired 5 anchored citations across 4 files.
+
+**AC5's two cases passed against the stubbed extractor** — before `rule_citations` existed at all.
+That is the vacuous pass FR6 was written for, observed live: an empty-set check is green whether
+the recognition is broken or the tree is clean, which is why AC2–AC4 have to red separately for
+the red-green cycle to mean anything.
+
+**Verified for QA:** whole suite green, 11 suites / 260 assertions, at f823e8f.
