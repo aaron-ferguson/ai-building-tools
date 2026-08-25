@@ -817,6 +817,24 @@ out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc       "exits 0 — dispatch"          "$rc" 0
 assert_contains "dispatches both as one gate" "$out" 'DISPATCH  develop 0101 0102'
 
+# The *other* in-progress branch. This one and the case below are two different code paths, the
+# same way AC9's two waiting cases are: with a completed outcome supplied, `--drive` reads the row
+# the stage just finished (phase A) and a row still in-progress there means the stage never
+# released its claim; with none supplied, it walks the rank and steps such a row over as another
+# session's. Not an FR8 row, so it owes no AC — but it was the last branch in the ladder with no
+# fixture, and the wording is the only thing that pins it: with the branch deleted the final `else`
+# escalates too, so rc 4 and ESCALATE alone stay green.
+echo "0038 FR8 — a completed stage that never released its claim: escalate"
+scaffold
+add_row 0101 'Still held' verify in-progress 0091
+add_ticket 0101 verify in-progress '[]' 0091 a/one.md
+seal
+out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"              "$rc" 4
+assert_contains     "escalates"                       "$out" 'ESCALATE'
+assert_contains     "names the unreleased claim"      "$out" 'the claim was never released'
+assert_not_contains "dispatches nothing"              "$out" 'DISPATCH'
+
 echo "0038 FR8 — an in-progress row is stepped over, not taken"
 scaffold
 add_row 0101 'Held by another session' develop in-progress 0091
