@@ -211,7 +211,18 @@ sessions it was written for.
   `FINDINGS.md`, where it would sit un-triageable and make a healthy buffer look neglected.
 
 Verify the installed copy matches the source afterwards — a silent no-op here is the Step 3 trap one layer
-further in.
+further in, and **the version number does not tell you**: an install can sit at the same version as the
+source and hold different bytes, or the bump can land while the install never happens. Diff the two
+trees and read the answer, rather than trusting either number:
+
+```bash
+diff -rq skills/ ~/.claude/plugins/cache/<plugin>/<plugin>/<version>/skills/
+```
+
+This has already cost a false finding: a session reported a rule missing from `verify` Step 2 that had
+shipped the same day, because the installed copy was 1,556 bytes behind the source. A retro that skips
+this check does not merely fail to release its own edits — it re-derives, and re-lands, work that is
+already done.
 
 ---
 
