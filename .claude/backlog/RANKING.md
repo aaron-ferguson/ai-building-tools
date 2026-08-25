@@ -447,3 +447,62 @@ is about to be paid for four more times.
   `companies/<name>/` so a *solo* preference has nowhere private and discoverable to live — are work
   in the conventions repo and in Aaron's own projects, not in this one. They stay parked, and the
   right home for them is that repo's backlog.
+
+## The findings sweep of 2026-08-25, batch 3 — six rows, three amendments, one unused ID
+
+The pass that empties the buffer. Six tickets at three anchors; three findings landed as
+**amendments** to tickets already editing the exact step they concern, rather than as tickets of
+their own — see the note at the end, which is a ranking decision as much as a scoping one.
+
+### Where the six went
+
+- **0065 above 0050, against tie-breaker 4.** It is `s` and completely certain, which by the
+  tie-breakers would put it above 0054 as well. It sits below 0054 because the regret operator says
+  so: 0054 is about verdicts taken over a tree that never existed as a commit, which happens
+  whenever two sessions overlap — the normal condition here — while 0065's failure needs someone to
+  hand-edit `QUEUE.md` with a stream editor. Same judgement as batch 2's 0050/0048-over-0049, and
+  recorded for the same reason: it is where this ranking is arguable.
+- **0064 then 0062, above 0048.** 0064's failure is the most severe of the six — a stage silently
+  does not run, the session believes it did, and the queue says the row moved. It is Tier 2 rather
+  than Tier 1 only because it needs someone to type the bare skill name. 0062 follows it: an
+  addition-only FR list cannot express a removal, and an absence NFR asserted over the deliverable
+  alone misses the ticket's own prose, which is exactly how 0026 shipped a privacy breach in its
+  Problem section.
+- **0066, 0063, 0067, above 0043.** All three are real and none is accruing much. 0066 is three
+  script defects, one of which (a correct `verify` claim reading as an under-specified `develop`
+  one) reaches every other session; 0063 is the unwrapping matcher, which fires on every prose edit
+  but only in this repo's own suites; 0067 is dormant until someone starts a rename, and is above
+  0043 only on blast radius.
+
+### Two things worth recording about 0063
+
+It is a **looser** matcher in a repo whose characteristic defect is a guard that runs and cannot
+fail, so its ACs are written to make the fix unshippable as one — AC2 and AC3 require the matcher to
+still miss an absent phrase and to still respect a section boundary. It was also not treated as a
+prerequisite of the eleven queued tickets naming scoped prose greps: it makes their assertions more
+robust, not possible, and the prerequisite override is for "possible or materially cheaper", not
+"better".
+
+### Three findings landed as amendments, not tickets
+
+Each was one clause in a step another ticket was already rewriting, and each would otherwise have
+put a second session in the same prose file — the collision 0050 exists to settle.
+
+- **0055 gained FR10/AC11** — Step 5's mutation rule cites the copy-aside diff for uncommitted code,
+  one clause in the paragraph FR4 already rewrites.
+- **0058 gained FR5/AC8** — Step 3 confirms the mutation reached the file the harness runs, in the
+  step FR2 and FR3 already rewrite.
+- **0060 gained FR6/AC5** — a bundled ticket's removal list derives from its FRs, not from the
+  cluster that produced it. It went to 0060 rather than 0057 because it is a rule about the
+  **sweep**, which 0060 owns, not about a `queue` operation.
+
+Each re-check confirmed `size`, the QA plan's named checks and *Out of scope* were unaffected,
+which is the actual work of an amend; the FR is the cheap part.
+
+### 0068 was claimed and not used
+
+The batch was scoped at seven and written as six once the three amendments above proved to be the
+right home for what the seventh would have held. **The ID is left unused rather than reclaimed**:
+`next_id` had already been committed at 69, and rolling it back risks handing 0068 to a concurrent
+session that has since read the higher value. A gap in the numbering costs nothing; a duplicate
+costs a ticket.

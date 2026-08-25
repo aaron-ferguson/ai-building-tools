@@ -71,15 +71,21 @@ by the next commit. This paragraph described that design as current fact and was
 | 0045 | Cross the take loop against the held file set in next | develop | ready |  |
 | 0060 | Decide how the findings buffer is emptied and gated | design | ready |  |
 | 0054 | Give develop and verify a rule for a result taken over a shared dirty tree | develop | ready |  |
+| 0065 | Name stream editors in the rule against rewriting QUEUE.md | develop | ready |  |
 | 0050 | Decide how file scope works when the prose files are the product | design | ready |  |
 | 0055 | Fill the develop steps that have no case for what now happens routinely | develop | ready |  |
 | 0058 | Give verify the outcomes its steps assume can never happen | develop | ready |  |
 | 0056 | Give design a non-UI reading list and complete its write step | develop | ready |  |
 | 0059 | Decide what the batching rule actually licenses | design | ready |  |
+| 0064 | Make a stage skill say which copy of it is running | develop | ready |  |
+| 0062 | Let a ticket's contract express a removal and cover its own prose | develop | ready |  |
 | 0048 | Decide which remaining backlog write sites become scripts | design | ready |  |
 | 0057 | Add the queue operations that exist in practice and not in the skill | develop | ready |  |
 | 0049 | Decide what a claim token guarantees and what enforces it | design | ready |  |
 | 0061 | Decide how a session learns the installed plugin differs from this repo | design | ready |  |
+| 0066 | Fix the three places the backlog scripts answer the wrong question | develop | ready |  |
+| 0063 | Give the prose guards a matcher that survives a rewrap | develop | ready |  |
+| 0067 | Decide what shape a cross-cutting rename takes in the backlog | design | ready |  |
 | 0043 | Make the two size gates fail on a registry entry that no longer resolves | develop | ready |  |
 | 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
 | 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |

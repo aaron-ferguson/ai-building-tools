@@ -92,6 +92,11 @@ Written after the design question is settled. What is fixed regardless:
   to rather than quoting a sibling.
 - FR4 — Dates written into the backlog and this buffer state their timezone, matching
   `claimed_at:`'s existing ISO-8601 UTC.
+- FR6 — `queue` Step 5 states that when a ticket is bundled from several entries, the removal list
+  is derived from **the ticket's FRs**, not from the cluster that produced it. Sweeping this buffer's
+  second batch, three of forty-six entries read as covered because a neighbouring concern in the same
+  bundle was, and were caught only by a check nothing asked for; had it been skipped they would have
+  left the buffer with no ticket, no trace, and a sweep reporting success.
 - FR5 — Whatever mechanism FR1 lands, the code that implements it is named: `count_findings` in
   `skills/queue/templates/next` and its installed copy, not only the prose.
 
@@ -113,6 +118,8 @@ Cannot be written until the design question is settled. These hold regardless:
   it cannot finish.
 - [ ] AC3 — Given the buffer's header, when read, then it states how a cross-referencing entry
   names its subject.
+- [ ] AC5 — Given `skills/queue/SKILL.md` Step 5, when read, then it states that a bundled ticket's
+  removal list comes from its FRs.
 - [ ] AC4 — Given the buffer's header and `templates/item.md`, when read, then the timezone of a
   written date is stated.
 
@@ -134,6 +141,11 @@ Cannot be written until the design question is settled. These hold regardless:
 
 ## Notes & decisions
 
+- **Amended 2026-08-25**, during the third sweep, adding FR6/AC5 — the bundled-removal rule.
+  Re-checked: `size` stays `m` (one paragraph in a step FR2 already rewrites), the QA plan is
+  unchanged because AC5 is a scoped grep on the same step, and *Out of scope* is unchanged. It
+  belongs here rather than in 0057 because it is a rule about the **sweep**, which this ticket owns,
+  not about a `queue` operation.
 - Routed to `design` on trigger 1. The marker and the gate are one decision, not two: a marker
   makes the count derivable, and without one the gate has to be re-based on something else.
 - The header's own reasoning — that nothing is tagged at write time, because classification at the

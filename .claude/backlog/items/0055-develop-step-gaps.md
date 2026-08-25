@@ -97,6 +97,10 @@ file second** — the claim is two seconds and the item file is the expensive re
   copy to prove it landed, revert before committing.
 - FR7 — Step 1 shows the `./next` invocation from the repo root, so following it does not move the
   working directory.
+- FR10 — Step 5's mutation rule cites `testing-conventions.md`'s statement that on the TDD path
+  `git diff` compares against HEAD — which never held the code just mutated — so an empty diff is
+  indistinguishable from a mutation that failed to apply, on a run that was correctly red. The
+  remedy it names is to copy the file aside and diff against the copy.
 - FR9 — Step 1 states the ordering **claim first, read the item file second**, and names why: the
   claim is cheap and `./claim` re-reads under the lock, while restating a contract for a row you do
   not hold is the expensive mistake.
@@ -122,6 +126,8 @@ file second** — the claim is two seconds and the item file is the expensive re
 - [ ] AC6 — Given Step 4, when read, then it names the evidence-only re-entry and its
   mutate-diff-revert procedure.
 - [ ] AC7 — Given Step 1, when read, then the `./next` invocation shown runs from the repo root.
+- [ ] AC11 — Given Step 5's mutation rule, when read, then it names the copy-aside diff for code
+  that is not yet committed, and cites the convention rather than restating it.
 - [ ] AC10 — Given Step 1, when read, then it states that the row is claimed before the item file
   is read, and why that order.
 - [ ] AC8 — Given every citation added, when `tests/citations.test.sh` runs, then each resolves.
@@ -156,6 +162,12 @@ file second** — the claim is two seconds and the item file is the expensive re
 - Bundled at the level of "one skill file's steps have no case for what now happens routinely"
   rather than six tickets. Six tickets on one prose file is the stage-wide stall 0050 describes,
   reproduced deliberately.
+- **Amended twice on 2026-08-25**, both during the sweep that captured this ticket. The second
+  added FR10/AC11 — the copy-aside diff. Re-checked: `size` stays `l`, the QA plan is unchanged
+  because AC11 is another scoped grep on the same Step 5 mutation rule as AC4, and *Out of scope* is
+  unchanged. It landed here rather than as its own ticket because it is one clause in the exact
+  paragraph FR4 already rewrites, and a separate ticket would have been a second session in this
+  file for one sentence.
 - **Amended 2026-08-25**, during the same sweep that captured it, to add FR9/AC10 — the
   claim-before-read ordering. Re-checked per the amend rules: `size` stays `l` (one more prose
   clause on a file already being edited for seven), the QA plan's named checks are unchanged

@@ -62,7 +62,13 @@ defect exactly as precisely as quoting it.
   a scratch directory, never a live row in the shared table.
 - FR4 — The verdict step states that a leaked value is **described, never quoted**, so the verdict
   does not republish what it is failing the ticket for.
-- FR5 — Every rule added cites its convention rather than restating it, and each citation resolves
+- FR5 — Step 3 requires confirming the mutation reached **the file the harness runs**, not the copy
+  being read, citing `testing-conventions.md`. Where a project keeps two copies — here the harness
+  runs `skills/queue/templates/next` while the backlog runs `.claude/backlog/next`, kept identical
+  by `tests/backlog-scripts-installed.test.sh` — mutating the wrong one returns a clean pass, which
+  is exactly what a check that cannot fail returns. Step 2 warns about the *installed* copy under
+  `plugins/cache/`; it does not cover a second in-repo copy the harness prefers over the live one.
+- FR6 — Every rule added cites its convention rather than restating it, and each citation resolves
   under `tests/citations.test.sh`.
 
 ## Non-functional requirements
@@ -85,6 +91,8 @@ defect exactly as precisely as quoting it.
   quoted.
 - [ ] AC5 — Given the whole change, when `git grep` is run over every file it touches — this item
   file included — for a transcript-store path segment, then none is present.
+- [ ] AC8 — Given Step 3, when read, then it requires confirming the mutation reached the file the
+  harness runs, and names how to tell which that is.
 - [ ] AC6 — Given every citation added, when `tests/citations.test.sh` runs, then each resolves.
 - [ ] AC7 — Given the whole suite, when it runs, then every suite passes.
 
@@ -107,6 +115,11 @@ defect exactly as precisely as quoting it.
 
 ## Notes & decisions
 
+- **Amended 2026-08-25**, during the sweep that captured it, adding FR5/AC8 — confirm the mutation
+  reached the file under test. Re-checked: `size` stays `m` (one clause in Step 3, which FR2 and FR3
+  already rewrite), the QA plan's checks are unchanged because AC8 is another scoped grep on Step 3,
+  and *Out of scope* is unchanged. The alternative was a separate ticket in `skills/verify/SKILL.md`
+  alongside this one, which is the collision 0050 exists to settle.
 - Routed to `develop`: each case has a method that was used successfully and recorded. FR2 offers
   two acceptable resolutions because which applies depends on the AC, and both satisfy the
   ownership rule — that is a build-time choice, not an open decision.
