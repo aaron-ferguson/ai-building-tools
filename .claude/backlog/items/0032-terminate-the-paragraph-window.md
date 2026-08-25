@@ -2,18 +2,17 @@
 id: "0032"
 title: Terminate batching.test.sh's paragraph window on a blank line
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-23
 source: agent
 expects:
   - tests/batching.test.sh
-claimed_by: "5864"
-claimed_at: 2026-08-25T01:58:26Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/batching.test.sh
 ---
 
 ## Problem
@@ -88,6 +87,27 @@ A blank-line terminator costs nothing and cannot drift.
   a scripted assertion over prose, and that is not in question.
 
 ## Notes & decisions
+
+- Built 2026-08-24. FR4's sweep (`grep -rn '++n\|n>[0-9]' tests/`) returns exactly one hit across all
+  ten suites — this line. The idiom was not copied, so there is nothing else to give the same
+  treatment.
+- The window was 15 lines over a 13-line paragraph (`skills/develop/SKILL.md` lines 30–42), so it
+  carried the blank line plus the first line of *"Another session may be working this same backlog."*
+  Confirmed before the change and re-confirmed green after.
+- FR2 is asserted as two properties rather than one: the window holds no blank line (it cannot have
+  run past its own paragraph) **and** the line immediately after the window in `$DEV` is blank or
+  EOF (it did not stop short either). One without the other is satisfiable by a broken window —
+  a window truncated at 3 lines passes the first alone.
+- All three mutations driven against a fixture copy in a temp tree, never the live skill: start
+  phrase renamed → exit 2 naming the extraction (AC3); every date stripped from the paragraph →
+  still red (AC4); sentinel `parent slice 2026-08-22 0026 expects:` added to the *following*
+  paragraph → still green (AC5), which is the regression the ticket exists for.
+- **The AC4 mutation did not red on the first attempt, and the guard was right — the mutation was
+  incomplete.** The paragraph carries two dates, and AC4's grep is satisfied by either. That is a
+  real weakness in a neighbouring assertion but not this ticket's; parked in `FINDINGS.md`
+  (2026-08-24) rather than fixed here, per *Out of scope*.
+- `grep -m1` was written first and replaced with `grep | head -1`: `-m` is a BSD/GNU extension used
+  nowhere else in this project, whose scripts are POSIX `sh` throughout.
 
 - Fixture discipline for this one specifically: build the fixture from a *copy* of the skill placed
   in a temp tree and mutated there, and do not assert against the live `skills/develop/SKILL.md`
