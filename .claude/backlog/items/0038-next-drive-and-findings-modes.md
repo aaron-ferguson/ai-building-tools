@@ -20,6 +20,13 @@ expects:
 claimed_by: "0092"
 claimed_at: 2026-08-25T06:26:46Z
 touches:
+  - skills/queue/templates/next          # the implementation; the template is the source
+  - .claude/backlog/next                 # the byte-identical copy, per backlog-scripts-installed
+  - tests/next.test.sh                   # the fixtures
+  - skills/queue/templates/config.yml    # findings_threshold, with the comment naming its reader
+  - .claude/backlog/config.yml           # the same key for this repo
+  - skills/retro/SKILL.md                # FR3: a pointer to the key, not a second number
+  - README.md                            # new to expects: line 208's test inventory names next's modes
 ---
 
 ## Problem
