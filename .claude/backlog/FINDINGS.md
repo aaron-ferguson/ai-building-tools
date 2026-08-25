@@ -654,3 +654,22 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   prose was correct here and only the tool was wrong (pointer: .claude/backlog/next:286-304 and :204,
   skills/queue/templates/next, skills/develop Step 1, references/CONCURRENCY.md *The working tree is
   shared too*).
+- 2026-08-25 — **0032's own AC5 prescribes a mutation that passes under both the bug and the fix, so
+  following it literally proves nothing — on the one ticket whose whole subject is adjacent
+  measurement.** AC5 reads "given a phrase the suite asserts is absent, when that phrase is added to
+  the paragraph *following* the batching paragraph, then the suite still passes — proving the window no
+  longer reaches it." It does not prove that. Adding a phrase to the next paragraph leaves every
+  `present` assertion satisfied by the real paragraph, so the suite is green with the 15-line window
+  *and* with the blank-line window; and the only `absent` assertion in the suite is scoped to `$DEV`,
+  the whole file, where the window is irrelevant by construction. The item's notes record doing
+  exactly this (sentinel `parent slice 2026-08-22 0026 expects:` appended to the following paragraph,
+  "still green (AC5), which is the regression the ticket exists for") — a green that was never
+  reachable as a red. The discriminating mutation is to **move** a pinned phrase out of the batching
+  paragraph into the next one: verified here, the old window reports `ok   the shared-slice half of
+  the test, in the paragraph` for a phrase no longer in that paragraph, while the blank-line window
+  reds. Stated as a rule: **a window-scoping guard is proved by moving the pinned string across the
+  boundary, never by adding a string on the far side of it** — addition tests reachability of the
+  assertion, movement tests the boundary. The fix shipped in 0032 is correct and this changes none of
+  its results; what is wrong is the recipe an AC hands the next verifier (pointer: items/0032 AC5 and
+  its *Notes & decisions*, tests/batching.test.sh:60, ai-building-conventions/testing-conventions.md
+  "a guard that is wired and still cannot fail").
