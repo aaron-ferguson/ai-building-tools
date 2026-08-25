@@ -510,6 +510,11 @@ seal
 out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
 assert_rc           "exits 4 — escalate"  "$rc" 4
 assert_contains     "names next: queue"   "$out" 'queue'
+# The substring `queue` matches the ladder's catch-all `else` too ("is at next: queue / ready
+# after verify, which no routing rule covers"), so with this FR8 row deleted the three assertions
+# above stay green while a fully routed state reports as one no rule covers. The wording is what
+# pins the branch.
+assert_contains     "names it as the stale contract" "$out" 'the contract is stale'
 assert_not_contains "dispatches nothing"  "$out" 'DISPATCH'
 
 # The loop hazard with no precedent in this suite: verify Step 7 leaves an advisory PASS at
