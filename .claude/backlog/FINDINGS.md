@@ -610,3 +610,20 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   the expensive read. Two sessions were live on this backlog at once when it happened, which is the
   condition `CONCURRENCY.md` is written for, not an unusual one (pointer: skills/develop Step 1
   "Select and claim the item", references/CONCURRENCY.md *Re-read immediately before you write*).
+
+- 2026-08-25 — **`./next develop` verdicts `TAKE` on a row whose *entire* `expects:` set is held, and
+  it has both halves on screen to know better.** All five `next: verify` rows were held by one batched
+  pass (`1a06c11`); every remaining `next: develop` row overlapped that pass's `touches:` — 0034 on
+  2 of 2 expected paths, 0036 on 4 of 11, 0007 on 4 of 6 — so nothing was developable. `./next develop`
+  nonetheless printed `TAKE 0034`, then printed the CLAIMED FILES block four lines below showing both
+  of 0034's paths held by `0029`/`0026`/`0033`. The take loop (`next:286-304`) filters on stage,
+  `blocked_by` and the Status column, and never consults the held set; `show_claimed` runs afterward
+  and independently. Two consequences, and the second is the worse one: the verdict word contradicts
+  the skill's own rule (`develop` Step 1, *Check the file scope before you claim*) for a reader who
+  trusts the first line, and because the loop `break`s on the first stage match it cannot offer the
+  next *clear* row either — the thing Step 1 actually asks for. The data to cross is already in the
+  same process. Note the asymmetry with the 2026-08-25 verify entry above: `develop` Step 1 *does*
+  write down this outcome ("If every row collides, say there is nothing safe to develop"), so the
+  prose was correct here and only the tool was wrong (pointer: .claude/backlog/next:286-304 and :204,
+  skills/queue/templates/next, skills/develop Step 1, references/CONCURRENCY.md *The working tree is
+  shared too*).
