@@ -842,3 +842,23 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   live use, so this is not a one-off malformed ticket — `templates/item.md` should settle one form
   and `close` should refuse, or report, when it ticks zero of a non-empty AC list (pointer:
   .claude/backlog/close, skills/verify/SKILL.md Step 5, items/0035 vs items/0034, templates/item.md).
+- 2026-08-25 — **a ticket that edits a template silently owns its installed copy, and no `expects:`
+  ever says so.** `tests/backlog-scripts-installed.test.sh` AC2 requires `.claude/backlog/{next,claim,
+  close}` to be byte-identical to `skills/queue/templates/`, fixed one-way (template → copy). So any
+  ticket touching one of those three templates also owns a second file, or the suite goes red at Step
+  5 in a file the ticket never named. 0007's `expects:` named both templates and neither copy; the
+  session found it only by reading the suite before claiming. This is not 0007-specific — it applies
+  to every future ticket touching the three scripts, and the coupling lives in a test file that
+  `queue` has no reason to open at capture time. Either `expects:` should be derived through that
+  coupling, or the templates should carry a pointer to it (pointer:
+  tests/backlog-scripts-installed.test.sh, skills/queue Step 0, items/0007).
+- 2026-08-25 — **an AC that asserts a *count* of things in a shared reference file goes stale
+  silently whenever any sibling adds one.** 0007 AC2 reads "names exactly one operation that takes
+  the lock", written 2026-08-18 when `CONCURRENCY.md` listed two. 0023 added a third on 2026-08-23
+  (`60ebd36`), so a literal build now strips the lock from `./close` — automating away the atomicity
+  0023 and 0024 exist to provide. Nothing flags it: every path 0007 names was untouched, and the
+  cardinality is correct-looking prose in a ticket that reads fresh. 0033 guards stale rule
+  *citations* (named rules that no longer resolve); a stale *count* still resolves and still reads
+  fine, so it slips through. The general rule worth landing: assert membership ("closing a row still
+  takes the lock"), never cardinality (pointer: items/0007 AC2, items/0033, references/CONCURRENCY.md
+  *Lock every write to `QUEUE.md`*).
