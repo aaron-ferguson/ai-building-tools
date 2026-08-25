@@ -1,6 +1,6 @@
 # Measurement — what one skill per session actually cost
 
-**Recorded 2026-08-24, ticket 0026.** Effort `0009` opened with a measurement and committed to
+**Recorded 2026-08-24, ticket 0026.** Project `0009` opened with a measurement and committed to
 closing with one. This is that measurement, and it is **observed against observed**: both runs are
 recomputed from their own transcripts by `tools/harvest-usage.sh`, at the same rates, by the same
 arithmetic. Re-run it with that script rather than trusting the numbers below.
@@ -115,7 +115,7 @@ from the record the run left rather than from memory.
 once for real: `0021` was sent back with AC1 unmet on four of six files rather than closed. **42
 findings were parked** across the two days — 4 dated 2026-08-23 and 38 dated 2026-08-24, counted as
 at 2026-08-24 06:00Z — against the baseline run's 4, of which two existed only in conversation and
-would have been lost. That is the durable-handoff half of the effort doing exactly what it was for.
+would have been lost. That is the durable-handoff half of the project doing exactly what it was for.
 This measurement itself caught a defect no acceptance criterion would have: naive per-line summation
 of the transcripts overstates cost by 2.2x, and the figure would have been published wrong.
 
