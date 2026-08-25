@@ -3,19 +3,17 @@ id: "0032"
 title: Terminate batching.test.sh's paragraph window on a blank line
 type: bug
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
 source: agent
 expects:
   - tests/batching.test.sh
-claimed_by: "ade9"
-claimed_at: 2026-08-25T02:13:10Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/batching.test.sh
-  - skills/develop/SKILL.md
-  - .claude/backlog/items/0032-terminate-the-paragraph-window.md
+closed: 2026-08-25
 ---
 
 ## Problem
@@ -57,21 +55,21 @@ A blank-line terminator costs nothing and cannot drift.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `tests/batching.test.sh`, when its extraction is read, then it terminates on a
+- [x] AC1 — Given `tests/batching.test.sh`, when its extraction is read, then it terminates on a
   blank line and contains no line-count bound.
-- [ ] AC2 — Given the extracted window, when it is printed, then its last line is the batching
+- [x] AC2 — Given the extracted window, when it is printed, then its last line is the batching
   paragraph's last line and no line of the following paragraph appears.
-- [ ] AC3 — Given a tree where the batching paragraph's start phrase has been renamed, when the
+- [x] AC3 — Given a tree where the batching paragraph's start phrase has been renamed, when the
   suite runs, then it fails with a message naming the extraction as the cause — not with a
   misleading content assertion.
-- [ ] AC4 — Given the paragraph with its date stripped, when the suite runs, then it still fails —
+- [x] AC4 — Given the paragraph with its date stripped, when the suite runs, then it still fails —
   the behaviour verified before this change is preserved.
-- [ ] AC5 — Given a phrase the suite asserts is absent, when that phrase is added to the paragraph
+- [x] AC5 — Given a phrase the suite asserts is absent, when that phrase is added to the paragraph
   *following* the batching paragraph, then the suite still passes — proving the window no longer
   reaches it. This is the regression the ticket exists for.
-- [ ] AC6 — Given `grep -rn "n>[0-9]" tests/`, when it runs, then no remaining paragraph extraction
+- [x] AC6 — Given `grep -rn "n>[0-9]" tests/`, when it runs, then no remaining paragraph extraction
   is bounded by a line count.
-- [ ] AC7 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then all
+- [x] AC7 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then all
   suites pass.
 
 ## QA plan

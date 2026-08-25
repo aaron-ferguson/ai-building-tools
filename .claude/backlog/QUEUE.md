@@ -61,7 +61,6 @@ by the next commit. This paragraph described that design as current fact and was
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0032 | Terminate batching.test.sh's paragraph window on a blank line | verify | in-progress | — |
 | 0033 | Guard against stale rule-name citations across the references | verify | in-progress | — |
 | 0034 | Derive the advisory label from the paths the verdict rested on | develop | ready | — |
 | 0036 | Orchestrate the isolated stage sessions from one supervising session | develop | ready | — |
