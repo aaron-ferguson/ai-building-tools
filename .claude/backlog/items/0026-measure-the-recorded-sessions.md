@@ -3,7 +3,7 @@ id: "0026"
 title: Measure the isolated workflow from the recorded sessions and record the verdict
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -19,8 +19,8 @@ expects:
   - skills/verify/SKILL.md
   - tests/measurement.test.sh
   - tools/harvest-usage.sh
-claimed_by:
-claimed_at:
+claimed_by: "35a8"
+claimed_at: 2026-08-25T02:13:10Z
 touches:
 ---
 
