@@ -544,6 +544,11 @@ assert_rc       "exits 4 — escalate"          "$rc" 4
 assert_contains "escalates"                   "$out" 'ESCALATE'
 assert_contains "carries the design question" "$out" 'toolbar or the sidebar'
 
+# The rank walk's own `queue` arm, which is a different branch from the phase-A one above and
+# carries a different reason: there, verify sent a built ticket back and the contract is stale;
+# here, a top-ranked row was never specified in the first place. Both are pinned by wording for
+# the same reason — the walk's `case` ends in a `*)` that escalates with rc 4 too, so renaming
+# this arm away leaves rc, `ESCALATE` and the absent `DISPATCH` all green.
 echo "0038 AC9 — a row at next: queue escalates"
 scaffold
 add_row 0101 'An unspecified ticket' queue ready 0091
@@ -552,6 +557,7 @@ seal
 out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc           "exits 4 — escalate" "$rc" 4
 assert_contains     "escalates"          "$out" 'ESCALATE'
+assert_contains     "names the missing acceptance criteria" "$out" 'no acceptance criteria to build against'
 assert_not_contains "dispatches nothing" "$out" 'DISPATCH'
 
 echo "0038 AC9 — develop handed the ticket to design: escalate carrying the open design question"
