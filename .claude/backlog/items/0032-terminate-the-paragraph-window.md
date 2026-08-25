@@ -13,6 +13,7 @@ expects:
 claimed_by: "5864"
 claimed_at: 2026-08-25T01:58:26Z
 touches:
+  - tests/batching.test.sh
 ---
 
 ## Problem
