@@ -3,7 +3,7 @@ id: "0038"
 title: Add the drive and findings routing modes to next
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -18,8 +18,8 @@ expects:
   - skills/queue/templates/config.yml
   - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
   - README.md               # not predicted: line 208's test inventory names next's modes
-claimed_by:
-claimed_at:
+claimed_by: "b978"
+claimed_at: 2026-08-25T07:11:18Z
 touches:
 ---
 
