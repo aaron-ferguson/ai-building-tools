@@ -7,7 +7,7 @@ conventions:
   path: ../ai-building-conventions
 
 # Monotonic. queue claims this number for a new ticket, then increments it.
-next_id: 62
+next_id: 69
 
 # How many FINDINGS.md entries before a driver runs a retro instead of the next ticket. Read by
 # `./next --findings` and gated on by `./next --drive` (exit 5). Left at retro's stated cadence
