@@ -19,6 +19,10 @@ expects:
 claimed_by: "064e"
 claimed_at: 2026-08-25T22:16:17Z
 touches:
+  - tests/next.test.sh
+  - tests/close.test.sh
+  - tests/claim.test.sh
+  - README.md
 ---
 
 ## Problem
