@@ -972,3 +972,18 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   degenerate stage-wide lock this repo's normal operating mode rather than an incident (pointer:
   references/CONCURRENCY.md *The working tree is shared too* and *A stage writes only the ticket it
   holds*, skills/develop Step 1, items/0007, items/0038).
+
+- 2026-08-25 — **"Mutate it wrong" is not "mutate it away", and a branch needs both — the rule two
+  sessions handed forward was half a rule.** The previous pass declared its sweep complete on the
+  strength of mutating `--drive`'s same-stage guard to the *naive* implementation (`lnext = verify`,
+  the mistake a person makes), which reds 5 assertions. Deleting the same branch
+  (`elif [ "$lnext" = "$lstage" ]` → `elif false`, the mistake a later edit makes) left
+  `145 passed, 0 failed`. Same for rank-walk `queue)`. Between them, three FR8 rows were free to
+  vanish with their own cases printing ok. Mutating to the plausible wrong implementation pins the
+  branch's **condition**; mutating it away pins its **identity** — a report of "covered" from
+  either alone is not evidence about the other. **And the operational half:** three consecutive
+  sessions each found exactly one instance of this shape by *reading* for the next one. Enumerating
+  the eighteen branches and driving mutate-run-revert from a loop took ~5 minutes and found the
+  remainder at once. Where a suite has a known systematic assertion weakness, the sweep is a loop,
+  not a read (pointer: items/0038 *Re-entry 2026-08-25 (second)*, the two entries above this one,
+  testing-conventions.md *Prove a new guard fails*).
