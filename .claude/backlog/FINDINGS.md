@@ -29,6 +29,18 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-25 — **the `Co-Authored-By` trailer collapsed exactly when the skill-driven lifecycle took
+  over the commit volume, and nothing noticed.** `git-conventions.md` requires the trailer in *all*
+  AI-assisted commits. Every one of the 28 commits through 2026-08-20 carries it; of the 229 since
+  2026-08-21 only 36 do (16%), and the ones that do are the hand-driven sessions. The mechanism is
+  in the skills themselves: `develop`, `queue` and the rest give commit templates as a single-line
+  `git commit -m "Claim 0007 [$CLAIM]" -- <paths>`, and **no skill file mentions the trailer at
+  all** — so a rule that lives only in a conventions file is silently dropped by every skill that
+  hands the agent a ready-made command instead. Either the templates carry the trailer or the
+  convention says lifecycle commits are exempt; what is there now is a rule that 84% of recent
+  commits break (pointer: ai-building-conventions/git-conventions.md:21,
+  skills/develop/SKILL.md:135, skills/queue/SKILL.md:373).
+
 - 2026-08-25 — **0026's AC5 guard cannot fail, because its verdict grep matches a heading the same
   test file requires to exist.** `tests/measurement.test.sh` asserts the verdict with
   `grep -qE 'materialised|partly|did not'` over `MEASUREMENT.md`. The record's section heading *What
