@@ -29,6 +29,27 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-25 — **`design` Step 2 is written entirely for UI questions, but `next: design` also
+  catches mechanism decisions, and then the step points at nothing.** Its three ordered lookups are
+  prior art, the design system, and "the files the core's index names for design, UI and
+  accessibility". 0007 is a concurrency-protocol question — does claiming write `QUEUE.md` — and
+  followed literally, Step 2 sends the session to `design-conventions.md` and the `neumo-ds` MCP,
+  neither of which has anything to say. What actually decided it was `migration-conventions.md`
+  (*Expand, Migrate, Contract*) and the project's own `CONCURRENCY-INCIDENTS.md`. The step has a
+  clause for "if the question touches user-facing UI" and none for the other case, so a
+  non-UI design session either invents its own reading list or cites nothing. Cheap fix: make
+  lookup 3 "the convention files this question turns on, per the core's index" and keep the design
+  system as a *conditional* lookup rather than an ordered one (pointer: skills/design/SKILL.md
+  Step 2).
+- 2026-08-25 — **`design` Step 4 has no route for an answer whose consequence is a second ticket.**
+  Its four cases are item-scoped-unclaimed (write it here), item-scoped-claimed (hand to `queue`),
+  has-to-be-seen (`waiting`), and standing (a decision record). 0007's answer implied an
+  expand/contract split, and the honest shape of that is arguably two rows — but minting an ID is a
+  `queue` write against `config.yml`, and Step 4 neither authorises it nor names the handoff. It
+  was resolvable here by keeping both phases in one ticket with an ordering FR, so nothing was lost;
+  the gap is that the resolution was forced by the skill's silence rather than chosen. A fifth case
+  — "the answer splits the work: write the FRs here, and say in the report that `queue` should
+  consider a split" — would cost two lines (pointer: skills/design/SKILL.md Step 4).
 - 2026-08-25 — **`develop` Step 5.4 tells a session to clear `touches:`, which is where Step 1 told
   it to record that `expects:` under-predicted.** Building 0038 turned up one file `expects:` had
   not named (`README.md`); Step 1 says to declare it in `touches:` and say inline that it is new,
