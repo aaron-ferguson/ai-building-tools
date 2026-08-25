@@ -2,8 +2,8 @@
 id: "0053"
 title: Let the test harness print the line an assertion actually saw
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -16,13 +16,9 @@ expects:
   - tests/close.test.sh
   - tests/claim.test.sh
   - README.md
-claimed_by: "064e"
-claimed_at: 2026-08-25T22:16:17Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/next.test.sh
-  - tests/close.test.sh
-  - tests/claim.test.sh
-  - README.md
 ---
 
 ## Problem
@@ -101,6 +97,30 @@ turn into a read.
   is cheap once the shape exists and is not required to close this.
 
 ## Notes & decisions
+
+- **FR4 resolved as three copies that name each other, not a shared file.** `CLAUDE.md` states the
+  suite is `tests/*.test.sh`, "each self-contained and printing its own tally", so sourcing a
+  `tests/lib/` helper would change the shape of the suite to satisfy a sub-clause of one FR. Each of
+  the three carries the same `saw` / `saw_on_pass` pair under a comment naming the other two.
+- **`close.test.sh` had no rc helper at all** — eight inline `[ "$rc" -eq 0 ] && ok … || bad …`
+  lines, four of which also dumped `$out`. Routed through `assert_rc` / `assert_rc_nonzero`, and both
+  suites' helpers took an optional trailing captured-output argument so the two do not drift into
+  different signatures. No assertion's subject changed; the pass lines are byte-identical.
+- **`saw_on_pass` ends in an explicit `return 0`, and must.** Under `set -eu` a body of
+  `[ -n "${SHOW_MATCHED:-}" ] && saw "$1"` returns 1 whenever the flag is off, and a function whose
+  last command returns non-zero aborts the suite at the first passing assertion.
+- **AC1 was checked by diff, not by eye**: `git show HEAD:tests/<suite> > tests/.head-<x>.sh` and
+  diffing the two runs. The copy has to live inside the repo — every suite resolves `ROOT` from its
+  own location, so a copy in a scratch directory exits 2 looking for `skills/queue/templates/` under
+  the scratch path. Dot-prefixed so the `tests/*.test.sh` loop skips it, removed the same turn.
+  Parked in `FINDINGS.md`, since the next mutation sweep will want it too.
+- **AC3 was driven by a real failure with the flag off** — `'blocked'` mutated to `'NOT-A-STATUS'` in
+  `tests/claim.test.sh`, mutation confirmed by diffing against a copy taken before the edit, output
+  observed, mutation reverted. The failing line printed `saw: 0002 is 'blocked', not ready — pick
+  another row`, which is the evidence the old `FAIL` line withheld.
+- **Not done here:** the other five suites (`citations`, `graph-fields`, `measurement`, `batching`,
+  the two size gates) still have their own `ok`/`bad` pairs and no flag. *Out of scope* says so; the
+  block is eleven lines and copies cleanly when one of them next needs a sweep.
 
 - Routed to `develop`: the mechanism is named in the finding (an env flag, or on `FAIL` plus a
   `--show` mode) and the trade-off is settled by `testing-conventions.md`'s existing rule that test
