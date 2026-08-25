@@ -906,3 +906,22 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   message assertion worth adding, not a red. Both cases were live in one ticket, which is what makes
   the missing distinction expensive rather than academic (pointer: skills/verify/SKILL.md Step 3,
   items/0038, skills/queue/templates/next `--drive` phase A).
+- 2026-08-25 — **`develop` Step 4 has no correct answer for a re-entry whose verdict is "the code
+  is right, only the evidence is missing".** The cycle it cites is write the test → confirm red →
+  implement → confirm green, and on a QA bounce of this shape there is nothing to implement: the
+  red can only come from *deliberately mutating correct production code*, running, and reverting.
+  That is `testing-conventions.md`'s "prove a new guard fails", but Step 4 does not point at it, so
+  the honest paths are to skip the red — leaving exactly the untrustworthy assertion the bounce
+  existed to remove — or to invent the technique. The rule that fits: on a re-entry, confirm red by
+  the mutation the verdict names, diff the file to prove it landed, and revert before committing.
+  Two of this session's three findings came out of that pass rather than out of reading (pointer:
+  skills/develop/SKILL.md Step 4, items/0038 *Re-entry 2026-08-25*).
+- 2026-08-25 — **Where a routing ladder ends in a catch-all `else`, asserting rc plus the outcome
+  keyword asserts the `else`, not the branch.** Mutating `--drive`'s verify-bounce branch to
+  `elif false` left all three of its pre-existing assertions green — rc 4, `ESCALATE`, the ticket
+  id — because the final `else` escalates too. An FR8 row can be deleted outright while its own
+  test case prints `ok` three times. This is the generative rule behind the previous entry's
+  three mutation-silent branches rather than a fourth instance of it, and it belongs wherever the
+  suite's assertion shape is described: for a ladder, the branch is pinned by its *wording*, and
+  only the ladder's last arm is pinned by its outcome (pointer: tests/next.test.sh AC9 block,
+  skills/queue/templates/next `--drive` phase A, testing-conventions.md).
