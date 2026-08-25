@@ -21,6 +21,8 @@ expects:
 claimed_by: "e1cb"
 claimed_at: 2026-08-25T07:21:04Z
 touches:
+  - skills/queue/templates/next   # mutated transiently by the QA mutation pass, reverted in the same turn
+  - tests/next.test.sh
 ---
 
 ## Problem
