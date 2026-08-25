@@ -2,8 +2,8 @@
 id: "0038"
 title: Add the drive and findings routing modes to next
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -18,8 +18,8 @@ expects:
   - skills/queue/templates/config.yml
   - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
   - README.md               # not predicted: line 208's test inventory names next's modes
-claimed_by: "70c3"
-claimed_at: 2026-08-25T08:02:04Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -479,3 +479,104 @@ edited.
 
 **Advisory, unchanged from the last pass:** `items/0037-*.md` was uncommitted throughout — another
 session mid-release of its own claim. Nothing was stashed or reverted, and no test reads it.
+
+### QA 2026-08-25 (third pass) — FAIL: the sweep declared complete missed two decision sites, one of them the ticket's own problem statement
+
+**Everything the last re-entry claims is confirmed.** Suite green — `147 passed, 0 failed` in
+`next.test.sh`, `391 passed, 0 failed` across `tests/*.test.sh`. I re-ran the sweep mechanically
+rather than by reading, as the parked finding advises: 26 mutations, one line each, revert by
+pathspec between. The last pass's eighteen ladder branches are all red, including the four it added
+(`waiting` rank-walk, verify-bounce wording, stale-contract wording, phase-A `in-progress`), and
+AC6, AC10, AC28 and AC29 each red under mutation. AC9's fourteen FR8 rows all have fixtures —
+sixteen cases, since `waiting` and the same-stage guard each have two.
+
+**Two decision sites are still free to be deleted with the suite at `147 passed, 0 failed`, and
+neither is in the eighteen.** Both are `--drive` outcomes with no fixture at all, so AC11 —
+*exercises `./next --drive` for each routing outcome and each escalation* — is unmet.
+
+- **`--drive`'s malformed-FINDINGS escalation (`next` ~560) is unguarded, and it is the exact defect
+  in this ticket's Problem section.** `findings_gate` has its own format check, separate from the one
+  `--findings` mode carries:
+
+  ```
+  -    if [ "$gbad" != 0 ]; then
+  +    if false; then
+  ```
+
+  `147 passed, 0 failed`. Against a fixture holding a third entry shape and a takeable develop row:
+
+  ```
+  real     MALFORMED FINDINGS.md:8  - a bullet with no date at all, which neither shape covers.
+           ESCALATE  FINDINGS.md carries an entry shape the count does not recognise, so the gate
+                     cannot be trusted — and a gate reading a low number fires late and silently  rc=4
+  mutant   DISPATCH  develop 0101                                                                 rc=0
+  ```
+
+  A driver proceeds on a count the script has already established is low — *"a gate reading a
+  reliably-low number fires late, silently, and there is nothing to notice it with"*, this ticket's
+  own words, arriving through the driver path rather than the reporting one. AC6's guard fixture
+  (`next.test.sh:446`) exercises **`--findings`**, which is a different guard on a different code
+  path, so nothing covers this one.
+
+- **Phase A's no-ticket branch (`next` ~580) has no fixture either.** The last pass listed it as
+  pinned at "89 failures", which is not a branch deletion — 89 reds is a script that stopped
+  parsing. Deleting the branch:
+
+  ```
+  -    if [ -z "$lid" ]; then
+  +    if false; then
+  ```
+
+  `147 passed, 0 failed`. On `--drive --completed develop` (a bare stage, the form `usage` documents
+  as `[:<id>]` optional):
+
+  ```
+  real     NOTE      develop finished with no ticket of its own — choosing the next gate
+           DISPATCH  develop 0101                                                       rc=0
+  mutant   ESCALATE   has no row in QUEUE.md and no item file — nothing recognises that state  rc=4
+  ```
+
+  A continuable run stops and asks a person, and the message carries a blank id where the ticket
+  should be. `grep -n 'finished with no ticket' tests/` is empty.
+
+**No production code is wrong.** Third pass in a row where the branch is right and only the evidence
+is missing. The fix is two fixtures in the AC11 block: one with a malformed `FINDINGS.md` plus a
+takeable develop row, asserting rc 4 and `an entry shape the count does not recognise` with
+`assert_not_contains DISPATCH`; one with `--completed develop` and no id, asserting rc 0,
+`finished with no ticket of its own`, and the dispatch that follows it.
+
+**Why a loop-driven sweep still missed them, which is the part worth carrying.** The parked finding
+fixed *what* to mutate; it did not fix *how the branch list is built*, and both survivors are
+outside the list rather than inside it.
+
+- **Enumerating "the branches" by reading the two ladders misses decision sites in helpers.**
+  `findings_gate` calls `decide` twice and is a routing outcome by every definition FR8 uses, but it
+  is a function above the ladder, so a reader walking `if/elif/else` never reaches it. Build the
+  list from **every call site of `decide`** plus every `NOTE`-and-continue — that is the set FR8's
+  table actually maps onto — not from the control flow that happens to be adjacent.
+- **A mutation sweep needs a control, because the failure count is evidence about the mutation
+  before it is evidence about the test.** Two of my own 26 came back silent for no interesting
+  reason: `STATUS="$(column_named Status || echo 5)"` never fires the `||` (awk exits 0 printing
+  nothing), and renaming the modes on `usage()`'s description lines leaves them in its synopsis
+  line. Both were false gaps, found only by re-running the *intended* mutation. Symmetrically, "89
+  failures" was a false confirmation. So: run one no-op mutation as a control, and treat a zero or an
+  implausibly large count as a claim about the mutation until the behaviour is probed by hand.
+
+**Non-functional requirements both hold, re-checked rather than inherited.** Compatibility: the
+pre-existing modes keep the fixed-shape assertion verbatim and `--drive` alone skips it
+(`next` ~155); `next.test.sh:731` pins every pre-existing invocation and reds 2 when the
+required-column check drops `Status`; `claim.test.sh` 18 and `close.test.sh` 63 green against the
+real scripts. An unmigrated install — `config.yml` with no `findings_threshold`, no `FINDINGS.md` —
+was exercised by hand and defaults to 8, dispatching normally; `--findings` returns `0 entries;
+threshold 8` at rc 0 and never reaches the shape check. Documentation: the key ships in
+`skills/queue/templates/config.yml` naming both readers and exit code 5, and `--help` reds 2 once
+`usage()` stops naming the modes. Nothing in the `--drive` block writes, locks, or launches a
+process — checked, so Step 4's newly-reachable pass finds no privileged path the change opened.
+
+**Copies:** `tests/next.test.sh` executes `skills/queue/templates/next`, byte-identical to
+`.claude/backlog/next` and to HEAD. Every mutation was reverted by
+`git checkout -- skills/queue/templates/next`, never a bare pathspec.
+
+**Advisory, and it does not touch this verdict — third pass unchanged.** `items/0037-*.md` was
+uncommitted throughout, another session's claim. `grep -rln 0037 tests/` is empty, so it cannot
+reach the suite; nothing was stashed or reverted.
