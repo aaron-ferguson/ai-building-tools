@@ -29,6 +29,35 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-25 — **`next.test.sh` prints only `ok`/`FAIL`, never the line the assertion saw, so a
+  mutation sweep cannot tell why a case passed.** Verifying 0038 meant deleting each branch of
+  `--drive`'s ladder and asking which cases red; where one stayed green the harness could not say
+  what it had matched instead, and the only way to see it was to hand-build a fixture outside the
+  suite and diff the real line against the mutant's. That scaffolding is invented per session and
+  thrown away — the third session in a row on this ticket to pay for it. A harness that printed the
+  captured output on demand (an env flag, or on `FAIL` plus a `--show` mode) would have turned a
+  session of work into a read (pointer: tests/next.test.sh assert helpers ~line 222, items/0038).
+
+- 2026-08-25 — **`verify` Step 2's advisory rule has no answer for a dirty path no test can
+  reach, and on this repo that is the normal case.** Step 2 marks a verdict advisory on any change
+  outside the ticket and Step 7 says an advisory PASS does not close, with no distinction between
+  "dirty in a path the suite reads" and "dirty anywhere in the repo". Here `items/0037-*.md` sat
+  uncommitted all session — another session mid-release of its own claim — and no test reads it
+  (`grep -rn 0037 tests/` is empty). Read literally, one session pausing mid-claim makes every
+  verdict in this repo advisory and nothing can close, and on a project whose backlog *is* its tree
+  that is most of the time. The rule wants a reachability test — does the dirty path feed the level
+  being run — rather than a whole-tree one (pointer: skills/verify/SKILL.md Steps 2 and 7,
+  items/0038, items/0037).
+
+- 2026-08-25 — **"assert the wording, not the outcome" is a general testing rule sitting in one
+  ticket's notes, and it has now cost three sessions.** Where a ladder ends in a catch-all `else`
+  that returns the same code as its specific branches, every assertion on the outcome passes against
+  code that has lost the branch entirely — so a case reports ok while its rule is deleted. 0038's
+  notes state it well and scoped it to FR8's table; the shape is generic and this repo has three
+  more ladders (`claim`'s refusals, `close`'s three grounds, `next`'s own stage loop). Its home is
+  probably `testing-conventions.md` beside the existing mutation guidance, not a ticket
+  (pointer: items/0038 *Re-entry* and *QA (second pass)*, ai-building-conventions/testing-conventions.md).
+
 - 2026-08-25 — **`design` Step 2 is written entirely for UI questions, but `next: design` also
   catches mechanism decisions, and then the step points at nothing.** Its three ordered lookups are
   prior art, the design system, and "the files the core's index names for design, UI and
