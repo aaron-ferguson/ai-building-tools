@@ -2,8 +2,8 @@
 id: "0034"
 title: Derive the advisory label from the paths the verdict rested on
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -11,11 +11,9 @@ source: agent
 expects:
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by: "c2e9"
-claimed_at: 2026-08-25T02:36:40Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/verify/SKILL.md
-  - references/CONCURRENCY.md
 ---
 
 ## Problem
@@ -186,3 +184,45 @@ warns about.
 
 **No design system or accessibility check applies** — the artefacts are two prose files in a
 plugin, with no user-facing UI.
+
+### Built 2026-08-25 (token `c2e9`) — commit `eab05ac`, awaiting QA
+
+Where each FR landed, so the QA pass knows which prose to read:
+
+| FR | Where | Shape |
+|---|---|---|
+| FR1 | `verify` Step 3 opening sentence, plus one clause on Step 4's NFR paragraph | a clause on the existing sentence, per the decision's note about 0021's trim |
+| FR2 | Step 7, replacing the old "if Step 2 found unrelated changes" sentence | two bullets — empty and non-empty intersection |
+| FR3 | Step 7's non-empty bullet | "both copies agreed" refused by name |
+| FR4 | Step 5's opening | the existing sentence kept, one clause added |
+| FR5 | `CONCURRENCY.md` bullet under *The working tree is shared too* | same commit |
+
+**Step 2 had to stop labelling, which the FRs imply but do not say.** AC2 forbids any other trigger
+for the label remaining in the file, and Step 2's bullet was the original trigger. It now records the
+dirty paths as a set and names Step 7 as where the label is derived — consistent with *Out of scope*,
+which preserves what Step 2 *does* (still runs `git status --porcelain`, still records, still forbids
+tidying) and moves only where the label is decided.
+
+**Step 4 needed the clause too.** FR1 says the evidence set covers "each checked NFR row", but Step 3
+is the ACs and Step 4 is the NFRs. One sentence in Step 4 folds its paths into the same set rather
+than defining a second one.
+
+**A forward-reference is not a second trigger.** Step 3 names the advisory label to say Step 7 derives
+it from the set being recorded. An assertion written as "advisory appears only in Step 7" fails on
+that line and is wrong to: AC2 forbids another *trigger*, and a pointer at the single trigger is what
+keeps Step 3's bookkeeping motivated. The check that matches AC2 is that no line outside Step 7
+*assigns* the label.
+
+**AC7 walked by hand.** The recorded 2026-08-24 case: dirty set `{.claude/backlog/QUEUE.md,
+.claude/backlog/items/0030-…md}`; evidence set the skill and template files 0030's ACs rested on.
+Intersection empty → not advisory → plain PASS closing by Step 5, with the verdict naming the two
+excluded paths. The rule as written gives the answer the finding said it should.
+
+**Full suite green at `eab05ac`** — all 11 scripts in `tests/`, 260 assertions, 0 failed.
+`skills/verify/SKILL.md` is 18,761 bytes against the 20,190 goal, so it still needs no recorded
+justification; `references/CONCURRENCY.md` grew 126 bytes and keeps its existing 0028 reason.
+
+**No durable guard was added, deliberately.** The QA plan settled on reads and greps with no runner,
+and FR4 adds no field for anything to parse. A `tests/advisory.test.sh` asserting on this prose is
+buildable and was not built, because inventing it here would be a contract the ticket did not agree
+to — it is named in the report as a queue candidate instead.
