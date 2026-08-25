@@ -219,6 +219,19 @@ including on failure. Refusals are asserted on the *message* and on *files uncha
 exit status alone: "exits non-zero" is satisfied by the silent refusal the guard exists to forbid. There
 is no runner and no framework; a guard is a `sh` file that exits non-zero.
 
+The three script suites — `tests/claim.test.sh`, `tests/close.test.sh` and `tests/next.test.sh` —
+print one line per case and the tally, and nothing else. Set `SHOW_MATCHED=1` to make every
+assertion also print the text it matched against:
+
+```bash
+SHOW_MATCHED=1 tests/next.test.sh   # every ok line followed by what that assertion saw
+```
+
+That is what a mutation sweep needs and a green run does not: when a case stays green against
+deliberately broken code, this is what says what it matched *instead*. A **failing** case prints
+the same line with the flag off — a failure with no evidence is the case bare output serves worst.
+Turn it on for the one run and leave it off otherwise (`testing-conventions.md`).
+
 A guard on the skills only asserts what a command can measure — a phrase present or absent, a byte
 count. Everything else about a skill's behaviour is prose, and is checked by `/verify` against a
 ticket's acceptance criteria instead.
