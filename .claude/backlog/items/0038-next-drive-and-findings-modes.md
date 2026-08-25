@@ -2,8 +2,8 @@
 id: "0038"
 title: Add the drive and findings routing modes to next
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -18,12 +18,9 @@ expects:
   - skills/queue/templates/config.yml
   - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
   - README.md               # not predicted: line 208's test inventory names next's modes
-claimed_by: "0325"
-claimed_at: 2026-08-25T07:38:55Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/next.test.sh   # re-entry: evidence only. The QA verdict is explicit that no production
-                         # code is wrong, so the script and its template are NOT held this pass —
-                         # mutations are applied and reverted in place, never committed.
 ---
 
 ## Problem
@@ -427,3 +424,58 @@ modes. File scope stayed inside `expects:`.
 **Advisory, and it does not touch this verdict.** `items/0037-*.md` was uncommitted throughout —
 another session mid-release of its own claim. No test reads it (`grep -rn 0037 tests/` is empty), so
 it cannot reach the suite; nothing was stashed or reverted.
+
+### Re-entry 2026-08-25 (second) — both fixes in, and the sweep the last verdict declared complete was not
+
+- **The two the verdict asked for are in, each proven red.** The stale-contract case now asserts
+  `the contract is stale`, and the phase-A `in-progress` branch has its first fixture, asserting
+  `the claim was never released`. Under the mutations the verdict named each reds on exactly that
+  one assertion while rc 4 and `ESCALATE` stay green — confirming its diagnosis in both cases.
+  **No production code changed this session**; `skills/queue/templates/next` and
+  `.claude/backlog/next` are byte-identical to each other and to HEAD.
+
+- **The verdict's "the sweep is done and this is the whole remainder" was wrong, by two branches,
+  and the reason is instructive.** It listed *rank-walk `queue`* as pinned "(rc 3 vs 4)" and the
+  *same-stage guard* as pinned by "5 reds against the naive `lnext = verify` driver". Both survive
+  their own deletion:
+
+  | Mutation | Suite before the fix |
+  |---|---|
+  | `queue)` → `queue-mutated-away)` (rank walk) | `144 passed, 0 failed` |
+  | `elif [ "$lnext" = "$lstage" ]` → `elif false` (phase A) | `145 passed, 0 failed` |
+
+  The first is an FR8 row of its own; the second carries **two** — *develop, tree not green* and
+  *same ticket, same stage*. Both are now pinned by wording (`no acceptance criteria to build
+  against`, `same ticket, same stage`) and proven red.
+
+- **Why a sweep that ran missed them: mutating to the plausible wrong implementation and mutating
+  to branch deletion pin different things, and a branch needs both.** The naive `lnext = verify`
+  driver is the mistake a *person* would make, and the pair of assertions catches it — that is real
+  evidence and the earlier note was right to prize it. Deletion is the mistake a *later edit* makes,
+  and only the wording catches that. The previous pass mutated to the first and concluded the branch
+  was covered. So the rule the last two passes handed forward is half a rule; the whole one is:
+  **for each branch, mutate it away as well as mutating it wrong — the first pins its identity, the
+  second pins its condition.**
+
+- **The sweep is now genuinely complete, recorded here so a fourth pass does not re-derive it.**
+  Every branch of both `--drive` ladders was mutated individually and the suite run against each.
+  All eighteen now red. Phase A: no-ticket NOTE (89 failures), `DONE.md` NOTE (1),
+  became-a-project (4), `waiting` (1), `in-progress` (1 — new), `design` (1), `queue` (1),
+  gained-blocker (2), verify-bounce (1), same-stage (2 — new), develop→verify (2). Rank walk:
+  `in-progress` (1), blocked (4), `waiting` (4), `design` arm (1), `queue` arm (1 — new),
+  `verify` arm (4), `develop` arm (20). The `*)` fallback and the no-row/no-item escalation are
+  AC10's, already red.
+
+- **The cost argument for doing this mechanically in `develop` rather than one instance per QA
+  pass.** One mutate-run-revert cycle over `next.test.sh` is ~15–20s, so the whole eighteen-branch
+  sweep is about five minutes of wall clock in a loop. Three sessions have now been spent finding
+  one instance each of the same defect shape. Where a suite's assertion shape has a known
+  systematic weakness, enumerate the branches and drive it from a loop; reading for the next
+  instance is what kept missing them.
+
+**Suite:** `147 passed, 0 failed` in `next.test.sh`; **391 across `tests/*.test.sh`, 0 failed** —
+every runner this project has. File scope stayed inside `expects:`; only `tests/next.test.sh` was
+edited.
+
+**Advisory, unchanged from the last pass:** `items/0037-*.md` was uncommitted throughout — another
+session mid-release of its own claim. Nothing was stashed or reverted, and no test reads it.
