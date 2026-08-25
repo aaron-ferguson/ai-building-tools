@@ -11,8 +11,52 @@
 # examples and niche cases. So: over the goal is allowed, and must be RECORDED with a reason. The
 # reason is what a reviewer argues with; the number only decides when that argument has to happen.
 #
-# The first move for a file over the goal is a POINTER, not a cut: detail that only some runs need
-# belongs in a conditionally-read file (references/), so it costs nothing on the runs that don't.
+# WHEN RELOCATION IS THE ANSWER — the payback test (0035). The first move for a file over the goal
+# is usually a POINTER rather than a cut: detail that only some runs need belongs in a
+# conditionally-read file (references/), so it costs nothing on the runs that don't. "Usually" is
+# doing work there. Relocation has a price, and three separate things decide whether it is worth
+# paying. This is the test; apply it before moving anything, and record the answer either way.
+#
+#   THE ARITHMETIC. A block of B bytes carried inside a skill file is paid for once as a cache
+#   WRITE and then re-read on every later turn of the session. Following a pointer instead is paid
+#   for once, as one extra turn. So for an N-turn session:
+#
+#       carry = (B / 4.038) x ($6.25 + (N-1) x $0.50) / 1e6      fetch = $0.1028
+#
+#   Setting them equal gives B0, the block size at which one skipped fetch exactly pays for one
+#   carried block:
+#
+#       N = 37 turns per session  ->  $6.25 + 36 x $0.50  = $24.25 per MTok carried
+#                                 ->  $0.1028 / $24.25 x 1e6 = 4,239 tokens
+#                                 ->  x 4.038 bytes/token     = ~17,000 bytes = B0
+#
+#   Every figure is measured and lives in MEASUREMENT.md: 4.038 bytes/token, $6.25/MTok cache write
+#   at the 5-minute TTL, $0.50/MTok cache read, $0.1028 per turn, and 1,112 turns across 30 sessions
+#   = ~37 turns per session. RECOMPUTE B0 rather than trusting it whenever the rates or the
+#   turns-per-session figure move — the derivation is the durable part and the constant is an
+#   output. It is not a sensitive number: a develop session averages 39 turns, which gives ~16,400,
+#   and no answer below changes. 0035's design pass read "30 sessions" as 30 turns and published
+#   20,000; the correction moved the constant and left every conclusion standing.
+#
+#   WHAT B0 MEANS. It is most of the whole goal, so relocation NEVER pays on size alone — a block
+#   big enough to matter is a block nearly as big as the file. What it pays on is the share of runs
+#   that never follow the pointer, and the break-even share is
+#
+#       p = 1 / (1 + B/17,000)
+#
+#   Relocate only if the estimated share of runs that skip the branch clears p.
+#
+#   TWO CONDITIONS THAT ARE NOT ABOUT COST, and the second outranks the arithmetic:
+#     (a) the share of runs skipping the branch clears p, above; and
+#     (b) the content is not MANDATORY once its branch is taken. A mandatory step behind a pointer
+#         is a step that gets skipped, and no byte count buys that. Where (b) fails, (a) is moot.
+#
+#   THE WORKED INSTANCE that passes both. references/CONCURRENCY.md -> CONCURRENCY-INCIDENTS.md:
+#   the rules and the failure each prevents stayed, the narrative, the reasoning and the live
+#   procedure moved, and the moved half is read only when a rule is argued with or a conflict is
+#   live — well under p. The compression rule it yields, stated for reuse: KEEP RULE + FAILURE IN
+#   ONE CLAUSE, MOVE THE STORY. A rule whose failure has been relocated is a rule the next session
+#   argues with, which is why the test can reject a cut as well as a move.
 #
 # It is measured in bytes, absolutely — never a percentage of a baseline. 0021's first pass could
 # not close because its target was 25% off a baseline eight sibling tickets moved 18% while it
@@ -29,14 +73,19 @@ ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 
 GOAL=20190             # ~5,000 tokens at the 4.038 bytes/token ratio this repo measured
 
+# Asked for in the same words as tests/reference-size.test.sh, deliberately: a guard that asks only
+# for "a reason" gets a reason, and a reason that does not say what was considered is one nobody can
+# argue with. The two guards state one demand; the arithmetic behind it lives only in this file.
+RELOCATE='relocate detail only some runs need to a pointer file, or record a justification naming what you considered relocating'
+
 # justification <relative-path> — echoes why this file is over the goal, or nothing if it is not
 # recorded as over it. One line per file, naming the ticket that accepted the cost. A file over the
 # goal with no entry here fails; an entry on a file back under the goal fails so it gets removed.
 justification() {
   case "$1" in
-    skills/prototype/SKILL.md) echo "0021 — three build procedures, one used per run; relocating each to a conditional reference is an open design question" ;;
-    skills/queue/SKILL.md)     echo "0021 — specification rules read by every other stage" ;;
-    skills/develop/SKILL.md)   echo "0027 — carries the re-entry and staleness rules; its anecdotes are the relocation candidates" ;;
+    skills/prototype/SKILL.md) echo "0035 — considered relocating Step 5's level-2, level-3 and field-reference branches, over half the file; rejected on both conditions: the level split is unmeasured so nothing shows it clears p, and every byte is mandatory once its level is picked" ;;
+    skills/queue/SKILL.md)     echo "0035 — considered relocating the specification rules; rejected on (a), because every other stage reads them and p is zero — there is no branch here that any run skips" ;;
+    skills/develop/SKILL.md)   echo "0035 — considered relocating its worked anecdotes; rejected on both: they are already the one-clause statement of the failure each rule prevents, so moving them leaves a rule with no failure named, and they are read on every run" ;;
     *) return 0 ;;
   esac
 }
@@ -69,7 +118,7 @@ offenders() {
         echo "$rel is $bytes bytes, under the $GOAL goal — remove its stale justification"
       fi
     elif [ "$bytes" -gt "$GOAL" ]; then
-      echo "$rel is $bytes bytes, over the $GOAL goal by $((bytes - GOAL)) — relocate detail to a pointer file, or record a justification"
+      echo "$rel is $bytes bytes, over the $GOAL goal by $((bytes - GOAL)) — $RELOCATE"
     fi
   done
 }
@@ -129,7 +178,18 @@ pad "$FIX/skills/padded/SKILL.md" $((GOAL + 500))
 out="$(offenders "$FIX" justification)"
 case "$out" in
   *"skills/padded/SKILL.md is $((GOAL + 500)) bytes, over the $GOAL goal by 500"*)
-    ok "unrecorded file over the goal reported with its overage" ;;
+    # 0035 AC5: the message must ask for a justification that says what was considered relocating,
+    # in the words reference-size.test.sh already uses. A guard that asks only for "a reason" gets
+    # a reason, and a reason nobody can argue with is the thing the soft goal exists to avoid.
+    case "$out" in
+      *"relocate detail only some runs need to a pointer file"*)
+        case "$out" in
+          *"naming what you considered relocating"*)
+            ok "unrecorded file over the goal reported with its overage, relocation named first" ;;
+          *) bad "0035 AC5 — the over-goal message does not ask what was considered relocating: $out" ;;
+        esac ;;
+      *) bad "0035 AC5/FR4 — the over-goal message does not name relocation first: $out" ;;
+    esac ;;
   "") bad "AC4 — file over the goal was NOT reported; the guard is wired to nothing" ;;
   *)  bad "AC4 — reported something else: $out" ;;
 esac
@@ -186,6 +246,63 @@ case "$out" in
     esac ;;
   *) bad "FR7 — the unrecorded file was not reported: ${out:-<nothing>}" ;;
 esac
+
+# ------------------------------------------------------------------------------------------------
+# 0035 — the payback test itself is guarded. The NFR that put the test in this header rather than a
+# decision record only holds if something notices when it goes missing: an author who deletes the
+# arithmetic leaves a guard that says "relocate first" and cannot say when. These cases read this
+# file's own header, so the rule and its check live in one place.
+
+SELF="$ROOT/tests/skill-size.test.sh"
+HEADER="$(awk '/^set -eu$/ { exit } { print }' "$SELF")"
+
+echo "0035 AC1 — the header states the payback test, every input, and their source"
+for want in \
+  'p = 1 / (1 + B/' \
+  '4.038' \
+  '$6.25' \
+  '$0.50' \
+  '$0.1028' \
+  'turns per session' \
+  'MEASUREMENT.md'
+do
+  case "$HEADER" in
+    *"$want"*) ok "payback test names $want" ;;
+    *) bad "0035 AC1 — the header does not state $want; the test cannot be recomputed without it" ;;
+  esac
+done
+
+echo "0035 AC2 — the POINTER sentence is qualified, not unconditional"
+case "$HEADER" in
+  *"is a POINTER, not a cut: detail that only some runs need"*)
+    bad "0035 AC2 — the unconditional 'first move is a POINTER' sentence still stands" ;;
+  *"POINTER"*)
+    case "$HEADER" in
+      *"mandatory"*) ok "the POINTER sentence is qualified by the non-cost conditions" ;;
+      *) bad "0035 AC2/FR2 — the POINTER sentence names no mandatory-content condition" ;;
+    esac ;;
+  *) bad "0035 AC2 — the header no longer names the pointer as the first move at all" ;;
+esac
+
+echo "0035 AC4/FR6 — every justification names what was considered, and carries no byte count"
+for rel in skills/prototype/SKILL.md skills/queue/SKILL.md skills/develop/SKILL.md; do
+  reason="$(justification "$rel")"
+  if [ -z "$reason" ]; then
+    bad "0035 AC4 — $rel has no recorded justification"
+    continue
+  fi
+  # Drop the leading ticket id so its four digits are not read as a byte count.
+  body="${reason#[0-9][0-9][0-9][0-9] }"
+  if printf '%s' "$body" | grep -Eq '[0-9]{4,}'; then
+    bad "0035 FR6 — $rel's justification carries a number that will go stale: $body"
+  else
+    ok "$rel's justification carries no byte count"
+  fi
+  case "$body" in
+    *relocat*) ok "$rel's justification names what was considered relocating" ;;
+    *) bad "0035 AC4/FR4 — $rel's justification does not say what was considered relocating" ;;
+  esac
+done
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]
