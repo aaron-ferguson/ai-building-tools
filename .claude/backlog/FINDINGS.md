@@ -513,3 +513,18 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   cheap and worth naming in the rule: copy the file aside before mutating and `diff` against that
   copy, never against HEAD, whenever the code under mutation is uncommitted (pointer:
   ai-building-conventions/testing-conventions.md "Prove a new guard fails", skills/develop Step 5).
+- 2026-08-24 — **batching.test.sh's AC4 date check is an adjacent measurement of exactly the kind
+  0032 existed to remove, one assertion below the one 0032 fixed.** AC4 asserts the batching
+  statement "carries a dated figure" with `grep -qE '20[0-9][0-9]-[0-9][0-9]' "$PARA"` over the whole
+  paragraph — so *any* date anywhere in it satisfies it, not the date on the figure. The paragraph
+  currently holds two (`**2026-08-22**` on the capture-side figure, and `2026-08-23/24` in the
+  sentence about 0026 finding nothing to measure), so stripping the figure's own date leaves the
+  guard green. Found by driving 0032's AC4 mutation and watching it *not* red: the first mutation
+  removed only the figure's date and the suite still reported 13 passed. The guard is real but it
+  pins a weaker property than its label claims, and it gets weaker every time the paragraph gains a
+  date — which it will, since 0026 is due to replace that very sentence with a dated develop-side
+  figure. Anchor the date to the figure it dates (assert the date and the claim on one line, or
+  `grep -qE '\*\*20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]\*\*: '`) rather than asserting a date is present
+  somewhere nearby. Out of scope for 0032, whose FRs are the extraction window only (pointer:
+  tests/batching.test.sh "AC4 — the statement carries a dated figure", items/0032,
+  ai-building-conventions/testing-conventions.md "a guard that is wired and still cannot fail").
