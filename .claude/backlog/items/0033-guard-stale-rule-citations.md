@@ -3,20 +3,17 @@ id: "0033"
 title: Guard against stale rule-name citations across the references
 type: debt
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
 source: agent
 expects:
   - tests/citations.test.sh
-claimed_by: "ff85"
-claimed_at: 2026-08-25T02:13:10Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/citations.test.sh
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
-  - .claude/backlog/items/0033-guard-stale-rule-citations.md
+closed: 2026-08-25
 ---
 
 ## Problem
@@ -61,20 +58,20 @@ fails.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the shipped tree, when the guard runs, then it passes, having found a non-zero
+- [x] AC1 — Given the shipped tree, when the guard runs, then it passes, having found a non-zero
   number of both definitions and citations, and reports both counts.
-- [ ] AC2 — Given a fixture tree where one rule heading in `CONCURRENCY.md` is renamed and its
+- [x] AC2 — Given a fixture tree where one rule heading in `CONCURRENCY.md` is renamed and its
   citations left alone, when the guard runs, then it fails and names every stale citation with its
   file.
-- [ ] AC3 — Given a fixture tree where a citation is added for a rule that does not exist, when the
+- [x] AC3 — Given a fixture tree where a citation is added for a rule that does not exist, when the
   guard runs, then it fails and names that citation.
-- [ ] AC4 — Given a fixture tree where a rule is defined and cited nowhere, when the guard runs,
+- [x] AC4 — Given a fixture tree where a rule is defined and cited nowhere, when the guard runs,
   then it passes and reports that rule as uncited.
-- [ ] AC5 — Given a fixture where the citation syntax is mangled so nothing matches, when the guard
+- [x] AC5 — Given a fixture where the citation syntax is mangled so nothing matches, when the guard
   runs, then it fails on the empty-set check rather than passing vacuously.
-- [ ] AC6 — Given each mutation used for AC2–AC5, when it is diffed before the guard runs, then the
+- [x] AC6 — Given each mutation used for AC2–AC5, when it is diffed before the guard runs, then the
   diff is non-empty.
-- [ ] AC7 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then all suites
+- [x] AC7 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then all suites
   pass.
 
 ## QA plan
