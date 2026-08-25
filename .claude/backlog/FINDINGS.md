@@ -29,6 +29,27 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-25 — **a ticket that quantifies a file it does not own goes stale, and the stale numbers
+  shaped its question.** 0035's Problem statement described `prototype` Step 5 as "three build
+  procedures", which is the framing its whole design question rested on; re-measured, level 1 is 969
+  bytes, level 2 is 5,859, level 3 is 1,427 — one big branch and two small ones, so "each level
+  becomes a reference file" was never the shape of the answer. Its `develop` byte count had also
+  drifted 219 bytes since capture. Neither `queue` nor `design` says to re-measure a figure a ticket
+  captured about a file it is not changing, and the figure reads as fact. Plausibly the rule is the
+  same one this repo already applies to `blocked`: a number about another file is a **cache**, and
+  the file is the authority (pointer: skills/queue Step 1, skills/design Step 1, items/0035 FR6).
+
+- 2026-08-25 — **`design` Step 4 moves a ticket's stage but never says to re-check `expects:`, and a
+  decision can move the file scope entirely.** Settling 0035, the answer changed the work from
+  editing `skills/prototype/SKILL.md` + `skills/develop/SKILL.md` to editing two files under
+  `tests/` — a completely disjoint scope. Step 4 lists *Notes & decisions*, the FRs and ACs, the
+  stage fields and the commit, and stops there, so a session that follows it literally hands
+  `develop` an `expects:` describing the work the decision rejected. That is not cosmetic: the
+  2026-08-25 finding below ("one claim on two shared prose files stalled the whole `develop`
+  stage") records exactly that, and this decision's real scope collides with nothing. A design answer is exactly the event
+  that can narrow a scope, and nothing asks for it (pointer: skills/design Step 4, items/0035
+  `expects:`, references/CONCURRENCY.md *The working tree is shared too*).
+
 - 2026-08-25 — **`./next <stage>` prints `TAKE` on a row whose `expects:` collides with the files it
   names as held, in the same output.** A `develop` session found 0034 claimed by another window
   (`c2e9`, `touches: skills/verify/SKILL.md references/CONCURRENCY.md`); `./next develop` then
