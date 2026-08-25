@@ -733,3 +733,34 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   a decision, one FR should name the site it is relocated *from*, not only the site it moves to** —
   an addition-only FR list cannot express a move, and the AC that catches it fires after the work is
   done (pointer: items/0034 FR2 and its *Out of scope*, skills/verify Step 2, skills/develop Step 2).
+- 2026-08-25 — **a design pass can source a constant to a file that does not contain it, and every
+  downstream number inherits the error silently.** 0035 FR1 cited "~30 turns per session
+  (`MEASUREMENT.md`)"; that file's 30 is its *session* count (1,112 turns / 30 sessions ≈ 37) and it
+  says at line 24 that a develop session averages 39. The break-even constant is a direct function of
+  N, so the misread propagated to the published `B ≈ 20,000` and into two ACs written against it.
+  Nothing could catch it: the arithmetic is internally consistent, the citation is real, and the
+  conclusions happened to be robust. Rule to draw: **when an FR quotes a figure with a source, the
+  build re-reads the source rather than the FR** — a cited number is an assertion about another file,
+  and it is the one kind of assertion a ticket cannot test itself (pointer: items/0035 FR1 and its
+  build notes, MEASUREMENT.md line 24 and line 52).
+- 2026-08-25 — **a whole-file substitution is not a valid red proof for a guard that asserts against
+  its own text.** Proving 0035's new AC5 cases could fail, a `sed` across a throwaway copy changed the
+  `RELOCATE=` definition *and* the assertion's own literal, so the check compared a string to itself
+  and the suite stayed green — a guard that was in fact wired reported as un-provable, which would
+  have read as "wired to nothing" to the next session. Re-proved by editing only the definition line.
+  This is a class the existing fixture convention does not cover: `skill-size` and `reference-size`
+  both generate independent fixtures for the *sizes* they gate, precisely so a red cannot be an
+  artefact, but the self-referential *wording* assertions have no equivalent rule. Rule to draw:
+  **break the definition, never the expectation** — and where expectation and subject are one string,
+  say so where the assertion lives (pointer: tests/skill-size.test.sh's 0035 block,
+  tests/reference-size.test.sh's fixture-base comment).
+- 2026-08-25 — **`develop` Step 5.4 says to clear the claim and take the lock, but the lock helper
+  pattern in the docs releases on shell exit — and every Bash call is a new shell.** Routing 0036,
+  `mkdir .lock` + `trap 'rm -rf' EXIT` in one tool call released the lock the instant that call
+  returned, so the read, the write and the commit spanned three unlocked windows rather than one held
+  one. `CONCURRENCY.md` says "hold it for the read, the write and the commit, then release in the same
+  turn" and `./claim` gets this right by being a single process; a session doing it by hand cannot,
+  unless the whole sequence is one command. Rule to draw: **a by-hand lock must be one tool call from
+  `mkdir` to `git commit`, or it is not a lock** — which is a fourth silent leak to add to the three
+  `CONCURRENCY-INCIDENTS.md` already lists (pointer: references/CONCURRENCY.md *Lock every write*,
+  skills/develop Step 5.4).
