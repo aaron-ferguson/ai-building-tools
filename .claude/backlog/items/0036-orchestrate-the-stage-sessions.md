@@ -2,8 +2,8 @@
 id: "0036"
 title: Orchestrate the isolated stage sessions from one supervising session
 type: feature
-next: develop
-status: in-progress
+next: queue
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-24
@@ -27,8 +27,8 @@ expects:
 # invoker, so no stage skill has to describe the FR13 shape. See *Notes & decisions*, the second
 # amendment. develop is already over the skill-size goal with a recorded reason, so not reaching
 # into it is worth having.
-claimed_by: "38c7"
-claimed_at: 2026-08-25T06:10:24Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -894,3 +894,33 @@ mechanism is settled: `./next --drive` + `--findings` + their fixtures is one sl
 standing on its own and is testable without a supervisor existing; the `orchestrate` skill and its
 schema is a second; FR15–FR16's lock and budget-kill handling is a third. **The first slice is the one
 to rank**, because it is where every decision that can be wrong the same way twice actually lives.
+
+### Routed to `queue` as a project, 2026-08-25 — by `develop`, on this ticket's own recommendation
+
+A `develop` session took this row at the top of the rank, read it whole, and handed it back rather
+than building it. **Nothing about the contract is wrong** — the design is settled, the FRs are
+enumerable and the ACs are testable. What is wrong is the *unit*: the review amendment above ends by
+recommending this ticket become a project, and naming the three slices. A row that recommends its own
+slicing is not a row a stage should build as one.
+
+**The slicing recommended above, unchanged, so `queue` has it in one place:**
+
+1. **`./next --drive` + `./next --findings` + their fixtures.** Ships standing on its own and is
+   testable with no supervisor existing. FR3's count, FR8's routing table, FR9's exit-code contract,
+   AC6, AC9, AC10, AC11. **This is the slice to rank** — it is where every decision that can be wrong
+   the same way twice actually lives.
+2. **The `orchestrate` skill and `outcome.schema.json`.** FR1, FR2, FR4–FR7, FR10–FR14, FR17 and the
+   README change. Depends on slice 1 for its routing probe.
+3. **FR15–FR16 — the lock policy and the budget-kill recovery.** AC25, AC26. Hardening on a loop that
+   has to exist first.
+
+**Why `queue` and not `design`.** `develop` Step 2 routes a ticket to `design` when a *decision* is
+missing; no decision is missing here — the 2026-08-24 design pass settled the mechanism and the review
+amendment settled the corrections. What is missing is children, and slicing is `queue`'s job. The
+precedent for the return is 0021, already cited above.
+
+**The claim was taken and released, not skipped.** Token `38c7`, minted and cleared in the same turn
+under `.lock/`, so `touches:` reserved nothing and no row was held while this was decided.
+
+**Aaron chose this route on 2026-08-25**, over building the ticket whole in one session, when the
+`develop` session put both options to him at claim time.
