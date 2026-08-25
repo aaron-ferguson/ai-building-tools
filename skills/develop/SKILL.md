@@ -197,6 +197,17 @@ superseded FR as the stale contract it is. One ticket enumerated a five-step pro
 had since made a six-step one; building it as written would have automated the very defect the sibling
 existed to fix.
 
+**And a figure a ticket quotes about a file it does not own is a cache, not a fact — re-read the
+source, never the FR.** A cited number is an assertion about another file, and it is the one kind of
+assertion a ticket cannot test itself: the arithmetic stays internally consistent, the citation
+resolves, and nothing in the diff looks wrong. Three ways it has bitten. The figure **moved** since
+capture, and the ticket's whole question rested on the old shape. The figure was **misread** at
+capture — a session count taken for a turn count — and propagated into the published constant and two
+ACs written against it. The figure is **not in the cited file at all**, so the next session told to
+recompute from it finds one input missing and either invents it or trusts the stale value. Same
+discipline the backlog already applies to `blocked`: the cache reads correctly on its own, and the
+source is the authority whenever the two disagree.
+
 ---
 
 ## Step 3 — Load the conventions this item actually triggers
