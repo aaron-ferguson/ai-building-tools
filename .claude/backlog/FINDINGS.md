@@ -787,3 +787,27 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   the lock is held and `QUEUE.md` is dirty, which is the worst moment to be improvising. `./claim` and
   `./close` never hit it because they only ever commit files git already knows (pointer:
   skills/queue/SKILL.md Step 6, references/CONCURRENCY.md *The git index is shared*).
+- 2026-08-25 — **the payback test's own bytes/token constant is cited to a file that does not carry
+  it.** `tests/skill-size.test.sh`'s header says "Every figure is measured and lives in
+  MEASUREMENT.md: 4.038 bytes/token, $6.25/MTok cache write … $0.1028 per turn, and 1,112 turns
+  across 30 sessions". Four of the five are there; **`4.038` is not in `MEASUREMENT.md` at all** —
+  `git log -S` puts its origin in 0021's own guard, and that file's line 101 says the transcripts
+  carry no field it could be derived from. 0035's AC1 asks only for "a citation of MEASUREMENT.md as
+  their source", so the AC passes on a citation that is wrong for the one input the header instructs
+  you to RECOMPUTE from. The bad case is not a wrong number today but a session that follows the
+  pointer to recompute B0 when the rates move, finds four inputs, and either invents the fifth or
+  trusts the stale constant — the exact failure the derivation was written down to prevent. Fix is
+  one of: land the ratio and its provenance in `MEASUREMENT.md`, or narrow the header's claim to the
+  four figures that are there and say where 4.038 came from (pointer: tests/skill-size.test.sh
+  header lines 26-36, MEASUREMENT.md, items/0035 AC1).
+- 2026-08-25 — **`verify`'s batching rule licenses a batch by file scope or parent slice, and its own
+  reason licenses a wider one.** The rule reads "tickets that share a file scope or a parent slice
+  are checked in one session", justified by the conventions, the skill and the suite's startup being
+  "a shared cost paid once however many verdicts come out of it". 0034 (`skills/verify/SKILL.md`,
+  `references/CONCURRENCY.md`) and 0035 (`tests/*.test.sh`) share neither scope nor parent, yet the
+  stated reason applies to them in full — the startup is paid once either way. So the enumerated
+  condition is narrower than the rationale it is derived from, and a session reading it literally
+  splits two `next: verify` rows across two sessions to no benefit. Taken as one gate here, each
+  closed on its own ACs. Worth deciding whether the condition is meant to be the gate itself
+  (any rows at `next: verify`) with scope-sharing merely the common case (pointer: skills/verify
+  SKILL.md preamble, *One gate per invocation, not one ticket*).
