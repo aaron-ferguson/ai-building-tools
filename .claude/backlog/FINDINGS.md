@@ -29,6 +29,50 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-25 — **0026's AC5 guard cannot fail, because its verdict grep matches a heading the same
+  test file requires to exist.** `tests/measurement.test.sh` asserts the verdict with
+  `grep -qE 'materialised|partly|did not'` over `MEASUREMENT.md`. The record's section heading *What
+  the two runs did not hold constant* contains "did not", and AC8's own assertion in the same file
+  requires that heading to be present — so AC8 passing *guarantees* AC5 passing. Proved by deleting
+  the entire `## Verdict` section: `grep -c materialised` went to 0 and the suite still reported "ok
+  the record states a verdict", with only the separate `5.09` presence check going red. The test's
+  own header comment claims the opposite — "a run that produces figures and no verdict fails ... which
+  is why AC5 ... [is] asserted separately from AC1". This is the same family as the 0032 entry below
+  and the 0026 entry of 2026-08-24, and it is now three instances: assert the verdict and its subject
+  on one line, or anchor to the Verdict section's own body rather than to the document
+  (pointer: tests/measurement.test.sh AC5 block, items/0026,
+  ai-building-conventions/testing-conventions.md "a guard that is wired and still cannot fail").
+
+- 2026-08-25 — **the same document-wide grep weakness hits 0026's AC1: deleting a whole row from the
+  per-skill table leaves the suite green.** AC1 is checked with `present ... "verify"` and friends,
+  and the words `queue`, `develop`, `verify`, "cost per turn" and "context tokens per turn" all occur
+  in the surrounding prose, so the assertions pin *vocabulary*, not the existence of a breakdown.
+  Removing the `| verify | 10 | ... |` row from the isolated table left 40/40 passing. A table-shaped
+  claim wants a table-shaped assertion — match the row, not the word (pointer:
+  tests/measurement.test.sh AC1 block, MEASUREMENT.md isolated-run table).
+
+- 2026-08-25 — **a measurement can pin its numerator and leave its denominator live, and the ratio
+  then rots silently.** `MEASUREMENT.md` pins its token figures with `--exclude` and pins its findings
+  count "as at 2026-08-24 06:00Z" — both deliberate, both recorded. But *cost per closed ticket*
+  divides that pinned $114.27 by a count of closed tickets read from `DONE.md`, which is as live as
+  `FINDINGS.md` was. `DONE.md` now holds **20** rows dated 2026-08-23/24, not the recorded 19 — `0005`
+  closed later the same day — so the recorded $6.01 is today $5.71, and `README.md` repeats the 19.
+  The lesson the record already learned one section earlier was not carried to the figure beside it:
+  **every denominator read from a live file needs the same as-at pin as the numerator**
+  (pointer: MEASUREMENT.md "Cost per closed ticket", README.md, items/0026 AC6).
+
+- 2026-08-25 — **the record's own "Re-running this" recipe does not reproduce the record.** It gives
+  `harvest-usage.sh <store> --since 2026-08-23 --sessions`, which today returns 45 sessions and
+  $174.29 against the recorded 30 and $114.27, because ten more sessions have since landed *inside the
+  same UTC date* that the `--until` bound cannot separate. The figures are exactly reproducible — every
+  cell of both tables was reproduced in this pass — but only with twelve `--exclude` flags derived by
+  sorting sessions on their first timestamp, which the record does not carry. It names two exclusions
+  and asserts "pin the exclusions and record them, as this one does"; that sentence is now false, and
+  `0037` and `0036` are named as the re-runners. A date window is not a pin on a live store: record
+  the session-id set, or give the harvest a timestamp cut rather than a date one (pointer:
+  MEASUREMENT.md "Re-running this", tools/harvest-usage.sh --until, items/0026 FR10/AC9).
+
+
 - 2026-08-24 — **a `/design` pass confirmed its load-bearing flags by running them, and that is not
   the same as reading what they do.** 0036's design decision rested on `claude -p --bare` and cited
   `--bare`'s docs for "skills still resolve via `/skill-name`" — true, and the same paragraph also

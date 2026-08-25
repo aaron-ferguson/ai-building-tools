@@ -3,7 +3,7 @@ id: "0026"
 title: Measure the isolated workflow from the recorded sessions and record the verdict
 type: chore
 next: verify
-status: in-progress
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-23
@@ -19,13 +19,9 @@ expects:
   - skills/verify/SKILL.md
   - tests/measurement.test.sh
   - tools/harvest-usage.sh
-claimed_by: "7c1e"
-claimed_at: 2026-08-25T01:58:44Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/items/0026-measure-the-recorded-sessions.md
-  - .claude/backlog/QUEUE.md
-  - .claude/backlog/DONE.md
-  - .claude/backlog/FINDINGS.md
 ---
 
 ## Problem
@@ -292,3 +288,32 @@ the comparison says about the suite as it then stands. `0037` carries the forwar
   28 entries"; 28 is the true count and the gap is two entries formatted `- **2026-08-24 —` instead
   of `- 2026-08-24 — **`, which a date-anchored grep misses. (2) `expects:` omits `MEASUREMENT.md`
   and `tools/harvest-usage.sh`, the two central deliverables.
+
+### Verified 2026-08-25 — advisory PASS on all nine ACs and all three NFRs; not closed
+
+- **Every AC passes on this pass's own evidence, and every figure reproduces exactly.**
+  `tests/measurement.test.sh` is 40/40 against a clean throwaway worktree at `43a81ba` and again
+  against the working tree. `tools/harvest-usage.sh` re-run against the live store reproduces
+  `MEASUREMENT.md`'s isolated table **cell for cell** — 30 sessions, 1,112 turns, $114.27, $0.1028
+  per turn, 106,139 context tokens per turn, 22.5% output share, and all six skill rows — and the
+  baseline session reproduces at 98 turns, $11.79, $0.1203, 151,669. AC6's arithmetic checks:
+  114.27/19 = $6.01, 84.64/19 = $4.45.
+- **The Privacy & data row, which failed this ticket on 2026-08-24, is clean and its guard was
+  proved red.** Planting a home-directory path in a tracked file made the guard fail and name the
+  file and line; the real harvest output carries 0 lines outside the aggregate character set and no
+  path. AC3's cost model is sound in a way the record undersells: the transcripts carry the TTL
+  split on **every** priced turn on both sides (0 fallback-priced turns of 1,971 checked), so the
+  "priced at the cheaper 5-minute rate" fallback never fires and neither side is understated.
+- **Not closed, because the run is advisory, and both the written rule and 0034's settled rule
+  agree on that.** `MEASUREMENT.md` is dirty in the working tree and the verdict rested on it, so
+  the intersection of Step 2's dirty set with the evidence set is non-empty (0034 FR2). 0034 FR3
+  forecloses the obvious escape — the pass *did* check the committed and working copies and they
+  agree, and that is explicitly not sufficient. The dirt is two words, `effort` -> `project`,
+  orphaned by the rename that landed in `267d13f`; no session holds a claim naming it.
+  **What has to be clean: `MEASUREMENT.md`.** `tests/citations.test.sh` was also untracked in the
+  tree (0033's in-flight work) and is excluded — the verdict did not rest on it.
+- **Four findings parked, two of them about this ticket's own guards** — AC5's verdict assertion
+  cannot be made to fail, and AC1's cannot see a deleted table row. Neither changes the AC results,
+  which rest on reading and on reproduction rather than on those greps, but both would let a real
+  regression through. Also parked: the cost-per-closed-ticket denominator has drifted 19 -> 20 while
+  its numerator stays pinned, and the record's own re-run recipe no longer reproduces the record.
