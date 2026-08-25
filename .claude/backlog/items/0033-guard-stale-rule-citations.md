@@ -3,15 +3,15 @@ id: "0033"
 title: Guard against stale rule-name citations across the references
 type: debt
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-23
 source: agent
 expects:
   - tests/citations.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "ff85"
+claimed_at: 2026-08-25T02:13:10Z
 touches:
 ---
 
