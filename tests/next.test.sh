@@ -580,6 +580,10 @@ seal
 out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
 assert_rc           "exits 4 — escalate"  "$rc" 4
 assert_contains     "escalates"           "$out" 'ESCALATE'
+# Routed by the same-stage branch, and pinned by its wording for the same reason as the two above:
+# with `elif [ "$lnext" = "$lstage" ]` deleted the ladder's final `else` escalates with rc 4 too,
+# so this case reports ok three times against code that has lost the branch entirely.
+assert_contains     "names it as the same stage twice" "$out" 'same ticket, same stage'
 assert_not_contains "dispatches nothing"  "$out" 'DISPATCH'
 
 echo "0038 AC9 — develop left the ticket waiting: escalate carrying the Waiting on question"
@@ -675,6 +679,7 @@ seal
 out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
 assert_rc       "with an outcome supplied, exits 4" "$rc" 4
 assert_contains "escalates"                          "$out" 'ESCALATE'
+assert_contains "names the guard, not the fallback"  "$out" 'same ticket, same stage'
 out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc       "with no outcome supplied, exits 0"  "$rc" 0
 assert_contains "dispatches rather than escalating"  "$out" 'DISPATCH  verify 0101'
