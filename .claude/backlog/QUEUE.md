@@ -63,7 +63,7 @@ by the next commit. This paragraph described that design as current fact and was
 |------|-------|------|--------|--------|
 | 0034 | Derive the advisory label from the paths the verdict rested on | verify | ready | — |
 | 0036 | Orchestrate the isolated stage sessions from one supervising session | queue | ready | — |
-| 0035 | Decide where conditionally-needed skill detail lives | develop | ready | — |
+| 0035 | Decide where conditionally-needed skill detail lives | develop | in-progress | — |
 | 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |
 | 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |
 | 0008 | Add the graph rules to queue, develop, and verify | develop | blocked | 0002 |
