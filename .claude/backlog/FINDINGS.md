@@ -101,33 +101,6 @@ end rather than stopping at the first entry older than its window.
   (pointer: skills/design Step 4, items/0035
   `expects:`, references/CONCURRENCY.md *The working tree is shared too*).
 
-- 2026-08-25 — **`./next <stage>` prints `TAKE` on a row whose `expects:` collides with the files it
-  names as held, in the same output.** A `develop` session found 0034 claimed by another window
-  (`c2e9`, `touches: skills/verify/SKILL.md references/CONCURRENCY.md`); `./next develop` then
-  printed `TAKE 0036` — whose `expects:` names `skills/verify/SKILL.md` — directly above a
-  `CLAIMED FILES — another session owns these` block naming that same path. Both facts are correct
-  and the intersection is left entirely to the reader, because `--help` defines takeable as stage +
-  `blocked_by` only. The skill does require the manual compare (`develop` Step 1 "Check the file
-  scope before you claim", `CONCURRENCY.md` *The working tree is shared too*), so this is not a
-  script bug — but a row printed under `TAKE` reads as cleared, and the session that trusts the
-  header is exactly the one that collides. Worth either filtering the offer or marking the
-  overlapping row inline (pointer: .claude/backlog/next, skills/develop Step 1, items/0034,
-  items/0036).
-
-- 2026-08-25 — **one claim on two shared prose files stalled the whole `develop` stage, and no rule
-  covers it.** 0034's `touches:` is `skills/verify/SKILL.md` + `references/CONCURRENCY.md`. With it
-  held, every other takeable `develop` row collided — 0036 on `skills/verify/SKILL.md`, 0007 on
-  `references/CONCURRENCY.md` — while 0035 is `next: design` and 0006/0008/0003/0004/0037 are
-  genuinely blocked, so the session claimed nothing and stopped with the stage non-empty.
-  `CONCURRENCY.md` says "prefer single-writer files", but in a plugin repo the skill and reference
-  files *are* the product, so they are structurally multi-writer and the file-scope rule degenerates
-  to a stage-wide lock held by whichever row was ranked first. The collisions here are also
-  section-level, not line-level (0034 rewrites CONCURRENCY.md's advisory line; 0007 rewrites its
-  claim rules), and nothing says whether that is safe — the honest answer today is no, because a
-  pathspec commit carries the other session's edits to the same path regardless. Plausibly the same
-  root as the batching finding above (pointer: references/CONCURRENCY.md *The working tree is shared
-  too*, items/0034, items/0007, items/0036).
-
 - 2026-08-25 — **the batching rule's constraint and its rationale point in opposite directions, and a
   stage queue is a chain, so "shares a file scope" ends up licensing a sweep of the whole stage.** One
   session took all five `next: verify` rows in a single pass (`1a06c11`, one token per row — the
@@ -169,50 +142,6 @@ end rather than stopping at the first entry older than its window.
   verify session opens onto nothing (pointer: skills/verify Step 1, .claude/backlog/next,
   references/CONCURRENCY.md *A stage writes only the ticket it holds*).
 
-- 2026-08-25 — **0026's AC5 guard cannot fail, because its verdict grep matches a heading the same
-  test file requires to exist.** `tests/measurement.test.sh` asserts the verdict with
-  `grep -qE 'materialised|partly|did not'` over `MEASUREMENT.md`. The record's section heading *What
-  the two runs did not hold constant* contains "did not", and AC8's own assertion in the same file
-  requires that heading to be present — so AC8 passing *guarantees* AC5 passing. Proved by deleting
-  the entire `## Verdict` section: `grep -c materialised` went to 0 and the suite still reported "ok
-  the record states a verdict", with only the separate `5.09` presence check going red. The test's
-  own header comment claims the opposite — "a run that produces figures and no verdict fails ... which
-  is why AC5 ... [is] asserted separately from AC1". This is the same family as the 0032 entry below
-  and the 0026 entry of 2026-08-24, and it is now three instances: assert the verdict and its subject
-  on one line, or anchor to the Verdict section's own body rather than to the document
-  (pointer: tests/measurement.test.sh AC5 block, items/0026,
-  ai-building-conventions/testing-conventions.md "a guard that is wired and still cannot fail").
-
-- 2026-08-25 — **the same document-wide grep weakness hits 0026's AC1: deleting a whole row from the
-  per-skill table leaves the suite green.** AC1 is checked with `present ... "verify"` and friends,
-  and the words `queue`, `develop`, `verify`, "cost per turn" and "context tokens per turn" all occur
-  in the surrounding prose, so the assertions pin *vocabulary*, not the existence of a breakdown.
-  Removing the `| verify | 10 | ... |` row from the isolated table left 40/40 passing. A table-shaped
-  claim wants a table-shaped assertion — match the row, not the word (pointer:
-  tests/measurement.test.sh AC1 block, MEASUREMENT.md isolated-run table).
-
-- 2026-08-25 — **a measurement can pin its numerator and leave its denominator live, and the ratio
-  then rots silently.** `MEASUREMENT.md` pins its token figures with `--exclude` and pins its findings
-  count "as at 2026-08-24 06:00Z" — both deliberate, both recorded. But *cost per closed ticket*
-  divides that pinned $114.27 by a count of closed tickets read from `DONE.md`, which is as live as
-  `FINDINGS.md` was. `DONE.md` now holds **20** rows dated 2026-08-23/24, not the recorded 19 — `0005`
-  closed later the same day — so the recorded $6.01 is today $5.71, and `README.md` repeats the 19.
-  The lesson the record already learned one section earlier was not carried to the figure beside it:
-  **every denominator read from a live file needs the same as-at pin as the numerator**
-  (pointer: MEASUREMENT.md "Cost per closed ticket", README.md, items/0026 AC6).
-
-- 2026-08-25 — **the record's own "Re-running this" recipe does not reproduce the record.** It gives
-  `harvest-usage.sh <store> --since 2026-08-23 --sessions`, which today returns 45 sessions and
-  $174.29 against the recorded 30 and $114.27, because ten more sessions have since landed *inside the
-  same UTC date* that the `--until` bound cannot separate. The figures are exactly reproducible — every
-  cell of both tables was reproduced in this pass — but only with twelve `--exclude` flags derived by
-  sorting sessions on their first timestamp, which the record does not carry. It names two exclusions
-  and asserts "pin the exclusions and record them, as this one does"; that sentence is now false, and
-  `0037` and `0036` are named as the re-runners. A date window is not a pin on a live store: record
-  the session-id set, or give the harvest a timestamp cut rather than a date one (pointer:
-  MEASUREMENT.md "Re-running this", tools/harvest-usage.sh --until, items/0026 FR10/AC9).
-
-
 - 2026-08-24 — **a `/design` pass confirmed its load-bearing flags by running them, and that is not
   the same as reading what they do.** 0036's design decision rested on `claude -p --bare` and cited
   `--bare`'s docs for "skills still resolve via `/skill-name`" — true, and the same paragraph also
@@ -230,18 +159,6 @@ end rather than stopping at the first entry older than its window.
   It survived a `queue` pass and a `design` pass. `verify` checks whether an AC is *met*; nothing
   checks whether it *could have failed*. Possible one-line rule in `queue`'s AC step, or a `verify`
   question: for each AC, name the input that would make it red (pointer: 0036 AC13).
-
-- 2026-08-24 — **two sessions committed under the same claim token, so the audit trail cannot say
-  who did what — and nothing in the protocol can detect it.** While `develop` held 0026 as `ebff`,
-  a concurrent session committed `267d13f` and `2cfc227` tagged `[ebff]` for an unrelated repo-wide
-  rename. Whether that is a 1-in-65536 collision on `head -c2 /dev/urandom` or a token read out of a
-  file and reused, the effect is the same: `CONCURRENCY.md`'s *Claim tokens* says ownership is
-  memory and an unfamiliar token belongs to the other window, which gives a session no way to
-  notice a **familiar** token on work it did not do. The same commit also swept 41 lines of this
-  ticket's uncommitted *Notes & decisions* into its own message — the documented hazard, arriving
-  from the direction the rule does not cover, since the notes were mid-write rather than a claim.
-  Options: widen the token, or have `claim` refuse a token already live in another item's
-  `claimed_by:`, or drop the pretence that a commit tag identifies a session.
 
 - 2026-08-24 — **a verify verdict that quotes the string it is failing the ticket for re-publishes
   it, and the fix then reads as complete while the repo is still dirty.** 0026 failed on its privacy
@@ -283,20 +200,6 @@ end rather than stopping at the first entry older than its window.
   rewrapped (pointer: tests/graph-fields.test.sh `in_block`, skills/queue/templates/item.md
   `blocked_by:` comment, items/0005 *Notes & decisions*).
 
-- 2026-08-24 — **`./next` tells you a row is held but never what it holds, so "avoid the collision"
-  costs an item file read anyway.** `develop` Step 1 says to compare the candidate's `expects:`
-  against every in-progress row's `touches:`, and `./next develop` does print the claimed-files
-  block — but for a row with an empty `touches:` it prints `0026 [b7f1] none declared — assume
-  held, ask` and stops. `assume held` is the right instruction and an unusable one on its own: the
-  only description of that row's scope is its `expects:`, which the script already parses for the
-  row it offers and does not print for the rows it warns about. Deciding 0005 was safe meant opening
-  0026's item file, which is the read Step 1 exists to avoid. Distinct from the stage-blind `claim`
-  message below — that one is about how the empty field arises, this is that the reader is given
-  nothing to put in its place. Candidate: fall back to `expects:` in the claimed-files block, labelled
-  as the weaker field (pointer: .claude/backlog/next claimed-files output, skills/develop/SKILL.md
-  Step 1 *Check the file scope before you claim*).
-
-
 - 2026-08-24 — **a ticket's own prose is outside every guard the ticket writes.** 0026's privacy NFR
   forbade publishing paths outside the repo. Its test asserts the harvest *output* and the *record*
   stay clean, and both do — the two store slugs that breached it sat in the ticket's own Problem
@@ -309,42 +212,10 @@ end rather than stopping at the first entry older than its window.
   the generic branch, but the message that would have named the cause can never fire. Compute the
   wrong answer from the fixture rather than by hand.
 
-- 2026-08-24 — **a verdict assertion that greps for "did not" cannot tell a verdict from prose.**
-  Deleting `MEASUREMENT.md`'s verdict sentence outright left "the record states a verdict" green —
-  "did not" occurs elsewhere in the file — and only the `5.09` assertion reddened. The QA plan
-  asserted AC5 separately because figures-with-no-verdict is the likely failure; that is the one
-  shape the assertion does not catch.
-
-- 2026-08-24 — **a harvest pinned by exclusions is re-runnable only if the exclusions are recorded by
-  id.** `MEASUREMENT.md` names them in prose — "the session that produced this measurement, and one
-  still in flight" — so reproducing its table meant deriving the three session ids by differencing a
-  live store against the published per-skill rows. The `--exclude` flags belong in the *Re-running
-  this* block, which is where FR10's re-runnability actually lands.
-
 - 2026-08-24 — **`/verify` in this repo resolves to the bundled verify skill, not
   `ai-building-tools:verify`.** The session that verified 0026 loaded the built-in evidence-capture
   skill; this repo's stage protocol had to be read out of `skills/verify/SKILL.md` by hand. A stage
   whose name collides with a built-in is a stage that can silently not run.
-
-- 2026-08-24 — **handing a ticket from one stage to the next is the one backlog operation with no
-  script, and it half-applied.** `./claim` takes a row and `./close` finishes one, but the handoff —
-  set `next:`, set `status:`, clear `claimed_by:`/`claimed_at:`, edit the row, commit, release — is a
-  by-hand lock operation in `design` Step 4 and `develop` Step 5 both. Settling 0036 it *did* half
-  apply: the `QUEUE.md` row reached `develop | ready` while the item frontmatter was still
-  `design | in-progress`, and the lock had already been released by the trap, so for a moment the row
-  and its item disagreed with nobody holding either. `CONCURRENCY.md`'s own argument for why `claim`
-  and `close` are scripts — "a script cannot forget" — applies unchanged to the handoff, which is the
-  one that mutates four fields across two files instead of two. (pointer: `references/CONCURRENCY.md`
-  *The three scripts*, `skills/design/SKILL.md` Step 4, `skills/develop/SKILL.md` Step 5)
-
-- 2026-08-24 — **`claim` writes `claimed_by:` quoted and the template shows it bare, so a matcher
-  written against either form silently misses the other.** The template has `claimed_by:`, `./claim`
-  wrote `claimed_by: "09e4"`, and an edit anchored on the unquoted spelling matched nothing — which is
-  what caused the half-applied handoff above. It fails silently rather than loudly: a
-  find-and-replace that matches zero times looks identical to one already in the desired state. Same
-  family as 0031's comment-blind `fm_list` but a different cause — quoting, not comments — so the
-  fix there will not cover it. (pointer: `.claude/backlog/claim`, `skills/queue/templates/item.md`,
-  item 0031)
 
 - 2026-08-24 — **`./claim --help` and `./close --help` treat the flag as a ticket id.** `./claim
   --help` answers `no row for --help in QUEUE.md`. `./next --help` works and documents every mode, so
@@ -379,16 +250,6 @@ end rather than stopping at the first entry older than its window.
   opposite rules about the ID claim and the rank. Composed by hand for 0026 → 0037; the risk in
   getting it wrong is re-ranking the original, which is the thing both existing cases are careful not
   to do (pointer: skills/queue/SKILL.md Step 1 table, items/0026, items/0037).
-- 2026-08-24 — **The skill and `CONCURRENCY.md` disagree about whether a `QUEUE.md` row edit needs the
-  lock.** Step 2 says *"Release in the same turn; the item file, ranking and the row are all
-  unlocked"*, and Step 3 has the insert as a bare single `Edit`. `CONCURRENCY.md`'s *Lock every write
-  to `QUEUE.md`* says **"Every write, no exemptions"** and lists only three write sites, none of them
-  a capture-time insert. Resolved this session by taking the lock, which satisfies both, but a reader
-  following the skill alone inserts unlocked. One of the two is wrong and it is not obvious which:
-  `Edit`'s fail-on-mismatch may be the intended substitute for the lock on a single row, in which case
-  `CONCURRENCY.md`'s "no exemptions" is what needs the caveat (pointer: skills/queue/SKILL.md Step 2
-  and Step 3, references/CONCURRENCY.md *Lock every write to `QUEUE.md`* and *Never rewrite `QUEUE.md`
-  by hand*).
 - 2026-08-24 — **A non-takeable row 1 reads as an instruction, and bare `./next` is what makes it
   read that way.** 0026 sat at row 1 as `waiting` for a day and was read as "the next thing to do" —
   the user asked why we would run that test now. The rank was correct (a waiting ticket keeps its
@@ -424,15 +285,6 @@ end rather than stopping at the first entry older than its window.
   are executing prose the repo no longer contains, and nothing points at it. `SOURCE` explains why the
   cache is disposable but gates nothing (pointer: SOURCE, skills/verify Step 2 *check which copy*).
 
-- 2026-08-24 — **the lock protocol cannot be satisfied by hand, because a lock cannot be held across
-  tool calls.** `CONCURRENCY.md` *Lock every write to `QUEUE.md`* requires the lock to be held "for the
-  read, the write and the commit". A shell `trap` releases it when the Bash call exits, so a by-hand
-  insert is two separate acquisitions with an **uncommitted `QUEUE.md` edit sitting unlocked between
-  them**; omitting the trap instead leaks the lock on any failure path. `claim` and `close` satisfy the
-  rule because each is one process — but **`queue` has no script for the row insert**, so the one
-  operation this skill performs on `QUEUE.md` is the one with no compliant path. Either the insert
-  earns a fourth script or the rule needs a documented by-hand form (pointer: references/CONCURRENCY.md
-  *Lock every write*, skills/queue Step 3, items/0027).
 - 2026-08-24 — **dates in the backlog have no stated timezone, and this file's stated order is not the
   order it is in.** `claimed_at:` is specified as ISO-8601 UTC but `created:` and these entries are bare
   dates: at 2026-08-23 local / 2026-08-24 UTC, two sessions working the same hour wrote different dates,
@@ -464,14 +316,6 @@ end rather than stopping at the first entry older than its window.
   could only answer "not here"; it deleted the file and pointed at git history instead. Every future
   "move X behind a profile" ticket hits the same wall (pointer: items/0030 FR4, CONVENTIONS_CORE.md
   "Profiles & How Overrides Work").
-- 2026-08-24 — **the busy-lock procedure is written for a claim and strands a close.**
-  `CONCURRENCY-INCIDENTS.md` says a lock under 5 minutes old means "report it to the user and stop,
-  do not break it". At claim time stopping costs nothing. At *close* time the verdict already exists
-  and lives only in the session holding it, so stopping leaves the row `in-progress` under a token
-  whose session is ending — the failure `verify` owns closing to prevent. Hit live this session: the
-  lock was held by another window at close time, and the only safe move (wait, then retry) is
-  nowhere in the procedure (pointer: references/CONCURRENCY-INCIDENTS.md *A busy or stale lock*,
-  skills/verify Step 5, items/0034).
 - 2026-08-24 — **"never rewrite `QUEUE.md` by hand" needs to name stream editors, not just `Write`.**
   Closing 0030 without the scripts, a stray `perl -i -ne` invocation left in the script with an
   unset variable expanded its match to `"\n"` and deleted **every blank line in the file** — the row
@@ -487,14 +331,6 @@ end rather than stopping at the first entry older than its window.
   individually right and jointly wrong, and nothing in either flags the other. Either the skill says
   where the "it is new" note goes instead, or 0031 lands first (pointer: skills/develop Step 1,
   items/0031).
-- 2026-08-24 — **`tests/skill-size.test.sh`'s exception registry cites a ticket that never accepted
-  the cost.** `skills/develop/SKILL.md`'s entry reads `0027 — carries the re-entry and staleness
-  rules`, but 0027 is the script install and never touched that file; the described work ("its
-  anecdotes are the relocation candidates") is 0035's question. The registry's own contract is "the
-  ticket that accepted the cost", and a wrong ID there is invisible because the test passes either
-  way — the reason is the control, not a number, so nothing ever checks the citation resolves. Same
-  failure class as 0033 but for ticket IDs rather than rule names (pointer:
-  tests/skill-size.test.sh:39, items/0033, items/0035).
 - 2026-08-24 — **a third size gate would trip the DRY trigger that 0028 correctly declined.**
   `tests/reference-size.test.sh` is the second copy of the `offenders`/`pad`/`ok`/`bad` shape;
   `coding-conventions.md`'s Tier-2 rule fires on the *third* instance, so 0028's *Out of scope*
@@ -517,48 +353,12 @@ end rather than stopping at the first entry older than its window.
   the diff was non-empty in both the valid and the invalid attempt, so the diff alone does not
   separate them (pointer: skills/develop Step 5, testing-conventions.md *Prove a new guard fails*,
   items/0028 develop-pass notes).
-- 2026-08-24 — **`tests/backlog-scripts-installed.test.sh` is not in README's guard list**, so the
-  block README offers as "run every guard" runs seven of eight. Noticed from 0028 while adding the
-  eighth line beside it; left for whoever owns 0027's tail rather than fixed, since that file landed
-  in a session running concurrently with this one (pointer: README.md *Testing*, items/0027).
-- 2026-08-24 — **a justification entry whose file no longer exists passes silently, in both size
-  gates.** Removing `references/CONCURRENCY-INCIDENTS.md` while its `case` branch stayed left the
-  gate green at 9/0, exit 0 — the pass line just stops naming it. This is the staleness AC4 exists to
-  catch, from the other direction, and it is a live risk precisely because the gate's own first
-  recommendation is *relocation*, the operation most likely to rename a file out from under its
-  entry. `tests/skill-size.test.sh` has the identical shape (iterate the tree, look up a reason;
-  never the reverse), so a fix wants to land in both — which is the third-instance DRY question the
-  entry above already parks. A `[ -f ]` sweep over the recorded paths closes it in about three lines
-  (pointer: tests/reference-size.test.sh, tests/skill-size.test.sh, items/0028 verify notes).
 - 2026-08-24 — **`references/TRACKER.md` is 6,022 bytes, 35 bytes under the 6,057 goal.** The next
   sentence added to it reds the new gate under whatever unrelated ticket happens to be editing it,
   with no reason recorded and the author mid-way through something else. The gate doing its job, not
   a defect — but it means a third reference file is about to need either a relocation or a recorded
   reason, and better to decide that deliberately than at a red (pointer: references/TRACKER.md,
   tests/reference-size.test.sh, items/0028).
-- 2026-08-24 — **`close`'s reconcile silently skips a dependent whose `blocked_by` is a YAML block
-  list, and closing 0028 hit it.** `close` reads the field with `fm_value`, which returns only what
-  sits after the colon on the key's own line, so `blocked_by:` followed by `  - "0028"` parses as
-  empty, the `case "$blockers" in *"$ID"*)` test misses, and the loop `continue`s. 0028 closed
-  reporting no reconcile at all; 0029 stayed `blocked` in both the item and the row, and
-  `./next --drift` exited 1 — the stale-cache failure `close`'s own header calls the reason the
-  reconcile is part of the close. Reconciled by hand under the lock afterwards. `next` already
-  handles both forms via `fm_list` (next:100, used at next:118); `close` never got that parser.
-  Blast radius today is one ticket — 24 of 25 items use the inline `blocked_by: ["0002"]` form that
-  `fm_value` reads correctly, and 0029 is the only block-list one — but the form is unstandardised
-  because the shipped template carries no `blocked_by` field at all (that is 0005, still open), so
-  both forms will keep appearing. Two fixes, and the second is the load-bearing one: give `close`
-  `fm_list`, and standardise the field in the template (pointer: .claude/backlog/close `fm_value`
-  and `other_blockers_all_done`, .claude/backlog/next:100, skills/queue/templates/item.md,
-  items/0005, items/0029, items/0028 verify notes).
-- 2026-08-24 — **`tests/close.test.sh` passes 62 assertions over the reconcile and could not have
-  caught the bug above: every one of its `blocked_by` fixtures is the inline flow form.** `mkitem` is
-  called as `mkitem 0008 develop blocked '' '["0007"]'`, so the block-list shape the parser cannot
-  read is never fed to it. The guard is green against a shape the tree also mostly holds, which is
-  why this reads as covered rather than untested — the same fixture-realism trap 0028's own FR4 was
-  written about, one level up: not a fixture copied from the tree, but a fixture that encodes only
-  one of the two shapes the tree actually contains. A reconcile case in the block-list form is the
-  missing assertion (pointer: tests/close.test.sh:61-72 `mkitem`, :238-262, items/0028 FR4).
 - 2026-08-23 — **`design` writes `QUEUE.md` but never mentions the lock.** Step 4 tells a session
   holding an unclaimed ticket to set `next: develop` / `status: ready` and "commit by pathspec in
   the same turn" — that row edit is a `QUEUE.md` write, and `CONCURRENCY.md` says every write to it
@@ -595,12 +395,6 @@ end rather than stopping at the first entry older than its window.
   verifier happened to re-run the suite at the end. A verify pass that had closed on its earlier
   green would have ticked ACs against a file set that no longer existed (pointer:
   references/CONCURRENCY.md *The working tree is shared too*, items/0005).
-- 2026-08-24 — **a `done` ticket can keep a live-looking claim token.** 0010 is `status: done`,
-  `closed: 2026-08-23`, and still carries `claimed_by: "1b2e"`. `./close` clears both claim fields,
-  so this is a by-hand close predating the script — but `CONCURRENCY.md` defines *held* as a
-  non-empty `claimed_by:`, and the close-reconcile rule refuses to write a held dependent. A stale
-  token on a closed ticket is therefore a row a future reconcile will silently skip and report as
-  someone else's (pointer: items/0010 frontmatter, references/CONCURRENCY.md *Claim tokens*).
 - 2026-08-24 — **a ticket was handed to `verify` with part of its own work uncommitted.** `0026` was
   set to `next: verify` by `e604703`, but the tail of the effort→project rename it depends on —
   two words in `MEASUREMENT.md`, the file that ticket is *about* — is still sitting in the working
@@ -609,13 +403,6 @@ end rather than stopping at the first entry older than its window.
   one careless `git add` away from landing under someone else's message. Handing a ticket on is the
   moment to check `git status --porcelain` is clean of your own paths, and no stage says so
   (pointer: skills/develop Step 5, skills/verify Step 2, MEASUREMENT.md).
-- 2026-08-24 — **`./close` leaves `next:` set on a ticket it marks `done`.** After closing 0005 the
-  item reads `status: done`, `closed: 2026-08-24`, `next: verify`; 0010, closed by hand before the
-  script existed, reads `next:` empty. The two close paths disagree about the same field. It is
-  currently harmless only because the row leaves `QUEUE.md` and `./next` reads the row — but the
-  item file is left saying a closed ticket is still due at a stage, which is exactly the
-  field-and-status disagreement the `next`/`status` split was made to prevent (pointer:
-  .claude/backlog/close, items/0005 and items/0010 frontmatter, items/0010 FR).
 - 2026-08-24 — **a template fix is two files, and nothing at claim time says so.** 0029's `expects:`
   named `skills/queue/templates/close`; 0027 also instantiated that script into this repo's own
   `.claude/backlog/close`, and `tests/backlog-scripts-installed.test.sh` asserts the copy is
@@ -633,17 +420,6 @@ end rather than stopping at the first entry older than its window.
   carried into the handoff, not just the sentence "not mine". Worth a named case: a red the tree is
   *supposed* to have right now (pointer: skills/develop Step 5, skills/verify Step 2, items/0029
   notes).
-- 2026-08-24 — **0031 fixed the comment-blind *list* reader; the *scalar* readers are still
-  comment-blind, in both scripts.** `next`'s `fm()` and `close`'s `fm_value()` take everything after
-  `key:` and strip only surrounding quotes, so `claimed_by: "f0c3" # mine` returns `f0c3" # mine` —
-  and `close` compares that against the token it was given before it will close anything. The same
-  instruction that produced 0031 (develop Step 1: annotate the entry inline) invites it on any
-  frontmatter field, and there is now an asymmetry a reader will not expect: a comment on `touches:`
-  is handled, a comment on `claimed_by:` or `size:` is not. `decomment` in `next:117` is already the
-  fix — it needs lifting out of `fm_list` and applying in `fm()`, and giving to `close` along with
-  `fm_list` (which the 2026-08-24 block-list finding above already asks for). Out of scope for 0031,
-  whose FRs are lists only (pointer: skills/queue/templates/next `fm()`, skills/queue/templates/close
-  `fm_value()`, items/0031, develop Step 1).
 - 2026-08-24 — **"diff the mutation before believing either colour" silently gives you nothing when
   the implementation is not committed yet.** `testing-conventions.md` says to confirm a mutation
   landed by diffing the file, and the reflex is `git diff -- <path>`. On the TDD path that diff is
@@ -653,21 +429,6 @@ end rather than stopping at the first entry older than its window.
   cheap and worth naming in the rule: copy the file aside before mutating and `diff` against that
   copy, never against HEAD, whenever the code under mutation is uncommitted (pointer:
   ai-building-conventions/testing-conventions.md "Prove a new guard fails", skills/develop Step 5).
-- 2026-08-24 — **batching.test.sh's AC4 date check is an adjacent measurement of exactly the kind
-  0032 existed to remove, one assertion below the one 0032 fixed.** AC4 asserts the batching
-  statement "carries a dated figure" with `grep -qE '20[0-9][0-9]-[0-9][0-9]' "$PARA"` over the whole
-  paragraph — so *any* date anywhere in it satisfies it, not the date on the figure. The paragraph
-  currently holds two (`**2026-08-22**` on the capture-side figure, and `2026-08-23/24` in the
-  sentence about 0026 finding nothing to measure), so stripping the figure's own date leaves the
-  guard green. Found by driving 0032's AC4 mutation and watching it *not* red: the first mutation
-  removed only the figure's date and the suite still reported 13 passed. The guard is real but it
-  pins a weaker property than its label claims, and it gets weaker every time the paragraph gains a
-  date — which it will, since 0026 is due to replace that very sentence with a dated develop-side
-  figure. Anchor the date to the figure it dates (assert the date and the claim on one line, or
-  `grep -qE '\*\*20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]\*\*: '`) rather than asserting a date is present
-  somewhere nearby. Out of scope for 0032, whose FRs are the extraction window only (pointer:
-  tests/batching.test.sh "AC4 — the statement carries a dated figure", items/0032,
-  ai-building-conventions/testing-conventions.md "a guard that is wired and still cannot fail").
 - 2026-08-24 — **A row can be claimed between `./next develop` printing it and you claiming it, and
   `develop` Step 1 has no line for that case.** `./next develop` offered `TAKE 0032`; by the time I
   had read `items/0032-*.md` and started restating its contract, another session held it
@@ -681,22 +442,6 @@ end rather than stopping at the first entry older than its window.
   condition `CONCURRENCY.md` is written for, not an unusual one (pointer: skills/develop Step 1
   "Select and claim the item", references/CONCURRENCY.md *Re-read immediately before you write*).
 
-- 2026-08-25 — **`./next develop` verdicts `TAKE` on a row whose *entire* `expects:` set is held, and
-  it has both halves on screen to know better.** All five `next: verify` rows were held by one batched
-  pass (`1a06c11`); every remaining `next: develop` row overlapped that pass's `touches:` — 0034 on
-  2 of 2 expected paths, 0036 on 4 of 11, 0007 on 4 of 6 — so nothing was developable. `./next develop`
-  nonetheless printed `TAKE 0034`, then printed the CLAIMED FILES block four lines below showing both
-  of 0034's paths held by `0029`/`0026`/`0033`. The take loop (`next:286-304`) filters on stage,
-  `blocked_by` and the Status column, and never consults the held set; `show_claimed` runs afterward
-  and independently. Two consequences, and the second is the worse one: the verdict word contradicts
-  the skill's own rule (`develop` Step 1, *Check the file scope before you claim*) for a reader who
-  trusts the first line, and because the loop `break`s on the first stage match it cannot offer the
-  next *clear* row either — the thing Step 1 actually asks for. The data to cross is already in the
-  same process. Note the asymmetry with the 2026-08-25 verify entry above: `develop` Step 1 *does*
-  write down this outcome ("If every row collides, say there is nothing safe to develop"), so the
-  prose was correct here and only the tool was wrong (pointer: .claude/backlog/next:286-304 and :204,
-  skills/queue/templates/next, skills/develop Step 1, references/CONCURRENCY.md *The working tree is
-  shared too*).
 - 2026-08-25 — **0032's own AC5 prescribes a mutation that passes under both the bug and the fix, so
   following it literally proves nothing — on the one ticket whose whole subject is adjacent
   measurement.** AC5 reads "given a phrase the suite asserts is absent, when that phrase is added to
@@ -750,19 +495,6 @@ end rather than stopping at the first entry older than its window.
   conversion is its own operation with its own template, and the two facts a reconstruction is most
   likely to get wrong are **move, do not copy** and **do not renumber** (pointer: skills/queue
   SKILL.md Step 1 table and Step 2, templates/item.md `status:` comment, items/0009 and items/0002).
-- 2026-08-25 — **the payback test's own bytes/token constant is cited to a file that does not carry
-  it.** `tests/skill-size.test.sh`'s header says "Every figure is measured and lives in
-  MEASUREMENT.md: 4.038 bytes/token, $6.25/MTok cache write … $0.1028 per turn, and 1,112 turns
-  across 30 sessions". Four of the five are there; **`4.038` is not in `MEASUREMENT.md` at all** —
-  `git log -S` puts its origin in 0021's own guard, and that file's line 101 says the transcripts
-  carry no field it could be derived from. 0035's AC1 asks only for "a citation of MEASUREMENT.md as
-  their source", so the AC passes on a citation that is wrong for the one input the header instructs
-  you to RECOMPUTE from. The bad case is not a wrong number today but a session that follows the
-  pointer to recompute B0 when the rates move, finds four inputs, and either invents the fifth or
-  trusts the stale constant — the exact failure the derivation was written down to prevent. Fix is
-  one of: land the ratio and its provenance in `MEASUREMENT.md`, or narrow the header's claim to the
-  four figures that are there and say where 4.038 came from (pointer: tests/skill-size.test.sh
-  header lines 26-36, MEASUREMENT.md, items/0035 AC1).
 - 2026-08-25 — **`verify`'s batching rule licenses a batch by file scope or parent slice, and its own
   reason licenses a wider one.** The rule reads "tickets that share a file scope or a parent slice
   are checked in one session", justified by the conventions, the skill and the suite's startup being
@@ -774,18 +506,6 @@ end rather than stopping at the first entry older than its window.
   closed on its own ACs. Worth deciding whether the condition is meant to be the gate itself
   (any rows at `next: verify`) with scope-sharing merely the common case (pointer: skills/verify
   SKILL.md preamble, *One gate per invocation, not one ticket*).
-- 2026-08-25 — **`./close` ticks nothing when the ACs carry no checkbox, and closes anyway.** 0035's
-  acceptance criteria are written `- **AC1** — Given …`, with no `- [ ]`; 0034's are written
-  `- [ ] AC1 — …`. `close` ticked 0034's seven and silently ticked none of 0035's eight, then closed
-  the ticket, moved the row and reported success identically in both cases. `verify` Step 5 step 1
-  says a close ticks the ACs and the skill states outright that **`verify` closes on ticked ACs** —
-  so on the second format the one durable record that each criterion was checked is simply absent,
-  and `DONE.md` cannot distinguish a ticket verified AC-by-AC from one waved through. The script is
-  documented to refuse rather than guess on three grounds (unreadable table shape, wrong `next:`,
-  wrong token); an AC block it cannot tick is a fourth and is not among them. Both templates are in
-  live use, so this is not a one-off malformed ticket — `templates/item.md` should settle one form
-  and `close` should refuse, or report, when it ticks zero of a non-empty AC list (pointer:
-  .claude/backlog/close, skills/verify/SKILL.md Step 5, items/0035 vs items/0034, templates/item.md).
 - 2026-08-25 — **a ticket that edits a template silently owns its installed copy, and no `expects:`
   ever says so.** `tests/backlog-scripts-installed.test.sh` AC2 requires `.claude/backlog/{next,claim,
   close}` to be byte-identical to `skills/queue/templates/`, fixed one-way (template → copy). So any
@@ -839,24 +559,6 @@ end rather than stopping at the first entry older than its window.
   the mutation the verdict names, diff the file to prove it landed, and revert before committing.
   Two of this session's three findings came out of that pass rather than out of reading (pointer:
   skills/develop/SKILL.md Step 4, items/0038 *Re-entry 2026-08-25*).
-- 2026-08-25 — **A collision with a *live `verify` claim* corrupts that session's verdict, which is a
-  strictly worse failure than the commit conflict the file-scope rule is written against — and
-  nothing says so.** `./next develop` offered `TAKE 0007` (the only takeable `develop` row: 0006,
-  0008, 0039, 0040, 0003, 0004 all genuinely blocked, 0037 held) against `0038 [e1cb]
-  touches: skills/queue/templates/next tests/next.test.sh`, claimed ninety seconds earlier. Three of
-  0007's `expects:` are that same scope — both those paths plus `.claude/backlog/next`, which
-  `tests/backlog-scripts-installed.test.sh` AC2 forces byte-identical to the template. The existing
-  stall entries above name the hazard as the pathspec commit carrying the other session's edits;
-  here the held ticket is at **`verify`**, so the hazard lands earlier and harder — a QA pass runs
-  the suite, and edits to `tests/next.test.sh` or the script under it make e1cb's verdict a
-  statement about a tree that was never a commit, with nothing in either session's output revealing
-  it. `CONCURRENCY.md` says `verify` "marks its verdict advisory on changes outside the ticket",
-  which is the reverse case (verify noticing develop's work) and offers develop no rule for this
-  one. Also the second whole-stage stall in a single day on a different file pair, which makes the
-  degenerate stage-wide lock this repo's normal operating mode rather than an incident (pointer:
-  references/CONCURRENCY.md *The working tree is shared too* and *A stage writes only the ticket it
-  holds*, skills/develop Step 1, items/0007, items/0038).
-
 - 2026-08-25 — **`queue` requires `qa_level` at capture time, but a `next: design` ticket does not
   yet know what artefact it produces — so the one field the skill calls "the decision that stops QA
   rigour quietly sliding" is set against an unknown deliverable.** Capturing 0041, the open design
@@ -894,3 +596,28 @@ end rather than stopping at the first entry older than its window.
   rule is now in `testing-conventions.md`, only the test fix remains. Either an entry gets a marker
   the other sweeper writes, or the lesson half should be removable independently
   (pointer: .claude/backlog/FINDINGS.md header *Two sweepers empty this file*, skills/retro Step 4).
+
+- 2026-08-25 — **`queue` Step 5 has no procedure for a sweep that is an order of magnitude past the
+  threshold, and the per-entry instruction it does give does not scale.** The buffer held 86
+  entries; the step says "for each entry that is a unit of work, do the Step 2 work properly", which
+  is right per entry and silent on everything that matters at this size. Nothing says to cluster
+  first, nothing says an entry and a ticket are not one-to-one, and nothing says what to do when the
+  honest answer is ~32 tickets — several sessions of Step 2 rigour, which no single sweep can
+  deliver. I clustered by root cause, asked the user to scope, took Tier 1 and Tier 2 only, and left
+  ~22 clusters parked; every one of those decisions was invented. The bundling question is the sharp
+  one: eight of the ten tickets written here each came from two to five entries, and bundling by
+  root cause versus splitting by file has an actual trade-off in this repo — narrower `touches:`
+  collides less, which is the live failure mode, while one rule landed three times drifts. Worth a
+  paragraph in Step 5 on clustering, and one on what a sweep does when it cannot finish
+  (pointer: skills/queue/SKILL.md Step 5, .claude/backlog/FINDINGS.md, items/0042-0051).
+
+- 2026-08-25 — **entries in this file cross-reference each other by quoted phrase, so a sweep that
+  removes one breaks the other's pointer with nothing to report it.** The surviving `design` Step 4
+  entry says *"the 2026-08-25 finding below ('one claim on two shared prose files stalled the whole
+  `develop` stage') records exactly that"* — an entry this sweep processed into 0050 and removed.
+  The reference now resolves to nothing, and it is worse than a dead link because the sentence still
+  reads as though the evidence is at hand. Neither sweeper is told to look, and the phrase is quoted
+  rather than keyed, so nothing could look automatically. The cheap version is a rule that a
+  cross-referencing entry names the ticket or the file rather than quoting a sibling; the honest
+  version is that entries which cite each other are one entry (pointer: .claude/backlog/FINDINGS.md
+  header *Entry order is not guaranteed*, items/0050).
