@@ -987,3 +987,21 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   remainder at once. Where a suite has a known systematic assertion weakness, the sweep is a loop,
   not a read (pointer: items/0038 *Re-entry 2026-08-25 (second)*, the two entries above this one,
   testing-conventions.md *Prove a new guard fails*).
+
+- 2026-08-25 — **`queue` requires `qa_level` at capture time, but a `next: design` ticket does not
+  yet know what artefact it produces — so the one field the skill calls "the decision that stops QA
+  rigour quietly sliding" is set against an unknown deliverable.** Capturing 0041, the open design
+  question is *skill, `retro` mode, `orchestrate` step, or `tools/` script* — and those do not share
+  a level: a script is `unit` with fixtures (the `tests/measurement.test.sh` precedent), skill prose
+  is `verify` with a named scripted assertion. The skill's own instruction is emphatic that the level
+  is chosen "at queue time, not at develop time", and its routing section is equally emphatic that
+  design tickets are "ranked normally" — but it never says what a design ticket does about the field,
+  and `templates/item.md` offers no way to mark it provisional. I resolved it by arguing the level
+  from what is certain *across* all four candidate placements (computed metrics mean code either
+  way, and this project's `unit` command runs every `tests/*.test.sh`, so `unit` subsumes a
+  `verify`-level grep) and writing that argument into the QA plan — which works here only because
+  `unit` happened to dominate. Where the candidates straddle levels in the other direction there is
+  no answer at all. Rule to draw: **a `design` ticket sets the level its candidate placements
+  share, or records that design must set it** — and either way the skill should say which, because a
+  cold session will otherwise guess and the guess is invisible (pointer: skills/queue Step 2 *Set
+  `qa_level` now*, skills/queue/templates/item.md `qa_level:`, items/0041 QA plan).
