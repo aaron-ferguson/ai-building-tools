@@ -3,7 +3,7 @@ id: "0038"
 title: Add the drive and findings routing modes to next
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -17,8 +17,8 @@ expects:
   - .claude/backlog/config.yml
   - skills/queue/templates/config.yml
   - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
-claimed_by:
-claimed_at:
+claimed_by: "0092"
+claimed_at: 2026-08-25T06:26:46Z
 touches:
 ---
 
