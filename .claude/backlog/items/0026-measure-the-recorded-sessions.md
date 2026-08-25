@@ -22,6 +22,10 @@ expects:
 claimed_by: "7c1e"
 claimed_at: 2026-08-25T01:58:44Z
 touches:
+  - .claude/backlog/items/0026-measure-the-recorded-sessions.md
+  - .claude/backlog/QUEUE.md
+  - .claude/backlog/DONE.md
+  - .claude/backlog/FINDINGS.md
 ---
 
 ## Problem
