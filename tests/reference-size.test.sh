@@ -41,10 +41,16 @@ ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 # a token figure is a model's arithmetic, a byte figure is `wc -c`, and only one of them is checkable.
 GOAL=6057
 
-# RELOCATE FIRST. Detail that only some runs need belongs behind a pointer, in a file read when the
-# pointer is followed and free on every run that doesn't. CONCURRENCY.md -> CONCURRENCY-INCIDENTS.md
-# is the worked instance: the rules stayed, the incidents and the reasoning moved, and nothing was
-# lost. Record a reason only once relocation has been considered and rejected — and say what was
+# RELOCATE FIRST — but only where it pays, and WHEN IT PAYS IS DECIDED BY THE PAYBACK TEST IN
+# tests/skill-size.test.sh. That header holds the arithmetic, the break-even share and the two
+# conditions that are not about cost; this file does not restate any of it, because two guards
+# stating one rule is two rules that drift, silently, with nothing to red when they disagree.
+#
+# What belongs here is the worked instance, because it is a references/ file and this is the
+# references/ guard: CONCURRENCY.md -> CONCURRENCY-INCIDENTS.md is the split that passes the test.
+# The rules and the failure each prevents stayed; the incidents, the reasoning and the live-conflict
+# procedure moved, and the moved half is read only when a rule is argued with or a conflict is live.
+# Record a reason only once relocation has been considered and rejected — and say what was
 # considered, so the next reader argues with a judgement rather than re-deriving it.
 RELOCATE='relocate detail only some runs need to a pointer file, or record a justification naming what you considered relocating'
 
@@ -217,6 +223,23 @@ if grep -rn "1,500\|1500 token" "$ROOT/references" "$ROOT/skills" >/dev/null 2>&
 else
   ok "no file under references/ or skills/ asserts the retired hard ceiling"
 fi
+
+# 0035 — the RELOCATE block cites the payback test rather than carrying a second copy of it. Two
+# guards stating one rule is two rules that drift, and the drift is silent: nothing reds when the
+# copies disagree, and the author reads whichever file they opened.
+
+echo "0035 AC3 — the RELOCATE block names where the test lives and does not restate it"
+RELOCATE_BLOCK="$(awk '/^# RELOCATE FIRST/ { on = 1 } on { print } /^RELOCATE=/ { if (on) exit }' "$ROOT/tests/reference-size.test.sh")"
+case "$RELOCATE_BLOCK" in
+  *"tests/skill-size.test.sh"*) ok "the RELOCATE block names tests/skill-size.test.sh as where the test lives" ;;
+  *) bad "0035 AC3/FR3 — the RELOCATE block does not say where the payback test lives" ;;
+esac
+for copied in 'p = 1 /' '4.038' '$6.25' '$0.1028' '17,000'; do
+  case "$RELOCATE_BLOCK" in
+    *"$copied"*) bad "0035 AC3/FR3 — the RELOCATE block restates $copied; cite the test, do not copy it" ;;
+    *) ok "the RELOCATE block does not restate $copied" ;;
+  esac
+done
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]

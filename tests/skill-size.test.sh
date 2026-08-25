@@ -8,8 +8,10 @@
 # The goal is SOFT, and deliberately so. A hard cap is paid by deleting whatever fits least well,
 # which on a file of rules means deleting a rule — backwards, because "no rule is dropped" outranks
 # any byte count. What the goal exists to stop is a generic tool accreting anecdotes, worked
-# examples and niche cases. So: over the goal is allowed, and must be RECORDED with a reason. The
-# reason is what a reviewer argues with; the number only decides when that argument has to happen.
+# examples and niche cases. So: over the goal is allowed, and must be RECORDED with a reason that
+# says what was considered relocating and why it was rejected — not merely why the file is long.
+# The reason is what a reviewer argues with; the number only decides when that argument has to
+# happen, and a reason that names no rejected alternative is one nobody can argue with.
 #
 # WHEN RELOCATION IS THE ANSWER — the payback test (0035). The first move for a file over the goal
 # is usually a POINTER rather than a cut: detail that only some runs need belongs in a
@@ -271,6 +273,12 @@ do
     *) bad "0035 AC1 — the header does not state $want; the test cannot be recomputed without it" ;;
   esac
 done
+
+echo "0035 FR4 — the header demands a justification that says what was considered relocating"
+case "$HEADER" in
+  *"considered relocating"*) ok "the header asks for what was considered relocating, as the message does" ;;
+  *) bad "0035 FR4 — the header asks for a reason without asking what was considered relocating" ;;
+esac
 
 echo "0035 AC2 — the POINTER sentence is qualified, not unconditional"
 case "$HEADER" in
