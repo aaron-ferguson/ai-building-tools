@@ -3,15 +3,15 @@ id: "0032"
 title: Terminate batching.test.sh's paragraph window on a blank line
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-08-23
 source: agent
 expects:
   - tests/batching.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "5864"
+claimed_at: 2026-08-25T01:58:26Z
 touches:
 ---
 
