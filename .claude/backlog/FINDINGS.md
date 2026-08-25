@@ -700,3 +700,14 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
   its results; what is wrong is the recipe an AC hands the next verifier (pointer: items/0032 AC5 and
   its *Notes & decisions*, tests/batching.test.sh:60, ai-building-conventions/testing-conventions.md
   "a guard that is wired and still cannot fail").
+- 2026-08-25 — **a ticket's FRs enumerate what to add; a required *deletion* can live only in an AC,
+  and *Out of scope* can read as though it forbids it.** 0034's five FRs describe the new derived
+  rule and none says `verify` Step 2 must stop applying the advisory label — only AC2 ("no other
+  trigger for the label remains anywhere in the file") requires that bullet to change. Worse, *Out of
+  scope* opens "Changing what Step 2 *does*" and lists three things it keeps doing, which on a first
+  read looks like Step 2 is untouched; the paragraph does go on to say the label moves, but a session
+  working FR-by-FR per develop Step 4 reaches the ACs only after implementing, and the diff it would
+  have written leaves two triggers in the file and fails QA. Rule to draw: **when a change relocates
+  a decision, one FR should name the site it is relocated *from*, not only the site it moves to** —
+  an addition-only FR list cannot express a move, and the AC that catches it fires after the work is
+  done (pointer: items/0034 FR2 and its *Out of scope*, skills/verify Step 2, skills/develop Step 2).
