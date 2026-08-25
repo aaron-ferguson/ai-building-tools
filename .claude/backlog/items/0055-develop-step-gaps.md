@@ -68,6 +68,15 @@ repo-root path then fails with *no such file or directory* — including `.claud
 which reads as the script being absent rather than the cwd having moved. Two calls were lost to it
 in one session.
 
+**And a row can be claimed between `./next develop` printing it and you claiming it.**
+`./next develop` offered `TAKE 0032`; by the time the item file had been read and its contract
+restated, another session held it. Nothing broke — `./claim` re-reads under the lock, which is
+*Re-read immediately before you write* doing its job — but it was noticed only because the harness
+happened to send a "QUEUE.md changed on disk" reminder. Without that, Step 2 would have restated
+the contract for a ticket the session did not hold. Step 1 reads as though the row `./next` prints
+is still there when you get to it; the ordering it should state is **claim first, read the item
+file second** — the claim is two seconds and the item file is the expensive read.
+
 ## Functional requirements
 
 - FR1 — Step 5.4 says where the record that `expects:` under-predicted goes when `touches:` is
@@ -88,6 +97,9 @@ in one session.
   copy to prove it landed, revert before committing.
 - FR7 — Step 1 shows the `./next` invocation from the repo root, so following it does not move the
   working directory.
+- FR9 — Step 1 states the ordering **claim first, read the item file second**, and names why: the
+  claim is cheap and `./claim` re-reads under the lock, while restating a contract for a row you do
+  not hold is the expensive mistake.
 - FR8 — Every rule added cites the governing convention rather than restating it, and each citation
   resolves under `tests/citations.test.sh`.
 
@@ -110,6 +122,8 @@ in one session.
 - [ ] AC6 — Given Step 4, when read, then it names the evidence-only re-entry and its
   mutate-diff-revert procedure.
 - [ ] AC7 — Given Step 1, when read, then the `./next` invocation shown runs from the repo root.
+- [ ] AC10 — Given Step 1, when read, then it states that the row is claimed before the item file
+  is read, and why that order.
 - [ ] AC8 — Given every citation added, when `tests/citations.test.sh` runs, then each resolves.
 - [ ] AC9 — Given `tests/skill-size.test.sh`, when it runs, then `skills/develop/SKILL.md` is
   within its goal or carries a recorded justification naming this ticket.
@@ -128,6 +142,9 @@ in one session.
 
 - **Anything about a red the session did not cause.** That is 0054, which holds Step 5's
   attribution rules; this ticket holds the six gaps that are not about concurrency.
+- Making `./next` and `./claim` behave differently in the race FR9 describes. The scripts are
+  already correct — `./claim` refuses an `in-progress` row under the lock — and FR9 changes only
+  the order the skill tells a session to work in.
 - Making the scalar frontmatter readers comment-aware. That is 0044. FR2 is the skill's half and is
   worth landing either way, since the instruction is wrong even once the readers are fixed.
 - Relocating any of this file's content to hold its byte goal. AC9 accepts a recorded justification.
@@ -139,6 +156,13 @@ in one session.
 - Bundled at the level of "one skill file's steps have no case for what now happens routinely"
   rather than six tickets. Six tickets on one prose file is the stage-wide stall 0050 describes,
   reproduced deliberately.
+- **Amended 2026-08-25**, during the same sweep that captured it, to add FR9/AC10 — the
+  claim-before-read ordering. Re-checked per the amend rules: `size` stays `l` (one more prose
+  clause on a file already being edited for seven), the QA plan's named checks are unchanged
+  because AC10 is another scoped grep on the same step as AC7, and *Out of scope* gained the line
+  above so nobody reads FR9 as a request to change the scripts. The alternative was leaving the
+  finding parked, which would have put a future ticket in this file alongside this one — the
+  collision 0050 exists to settle.
 - `skills/develop/SKILL.md` carries a recorded size justification already (0035). AC9 is written to
   accept an updated one rather than to force a relocation, because relocation is the operation the
   size gate itself says rarely pays.
