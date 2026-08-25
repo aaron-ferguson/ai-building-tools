@@ -2,8 +2,8 @@
 id: "0038"
 title: Add the drive and findings routing modes to next
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -18,10 +18,9 @@ expects:
   - skills/queue/templates/config.yml
   - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
   - README.md               # not predicted: line 208's test inventory names next's modes
-claimed_by: "b978"
-claimed_at: 2026-08-25T07:11:18Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/next.test.sh
 ---
 
 ## Problem
@@ -81,7 +80,7 @@ lives here.
   | close reconciles dependents `blocked`→`ready` | verify S5.3 | re-derive — new rows may be takeable |
   | **ticket becomes a project; row leaves `QUEUE.md`** | queue | not an error, and not a loop |
   | **nothing takeable at `develop`** | — | **run complete** — a success, not an escalation |
-  | foreign red tree · push required · anything unrecognised | — | **escalate** |
+  | foreign red tree · push required · anything unrecognised | — | **escalate** — of the three, only *anything unrecognised* is decidable from the backlog; the first two are git and repository state `--drive` never reads, and 0039 owns them |
 
   **Which `status:` is authoritative, because there are two vocabularies and nothing pinned one.**
   `./next` reads Status from the `QUEUE.md` column (`ready|waiting|blocked|in-progress`) and
@@ -149,7 +148,7 @@ lives here.
   format guard fails.
 - [ ] **AC9 — every row of FR8's table is routed as the table says, with one fixture each.** Given
   a backlog in each FR8 state in turn — verify bounce, `next: design`, `next: queue`, stale
-  contract, foreign red tree, `waiting` top row, genuinely `blocked` top row, **advisory PASS**,
+  contract, `waiting` top row, genuinely `blocked` top row, **advisory PASS**,
   **develop→`design`**, **develop→`develop` on a red tree**, **develop→`waiting`**,
   **develop→new `blocked_by`**, **a row that left `QUEUE.md` because its ticket became a
   project**, **nothing takeable at `develop`**, and **the same ticket reaching the same stage
@@ -185,7 +184,7 @@ lives here.
   drive, and it is the whole reason this slice was separated from the supervisor: prose cannot be
   red, and a routing rule that is wrong is wrong the same way every run.
 - **Specific checks:** the whole suite (`for t in tests/*.test.sh`), and specifically —
-  - **A fixture per row of FR8's table**, fifteen of them, each asserting the printed decision and
+  - **A fixture per row of FR8's table**, fourteen of them, each asserting the printed decision and
     the exit code (AC9, AC11). The four develop-side unhappy endings and the two loop hazards —
     advisory PASS, and same-stage-twice — have no precedent in the existing tests, so they are the
     ones to write first.
@@ -210,6 +209,11 @@ lives here.
   moves its threshold into a key.
 - **Reading the time half of `retro`'s cadence.** "Or weekly" has no fixture and stays a human's
   judgement (FR3).
+- **Routing a foreign red tree, or a push that needs approval.** FR8's table groups both with
+  *anything unrecognised* because all three escalate, but only the third is decidable from the
+  backlog: the other two are git and repository state `--drive` never reads, and nothing here
+  launches a process. 0039 owns them. Amended after QA 2026-08-25 named the clause as
+  unexpressible rather than merely untested.
 
 ## Notes & decisions
 
@@ -327,6 +331,33 @@ less specific message: phase-A `queue` (~608), phase-A `in-progress` (~603), and
 branch (~613). Only the bounce is an FR8 row of its own, and `next.test.sh:491` does pin its outcome
 (rc 4 + `ESCALATE`) — just not its reason. Worth an `assert_contains` on the bounce wording next time
 that block is open; not worth a red on its own.
+
+### Re-entry 2026-08-25 — the two things the QA verdict above asked for
+
+- **The missing fixture is added and proven red.** `tests/next.test.sh` now holds a rank-walk
+  `waiting` case: a `waiting` top row, a takeable row beneath it, `--drive` with **no**
+  `--completed`. Under the mutation the verdict named (`if [ "$rstatus" = "waiting" ]` →
+  `if false`) it fails on all four of its assertions, printing `DISPATCH  develop 0101` against a
+  row whose whole state is that a person has been asked a question. Reverted, the suite is green.
+  **No production code changed** — the verdict was right that the branch was correct and only the
+  evidence was missing.
+
+- **The bounce reason is now asserted, and this is the more interesting of the two.** The verdict
+  called it "worth an `assert_contains` next time that block is open; not worth a red on its own."
+  It is worth more than that: with `elif [ "$lstage" = "verify" ] && [ "$lnext" = "develop" ]`
+  mutated to `elif false`, the three pre-existing assertions on that case — rc 4, `ESCALATE`, the
+  ticket id — **all stay green**, because the ladder's final `else` escalates anyway. Only the new
+  assertion reds. An FR8 row can therefore be deleted outright while its own case reports ok three
+  times. The same shape is live on the two remaining mutation-silent branches the verdict listed
+  (phase-A `queue`, phase-A `in-progress`): both are covered only by outcome, not by reason. The
+  general rule for this table — **where a ladder has a catch-all `else`, asserting the outcome
+  asserts the `else`, not the branch; assert the wording** — is what a later pass should carry to
+  them.
+
+- **AC9's `foreign red tree` is resolved by amendment, not by a fixture.** It is handed to 0039
+  along with *push required*, and *Out of scope* now says so. Both are state `--drive` structurally
+  cannot read, so leaving them in AC9 meant an AC that no implementation of this slice could ever
+  satisfy — the fixture count in the QA plan drops from fifteen to fourteen to match.
 
 **Copies:** `tests/next.test.sh` executes `skills/queue/templates/next`, and
 `.claude/backlog/next` is byte-for-byte identical to it — checked, so this repo's own backlog runs
