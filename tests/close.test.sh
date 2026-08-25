@@ -87,6 +87,58 @@ touches:
 ITEM
 }
 
+# An item whose acceptance criteria carry NO checkbox — the `- **AC1** —` form real tickets have
+# been written in. `close` ticks nothing here, and 0044 FR5 makes that a refusal rather than a
+# success the reader cannot tell from a real one.
+# mkitem_plain_acs <id> <next> <status> <token>
+mkitem_plain_acs() {
+  cat > "$FIX/$BL/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+type: chore
+next: $2
+status: $3
+qa_level: verify
+created: 2026-08-01
+blocked_by: []
+claimed_by: $4
+claimed_at: 2026-08-01T00:00:00Z
+touches:
+---
+
+## Acceptance criteria
+
+- **AC1** — Given a criterion with no checkbox, when close runs, then it cannot be ticked
+- **AC2** — And neither can this one
+ITEM
+}
+
+# An item with an empty acceptance-criteria section. Nothing to tick is not the same defect as
+# criteria that cannot be ticked, and the refusal must tell them apart.
+# mkitem_no_acs <id> <next> <status> <token>
+mkitem_no_acs() {
+  cat > "$FIX/$BL/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+type: chore
+next: $2
+status: $3
+qa_level: verify
+created: 2026-08-01
+blocked_by: []
+claimed_by: $4
+claimed_at: 2026-08-01T00:00:00Z
+touches:
+---
+
+## Acceptance criteria
+
+## Notes & decisions
+ITEM
+}
+
 commit_fixture() { git -C "$FIX" add -A && git -C "$FIX" commit -q -m "fixture"; }
 
 run_close() { (cd "$FIX" && "$BL/close" "$@" 2>&1); }
@@ -350,6 +402,114 @@ expect="$BL/DONE.md $BL/QUEUE.md $BL/items/0020-fixture.md $BL/items/0021-fixtur
 [ "$paths" = "$expect" ] && ok "commits only the row it closed and the rows it freed" || {
   bad "commits only the row it closed and the rows it freed"; echo "         expected: $expect"; echo "         got:      $paths"; }
 assert_clean "nothing is left uncommitted"
+
+# --- 0044 AC1 — a dependent whose blocked_by is a block list ------------------------------------
+# `close` read `blocked_by` with its scalar reader, which returns only what sits after the colon on
+# the key's own line — so the block form parsed as empty, the `case` missed, and the dependent was
+# never reconciled. Closing 0028 hit exactly this and left 0029 blocked in both the item and the
+# row. `next` has read both forms since 0031; this asserts the two scripts agree.
+echo "0044 AC1 — a block-list blocked_by is reconciled like the inline form"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" \
+  '| 0030 | The blocker | verify | in-progress | 0000 |' \
+  '| 0031 | Blocked by a block list | develop | blocked | 0000 |' \
+  '| 0032 | Blocked by an inline list | develop | blocked | 0000 |'
+mkitem 0030 verify in-progress '"ab12"' '[]'
+mkitem 0031 develop blocked '' '
+  - "0030"'
+mkitem 0032 develop blocked '' '["0030"]'
+commit_fixture
+out="$(run_close 0030 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the block-list dependent is freed" "$(cat "$FIX/$BL/items/0031-fixture.md")" 'status: ready'
+assert_line "and its row is freed too" '| 0031 | Blocked by a block list | develop | ready | 0000 |' QUEUE.md
+assert_contains "the block-list dependent is reported" "$(printf '%s' "$out" | grep 'reconciled' || true)" '0031'
+assert_contains "the inline dependent is freed as before" "$(cat "$FIX/$BL/items/0032-fixture.md")" 'status: ready'
+assert_clean "both reconciles landed in the close commit"
+
+# --- 0044 AC1 — a block-list entry that is NOT this ticket still blocks --------------------------
+# The cheap way to pass the case above is to treat an unreadable `blocked_by` as "names me". That
+# frees every dependent of every close, so the parser is pinned from both directions.
+echo "0044 AC1 — a block list naming another ticket is not freed"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" \
+  '| 0033 | The blocker | verify | in-progress | 0000 |' \
+  '| 0034 | Blocked by someone else entirely | develop | blocked | 0000 |'
+mkitem 0033 verify in-progress '"ab12"' '[]'
+mkitem 0034 develop blocked '' '
+  - "0099"'
+commit_fixture
+out="$(run_close 0033 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the unrelated dependent stays blocked" "$(cat "$FIX/$BL/items/0034-fixture.md")" 'status: blocked'
+refute_contains "and is not reported as freed" "$(printf '%s' "$out" | grep 'reconciled' || true)" '0034'
+
+# --- 0044 AC2 — a scalar field carrying a trailing YAML comment ---------------------------------
+# `develop` Step 1 tells a session to annotate frontmatter inline, and 0031 taught only the LIST
+# reader to cope. A comment on `claimed_by:` made the ownership test compare `ab12" # mine` against
+# the token and refuse the holder's own close.
+echo "0044 AC2 — a commented claimed_by still matches the bare token"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0040 | Annotated claim | verify | in-progress | 0000 |'
+mkitem 0040 verify in-progress '"ab12" # minted this session' '[]'
+commit_fixture
+out="$(run_close 0040 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0040-fixture.md")" 'status: done'
+refute_line "the row is gone from QUEUE.md" '| 0040 | Annotated claim | verify | in-progress | 0000 |' QUEUE.md
+
+# --- 0044 AC2 — and a wrong token is still refused, comment or not ------------------------------
+echo "0044 AC2 — a commented claim does not accept the wrong token"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0041 | Annotated claim | verify | in-progress | 0000 |'
+mkitem 0041 verify in-progress '"ab12" # minted this session' '[]'
+commit_fixture
+out="$(run_close 0041 zz99)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the holding token without its comment" "$out" "held by token 'ab12'"
+assert_line "the row is untouched" '| 0041 | Annotated claim | verify | in-progress | 0000 |' QUEUE.md
+assert_clean "no file was changed"
+
+# --- 0044 AC4 — the closed ticket is no longer due at a stage -----------------------------------
+# The script path left `next: verify` on a `status: done` ticket; the by-hand path cleared it. The
+# item then says a closed ticket is still due at a stage, which is the disagreement the next/status
+# split exists to prevent.
+echo "0044 AC4 — close clears next: on the ticket it marks done"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0042 | Closed properly | verify | in-progress | 0000 |'
+mkitem 0042 verify in-progress '"ab12"' '[]'
+commit_fixture
+out="$(run_close 0042 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+item="$(cat "$FIX/$BL/items/0042-fixture.md")"
+assert_contains "status is done"  "$item" 'status: done'
+assert_contains "next: is empty"  "$item" 'next:
+status: done'
+refute_contains "no stage is left on it" "$item" 'next: verify'
+
+# --- 0044 AC5 — criteria that cannot be ticked are a refusal ------------------------------------
+# `close` ticked zero of eight on 0035's `- **AC1** —` criteria, closed anyway, and reported
+# success in the same words as a real close. `verify` closes on ticked ACs, so the one durable
+# record that each criterion was checked was simply absent.
+echo "0044 AC5 — a criteria list with no checkbox is refused, not silently closed"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0043 | Criteria with no checkboxes | verify | in-progress | 0000 |'
+mkitem_plain_acs 0043 verify in-progress '"ab12"'
+commit_fixture
+out="$(run_close 0043 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "says how many it could not tick" "$out" '2'
+assert_contains "names the form it needs" "$out" '- [ ]'
+assert_line "the row is untouched" '| 0043 | Criteria with no checkboxes | verify | in-progress | 0000 |' QUEUE.md
+refute_line "nothing was written to DONE.md" '| 0043 | Criteria with no checkboxes | chore | verify | '"$(date -u +%Y-%m-%d)"' | [items/0043-fixture.md](items/0043-fixture.md) |' DONE.md
+assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0043-fixture.md")" 'status: in-progress'
+assert_clean "no file was changed"
+assert_no_lock "the lock is released on the refusal"
+
+# --- 0044 AC5 — an empty criteria section is not the same defect --------------------------------
+# Nothing to tick is not criteria that cannot be ticked. Refusing here would block every chore
+# ticket written without ACs, which is a different argument and not this ticket's.
+echo "0044 AC5 — an empty criteria section still closes"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0044 | No criteria at all | verify | in-progress | 0000 |'
+mkitem_no_acs 0044 verify in-progress '"ab12"'
+commit_fixture
+out="$(run_close 0044 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0044-fixture.md")" 'status: done'
 
 # --- result -----------------------------------------------------------------------------------
 echo

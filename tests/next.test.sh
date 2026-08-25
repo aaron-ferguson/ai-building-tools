@@ -134,6 +134,33 @@ touches:
 ITEM
 }
 
+# An item whose scalar `claimed_by:` carries a trailing YAML comment. `add_item_lists` writes a
+# bare token, and 0031 taught only the LIST reader to strip comments — so the scalar asymmetry
+# 0044 removes was never fed to this suite (0044 FR2).
+#
+# $1 id, $2 status, $3 the claimed_by value written verbatim, e.g. '"aa11" # mine'
+add_item_commented_scalar() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: develop
+status: $2
+qa_level: unit
+size: s   # one sitting
+blocked_by: []
+expects:
+  - some/file.md
+claimed_by: $3
+claimed_at: 2026-08-24T00:00:00Z
+touches:
+  - held/file.md
+---
+
+## Problem
+ITEM
+}
+
 # --- 0038 fixtures ----------------------------------------------------------------------------
 # The helpers above hardwire `next: develop` in the frontmatter and one `expects:` entry, which the
 # routing cases cannot use: `--drive` routes on the Next column and groups a gate by `parent:` and
@@ -880,6 +907,35 @@ out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc       "exits 0 — dispatch"        "$rc" 0
 assert_contains "names the held row"        "$out" '0101'
 assert_contains "dispatches the free row"   "$out" 'DISPATCH  develop 0102'
+
+# --- 0044 AC2 — a scalar frontmatter value carrying a trailing comment --------------------------
+# `fm()` took everything after `key:` and stripped only surrounding quotes, so an annotated token
+# came back as `aa11" # mine`. `close` compares that string against the token it is given before it
+# will close anything, and this is the reader both scripts share the shape of.
+echo "0044 AC2 — a commented scalar reads as its bare value"
+scaffold
+add_row 0001 'A free row' develop ready 0000
+add_row 0002 'Held with an annotated token' develop in-progress 0000
+add_item 0001 ready '[]'
+add_item_commented_scalar 0002 in-progress '"aa11" # minted this session'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+assert_contains "prints the bare token" "$out" '0002 [aa11]'
+assert_not_contains "not the comment with it" "$out" '#'
+
+# The take line reads `size:` and `qa_level:` through the same scalar reader, so the defect is
+# pinned on the row being offered too — not only on the held row's token.
+echo "0044 AC2 — and the offered row's own scalars are read the same way"
+scaffold
+add_row 0003 'A free row with annotated frontmatter' develop ready 0000
+add_item_commented_scalar 0003 ready ''
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+assert_contains "offers the row" "$out" 'TAKE      0003'
+assert_contains "the size is read without its comment" "$out" 'size s | qa unit'
+assert_not_contains "no comment reaches the take line" "$out" '#'
 
 # --- result -----------------------------------------------------------------------------------
 echo
