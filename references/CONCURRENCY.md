@@ -13,7 +13,8 @@ conflict**; read it then, or to argue with a rule. **Part 1 applies everywhere, 
 
 One staging area per repository, no lock, no token: any session can commit what another staged.
 
-- **Commit by pathspec — `git commit -m "…" -- <paths>`.** Bare `git commit` writes the whole index,
+- **Commit by pathspec — `git commit -m "…" -- <paths>`, carrying the `Co-Authored-By` trailer
+  every AI-assisted commit takes (`git-conventions.md`).** Bare `git commit` writes the whole index,
   so `git add <mine> && git commit` still takes their work. Never `-a`, `add .`, `add -A`. A file git
   does not know yet needs **`git add -N` first**, or the pathspec fails.
 - **Stage and commit in one turn**, and **read back** (`git diff --cached --name-only`), then

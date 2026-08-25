@@ -371,7 +371,7 @@ provide, the de-duplication log and the field mapping.
 
 ```bash
 git add -N .claude/backlog/items/0007-*.md          # a file git does not know yet
-git commit -m "Capture 0007: <title>" -- \
+git commit -m "Capture 0007: <title>" -m "Co-Authored-By: <model> <noreply@anthropic.com>" -- \
   .claude/backlog/QUEUE.md .claude/backlog/items/0007-*.md .claude/backlog/config.yml
 ```
 

@@ -132,7 +132,8 @@ read-modify-write two sessions can both win:
    the prose implies** — a guessed path reserves nothing and the other window cannot tell it from one
    you are about to create, so **declare a file you will create the same way and say inline that it
    is new**. Correct `expects:` where it was wrong; the next capture calibrates on it.
-4. **Commit by pathspec** — `git commit -m "Claim 0007 [$CLAIM]" -- <queue> <item>`.
+4. **Commit by pathspec** — `git commit -m "Claim 0007 [$CLAIM]" -- <queue> <item>`, with the
+   `Co-Authored-By` trailer (`git-conventions.md`). A lifecycle commit is not exempt from it.
 5. `rm -rf .claude/backlog/.lock` — this same turn, before any implementation work.
 
 Widen `touches:` the moment the work reaches further: the other window reads it to decide what it may

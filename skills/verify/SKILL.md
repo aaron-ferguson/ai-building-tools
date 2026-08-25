@@ -235,7 +235,8 @@ installed:
    session with nothing blocking them. Narrow writes lost to a queue that lies. You still hold the
    lock, and you write nothing that is held — leave a claimed dependent alone and say so in your
    report; its own session will see the drift.
-4. **Commit by pathspec**, **then** release the lock. The order matters: the lock guards the commit,
+4. **Commit by pathspec** — with the `Co-Authored-By` trailer (`git-conventions.md`) — **then**
+   release the lock. The order matters: the lock guards the commit,
    not just the edit, because the commit takes `QUEUE.md` whole (`CONCURRENCY.md`, *Lock every write to
    `QUEUE.md`*).
 5. Record this session's cost share if `cost_tracking:` is configured, and mirror the close if a
