@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0031 | Strip YAML comments in next and claim's fm_list | bug | verify | 2026-08-25 | [items/0031-fm-list-strips-yaml-comments.md](items/0031-fm-list-strips-yaml-comments.md) |
 | 0029 | Reconcile close's definition of held with CONCURRENCY.md's | bug | verify | 2026-08-25 | [items/0029-reconcile-what-held-means.md](items/0029-reconcile-what-held-means.md) |
 | 0026 | Measure the isolated workflow from the recorded sessions and record the verdict | chore | verify | 2026-08-25 | [items/0026-measure-the-recorded-sessions.md](items/0026-measure-the-recorded-sessions.md) |
 | 0005 | Add the graph fields to the ticket template and QUEUE.md | chore | verify | 2026-08-24 | [items/0005-add-graph-fields-to-template.md](items/0005-add-graph-fields-to-template.md) |

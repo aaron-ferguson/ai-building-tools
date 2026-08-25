@@ -3,7 +3,7 @@ id: "0031"
 title: Strip YAML comments in next and claim's fm_list
 type: bug
 next: verify
-status: in-progress
+status: done
 qa_level: verify
 size: s
 created: 2026-08-23
@@ -12,13 +12,10 @@ expects:
   - skills/queue/templates/next
   - skills/queue/templates/claim
   - tests/next.test.sh
-claimed_by: "3e26"
-claimed_at: 2026-08-25T02:13:10Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next
-  - skills/queue/templates/claim
-  - tests/next.test.sh
-  - .claude/backlog/items/0031-fm-list-strips-yaml-comments.md
+closed: 2026-08-25
 ---
 
 ## Problem
@@ -58,20 +55,20 @@ Found on 0024.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given an item whose `touches:` entry carries an inline `# new file` comment, when
+- [x] AC1 — Given an item whose `touches:` entry carries an inline `# new file` comment, when
   `./next develop` runs, then the CLAIMED FILES block shows the path alone, with no comment text.
-- [ ] AC2 — Given an item whose `touches:` entry is a quoted path containing a `#`, when `./next`
+- [x] AC2 — Given an item whose `touches:` entry is a quoted path containing a `#`, when `./next`
   reads it, then the whole path is returned unmodified.
-- [ ] AC3 — Given a frontmatter list containing a line that is only a comment, when `fm_list` reads
+- [x] AC3 — Given a frontmatter list containing a line that is only a comment, when `fm_list` reads
   it, then that line produces no element and no blank row appears in the output.
-- [ ] AC4 — Given a `touches:` entry with a comment stripped, when it is compared against another
+- [x] AC4 — Given a `touches:` entry with a comment stripped, when it is compared against another
   item's `expects:` entry for the same path, then the two compare equal — no trailing whitespace
   defeats the match.
-- [ ] AC5 — Given an item whose `blocked_by:` entry carries an inline comment, when `./next --drift`
+- [x] AC5 — Given an item whose `blocked_by:` entry carries an inline comment, when `./next --drift`
   runs, then the blocker id is parsed correctly and no phantom open blocker is reported.
-- [ ] AC6 — Given `tests/next.test.sh`, when the comment-stripping logic is mutated away, then the
+- [x] AC6 — Given `tests/next.test.sh`, when the comment-stripping logic is mutated away, then the
   suite goes red; the mutation is diffed first to confirm it landed.
-- [ ] AC7 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then all
+- [x] AC7 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then all
   suites pass.
 
 ## QA plan
