@@ -29,6 +29,33 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-25 — **`./next <stage>` prints `TAKE` on a row whose `expects:` collides with the files it
+  names as held, in the same output.** A `develop` session found 0034 claimed by another window
+  (`c2e9`, `touches: skills/verify/SKILL.md references/CONCURRENCY.md`); `./next develop` then
+  printed `TAKE 0036` — whose `expects:` names `skills/verify/SKILL.md` — directly above a
+  `CLAIMED FILES — another session owns these` block naming that same path. Both facts are correct
+  and the intersection is left entirely to the reader, because `--help` defines takeable as stage +
+  `blocked_by` only. The skill does require the manual compare (`develop` Step 1 "Check the file
+  scope before you claim", `CONCURRENCY.md` *The working tree is shared too*), so this is not a
+  script bug — but a row printed under `TAKE` reads as cleared, and the session that trusts the
+  header is exactly the one that collides. Worth either filtering the offer or marking the
+  overlapping row inline (pointer: .claude/backlog/next, skills/develop Step 1, items/0034,
+  items/0036).
+
+- 2026-08-25 — **one claim on two shared prose files stalled the whole `develop` stage, and no rule
+  covers it.** 0034's `touches:` is `skills/verify/SKILL.md` + `references/CONCURRENCY.md`. With it
+  held, every other takeable `develop` row collided — 0036 on `skills/verify/SKILL.md`, 0007 on
+  `references/CONCURRENCY.md` — while 0035 is `next: design` and 0006/0008/0003/0004/0037 are
+  genuinely blocked, so the session claimed nothing and stopped with the stage non-empty.
+  `CONCURRENCY.md` says "prefer single-writer files", but in a plugin repo the skill and reference
+  files *are* the product, so they are structurally multi-writer and the file-scope rule degenerates
+  to a stage-wide lock held by whichever row was ranked first. The collisions here are also
+  section-level, not line-level (0034 rewrites CONCURRENCY.md's advisory line; 0007 rewrites its
+  claim rules), and nothing says whether that is safe — the honest answer today is no, because a
+  pathspec commit carries the other session's edits to the same path regardless. Plausibly the same
+  root as the batching finding above (pointer: references/CONCURRENCY.md *The working tree is shared
+  too*, items/0034, items/0007, items/0036).
+
 - 2026-08-25 — **the batching rule's constraint and its rationale point in opposite directions, and a
   stage queue is a chain, so "shares a file scope" ends up licensing a sweep of the whole stage.** One
   session took all five `next: verify` rows in a single pass (`1a06c11`, one token per row — the
