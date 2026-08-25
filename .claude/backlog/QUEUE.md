@@ -24,7 +24,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0053 | Let the test harness print the line an assertion actually saw | verify | ready |  |
-| 0044 | Close the gaps in the close script's read and write contract | develop | ready |  |
+| 0044 | Close the gaps in the close script's read and write contract | develop | in-progress |  |
 | 0052 | Require an acceptance criterion to name the input that would make it red | develop | ready |  |
 | 0042 | Anchor the vocabulary-pinning guards to the claims they make | develop | ready |  |
 | 0046 | Make the README guard list provably complete | develop | ready |  |
