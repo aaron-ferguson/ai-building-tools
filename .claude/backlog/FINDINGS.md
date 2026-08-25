@@ -40,21 +40,6 @@ end rather than stopping at the first entry older than its window.
 
 ---
 
-- 2026-08-24 — **removing a preference from the base suite leaves a follow-up nothing owns.** 0030
-  took Notion out of the base tool suite and documented the `external_feedback:` extension point a
-  profile plugs into, but *wiring Aaron's own solo projects back up* is named in that ticket's *Out
-  of scope* and therefore has no ticket at all. Any solo project with `notion.enabled: true` in a
-  live `config.yml` now has a stated wiring path and no one carrying it out. The general shape is
-  worth a rule: a ticket that moves a preference behind a profile creates a second, smaller ticket
-  by construction — the port — and *Out of scope* is where it silently goes to die
-  (pointer: items/0030, references/EXTERNAL-FEEDBACK.md "If you had `notion:` configured").
-- 2026-08-24 — **the base suite has no home for a solo profile, only a company one.**
-  `CONVENTIONS_CORE.md` resolves preferences through `companies/<name>/`, and the conventions repo is
-  public, so a *solo* preference (which feedback product, which personal tooling) has nowhere to live
-  that is both private and discoverable. 0030 hit this deciding where `NOTION.md` should move to and
-  could only answer "not here"; it deleted the file and pointed at git history instead. Every future
-  "move X behind a profile" ticket hits the same wall (pointer: items/0030 FR4, CONVENTIONS_CORE.md
-  "Profiles & How Overrides Work").
 - 2026-08-24 — **a third size gate would trip the DRY trigger that 0028 correctly declined.**
   `tests/reference-size.test.sh` is the second copy of the `offenders`/`pad`/`ok`/`bad` shape;
   `coding-conventions.md`'s Tier-2 rule fires on the *third* instance, so 0028's *Out of scope*
