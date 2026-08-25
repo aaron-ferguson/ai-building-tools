@@ -15,6 +15,11 @@ expects:
 claimed_by: "8c99"
 claimed_at: 2026-08-25T01:59:06Z
 touches:
+  - tests/citations.test.sh
+  - references/CONCURRENCY.md
+  - references/CONCURRENCY-INCIDENTS.md
+  - .claude/backlog/items/0033-guard-stale-rule-citations.md
+  - .claude/backlog/QUEUE.md
 ---
 
 ## Problem
