@@ -180,20 +180,23 @@ pad "$FIX/skills/padded/SKILL.md" $((GOAL + 500))
 out="$(offenders "$FIX" justification)"
 case "$out" in
   *"skills/padded/SKILL.md is $((GOAL + 500)) bytes, over the $GOAL goal by 500"*)
-    # 0035 AC5: the message must ask for a justification that says what was considered relocating,
-    # in the words reference-size.test.sh already uses. A guard that asks only for "a reason" gets
-    # a reason, and a reason nobody can argue with is the thing the soft goal exists to avoid.
-    case "$out" in
-      *"relocate detail only some runs need to a pointer file"*)
-        case "$out" in
-          *"naming what you considered relocating"*)
-            ok "unrecorded file over the goal reported with its overage, relocation named first" ;;
-          *) bad "0035 AC5 — the over-goal message does not ask what was considered relocating: $out" ;;
-        esac ;;
-      *) bad "0035 AC5/FR4 — the over-goal message does not name relocation first: $out" ;;
-    esac ;;
+    ok "unrecorded file over the goal reported with its overage" ;;
   "") bad "AC4 — file over the goal was NOT reported; the guard is wired to nothing" ;;
   *)  bad "AC4 — reported something else: $out" ;;
+esac
+
+# 0035 AC5 — two further claims about that same printed line, asserted separately so a failure says
+# which half is missing. A guard that asks only for "a reason" gets a reason, and a reason naming no
+# rejected alternative is one nobody can argue with — which is what the soft goal exists to avoid.
+case "$out" in
+  *"relocate detail only some runs need to a pointer file"*)
+    ok "the over-goal message names relocation before it asks for a reason" ;;
+  *) bad "0035 AC5/FR4 — the over-goal message does not name relocation first: $out" ;;
+esac
+case "$out" in
+  *"naming what you considered relocating"*)
+    ok "the over-goal message asks what was considered relocating" ;;
+  *) bad "0035 AC5 — the over-goal message does not ask what was considered relocating: $out" ;;
 esac
 
 echo "AC4 — a file within the goal passes"
