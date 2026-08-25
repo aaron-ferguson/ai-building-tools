@@ -383,3 +383,67 @@ because it is the place this ranking is most arguable:
   stall the tool would then report honestly.
 - **0051 kept its rank while `blocked`**, per the standing rule. Sinking it would mean
   rediscovering why a published figure was wrong once 0042 clears.
+
+## The findings sweep of 2026-08-25, batch 2 — ten more rows, inserted at five positions
+
+The second pass over the same buffer, taking the clusters batch 1 left. Same bundling rule: one
+ticket per root cause, which here mostly means one per skill file — six to eight findings each,
+because six tickets on one prose file reproduces the stage-wide stall 0050 exists to settle.
+
+**Rows already in the queue were not re-sorted.** Every insert went above the first row it beat.
+
+### 0053 goes to row 1, on the prerequisite override rather than on its tier
+
+`tests/next.test.sh` prints `ok`/`FAIL` and never the line the assertion saw, so a mutation sweep
+cannot tell why a case passed. On its own tier that is a Tier 3 tool — its value is mostly the work
+it releases. But **a prerequisite outranks its dependent**, and it makes four queued tickets
+materially cheaper: 0042 repairs three guards by mutation, 0044 and 0045 each carry
+mutation-driven ACs, and 0052 makes "name the input that would make this red" a requirement of
+every criterion. Three consecutive sessions have each hand-built the same throwaway fixture and
+thrown it away. Row 1 is the override doing exactly what it is for — otherwise row 1 is work that
+is about to be paid for four more times.
+
+### Tier 1 — 0052 above 0042, below 0044
+
+- **0044 keeps row 2 on tie-breaker 5.** 0044 and 0052 are both Tier 1, both ship to every project,
+  neither unblocks a queued row, both are `l` and both were specified from a cold read. Nothing
+  separates them until capture order, and 0044 was captured first. A queue that reshuffles on every
+  capture stops carrying signal.
+- **0052 above 0042 on tie-breaker 1.** 0052 changes `queue` and `verify`, which ship to every
+  machine installing the plugin; 0042 repairs this repo's own test files.
+- **0052 is Tier 1 and the argument is worth recording**, because nothing about it is bleeding in
+  the code. Criteria that could not have failed have been closing tickets — 0036's AC13 survived a
+  `queue` pass and a `design` pass — so the record of what was verified is silently untrue, and
+  nobody is counting it.
+
+### Tier 2 — four inserts above 0050, four above 0048, two lower
+
+- **0060 and 0054 above 0050.** The findings gate counts a number no retro can reduce, so
+  `./next --drive` diverts every driver into a retro that reads the buffer again and correctly finds
+  nothing — a control loop that cannot settle, firing on every drive. 0054 is what a session does
+  with a red or a verdict taken over a tree another session has dirty, which in this repo is the
+  normal condition rather than the exception. Both fire more often than 0050's stall and both are
+  buildable today, where 0050 is a decision.
+- **0055, 0058, 0056 and 0059 above 0048, on tie-breaker 4's "more certain".** All four are
+  fully-specified skill fixes; 0048 is an open decision of the same size. 0059 sits with them rather
+  than lower because the hazard it names is a *wrong verdict*: in a batch, one ticket's Step 3
+  mutation is live in the tree another ticket's suite run reads, and that red is attributed to the
+  wrong ticket.
+- **0057 below 0048, on frequency.** The handoff is traversed twice per ticket and has already
+  half-applied; a split or a task-to-project conversion happens occasionally, and when it does the
+  shape is reconstructable from 0009, 0002 and 0026 → 0037, which is how it was done both times.
+- **0061 above 0043.** The repo↔install identity is being paid for continuously as vigilance —
+  `CLAUDE.md` instructs every session to diff the trees before concluding a rule is absent — where
+  0043's registry entries all resolve today.
+
+### Two things this batch deliberately did not do
+
+- **0052 and 0057 were not merged**, though both touch `skills/queue/SKILL.md` and
+  `templates/item.md` and will therefore collide. Their root causes are unrelated, and merging two
+  contracts because their files overlap is how a ticket ends up built to something nobody agreed to.
+  The collision is 0050's problem to solve, not a reason to distort the tickets.
+- **The solo-profile cluster was not ticketed at all.** Both entries — the orphaned Notion port from
+  0030's *Out of scope*, and the fact that `CONVENTIONS_CORE.md` resolves preferences only through
+  `companies/<name>/` so a *solo* preference has nowhere private and discoverable to live — are work
+  in the conventions repo and in Aaron's own projects, not in this one. They stay parked, and the
+  right home for them is that repo's backlog.

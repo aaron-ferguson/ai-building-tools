@@ -61,15 +61,25 @@ by the next commit. This paragraph described that design as current fact and was
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
+| 0053 | Let the test harness print the line an assertion actually saw | develop | ready |  |
 | 0044 | Close the gaps in the close script's read and write contract | develop | ready |  |
+| 0052 | Require an acceptance criterion to name the input that would make it red | develop | ready |  |
 | 0042 | Anchor the vocabulary-pinning guards to the claims they make | develop | ready |  |
 | 0046 | Make the README guard list provably complete | develop | ready |  |
 | 0051 | Pin the measurement record's denominator and make its recipe reproduce | develop | blocked |  |
 | 0047 | Give the busy-lock procedure a close-time path | develop | ready |  |
 | 0045 | Cross the take loop against the held file set in next | develop | ready |  |
+| 0060 | Decide how the findings buffer is emptied and gated | design | ready |  |
+| 0054 | Give develop and verify a rule for a result taken over a shared dirty tree | develop | ready |  |
 | 0050 | Decide how file scope works when the prose files are the product | design | ready |  |
+| 0055 | Fill the develop steps that have no case for what now happens routinely | develop | ready |  |
+| 0058 | Give verify the outcomes its steps assume can never happen | develop | ready |  |
+| 0056 | Give design a non-UI reading list and complete its write step | develop | ready |  |
+| 0059 | Decide what the batching rule actually licenses | design | ready |  |
 | 0048 | Decide which remaining backlog write sites become scripts | design | ready |  |
+| 0057 | Add the queue operations that exist in practice and not in the skill | develop | ready |  |
 | 0049 | Decide what a claim token guarantees and what enforces it | design | ready |  |
+| 0061 | Decide how a session learns the installed plugin differs from this repo | design | ready |  |
 | 0043 | Make the two size gates fail on a registry entry that no longer resolves | develop | ready |  |
 | 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
 | 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |
