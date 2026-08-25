@@ -3,7 +3,7 @@ id: "0036"
 title: Orchestrate the isolated stage sessions from one supervising session
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-24
@@ -27,8 +27,8 @@ expects:
 # invoker, so no stage skill has to describe the FR13 shape. See *Notes & decisions*, the second
 # amendment. develop is already over the skill-size goal with a recorded reason, so not reaching
 # into it is worth having.
-claimed_by:
-claimed_at:
+claimed_by: "38c7"
+claimed_at: 2026-08-25T06:10:24Z
 touches:
 ---
 
