@@ -29,6 +29,33 @@ Format: `- YYYY-MM-DD — what happened, why it might matter (pointer: file, ite
 
 ---
 
+- 2026-08-25 — **the batching rule's constraint and its rationale point in opposite directions, and a
+  stage queue is a chain, so "shares a file scope" ends up licensing a sweep of the whole stage.** One
+  session took all five `next: verify` rows in a single pass (`1a06c11`, one token per row — the
+  individual claiming the skill does require). That is *licensed*: `verify` opens with "one gate per
+  session, not one ticket per session", so this is a finding about the rule, not about that session.
+  But check the batch against the constraint the rule actually states — "tickets that share a file
+  scope or a parent slice". By the declared `touches:`, **no two of the five share a parent** (only
+  0026 has one at all), and by exact file the batch is a *chain* rather than a set: 0032–0026 via
+  `skills/develop/SKILL.md`, 0026–0029 via `skills/verify/SKILL.md`, 0029–0033 via
+  `references/CONCURRENCY.md`, and **0031 attached only at directory level**
+  (`skills/queue/templates/`), sharing no file with any of them. 0026 and 0033 share nothing; 0026
+  and 0031 share nothing. So the constraint is satisfied pairwise and transitively but never
+  set-wide — and because overlap chains, any starting row reaches the entire stage. The rationale
+  pushes the same way instead of checking it: what is amortised is conventions + skill + suite
+  startup, "paid once however many verdicts come out of it", which argues for the *largest* batch
+  available. Constraint says small, rationale says big, nothing reconciles them, and `./next <stage>`
+  — the only row-selection tool — selects by stage regardless. **The hazard the rule does not name is
+  Step 3**, which requires deliberately breaking each AC's guard to prove it can go red: in a batch
+  those mutations land in the working tree the other four tickets' passes share, with no ordering or
+  isolation rule given, so a suite run for ticket B while ticket A's mutation is live reads as B's
+  red. 0026's notes already record the *inter*-session form of exactly this — "a full-suite run taken
+  while another window is mid-edit is a verdict about a tree that never existed as a commit" — and
+  settle on a throwaway worktree as the remedy; a batch reproduces it *intra*-session, where there is
+  no other window and that note does not reach (pointer: skills/verify "One gate per invocation, not
+  one ticket", commit 1a06c11, items/0026 *Redacted 2026-08-24*, references/CONCURRENCY.md *The
+  working tree is shared too*).
+
 - 2026-08-25 — **`verify` Step 1 has no outcome for "every row at my stage is already held", and
   batching makes that a designed-for case rather than a rare one.** `./next verify` offered
   `TAKE 0026`; about ninety seconds later all five `next: verify` rows were held by a single batched
