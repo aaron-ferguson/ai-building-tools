@@ -49,26 +49,6 @@ end rather than stopping at the first entry older than its window.
   captured output on demand (an env flag, or on `FAIL` plus a `--show` mode) would have turned a
   session of work into a read (pointer: tests/next.test.sh assert helpers ~line 222, items/0038).
 
-- 2026-08-25 — **`verify` Step 2's advisory rule has no answer for a dirty path no test can
-  reach, and on this repo that is the normal case.** Step 2 marks a verdict advisory on any change
-  outside the ticket and Step 7 says an advisory PASS does not close, with no distinction between
-  "dirty in a path the suite reads" and "dirty anywhere in the repo". Here `items/0037-*.md` sat
-  uncommitted all session — another session mid-release of its own claim — and no test reads it
-  (`grep -rn 0037 tests/` is empty). Read literally, one session pausing mid-claim makes every
-  verdict in this repo advisory and nothing can close, and on a project whose backlog *is* its tree
-  that is most of the time. The rule wants a reachability test — does the dirty path feed the level
-  being run — rather than a whole-tree one (pointer: skills/verify/SKILL.md Steps 2 and 7,
-  items/0038, items/0037).
-
-- 2026-08-25 — **"assert the wording, not the outcome" is a general testing rule sitting in one
-  ticket's notes, and it has now cost three sessions.** Where a ladder ends in a catch-all `else`
-  that returns the same code as its specific branches, every assertion on the outcome passes against
-  code that has lost the branch entirely — so a case reports ok while its rule is deleted. 0038's
-  notes state it well and scoped it to FR8's table; the shape is generic and this repo has three
-  more ladders (`claim`'s refusals, `close`'s three grounds, `next`'s own stage loop). Its home is
-  probably `testing-conventions.md` beside the existing mutation guidance, not a ticket
-  (pointer: items/0038 *Re-entry* and *QA (second pass)*, ai-building-conventions/testing-conventions.md).
-
 - 2026-08-25 — **`design` Step 2 is written entirely for UI questions, but `next: design` also
   catches mechanism decisions, and then the step points at nothing.** Its three ordered lookups are
   prior art, the design system, and "the files the core's index names for design, UI and
@@ -108,16 +88,6 @@ end rather than stopping at the first entry older than its window.
   test, written after the "confirm green" step had already passed. Worth one clause in Step 5 saying
   a checklist finding that changes behaviour goes back through red rather than shipping on the
   strength of the earlier green.
-
-- 2026-08-25 — **a ticket that quantifies a file it does not own goes stale, and the stale numbers
-  shaped its question.** 0035's Problem statement described `prototype` Step 5 as "three build
-  procedures", which is the framing its whole design question rested on; re-measured, level 1 is 969
-  bytes, level 2 is 5,859, level 3 is 1,427 — one big branch and two small ones, so "each level
-  becomes a reference file" was never the shape of the answer. Its `develop` byte count had also
-  drifted 219 bytes since capture. Neither `queue` nor `design` says to re-measure a figure a ticket
-  captured about a file it is not changing, and the figure reads as fact. Plausibly the rule is the
-  same one this repo already applies to `blocked`: a number about another file is a **cache**, and
-  the file is the authority (pointer: skills/queue Step 1, skills/design Step 1, items/0035 FR6).
 
 - 2026-08-25 — **`design` Step 4 moves a ticket's stage but never says to re-check `expects:`, and a
   decision can move the file scope entirely.** Settling 0035, the answer changed the work from
@@ -198,18 +168,6 @@ end rather than stopping at the first entry older than its window.
   neighbour produces by design, and the harder the suite pushes batching the more often a second
   verify session opens onto nothing (pointer: skills/verify Step 1, .claude/backlog/next,
   references/CONCURRENCY.md *A stage writes only the ticket it holds*).
-
-- 2026-08-25 — **the `Co-Authored-By` trailer collapsed exactly when the skill-driven lifecycle took
-  over the commit volume, and nothing noticed.** `git-conventions.md` requires the trailer in *all*
-  AI-assisted commits. Every one of the 28 commits through 2026-08-20 carries it; of the 229 since
-  2026-08-21 only 36 do (16%), and the ones that do are the hand-driven sessions. The mechanism is
-  in the skills themselves: `develop`, `queue` and the rest give commit templates as a single-line
-  `git commit -m "Claim 0007 [$CLAIM]" -- <paths>`, and **no skill file mentions the trailer at
-  all** — so a rule that lives only in a conventions file is silently dropped by every skill that
-  hands the agent a ready-made command instead. Either the templates carry the trailer or the
-  convention says lifecycle commits are exempt; what is there now is a rule that 84% of recent
-  commits break (pointer: ai-building-conventions/git-conventions.md:21,
-  skills/develop/SKILL.md:135, skills/queue/SKILL.md:373).
 
 - 2026-08-25 — **0026's AC5 guard cannot fail, because its verdict grep matches a heading the same
   test file requires to exist.** `tests/measurement.test.sh` asserts the verdict with
@@ -294,14 +252,6 @@ end rather than stopping at the first entry older than its window.
   parent workspace" identified the defect exactly as precisely. Possible one-line rule in the verify
   skill's verdict step.
 
-- 2026-08-24 — **this file's own entries are formatted two ways, so every count taken from it is
-  low.** Most read `- <date> — **lead.**` but at least two read `- **<date> — lead.**`, and the
-  obvious `^- 2026-` grep misses exactly those. `MEASUREMENT.md` published 26 in one sentence and 28
-  in the next off that grep; the format-tolerant count was 42, and 45 an hour later. Both sweepers
-  read this file by line shape, so the same undercount is available to `queue` and `retro` — an entry
-  whose date sits inside the bold marker can be skipped by a sweep and never noticed. Either the
-  header pins one format and a guard enforces it, or every reader has to match `^- (\*\*)?`.
-
 - 2026-08-24 — **`develop` Step 5 has no answer for a full-suite run taken while another session has
   the shared tree dirty, and its "whose red is it" fork silently assumes the other window's work is
   committed.** Two runners red in one loop and green on three immediate re-runs; the cause was
@@ -320,13 +270,6 @@ end rather than stopping at the first entry older than its window.
   such a change needs its own convention (announce, land in one commit, re-run the whole suite) or
   the repo should accept that vocabulary is changed only when nothing is claimed (pointer:
   references/CONCURRENCY.md, items/0001 *Notes & decisions* 2026-08-23).
-- 2026-08-23 — **the term the repo argued itself into was the one nobody used.** 0001 rejected
-  "project" on a collision argument — repo, Jira project key — and coined "effort" instead. The
-  collision was real and the reasoning sound, and it was still the wrong trade: a coined term is
-  misread by every reader who did not read the decision, while an overloaded real term is
-  disambiguated by context for free. Worth a rule somewhere: prefer the real-world word and qualify
-  it at the collision points, rather than inventing a word to avoid qualifying (pointer: items/0001
-  *Notes & decisions* 2026-08-18 and 2026-08-23).
 - 2026-08-24 — **every guard in this repo greps prose, and prose wraps — so a phrase that straddles
   a line break cannot be asserted at all.** Writing 0005's guard, `never its dependents` red against
   a template that plainly contained it: the sentence wrapped, so the phrase existed only as
@@ -382,11 +325,6 @@ end rather than stopping at the first entry older than its window.
   `ai-building-tools:verify`.** The session that verified 0026 loaded the built-in evidence-capture
   skill; this repo's stage protocol had to be read out of `skills/verify/SKILL.md` by hand. A stage
   whose name collides with a built-in is a stage that can silently not run.
-
-- 2026-08-24 — **`FINDINGS.md`'s entry format has drifted, and a count of the file disagrees with
-  itself because of it.** Two entries lead with `- **2026-08-24 —` rather than `- 2026-08-24 — **`,
-  so a date-anchored count returns 26 where the file holds 28 — exactly the gap between
-  `MEASUREMENT.md`'s "26 findings parked" and its "grown to 28 entries" two paragraphs later.
 
 - 2026-08-24 — **handing a ticket from one stage to the next is the one backlog operation with no
   script, and it half-applied.** `./claim` takes a row and `./close` finishes one, but the handoff —
@@ -511,14 +449,6 @@ end rather than stopping at the first entry older than its window.
   rule; what is missing is anything that *fails* when the install and the source disagree, or any
   version marker a session can read from the installed side alone (pointer: SOURCE, skills/retro
   Step 5, .claude-plugin/plugin.json).
-- 2026-08-23 — **"one skill per session" has no correct answer for a user who deliberately runs two.**
-  `/queue` was invoked inside a live `retro` session, with approval of the retro's proposals as its
-  argument. Both skills open by asserting isolation, neither says what to do when the human overrides
-  it, and the two have different commit disciplines (`queue` commits only under `.claude/backlog/`,
-  `retro` commits across several repos) — so the combined session's commits had to be split by hand
-  against two rules that each assume they own the session. It worked, but nothing said it should
-  (pointer: skills/queue Step 6, skills/retro Step 5, this session).
-
 - 2026-08-24 — **removing a preference from the base suite leaves a follow-up nothing owns.** 0030
   took Notion out of the base tool suite and documented the `external_feedback:` extension point a
   profile plugs into, but *wiring Aaron's own solo projects back up* is named in that ticket's *Out
@@ -534,14 +464,6 @@ end rather than stopping at the first entry older than its window.
   could only answer "not here"; it deleted the file and pointed at git history instead. Every future
   "move X behind a profile" ticket hits the same wall (pointer: items/0030 FR4, CONVENTIONS_CORE.md
   "Profiles & How Overrides Work").
-- 2026-08-24 — **`verify` Step 2's advisory trigger has no answer when the only dirty paths are the
-  backlog's own coordination files.** Step 2 says any change outside the ticket makes the verdict
-  advisory, and Step 7 says an advisory PASS does not close. But a concurrent `queue` session leaves
-  `QUEUE.md` modified and an item file untracked — dirt that provably cannot influence a verdict
-  (0030's own guard excludes `.claude/` by design), while the literal rule would forbid closing
-  whenever another window is queueing, which is the concurrency the suite is built for. The
-  distinction the rule wants is "dirty *under test*", not "dirty anywhere" (pointer: skills/verify
-  Steps 2 and 7, items/0034).
 - 2026-08-24 — **the busy-lock procedure is written for a claim and strands a close.**
   `CONCURRENCY-INCIDENTS.md` says a lock under 5 minutes old means "report it to the user and stop,
   do not break it". At claim time stopping costs nothing. At *close* time the verdict already exists
@@ -573,14 +495,6 @@ end rather than stopping at the first entry older than its window.
   way — the reason is the control, not a number, so nothing ever checks the citation resolves. Same
   failure class as 0033 but for ticket IDs rather than rule names (pointer:
   tests/skill-size.test.sh:39, items/0033, items/0035).
-- 2026-08-24 — **this project has no `CLAUDE.md`, so no session reads its Profile.**
-  `CONVENTIONS_CORE.md` requires every project to declare `collaboration`, `company` and `release` in
-  its own `CLAUDE.md`, and the precedence chain names it as the top override. There is none at the
-  repo root, so a session inherits `~/Documents/AI/CLAUDE.md` — a personal memory file for a
-  different purpose — and `release:` is absent, which the conventions say resolves to `released`. Both
-  `queue` Step 0 and `develop` Step 3 tell a session to read the project's `CLAUDE.md`; here that
-  read silently finds a parent (pointer: CONVENTIONS_CORE.md *Profiles & How Overrides Work*,
-  skills/develop Step 3).
 - 2026-08-24 — **a third size gate would trip the DRY trigger that 0028 correctly declined.**
   `tests/reference-size.test.sh` is the second copy of the `offenders`/`pad`/`ok`/`bad` shape;
   `coding-conventions.md`'s Tier-2 rule fires on the *third* instance, so 0028's *Out of scope*
@@ -813,27 +727,6 @@ end rather than stopping at the first entry older than its window.
   a decision, one FR should name the site it is relocated *from*, not only the site it moves to** —
   an addition-only FR list cannot express a move, and the AC that catches it fires after the work is
   done (pointer: items/0034 FR2 and its *Out of scope*, skills/verify Step 2, skills/develop Step 2).
-- 2026-08-25 — **a design pass can source a constant to a file that does not contain it, and every
-  downstream number inherits the error silently.** 0035 FR1 cited "~30 turns per session
-  (`MEASUREMENT.md`)"; that file's 30 is its *session* count (1,112 turns / 30 sessions ≈ 37) and it
-  says at line 24 that a develop session averages 39. The break-even constant is a direct function of
-  N, so the misread propagated to the published `B ≈ 20,000` and into two ACs written against it.
-  Nothing could catch it: the arithmetic is internally consistent, the citation is real, and the
-  conclusions happened to be robust. Rule to draw: **when an FR quotes a figure with a source, the
-  build re-reads the source rather than the FR** — a cited number is an assertion about another file,
-  and it is the one kind of assertion a ticket cannot test itself (pointer: items/0035 FR1 and its
-  build notes, MEASUREMENT.md line 24 and line 52).
-- 2026-08-25 — **a whole-file substitution is not a valid red proof for a guard that asserts against
-  its own text.** Proving 0035's new AC5 cases could fail, a `sed` across a throwaway copy changed the
-  `RELOCATE=` definition *and* the assertion's own literal, so the check compared a string to itself
-  and the suite stayed green — a guard that was in fact wired reported as un-provable, which would
-  have read as "wired to nothing" to the next session. Re-proved by editing only the definition line.
-  This is a class the existing fixture convention does not cover: `skill-size` and `reference-size`
-  both generate independent fixtures for the *sizes* they gate, precisely so a red cannot be an
-  artefact, but the self-referential *wording* assertions have no equivalent rule. Rule to draw:
-  **break the definition, never the expectation** — and where expectation and subject are one string,
-  say so where the assertion lives (pointer: tests/skill-size.test.sh's 0035 block,
-  tests/reference-size.test.sh's fixture-base comment).
 - 2026-08-25 — **`develop` Step 5.4 says to clear the claim and take the lock, but the lock helper
   pattern in the docs releases on shell exit — and every Bash call is a new shell.** Routing 0036,
   `mkdir .lock` + `trap 'rm -rf' EXIT` in one tool call released the lock the instant that call
@@ -857,16 +750,6 @@ end rather than stopping at the first entry older than its window.
   conversion is its own operation with its own template, and the two facts a reconstruction is most
   likely to get wrong are **move, do not copy** and **do not renumber** (pointer: skills/queue
   SKILL.md Step 1 table and Step 2, templates/item.md `status:` comment, items/0009 and items/0002).
-- 2026-08-25 — **`queue` Step 6's own commit example fails on the file it is committing.** The step
-  shows `git commit -m "Capture 0007: …" -- .claude/backlog/QUEUE.md .claude/backlog/items/0007-*.md`,
-  and `items/0007-*.md` is the brand-new file that capture just wrote — so git rejects the pathspec
-  with *"did not match any file(s) known to git"* and the whole commit fails, queue rows included.
-  `CONCURRENCY.md` states the fix (*"A file git does not know yet needs `git add -N` first, or the
-  pathspec fails"*), so the skill contradicts the reference it cites, in the one snippet a session is
-  most likely to copy verbatim. It costs a retry rather than a corruption, but the retry happens while
-  the lock is held and `QUEUE.md` is dirty, which is the worst moment to be improvising. `./claim` and
-  `./close` never hit it because they only ever commit files git already knows (pointer:
-  skills/queue/SKILL.md Step 6, references/CONCURRENCY.md *The git index is shared*).
 - 2026-08-25 — **the payback test's own bytes/token constant is cited to a file that does not carry
   it.** `tests/skill-size.test.sh`'s header says "Every figure is measured and lives in
   MEASUREMENT.md: 4.038 bytes/token, $6.25/MTok cache write … $0.1028 per turn, and 1,112 turns
@@ -956,16 +839,6 @@ end rather than stopping at the first entry older than its window.
   the mutation the verdict names, diff the file to prove it landed, and revert before committing.
   Two of this session's three findings came out of that pass rather than out of reading (pointer:
   skills/develop/SKILL.md Step 4, items/0038 *Re-entry 2026-08-25*).
-- 2026-08-25 — **Where a routing ladder ends in a catch-all `else`, asserting rc plus the outcome
-  keyword asserts the `else`, not the branch.** Mutating `--drive`'s verify-bounce branch to
-  `elif false` left all three of its pre-existing assertions green — rc 4, `ESCALATE`, the ticket
-  id — because the final `else` escalates too. An FR8 row can be deleted outright while its own
-  test case prints `ok` three times. This is the generative rule behind the previous entry's
-  three mutation-silent branches rather than a fourth instance of it, and it belongs wherever the
-  suite's assertion shape is described: for a ladder, the branch is pinned by its *wording*, and
-  only the ladder's last arm is pinned by its outcome (pointer: tests/next.test.sh AC9 block,
-  skills/queue/templates/next `--drive` phase A, testing-conventions.md).
-
 - 2026-08-25 — **A collision with a *live `verify` claim* corrupts that session's verdict, which is a
   strictly worse failure than the commit conflict the file-scope rule is written against — and
   nothing says so.** `./next develop` offered `TAKE 0007` (the only takeable `develop` row: 0006,
@@ -983,21 +856,6 @@ end rather than stopping at the first entry older than its window.
   degenerate stage-wide lock this repo's normal operating mode rather than an incident (pointer:
   references/CONCURRENCY.md *The working tree is shared too* and *A stage writes only the ticket it
   holds*, skills/develop Step 1, items/0007, items/0038).
-
-- 2026-08-25 — **"Mutate it wrong" is not "mutate it away", and a branch needs both — the rule two
-  sessions handed forward was half a rule.** The previous pass declared its sweep complete on the
-  strength of mutating `--drive`'s same-stage guard to the *naive* implementation (`lnext = verify`,
-  the mistake a person makes), which reds 5 assertions. Deleting the same branch
-  (`elif [ "$lnext" = "$lstage" ]` → `elif false`, the mistake a later edit makes) left
-  `145 passed, 0 failed`. Same for rank-walk `queue)`. Between them, three FR8 rows were free to
-  vanish with their own cases printing ok. Mutating to the plausible wrong implementation pins the
-  branch's **condition**; mutating it away pins its **identity** — a report of "covered" from
-  either alone is not evidence about the other. **And the operational half:** three consecutive
-  sessions each found exactly one instance of this shape by *reading* for the next one. Enumerating
-  the eighteen branches and driving mutate-run-revert from a loop took ~5 minutes and found the
-  remainder at once. Where a suite has a known systematic assertion weakness, the sweep is a loop,
-  not a read (pointer: items/0038 *Re-entry 2026-08-25 (second)*, the two entries above this one,
-  testing-conventions.md *Prove a new guard fails*).
 
 - 2026-08-25 — **`queue` requires `qa_level` at capture time, but a `next: design` ticket does not
   yet know what artefact it produces — so the one field the skill calls "the decision that stops QA
@@ -1017,22 +875,22 @@ end rather than stopping at the first entry older than its window.
   cold session will otherwise guess and the guess is invisible (pointer: skills/queue Step 2 *Set
   `qa_level` now*, skills/queue/templates/item.md `qa_level:`, items/0041 QA plan).
 
-- 2026-08-25 — **The parked "mutate away as well as wrong" rule fixed *what* to mutate and left
-  *how the branch list is built* unfixed — so a loop-driven sweep still missed two decision sites,
-  both outside the list rather than inside it.** Enumerating `--drive`'s branches by reading its two
-  `if/elif/else` ladders gives eighteen and misses `findings_gate`, which calls `decide` twice from a
-  *helper above* the ladder: deleting its format guard leaves `147 passed, 0 failed` while a driver
-  dispatches on a count the script has already established is low — this ticket's own problem
-  statement, arriving through the driver path instead of the reporting one. Build the branch list
-  from **every call site of `decide`** plus every `NOTE`-and-continue, which is the set FR8's table
-  maps onto; control flow adjacency is not the criterion. **And the sweep needs a control, because a
-  failure count is evidence about the mutation before it is evidence about the test.** Two of my
-  twenty-six came back silent for no interesting reason — `STATUS="$(column_named Status || echo 5)"`
-  never fires the `||`, since awk exits 0 printing nothing, and renaming the modes on `usage()`'s
-  description lines leaves them in its synopsis line — both false gaps, caught only by re-running
-  the intended mutation. Symmetrically the previous pass recorded phase A's no-ticket branch as
-  pinned at "89 failures", which is a script that stopped parsing rather than a branch that was
-  deleted: a false confirmation, and it is why that branch reached a fourth pass unfixtured. Run one
-  no-op mutation as a control, and treat a zero or an implausibly large count as a claim about the
-  mutation until the behaviour is probed by hand (pointer: items/0038 *QA 2026-08-25 (third pass)*,
-  the mutate-away entry above it, testing-conventions.md *Prove a new guard fails*).
+- 2026-08-25 — **the retro gate counts a number retro cannot reduce.** `findings_threshold: 8` is
+  read by `./next --findings` and gated on by `--drive` (exit 5), and it counts *every* entry in
+  this file. But the two sweepers are not symmetrical: this retro processed 16 of 100 and left 84,
+  almost all of them units of work that only `queue` can take. So the gate will keep diverting
+  drivers into a retro that reads all 84 again and correctly finds nothing new, and no number of
+  retros can ever clear it — only a `queue` sweep can, and nothing gates on *that*. The count the
+  retro gate wants is entries a retro could act on, or the gate belongs on both sweepers
+  (pointer: .claude/backlog/config.yml `findings_threshold`, .claude/backlog/next `--drive`
+  phase A, skills/retro Step 1, skills/queue's sweep).
+
+- 2026-08-25 — **an entry that is "taken by both" sweepers has no way to record that one half is
+  done.** The header says a finding that is both a lesson and a unit of work is taken by both, and
+  retro Step 4 says to leave the work entries — so an entry whose *lesson* I landed this session
+  stays in the file, unmarked, and the next retro pays full price to read it and re-derive that
+  there is nothing left to do. Five of the entries I kept are in exactly that state (the 0026 AC1/AC5
+  grep defects, the `4.038` citation, the stale skill-size ticket id, 0007's AC2 cardinality): the
+  rule is now in `testing-conventions.md`, only the test fix remains. Either an entry gets a marker
+  the other sweeper writes, or the lesson half should be removable independently
+  (pointer: .claude/backlog/FINDINGS.md header *Two sweepers empty this file*, skills/retro Step 4).
