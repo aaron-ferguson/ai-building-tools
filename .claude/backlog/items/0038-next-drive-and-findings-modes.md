@@ -2,8 +2,8 @@
 id: "0038"
 title: Add the drive and findings routing modes to next
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -18,11 +18,9 @@ expects:
   - skills/queue/templates/config.yml
   - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
   - README.md               # not predicted: line 208's test inventory names next's modes
-claimed_by: "e1cb"
-claimed_at: 2026-08-25T07:21:04Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next   # mutated transiently by the QA mutation pass, reverted in the same turn
-  - tests/next.test.sh
 ---
 
 ## Problem
@@ -365,3 +363,64 @@ that block is open; not worth a red on its own.
 `.claude/backlog/next` is byte-for-byte identical to it — checked, so this repo's own backlog runs
 what was tested. The installed plugin at `0.9.3` still carries the pre-0038 script; releasing it is
 not this ticket's contract.
+
+### QA 2026-08-25 (second pass) — FAIL: FR8's stale-contract row is free to break with its own fixture green
+
+**Both of the re-entry's fixes are confirmed real.** Under the mutation the last verdict named
+(`if [ "$rstatus" = "waiting" ]` → `if false`) the rank-walk case now reds on all four of its
+assertions where it was silent before; deleting the verify-bounce branch (`elif false`) reds on the
+new wording assertion, and on that alone. Suite green: `139 passed, 0 failed` in `next.test.sh`,
+`383 passed, 0 failed` across `tests/*.test.sh`. AC6, AC10, AC28 and AC29 each red under mutation.
+
+**The gap is the defect the last pass failed this ticket for, one branch over.** FR8's *stale
+contract → `queue/ready`* row is implemented by the phase-A branch at `next` ~608:
+
+```
+-        elif [ "$lnext" = "queue" ]; then
++        elif false; then
+```
+
+`139 passed, 0 failed`. That row's fixture (`next.test.sh:505`) asserts `rc 4`, the substring
+`queue`, and no `DISPATCH`, and the ladder's final `else` satisfies all three:
+
+```
+real     ESCALATE  0101 went back to next: queue after verify — the contract is stale, and
+                   respecifying it is a person's call                                       rc=4
+mutant   ESCALATE  0101 is at next: queue / ready after verify, which no routing rule covers  rc=4
+```
+
+The mutant's line is AC10's *unrecognised state* message, so a regression here reports a fully
+routed state as one no rule covers and a person triaging it goes looking for a rule already
+present. AC9 requires the fixture to print "the decision FR8's table names"; AC11 requires "the
+printed decision **and** the exit code". The substring `queue` distinguishes neither from the
+fallback, so AC9 and AC11 are unmet for this row. **No production code is wrong** — as last time,
+only the evidence is missing.
+
+The fix is one line, the same shape as last pass:
+`assert_contains "names it as the stale contract" "$out" 'the contract is stale'`.
+
+**Sweep the whole table this time rather than one branch per pass.** The re-entry wrote the rule —
+*where a ladder has a catch-all `else`, asserting the outcome asserts the `else`, not the branch;
+assert the wording* — and handed it forward, which is why a third session is now spending itself on
+the next instance. Every branch was mutated this pass, so the sweep is done and this is the whole
+remainder: the phase-A `in-progress` branch (~603) is the only other silent one, it has **no
+fixture at all**, and it is **not** an FR8 row, so it owes no AC — one case asserting `the claim was
+never released` closes it. Everything else is pinned, with what pins it: rank-walk `queue` (rc 3 vs
+4), phase-A `design` (the carried question), the same-stage guard and advisory PASS (5 reds against
+the naive `lnext = verify` driver the notes above name), header-name resolution (5 reds against
+canonical fixed indices — `STATUS=5` alone passes by luck, since the Next cell it then reads matches
+no status keyword), `--help` (2 reds once `usage()` stops naming the modes), the findings count
+(8 reds on the single-shape grep), the malformed-shape guard, the non-numeric threshold, exit-code
+distinctness, and the depth line.
+
+**Non-functional requirements both hold.** Compatibility: `--drive` and `--findings` are additive
+(`api-conventions.md`, *Additive changes are safe*); every pre-existing invocation returns what it
+returned (`next.test.sh:715`, plus `claim.test.sh` 18 and `close.test.sh` 63 green against the real
+scripts), and an unmigrated install with no `findings_threshold` and no `FINDINGS.md` defaults to 8
+and dispatches normally — exercised by hand, not only by fixture. Documentation: the key ships in
+`skills/queue/templates/config.yml` naming both readers and the exit code, and `--help` lists both
+modes. File scope stayed inside `expects:`.
+
+**Advisory, and it does not touch this verdict.** `items/0037-*.md` was uncommitted throughout —
+another session mid-release of its own claim. No test reads it (`grep -rn 0037 tests/` is empty), so
+it cannot reach the suite; nothing was stashed or reverted.
