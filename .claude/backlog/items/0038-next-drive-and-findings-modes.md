@@ -21,6 +21,9 @@ expects:
 claimed_by: "0325"
 claimed_at: 2026-08-25T07:38:55Z
 touches:
+  - tests/next.test.sh   # re-entry: evidence only. The QA verdict is explicit that no production
+                         # code is wrong, so the script and its template are NOT held this pass —
+                         # mutations are applied and reverted in place, never committed.
 ---
 
 ## Problem
