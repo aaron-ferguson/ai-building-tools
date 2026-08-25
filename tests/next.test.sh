@@ -219,29 +219,52 @@ seal() {
 run_next() { (cd "$FIX" && .claude/backlog/next "$@" 2>&1); }
 
 # --- assertions -------------------------------------------------------------------------------
+# Every assertion reports the text it matched against: always on FAIL, and on a pass only when
+# SHOW_MATCHED is set in the environment. A green run therefore stays one line per case plus the
+# tally (`testing-conventions.md`, lean by default), and a mutation sweep sets SHOW_MATCHED=1 for
+# one run to see what a case that stayed green matched instead — the question this harness could
+# not answer before, so each sweep hand-built a fixture outside the suite to ask it.
+#
+# tests/next.test.sh, tests/close.test.sh and tests/claim.test.sh each carry this pair, because a
+# suite here is self-contained and sources nothing (`CLAUDE.md`). Change one, change all three.
+saw()         { printf '%s\n' "$1" | sed '1s/^/         saw: /; 1!s/^/              /'; }
+saw_on_pass() { [ -n "${SHOW_MATCHED:-}" ] && saw "$1"; return 0; }
+
 ok()  { PASS=$((PASS + 1)); echo "  ok   — $1"; }
 bad() { FAIL=$((FAIL + 1)); echo "  FAIL — $1"; }
 
 assert_contains() {
   case "$2" in
-    *"$3"*) ok "$1" ;;
-    *)      bad "$1"; echo "         expected to contain: $3"; echo "         got: $2" ;;
+    *"$3"*) ok "$1"; saw_on_pass "$2" ;;
+    *)      bad "$1"; echo "         expected to contain: $3"; saw "$2" ;;
   esac
 }
 
 assert_not_contains() {
   case "$2" in
-    *"$3"*) bad "$1"; echo "         expected NOT to contain: $3"; echo "         got: $2" ;;
-    *)      ok "$1" ;;
+    *"$3"*) bad "$1"; echo "         expected NOT to contain: $3"; saw "$2" ;;
+    *)      ok "$1"; saw_on_pass "$2" ;;
   esac
 }
 
+# $1 label, $2 the exit code seen, $3 the code wanted, $4 optional: the output the run captured.
 assert_rc() {
-  if [ "$2" -eq "$3" ]; then ok "$1"; else bad "$1 (got $2, wanted $3)"; fi
+  seen="exit $2"
+  if [ $# -ge 4 ]; then seen="$seen
+$4"; fi
+  if [ "$2" -eq "$3" ]; then ok "$1"; saw_on_pass "$seen"; else
+    bad "$1"; saw "wanted exit $3
+$seen"; fi
 }
 
+# $1 label, $2 the exit code seen, $3 optional: the output the run captured.
 assert_rc_nonzero() {
-  if [ "$2" -ne 0 ]; then ok "$1"; else bad "$1 (got 0)"; fi
+  seen="exit $2"
+  if [ $# -ge 3 ]; then seen="$seen
+$3"; fi
+  if [ "$2" -ne 0 ]; then ok "$1"; saw_on_pass "$seen"; else
+    bad "$1"; saw "wanted any exit but 0
+$seen"; fi
 }
 
 # --- AC1 — a cleared blocker does not hide the row ---------------------------------------------

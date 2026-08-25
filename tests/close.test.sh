@@ -92,46 +92,86 @@ commit_fixture() { git -C "$FIX" add -A && git -C "$FIX" commit -q -m "fixture";
 run_close() { (cd "$FIX" && "$BL/close" "$@" 2>&1); }
 
 # --- assertions -------------------------------------------------------------------------------
+# Every assertion reports the text it matched against: always on FAIL, and on a pass only when
+# SHOW_MATCHED is set in the environment. A green run therefore stays one line per case plus the
+# tally (`testing-conventions.md`, lean by default), and a mutation sweep sets SHOW_MATCHED=1 for
+# one run to see what a case that stayed green matched instead — the question this harness could
+# not answer before, so each sweep hand-built a fixture outside the suite to ask it.
+#
+# tests/next.test.sh, tests/close.test.sh and tests/claim.test.sh each carry this pair, because a
+# suite here is self-contained and sources nothing (`CLAUDE.md`). Change one, change all three.
+saw()         { printf '%s\n' "$1" | sed '1s/^/         saw: /; 1!s/^/              /'; }
+saw_on_pass() { [ -n "${SHOW_MATCHED:-}" ] && saw "$1"; return 0; }
+
 ok()  { PASS=$((PASS + 1)); echo "  ok   — $1"; }
 bad() { FAIL=$((FAIL + 1)); echo "  FAIL — $1"; }
 
 assert_contains() {
   case "$2" in
-    *"$3"*) ok "$1" ;;
-    *)      bad "$1"; echo "         expected to contain: $3"; echo "         got: $2" ;;
+    *"$3"*) ok "$1"; saw_on_pass "$2" ;;
+    *)      bad "$1"; echo "         expected to contain: $3"; saw "$2" ;;
   esac
 }
 
 # Whole-line matching against the file, never a cell this harness looked up itself: a harness that
 # reimplements the parser under test passes and fails with it (`testing-conventions.md`).
 assert_line() {
-  if grep -Fxq "$2" "$FIX/$BL/$3"; then ok "$1"; else
-    bad "$1"; echo "         expected line: $2"; echo "         $3 now:"
-    sed -n '/^|/p' "$FIX/$BL/$3" | sed 's/^/           /'
+  rows="$(sed -n '/^|/p' "$FIX/$BL/$3")"
+  if grep -Fxq "$2" "$FIX/$BL/$3"; then ok "$1"; saw_on_pass "$3 holds:
+$rows"; else
+    bad "$1"; echo "         expected line: $2"; saw "$3 holds:
+$rows"
   fi
 }
 
 refute_contains() {
   case "$2" in
-    *"$3"*) bad "$1"; echo "         expected NOT to contain: $3"; echo "         got: $2" ;;
-    *)      ok "$1" ;;
+    *"$3"*) bad "$1"; echo "         expected NOT to contain: $3"; saw "$2" ;;
+    *)      ok "$1"; saw_on_pass "$2" ;;
   esac
 }
 
 refute_line() {
+  rows="$(sed -n '/^|/p' "$FIX/$BL/$3")"
   if grep -Fxq "$2" "$FIX/$BL/$3"; then
-    bad "$1"; echo "         expected NOT to find: $2"
-  else ok "$1"; fi
+    bad "$1"; echo "         expected NOT to find: $2"; saw "$3 holds:
+$rows"
+  else ok "$1"; saw_on_pass "$3 holds:
+$rows"; fi
 }
 
 assert_clean() {
-  if [ -z "$(git -C "$FIX" status --porcelain)" ]; then ok "$1"; else
-    bad "$1"; echo "         still dirty:"; git -C "$FIX" status --porcelain | sed 's/^/           /'
+  dirty="$(git -C "$FIX" status --porcelain)"
+  if [ -z "$dirty" ]; then ok "$1"; saw_on_pass "the tree is clean"; else
+    bad "$1"; saw "still dirty:
+$dirty"
   fi
 }
 
 assert_no_lock() {
-  if [ -d "$FIX/$BL/.lock" ]; then bad "$1"; else ok "$1"; fi
+  if [ -d "$FIX/$BL/.lock" ]; then
+    bad "$1"; saw "$BL/.lock is held by: $(cat "$FIX/$BL/.lock/held-by" 2>/dev/null || echo '<no held-by file>')"
+  else ok "$1"; saw_on_pass "no $BL/.lock directory"; fi
+}
+
+# $1 label, $2 the exit code seen, $3 the code wanted, $4 optional: the output the run captured.
+assert_rc() {
+  seen="exit $2"
+  if [ $# -ge 4 ]; then seen="$seen
+$4"; fi
+  if [ "$2" -eq "$3" ]; then ok "$1"; saw_on_pass "$seen"; else
+    bad "$1"; saw "wanted exit $3
+$seen"; fi
+}
+
+# $1 label, $2 the exit code seen, $3 optional: the output the run captured.
+assert_rc_nonzero() {
+  seen="exit $2"
+  if [ $# -ge 3 ]; then seen="$seen
+$3"; fi
+  if [ "$2" -ne 0 ]; then ok "$1"; saw_on_pass "$seen"; else
+    bad "$1"; saw "wanted any exit but 0
+$seen"; fi
 }
 
 FIVE_HEAD='| ID | Title | Next | Status | Parent |'
@@ -143,7 +183,7 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0001 | A fixture row | verify | in-progress
 mkitem 0001 verify in-progress '"ab12"' '[]'
 commit_fixture
 out="$(run_close 0001 ab12)" && rc=0 || rc=$?
-[ "$rc" -eq 0 ] && ok "exits 0" || { bad "exits 0 (got $rc)"; echo "         got: $out"; }
+assert_rc "exits 0" "$rc" 0 "$out"
 refute_line "the row is gone from QUEUE.md" '| 0001 | A fixture row | verify | in-progress | 0000 |' QUEUE.md
 assert_line "the row is in DONE.md" '| 0001 | A fixture row | chore | verify | '"$(date -u +%Y-%m-%d)"' | [items/0001-fixture.md](items/0001-fixture.md) |' DONE.md
 item="$(cat "$FIX/$BL/items/0001-fixture.md")"
@@ -158,8 +198,8 @@ touches:'
 assert_contains "the close is committed" "$(git -C "$FIX" log -1 --format=%s)" 'Close 0001 [ab12]'
 paths="$(git -C "$FIX" log -1 --name-only --format= | grep . | sort | tr '\n' ' ')"
 expect="$BL/DONE.md $BL/QUEUE.md $BL/items/0001-fixture.md "
-[ "$paths" = "$expect" ] && ok "commits exactly the three paths" || {
-  bad "commits exactly the three paths"; echo "         expected: $expect"; echo "         got:      $paths"; }
+if [ "$paths" = "$expect" ]; then ok "commits exactly the three paths"; saw_on_pass "$paths"; else
+  bad "commits exactly the three paths"; echo "         expected: $expect"; saw "$paths"; fi
 
 # --- AC2 — the lock is gone and nothing is left dirty -----------------------------------------
 echo "AC2 — the commit precedes the release, and the lock is gone"
@@ -172,7 +212,7 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0002 | Still building | develop | in-progre
 mkitem 0002 develop in-progress '"ab12"' '[]'
 commit_fixture
 out="$(run_close 0002 ab12)" && rc=0 || rc=$?
-[ "$rc" -ne 0 ] && ok "exits non-zero" || bad "exits non-zero (got 0)"
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names the stage it found" "$out" 'develop'
 assert_contains "names the stage required" "$out" 'verify'
 assert_line  "the row is untouched"     '| 0002 | Still building | develop | in-progress | 0000 |' QUEUE.md
@@ -186,7 +226,7 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0003 | Another window has it | verify | in-
 mkitem 0003 verify in-progress '"ab12"' '[]'
 commit_fixture
 out="$(run_close 0003 ff99)" && rc=0 || rc=$?
-[ "$rc" -ne 0 ] && ok "exits non-zero" || bad "exits non-zero (got 0)"
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names the token it was given" "$out" 'ff99'
 assert_contains "names the token that holds it" "$out" 'ab12'
 assert_line  "the row is untouched" '| 0003 | Another window has it | verify | in-progress | 0000 |' QUEUE.md
@@ -199,7 +239,7 @@ scaffold '| ID | Title | Status | Parent |' '|------|-------|--------|--------|'
 mkitem 0004 verify in-progress '"ab12"' '[]'
 commit_fixture
 out="$(run_close 0004 ab12)" && rc=0 || rc=$?
-[ "$rc" -ne 0 ] && ok "exits non-zero" || bad "exits non-zero (got 0)"
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "says which column is missing" "$out" 'Next'
 assert_contains "quotes the header it found"   "$out" 'ID | Title | Status | Parent'
 assert_line  "the row is untouched" '| 0004 | No Next column | in-progress | 0000 |' QUEUE.md
@@ -212,7 +252,7 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0005 | Uncommittable | verify | in-progress
 mkitem 0005 verify in-progress '"ab12"' '[]'
 commit_fixture
 out="$( (cd "$FIX" && GIT_DIR=/nonexistent-close-test "$BL/close" 0005 ab12 2>&1) )" && rc=0 || rc=$?
-[ "$rc" -ne 0 ] && ok "exits non-zero" || bad "exits non-zero (got 0)"
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "says the edits are uncommitted" "$out" 'uncommitted'
 # Not just any refusal: the retry loop's "git busy" also contains "uncommitted", and is a lie when
 # the repository is simply absent. Assert the reason, not only that something was said.
@@ -227,7 +267,7 @@ scaffold '| Next | ID | Status | Title | Parent |' '|------|------|--------|----
 mkitem 0006 verify in-progress '"ab12"' '[]'
 commit_fixture
 out="$(run_close 0006 ab12)" && rc=0 || rc=$?
-[ "$rc" -eq 0 ] && ok "exits 0" || { bad "exits 0 (got $rc)"; echo "         got: $out"; }
+assert_rc "exits 0" "$rc" 0 "$out"
 refute_line "the row is gone" '| verify | 0006 | in-progress | Reordered | 0000 |' QUEUE.md
 assert_line "the title came from the Title cell, not a position" \
   '| 0006 | Reordered | chore | verify | '"$(date -u +%Y-%m-%d)"' | [items/0006-fixture.md](items/0006-fixture.md) |' DONE.md
@@ -250,7 +290,7 @@ mkitem 0099 develop ready '' '[]'
 mkitem 0010 develop blocked '' '["0007", "0404"]'
 commit_fixture
 out="$(run_close 0007 ab12)" && rc=0 || rc=$?
-[ "$rc" -eq 0 ] && ok "exits 0" || { bad "exits 0 (got $rc)"; echo "         got: $out"; }
+assert_rc "exits 0" "$rc" 0 "$out"
 assert_line "the freed row is set ready"          '| 0008 | Freed by the close | develop | ready | 0000 |' QUEUE.md
 assert_line "the still-blocked row is untouched"  '| 0009 | Still blocked by another | develop | blocked | 0000 |' QUEUE.md
 assert_contains "the freed item is ready"         "$(cat "$FIX/$BL/items/0008-fixture.md")" 'status: ready'
@@ -287,7 +327,7 @@ mkitem 0024 develop blocked '' '["0020"]'
 mkitem 0025 develop ready '' '["0020"]'
 commit_fixture
 out="$(run_close 0020 ab12)" && rc=0 || rc=$?
-[ "$rc" -eq 0 ] && ok "exits 0" || { bad "exits 0 (got $rc)"; echo "         got: $out"; }
+assert_rc "exits 0" "$rc" 0 "$out"
 assert_line "the rowed dependent is still freed" '| 0021 | Freed by the close | develop | ready | 0000 |' QUEUE.md
 done_dep="$(cat "$FIX/$BL/items/0022-fixture.md")"
 assert_contains  "AC9 — the closed dependent stays done"    "$done_dep" 'status: done'
