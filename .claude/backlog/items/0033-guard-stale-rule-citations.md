@@ -13,6 +13,10 @@ expects:
 claimed_by: "ff85"
 claimed_at: 2026-08-25T02:13:10Z
 touches:
+  - tests/citations.test.sh
+  - references/CONCURRENCY.md
+  - references/CONCURRENCY-INCIDENTS.md
+  - .claude/backlog/items/0033-guard-stale-rule-citations.md
 ---
 
 ## Problem

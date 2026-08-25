@@ -22,6 +22,13 @@ expects:
 claimed_by: "35a8"
 claimed_at: 2026-08-25T02:13:10Z
 touches:
+  - MEASUREMENT.md
+  - README.md
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - tests/measurement.test.sh
+  - tools/harvest-usage.sh
+  - .claude/backlog/items/0026-measure-the-recorded-sessions.md
 ---
 
 ## Problem

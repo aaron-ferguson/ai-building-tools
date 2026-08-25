@@ -15,6 +15,10 @@ expects:
 claimed_by: "3e26"
 claimed_at: 2026-08-25T02:13:10Z
 touches:
+  - skills/queue/templates/next
+  - skills/queue/templates/claim
+  - tests/next.test.sh
+  - .claude/backlog/items/0031-fm-list-strips-yaml-comments.md
 ---
 
 ## Problem

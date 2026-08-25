@@ -13,6 +13,9 @@ expects:
 claimed_by: "ade9"
 claimed_at: 2026-08-25T02:13:10Z
 touches:
+  - tests/batching.test.sh
+  - skills/develop/SKILL.md
+  - .claude/backlog/items/0032-terminate-the-paragraph-window.md
 ---
 
 ## Problem

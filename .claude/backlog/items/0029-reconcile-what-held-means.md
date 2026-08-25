@@ -18,6 +18,11 @@ expects:
 claimed_by: "a79a"
 claimed_at: 2026-08-25T02:13:10Z
 touches:
+  - skills/queue/templates/close
+  - references/CONCURRENCY.md
+  - skills/verify/SKILL.md
+  - tests/close.test.sh
+  - .claude/backlog/items/0029-reconcile-what-held-means.md
 ---
 
 ## Problem
