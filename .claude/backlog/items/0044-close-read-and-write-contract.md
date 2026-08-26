@@ -2,8 +2,8 @@
 id: "0044"
 title: Close the gaps in the close script's read and write contract
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -19,8 +19,9 @@ expects:
   - skills/queue/templates/item.md
   - tests/close.test.sh
   - tests/next.test.sh
-claimed_by: "6dea"
-claimed_at: 2026-08-25T22:26:23Z
+  - skills/verify/SKILL.md
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -149,6 +150,36 @@ it needs lifting out of `fm_list` and giving to both scalar readers and to `clos
 - Whether the handoff between stages should also be a script. That is 0048's decision.
 
 ## Notes & decisions
+
+- **FR2's "shared rather than copied a third time" resolved as its fallback clause.** `decomment`
+  now sits in one `DECOMMENT` shell variable per script, injected as awk source into both of that
+  script's readers — so it is one copy per *script* (two) rather than one per *reader* (four), and
+  each block names the other script. A genuinely single copy needs a fourth file the scripts source,
+  which is a change to `queue` Step 0's scaffold and to `tests/backlog-scripts-installed.test.sh`'s
+  three-name `SCRIPTS` list, not a refactor. Parked in `FINDINGS.md`.
+- **`case "$blockers" in *"$ID"*` was replaced with a whole-id loop, not just re-pointed at
+  `fm_list`.** The flattened list is bare space-separated ids, so the old substring test would read
+  `0044` as naming `004`. Not a defect anyone had hit — four-digit ids and a short backlog — but the
+  substring form only looked safe because `fm_value` was returning the raw `["0007"]` text.
+- **One new guard could not fail, and the mutation is what showed it.** "A block list naming another
+  ticket is not freed" passed with the id comparison deleted: its fixture's other blocker had no item
+  file, so `other_blockers_all_done` refused the dependent first and the comparison never decided
+  anything — `testing-conventions.md`'s "another check fires first and the new one never runs" case,
+  arriving in a guard written the same hour. The fixture's blocker is now `done`, so nothing but the
+  id comparison stands between that dependent and a reconcile it should not get, and the mutation
+  reds it. Both new refusals were mutation-checked the same way, each mutation confirmed landed by
+  diffing against a copy taken before the edit.
+- **FR5 chose refusal over a loud report**, which FR5 left open and AC5 did not pin. `close`'s own
+  header already frames every other unreadable shape as "an error, never a refusal that looks like a
+  closed ticket", and a fourth *refusal ground* is what the Problem section asks for. The check
+  counts before anything is written, so the refusal leaves the tree exactly as it found it.
+- **An empty criteria section still closes.** Nothing to tick is not the same defect as criteria that
+  cannot be ticked, and refusing there would block every chore ticket written without ACs — a
+  different argument, and not this one's. Pinned by its own case.
+- **Blast radius of the new refusal on this backlog: one item, already closed.** A scan of all 44
+  items found only `0035` in the checkbox-less form, and it is `done`. No open ticket is affected, so
+  FR7's "existing items are not rewritten" costs nothing today.
+- **`next` gained four cases and `close` fifteen** — 154 and 93. The whole suite is green.
 
 - Routed to `develop`, not `design`: every fix direction is named in the findings and the
   implementation already exists in the sibling script — `decomment` and `fm_list` are lifted, not
