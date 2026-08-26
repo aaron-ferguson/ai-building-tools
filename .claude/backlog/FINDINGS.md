@@ -82,3 +82,15 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the `tests/*.test.sh` loop does not pick it up) and be removed in the same turn. Third session in
   a row to hand-build throwaway comparison scaffolding, which is the finding 0053 itself came from
   (pointer: skills/develop/SKILL.md Step 5, items/0053).
+
+- 2026-08-26 — **the install contract caps how DRY the three backlog scripts can be, and nothing
+  says so.** 0044 FR2 asked for one `decomment`, "shared rather than copied a third time"; the
+  answer had to be its fallback clause instead. `queue` Step 0 scaffolds a backlog by copying each
+  template into `.claude/backlog/`, and `tests/backlog-scripts-installed.test.sh` names exactly
+  three (`next claim close`) and forces each byte-identical to its template — so a fourth file the
+  scripts *source* is possible but is a change to the install contract, the scaffold step and that
+  guard's `SCRIPTS` list, not a refactor. The result is one copy per script rather than one copy
+  per reader, held in step by a comment in each saying "change one, change both". That is fine at
+  two and is the third-instance trigger `coding-conventions.md` fires on the day a fourth reader
+  appears (pointer: skills/queue/SKILL.md Step 0, tests/backlog-scripts-installed.test.sh,
+  items/0048).
