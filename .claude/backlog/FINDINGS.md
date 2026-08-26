@@ -94,3 +94,15 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   two and is the third-instance trigger `coding-conventions.md` fires on the day a fourth reader
   appears (pointer: skills/queue/SKILL.md Step 0, tests/backlog-scripts-installed.test.sh,
   items/0048).
+
+- 2026-08-26 — **`references/CONVENTIONS.md`'s stop-and-report path has no answer for a single
+  capture session asked to queue related work across several repos when only some resolve
+  conventions.** This session was asked to turn one comparison's findings into tickets across four
+  repos; one (this one) already had `conventions.path` set, three others (a PM-tooling repo, a
+  Jira-ticket-drafting repo, and a general skills repo) had no conventions wiring at all. The
+  skill file's instruction is unambiguous per-repo ("stop, do not scaffold, do not guess"), but
+  says nothing about the batch case: whether to proceed with the repos that resolve and report the
+  rest, or hold the whole batch for the user to decide how the unwired repos should be wired
+  first. Handled it here by doing the resolvable repo and stopping to ask about the other three,
+  which seems like the right default but isn't written anywhere (pointer:
+  references/CONVENTIONS.md "Resolution order").
