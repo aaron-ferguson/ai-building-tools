@@ -61,3 +61,29 @@ re-rank is entitled to disagree with any of them:
   collision that actually costs work promotes it above the fixes queued around it.
 - **A findings sweep of comparable size.** The buffer is empty as of 2026-08-25; the next sweep
   should compare its clusters against these rows rather than inserting above them by default.
+
+## 2026-08-26 — four capability tickets appended below 0041
+
+0069–0072 were captured from a comparison against a third-party skills repo, not from this
+project's own defects. None of them beat any existing row: nothing bleeds, nothing compounds, and
+nothing queued above them is blocked on any of the four, so all four are **Tier 4 (Value)** at
+best, sitting below every Tier 1–3 row already in the queue.
+
+Against **0041**, also Tier 4 ("nothing degrades while it sits, and there is no row it beats"):
+capture order decides, per tie-breaker 5 — 0041 was captured first and stays higher. None of the
+tie-breakers separated 0041 from any of 0069–0071 on grounds other than capture order; the regret
+operator was not needed.
+
+**Among 0069, 0070, 0071:** the **prerequisite override** placed 0069 first — both 0070 and 0071
+would, per their own *Notes & decisions*, revisit whether to call into whatever 0069 produces
+(a shared vocabulary-recording mechanism) once it lands, so specifying 0069 first is not merely
+convenient, it is what the other two are conditioned on being aware of. Between 0070 and 0071,
+tie-breaker 4 (smaller and more certain) favoured 0070: 0071's open design question has real blast
+radius (it may touch a mechanism four live projects already depend on), where 0070's worst case is
+a net-new, self-contained skill file.
+
+**0072** is mechanical polish, not a capability decision — it is `next: develop`, fully specified,
+`size: s` — so it is **Tier 5 (Debt & polish)** and sits last of the batch, below the three Tier 4
+rows, per the tier system itself rather than any tie-break among them.
+
+Order added: 0069, 0070, 0071, 0072, all below 0041.

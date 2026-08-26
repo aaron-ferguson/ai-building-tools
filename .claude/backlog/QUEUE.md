@@ -59,6 +59,10 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0004 | Phase 3 — extend tracker mirroring with hierarchy and standards | develop | blocked | 0001 |
 | 0037 | Run the fresh-project end-to-end exercise against the settled configuration | develop | in-progress | 0009 |
 | 0041 | Report what a work session delivered and what it cost | design | ready |  |
+| 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
+| 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
+| 0071 | Add a decision-map mode for work too large or too foggy for one project ticket | design | ready |  |
+| 0072 | Archive an escalated prototype on its own branch instead of leaving it only in the working tree | develop | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
