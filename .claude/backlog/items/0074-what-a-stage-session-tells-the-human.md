@@ -305,3 +305,56 @@ four kinds **in its own words** is invisible to the guard. That is the identical
 `tests/citations.test.sh` records for anchoring, and widening the match would report ordinary prose as
 a restatement. Nothing can check that a lesson went to disk *instead of* the screen; the compliance
 signal remains `0036` AC21's findings-parked count, which exists only in an orchestrated run.
+
+### Verified and closed, 2026-08-30 (claim `2e0f`)
+
+**PASS on all seven ACs and both NFR rows, at `qa_level: verify`.** Whole suite green — 12 suites,
+452 assertions, `tests/reporting.test.sh` contributing 23.
+
+**Every check ran against a clone pinned at `4d2271a`, not the working tree, and that was a
+deliberate response to the tree.** Two other sessions were live in `tests/` throughout this pass:
+`626a` on 0053 (`tests/claim.test.sh`, `tests/close.test.sh`) and `296c` on 0045
+(`tests/next.test.sh`). The working tree went clean, dirty, clean and dirty again while the verdict
+was being formed. Because the QA plan's third check is `for t in tests/*.test.sh`, running it against
+the live tree would have pulled all three of those files into the evidence set on a glob, and Step 7
+forbids judging whether the dirt *looks* relevant. Pinning removed the question instead of arguing
+it: the suite was executed over bytes that provably existed as one committed state.
+
+**Step 7 derivation — intersection empty, so this is a plain PASS and not advisory.** Dirty set:
+`tests/claim.test.sh`, `tests/close.test.sh`, `tests/next.test.sh`. Evidence set: `references/
+REPORTING.md`, the six `skills/*/SKILL.md`, `tests/reporting.test.sh`, `tests/reference-size.test.sh`,
+the pinned clone's full suite, this item file, and `observability-conventions.md` /
+`documentation-conventions.md`. No path is in both. None of the three dirty files is in 0074's
+`expects:` or `touches:`, and neither 0053 nor 0045 declares a path 0074 declares.
+
+**Seven mutations, each confirmed red and each reverted by the path it touched.** A green check that
+was never made to fail is not evidence: AC2 (delete `design`'s citation → names that file and no
+other), AC5 twice (`Keep the report under 200 tokens.` and the spelled-out `under two hundred words`
+→ both caught, so the digit form is not the only one), AC4 twice (`--verbose` and `just ask` → both
+caught), AC7 (delete the two-channel sentence → caught even with `FR13` and "same facts" left
+elsewhere in the file), and the Observability row (delete *What failed, was skipped, or was refused*
+→ "routes 3 kinds to the screen; FR7 fixes it at four"). That last one is what makes the Observability
+NFR's "not optional" enforceable rather than asserted.
+
+**The QA plan's rewrap check was run in both directions and holds.** Reflowing the two-channel
+paragraph and reflowing `design`'s citation sentence across new line breaks both stayed green — the
+`awk RS=""` paragraph scoping and the backticked path survive a rewrap, which is the hazard this
+repo's `CLAUDE.md` names for every prose guard.
+
+**AC6 checked deletion by deletion against `b35834e`.** `verify` Step 7 is purely additive — the
+evidence table, the PASS/FAIL line and the whole advisory derivation are untouched. `develop` Step 8
+lost four items, all of them recovered by rule rows 1 and 4, and the one line genuinely gone —
+"what's next at the top of the queue" — is not the output of a step that performed a check, exactly
+as the build notes flagged.
+
+**The change is not live in any installed copy, and the repo is the authority for this verdict.**
+`diff -rq` puts all six skills at different bytes from
+`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.6/`, and `references/REPORTING.md`
+exists only here — the same version number over different bytes that this repo's `CLAUDE.md` warns
+about. The release chain (bump, install, restart) is still owed; until it runs, no session's closing
+step can follow a citation to a file its own plugin root does not contain.
+
+**Two findings parked** (`58e1aea`): a bundled Claude Code skill named `verify` shadows this
+plugin's `/verify` and opens with "Don't run tests", and `REPORTING.md` attributes FR14 to 0039 while
+attributing FR13 to 0036. Neither affects the verdict. Separately, `FINDINGS.md` now holds 24 entries
+against a threshold of 8 — `retro` is three cycles overdue.
