@@ -215,3 +215,21 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   against the current tree, and neither is the working copy. The item's notes record the ROOT gotcha
   (a copy must live inside the repo) but not the base-selection one, which cost the larger detour
   (pointer: items/0053 notes, verify SKILL.md Step 3).
+- 2026-08-30 — **A ticket's AC can require exactly the assertion `testing-conventions.md` warns
+  against, and nothing in `develop` says which wins.** 0074's AC1 asks a guard to check each skill
+  cites the rule "exactly once"; `testing-conventions.md` says *assert membership, never
+  cardinality*, because "names exactly one X" goes quietly false the day a sibling adds a second.
+  Here the count IS the contract — FR1 is "stated in one place, cited never restated", so a second
+  copy is the defect — and the guard was written to the AC with the reasoning recorded in its header.
+  But that judgement was made silently by the implementing session. Step 2 tells `develop` to restate
+  the contract and Step 3 to load the conventions; neither says what to do when they collide, and the
+  cheap answer (follow the AC, so `verify` passes) is not obviously the right one (pointer:
+  tests/reporting.test.sh header, items/0074 AC1).
+- 2026-08-30 — **The `set -e` short-circuit trap is recorded in the guard where it was found, so the
+  next guard author hits it again.** Writing `[ "$n" -eq 0 ] && echo "FAIL …"` as a statement inside
+  an audit function makes the function exit non-zero on the CLEAN path, which `set -e` turns into a
+  truncated result for every caller — the guard reports a partial audit exactly when nothing is
+  wrong. `tests/reference-size.test.sh` documents this inside one loop body; `tests/reporting.test.sh`
+  hit it twice in fresh code before that note was found. Five shell guards now share the pattern and
+  the warning lives in one of them (pointer: tests/reference-size.test.sh `offenders`,
+  tests/reporting.test.sh `audit`).
