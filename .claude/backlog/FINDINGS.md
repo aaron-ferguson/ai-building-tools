@@ -233,3 +233,35 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   hit it twice in fresh code before that note was found. Five shell guards now share the pattern and
   the warning lives in one of them (pointer: tests/reference-size.test.sh `offenders`,
   tests/reporting.test.sh `audit`).
+- 2026-08-30 — **A Documentation NFR row that cites a skill file makes *advisory* near-certain in
+  this repo, and the mechanism is not the repo-wide-grep one already parked above.** 0044's
+  Documentation row requires its fourth refusal ground to land in `skills/verify/SKILL.md` Step 5,
+  so that path is in the evidence set by the row's own wording — and `skills/**/SKILL.md` is the
+  one surface every suite-wide ticket edits, so it is dirty whenever any of them is in flight. It
+  was: 0074 holds it in `touches:` and had it uncommitted, and 0044 verified green on all nine ACs
+  and all three NFRs yet could not close. The general shape is that this plugin's tickets are
+  *about* the prose files, so documentation NFRs routinely name a file another ticket is legitimately
+  rewriting, and Step 7's intersection reads a scheduling collision as evidence contamination. Worth
+  noting the substance agreed — the fourth-refusal text was intact in both the committed and working
+  copies — and Step 7 explicitly refuses that as grounds to close, correctly, since 3895's edit is
+  unfinished. The narrow question is whether an evidence set should carry a path a row cites for
+  *documentation* on the same terms as one an assertion executed (pointer: items/0044 Documentation
+  NFR, skills/verify/SKILL.md Step 7, items/0074, items/0050).
+- 2026-08-30 — **An acceptance criterion that globs the test directory lets another session rewrite
+  its contract mid-verify.** 0044 AC9 is "given the whole suite, when `for t in tests/*.test.sh`
+  runs, then every suite passes". During this pass 3895 created `tests/reporting.test.sh` as an
+  untracked file, so the set AC9 quantifies over grew by one unfinished guard while the verdict was
+  being formed. Nothing red — the run used a pinned clone — but the AC as written is satisfied
+  against a moving target, and two sessions can hold contradictory true answers to it at the same
+  moment. This is the same class as 0052's requirement that an AC name the input that would make it
+  red: a glob names no input. The fix direction is either pinning such an AC to a commit or
+  enumerating the suites it means (pointer: items/0044 AC9, items/0052, tests/).
+- 2026-08-30 — **`./next verify`'s collision warning flagged the two rows that declared *nothing*,
+  while the collision that actually cost the close came through a `touches:` that was declared
+  properly.** The banner read "0053 [b673] none declared — assume held, ask" and the same for 0074;
+  0053 turned out to share no path with 0044 at all, and 0074 — which had just committed a full
+  `touches:` list naming `skills/verify/SKILL.md` — was the one that made the verdict advisory. The
+  warning keys on absence of a declaration, which is the cheaper signal, and says nothing about a
+  declared overlap with the row it is offering. That cross-check is exactly 0045, and this is a
+  worked case for it: the useful output would have been "0044's evidence set meets 0074's declared
+  touches at skills/verify/SKILL.md" (pointer: items/0045, .claude/backlog/next, items/0074).
