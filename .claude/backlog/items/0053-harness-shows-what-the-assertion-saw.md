@@ -2,8 +2,8 @@
 id: "0053"
 title: Let the test harness print the line an assertion actually saw
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -16,8 +16,8 @@ expects:
   - tests/close.test.sh
   - tests/claim.test.sh
   - README.md
-claimed_by: "b673"
-claimed_at: 2026-08-30T16:30:48Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -128,3 +128,40 @@ turn into a read.
 - Ranked directly below 0052 rather than as a nicety. It is the tool that makes 0052's requirement
   and 0042's repairs affordable, and three consecutive sessions have each paid to build it by hand
   and thrown it away.
+
+- **Verify 2026-08-30 [b673]: FAIL on AC2 and AC3 — `tests/claim.test.sh` never got the rc
+  helpers.** It carries the `saw` / `saw_on_pass` pair and routes `assert_contains`,
+  `assert_not_contains` and `assert_row` through it, but its five exit-code assertions were left as
+  the inline `[ "$rc" -eq 0 ] && ok … || bad …` form — the exact shape the notes record having
+  routed through `assert_rc` / `assert_rc_nonzero` in `close.test.sh`. There is no `assert_rc` in
+  `claim.test.sh` at all (lines 120, 130, 140, 147, 158).
+  - **AC2** — with `SHOW_MATCHED=1`, 5 of 18 passing cases print no matched text: `claim.test.sh`
+    emits 13 `saw:` lines for 18 passes. `close.test.sh` emits 92 for 93 — line 402's
+    `commits only the row it closed and the rows it freed` is the twin of line ~193's
+    `commits exactly the three paths`, same shape in the same file; one was converted and one
+    was missed.
+  - **AC3** — the two `exits non-zero` assertions (lines 130, 147) print nothing at all on
+    failure, flag on or off. Driven by mutation: `exit 1` → `exit 0` at
+    `skills/queue/templates/claim:94`, mutation confirmed by diff against a copy taken before
+    the edit, reverted by that path alone (sha `1952d7ec` before and after). Observed:
+
+    ```
+    AC2 — a blocked row is refused by its actual status
+      FAIL — exits non-zero (got 0)
+      ok   — names the actual status
+    ```
+
+    That failing line is precisely the "why did this case go red with no evidence" the ticket
+    exists to remove. `next.test.sh`'s `assert_rc_nonzero` would have printed
+    `saw: wanted any exit but 0 / exit 0 / <output>`.
+  - The other three (120, 140, 158) do print evidence on failure, but as `got:` rather than
+    `saw:` — the third debugging interface FR4 exists to prevent.
+  - `README.md`'s new block claims "every ok line followed by what that assertion saw", which is
+    false while those six assertions stand.
+  - **Not in scope's exemption:** *Out of scope* excludes the other five suites, not
+    `claim.test.sh` — it is named in `expects:` and in FR4. The fix is the eleven-line block
+    already written twice.
+  - **Passing:** AC1 (pre-0053 vs post-0053 default output byte-identical for all three suites,
+    verified by running both historical copies against today's tree), AC4 (all three do honour the
+    flag), AC5 (`README.md` *Testing* names `SHOW_MATCHED` and what it does), AC6 (11 committed
+    suites, 0 failed, loop exit 0). Both NFR rows hold.
