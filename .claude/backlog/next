@@ -94,9 +94,16 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--completed
                      crash-recovery re-dispatch from a loop. Give it at most once.
   ./next --help      this
 
-Takeable means: `next` matches the stage and no `blocked_by` entry is still open. `blocked` is
+Takeable means three things: `next` matches the stage, no `blocked_by` entry is still open, and
+no file the row `expects:` is already held by an in-progress row's `touches:`. `blocked` is
 DERIVED from `blocked_by`, so the column is a cache of that answer and never the authority — a
 row is offered on the graph's answer whatever the column says, and the disagreement is reported.
+
+A row held out on that third test is reported as COLLIDES, naming the shared paths and the row
+holding them, and the walk carries on to the next clear row rather than stopping at the first
+stage match. The held set spans every stage: a develop row can collide with a live verify claim.
+Where every row at the stage collides, the closing line says so in different words from an
+empty stage — the two mean different things to whoever reads them.
 
 --drive spends a code per outcome, and they are the contract: 0 dispatch this · 3 run complete,
 nothing takeable · 4 escalate, a person decides · 5 the findings gate is reached, dispatch retro.
@@ -335,6 +342,28 @@ design_question() {
 }
 
 # --- shared tails -----------------------------------------------------------------------------
+# Is $1 one of the space-separated words in $2? The padding is what makes it exact — without it
+# `docs/a` matches `docs/ab`. Ids and the paths in `expects:` carry no whitespace, which is what
+# lets every list in this script be space-separated in the first place.
+contains_word() {
+  case " $2 " in *" $1 "*) return 0 ;; esac
+  return 1
+}
+
+# Every path in $1 that is also in $2, in $1's order. `--drive` asks only whether the two lists
+# meet; the take loop has to name which paths did, because a collision reported without its path
+# is a verdict the reader cannot check (0045 FR3).
+paths_shared() {
+  for pa in $1; do
+    if contains_word "$pa" "$2"; then printf '%s ' "$pa"; fi
+  done
+}
+
+paths_overlap() {
+  [ -n "$(paths_shared "$1" "$2")" ]
+}
+
+
 # An uncommitted queue is a claim only one session can see: whoever commits QUEUE.md next carries
 # these rows under their own message, and the first anyone notices is a confusing diff.
 warn_dirty() {
@@ -364,8 +393,46 @@ show_claimed() {
     tou="$(fm_list "$it" touches)"
     # An empty `touches:` on an in-progress row is ambiguous — not yet declared, or released as it
     # closes — and nothing here can tell them apart, so say so rather than implying it is free.
-    printf '  %s [%s] %s\n' "$id" "${tok:-no token}" "${tou:-none declared — assume held, ask}"
+    # `assume held, ask` is the right instruction and an unusable one alone, because the only other
+    # description of that row's scope is its `expects:` and reading it meant opening the item file —
+    # the cost the pared table exists to remove. So print it, labelled: predicted rather than
+    # checked, which is why the row is still offered against it and still worth asking about.
+    if [ -n "$tou" ]; then
+      scope="$tou"
+    else
+      pred="$(fm_list "$it" expects)"
+      if [ -n "$pred" ]; then
+        scope="none declared; predicted by expects: ${pred% } — assume held, ask"
+      else
+        scope="none declared — assume held, ask"
+      fi
+    fi
+    printf '  %s [%s] %s\n' "$id" "${tok:-no token}" "$scope"
   done
+}
+
+# Which in-progress rows hold a file this candidate's `expects:` names, and which files those are.
+# One line per colliding row, already worded for the report: a collision stated without its path is
+# a verdict the reader cannot check, and without its holder there is nobody to ask (0045 FR3).
+#
+# `touches:` only. That is the claim a session made against the code, where a held row's `expects:`
+# was written before anyone opened the file — the CLAIMED FILES block below carries the weaker
+# field for a reader to judge, and a prediction is not a thing to refuse a row over.
+#
+# Not filtered by stage: the instance that cost the most was a `develop` row colliding with a live
+# `verify` claim, and that one is the worse case — a QA session runs the suite while the files
+# under it are edited, so its verdict describes a tree that was never a commit (0045 FR6).
+#
+# $1 the candidate's `expects:` list.
+collisions_with() {
+  rows | awk -F'|' -v s="$STATUS" '{ v = $s; gsub(/^ +| +$/, "", v); if (v == "in-progress") print }' \
+  | while IFS= read -r hrow; do
+      hid="$(field "$hrow" "$ID")"
+      hit="$(item_for "$hid")"
+      shared="$(paths_shared "$1" "$(fm_list "$hit" touches)")"
+      [ -n "$shared" ] || continue
+      printf '%s — held by %s [%s]\n' "${shared% }" "$hid" "$(fm "$hit" claimed_by)"
+    done
 }
 
 # --- --waiting --------------------------------------------------------------------------------
@@ -477,21 +544,6 @@ if [ "${1:-}" = "--drive" ]; then
       if [ -n "$(open_blockers_of "$tid")" ]; then continue; fi
       printf '%s ' "$tid"
     done
-  }
-
-  # Is $1 one of the space-separated words in $2? The padding is what makes it exact — without it
-  # `docs/a` matches `docs/ab`. Ids and the paths in `expects:` carry no whitespace, which is what
-  # lets every list in this script be space-separated in the first place.
-  contains_word() {
-    case " $2 " in *" $1 "*) return 0 ;; esac
-    return 1
-  }
-
-  paths_overlap() {
-    for pa in $1; do
-      if contains_word "$pa" "$2"; then return 0; fi
-    done
-    return 1
   }
 
   # $1 minus $2. sh has no set type, so the difference is a loop rather than an operator.
@@ -683,6 +735,7 @@ if [ -n "${1:-}" ]; then
   esac
 
   took=0
+  collided=0
   for id in $(ids_where "$NEXT" "$stage"); do
     row="$(row_for "$id")"
     written="$(field "$row" "$STATUS")"
@@ -704,15 +757,38 @@ if [ -n "${1:-}" ]; then
       printf 'DRIFT     %s | column says blocked, no blocked_by entry is still open\n' "$id"
     fi
     it="$(item_for "$id")"
+    exp="$(fm_list "$it" expects)"
+    # The proof used to be printed four lines below the verdict it contradicts: this loop filtered
+    # on stage, `blocked_by` and the column, `show_claimed` ran afterward and independently, and
+    # neither consulted the other. Cross them here, before the word TAKE is written.
+    #
+    # And CONTINUE rather than break — that is the load-bearing half. Suppressing the wrong TAKE
+    # without it leaves a session correctly warned and still with nothing to do, which is the same
+    # outcome by a slower route; the thing `develop` Step 1 actually asks for is the next clear row.
+    clash="$(collisions_with "$exp")"
+    if [ -n "$clash" ]; then
+      printf '%s\n' "$clash" | while IFS= read -r cl; do
+        printf 'COLLIDES  %s | %s\n' "$id" "$cl"
+      done
+      collided=1
+      continue
+    fi
     printf 'TAKE      %s | %s | size %s | qa %s\n' \
       "$id" "$(field "$row" "$TITLE")" "$(fm "$it" size)" "$(fm "$it" qa_level)"
-    exp="$(fm_list "$it" expects)"
     printf 'EXPECTS   %s\n' "${exp:-not predicted — check this one by hand}"
     took=1
     break
   done
-  # An empty stage is not an error; a session asking "anything for me?" gets a plain no and a zero.
-  [ "$took" -eq 1 ] || printf 'nothing is takeable at stage %s\n' "$stage"
+  # Three outcomes, not two. An empty stage is not an error; a session asking "anything for me?"
+  # gets a plain no and a zero. But a stage whose every row is held says something else entirely —
+  # come back, or ask — and one message for both reads as "this stage is done" when it is not.
+  if [ "$took" -eq 0 ]; then
+    if [ "$collided" -eq 1 ]; then
+      printf 'every takeable %s row collides with files another session holds — nothing here is safe to take\n' "$stage"
+    else
+      printf 'nothing is takeable at stage %s\n' "$stage"
+    fi
+  fi
   show_claimed
   warn_dirty
   exit 0

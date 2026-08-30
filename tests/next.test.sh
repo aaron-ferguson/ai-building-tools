@@ -937,6 +937,170 @@ assert_contains "offers the row" "$out" 'TAKE      0003'
 assert_contains "the size is read without its comment" "$out" 'size s | qa unit'
 assert_not_contains "no comment reaches the take line" "$out" '#'
 
+# --- 0045 — the take loop crosses itself against the held file set ------------------------------
+# `./next <stage>` printed TAKE on a row whose `expects:` was held by another session and printed
+# the proof four lines below, in the same output. The loop filtered on stage, `blocked_by` and the
+# Status column; `show_claimed` ran afterward and independently, and neither consulted the other.
+#
+# The collision cases need `expects:` and `touches:` to vary independently per row, which no
+# earlier helper offers: `add_ticket` hardwires an empty `touches:`, and `add_item_lists` hardwires
+# the same one-line `expects:` on every row it writes.
+#
+# $1 id, $2 next, $3 status, $4 one expects path, $5 the touches block body — a leading newline
+# then `  - ` entries, or empty for none — $6 claimed_by written verbatim, e.g. '"aa11"' or empty.
+add_item_scope() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: $2
+status: $3
+qa_level: unit
+size: s
+parent:
+blocked_by: []
+expects:
+  - $4
+claimed_by: $6
+claimed_at: 2026-08-24T00:00:00Z
+touches:$5
+---
+
+## Problem
+ITEM
+}
+
+# A held row that declares neither field, so the fallback has nothing to fall back to. Written as
+# its own helper rather than as `add_item_scope` with an empty path, because `  - ` with nothing
+# after it is a list entry, not an absent list, and the two read differently to `fm_list`.
+#
+# $1 id, $2 next, $3 status
+add_item_blank_scope() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: $2
+status: $3
+qa_level: unit
+size: s
+parent:
+blocked_by: []
+expects:
+claimed_by: "bb22"
+claimed_at: 2026-08-24T00:00:00Z
+touches:
+---
+
+## Problem
+ITEM
+}
+
+# One COLLIDES line, whole, for the given id — asserted entire for the same reason `claimed_line`
+# is: the row, the path and the holder have to appear on one line to be the report FR3 asks for,
+# and three separate substring matches over the whole output would pass on three unrelated lines.
+collides_line() { printf '%s\n' "$1" | grep "^COLLIDES  $2 " || true; }
+
+# The fixture AC1, AC2 and AC3 all read: a colliding top row, a clear row below it, one holder.
+scope_fixture() {
+  scaffold
+  add_row 0001 'Topmost, and colliding' develop ready 0000
+  add_row 0002 'Lower, and clear' develop ready 0000
+  add_row 0003 'Held by another session' develop in-progress 0000
+  add_item_scope 0001 develop ready     shared/file.md '' ''
+  add_item_scope 0002 develop ready     free/file.md   '' ''
+  add_item_scope 0003 develop in-progress other/file.md "$(printf '\n  - shared/file.md')" '"aa11"'
+  seal
+}
+
+echo "0045 AC1 — a row whose expects intersects a held touches is not offered"
+scope_fixture
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+assert_not_contains "no TAKE on the colliding top row" "$out" 'TAKE      0001'
+
+echo "0045 AC2 — the walk continues to the first row that is clear"
+scope_fixture
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_contains "offers the lower clear row" "$out" 'TAKE      0002'
+assert_contains "with its own expects"       "$out" 'EXPECTS   free/file.md'
+
+echo "0045 AC3 — the row stepped over is reported with the path and the holder"
+scope_fixture
+out="$(run_next develop)" && rc=0 || rc=$?
+line="$(collides_line "$out" 0001)"
+assert_contains "names the row stepped over" "$line" 'COLLIDES  0001'
+assert_contains "names the intersecting path" "$line" 'shared/file.md'
+assert_contains "names the row that holds it" "$line" '0003'
+# The path that does NOT intersect must not be reported as the reason — a report naming every path
+# either row declares is not a report of the collision.
+assert_not_contains "does not name the holder's other file" "$line" 'other/file.md'
+
+echo "0045 AC4 — every row colliding reads differently from an empty stage"
+scaffold
+add_row 0001 'The only develop row, and colliding' develop ready 0000
+add_row 0003 'Held by another session' develop in-progress 0000
+add_item_scope 0001 develop ready     shared/file.md '' ''
+add_item_scope 0003 develop in-progress other/file.md "$(printf '\n  - shared/file.md')" '"aa11"'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+assert_contains     "says the stage is held, not empty" "$out" 'every takeable develop row collides'
+assert_not_contains "not the empty-stage wording"       "$out" 'nothing is takeable at stage develop'
+
+echo "0045 AC5 — a held row with no touches falls back to its expects, labelled predicted"
+scaffold
+add_row 0001 'A free row' develop ready 0000
+add_row 0002 'Held, nothing declared' develop in-progress 0000
+add_item_scope 0001 develop ready       free/file.md    '' ''
+add_item_scope 0002 develop in-progress guessed/file.md '' '"aa11"'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+line="$(claimed_line "$out" 0002)"
+assert_contains "falls back to the expects entry" "$line" 'guessed/file.md'
+assert_contains "labels it as the weaker field"   "$line" 'predicted'
+assert_contains "and still says to ask"           "$line" 'assume held, ask'
+assert_contains "the free row is still offered"   "$out" 'TAKE      0001'
+
+# The fallback is a display, not a claim, and the case above does not pin that: its free row shares
+# no path with the held row under either field, so widening the held set to `touches: + expects:`
+# leaves it green. This one separates them — the candidate collides with the held row's PREDICTED
+# scope and with nothing it has actually claimed — because which field the filter reads is a real
+# decision (0045 FR1) and a wider one would refuse rows on a guess nobody checked against the code.
+echo "0045 FR1 — the filter reads touches, not the held row's predicted expects"
+scaffold
+add_row 0001 'Colliding with a prediction only' develop ready 0000
+add_row 0002 'Held, nothing declared' develop in-progress 0000
+add_item_scope 0001 develop ready       guessed/file.md '' ''
+add_item_scope 0002 develop in-progress guessed/file.md '' '"aa11"'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_contains     "the row is offered"                 "$out" 'TAKE      0001'
+assert_not_contains "and not refused on the prediction"  "$out" 'COLLIDES  0001'
+assert_contains     "the prediction is still surfaced"   "$(claimed_line "$out" 0002)" 'predicted'
+
+echo "0045 AC5 — a held row with neither field keeps the original wording"
+scaffold
+add_row 0001 'A free row' develop ready 0000
+add_row 0002 'Held, and declaring nothing at all' develop in-progress 0000
+add_item_scope 0001 develop ready free/file.md '' ''
+add_item_blank_scope 0002 develop in-progress
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+line="$(claimed_line "$out" 0002)"
+assert_contains "still says nothing is declared" "$line" 'none declared — assume held, ask'
+
+echo "0045 AC6 — the held set is not filtered by stage: a verify claim counts"
+scaffold
+add_row 0001 'A develop row' develop ready 0000
+add_row 0002 'Held at verify' verify in-progress 0000
+add_item_scope 0001 develop ready      shared/file.md '' ''
+add_item_scope 0002 verify in-progress other/file.md "$(printf '\n  - shared/file.md')" '"aa11"'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_not_contains "no TAKE across a live verify claim" "$out" 'TAKE      0001'
+assert_contains     "and the collision is reported"      "$out" 'COLLIDES  0001'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
