@@ -3,7 +3,7 @@ id: "0044"
 title: Close the gaps in the close script's read and write contract
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -20,8 +20,8 @@ expects:
   - tests/close.test.sh
   - tests/next.test.sh
   - skills/verify/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "ce83"
+claimed_at: 2026-08-30T16:35:21Z
 touches:
 ---
 
