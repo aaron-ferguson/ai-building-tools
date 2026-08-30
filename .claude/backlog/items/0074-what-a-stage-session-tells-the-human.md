@@ -3,7 +3,7 @@ id: "0074"
 title: Give the suite one reporting rule and route the detail to disk
 type: debt
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-30
@@ -21,8 +21,8 @@ expects:
   - skills/prototype/SKILL.md
   - tests/reporting.test.sh      # new guard
   - tests/reference-size.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "3895"
+claimed_at: 2026-08-30T16:30:46Z
 touches:
 ---
 
