@@ -25,10 +25,16 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0053 | Let the test harness print the line an assertion actually saw | verify | ready |  |
 | 0044 | Close the gaps in the close script's read and write contract | verify | ready |  |
-| 0052 | Require an acceptance criterion to name the input that would make it red | develop | ready |  |
+| 0074 | Decide what a stage session tells the human as it runs, and cut the rest | design | ready |  |
 | 0042 | Anchor the vocabulary-pinning guards to the claims they make | develop | ready |  |
-| 0046 | Make the README guard list provably complete | develop | ready |  |
 | 0051 | Pin the measurement record's denominator and make its recipe reproduce | develop | blocked |  |
+| 0073 | Measure where a stage session's turns and tokens actually go | develop | blocked |  |
+| 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
+| 0039 | Build the orchestrate skill and the stage outcome schema | develop | blocked | 0036 |
+| 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
+| 0041 | Report what a work session delivered and what it cost | design | ready |  |
+| 0052 | Require an acceptance criterion to name the input that would make it red | develop | ready |  |
+| 0046 | Make the README guard list provably complete | develop | ready |  |
 | 0047 | Give the busy-lock procedure a close-time path | develop | ready |  |
 | 0045 | Cross the take loop against the held file set in next | develop | ready |  |
 | 0060 | Decide how the findings buffer is emptied and gated | design | ready |  |
@@ -49,16 +55,12 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0063 | Give the prose guards a matcher that survives a rewrap | develop | ready |  |
 | 0067 | Decide what shape a cross-cutting rename takes in the backlog | design | ready |  |
 | 0043 | Make the two size gates fail on a registry entry that no longer resolves | develop | ready |  |
-| 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
 | 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |
 | 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |
 | 0008 | Add the graph rules to queue, develop, and verify | develop | blocked | 0002 |
-| 0039 | Build the orchestrate skill and the stage outcome schema | develop | blocked | 0036 |
-| 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
 | 0003 | Phase 2 — the readiness gate and outcome reviews | develop | blocked | 0001 |
 | 0004 | Phase 3 — extend tracker mirroring with hierarchy and standards | develop | blocked | 0001 |
 | 0037 | Run the fresh-project end-to-end exercise against the settled configuration | develop | in-progress | 0009 |
-| 0041 | Report what a work session delivered and what it cost | design | ready |  |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
 | 0071 | Add a decision-map mode for work too large or too foggy for one project ticket | design | ready |  |
