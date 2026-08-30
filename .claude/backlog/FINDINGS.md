@@ -195,3 +195,23 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   and the release chain in CLAUDE.md is a four-step sequence with no instruction to re-verify state
   before executing it. Every step is silent when skipped, including this missing one (pointer:
   CLAUDE.md *This project is the tool its sessions are running*, references/CONCURRENCY.md).
+- 2026-08-30 — **A "convert the helpers" ticket has no way to state which call sites it converted, so
+  a partial conversion reads as a complete one.** 0053 routed `close.test.sh`'s eight inline
+  `[ "$rc" -eq 0 ] && ok … || bad …` lines through new `assert_rc` helpers and recorded that in the
+  notes, but left `claim.test.sh`'s five identical lines untouched and `close.test.sh`'s own line 402
+  unconverted — the twin of the line it *did* convert at 193, same shape, same file. Nothing failed:
+  the suites are green, the flag works, and AC4's "all three honour it" is satisfied by three suites
+  that honour it to three different depths. The gap is only visible by counting `saw:` lines against
+  `ok` lines (13 of 18 in claim, 92 of 93 in close), which no AC asked for and no guard measures.
+  A ticket that changes an interface at N call sites wants the call-site count as an acceptance
+  criterion, not a prose note listing the ones that were done (pointer:
+  tests/claim.test.sh:120,130,140,147,158, tests/close.test.sh:402, items/0053).
+- 2026-08-30 — **`verify` Step 3's mutation sweep needs the pre-change suite to compare against, and
+  a suite's own `ROOT` resolution makes that awkward in a way each session rediscovers.** Checking
+  0053's AC1 ("output unchanged") meant running the pre-0053 and post-0053 copies of three suites
+  against today's tree. The obvious base — the commit before the implementation — was wrong, because
+  two of the three suites had since been changed by *other* tickets (0044), so the diff showed 0044's
+  cases as 0053's noise. The isolating comparison is pre-boundary vs post-boundary, both replayed
+  against the current tree, and neither is the working copy. The item's notes record the ROOT gotcha
+  (a copy must live inside the repo) but not the base-selection one, which cost the larger detour
+  (pointer: items/0053 notes, verify SKILL.md Step 3).
