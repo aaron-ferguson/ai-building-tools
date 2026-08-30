@@ -18,6 +18,9 @@ expects:
 claimed_by: "296c"
 claimed_at: 2026-08-30T16:47:32Z
 touches:
+  - skills/queue/templates/next
+  - .claude/backlog/next
+  - tests/next.test.sh
 ---
 
 ## Problem
