@@ -2,8 +2,8 @@
 id: "0053"
 title: Let the test harness print the line an assertion actually saw
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -16,9 +16,10 @@ expects:
   - tests/close.test.sh
   - tests/claim.test.sh
   - README.md
-claimed_by: "0f0a"
-claimed_at: 2026-08-30T17:10:23Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-08-30
 ---
 
 ## Problem
@@ -63,17 +64,17 @@ turn into a read.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a suite run with no flag set, when it passes, then its output is unchanged from
+- [x] AC1 — Given a suite run with no flag set, when it passes, then its output is unchanged from
   today — one line per case plus the tally.
-- [ ] AC2 — Given a suite run with the verbose mode enabled, when a case passes, then the output
+- [x] AC2 — Given a suite run with the verbose mode enabled, when a case passes, then the output
   includes the text the assertion matched against.
-- [ ] AC3 — Given any suite run, when a case fails, then the output includes the text the assertion
+- [x] AC3 — Given any suite run, when a case fails, then the output includes the text the assertion
   saw, with the verbose mode off.
-- [ ] AC4 — Given `tests/next.test.sh`, `tests/close.test.sh` and `tests/claim.test.sh`, when each
+- [x] AC4 — Given `tests/next.test.sh`, `tests/close.test.sh` and `tests/claim.test.sh`, when each
   is run with the verbose mode enabled, then all three honour it.
-- [ ] AC5 — Given `README.md`'s *Testing* section, when read, then it names the flag and what it
+- [x] AC5 — Given `README.md`'s *Testing* section, when read, then it names the flag and what it
   does.
-- [ ] AC6 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs
+- [x] AC6 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs
   with no flag set, then every suite passes and the tallies are unchanged.
 
 ## QA plan
