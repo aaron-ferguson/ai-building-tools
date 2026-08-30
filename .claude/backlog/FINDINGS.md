@@ -186,3 +186,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   assertion, which is careful to disclaim rewrap-proofness, does not mention that the anchor word
   itself is now load-bearing prose (pointer: tests/batching.test.sh AC4, skills/develop/SKILL.md
   batching paragraph, items/0063).
+- 2026-08-30 — **The release chain has no re-check step, and a sibling session closed a ticket in the
+  middle of one.** A release audit found the install 14 files behind at the *same* version number,
+  decided what to ship on the basis that 0042 and 0044 were both unverified, and was about to push
+  when the user stopped it because another session had just finished — which had verified and closed
+  0042, changing the premise the release decision rested on. `CONCURRENCY.md`'s *Re-read immediately
+  before you write* is scoped to `QUEUE.md` rows, so nothing covers the longer read-decide-push gap,
+  and the release chain in CLAUDE.md is a four-step sequence with no instruction to re-verify state
+  before executing it. Every step is silent when skipped, including this missing one (pointer:
+  CLAUDE.md *This project is the tool its sessions are running*, references/CONCURRENCY.md).
