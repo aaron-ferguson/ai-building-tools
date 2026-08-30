@@ -2,8 +2,8 @@
 id: "0042"
 title: Anchor the vocabulary-pinning guards to the claims they make
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -14,15 +14,9 @@ relates: ["0026", "0032", "0051"]
 expects:
   - tests/measurement.test.sh
   - tests/batching.test.sh
-claimed_by: "7085"
-claimed_at: 2026-08-30T15:58:21Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/measurement.test.sh
-  - tests/batching.test.sh
-  # Mutated transiently to prove each repaired assertion reds, then reverted in the same turn.
-  # Not edited by this ticket -- its Out of scope forbids it -- but dirty under my hand meanwhile.
-  - MEASUREMENT.md
-  - skills/develop/SKILL.md
 ---
 
 ## Problem
@@ -119,3 +113,32 @@ retro landed the lesson. What has not happened is the fix to the guards themselv
 - `testing-conventions.md` already carries the rule ("Anchor an assertion to the claim, not to the
   document that contains it"), landed by the 2026-08-25 retro. This ticket is the code half; the
   ticket verifies the guards, not the convention.
+
+**Built 2026-08-30 (token 7085).** All three defects reproduced exactly as the Problem section
+describes before anything was changed: deleting `## Verdict` left AC5 green with only the separate
+5.09 check red; deleting the `| verify |` row left 40/40; stripping the batching figure's date left
+13/13. Four things worth carrying forward:
+
+- **FR1's section scope is not sufficient on its own, and the ticket did not say so.** Scoping the
+  verdict grep to the `## Verdict` section body reds the deletion AC1 names, but *not* the deletion
+  of just the verdict sentence with the section left standing — "The model's premise **did not**
+  hold" lives eleven lines further down the same section, so the word survives inside the new scope
+  and the original defect reappears one level in. The assertion is therefore anchored to the
+  section's **first non-blank line**, which is where a verdict is stated. Both mutations red; both
+  are named in the comment beside it.
+- **The row assertions deliberately assert shape and no figures.** `| develop |` at the head of a
+  table line followed by six cells each containing a digit. 0051 exists to move those numbers, and
+  `testing-conventions.md` is explicit that a guard whose reds can be artefacts of unrelated correct
+  work teaches everyone to discount its reds. Proved with an inverted control: the `| verify |`
+  row's every figure changed, shape kept, suite stays 41/41.
+- **Unwrapping the batching paragraph does not make that guard rewrap-proof, and the first version
+  of its comment claimed it did.** Caught by running the control rather than reasoning about it:
+  rewrapping the paragraph to 78 columns splits `one gate per session` across a line break, and the
+  window extraction dies with `exit 2` before AC4 is ever reached. What the unwrap buys is only that
+  AC4's own binding no longer depends on where the prose wraps. The comment now says that and names
+  0063 as the owner of the general problem. Writing an overclaim into a comment on a fix *for*
+  overclaiming assertions is the same defect wearing the fix's clothes.
+- **`{0,4}` after "dated" is the binding, and it is deliberately tight.** Wide enough for the `**`
+  emphasis markers, too narrow to reach across a sentence to the paragraph's other date. A window
+  measured in characters rather than "same sentence" because sentence boundaries in this prose are
+  not reliably punctuated — `CLAUDE.md`, `0026` and the figures all carry dots.
