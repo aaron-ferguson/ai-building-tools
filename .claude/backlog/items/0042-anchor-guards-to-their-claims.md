@@ -3,7 +3,7 @@ id: "0042"
 title: Anchor the vocabulary-pinning guards to the claims they make
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -14,8 +14,8 @@ relates: ["0026", "0032", "0051"]
 expects:
   - tests/measurement.test.sh
   - tests/batching.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "ea52"
+claimed_at: 2026-08-30T16:13:27Z
 touches:
 ---
 
