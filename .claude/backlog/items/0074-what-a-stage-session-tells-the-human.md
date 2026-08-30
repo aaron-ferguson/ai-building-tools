@@ -3,7 +3,7 @@ id: "0074"
 title: Decide what a stage session tells the human as it runs, and cut the rest
 type: debt
 next: design
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-30
@@ -20,8 +20,8 @@ expects:
   - skills/prototype/SKILL.md
   - references/                  # if the shared rule earns a file rather than a repeated paragraph
   - tests/skill-size.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "5ac2"
+claimed_at: 2026-08-30T16:01:51Z
 touches:
 ---
 

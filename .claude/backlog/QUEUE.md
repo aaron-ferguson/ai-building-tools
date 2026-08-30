@@ -25,7 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0053 | Let the test harness print the line an assertion actually saw | verify | ready |  |
 | 0044 | Close the gaps in the close script's read and write contract | verify | ready |  |
-| 0074 | Decide what a stage session tells the human as it runs, and cut the rest | design | ready |  |
+| 0074 | Decide what a stage session tells the human as it runs, and cut the rest | design | in-progress |  |
 | 0042 | Anchor the vocabulary-pinning guards to the claims they make | develop | in-progress |  |
 | 0051 | Pin the measurement record's denominator and make its recipe reproduce | develop | blocked |  |
 | 0073 | Measure where a stage session's turns and tokens actually go | develop | blocked |  |
