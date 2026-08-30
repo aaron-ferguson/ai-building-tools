@@ -193,13 +193,17 @@ it needs lifting out of `fm_list` and giving to both scalar readers and to `clos
   Splitting them would put two sessions in `close` and `close.test.sh` at once, which is this
   repo's live failure mode.
 
-- **Verified green on every AC and NFR (2026-08-30, token `ce83`), but closed by nobody: the
-  verdict is advisory.** All nine ACs and all three NFR rows checked against a scratchpad clone
+- **Verified green on every AC and NFR (2026-08-30), advisory for one window, then closed.** All nine ACs and all three NFR rows checked against a scratchpad clone
   pinned at `62b177a`, the whole suite green (429 assertions; `close` 93, `next` 154), and all five
   fix sites mutation-confirmed — reverting FR1, FR2, FR4, FR5 and the whole-id comparison each reds
   the specific assertion written for it, not merely the exit code. The blocker is `verify` Step 7's
   derivation, not the work: `skills/verify/SKILL.md` carries this ticket's Documentation NFR *and*
   sits in 0074's `touches:`, where session 3895 has it uncommitted. Non-empty intersection of the
-  dirty set with the evidence set, so the row stays at `next: verify, status: ready` and the claim
-  is released. The next pass needs only to re-run against a tree where `skills/verify/SKILL.md` and
-  `tests/reporting.test.sh` are settled — the ACs themselves are not in doubt.
+  dirty set with the evidence set, so the claim was released at `next: verify, status: ready`
+  (`8ad2d94`) rather than closing on a file another session had mid-edit. 3895 then committed 0074
+  (`126c31e`), the tree went clean, and the intersection emptied. Re-verified at that commit before
+  closing rather than trusting the earlier run: `skills/verify/SKILL.md` had changed, so Step 5's
+  fourth refusal ground was re-read there and is intact; the whole suite was re-run green (12
+  suites, 452 assertions, `tests/reporting.test.sh` new since); and every other evidence path —
+  both scripts, both templates, `item.md`, all three test files — is byte-identical between
+  `62b177a` and `126c31e`, so the mutation evidence for AC1-AC8 carries over unchanged.
