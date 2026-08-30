@@ -5,6 +5,20 @@ closing with one. This is that measurement, and it is **observed against observe
 recomputed from their own transcripts by `tools/harvest-usage.sh`, at the same rates, by the same
 arithmetic. Re-run it with that script rather than trusting the numbers below.
 
+## How the figures here are pinned
+
+Every figure below is read from a source still being written — the transcript store, `DONE.md`,
+`FINDINGS.md`. So each carries an **as-at stamp**, and **both sides of a division carry one**: a
+pinned numerator over a live denominator decays exactly like an unpinned figure, silently, while
+the arithmetic on the page stays self-consistent and every citation still resolves. That is the
+defect this record shipped and `0051` repaired — *Cost per closed ticket* divided a pinned $114.27
+by a count re-read from a growing `DONE.md`.
+
+**A date window is not a pin on a live store.** The window that selected these 30 sessions now
+returns 42 of them and $170.17. What pins them is the session-id set, which *Re-running this*
+carries in full. Give any figure added here the same two things: the source it was read from, and
+the stamp it was true at.
+
 ## Verdict
 
 **The saving partly materialised, and it is roughly a fifth of what was modelled.**
@@ -31,7 +45,7 @@ cache **writes rose 22.8%**, 2,276 to 2,795. That is the tax on splitting, and i
 context cut buys a 15% cost cut rather than a 30% one.
 
 **Total spend is not the comparison and is not offered as one.** The isolated run cost $114.27 across
-30 sessions because it closed 19 tickets; the baseline session cost $11.79 for one conversation. Per
+30 sessions because it closed 20 tickets; the baseline session cost $11.79 for one conversation. Per
 turn and per closed ticket are the figures that compare.
 
 ## The isolated run — 30 sessions, 2026-08-23 and 2026-08-24
@@ -57,11 +71,19 @@ Ranked by context per turn the order is the same: queue, develop, retro, verify,
 
 ### Cost per closed ticket
 
-19 tickets closed on 2026-08-23 and 2026-08-24, every one at `qa_level: verify`. Whole run,
-**$6.01 per closed ticket**. Counting only the two gates that close tickets, develop and verify,
-$84.64 over 19 is **$4.45 per closed ticket**. This is the figure `0036`'s Performance NFR measures
-against; the baseline has no comparable denominator, because it ran against a different project and
-`DONE.md` records no ticket closed before 2026-08-23.
+**The denominator is as live as the numerator, and this is where it was not pinned.** `DONE.md`
+records **20 tickets** closed on 2026-08-23 and 2026-08-24 — that date bound is what produces the
+count — every one at `qa_level: verify`, **as at 2026-08-30**.
+
+Whole run, $114.27 over 20 is **$5.71 per closed ticket**. Counting only the two gates that close
+tickets, develop and verify, $84.64 over 20 is **$4.23 per closed ticket**. This is the figure
+`0036`'s Performance NFR measures against; the baseline has no comparable denominator, because it
+ran against a different project and `DONE.md` records no ticket closed before 2026-08-23.
+
+Published until 2026-08-30 as 19 tickets, $6.01 and $4.45. One further ticket was closed on
+2026-08-24 after this record was written, and the quotient decayed on its own: the numerator was
+pinned, the denominator was re-read, and nothing on the page looked wrong. Tickets quoting the old
+pair — `0036`, `0040`, `0041` — hold a stale cache of this figure, not a second reading of it.
 
 ## The baseline — 2026-08-22, and how it was matched
 
@@ -111,7 +133,7 @@ Every dollar figure here is recomputable from the token counts with that table.
 `0009`'s standing commitment was that effectiveness must not be traded for cost, so this is read
 from the record the run left rather than from memory.
 
-**What the run caught.** 19 tickets closed, all at `qa_level: verify`, and the gate bit at least
+**What the run caught.** 20 tickets closed, all at `qa_level: verify`, and the gate bit at least
 once for real: `0021` was sent back with AC1 unmet on four of six files rather than closed. **42
 findings were parked** across the two days — 4 dated 2026-08-23 and 38 dated 2026-08-24, counted as
 at 2026-08-24 06:00Z — against the baseline run's 4, of which two existed only in conversation and
@@ -121,8 +143,9 @@ of the transcripts overstates cost by 2.2x, and the figure would have been publi
 
 **What it missed.** Its own row: `0026` was read as `blocked` and skipped, leaving four rows
 unavailable for a session, and the stale row survived three separate closes before `0024` fixed the
-derivation. `FINDINGS.md` still holds all 42, which the file's own header calls the finding —
-retros are not emptying it.
+derivation. `FINDINGS.md` held all 42 at that same stamp, which the file's own header called
+the finding. **As at 2026-08-30 it holds 29 entries, only 2 of them from those two days** — later
+retros did sweep it, so that was a snapshot of the buffer and not a standing verdict on the cadence.
 
 **Two cautions on that count, because it read 26 in one sentence and 28 in the next until
 2026-08-24.** It is a *live* buffer: sessions that postdate this record keep appending, so the
@@ -181,11 +204,23 @@ applied by one script to both.
 
 ## Re-running this
 
+The store is live and has grown. The date window alone now returns **42 sessions and $170.17**
+against the 30 and $114.27 published above, because sessions kept landing inside the same two UTC
+dates that a date bound cannot separate. What pins the run is the session-id set, so the command
+carries it in full:
+
 ```sh
-tools/harvest-usage.sh ~/.claude/projects/<slug> --since 2026-08-23 --sessions
+tools/harvest-usage.sh <transcript-store> --since 2026-08-23 --until 2026-08-24 \
+  --exclude 1860b4f4 --exclude 5c2b0c27 --exclude 26acbad7 --exclude 3ab24685 \
+  --exclude 05e441cd --exclude b5862898 --exclude fe292418 --exclude 52cc41c8 \
+  --exclude 35873f41 --exclude 873196d2 --exclude ba215ccf --exclude 1a2da19b
 ```
 
-`--until`, `--exclude <session-id-prefix>` and `--sessions` are the other modes; `--exclude` is how
-an in-flight session is kept out of a harvest taken from inside one. The store is live, so a harvest
-taken while other windows are working is not stable — pin the exclusions and record them, as this
-one does. `tests/measurement.test.sh` guards the arithmetic and this record's claims.
+Verified 2026-08-30: **30 sessions**, 1,112 turns, **$114.27**, and every cell of both tables above
+down to each skill's context per turn. Should it stop reproducing those, a session inside the window
+has been added or resumed — re-derive the exclusions against the published per-skill session counts
+rather than republishing whatever the window returns.
+
+`--since`, `--until`, `--sessions` and `--exclude <session-id-prefix>` are the modes, and
+`--exclude` is repeatable. `tests/measurement.test.sh` guards the arithmetic and this record's
+claims.

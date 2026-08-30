@@ -47,13 +47,15 @@ ok()  { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
 bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
 
 # present <label> <file> <fixed-string>
+# `--` before the pattern: an asserted string that starts with a dash (a CLI flag, which AC4
+# asserts) is otherwise read by grep as its own option and the assertion errors instead of running.
 present() {
-  if [ -f "$2" ] && grep -qF "$3" "$2"; then ok "$1"; else bad "$1 — expected to find in $(basename "$2"): $3"; fi
+  if [ -f "$2" ] && grep -qF -- "$3" "$2"; then ok "$1"; else bad "$1 — expected to find in $(basename "$2"): $3"; fi
 }
 # presenti <label> <file> <fixed-string> — case-insensitive; for a word whose capitalisation
 # depends only on where it lands in a sentence.
 presenti() {
-  if [ -f "$2" ] && grep -qiF "$3" "$2"; then ok "$1"; else bad "$1 — expected to find in $(basename "$2"): $3"; fi
+  if [ -f "$2" ] && grep -qiF -- "$3" "$2"; then ok "$1"; else bad "$1 — expected to find in $(basename "$2"): $3"; fi
 }
 # absent <label> <file> <fixed-string>
 absent() {
@@ -80,11 +82,19 @@ trap cleanup EXIT INT TERM
 SCOPE="$(mktemp -d)"
 VERDICT="$SCOPE/verdict"
 TABLE="$SCOPE/table"
+CPT="$SCOPE/cost-per-ticket"
+RERUN="$SCOPE/rerun"
+CMD="$SCOPE/rerun-command"
+PINNED="$SCOPE/pinned"
 if [ -f "$REC" ]; then
   awk '/^## Verdict$/{s=1;next} s&&/^## /{exit} s' "$REC" > "$VERDICT"
   awk '/^\|[[:space:]]*Skill[[:space:]]*\|/{s=1} s&&/^[[:space:]]*$/{exit} s' "$REC" > "$TABLE"
+  awk '/^### Cost per closed ticket$/{s=1;next} s&&/^#+ /{exit} s' "$REC" > "$CPT"
+  awk '/^## Re-running this$/{s=1;next} s&&/^## /{exit} s' "$REC" > "$RERUN"
+  awk '/^```/{f=!f;next} f' "$RERUN" > "$CMD"
+  awk '/^## How the figures here are pinned$/{s=1;next} s&&/^## /{exit} s' "$REC" > "$PINNED"
 else
-  : > "$VERDICT"; : > "$TABLE"
+  : > "$VERDICT"; : > "$TABLE"; : > "$CPT"; : > "$RERUN"; : > "$CMD"; : > "$PINNED"
 fi
 
 echo "AC9 — the harvest script is committed and runnable"
@@ -269,6 +279,104 @@ present "the record says what it missed" "$REC" "missed"
 
 echo "AC6 — cost per closed ticket"
 present "the record carries cost per closed ticket" "$REC" "per closed ticket"
+
+# 0051. The numerator was pinned and the denominator was not: $114.27 was fixed by an --exclude
+# list while the closed-ticket count was re-read from a live DONE.md, so the published quotient
+# decayed on its own. Every assertion below is scoped to the SECTION, never the record -- "per
+# closed ticket" also appears in the verdict prose and in AC6 above, so a document-wide grep stays
+# green with the whole section deleted (the 0042 lesson, applied to the figure 0042 left alone).
+echo "0051 AC1 — the closed-ticket denominator is pinned, like the numerator over it"
+# MUTATION THAT REDS THIS: delete the `### Cost per closed ticket` section from MEASUREMENT.md.
+if [ ! -s "$CPT" ]; then
+  bad "0051 AC1 — no '### Cost per closed ticket' section in MEASUREMENT.md to scope to"
+else
+  ok "the cost-per-closed-ticket section is present, so the assertions below have a scope"
+fi
+# MUTATION THAT REDS THIS: drop the `as at <date>` clause and leave the count bare.
+if grep -qE 'as at 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]' "$CPT"; then
+  ok "the denominator carries an as-at stamp"
+else
+  bad "0051 AC1 — the section states no 'as at <ISO date>' stamp for its live denominator"
+fi
+# MUTATION THAT REDS THIS: delete the `closed on <date> and <date>` clause and leave the count
+# bare. Two separate `present` greps for the two dates did NOT catch that -- both dates recur in
+# the section's closing paragraph, so the bound could vanish with the assertions green. The bound
+# has to be asserted AS a bound: one line, attached to the word it bounds.
+if grep -qE 'closed on 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] and 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]' "$CPT"; then
+  ok "the count names the date bound that produced it, on the line that states it"
+else
+  bad "0051 AC1 — the section states no 'closed on <date> and <date>' bound for its count"
+fi
+present "the section names the live file the count was read from" "$CPT" "DONE.md"
+
+echo "0051 AC2 — the published figure recomputes from its own numerator and denominator"
+# Each claim is written "$<numerator> over <denominator> is **$<quotient> per closed ticket**", and
+# this recomputes every one of them. It is the assertion the old record could not have passed: a
+# corrected numerator beside a stale quotient reds here and nowhere else.
+ARITH="$(python3 - "$CPT" <<'PY'
+import re, sys
+body = open(sys.argv[1]).read()
+trip = re.findall(r'\$([0-9]+\.[0-9]{2}) over ([0-9]+) is \*\*\$([0-9]+\.[0-9]{2})', body)
+if len(trip) < 2:
+    print("FEWER THAN TWO recomputable claims in the section: %d" % len(trip))
+    raise SystemExit
+wrong = ["%s/%s = %.2f but the record publishes %s" % (n, d, round(float(n) / int(d), 2), q)
+         for n, d, q in trip if abs(round(float(n) / int(d), 2) - float(q)) > 0.005]
+print("BAD " + "; ".join(wrong) if wrong else "OK %d claims recompute" % len(trip))
+PY
+)"
+case "$ARITH" in
+  OK*) ok "every 'X over N is Y per closed ticket' claim recomputes — $ARITH" ;;
+  *)   bad "0051 AC2 — $ARITH" ;;
+esac
+
+echo "0051 AC3 — README repeats the same denominator, so the two files cannot disagree"
+DENOM="$(grep -oE '\$[0-9]+\.[0-9]{2} over [0-9]+' "$CPT" | head -1 | awk '{print $3}')"
+if [ -z "$DENOM" ]; then
+  bad "0051 AC3 — no denominator in the cost-per-closed-ticket section to compare README against"
+elif grep -qE "closed \*{0,2}$DENOM\*{0,2} tickets" "$RME"; then
+  ok "README states the same closed-ticket denominator, $DENOM"
+else
+  bad "0051 AC3 — MEASUREMENT.md divides by $DENOM but README does not say 'closed $DENOM tickets'"
+fi
+
+echo "0051 AC4 — the re-run recipe carries the session-id set, not a date window"
+# MUTATION THAT REDS THIS: replace the command block with the bare
+# `--since 2026-08-23 --sessions` it used to print. That command now returns 42 sessions and
+# $170.17 against a published 30 and $114.27, and nothing in the record said so.
+if [ ! -s "$RERUN" ]; then
+  bad "0051 AC4 — no '## Re-running this' section in MEASUREMENT.md to scope to"
+else
+  ok "the re-running section is present, so the assertions below have a scope"
+fi
+if [ ! -s "$CMD" ]; then
+  bad "0051 AC4 — the re-running section prints no fenced command to check"
+else
+  ok "the re-running section prints a command"
+fi
+NEX="$(grep -o -- '--exclude' "$CMD" | wc -l | tr -d ' ')"
+if [ "$NEX" -ge 12 ]; then
+  ok "the printed command pins the harvest with $NEX --exclude flags"
+else
+  bad "0051 AC4 — the printed command carries $NEX --exclude flags; the pinned set needs 12"
+fi
+present "the printed command bounds the window at its far end too" "$CMD" "--until"
+present "the recipe states the session count it reproduces" "$RERUN" "30 sessions"
+present "the recipe states the total it reproduces" "$RERUN" "114.27"
+
+echo "0051 FR6 — the record no longer asserts a pin it does not carry"
+absent "the false claim to carry its own pin is gone" "$REC" "pin the exclusions and record them"
+
+echo "0051 FR1/documentation — the as-at convention is stated once, where a new figure is read"
+# MUTATION THAT REDS THIS: delete the `## How the figures here are pinned` section. Scoped, not a
+# document-wide grep for "as at": the stamps themselves carry that phrase, so the convention could
+# vanish while every figure still passed AC1.
+if [ ! -s "$PINNED" ]; then
+  bad "0051 FR1 — no '## How the figures here are pinned' section stating the convention once"
+else
+  ok "the as-at convention has a section of its own"
+fi
+present "the convention names the failure it exists to prevent" "$PINNED" "both sides"
 
 echo "AC7 — the per-gate batching figure, or its stated absence and the run that would produce it"
 if [ -f "$REC" ] && grep -qE 'per-gate|batch' "$REC"; then

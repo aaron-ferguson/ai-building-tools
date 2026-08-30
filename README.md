@@ -45,7 +45,7 @@ the run, $0.12 in `queue` to $0.25 in `retro`, for work of the same kind: nothin
 context got bigger, reaching an average of **191,752 tokens per turn**.
 
 **Measured again, isolated, and the saving is real but partial.** 30 one-skill sessions over
-**2026-08-23/24** closed 19 tickets at **$0.1028 per turn and 106,139 context tokens per turn**,
+**2026-08-23/24** closed 20 tickets at **$0.1028 per turn and 106,139 context tokens per turn**,
 against a recomputed baseline of $0.1203 and 151,669: **context per turn fell 30%, cost per turn
 14.5%**. The projection of a two-thirds cut assumed a 60k average context and did not survive
 contact — isolation resets context per *session*, not per *turn*, and a cheap cache read at 0.1x
