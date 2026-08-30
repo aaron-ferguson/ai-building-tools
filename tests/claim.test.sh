@@ -93,6 +93,28 @@ assert_not_contains() {
   esac
 }
 
+# An exit code carries no evidence of its own, so both helpers take the captured output as an
+# optional trailing argument and report it the same way every other assertion does. The inline
+# `[ "$rc" -eq 0 ] && ok … || bad …` form these replace printed `got:` on three cases and nothing
+# at all on the other two — a third debugging interface in the suite FR4 exists to keep to one.
+assert_rc() {
+  seen="exit $2"
+  if [ $# -ge 4 ]; then seen="$seen
+$4"; fi
+  if [ "$2" -eq "$3" ]; then ok "$1"; saw_on_pass "$seen"; else
+    bad "$1"; saw "wanted exit $3
+$seen"; fi
+}
+
+assert_rc_nonzero() {
+  seen="exit $2"
+  if [ $# -ge 3 ]; then seen="$seen
+$3"; fi
+  if [ "$2" -ne 0 ]; then ok "$1"; saw_on_pass "$seen"; else
+    bad "$1"; saw "wanted any exit but 0
+$seen"; fi
+}
+
 # Match the whole line rather than looking a cell up by index: a harness that reimplements the
 # parser under test passes and fails with it, and this one did — it reported a correct claim as a
 # missing row because it was still finding the id in column 2.
@@ -117,7 +139,7 @@ EIGHT_SEP='|------|-------|------|------|----|--------|-------|------|'
 echo "AC1 — five-column ready row is claimed, written and committed"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0001 | A fixture row | develop | ready | 0000 |' 0001
 out="$(run_claim 0001)" && rc=0 || rc=$?
-[ "$rc" -eq 0 ] && ok "exits 0" || { bad "exits 0 (got $rc)"; echo "         got: $out"; }
+assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "row is set in-progress" '| 0001 | A fixture row | develop | in-progress | 0000 |'
 assert_contains "item records the token" "$(cat "$FIX/.claude/backlog/items/0001-fixture.md")" 'claimed_by: "tok0"'
 assert_contains "the claim is committed" "$(git -C "$FIX" log -1 --format=%s)" 'Claim 0001 [tok0]'
@@ -127,7 +149,7 @@ assert_contains "nothing is left uncommitted" "clean$(git -C "$FIX" status --por
 echo "AC2 — a blocked row is refused by its actual status"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0002 | A blocked row | develop | blocked | 0000 |' 0002
 out="$(run_claim 0002)" && rc=0 || rc=$?
-[ "$rc" -ne 0 ] && ok "exits non-zero" || bad "exits non-zero (got 0)"
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names the actual status" "$out" 'blocked'
 assert_not_contains "does not report an empty status" "$out" "is ''"
 assert_not_contains "does not read ownership from a column" "$out" 'owner'
@@ -137,14 +159,14 @@ assert_row "the row is untouched" '| 0002 | A blocked row | develop | blocked | 
 echo "AC3 — a pre-0010 eight-column table still claims"
 scaffold "$EIGHT_HEAD" "$EIGHT_SEP" '| 0003 | An old row | bug | s | unit | ready | — | items/0003.md |' 0003
 out="$(run_claim 0003)" && rc=0 || rc=$?
-[ "$rc" -eq 0 ] && ok "exits 0" || { bad "exits 0 (got $rc)"; echo "         got: $out"; }
+assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "the Status cell is the one that changed" '| 0003 | An old row | bug | s | unit | in-progress | — | items/0003.md |'
 
 # --- AC4 — a table with no Status column -----------------------------------------------------
 echo "AC4 — a table with no Status column is an explicit error"
 scaffold '| ID | Title | Next | Parent |' '|------|-------|------|--------|' '| 0004 | No status column | develop | 0000 |' 0004
 out="$(run_claim 0004)" && rc=0 || rc=$?
-[ "$rc" -ne 0 ] && ok "exits non-zero" || bad "exits non-zero (got 0)"
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "quotes the header it found" "$out" 'ID | Title | Next | Parent'
 assert_contains "says what is missing" "$out" 'Status'
 assert_row "the row is untouched" '| 0004 | No status column | develop | 0000 |'
@@ -155,7 +177,7 @@ assert_row "the row is untouched" '| 0004 | No status column | develop | 0000 |'
 echo "FR1 — a reordered table claims by name, not by index"
 scaffold '| Status | ID | Title | Next | Parent |' '|--------|------|-------|------|--------|' '| ready | 0005 | Reordered | develop | 0000 |' 0005
 out="$(run_claim 0005)" && rc=0 || rc=$?
-[ "$rc" -eq 0 ] && ok "exits 0" || { bad "exits 0 (got $rc)"; echo "         got: $out"; }
+assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "the Status cell is the one that changed" '| in-progress | 0005 | Reordered | develop | 0000 |'
 
 # --- result -----------------------------------------------------------------------------------

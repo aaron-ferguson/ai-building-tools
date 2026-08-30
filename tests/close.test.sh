@@ -399,8 +399,8 @@ assert_contains  "FR7 — an already-unblocked dependent is untouched"     "$unb
 refute_contains  "FR7 — and not reported as freed"                       "$(printf '%s' "$out" | grep 'reconciled' || true)" '0025'
 paths="$(git -C "$FIX" log -1 --name-only --format= | grep . | sort | tr '\n' ' ')"
 expect="$BL/DONE.md $BL/QUEUE.md $BL/items/0020-fixture.md $BL/items/0021-fixture.md $BL/items/0024-fixture.md "
-[ "$paths" = "$expect" ] && ok "commits only the row it closed and the rows it freed" || {
-  bad "commits only the row it closed and the rows it freed"; echo "         expected: $expect"; echo "         got:      $paths"; }
+if [ "$paths" = "$expect" ]; then ok "commits only the row it closed and the rows it freed"; saw_on_pass "$paths"; else
+  bad "commits only the row it closed and the rows it freed"; echo "         expected: $expect"; saw "$paths"; fi
 assert_clean "nothing is left uncommitted"
 
 # --- 0044 AC1 — a dependent whose blocked_by is a block list ------------------------------------
