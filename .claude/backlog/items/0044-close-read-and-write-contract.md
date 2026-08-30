@@ -2,8 +2,8 @@
 id: "0044"
 title: Close the gaps in the close script's read and write contract
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -20,9 +20,10 @@ expects:
   - tests/close.test.sh
   - tests/next.test.sh
   - skills/verify/SKILL.md
-claimed_by: "5346"
-claimed_at: 2026-08-30T16:44:35Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-08-30
 ---
 
 ## Problem
@@ -107,25 +108,25 @@ it needs lifting out of `fm_list` and giving to both scalar readers and to `clos
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a dependent whose `blocked_by` is a block list naming the closing ticket, when
+- [x] AC1 — Given a dependent whose `blocked_by` is a block list naming the closing ticket, when
   `./close` runs, then that dependent is reconciled and reported, exactly as for the inline form.
-- [ ] AC2 — Given an item whose `claimed_by:` carries a trailing ` # comment`, when `./close` is
+- [x] AC2 — Given an item whose `claimed_by:` carries a trailing ` # comment`, when `./close` is
   given the bare token, then it accepts the token; and when `./next` reads that item, then it
   prints the bare token.
-- [ ] AC3 — Given `tests/close.test.sh`, when it is read, then it contains a reconcile fixture in
+- [x] AC3 — Given `tests/close.test.sh`, when it is read, then it contains a reconcile fixture in
   the block-list form and a fixture with a commented scalar field.
-- [ ] AC4 — Given a ticket closed by `./close`, when its frontmatter is read, then `next:` is
+- [x] AC4 — Given a ticket closed by `./close`, when its frontmatter is read, then `next:` is
   empty and `status:` is `done`.
-- [ ] AC5 — Given a ticket whose acceptance criteria carry no `- [ ]` checkbox, when `./close`
+- [x] AC5 — Given a ticket whose acceptance criteria carry no `- [ ]` checkbox, when `./close`
   runs, then it does not report a plain success: it either refuses, or reports that it ticked zero
   of N criteria.
-- [ ] AC6 — Given a ticket whose criteria do carry checkboxes, when `./close` runs, then every one
+- [x] AC6 — Given a ticket whose criteria do carry checkboxes, when `./close` runs, then every one
   is ticked, unchanged from today.
-- [ ] AC7 — Given `skills/queue/templates/item.md`, when it is read, then it offers exactly one
+- [x] AC7 — Given `skills/queue/templates/item.md`, when it is read, then it offers exactly one
   `blocked_by` form and exactly one acceptance-criterion form.
-- [ ] AC8 — Given `.claude/backlog/close` and `.claude/backlog/next`, when compared against
+- [x] AC8 — Given `.claude/backlog/close` and `.claude/backlog/next`, when compared against
   `skills/queue/templates/`, then `tests/backlog-scripts-installed.test.sh` passes.
-- [ ] AC9 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
+- [x] AC9 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
   then every suite passes.
 
 ## QA plan

@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0044 | Close the gaps in the close script's read and write contract | bug | unit | 2026-08-30 | [items/0044-close-read-and-write-contract.md](items/0044-close-read-and-write-contract.md) |
 | 0042 | Anchor the vocabulary-pinning guards to the claims they make | bug | unit | 2026-08-30 | [items/0042-anchor-guards-to-their-claims.md](items/0042-anchor-guards-to-their-claims.md) |
 | 0035 | Decide where conditionally-needed skill detail lives | debt | verify | 2026-08-25 | [items/0035-where-conditional-skill-detail-lives.md](items/0035-where-conditional-skill-detail-lives.md) |
 | 0034 | Derive the advisory label from the paths the verdict rested on | feature | verify | 2026-08-25 | [items/0034-derive-the-advisory-label.md](items/0034-derive-the-advisory-label.md) |
