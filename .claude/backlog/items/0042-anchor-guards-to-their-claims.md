@@ -17,6 +17,12 @@ expects:
 claimed_by: "7085"
 claimed_at: 2026-08-30T15:58:21Z
 touches:
+  - tests/measurement.test.sh
+  - tests/batching.test.sh
+  # Mutated transiently to prove each repaired assertion reds, then reverted in the same turn.
+  # Not edited by this ticket -- its Out of scope forbids it -- but dirty under my hand meanwhile.
+  - MEASUREMENT.md
+  - skills/develop/SKILL.md
 ---
 
 ## Problem
