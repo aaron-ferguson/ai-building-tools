@@ -24,6 +24,15 @@ expects:
 claimed_by: "2e0f"
 claimed_at: 2026-08-30T16:45:36Z
 touches:
+  - references/REPORTING.md
+  - skills/design/SKILL.md
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - skills/queue/SKILL.md
+  - skills/retro/SKILL.md
+  - skills/prototype/SKILL.md
+  - tests/reporting.test.sh
+  - tests/reference-size.test.sh
 ---
 
 ## Problem
