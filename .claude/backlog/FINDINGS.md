@@ -265,3 +265,23 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   declared overlap with the row it is offering. That cross-check is exactly 0045, and this is a
   worked case for it: the useful output would have been "0044's evidence set meets 0074's declared
   touches at skills/verify/SKILL.md" (pointer: items/0045, .claude/backlog/next, items/0074).
+- 2026-08-30 — **A bundled Claude Code skill named `verify` shadows this plugin's `/verify`, and its
+  first instruction is the inverse of ours.** Typing `/verify` in this repo loaded
+  `bundled-skills/…/verify` — a runtime-observation skill whose opening rules are "Don't run tests.
+  Don't typecheck" and "the scope is a diff" — rather than `ai-building-tools:verify`, which reads a
+  ticket's acceptance criteria and whose declared `qa_level` for almost every ticket in this backlog
+  *is* a scripted assertion. A session that followed the loaded skill would have refused to run
+  `tests/reporting.test.sh`, reported SKIP for "no runtime surface", and closed nothing, because the
+  bundled skill has no concept of a backlog row. It was caught only because the operator noticed the
+  base directory in the skill header. The same collision is available for `design` and `run`. The fix
+  direction is either a distinguishing name or a line in this repo's `CLAUDE.md` telling a session to
+  invoke the plugin-qualified `ai-building-tools:verify` explicitly (pointer: CLAUDE.md,
+  skills/verify/SKILL.md, items/0064).
+- 2026-08-30 — **`references/REPORTING.md` attributes the same requirement numbering to two different
+  tickets, three sections apart.** Line 37 cites "0039 FR14" and line 57 cites "0036 FR13"; both FR13
+  and FR14 are *defined* only in `items/0039`, which inherited 0036's numbering when 0036 was split
+  into children. Neither citation is wrong on its own — 0036 references both numbers — but a reader
+  chasing one of them learns the numbering is ticket-ambiguous, and 0074 AC7 pins the 0036 spelling
+  while nothing pins the other. This is the citation-drift 0036's split created and is not specific to
+  this file: any reference to an FR number in the 0036/0039 pair needs saying which ticket's list it
+  means (pointer: references/REPORTING.md:37, references/REPORTING.md:57, items/0036, items/0039).
