@@ -153,3 +153,36 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   land an abandoned release — belongs with 0049 (what a claim token guarantees) or 0050 (file
   scope where the prose files are the product) (pointer: skills/develop/SKILL.md Step 1,
   references/CONCURRENCY.md, items/0037, items/0049, items/0050).
+- 2026-08-30 — **`verify` Step 1 gives no argument-less default a session actually reaches for, and
+  "most recently handed off" is the wrong one.** This session opened `/verify` with no ID, derived
+  the candidates by grepping item frontmatter for `next: verify`, and took the ticket whose handoff
+  commit was newest — 0042, ranked *third* of the three ready rows. `./next verify` prints `TAKE
+  0053`, which is what Step 1 says to use, but the instruction sits in a subordinate clause ("With
+  no argument, `./next verify` prints the topmost row") in a step whose headline is about refusing
+  and claiming. Handoff recency is a plausible-looking substitute for rank because the newest
+  handoff is the freshest in a session's context, and nothing reds when it is used: the ticket
+  verifies fine, it is just the wrong one, so the queue's ranking silently stops governing the
+  order work is checked in. The user caught it; nothing in the skill or the scripts would have
+  (pointer: skills/verify/SKILL.md Step 1, .claude/backlog/next).
+- 2026-08-30 — **`measurement.test.sh`'s privacy assertion greps the whole repo through `git grep`,
+  which reads the *working tree*, so every tracked file lands in the evidence set of any verdict
+  resting on that suite.** Confirmed empirically in a throwaway repo: `git grep` with no flags
+  matches uncommitted content in tracked files. `verify` Step 7 derives *advisory* by intersecting
+  the dirty set with the evidence set, so on this repo that intersection is non-empty whenever
+  *any* tracked file is dirty, however unrelated — and 0042's AC6 ("the whole suite passes") pulls
+  the privacy check into every close. Taken literally this means no ticket whose ACs run the full
+  suite can ever close over a dirty tree. It did not bite here only because the one dirty file was
+  committed by its owning session mid-run. Either Step 7 needs a notion of evidence narrower than
+  "every path the assertion touched", or a repo-wide guard needs to be excluded from the evidence
+  set by name (pointer: tests/measurement.test.sh privacy NFR block, skills/verify/SKILL.md Step 7).
+- 2026-08-30 — **0042's batching AC4 binds the date to the literal word `dated`, so a reword that
+  keeps the date bound to its figure still reds the guard.** Rewriting "capture-side and dated
+  **2026-08-22**" to "capture-side, from **2026-08-22**" leaves the figure carrying its own date in
+  exactly the position the assertion exists to require, and `tests/batching.test.sh` reports 12
+  passed, 1 failed. The regex `dated[^0-9]{0,4}20[0-9][0-9]-...` is a good binding and the fix is
+  a real one — this is the residual cost of it, not an argument against it. But
+  `testing-conventions.md` warns in the same rule that a guard whose reds can be artefacts of
+  unrelated correct work teaches everyone to discount its reds, and the comment beside the
+  assertion, which is careful to disclaim rewrap-proofness, does not mention that the anchor word
+  itself is now load-bearing prose (pointer: tests/batching.test.sh AC4, skills/develop/SKILL.md
+  batching paragraph, items/0063).
