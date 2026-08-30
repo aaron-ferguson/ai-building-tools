@@ -3,7 +3,7 @@ id: "0051"
 title: Pin the measurement record's denominator and make its recipe reproduce
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -16,8 +16,8 @@ expects:
   - README.md
   - tests/measurement.test.sh
   - tools/harvest-usage.sh
-claimed_by:
-claimed_at:
+claimed_by: "9910"
+claimed_at: 2026-08-30T16:57:34Z
 touches:
 ---
 
