@@ -34,7 +34,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0052 | Require an acceptance criterion to name the input that would make it red | develop | ready |  |
 | 0046 | Make the README guard list provably complete | develop | ready |  |
 | 0047 | Give the busy-lock procedure a close-time path | develop | ready |  |
-| 0045 | Cross the take loop against the held file set in next | develop | ready |  |
+| 0045 | Cross the take loop against the held file set in next | develop | in-progress |  |
 | 0060 | Decide how the findings buffer is emptied and gated | design | ready |  |
 | 0054 | Give develop and verify a rule for a result taken over a shared dirty tree | develop | ready |  |
 | 0065 | Name stream editors in the rule against rewriting QUEUE.md | develop | ready |  |
