@@ -3,7 +3,7 @@ id: "0044"
 title: Close the gaps in the close script's read and write contract
 type: bug
 next: verify
-status: in-progress
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -20,8 +20,8 @@ expects:
   - tests/close.test.sh
   - tests/next.test.sh
   - skills/verify/SKILL.md
-claimed_by: "ce83"
-claimed_at: 2026-08-30T16:35:21Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -192,3 +192,14 @@ it needs lifting out of `fm_list` and giving to both scalar readers and to `clos
   contract is incompletely implemented in both directions, and its file scope is a single unit.
   Splitting them would put two sessions in `close` and `close.test.sh` at once, which is this
   repo's live failure mode.
+
+- **Verified green on every AC and NFR (2026-08-30, token `ce83`), but closed by nobody: the
+  verdict is advisory.** All nine ACs and all three NFR rows checked against a scratchpad clone
+  pinned at `62b177a`, the whole suite green (429 assertions; `close` 93, `next` 154), and all five
+  fix sites mutation-confirmed — reverting FR1, FR2, FR4, FR5 and the whole-id comparison each reds
+  the specific assertion written for it, not merely the exit code. The blocker is `verify` Step 7's
+  derivation, not the work: `skills/verify/SKILL.md` carries this ticket's Documentation NFR *and*
+  sits in 0074's `touches:`, where session 3895 has it uncommitted. Non-empty intersection of the
+  dirty set with the evidence set, so the row stays at `next: verify, status: ready` and the claim
+  is released. The next pass needs only to re-run against a tree where `skills/verify/SKILL.md` and
+  `tests/reporting.test.sh` are settled — the ACs themselves are not in doubt.
