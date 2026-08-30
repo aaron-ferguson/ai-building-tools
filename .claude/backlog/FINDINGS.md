@@ -315,3 +315,20 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `in-progress` rows but crosses nothing against their `touches:` — so a driver can dispatch a row
   that `./next develop` now refuses as COLLIDES. 0045's ACs all name `./next <stage>`, so this was
   left alone rather than widened mid-ticket. Worth a row, or 0039's to absorb.
+- 2026-08-30 [0051] `$6.01` / `$4.45` per closed ticket are now stale caches of a figure this
+  ticket corrected to `$5.71` / `$4.23`, and they sit in three open tickets — `0036` (its
+  Performance NFR measures against it), `0040` and `0041`. Not edited from here: `CONCURRENCY.md`,
+  *A stage writes only the ticket it holds*. Whoever takes those rows re-reads MEASUREMENT.md
+  rather than the FR. The general shape is worth a rule — a figure quoted about a file the ticket
+  does not own has no guard that can fail, and this is the third time it has bitten (0026, 0051's
+  own problem statement, now these three).
+- 2026-08-30 [0051] A published figure can decay with every one of its inputs still correct and
+  every citation still resolving: pinned numerator, live denominator, self-consistent arithmetic.
+  The record had learned this lesson one section earlier for `FINDINGS.md` and had not carried it
+  to the figure beside it — so "we pinned it once" is not evidence the next figure is pinned.
+- 2026-08-30 [0051] Mutation-testing the new guards was not ceremony: two of six were green
+  against the exact mutation their comment named. One reproduced 0042's defect at *section* scope
+  after 0042 fixed it at document scope — a narrower grep is not automatically an anchored one.
+  The other was `grep` reading an asserted `--until` as its own option, which errors rather than
+  fails, so three assertions had never run. A guard that names its mutation and is not run against
+  it is worth about as much as no guard.
