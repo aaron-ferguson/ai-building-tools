@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0053 | Let the test harness print the line an assertion actually saw | develop | in-progress |  |
+| 0053 | Let the test harness print the line an assertion actually saw | verify | ready |  |
 | 0051 | Pin the measurement record's denominator and make its recipe reproduce | develop | ready |  |
 | 0073 | Measure where a stage session's turns and tokens actually go | develop | blocked |  |
 | 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |

@@ -2,8 +2,8 @@
 id: "0053"
 title: Let the test harness print the line an assertion actually saw
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -16,12 +16,9 @@ expects:
   - tests/close.test.sh
   - tests/claim.test.sh
   - README.md
-claimed_by: "626a"
-claimed_at: 2026-08-30T16:45:32Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/claim.test.sh
-  - tests/close.test.sh
-  - README.md
 ---
 
 ## Problem
@@ -168,3 +165,34 @@ turn into a read.
     verified by running both historical copies against today's tree), AC4 (all three do honour the
     flag), AC5 (`README.md` *Testing* names `SHOW_MATCHED` and what it does), AC6 (11 committed
     suites, 0 failed, loop exit 0). Both NFR rows hold.
+
+- **Re-entry 2026-08-30 [626a]: the verdict's six assertions fixed.** `assert_rc` /
+  `assert_rc_nonzero` added to `tests/claim.test.sh` byte-identical to the pair in `next.test.sh`
+  and `close.test.sh`, and the five inline `[ "$rc" … ] && ok … || bad …` lines routed through them
+  with `"$out"` as the trailing argument. `close.test.sh:402` converted to the `if`/`saw_on_pass`
+  shape of its twin at line 253. Counts under `SHOW_MATCHED=1`: claim 18 passes / 18 `saw:` lines
+  (was 18/13), close 93/93 (was 93/92), next 154/154 unchanged.
+- **AC3 re-driven by mutation with the flag off.** `exit 1` → `exit 0` at
+  `skills/queue/templates/claim:94` — the file `CLAIM_SRC` resolves, per the QA plan's warning
+  about mutating the copy rather than the subject. Mutation confirmed by diff against a copy taken
+  first, and reverted to a clean diff. The failure now prints `saw: wanted any exit but 0 / exit 0 /
+  0002 is 'blocked', not ready — pick another row`, where before it printed nothing at all.
+- **AC1 checked by diff, not by eye**, using the `tests/.head-<x>.sh` trick these notes already
+  record: default output byte-identical to HEAD for both suites, copies removed the same turn.
+
+- **The comment above the shared helpers still says "this pair" and now covers two pairs.** That
+  imprecision is not cosmetic — it is the exact reading that let `assert_rc` reach two suites and
+  miss the third, which is what bounced this ticket. Tightening it was attempted and **backed out**:
+  the line is identical in all three suites so it cannot be half-changed, and `tests/next.test.sh`
+  is held by 0045 [296c]. Parked in `FINDINGS.md` for whoever holds all three at once.
+- **A file declared in `touches:` but never edited is a live cost, not a harmless over-declaration.**
+  This ticket declared `README.md` because AC5 names it; AC5 needed no change, and while the
+  declaration stood `./next develop` reported 0051, 0038 and 0046 as COLLIDES against it. An
+  over-wide scope is visible to every other session and invisible to the one holding it.
+- **0045 [296c] claimed and began editing the tree mid-session**, after this ticket's `./next` run
+  had reported no claimed files. A file scope read at claim time is a snapshot, not a subscription:
+  the tree acquired `skills/queue/templates/next` and `tests/next.test.sh` changes, and 11
+  `next.test.sh` assertions plus `backlog-scripts-installed.test.sh` went red — none of it this
+  ticket's. Proved by running the full suite in a throwaway worktree at HEAD: 12 suites, 0 failures,
+  worktree removed the same turn. **Re-check the held file set before a full-suite run, not only
+  before the claim.**
