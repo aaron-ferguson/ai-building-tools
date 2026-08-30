@@ -24,6 +24,16 @@ expects:
 claimed_by: "3895"
 claimed_at: 2026-08-30T16:30:46Z
 touches:
+  - references/REPORTING.md            # new — the single home for the rule
+  - skills/design/SKILL.md             # Step 6 — Report
+  - skills/develop/SKILL.md            # Step 8 — Report
+  - skills/prototype/SKILL.md          # has NO report step today; one is added
+  - skills/queue/SKILL.md              # Step 8 — Report
+  - skills/retro/SKILL.md              # Step 7 — Report
+  - skills/verify/SKILL.md             # Step 7 — Verdict, not "Report"
+  - tests/reporting.test.sh            # new guard
+  - tests/reference-size.test.sh       # only if REPORTING.md lands over the soft goal
+  - README.md                          # the guard register at "## Testing"
 ---
 
 ## Problem
