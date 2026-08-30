@@ -110,8 +110,8 @@ echo "AC4 — the statement carries a dated figure"
 # rewrap-proof, and do not read it that way: a rewrap that splits "one gate per session" across a
 # line break kills the extraction above with exit 2 long before AC4 runs. Verified by rewrapping
 # the paragraph to 78 columns. That is 0063's problem, not this assertion's.
-PARA1="$(tr '\n' ' ' < "$PARA")"
-if printf '%s\n' "$PARA1" | grep -qE 'dated[^0-9]{0,4}20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]'; then
+PARA_ONELINE="$(tr '\n' ' ' < "$PARA")"
+if printf '%s\n' "$PARA_ONELINE" | grep -qE 'dated[^0-9]{0,4}20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]'; then
   ok "the figure's own date is bound to the figure, not merely present in the paragraph"
 else
   bad "AC4 — no ISO date bound to the word introducing the figure; a date elsewhere in the paragraph does not count"
