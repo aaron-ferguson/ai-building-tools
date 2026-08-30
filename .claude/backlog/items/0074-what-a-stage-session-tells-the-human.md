@@ -2,8 +2,8 @@
 id: "0074"
 title: Give the suite one reporting rule and route the detail to disk
 type: debt
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-30
@@ -21,19 +21,9 @@ expects:
   - skills/prototype/SKILL.md
   - tests/reporting.test.sh      # new guard
   - tests/reference-size.test.sh
-claimed_by: "3895"
-claimed_at: 2026-08-30T16:30:46Z
+claimed_by:
+claimed_at:
 touches:
-  - references/REPORTING.md            # new — the single home for the rule
-  - skills/design/SKILL.md             # Step 6 — Report
-  - skills/develop/SKILL.md            # Step 8 — Report
-  - skills/prototype/SKILL.md          # has NO report step today; one is added
-  - skills/queue/SKILL.md              # Step 8 — Report
-  - skills/retro/SKILL.md              # Step 7 — Report
-  - skills/verify/SKILL.md             # Step 7 — Verdict, not "Report"
-  - tests/reporting.test.sh            # new guard
-  - tests/reference-size.test.sh       # only if REPORTING.md lands over the soft goal
-  - README.md                          # the guard register at "## Testing"
 ---
 
 ## Problem
@@ -245,3 +235,64 @@ the token. It does not threaten the conclusion: narration would have to be **six
 share before halving it bought even 5% of a session. **`0073` owns turning this into a recorded,
 scripted measurement**; it is deliberately not scripted here, because that is that ticket's job and
 duplicating it would put two recipes in the repo.
+
+### Built, 2026-08-30 (claim `3895`)
+
+**`references/REPORTING.md`, 4.3 KB, under `reference-size.test.sh`'s soft goal — no justification
+entry needed.** Six skills cite it in one line each and restate none of it. `tests/reporting.test.sh`
+holds the shape with 23 assertions, every one of them driven against an authored fixture tree.
+
+**`prototype` had no report step at all.** The ticket counts it among "the six stage skills" and lists
+its file in `expects:`, but its numbered steps ended at *Park what surprised you*, followed by
+*Error Handling* and *Handoff* — so there was no step for AC1's citation to live in. A `Step 9: Report`
+was added rather than hanging the citation off *Handoff*, which is a `/capture` interface and not a
+report to a human. This is the ticket's own thesis showing up in the surface it was written about: the
+one stage with no report step is the one whose deliverable is a file, and describing that file in prose
+instead of naming its path is precisely the failure the rule exists to route away.
+
+**What was deleted from a report step and where it went.** AC6 is checked deletion by deletion:
+
+| Deleted | Now covered by |
+|---|---|
+| design — the decision, the reason, where it was recorded | rule rows 1 and 4 |
+| develop — what was built and changed, the ticket at `next: verify` | rule row 1 (the commit, the transition) |
+| develop — the full-suite result | rule row 1, **after** it was widened to say so (see below) |
+| develop — anything parked in `FINDINGS.md` | rule row 4, as a path |
+| queue — the ID, title, position and what else moved | rule row 1 |
+| retro — where each finding landed | rule rows 1 and 4; *why there* was **kept**, being a choice no file records |
+| verify — nothing | the evidence table is a check, and Step 7 now says so explicitly |
+
+**One line is genuinely gone: `develop`'s "what's next at the top of the queue".** No step computes
+it, so AC6's "a step that performed a check" does not reach it, and `./next develop` is one command
+away. Flagged rather than buried, because it is the only thing this change removes outright.
+
+**Row 1 of the table was widened during the build, and it was load-bearing.** As first written it read
+"state changes the session made" — the commit, the row, the transition. `develop` Step 5 requires the
+whole suite to be run and the tree left green, and a *green* result is neither a failure (row 2) nor an
+artifact. Under the narrow reading, running the suite would have had no visible output at all, which is
+the exact shape *Nothing here removes a check* forbids. Row 1 now says the state the work was **left
+in** — a claimed row, a transition taken, a tree left green.
+
+**The two-channel claim is paragraph-scoped, not line-scoped, and the difference was measured.** The
+first version grepped one line for `FR13` and `same facts`. The QA plan's own check — rewrap a guarded
+paragraph in a scratch copy — turned it red on a pure reflow, so the file had grown a hidden rule that
+the sentence may never be rewrapped, and a note saying so. Rewritten with `awk RS=""`, the way
+`tests/citations.test.sh` already scopes its matcher; a scratch copy then confirmed both directions —
+the rewrap passes, and deleting the claim while leaving `FR13` and "same facts" elsewhere in the file
+still reds. **This is `0063`'s subject arriving inside new code**, and it was fixed here rather than
+deferred because the fragility was authored by this ticket, not inherited by it.
+
+**The budget guard matches a digit ADJACENT to a unit word, not anywhere on the same line.** The
+whole-line form was written first and immediately false-positived on the guard's own fixture, which
+mentioned `FR13` on a line containing the word "sentence". A rule file that has to discuss reporting
+cannot avoid the vocabulary of reporting, so adjacency is what separates "200 tokens" from prose about
+tokens. The spelled-out form ("under two hundred words") carries no digit at all and is caught by a
+second pattern keyed on the budget verb; both have a fixture case.
+
+**What is not enforceable, restated because the design section already conceded it and the build
+confirmed it.** AC1 and AC2 check *citation*, and the "no restating" check compares a skill's report
+step against the kind labels read out of the rule's own table — so a skill that re-enumerates the same
+four kinds **in its own words** is invisible to the guard. That is the identical blind spot
+`tests/citations.test.sh` records for anchoring, and widening the match would report ordinary prose as
+a restatement. Nothing can check that a lesson went to disk *instead of* the screen; the compliance
+signal remains `0036` AC21's findings-parked count, which exists only in an orchestrated run.
