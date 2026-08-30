@@ -124,3 +124,19 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the theme being promoted is represented before reordering; a session that skipped the check would
   have produced a confident re-rank of rows that do not serve the stated priority (pointer:
   skills/queue/SKILL.md Steps 2–4, items/0073, items/0074).
+- 2026-08-30 — **`design` Step 4 tells an unclaimed ticket's session to write it and never says to
+  claim it, and there is no release path once it has.** `CONCURRENCY.md` *A stage writes only the
+  ticket it holds* says "claim the row you write", so settling 0074 meant claiming, writing,
+  then clearing `claimed_by:` and the `in-progress` row by hand — `./close` is for closing and
+  nothing reverses a claim. 0056 already has this step's missing lock (FR3) and `expects:`
+  re-check (FR4) but not ownership, so the same edit should decide whether `design` claims at all
+  and, if it does, what hands the row back (pointer: skills/design/SKILL.md Step 4, items/0056,
+  items/0048, .claude/backlog/claim).
+- 2026-08-30 — **Thinking is ~70.5% of a session's output tokens and its text is not retained in
+  the transcript, so the largest output term cannot be measured from the record.** Stored
+  `thinking` blocks carry an empty `thinking` field and a ~3,000-character `signature`, so 0074's
+  measurement could only get it as a residual — output tokens minus estimated text and tool-input
+  tokens. Human-facing narration was 4.6% and tool inputs 24.9% by comparison. This bounds what
+  0073 can report and it is not obvious before you look: a turns-and-tokens breakdown that assumes
+  the transcript holds what the model wrote will silently attribute 70% of output to nothing
+  (pointer: items/0073, items/0074, tools/harvest-usage.sh, MEASUREMENT.md).
