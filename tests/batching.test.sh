@@ -96,10 +96,25 @@ present "claim and close each ticket individually" "$DEV" "Claim and close each 
 present "stop the batch on a wrong contract" "$DEV" "Stop at the first ticket whose contract turns out wrong"
 
 echo "AC4 — the statement carries a dated figure"
-if grep -qE '20[0-9][0-9]-[0-9][0-9]' "$PARA"; then
-  ok "a dated figure sits inside the batching paragraph"
+# MUTATION THAT REDS THIS: strip `**2026-08-22**` from the batching figure in develop, leaving the
+# paragraph's other date (`2026-08-23/24`, in the sentence about 0026) in place. Before 0042 this
+# was `grep -qE '20[0-9][0-9]-[0-9][0-9]' "$PARA"` over the whole window, so ANY date anywhere in
+# the paragraph satisfied it and that mutation left 13/13 passing. The date has to be bound to the
+# figure it dates: within four characters of the word that introduces it, which is enough for the
+# emphasis markers and not enough to reach across a sentence.
+#
+# The paragraph is unwrapped to one logical line first, and that is load-bearing rather than tidy:
+# grep is line-based, "dated" ends one line of the prose and the date opens the next, so the
+# binding cannot be matched at all against the wrapped window. What unwrapping buys is only that
+# THIS assertion no longer depends on where the prose happens to wrap -- it does not make the guard
+# rewrap-proof, and do not read it that way: a rewrap that splits "one gate per session" across a
+# line break kills the extraction above with exit 2 long before AC4 runs. Verified by rewrapping
+# the paragraph to 78 columns. That is 0063's problem, not this assertion's.
+PARA1="$(tr '\n' ' ' < "$PARA")"
+if printf '%s\n' "$PARA1" | grep -qE 'dated[^0-9]{0,4}20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]'; then
+  ok "the figure's own date is bound to the figure, not merely present in the paragraph"
 else
-  bad "AC4 — no 20NN-NN date within the batching paragraph"
+  bad "AC4 — no ISO date bound to the word introducing the figure; a date elsewhere in the paragraph does not count"
 fi
 present "0026 named as the source of the develop-side figure" "$PARA" "0026"
 
