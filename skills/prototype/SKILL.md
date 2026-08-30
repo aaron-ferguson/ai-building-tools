@@ -311,6 +311,18 @@ uncommitted it is one `git stash` from gone. Anything whose home is obvious goes
 
 ---
 
+## Step 9: Report
+
+**This skill had no report step until 0074 added one**, which is why the artifact it built was
+sometimes described at length in a message and never by its path. What belongs on the screen and what
+belongs on disk is `references/REPORTING.md` at the plugin root.
+
+The instance that bites this stage: **the artifact is the deliverable and the path to it is the
+report** — a prototype narrated in prose is a prototype nobody opened. Name the level built, the file,
+and the question the user is being asked to look at and answer.
+
+---
+
 ## Error Handling
 
 - Ticket not found: "Could not find [KEY]. Please verify the ticket key."

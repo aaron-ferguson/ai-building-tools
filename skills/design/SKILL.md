@@ -150,7 +150,10 @@ uncommitted it is one `git stash` from gone. Anything whose home is obvious goes
 
 ## Step 6 — Report
 
-Short: the decision, the one-line reason, what it depends on, and where it was recorded. If a prototype
-is needed, that plus what it must settle. **Never report a decision as settled when Step 3 found it
-depends on a fact you do not have** — a confident answer to an unanswerable question is worse than an
-admitted gap, because it gets built.
+What belongs on the screen and what belongs on disk is `references/REPORTING.md` at the plugin root.
+One thing it cannot say, because it is specific to a decision: **never report one as settled when
+Step 3 found it depends on a fact you do not have** — a confident answer to an unanswerable question
+is worse than an admitted gap, because it gets built. That is a refusal, and it is reported as one.
+
+A prototype the decision now needs is what this session needs from the user, and the command that
+builds it is part of saying so.

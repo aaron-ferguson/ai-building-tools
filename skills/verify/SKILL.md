@@ -277,7 +277,12 @@ uncommitted it is one `git stash` from gone. Anything whose home is obvious goes
 
 ## Step 7 — Verdict
 
-State **PASS** or **FAIL** plainly, then the evidence table: each AC and NFR row, how it was checked, the
+What belongs on the screen and what belongs on disk is `references/REPORTING.md` at the plugin root.
+**The evidence table is not narrative and is not routed away by it**: it is the paragraph that forces
+enumeration against real output rather than against memory, and a verdict without it is a smaller
+check wearing the same word.
+
+State **PASS** or **FAIL** plainly, then that table: each AC and NFR row, how it was checked, the
 result, with the actual failure output for anything red.
 
 **Advisory is derived, never authored:** intersect Step 2's dirty set with Step 3's evidence set. No

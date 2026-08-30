@@ -246,11 +246,14 @@ so the next retro reads it rather than your report.
 
 ## Step 7 — Report
 
-Per finding: where it landed, and in one clause, why there. Then the three things the user cannot
-see for themselves:
+What belongs on the screen and what belongs on disk is `references/REPORTING.md` at the plugin root.
+Per finding, add the clause it cannot supply: **why that destination** — Step 3 chose it, and the
+choice is the part of this stage's work that no file records.
+
+Then the three things the user cannot see for themselves, and would not find on disk either:
 
 - What was proposed and deliberately **not** written, with the reason.
 - Anything left uncommitted, unpushed, or unreleased.
-- **Whether a restart is required**, in one line — see Step 5. No explanation unless asked.
+- **Whether a restart is required** — see Step 5. No explanation unless asked.
 
 If nothing surfaced, say that plainly.

@@ -350,7 +350,10 @@ uncommitted it is one `git stash` from gone. Anything whose home is obvious goes
 
 ## Step 8 — Report
 
-What was built, what changed, the full-suite result, anything parked in `FINDINGS.md`, the ticket
-now sitting at `next: verify`, and what's next at the top of the queue. The ticket is **not**
-closed — say so, and name the two commands a following session runs: `/verify <id>` to close it,
-and `/retro` if the buffer is worth sweeping. Each in its own session.
+What belongs on the screen and what belongs on disk is `references/REPORTING.md` at the plugin root.
+Two things it cannot say, because they are specific to this stage:
+
+- **The ticket is not closed — say so.** A stage reporting "done" over a ticket sitting at
+  `next: verify` is reporting a state it did not reach, and the QA pass is what reaches it.
+- **Name the two commands a following session runs** — `/verify <id>` to close it, and `/retro` if
+  the buffer is worth sweeping. Each in its own session, and neither is invoked here.

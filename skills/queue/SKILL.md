@@ -407,5 +407,6 @@ uncommitted it is one `git stash` from gone. Anything whose home is obvious goes
 
 ## Step 8 — Report
 
-One short block: the ID, the title, its position, and what else moved. Don't echo the whole
-item file back — it's on disk.
+What belongs on the screen and what belongs on disk is `references/REPORTING.md` at the plugin root.
+The instance of it that bites this stage: the item file is the detail, so name its path rather than
+echoing it back — everything a session would quote from it, it just wrote there.

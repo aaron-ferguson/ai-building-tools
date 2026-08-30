@@ -211,6 +211,7 @@ tests/skill-size.test.sh   # every skills/*/SKILL.md within its byte goal, or ov
 tests/reference-size.test.sh     # the same soft goal over references/*.md
 tests/external-feedback.test.sh  # no shipped file names a specific feedback product
 tests/measurement.test.sh        # the harvest arithmetic, and what MEASUREMENT.md must state
+tests/reporting.test.sh          # every stage skill cites references/REPORTING.md, and that rule holds its shape
 ```
 
 Each case scaffolds a throwaway git repo with one `QUEUE.md` shape, runs the script against it,
