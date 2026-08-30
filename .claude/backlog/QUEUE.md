@@ -60,7 +60,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0008 | Add the graph rules to queue, develop, and verify | develop | blocked | 0002 |
 | 0003 | Phase 2 — the readiness gate and outcome reviews | develop | blocked | 0001 |
 | 0004 | Phase 3 — extend tracker mirroring with hierarchy and standards | develop | blocked | 0001 |
-| 0037 | Run the fresh-project end-to-end exercise against the settled configuration | develop | in-progress | 0009 |
+| 0037 | Run the fresh-project end-to-end exercise against the settled configuration | develop | waiting | 0009 |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
 | 0071 | Add a decision-map mode for work too large or too foggy for one project ticket | design | ready |  |
