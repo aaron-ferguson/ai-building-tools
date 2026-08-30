@@ -140,3 +140,16 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   0073 can report and it is not obvious before you look: a turns-and-tokens breakdown that assumes
   the transcript holds what the model wrote will silently attribute 70% of output to nothing
   (pointer: items/0073, items/0074, tools/harvest-usage.sh, MEASUREMENT.md).
+- 2026-08-30 — **A stale claim whose release is sitting uncommitted in the shared tree has no rule
+  in `develop` Step 1, and the two rules that apply give opposite answers.** 0037 reads
+  `in-progress` with an empty `touches:` and an `expects:` overlapping this ticket's, so *The
+  working tree is shared too* says its files are held and the candidate must be stepped over. But
+  its `claimed_at` is five days old and the working tree holds an uncommitted edit setting it to
+  `waiting` with the token cleared, which *Claim tokens* calls a dead session to report and offer
+  to release. Nothing says which wins, and the deadlock is self-sustaining: the release edit
+  cannot be committed by any session but 0037's own (*A stage writes only the ticket it holds*),
+  so it stays uncommitted and every later session re-derives the same ambiguity from scratch. The
+  narrow question — may a session step over a *stale* in-progress row's file scope, and who may
+  land an abandoned release — belongs with 0049 (what a claim token guarantees) or 0050 (file
+  scope where the prose files are the product) (pointer: skills/develop/SKILL.md Step 1,
+  references/CONCURRENCY.md, items/0037, items/0049, items/0050).
