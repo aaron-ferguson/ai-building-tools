@@ -2,8 +2,8 @@
 id: "0051"
 title: Pin the measurement record's denominator and make its recipe reproduce
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -16,8 +16,8 @@ expects:
   - README.md
   - tests/measurement.test.sh
   - tools/harvest-usage.sh
-claimed_by: "9910"
-claimed_at: 2026-08-30T16:57:34Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -116,3 +116,38 @@ A date window is not a pin on a live store.
   decision, since both land the same observable property.
 - `blocked_by: ["0042"]` is a real dependency, not a scheduling convenience: AC6 asserts the
   corrected record against repaired assertions, and those do not exist until 0042 closes.
+
+### From the build (2026-08-30, token 9910)
+
+- **The ticket's own quoted figures were stale caches, both of them.** `DONE.md` holds **30** rows,
+  not the 27 the problem statement quotes, and the count that matters — closed on 2026-08-23 or
+  2026-08-24 — is **20**, not 19. So the published denominator was wrong on a date-bounded read as
+  well, which the problem statement did not claim. Re-read the source before trusting an FR's
+  arithmetic about a file the ticket does not own.
+- **FR4 and FR5 are not the equal alternatives the ticket presents.** FR5's timestamp cut does not
+  work here and cannot be made to: a cut at the harvest moment (2026-08-24T06:00Z) still returns
+  **38 sessions / $152.32** against the published 30 / $114.27, because sessions in flight during
+  the harvest kept adding turns *inside* the window afterwards. No cut on turn timestamps separates
+  a session that was excluded from one that merely grew. Only the id set pins it, so FR4's flag
+  list is the only route that lands and the timestamp cut was not built (YAGNI).
+- **How the pinned set was recovered, since the record did not carry it.** The per-skill table is
+  itself the constraint system: sessions, turns and cost per skill fix how many of each to drop and
+  what they must sum to. `develop` had a unique 5-session solution; `verify` had three candidates
+  on turns and cost, resolved by which one leaves the published 97,965 context per turn. `queue`
+  and `retro` were untouched by later sessions and confirmed the frame. The result reproduces
+  **every cell of both tables**, which is what makes it the right set rather than a plausible one.
+- **A second live-file claim had already gone false and was not in any FR.** The record said
+  "`FINDINGS.md` still holds all 42 — retros are not emptying it". It holds 29 entries as at
+  2026-08-30, only 2 of them from those two days: later retros did sweep it. Pinned rather than
+  restated, under the same convention as the denominator.
+- **Two of the new guards were green against the very mutation they name**, and were only caught by
+  running the mutations rather than trusting them. The date-bound assertion passed on the dates
+  recurring in the section's closing prose — the 0042 defect reproduced inside the fix for it, at
+  section scope instead of document scope. And `grep` read the asserted `--until` as its own
+  option, so three flag assertions errored instead of running; the helpers now pass `--` first.
+- **Left deliberately: `$6.01` / `$4.45` still appear in `0036`, `0040` and `0041`.** They are stale
+  caches of this figure now. Not edited here — `CONCURRENCY.md`'s *A stage writes only the ticket it
+  holds* — and parked in `FINDINGS.md` instead.
+- `expects:` named `tools/harvest-usage.sh` and it was not touched, because the FR5 branch that
+  needed it turned out to be unbuildable. The prediction was reasonable; the ticket offered it
+  conditionally and the condition did not fire.
