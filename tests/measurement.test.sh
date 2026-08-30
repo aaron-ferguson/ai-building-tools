@@ -11,10 +11,16 @@
 #      `usage` object, so summing lines overcounts cost by roughly 2.2x. A fixture with a
 #      three-line response is the only thing that catches that regressing.
 #
-#   2. WHAT WAS WRITTEN DOWN — each claim the ticket requires, asserted on its own line so a
-#      reflow cannot red it, and so a run that produces figures and no verdict fails. That is the
-#      likely failure and the one this ticket exists to prevent, which is why AC5 (the verdict)
-#      and AC8 (what was not held constant) are asserted separately from AC1 (the figures).
+#   2. WHAT WAS WRITTEN DOWN — each claim the ticket requires, asserted against the STRUCTURE that
+#      carries it: the table row, the section body, the line. The likely failure is a run that
+#      produces figures and no verdict, and giving AC5 (the verdict) and AC8 (what was not held
+#      constant) their own assertions is NOT on its own what catches it — that was this header's
+#      claim until 0042 and it was false. Both were document-wide greps for a word, so AC8's
+#      required heading `## What the two runs did not hold constant` contains "did not" and AC8
+#      passing guaranteed AC5 passing; deleting the entire verdict left the suite green. Separate
+#      assertions are necessary and the scope is what makes them sufficient. Each of the three
+#      repaired assertions names, beside itself, the mutation that reds it — re-run those before
+#      trusting any of them (`testing-conventions.md`, anchor to the claim not the document).
 #
 # Usage:  tests/measurement.test.sh
 #
@@ -55,8 +61,31 @@ absent() {
 }
 
 FIX=""
-cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
+SCOPE=""
+cleanup() {
+  [ -n "$FIX" ] && rm -rf "$FIX"
+  [ -n "$SCOPE" ] && rm -rf "$SCOPE"
+  return 0
+}
 trap cleanup EXIT INT TERM
+
+# Structural scopes for the AC1 and AC5 assertions below.
+#
+# Both were document-wide greps for a word, and both were green against the deletion they exist to
+# catch, because the word survives elsewhere in the same document (0042). An assertion is anchored
+# to the claim, not to the document that contains it (`testing-conventions.md`): match the row, the
+# line or the section body. These extractions are those scopes, and an extraction that comes back
+# empty is reported as the failure it is -- never skipped, since a scope that matches nothing turns
+# every assertion over it green precisely when the thing it guards has gone missing.
+SCOPE="$(mktemp -d)"
+VERDICT="$SCOPE/verdict"
+TABLE="$SCOPE/table"
+if [ -f "$REC" ]; then
+  awk '/^## Verdict$/{s=1;next} s&&/^## /{exit} s' "$REC" > "$VERDICT"
+  awk '/^\|[[:space:]]*Skill[[:space:]]*\|/{s=1} s&&/^[[:space:]]*$/{exit} s' "$REC" > "$TABLE"
+else
+  : > "$VERDICT"; : > "$TABLE"
+fi
 
 echo "AC9 — the harvest script is committed and runnable"
 if [ -x "$HARVEST" ]; then
@@ -158,11 +187,31 @@ else
 fi
 
 echo "AC1 — the record breaks the isolated run down by skill"
-present "the record exists and names queue" "$REC" "queue"
-present "the record names develop" "$REC" "develop"
-present "the record names verify" "$REC" "verify"
-present "the record reports cost per turn" "$REC" "per turn"
-present "the record reports context tokens per turn" "$REC" "context"
+# MUTATION THAT REDS THIS: delete the `| verify | 10 | ... |` line from the isolated-run table in
+# MEASUREMENT.md. Before 0042 these were `present "$REC" "verify"` and friends over the whole
+# record, and that mutation left 40/40 passing -- `queue`, `develop`, `verify`, "per turn" and
+# "context" all occur in the record's surrounding prose, so the guard pinned vocabulary rather than
+# the breakdown. What is asserted now is the ROW: the skill's name at the head of a table line
+# followed by six populated cells. Deliberately no figures -- 0051 is due to move them, and a guard
+# that reds on a corrected number teaches everyone to discount its reds.
+if [ ! -s "$TABLE" ]; then
+  bad "AC1 — no isolated-run table in MEASUREMENT.md: no line matching '| Skill |' to scope to"
+else
+  ok "the isolated-run table is present, so the row assertions below have a scope"
+fi
+# row <label> <skill> — that skill has a line in the isolated-run table carrying all six data cells.
+row() {
+  if grep -qE "^\\|[[:space:]]*$2[[:space:]]*\\|([^|]*[0-9][^|]*\\|){6}" "$TABLE"; then
+    ok "$1"
+  else
+    bad "AC1 — no populated table row for '$2' in the isolated-run table (six data cells expected)"
+  fi
+}
+row "queue has a row in the isolated-run table" "queue"
+row "develop has a row in the isolated-run table" "develop"
+row "verify has a row in the isolated-run table" "verify"
+present "the table reports cost per turn" "$TABLE" "Cost per turn"
+present "the table reports context per turn" "$TABLE" "Context per turn"
 
 echo "AC1/documentation — every figure is dated"
 if [ -f "$REC" ] && grep -qE '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]' "$REC"; then
@@ -199,10 +248,21 @@ present "0009 points at the record that holds the observed figures" "$PROJECT" "
 
 echo "AC5 — the verdict is stated explicitly, against the modelled figure"
 present "the record names the modelled figure it is judged against" "$REC" "5.09"
-if [ -f "$REC" ] && grep -qE 'materialised|partly|did not' "$REC"; then
-  ok "the record states a verdict"
+# MUTATION THAT REDS THIS: delete the whole `## Verdict` section from MEASUREMENT.md. Before 0042
+# this grepped the WHOLE record for materialised|partly|did not, and that mutation left it green --
+# the section heading `## What the two runs did not hold constant` carries "did not", and AC8 below
+# requires that heading to exist, so AC8 passing GUARANTEED this passing. Only the separate 5.09
+# check reddened. A second mutation reds it too, which the section scope alone would not catch:
+# delete just the verdict sentence and keep the section, since "The model's premise did not hold"
+# lives further down the same section. Hence the first non-blank line, which is where a verdict is
+# stated, rather than anywhere in the body.
+VERDICT_LINE="$(grep -m1 '[^[:space:]]' "$VERDICT" || true)"
+if [ -z "$VERDICT_LINE" ]; then
+  bad "AC5 — MEASUREMENT.md has no '## Verdict' section body, so it states no verdict"
+elif printf '%s\n' "$VERDICT_LINE" | grep -qE 'materialised|partly|did not'; then
+  ok "the Verdict section opens with a verdict"
 else
-  bad "AC5 — the record carries no verdict: none of materialised, partly, did not"
+  bad "AC5 — the Verdict section opens with no verdict (none of materialised, partly, did not): $VERDICT_LINE"
 fi
 present "the record says what the run caught" "$REC" "caught"
 present "the record says what it missed" "$REC" "missed"
