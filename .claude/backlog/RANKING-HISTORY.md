@@ -520,3 +520,94 @@ right home for what the seventh would have held. **The ID is left unused rather 
 `next_id` had already been committed at 69, and rolling it back risks handing 0068 to a concurrent
 session that has since read the higher value. A gap in the numbering costs nothing; a duplicate
 costs a ticket.
+
+## 2026-08-30 — the token-efficiency re-rank
+
+Aaron, verbatim:
+
+> Review our current queue and make sure that we are prioritizing token efficiency as our highest
+> priority so that we can slim down our sessions and orchestrate them smoothly. Once we have that,
+> then we'll continue to build on all of the other many good ideas that will improve our toolkit.
+
+And, mid-session:
+
+> Right now the agents are fairly verbose and give a lot of updates instead of giving critical
+> updates only. Being willing to go into additional context when requested, we could save a lot of
+> tokens by simply consolidating and summarizing agent work.
+
+**This is a stated priority from the person the queue belongs to, not a tie-break.** It is recorded
+as such: the tier system did not produce this order, and a later re-rank disagreeing with it is
+disagreeing with the instruction, not with an argument.
+
+### The gap the re-rank found first
+
+Promoting "token efficiency" turned out to promote almost nothing, because **no open ticket
+targeted the thing that is actually expensive now.** `MEASUREMENT.md` already names the residual
+mechanism — *"Isolation resets context per session, not per turn, and a develop session still
+averages 39 turns, so context still climbs inside each one"* — and of the three measurement tickets
+in the backlog, `0026` closed on history, `0037` measures a fresh project's cost *per turn* (holding
+the turn count in the denominator rather than examining it), and `0041` reports a run's cost after
+the fact. None asks where the 39 turns go. So the re-rank produced two tickets before it produced
+an order.
+
+`0073` is the diagnosis and `0074` is the verbosity decision. They are deliberately **not** one
+ticket and **not** chained: fewer turns and shorter turns are two levers, and conflated they leave
+neither measured.
+
+### Why `0073` is blocked by `0051`, which drags two Tier 1 rows up with it
+
+`0073` publishes new figures from the live transcript store using the committed harvest script.
+`0051` is the ticket that pins `MEASUREMENT.md`'s denominators and makes *Re-running this* actually
+reproduce the tables. Run in the other order, `0073` adds a second unreproducible figure over a live
+denominator — precisely the defect `0051` exists to remove — and leaves `0051` two records to fix.
+So `blocked_by: ["0051"]`, and `0051` is itself `blocked_by: ["0042"]`.
+
+The **prerequisite override** then does the work: `0042` and `0051` move above `0052` and `0046`,
+not because anything about them was re-argued, but because they are now upstream of row 6. Their
+Tier 1 placement is unchanged and the rows they stepped over are also Tier 1, so this costs nothing
+against the tier system.
+
+### Why `0074` is row 3 and not behind `0073`
+
+`0074` has no blockers, is `next: design` (the cheapest stage in the suite at $2.32 a session), and
+answers a question a person can answer without the diagnosis. Blocking it on `0073` would put the
+whole of the user's stated top priority behind a three-ticket chain and leave nothing takeable at
+the top of it. It is `relates`, not `blocked_by`, and its *Notes & decisions* tells `design` to read
+`0073`'s figures if they exist by then and to say so if they do not.
+
+### Why `0053` and `0044` stay above all of it
+
+Both are at `next: verify` — developed, unclosed, one short QA session each. `CONCURRENCY.md`'s
+*`verify` owns closing* exists so no green goes stale, and a finished result left unverified rots as
+the tree moves under it. Sinking in-flight work to promote new work spends the completed work.
+`0053` is additionally the prerequisite that made four rows below it cheaper, which is what put it
+at row 1 originally.
+
+### What the orchestration chain's promotion cost
+
+`0038 → 0039 → 0040` moved from ranks 27, 31 and 32 to 7, 8 and 9. This overrides a recorded
+argument: *batch 2* placed `0008` above `0039` because "leaving it unshipped strands the other three
+in a half-migrated backlog." That is still true — project `0002`'s phase 1 (`0007`, `0006`, `0008`)
+now sits below the efficiency spine and stays half-migrated longer. It is a real cost, accepted
+deliberately, and it is the first thing to revisit if the efficiency work stalls.
+
+`0041` moves to row 10, directly under the chain: it reads `0039`'s FR10 run log, so it is the
+feedback loop that says whether the slimming worked, and separating it from the thing it measures
+is how a measurement commitment gets forgotten.
+
+### What was NOT promoted, and why that is the honest answer
+
+The twenty-odd Tier 1 and Tier 2 defect rows below `0041` are unchanged in their relative order.
+They are not efficiency work and promoting them under this instruction would be dressing them up as
+it. **The standing concern**, stated once: `0052` (criteria that could not have failed have been
+closing tickets) and `0046` are Tier 1 rows now sitting at 11 and 12, so for as long as the
+efficiency spine runs, tickets keep closing on criteria whose record of what was verified may be
+untrue. That is the price of the instruction and it was Aaron's to set.
+
+### `0037` was not moved
+
+Its committed row reads `in-progress` while its uncommitted item file has `claimed_by:` cleared —
+the exact drift `FINDINGS.md` recorded on 2026-08-25 and `0066` exists to report. `queue` Step 4
+forbids reordering an `in-progress` row under a token this session did not mint, so the line stayed
+where it was and rows moved around it. Whoever owns that claim should either re-claim it or commit
+the release; until then its rank is not the interesting fact about it.
