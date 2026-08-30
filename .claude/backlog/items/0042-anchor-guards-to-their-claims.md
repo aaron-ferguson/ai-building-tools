@@ -2,8 +2,8 @@
 id: "0042"
 title: Anchor the vocabulary-pinning guards to the claims they make
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -14,9 +14,10 @@ relates: ["0026", "0032", "0051"]
 expects:
   - tests/measurement.test.sh
   - tests/batching.test.sh
-claimed_by: "ea52"
-claimed_at: 2026-08-30T16:13:27Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-08-30
 ---
 
 ## Problem
@@ -72,18 +73,18 @@ retro landed the lesson. What has not happened is the fix to the guards themselv
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the repaired suite, when the `## Verdict` section is deleted from
+- [x] AC1 — Given the repaired suite, when the `## Verdict` section is deleted from
   `MEASUREMENT.md`, then `tests/measurement.test.sh` reports a failure naming the verdict.
-- [ ] AC2 — Given the repaired suite, when the `| verify | … |` row is deleted from the
+- [x] AC2 — Given the repaired suite, when the `| verify | … |` row is deleted from the
   isolated-run table in `MEASUREMENT.md`, then `tests/measurement.test.sh` reports a failure.
-- [ ] AC3 — Given the repaired suite, when the date is stripped from the batching figure in
+- [x] AC3 — Given the repaired suite, when the date is stripped from the batching figure in
   `skills/develop/SKILL.md` while the paragraph's other date is left in place, then
   `tests/batching.test.sh` reports a failure.
-- [ ] AC4 — Given each of the three repaired assertions, when the file is read, then a comment
+- [x] AC4 — Given each of the three repaired assertions, when the file is read, then a comment
   beside it names the mutation that reds it.
-- [ ] AC5 — Given `tests/measurement.test.sh`'s header, when it is read, then it no longer claims
+- [x] AC5 — Given `tests/measurement.test.sh`'s header, when it is read, then it no longer claims
   AC5 catches a run that produces figures and no verdict by a document-wide match.
-- [ ] AC6 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs on
+- [x] AC6 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs on
   an unmutated tree, then every suite passes.
 
 ## QA plan

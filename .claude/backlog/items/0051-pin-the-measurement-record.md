@@ -3,7 +3,7 @@ id: "0051"
 title: Pin the measurement record's denominator and make its recipe reproduce
 type: bug
 next: develop
-status: blocked
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
