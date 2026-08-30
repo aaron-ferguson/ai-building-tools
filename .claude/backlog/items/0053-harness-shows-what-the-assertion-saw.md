@@ -3,7 +3,7 @@ id: "0053"
 title: Let the test harness print the line an assertion actually saw
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -16,8 +16,8 @@ expects:
   - tests/close.test.sh
   - tests/claim.test.sh
   - README.md
-claimed_by:
-claimed_at:
+claimed_by: "b673"
+claimed_at: 2026-08-30T16:30:48Z
 touches:
 ---
 
