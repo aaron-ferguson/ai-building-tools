@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0074 | Give the suite one reporting rule and route the detail to disk | debt | verify | 2026-08-30 | [items/0074-what-a-stage-session-tells-the-human.md](items/0074-what-a-stage-session-tells-the-human.md) |
 | 0044 | Close the gaps in the close script's read and write contract | bug | unit | 2026-08-30 | [items/0044-close-read-and-write-contract.md](items/0044-close-read-and-write-contract.md) |
 | 0042 | Anchor the vocabulary-pinning guards to the claims they make | bug | unit | 2026-08-30 | [items/0042-anchor-guards-to-their-claims.md](items/0042-anchor-guards-to-their-claims.md) |
 | 0035 | Decide where conditionally-needed skill detail lives | debt | verify | 2026-08-25 | [items/0035-where-conditional-skill-detail-lives.md](items/0035-where-conditional-skill-detail-lives.md) |

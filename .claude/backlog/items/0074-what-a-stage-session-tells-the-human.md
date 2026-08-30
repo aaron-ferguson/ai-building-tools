@@ -2,8 +2,8 @@
 id: "0074"
 title: Give the suite one reporting rule and route the detail to disk
 type: debt
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 size: m
 created: 2026-08-30
@@ -21,18 +21,10 @@ expects:
   - skills/prototype/SKILL.md
   - tests/reporting.test.sh      # new guard
   - tests/reference-size.test.sh
-claimed_by: "2e0f"
-claimed_at: 2026-08-30T16:45:36Z
+claimed_by:
+claimed_at:
 touches:
-  - references/REPORTING.md
-  - skills/design/SKILL.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/queue/SKILL.md
-  - skills/retro/SKILL.md
-  - skills/prototype/SKILL.md
-  - tests/reporting.test.sh
-  - tests/reference-size.test.sh
+closed: 2026-08-30
 ---
 
 ## Problem
@@ -104,25 +96,25 @@ finding, running the full suite, releasing a claim.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the six stage skills, when each is read, then each cites `references/REPORTING.md`
+- [x] AC1 — Given the six stage skills, when each is read, then each cites `references/REPORTING.md`
       exactly once in its Report step and states no default report set of its own. **Red when** a skill
       file enumerates what to report inline instead of citing.
-- [ ] AC2 — Given `tests/reporting.test.sh`, when run against a tree in which any one stage skill's
+- [x] AC2 — Given `tests/reporting.test.sh`, when run against a tree in which any one stage skill's
       citation of `references/REPORTING.md` has been deleted, then it exits non-zero and names that
       file. **Red input: delete the citation line from `skills/design/SKILL.md`.**
-- [ ] AC3 — Given `references/REPORTING.md`, when read, then it lists the four content kinds of FR7 and
+- [x] AC3 — Given `references/REPORTING.md`, when read, then it lists the four content kinds of FR7 and
       gives each an explicit destination, screen or disk. **Red when** a kind appears with no
       destination.
-- [ ] AC4 — Given `references/REPORTING.md`, when read, then the expansion path is a file path a human
+- [x] AC4 — Given `references/REPORTING.md`, when read, then the expansion path is a file path a human
       can open. **Red input: a `--verbose` flag or a "just ask" trigger phrase appearing in the file**,
       which `tests/reporting.test.sh` greps for and fails on.
-- [ ] AC5 — Given `tests/reporting.test.sh`, when run against a `references/REPORTING.md` containing a
+- [x] AC5 — Given `tests/reporting.test.sh`, when run against a `references/REPORTING.md` containing a
       numeric token, word or line budget, then it exits non-zero. **Red input: insert the line
       `Keep the report under 200 tokens.`** Guards FR6.
-- [ ] AC6 — Given `verify` Step 7 and `develop` Step 8 after the change, when read, then no step that
+- [x] AC6 — Given `verify` Step 7 and `develop` Step 8 after the change, when read, then no step that
       performed a check has lost its only visible output. **Red when** a report line is deleted and its
       content appears in no item file, `FINDINGS.md` entry or commit. Guards FR3.
-- [ ] AC7 — Given `references/REPORTING.md`, when read, then it names `0036` FR13's machine outcome as
+- [x] AC7 — Given `references/REPORTING.md`, when read, then it names `0036` FR13's machine outcome as
       the other channel and states that the two carry the same facts at different lengths. **Red when**
       the file describes the human channel as the only one. Guards FR4.
 
