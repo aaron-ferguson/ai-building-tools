@@ -19,6 +19,9 @@ expects:
 claimed_by: "626a"
 claimed_at: 2026-08-30T16:45:32Z
 touches:
+  - tests/claim.test.sh
+  - tests/close.test.sh
+  - README.md
 ---
 
 ## Problem
