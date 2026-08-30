@@ -380,6 +380,19 @@ warn_dirty() {
   fi
 }
 
+# The best available description of a held row's file scope. `touches:` was checked against the
+# code; `expects:` is the prediction the ticket was written with and is labelled as such — the
+# reader is being handed a weaker answer, not a narrower claim, and still has to ask.
+#
+# $1 the held item file.
+declared_scope() {
+  tou="$(fm_list "$1" touches)"
+  [ -z "$tou" ] || { printf '%s' "$tou"; return 0; }
+  pred="$(fm_list "$1" expects)"
+  [ -n "$pred" ] || { printf 'none declared — assume held, ask'; return 0; }
+  printf 'none declared; predicted by expects: %s — assume held, ask' "${pred% }"
+}
+
 # Files another session holds. This is the check that stops two windows in one file, and it is why
 # the script reads item frontmatter rather than only the table: `touches:` is a claim on files.
 show_claimed() {
@@ -390,24 +403,9 @@ show_claimed() {
     id="$(field "$row" "$ID")"
     it="$(item_for "$id")"
     tok="$(fm "$it" claimed_by)"
-    tou="$(fm_list "$it" touches)"
-    # An empty `touches:` on an in-progress row is ambiguous — not yet declared, or released as it
-    # closes — and nothing here can tell them apart, so say so rather than implying it is free.
-    # `assume held, ask` is the right instruction and an unusable one alone, because the only other
-    # description of that row's scope is its `expects:` and reading it meant opening the item file —
-    # the cost the pared table exists to remove. So print it, labelled: predicted rather than
-    # checked, which is why the row is still offered against it and still worth asking about.
-    if [ -n "$tou" ]; then
-      scope="$tou"
-    else
-      pred="$(fm_list "$it" expects)"
-      if [ -n "$pred" ]; then
-        scope="none declared; predicted by expects: ${pred% } — assume held, ask"
-      else
-        scope="none declared — assume held, ask"
-      fi
-    fi
-    printf '  %s [%s] %s\n' "$id" "${tok:-no token}" "$scope"
+    # An empty `touches:` here is ambiguous — not yet declared, or released as the row closes — and
+    # nothing can tell them apart, so `declared_scope` says so rather than implying the row is free.
+    printf '  %s [%s] %s\n' "$id" "${tok:-no token}" "$(declared_scope "$it")"
   done
 }
 
@@ -423,15 +421,17 @@ show_claimed() {
 # `verify` claim, and that one is the worse case — a QA session runs the suite while the files
 # under it are edited, so its verdict describes a tree that was never a commit (0045 FR6).
 #
-# $1 the candidate's `expects:` list.
-collisions_with() {
+# Empty when the candidate is clear, which is also how the caller asks the question.
+#
+# $1 the candidate's id, $2 its `expects:` list.
+collision_report() {
   rows | awk -F'|' -v s="$STATUS" '{ v = $s; gsub(/^ +| +$/, "", v); if (v == "in-progress") print }' \
   | while IFS= read -r hrow; do
       hid="$(field "$hrow" "$ID")"
       hit="$(item_for "$hid")"
-      shared="$(paths_shared "$1" "$(fm_list "$hit" touches)")"
+      shared="$(paths_shared "$2" "$(fm_list "$hit" touches)")"
       [ -n "$shared" ] || continue
-      printf '%s — held by %s [%s]\n' "${shared% }" "$hid" "$(fm "$hit" claimed_by)"
+      printf 'COLLIDES  %s | %s — held by %s [%s]\n' "$1" "${shared% }" "$hid" "$(fm "$hit" claimed_by)"
     done
 }
 
@@ -765,11 +765,9 @@ if [ -n "${1:-}" ]; then
     # And CONTINUE rather than break — that is the load-bearing half. Suppressing the wrong TAKE
     # without it leaves a session correctly warned and still with nothing to do, which is the same
     # outcome by a slower route; the thing `develop` Step 1 actually asks for is the next clear row.
-    clash="$(collisions_with "$exp")"
+    clash="$(collision_report "$id" "$exp")"
     if [ -n "$clash" ]; then
-      printf '%s\n' "$clash" | while IFS= read -r cl; do
-        printf 'COLLIDES  %s | %s\n' "$id" "$cl"
-      done
+      printf '%s\n' "$clash"
       collided=1
       continue
     fi
