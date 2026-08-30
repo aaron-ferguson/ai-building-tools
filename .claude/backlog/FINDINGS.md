@@ -311,3 +311,7 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   turns out not to; the cost of the over-declaration is visible to every other session and invisible
   to the one holding it (pointer: skills/develop/SKILL.md Step 1, references/CONCURRENCY.md Rule 6,
   items/0053).
+- 2026-08-30 [0045] `./next --drive` selects develop rows with `takeable_develop`, which skips
+  `in-progress` rows but crosses nothing against their `touches:` — so a driver can dispatch a row
+  that `./next develop` now refuses as COLLIDES. 0045's ACs all name `./next <stage>`, so this was
+  left alone rather than widened mid-ticket. Worth a row, or 0039's to absorb.

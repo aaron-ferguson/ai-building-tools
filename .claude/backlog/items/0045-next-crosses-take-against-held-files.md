@@ -2,8 +2,8 @@
 id: "0045"
 title: Cross the take loop against the held file set in next
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -15,12 +15,9 @@ expects:
   - skills/queue/templates/next
   - .claude/backlog/next
   - tests/next.test.sh
-claimed_by: "296c"
-claimed_at: 2026-08-30T16:47:32Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next
-  - .claude/backlog/next
-  - tests/next.test.sh
 ---
 
 ## Problem
@@ -133,3 +130,44 @@ about. Deciding 0005 was safe meant opening 0026's item file — the read Step 1
 - FR2's "continue rather than break" is the load-bearing half. Suppressing the wrong `TAKE` without
   it would leave a session correctly warned and still with nothing to do, which is the current
   outcome by a slower route.
+
+### Built 2026-08-30 — what the implementation turned up
+
+- **`contains_word` and `paths_overlap` already existed, inside the `--drive` block.** 0038 wrote
+  them for gate batching, which asks the same question this ticket asks — do two path lists meet —
+  from the other end. They are now shared readers, and `paths_shared` sits beside them because the
+  two callers want different answers from one comparison: `--drive` needs *whether* the lists meet,
+  the take loop needs *which paths did*, since a collision stated without its path is a verdict the
+  reader cannot check.
+
+- **FR1 says `touches:` and the CLAIMED FILES fallback says `expects:`, and that asymmetry is the
+  design, not an oversight.** A row is refused only on a claim a session checked against the code;
+  a *prediction* by a held row is surfaced for the reader to judge and never spends a rank. The
+  first version of the AC5 fixture did not pin this — its free row shared no path with the held row
+  under either field, so widening the held set to `touches: + expects:` left the whole suite green.
+  That is the conventions' "wired and still cannot fail", and only the mutation sweep found it: the
+  extra case (`0045 FR1`) gives the candidate a path the held row *predicts* and has not claimed.
+
+- **The mutation sweep needs the branch and the plausible-wrong version, and here they red
+  differently.** Deleting the collision check reds 9 assertions across five cases; turning
+  `continue` back into `break` reds exactly 2, both in AC2 — so FR2's load-bearing half is pinned
+  independently of FR1, which is what the ticket's own note asked for. Filtering the held set to
+  the candidate's stage — the mistake a reader of `show_claimed` would make — reds only AC6.
+
+- **A malformed mutation reds for the wrong reason and looks like thoroughness.** One attempt at
+  the FR5 mutation left an unterminated quote: 124 of 172 assertions failed, across every mode in
+  the script, including modes the change never touches. A sweep's failure count is evidence about
+  the mutation before it is evidence about the test — `sh -n` the mutant before believing either
+  colour, and re-diff after a refactor moves the code a mutation targeted (M1 and M5 were re-run
+  against the flattened version, not assumed).
+
+- **Not done, deliberately: `--drive` still selects without this check.** `takeable_develop` skips
+  `in-progress` rows but crosses nothing against `touches:`, so a driver can dispatch `develop` on
+  a row the take loop would now refuse. Every AC here names `./next <stage>`, and *Out of scope*
+  keeps the file-scope rule itself with 0050 — parked in `FINDINGS.md` rather than widened here.
+
+- **The live backlog demonstrated FR5 within a minute of the change landing.** `./next develop`
+  reported 0038 colliding with this very ticket's `touches:`, and printed 0051 — claimed by another
+  session that had not yet written `touches:` — as `none declared; predicted by expects: …`. Both
+  paths of the change exercised against real rows, not only fixtures.
+
