@@ -332,3 +332,17 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   The other was `grep` reading an asserted `--until` as its own option, which errors rather than
   fails, so three assertions had never run. A guard that names its mutation and is not run against
   it is worth about as much as no guard.
+- 2026-08-30 [0f0a] **The dirty set that decides `verify`'s advisory label changed three times
+  inside one session**, and the label flipped with it: `tests/next.test.sh` held by 0045, then
+  `tests/measurement.test.sh` held by 0051, then nothing. Step 2 takes the tree snapshot once at
+  the start and Step 7 intersects it, but the label describes the state the verdict *closes
+  against* — which is the state at close time, not at claim time. 0053's own notes had already
+  reached "re-check the held file set before a full-suite run"; this session says the check has to
+  be re-taken immediately before `./close`, and the AC run re-done when a path in the evidence set
+  moved. Possibly a Step 5 line rather than a Step 2 one.
+- 2026-08-30 [0f0a] **`./next verify` correctly offered no row, and `verify` Step 1 has no branch
+  for that.** The only `next: verify` row was 0053 and it collided with 0045's live `touches:`, so
+  the script printed COLLIDES and "nothing here is safe to take" — the right answer, and not one of
+  the cases Step 1 enumerates (a row for you, a row at another stage, no ticket at all). A session
+  reading Step 1 literally has to invent whether to wait, take it anyway, or stop. It resolved
+  itself here only because 0045 landed mid-session.
