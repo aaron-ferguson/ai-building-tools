@@ -106,3 +106,21 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   first. Handled it here by doing the resolvable repo and stopping to ask about the other three,
   which seems like the right default but isn't written anywhere (pointer:
   references/CONVENTIONS.md "Resolution order").
+
+- 2026-08-30 — **`queue` has no operation for a re-rank against a stated priority, and Step 4's
+  mechanics do not scale to one.** Step 4 describes a move as two single-line edits each preceded by
+  a fresh read, which is right for one row. This session moved ten and inserted two; twenty
+  sequential edits across twenty tool calls is slower *and* less safe than one locked rebuild that
+  asserts the row set is preserved modulo the additions. `./claim` and `./close` are granted the
+  rebuild exemption by *Never rewrite `QUEUE.md` by hand* for exactly that reason — holding the lock
+  while they rebuild — and a re-rank does the same thing with no named permission, so it is either
+  a fourth script or a stated exemption (pointer: skills/queue/SKILL.md Step 4,
+  references/CONCURRENCY.md, items/0048, items/0065).
+- 2026-08-30 — **Step 4 assumes the rows the user wants promoted already exist, and here none of
+  them did.** Asked to make token efficiency the top priority, the honest answer was that the
+  backlog held no ticket aimed at turns-per-session — the lever `MEASUREMENT.md` itself names — so
+  the re-rank had to run Step 2 and Step 3 inside Step 4 before it had anything to order, and rank
+  the results by the instruction rather than by the tiers. Nothing in the skill says to check that
+  the theme being promoted is represented before reordering; a session that skipped the check would
+  have produced a confident re-rank of rows that do not serve the stated priority (pointer:
+  skills/queue/SKILL.md Steps 2–4, items/0073, items/0074).
