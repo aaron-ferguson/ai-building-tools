@@ -357,3 +357,23 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   false claim capitalised at the start of a sentence left the suite green; verbatim and lowercase
   it went red. The mutation was mine to get wrong, but the property is the suite's — `absent`
   helpers grep case-sensitively, and prose that returns at a sentence boundary returns capitalised.
+- 2026-09-01 [becd] **A ticket's own AC named the guard that would prove it, and that guard could not
+  see it.** 0052 FR7/AC6 said each added `testing-conventions.md` citation "resolves under
+  `tests/citations.test.sh`"; that guard anchors on `CONCURRENCY.md`/`CONCURRENCY-INCIDENTS.md`/`rule:`
+  and validates against `CONCURRENCY.md`'s headings only, so a conventions citation matches no anchor
+  and the AC passed either way. `develop` Step 2's rule about a quoted figure covers the *number* case;
+  this is the same failure over a *mechanism* — "guard X checks this" is equally a claim about a file
+  the ticket does not own, and equally worth re-reading at the source. Worth a sentence in that rule.
+- 2026-09-01 [becd] **A mutation run by hand is not covered by the discipline the suite applies to its
+  own.** `citations.test.sh`'s `mutate()` refuses a mutation whose diff is empty, precisely because a
+  `sed` that matched nothing reads exactly like a guard that holds. Mutating the real tree by hand has
+  no such check: substituting `ui-conventions.md`, which appears in no covered file, left the suite
+  green and "the guard is wired to nothing" was the available and wrong reading. `verify` Step 3 tells
+  a session to break the behaviour and confirm red; it does not tell it to confirm the break landed.
+- 2026-09-01 [becd] **Falsifiability at phrase level is blocked on a citation marker this repo has not
+  decided on.** Resolving a cited *rule phrase* inside a conventions file needs to tell a citation from
+  emphasis, and italics carry emphasis throughout: three existing spots (`skills/retro/SKILL.md` x2,
+  `skills/verify/SKILL.md` x1) are emphasis directly after a conventions filename. 0052 resolved the
+  filename and recorded the gap in the guard's header. The marker is a design question, and it is the
+  same question `citations.test.sh`'s anchoring rule already answered for `CONCURRENCY.md` — so the
+  precedent exists and only needs extending. Candidate ticket.
