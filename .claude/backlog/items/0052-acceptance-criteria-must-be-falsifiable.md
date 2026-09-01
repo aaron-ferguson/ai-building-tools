@@ -19,6 +19,12 @@ expects:
 claimed_by: "becd"
 claimed_at: 2026-08-30T17:16:12Z
 touches:
+  - skills/queue/SKILL.md
+  - skills/verify/SKILL.md
+  - skills/queue/templates/item.md
+  - tests/citations.test.sh
+  - tests/skill-size.test.sh        # not in expects: AC8's justification entry lands here
+  - tests/falsifiable-acs.test.sh   # NEW FILE — the prose guards for AC1-AC5
 ---
 
 ## Problem
