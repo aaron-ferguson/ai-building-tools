@@ -41,6 +41,8 @@ for f in "$QUEUE" "$VERIFY" "$ITEM"; do
   [ -f "$f" ] || { echo "no file at $f" >&2; exit 2; }
 done
 
+SAW_LINES=8            # a step body runs to thirty-odd lines; enough to orient, not enough to bury
+
 PASS=0
 FAIL=0
 ok()  { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
@@ -56,9 +58,9 @@ trap cleanup EXIT INT TERM
 # one line saying what was expected. The count is printed so a truncated window is never mistaken
 # for the whole of it.
 saw() {
-  printf '%s\n' "$1" | sed 's/^/         | /' | head -8
+  printf '%s\n' "$1" | sed 's/^/         | /' | head -"$SAW_LINES"
   n="$(printf '%s\n' "$1" | wc -l | tr -d ' ')"
-  [ "$n" -gt 8 ] && printf '         | ... (%s lines in the window)\n' "$n"
+  [ "$n" -gt "$SAW_LINES" ] && printf '         | ... (%s lines in the window)\n' "$n"
   return 0
 }
 saw_on_pass() { [ -n "${SHOW_MATCHED:-}" ] && saw "$1"; return 0; }
@@ -79,16 +81,25 @@ window() {
   ' "$1"
 }
 
+# window_has <window-text> <fixed-string> — true when the window is non-empty AND holds the string.
+# A predicate rather than an assertion, so the falsifiability probes below can ask the question
+# without reporting a case; nothing here touches the counters.
+window_has() {
+  [ -n "$1" ] || return 1
+  case "$1" in *"$2"*) return 0 ;; *) return 1 ;; esac
+}
+
 # in_window <label> <window-text> <fixed-string>
 in_window() {
   if [ -z "$2" ]; then
     bad "$1 — the window is EMPTY; its opening phrase is gone, so nothing was searched"
     return 0
   fi
-  case "$2" in
-    *"$3"*) ok "$1"; saw_on_pass "$2" ;;
-    *)      bad "$1 — expected in the step: $3"; saw "$2" ;;
-  esac
+  if window_has "$2" "$3"; then
+    ok "$1"; saw_on_pass "$2"
+  else
+    bad "$1 — expected in the step: $3"; saw "$2"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -150,13 +161,10 @@ Write acceptance criteria as given/when/then; verify checks these literally.
 Route the ticket.
 FIXTURE
 W="$(window "$FIX/absent.md" 'Write acceptance criteria as given/when/then' '^### ')"
-before=$FAIL
-in_window "probe" "$W" 'Name what would make each AC red' >/dev/null 2>&1
-if [ "$FAIL" -gt "$before" ]; then
-  FAIL=$before
-  ok "a step without the rule is reported as a failure"
+if window_has "$W" 'Name what would make each AC red'; then
+  bad "FR8 — a step missing the rule matched anyway; this guard is wired to nothing"
 else
-  bad "FR8 — a step missing the rule passed; this guard is wired to nothing"
+  ok "a step without the rule is reported as a failure"
 fi
 
 echo "FR8 — the phrase present OUTSIDE the window does not satisfy the check"
@@ -186,17 +194,12 @@ The acceptance-criteria paragraph was deleted wholesale.
 ### Set next now
 FIXTURE
 W="$(window "$FIX/gone.md" 'Write acceptance criteria as given/when/then' '^### ')"
-if [ -z "$W" ]; then
-  before=$FAIL
-  in_window "probe" "$W" 'anything at all' >/dev/null 2>&1
-  if [ "$FAIL" -gt "$before" ]; then
-    FAIL=$before
-    ok "an empty window is a named failure, never a vacuous pass"
-  else
-    bad "FR8 — an empty window passed; every case below it would prove nothing"
-  fi
-else
+if [ -n "$W" ]; then
   bad "FR8 — the window found text after its opening phrase was deleted: $W"
+elif window_has "$W" 'anything at all'; then
+  bad "FR8 — an empty window matched; every case below it would prove nothing"
+else
+  ok "an empty window is a named failure, never a vacuous pass"
 fi
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
