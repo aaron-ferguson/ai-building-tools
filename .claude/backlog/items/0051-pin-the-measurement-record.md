@@ -2,8 +2,8 @@
 id: "0051"
 title: Pin the measurement record's denominator and make its recipe reproduce
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -16,9 +16,10 @@ expects:
   - README.md
   - tests/measurement.test.sh
   - tools/harvest-usage.sh
-claimed_by: "61a0"
-claimed_at: 2026-08-30T17:14:00Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-01
 ---
 
 ## Problem
@@ -73,19 +74,19 @@ A date window is not a pin on a live store.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `MEASUREMENT.md`, when *Cost per closed ticket* is read, then it names the
+- [x] AC1 — Given `MEASUREMENT.md`, when *Cost per closed ticket* is read, then it names the
   closed-ticket count, the date bound producing it, and an as-at stamp.
-- [ ] AC2 — Given that section's figure, when recomputed from the pinned numerator and the stated
+- [x] AC2 — Given that section's figure, when recomputed from the pinned numerator and the stated
   denominator, then the arithmetic agrees with the published number.
-- [ ] AC3 — Given `README.md`, when its closed-ticket figure and denominator are read, then they
+- [x] AC3 — Given `README.md`, when its closed-ticket figure and denominator are read, then they
   match `MEASUREMENT.md`'s.
-- [ ] AC4 — Given *Re-running this*, when the command it prints is run against the store, then it
+- [x] AC4 — Given *Re-running this*, when the command it prints is run against the store, then it
   reproduces the session count and total the record publishes.
-- [ ] AC5 — Given the whole change, when `git grep` is run for the transcript-store path segments
+- [x] AC5 — Given the whole change, when `git grep` is run for the transcript-store path segments
   across every file it touches — the item file included — then none is present.
-- [ ] AC6 — Given `tests/measurement.test.sh`, when it runs, then the assertions repaired by 0042
+- [x] AC6 — Given `tests/measurement.test.sh`, when it runs, then the assertions repaired by 0042
   pass against the corrected record.
-- [ ] AC7 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
+- [x] AC7 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
   then every suite passes.
 
 ## QA plan

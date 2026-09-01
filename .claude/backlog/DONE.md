@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0051 | Pin the measurement record's denominator and make its recipe reproduce | bug | unit | 2026-09-01 | [items/0051-pin-the-measurement-record.md](items/0051-pin-the-measurement-record.md) |
 | 0053 | Let the test harness print the line an assertion actually saw | feature | unit | 2026-08-30 | [items/0053-harness-shows-what-the-assertion-saw.md](items/0053-harness-shows-what-the-assertion-saw.md) |
 | 0074 | Give the suite one reporting rule and route the detail to disk | debt | verify | 2026-08-30 | [items/0074-what-a-stage-session-tells-the-human.md](items/0074-what-a-stage-session-tells-the-human.md) |
 | 0044 | Close the gaps in the close script's read and write contract | bug | unit | 2026-08-30 | [items/0044-close-read-and-write-contract.md](items/0044-close-read-and-write-contract.md) |

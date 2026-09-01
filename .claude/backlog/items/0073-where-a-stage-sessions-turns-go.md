@@ -3,7 +3,7 @@ id: "0073"
 title: Measure where a stage session's turns and tokens actually go
 type: chore
 next: develop
-status: blocked
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-30
