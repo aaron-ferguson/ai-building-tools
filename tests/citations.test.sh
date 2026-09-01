@@ -1,6 +1,19 @@
 #!/bin/sh
 #
-# Rule-name citation guard for references/CONCURRENCY.md (0033).
+# Citation guard: CONCURRENCY.md rule names (0033), and conventions filenames (0052).
+#
+# TWO KINDS, one file, because both answer "does this citation still resolve?" — the first against
+# the rule headings of references/CONCURRENCY.md, the second against the conventions directory
+# config.yml points at. The second exists because these skills cite a SEPARATE REPO: a conventions
+# file renamed or dropped there leaves a citation here that reads perfectly and resolves to nothing.
+#
+# WHAT THE CONVENTIONS CHECK DOES NOT DO, stated because 0052 found the gap by assuming it did.
+# It resolves the FILENAME, never the rule phrase inside it. Checking the phrase needs a citation
+# marker this repo does not have: italics carry emphasis all over these files, so reading an
+# italicised span after a conventions filename as a rule name reports three existing spots that are
+# emphasis rather than citations. Introducing that marker is a decision, not detail, and is parked
+# in FINDINGS.md rather than guessed at here. So: a citation whose FILE is gone is caught; one whose
+# cited RULE has been reworded inside a file that still exists is not.
 #
 # WHY THIS EXISTS:
 #
@@ -190,6 +203,88 @@ audit() {
 }
 
 # ---------------------------------------------------------------------------
+# 0052 — conventions filenames resolve in the conventions directory
+# ---------------------------------------------------------------------------
+
+# conventions_dir <root> — the conventions path from config.yml, resolved against the root. Prints
+# nothing when the key or the directory is absent, which conventions_audit reports by name rather
+# than skipping silently: a check that quietly stops running is the failure this suite exists for.
+conventions_dir() {
+  root="${1:?conventions_dir needs a tree root}"
+  cfg="$root/.claude/backlog/config.yml"
+  [ -f "$cfg" ] || return 0
+  # The key is nested under `conventions:`, so match the indented `path:` inside that block only —
+  # a document-wide grep for `path:` would take any other block's.
+  rel="$(awk '/^conventions:/{inb=1; next} /^[^[:space:]#]/{inb=0} inb && $1=="path:"{print $2; exit}' "$cfg")"
+  [ -n "$rel" ] || return 0
+  case "$rel" in
+    /*) [ -d "$rel" ] && printf '%s\n' "$rel" ;;
+    *)  [ -d "$root/$rel" ] && (CDPATH= cd -- "$root/$rel" && pwd) ;;
+  esac
+  return 0
+}
+
+# conventions_mentions <root> — "<path><TAB><filename>" for every *-conventions.md named in a cited
+# file. Deliberately NOT anchor-scoped: a bare filename in prose is still a claim that the file
+# exists, and unlike a rule name there is no emphasis it can be confused with.
+conventions_mentions() {
+  root="${1:?conventions_mentions needs a tree root}"
+  cited_files "$root" | while IFS= read -r file; do
+    grep -oE '[a-z][a-z-]*-conventions\.md' "$file" 2>/dev/null | sort -u | while read -r name; do
+      [ -n "$name" ] && printf '%s\t%s\n' "$file" "$name"
+    done
+  done
+  return 0
+}
+
+# conventions_audit <root> — FAIL / SKIP / COUNT lines, in audit()'s shape.
+conventions_audit() {
+  root="${1:?conventions_audit needs a tree root}"
+  dir="$(conventions_dir "$root")"
+  mentions="$(conventions_mentions "$root")"
+  nmention="$(printf '%s' "$mentions" | grep -c . || true)"
+
+  if [ -z "$dir" ]; then
+    echo "SKIP  no conventions directory resolved from config.yml — filename resolution not checked"
+    echo "COUNT $nmention mentions, 0 checked"
+    return 0
+  fi
+  # An empty mention set makes every comparison below pass, so it is a defect in its own right
+  # rather than a clean tree (the same reasoning as audit()'s FR6 branch).
+  if [ "$nmention" -eq 0 ]; then
+    echo "FAIL  no conventions filenames extracted from any covered file — the recognition stopped matching"
+    echo "COUNT 0 mentions, 0 checked"
+    return 0
+  fi
+
+  printf '%s\n' "$mentions" | while IFS='	' read -r file name; do
+    [ -n "$name" ] || continue
+    [ -f "$dir/$name" ] ||
+      echo "FAIL  ${file#$root/} cites \"$name\", which is not a file in $dir"
+  done
+
+  echo "COUNT $nmention mentions, $nmention checked"
+}
+
+echo "0052 AC6 — every conventions filename cited resolves in the conventions directory"
+cout="$(conventions_audit "$ROOT")"
+ccounts="$(printf '%s\n' "$cout" | grep '^COUNT ' || true)"
+cstale="$(printf '%s\n' "$cout" | grep '^FAIL ' || true)"
+cskip="$(printf '%s\n' "$cout" | grep '^SKIP ' || true)"
+if [ -n "$cskip" ]; then
+  # Reported as a failure, not a skip: this repo HAS a conventions path, so an unresolved one here
+  # means the config or the sibling checkout moved, and every case below it proves nothing.
+  bad "${cskip#SKIP  }"
+elif [ -z "$cstale" ]; then
+  ok "every conventions filename resolves — ${ccounts#COUNT }"
+else
+  OLDIFS="$IFS"; IFS='
+'
+  for l in $cstale; do bad "${l#FAIL  }"; done
+  IFS="$OLDIFS"
+fi
+
+# ---------------------------------------------------------------------------
 # AC1 — the shipped tree
 # ---------------------------------------------------------------------------
 
@@ -315,6 +410,71 @@ case "$out" in
   *'A retired rule nobody kept'*) bad "FR5 — narrative prose was reported as a citation: $out" ;;
   *'FAIL '*) bad "FR5 — unexpected failure: $out" ;;
   *) ok "an italicised phrase with no anchor is left alone, with no exemption list" ;;
+esac
+
+# ---------------------------------------------------------------------------
+# 0052 — the conventions check proves it can fail. Three mutations, one per branch: an
+# unresolvable filename, a recognition that stopped matching, and a conventions directory that no
+# longer resolves. Authored fixtures throughout — the real config.yml is a shared backlog file and
+# mutating it would be a write another session reads.
+# ---------------------------------------------------------------------------
+
+# mkconvfix <dir> — a minimal tree whose one cited file names one conventions file that exists.
+mkconvfix() {
+  dir="${1:?mkconvfix needs a target directory}"
+  rm -rf "$dir"
+  mkdir -p "$dir/references" "$dir/skills/develop" "$dir/.claude/backlog" "$dir/conv"
+  printf '# fixture convention\n' > "$dir/conv/testing-conventions.md"
+  printf 'conventions:\n  path: conv\n' > "$dir/.claude/backlog/config.yml"
+  printf '# Fixture skill\n\nTDD always (`testing-conventions.md`).\n' \
+    > "$dir/skills/develop/SKILL.md"
+}
+
+echo "0052 AC6 — a conventions file that does not resolve fails, naming the file and the citation"
+mkconvfix "$FIX/c"
+out="$(conventions_audit "$FIX/c")"
+case "$out" in
+  *'FAIL '*) bad "0052 — the baseline fixture already failed: $out" ;;
+  *) ok "the baseline fixture resolves, so the mutations below mean something" ;;
+esac
+
+mutate "$FIX/c/skills/develop/SKILL.md" 's/testing-conventions/deleted-conventions/' \
+  "rename a cited conventions file to one that does not exist"
+out="$(conventions_audit "$FIX/c")"
+case "$out" in
+  *'skills/develop/SKILL.md cites "deleted-conventions.md", which is not a file in '*)
+    ok "an unresolvable conventions filename is reported with its file and the name it used" ;;
+  *) bad "0052 AC6 — expected an unresolvable-filename FAIL, got: ${out:-<nothing>}" ;;
+esac
+
+echo "0052 AC6 — zero mentions is a defect, not a clean tree"
+mkconvfix "$FIX/c"
+mutate "$FIX/c/skills/develop/SKILL.md" 's/-conventions\.md//' "strip every conventions filename"
+out="$(conventions_audit "$FIX/c")"
+case "$out" in
+  *'FAIL  no conventions filenames extracted'*)
+    ok "an empty mention set is reported as a defect" ;;
+  *) bad "0052 AC6 — expected the empty-mention-set FAIL, got: ${out:-<nothing>}" ;;
+esac
+
+echo "0052 AC6 — a conventions directory that no longer resolves is named, never skipped silently"
+mkconvfix "$FIX/c"
+mutate "$FIX/c/.claude/backlog/config.yml" 's/path: conv/path: gone/' \
+  "point the conventions path at a directory that does not exist"
+out="$(conventions_audit "$FIX/c")"
+case "$out" in
+  *'SKIP  no conventions directory resolved'*)
+    ok "an unresolved conventions directory is reported by name, and the real tree treats it as a failure" ;;
+  *) bad "0052 AC6 — expected the unresolved-directory SKIP line, got: ${out:-<nothing>}" ;;
+esac
+
+echo "0052 FR7 — the conventions path is read from its own block, not from any path: key"
+mkconvfix "$FIX/c"
+printf 'tracker:\n  path: wrong\n' >> "$FIX/c/.claude/backlog/config.yml"
+dir="$(conventions_dir "$FIX/c")"
+case "$dir" in
+  */conv) ok "another block's path: key is not mistaken for the conventions one" ;;
+  *) bad "0052 FR7 — conventions_dir returned \"${dir:-<nothing>}\", not the conv directory" ;;
 esac
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
