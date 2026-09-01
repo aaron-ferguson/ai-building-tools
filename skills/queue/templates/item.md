@@ -133,6 +133,10 @@ Delete this section when the item moves to `next: develop`, and record the answe
 
 Given / when / then. `verify` checks these literally and will not close the item without them.
 
+**Each criterion names what would make it red** — the input, change or mutation that turns it from
+green to red. One for which none can be named **is not a criterion yet**; `queue`'s Step 2 names the
+three shapes that read as criteria and are not.
+
 **ONE form: every criterion is a `- [ ] ACn — ` checkbox**, and `./close` ticks exactly that.
 Written any other way — `- **AC1** —` is the one that happened — it ticks none of them, and until
 0044 it closed the ticket anyway, leaving no record that anything was checked.

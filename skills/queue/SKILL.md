@@ -200,6 +200,28 @@ X, whose fix is ticket NNNN"). **State any size or budget target absolutely** �
 ceiling — never as a percentage of a baseline a sibling ticket in the same project is still moving: two
 independently-written targets over a shifting baseline leave the second one unclosable.
 
+**Name what would make each AC red** — the input, change or mutation that turns it from green to
+red, and an AC for which none can be named **is not a criterion yet**. It cannot be *met*, only not
+contradicted, and `verify` closing on it records a check nobody ran. The underlying rules are
+`testing-conventions.md`'s; three shapes have each closed a ticket here while reading as criteria:
+
+- **A tolerance wider than the effect it measures** — "within the stated tolerance" over a per-cycle
+  growth orders below the per-turn floor is a green light dressed as a measurement.
+- **A cardinality claim over a set the ticket does not own** — "names exactly one operation that
+  takes the lock" goes quietly false the day a sibling adds a second, and reads as correct prose
+  while it does. The enumerated-set rule above is the same failure in an FR.
+- **A mutation applied on the far side of the boundary under test** rather than across it — a phrase
+  added *after* the paragraph a window should stop at leaves every presence assertion satisfied by
+  the real paragraph, so the suite is green under bug and fix alike. The discriminating mutation
+  **moves** a phrase across the boundary.
+
+**Check a QA plan's absence assertions against the guards already shipped**, or the plan demands the
+removal of a phrase an existing test requires and the next session must choose between its own
+ticket and another's guard. **Compute an absence assertion's expected wrong answer
+from the fixture rather than estimating it**, or name no value at all: an estimated constant that
+never appears reddens through some generic branch instead, so the message that would have named the
+cause never fires.
+
 If the report genuinely doesn't contain enough to write FRs or ACs, ask — once, batched, with your
 proposed defaults.
 

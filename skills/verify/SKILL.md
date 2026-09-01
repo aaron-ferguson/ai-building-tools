@@ -152,6 +152,15 @@ and measures something *adjacent* to the defect — a drag ending off the elemen
 never lands there and it passes against deliberately broken code. Budget this for the checks you would
 cite when closing; **a check that cannot be made to fail leaves its AC unverified.**
 
+**Then ask what the mutation changed: the AC's named outcome, or only the message.** If the outcome
+the AC names still holds against deliberately broken code, **the AC is unverified** and that is the
+red this step exists for. If the outcome moved and only the wording differs — a deleted branch
+dropping through to a vaguer escalation with the same exit code — that is a **message assertion**
+worth adding, not a failure; `testing-conventions.md` asks for the message rather than the status in
+exactly that case. Read the other way round, this step condemns every mutation-silent branch and
+pushes a QA session into asserting wording everywhere, which is how these guards became tied to
+prose in the first place.
+
 **And a check can only see what its runner can represent** — a headless browser has no compositor and
 no finger, a fake clock has no drift. If the defect lives in what the runner *substitutes*, no result
 counts in either direction: fall back to the level that can observe it, even when that is a human on a
