@@ -346,3 +346,14 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the cases Step 1 enumerates (a row for you, a row at another stage, no ticket at all). A session
   reading Step 1 literally has to invent whether to wait, take it anyway, or stop. It resolved
   itself here only because 0045 landed mid-session.
+- 2026-08-30 [61a0] **`verify` Step 3 tells you to mutate the working tree, but on this repo the
+  files under test are shared prose another live session predicts** — 0051's evidence set was
+  `MEASUREMENT.md` and `README.md`, both in 0053's `expects:`. Mutating a scratch copy removes the
+  window entirely, and it worked, but `git archive HEAD | tar -x` alone gives 55/1: the suite's
+  tracked-file guards use `git ls-files` and fail loudly outside a repo. Correct behaviour, and a
+  session could read that 1 as a real red. The copy needs a `git init` + commit first. Step 3 names
+  only the in-tree route and its `git checkout -- <that path>` restore.
+- 2026-08-30 [61a0] **An `absent` guard is only as strong as its casing.** Re-adding 0051's deleted
+  false claim capitalised at the start of a sentence left the suite green; verbatim and lowercase
+  it went red. The mutation was mine to get wrong, but the property is the suite's — `absent`
+  helpers grep case-sensitively, and prose that returns at a sentence boundary returns capitalised.
