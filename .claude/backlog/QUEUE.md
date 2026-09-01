@@ -28,7 +28,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0039 | Build the orchestrate skill and the stage outcome schema | develop | blocked | 0036 |
 | 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
 | 0041 | Report what a work session delivered and what it cost | design | ready |  |
-| 0052 | Require an acceptance criterion to name the input that would make it red | develop | in-progress |  |
+| 0052 | Require an acceptance criterion to name the input that would make it red | verify | ready |  |
 | 0046 | Make the README guard list provably complete | develop | ready |  |
 | 0047 | Give the busy-lock procedure a close-time path | develop | ready |  |
 | 0045 | Cross the take loop against the held file set in next | verify | ready |  |

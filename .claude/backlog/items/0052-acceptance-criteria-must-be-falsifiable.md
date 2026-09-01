@@ -2,8 +2,8 @@
 id: "0052"
 title: Require an acceptance criterion to name the input that would make it red
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -16,15 +16,9 @@ expects:
   - skills/verify/SKILL.md
   - skills/queue/templates/item.md
   - tests/citations.test.sh
-claimed_by: "becd"
-claimed_at: 2026-08-30T17:16:12Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/queue/templates/item.md
-  - tests/citations.test.sh
-  - tests/skill-size.test.sh        # not in expects: AC8's justification entry lands here
-  - tests/falsifiable-acs.test.sh   # NEW FILE — the prose guards for AC1-AC5
 ---
 
 ## Problem
@@ -162,3 +156,41 @@ a red. Both cases were live in one ticket.
   other skill files. That collision is real and is what 0050 exists to settle; the two tickets are
   not merged because their root causes are unrelated, and merging on collision grounds is how a
   ticket ends up with a contract nobody agreed to.
+
+### From the develop pass, 2026-09-01
+
+- **FR7 and AC6 were themselves unfalsifiable, which is the defect this ticket is about.** They
+  say each added citation "resolves under `tests/citations.test.sh`". That guard resolves
+  **`CONCURRENCY.md` rule names only** — it anchors on `CONCURRENCY.md`,
+  `CONCURRENCY-INCIDENTS.md` or the `rule:` marker and validates against `CONCURRENCY.md`'s own
+  headings. A `testing-conventions.md` citation matches no anchor, so it is invisible: AC6 would
+  have passed whether or not the citation resolved. Caught by reading the guard rather than the FR,
+  which is `develop` Step 2's rule about a figure a ticket quotes concerning a file it does not own.
+- **Resolved at filename level, not phrase level, and the difference is recorded in the guard's own
+  header.** Every `*-conventions.md` named in a covered file is now resolved against the directory
+  `config.yml` points at — a real failure mode, since the conventions live in a separate repo.
+  Checking the cited *rule phrase* would need a citation marker this repo does not have: italics
+  carry emphasis throughout, and reading an italicised span after a conventions filename as a rule
+  name reports three existing spots (`skills/retro/SKILL.md` twice, `skills/verify/SKILL.md` once)
+  that are emphasis, not citations. Introducing that marker is a **decision**, so it is parked
+  rather than guessed at here.
+- **A hand-run mutation that does not land proves nothing, and it is silent.** The first live
+  mutation of the new check replaced `ui-conventions.md` in `skills/design/SKILL.md` — a filename
+  that appears nowhere in any covered file. `sed` reported success, the suite stayed green, and the
+  reading "the guard is wired to nothing" was available and wrong. This is exactly what
+  `citations.test.sh`'s own `mutate()` helper exists to prevent, and the lesson is that the helper's
+  discipline applies to mutations run by hand too: **assert the diff is non-empty before believing
+  the result.** Re-run against `documentation-conventions.md`, which is present, and the guard fired
+  with the file, the name and the directory, exit 1.
+- **`verify/SKILL.md` crossed the soft size goal by 126 bytes**, so AC8's second branch applies.
+  The payback test rejects relocation on condition **(b)**: mutation guidance is mandatory the
+  moment an AC rests on an automated check, and a mandatory step behind a pointer is a step that
+  gets skipped — which outranks the arithmetic. `skills/verify/SKILL.md` was added to the loop in
+  `tests/skill-size.test.sh` that checks each justification names what was considered and carries
+  no byte count; without that, the new entry was the one unguarded entry in the list.
+- **The three rules FR7 cites were verified against the source, not the ticket.** *Anchor an
+  assertion to the claim*, *assert membership never cardinality* and *break the definition never the
+  expectation* are all present at `testing-conventions.md:15`.
+- **TDD was clean on FR1–FR6 and not on AC6.** The prose guard was written first, run red on 14
+  cases, then made green. The conventions checker was written before its fixtures, with red proven
+  afterwards by the live mutation above. Recorded rather than smoothed over.
