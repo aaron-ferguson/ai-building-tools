@@ -132,3 +132,34 @@ with no source tree can read. That is an argument for promoting it out of the Ti
 and it is **left unmade here**: rows 1–10 sit under Aaron's standing token-efficiency instruction,
 and a promotion into that region is his call rather than a capture session's. Recorded so the next
 re-rank has it.
+
+## 2026-09-02 — building what 0085's own cost record priced but did not build
+
+`docs/decisions/002-matching-rigour-to-stakes.md` (built on 0073/0085's measurement) named a Light
+QA tier and a ~10-turn inline-or-own-session break-even, both as pricing models rather than
+mechanisms. Two tickets captured from asking what building each would actually take.
+
+**0086 (the Light tier) is Tier 2, Compounding.** Decision 002's own *Consequences* section ranks
+routing discipline — whether a ticket enters the full lifecycle at all — as worth more than any
+single engineering fix under it ("30% of items routed Inline instead of Standard" is the single
+largest lever in its cost table after the backlog-protocol change 0085 itself makes). Every ticket
+that pays Standard's rate while a Light path is absent is the fix getting no cheaper while it
+waits, which is the Tier 2 test.
+
+**Against 0075–0083 it loses on tie-breaker 5, capture order — cleanly, not through the regret
+operator.** Tie-breakers 1–4 do not separate them: comparable blast radius (this project's own
+backlog machinery), no unblocking relationship either way, both freshly specified today, and 0086 is
+`size: l` against that batch's mostly `s`/`m` — tie-breaker 4 actively favours the existing batch,
+not 0086. It sits immediately below 0083, the last row of that batch, and above 0038, where the
+older, still-blocked 0036 epic and the long tail of legacy `design`-stage debt begin — none of
+which are compounding at 0086's rate; they are Value or Debt-tier decisions that have simply been
+sitting.
+
+**0087 (the turn-count signal) is Tier 4, Value.** The break-even test it instruments already exists
+and is usable as a judgement call without it; building a live or calibrated signal makes that
+judgement more precise, it does not close an active leak the way 0086 does — nothing degrades if it
+waits. Compared against the 0069–0072 band (the same kind of process-instrumentation work, same
+tier), tie-breaker 5 again decides it cleanly: that band was captured 2026-08-25 or earlier. It sits
+last, below 0072.
+
+**The regret operator was not needed for either placement.**

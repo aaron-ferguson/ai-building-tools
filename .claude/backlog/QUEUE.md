@@ -34,6 +34,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
 | 0079 | Give a repo with no test runner a QA level that is a checklist | design | ready |  |
 | 0083 | Decide what a second checkout may do with the backlog | design | ready |  |
+| 0086 | Add a light QA tier that closes without a separate verify session | design | ready |  |
 | 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
 | 0039 | Build the orchestrate skill and the stage outcome schema | develop | blocked | 0036 |
 | 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
@@ -70,6 +71,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
 | 0071 | Add a decision-map mode for work too large or too foggy for one project ticket | design | ready |  |
 | 0072 | Archive an escalated prototype on its own branch instead of leaving it only in the working tree | develop | ready |  |
+| 0087 | Give a session a turn-count signal for the inline-or-own-session break-even | design | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
