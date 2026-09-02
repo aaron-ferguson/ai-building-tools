@@ -2,8 +2,9 @@
 id: "0037"
 title: Run the fresh-project end-to-end exercise against the settled configuration
 type: chore
-next: develop
-status: waiting
+next:
+status: done
+closed: 2026-09-02
 qa_level: verify
 size: l
 created: 2026-08-24
@@ -117,6 +118,46 @@ than run as soon as someone has an afternoon.
 - Deciding **how** the sessions are driven. That is `0036`. This ticket uses whatever exists when it
   runs and records which it was.
 
+## Verdict — closed 2026-09-02 without being run
+
+**Superseded. The questions this run was built to answer have been answered more cheaply, and the
+one it would still have answered is not a measurement run.** Recorded per
+`measurement-conventions.md` — a commitment is discharged with a verdict, including the verdict
+"we are not doing this".
+
+**The acceptance criteria above are deliberately left unticked.** None was met. A closed ticket
+whose criteria read green is indistinguishable from one that was waved through, which is the
+failure `.claude/backlog/close`'s fourth refusal exists to prevent; this close records the opposite
+of a pass and says so in the row it wrote to `DONE.md`.
+
+Point by point, against what has landed since 2026-08-24:
+
+- **FR4 / AC3 — the effect of `0028` and `0035` on context per turn — is a closed question.**
+  `docs/decisions/002-matching-rigour-to-stakes.md`, *Closed questions*: all the prose this project
+  controls is 13,724 tokens of a 58,060-token floor, so halving every word of it buys about 4.5% of
+  a session. The direction those two tickets predicted is real and the magnitude is settled;
+  re-deriving it from a fresh end-to-end run would cost multiple sessions to confirm a figure
+  already measured by difference.
+- **FR3 / AC1–AC2 — how much of `0026`'s number was the suite and how much was this repo — is what
+  `tools/floor-probe.sh` now measures directly**, as the difference between observed runs rather
+  than by comparing two projects: harness system prompt 9,048, built-in tool definitions 25,064,
+  MCP 3,668–5,127, the `CLAUDE.md` chain 7,580 (`MEASUREMENT.md`, *What the harness floor costs*).
+  That decomposition is the fresh-project comparison's whole purpose, at a fraction of its price.
+- **The premise broke a second time, in the same way it broke the first.** This ticket was split out
+  of `0026` precisely so it would measure a *settled* configuration. On 2026-09-02 `dd699f2` moved
+  the floor from 45,448 to 32,742 through a **repository-scoped** `.claude/settings.json` deny list
+  and per-repository MCP disables — configuration a fresh project would not inherit. A run now would
+  measure neither the old configuration nor what a new project gets.
+- **`MEASUREMENT.md` already carries the forward commitment this ticket was standing in for**, with
+  a date and a named command: re-run `tools/classify-turns.sh --since 2026-08-25 --until 2026-10-31`
+  on **2026-10-31** against the turn budget, and record the verdict *including* "not moved". That is
+  the outcome review `0009` is owed, and it is scheduled rather than queued.
+
+**What dies unanswered, stated rather than buried:** FR6 — effectiveness on a *fresh* project, what
+a run caught and what it missed. Nothing above reaches it, and it is not a measurement run: it is a
+question about whether the suite works on a repo that is not this one. If it is wanted, it is a new
+ticket asking only that, and it should not be re-created as a cost measurement.
+
 ## Notes & decisions
 
 - **Created 2026-08-24 by splitting `0026`.** Aaron's decision, after the observation that `0026` sat
@@ -141,3 +182,6 @@ than run as soon as someone has an afternoon.
   favours every graph ticket above it, and the knowledge-freshness argument that put `0026` at row 1
   is spent — `0026` now delivers the observed figure that the decaying baseline was needed for. This
   ticket's value comes from being run *late*, which is the opposite of urgency.
+- **Closed 2026-09-02, not built.** See *Verdict* above. Closed by hand rather than by
+  `.claude/backlog/close`, which refuses any row not at `next: verify` — the backlog has no
+  withdraw-or-supersede operation, and that gap is parked in `FINDINGS.md` for `0057`.
