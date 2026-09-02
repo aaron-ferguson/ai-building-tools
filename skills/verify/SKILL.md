@@ -86,19 +86,11 @@ be luck.
   decided here: Step 7 derives it against the paths the verdict actually rested on, because at this
   point the pass does not yet know which files its ACs rest on.
   **Do not stash, revert or check out to tidy** — destroying another session's work is far worse than an
-  imprecise verdict. **`git stash push -- <paths>` is not the safe version of that**: a pathspec limits
-  the files, never the authorship, so it takes whatever another session was holding under those paths
-  (`CONCURRENCY.md`, *A pathspec is necessary but not sufficient*).
+  imprecise verdict — and a pathspec on a `stash` does not make it safe (`CONCURRENCY.md`).
 
-**At `qa_level: e2e`, verify a named commit in a worktree rather than the working tree.** The
-evidence set at that level is the whole application — the runner builds and serves it — so every
-foreign path is collected and Step 7's intersection can never be empty. Read literally in a project
-that runs two sessions by design, no `e2e` ticket could ever close. The resolution is not to relax
-the rule but to give it a coherent state to describe: `git worktree add` at an explicit commit,
-run there, remove it in the same turn, and **report the SHA as part of the verdict** — a verdict
-pinned to "the tree" is pinned to nothing when `git status` returns three answers minutes apart and
-`HEAD` advances mid-pass, both of which have happened. A worktree may run tests; it must never
-claim, close or hand off, because the lock and the queue it would write are per-checkout.
+**At `qa_level: e2e` the working tree cannot be the subject at all** — the evidence set is the whole
+application, so Step 7's intersection is never empty and no such ticket could close here. Verify a
+named commit in a worktree and report its SHA: `CONCURRENCY.md`, *The working tree is shared too*.
 - `in-progress` under a token **you did not mint in this conversation** → another session's. Say whose
   it seems to be and stop; Step 1's refusal normally prevents this, so reaching here means the field
   and the claim disagree.
@@ -182,15 +174,9 @@ privileged action on one is now available by a route nobody reviewed. Walk those
 rules the project holds elsewhere — one change put an unconfirmed discard one tap away this way, with
 every written AC passing.
 
-**A probe written to answer that question needs somewhere to live.** Where the only directory the
-runner collects is the suite's own, answering "what did this make reachable" means writing a spec
-into it, running it, and deleting it by hand — a scaffolding step that leaves the tree dirty if the
-session is interrupted, and one that recurred verbatim in this suite three days after it was first
-recorded. Put throwaway probes behind an ignored glob the runner still collects (`e2e/_tmp-*.spec.ts`
-and its equivalents), and remove them in the same turn, the way Step 3 restores a mutation by the
-path it mutated. **A probe worth keeping is not deleted — it is the guard the gap called for**: say
-so in the verdict and queue it as a test to be added, since a stage may not write another ticket and
-this one's ACs did not ask for it.
+**A probe written to answer that is scaffolding**: put it where the project says throwaway specs go
+and remove it in the same turn, as Step 3 restores a mutation by the path it mutated. **One worth
+keeping is not deleted — it is the guard the gap called for**: say so and queue it.
 
 For each filled NFR row, confirm the requirement holds and **load the cited convention file** — the row
 says what this ticket must satisfy, the convention says what the rule is, and you check against the
@@ -279,14 +265,12 @@ about to end.
 **On a stale contract** — the ACs no longer describe reality, so neither pass nor fail is honest —
 write why in the notes and set `next: queue, status: ready`. Do not re-specify it yourself.
 
-**On ACs that only a person can clear, `status: waiting`** — the fourth branch, and the one most
-often forced into one of the three above. A ticket whose scripted half is green and whose remaining
-ACs need a device, an author's eye, or an answer nobody has yet is not closeable (those ACs are
-unmet), not `develop` (no code is owed, and that session will run the suite and hand it straight
-back), and not `queue` (the contract is fine). Set `next` to the stage that resumes once the person
-has answered, `status: waiting`, and **write the item's `## Waiting on` section saying who must do
-what** — the column is meaningless without it. Tick and evidence the ACs you did clear; a waiting
-ticket keeps every verification already banked. Then release the claim: waiting is not held.
+**On ACs only a person can clear, `status: waiting`** — the fourth branch, routinely forced into one
+of the three above. A ticket green on its scripted half whose rest needs a device or the author's
+eye is not closeable (those ACs are unmet), not `develop` (no code is owed, so that session reruns
+the suite and hands it back), not `queue` (the contract is fine). Set `status: waiting`, `next` to
+the stage that resumes, and **write the item's `## Waiting on` section naming who must do what**.
+Tick the ACs you cleared, then release the claim.
 
 **Do not push** unless the project's conventions say a close should, or the user asks.
 

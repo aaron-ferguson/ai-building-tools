@@ -46,6 +46,14 @@ in one component, unwarned.
   holds the *row* is the item's token alone (*A stage writes only the ticket it holds*).
 - **`verify` derives *advisory*** from the dirty paths that intersect the evidence its verdict rested
   on — dirty **under test**, not dirty anywhere. Empty intersection: a plain PASS that closes.
+- **At `qa_level: e2e` that intersection can never be empty**, because the runner builds and serves
+  the whole application and so collects every foreign path. Read literally, no `e2e` ticket ever
+  closes in a project running two sessions. The answer is not to relax the rule but to give it a
+  state it can describe: **verify a named commit in a `git worktree`, remove it the same turn, and
+  report the SHA in the verdict.** A verdict pinned to "the tree" is pinned to nothing where
+  `git status` answers differently minute to minute and `HEAD` advances mid-pass — both observed.
+  Such a worktree may run tests and **must never claim, close or hand off**: the lock and the queue
+  it would write are per-checkout, so a claim made there is invisible to every other session.
 
 ## A claim must be durable the moment it is made
 

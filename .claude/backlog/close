@@ -275,7 +275,7 @@ done_row="$(printf '%s' "$DHEAD" | awk -F'|' \
       else if (v == "Title")  val = title
       else if (v == "Type")   val = type
       else if (v == "QA")     val = qa
-      # `Completed` and `Date` are this column under other projects' spellings. An unrecognised
+      # `Completed` and `Date` are this column as other projects spell it. An unrecognised
       # name still falls through to blank, because a `Notes` column is a human summary no script
       # can author — but it says so on stderr rather than silently dropping the cell, which is how
       # three closes in a row landed with a blank date and a blank summary in a file kept as a
