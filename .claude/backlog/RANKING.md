@@ -29,6 +29,7 @@ in above these rows by being newer or more interesting.
 | **0053, 0044** | Both at `next: verify` — developed and unclosed. In-flight work closes before new work starts, per *`verify` owns closing*; a green left unverified rots as the tree moves. 0053 is also the prerequisite that made four rows below it cheaper. | *batch 2*, "0053 goes to row 1"; *2026-08-30*, "Why 0053 and 0044 stay above all of it" |
 | **0074, 0042, 0051, 0073** | **The token-efficiency spine**, on Aaron's stated priority of 2026-08-30 rather than on tier. 0074 is takeable now and needs no diagnosis; 0042 → 0051 → 0073 is a prerequisite chain, since 0073 publishes measurement figures 0051 must first make reproducible. | *2026-08-30*, "The gap the re-rank found first" and "Why 0073 is blocked by 0051" |
 | **0075, 0076, 0077** | Tier 1, and placed above every older defect deliberately: each protects **every session that works the rows below it**, and all three are `size: s`. 0075 and 0076 already have a measured cost in this repo — a stale checkout that duplicated `ec650cd` four days later and collided the 0.9.6 bump, and a tool edit committed with a broken script the repo's own suite would have caught. 0077 is the guard for the class 0076 found. | *2026-09-01*, "The AetherWorks tool sweep" |
+| **0084** | Tier 1 — the back half of the chain 0075 guards the front of, and the only row here whose failure makes every other row's fix silently not ship. Below 0075–0077 on tie-breaker 4: all three are `size: s` prose with a grep behind them, 0084 is `size: m` and a script. Above 0078 on blast radius — every machine and every consuming project, against this toolset's own improvement loop. | *2026-09-01*, "The release chain reported success and shipped nothing" |
 | **0078, 0081, 0082** | Tier 1-2. 0078 is why the other eight sat in another project's buffer for ten days: 25 findings pointing at these tools, and no route out. 0081 and 0082 are the two backlog scripts failing open — a hand-off producing the drift `--drift` exists to catch, and a claim that narrates what it is about to do wrong. Ranked among themselves, **not argued against the sweep rows below**. | *2026-09-01*, "The AetherWorks tool sweep" |
 | **0080, 0079, 0083** | The three of the nine that are decisions, so they sit under the buildable six. 0080 is recorded twice and measured the second time; 0079 is the gap that makes `qa_level` meaningless in `ai-building-conventions`; 0083 became live load the day `verify` gained a second worktree prescription. | *2026-09-01*, "The AetherWorks tool sweep" |
 | **0038, 0039, 0040, 0041** | Project 0036's three slices in dependency order, plus the review that reads 0039's run log. Promoted from ranks 27/31/32 — the orchestrator is the second half of the same instruction. 0040 stays directly under 0039 by the **regression-guard override**. | *0036 became a project*; *2026-08-30*, "What the orchestration chain's promotion cost" |
@@ -97,3 +98,36 @@ a net-new, self-contained skill file.
 rows, per the tier system itself rather than any tie-break among them.
 
 Order added: 0069, 0070, 0071, 0072, all below 0041.
+
+## 2026-09-01 — the release chain reported success and shipped nothing
+
+0084 was captured from a live investigation rather than a sweep, and it is the first row placed
+into the 0075–0083 block since that block was ranked.
+
+**Tier 1 on the "silently wrong output" test**, the same test that put 0052 there: `claude plugin
+update` printed a success line, wrote a fresh `gitCommitSha` into `installed_plugins.json`, and
+re-extracted nothing, because the cache directory is keyed by version and the version had not
+moved. The record named `219f507`; the bytes were `49371a4`. Nothing reports it, and the session
+that then runs the stale copy cannot see it — this one did, resolving `queue` from that directory.
+
+**Against 0075, 0076 and 0077 it loses on tie-breaker 4.** All three are `size: s`, are prose with
+a grep behind them, and 0075 is the front half of the very chain 0084 completes. Shipping 0075
+first also makes 0084 cheaper to build, since the fetch-and-derive rule it encodes is FR1 of the
+script. The prerequisite override was considered and **not** applied: 0075 makes 0084 cheaper, not
+possible, so it is a tie-breaker and not an override.
+
+**Against 0078 it wins on tie-breaker 1.** 0078's blast radius is this toolset's own improvement
+loop — real, and the reason eight rows sat in another project's buffer. 0084's is every machine and
+every project that installs this plugin, and it is the one defect whose persistence means the fixes
+in every row below it can be released and still not run anywhere. That last part is nearly the
+prerequisite override, and was deliberately not called one: the chain does work when a version bump
+happens, so the failure is conditional rather than structural.
+
+**The regret operator was not needed.** The tie-breakers separated it from both neighbours.
+
+**0061 was amended, not moved.** The same measurement is evidence in its design question — it kills
+"trust the recorded version or sha" as an answer shape and narrows the question to what a session
+with no source tree can read. That is an argument for promoting it out of the Tier 2 lower band,
+and it is **left unmade here**: rows 1–10 sit under Aaron's standing token-efficiency instruction,
+and a promotion into that region is his call rather than a capture session's. Recorded so the next
+re-rank has it.

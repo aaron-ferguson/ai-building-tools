@@ -37,6 +37,16 @@ skills from a copy it cannot date.
 tickets behind the repo, so the sessions running these skills were executing prose the repo no
 longer contained. A session has reported a rule missing that had shipped the same day.
 
+**And the install record can name a commit whose bytes are not on disk.** Measured 2026-09-01:
+`claude plugin update` wrote `"gitCommitSha": "219f507…"` into `installed_plugins.json` while the
+version-keyed cache directory it named kept its earlier mtime and its `49371a4` content — eight
+differing files under `skills/` and `references/REPORTING.md` absent. On the same evening
+`/reload-plugins` built a `0.9.7` cache directory without rewriting that record, so `/plugin list`
+went on printing `0.9.6`. **Both fields a session might read as identity were wrong, in opposite
+directions, hours apart.** That rules out any answer of the shape "trust the recorded version or
+sha" and constrains the rest: whatever mechanism this settles on has to be grounded in content, not
+in what the harness recorded about it. 0084 acts on the same measurement from the releasing side.
+
 **One level down, the same failure already has a guard.** 0027 added
 `tests/backlog-scripts-installed.test.sh`, so a drifted `.claude/backlog/` copy fails a suite run.
 The identity one level up — repo ↔ installed plugin — has nothing. `SOURCE` explains why the cache
@@ -78,6 +88,9 @@ Written after the design question is settled. What is fixed regardless:
   the only defence.
 - FR4 — `skills/retro/SKILL.md`'s "you may be running an older copy" trap points at a check that
   exists.
+- FR5 — Whatever FR1 lands is grounded in content rather than in a recorded version or sha, both of
+  which were observed lying on 2026-09-01. A mechanism that reads `installed_plugins.json` and
+  believes it does not satisfy this.
 
 ## Non-functional requirements
 
@@ -122,3 +135,11 @@ Cannot be written until the design question is settled. These hold regardless:
 - Ranked in Tier 2 rather than Tier 5 because the cost is being paid continuously as vigilance:
   `CLAUDE.md` instructs every session to diff the trees before concluding a rule is absent, which
   is a tax on every session that suspects anything.
+- **Amended 2026-09-01** with the measurement above. Two of the four candidate shapes are affected:
+  the **release check attached to the bump** cannot be "the record was updated", since that is
+  exactly what happened while the bytes did not change — 0084 takes that shape and grounds it in a
+  diff; and **accept it** got more expensive, because the workaround `CLAUDE.md` prescribes is a
+  `diff -rq` needing a checkout, which the sessions most at risk do not have. The question left is
+  narrower than when it was written: what can a session with **no source tree** read that is
+  evidence about its own bytes? A `size: m` still looks right, and the tier argument is unchanged
+  in kind but now has a measured instance behind it rather than only vigilance.
