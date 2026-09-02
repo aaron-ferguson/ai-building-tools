@@ -246,6 +246,164 @@ Verified 2026-09-02: 30 sessions, 1,112 turns, and every cell of the four tables
 - **These 30 sessions are this repository's own**, editing the files each of its sessions loads,
   which the *not held constant* section below already records for the cost figures.
 
+## What a turn of each category costs
+
+**Recorded 2026-09-02, ticket 0085.** The same 30 sessions, the same pinned id set, priced by
+`tools/cost-by-category.sh` — committed code, the rate table and cache multipliers of
+`tools/harvest-usage.sh`, and the classification rules of `tools/classify-turns.sh`.
+
+**Why this had to be measured before anything was built on the section above.** Every figure there
+is a share of *turns*. A protocol turn is a short command and a short result; a work turn is a file
+read, an edit and a test run. If protocol turns were cheap turns, removing nine of them would save
+far less than 34.3% of anything and `0085` would have been optimising the wrong denominator while
+looking rigorous. `0009`'s history — a modelled 66% that came in at 14.5% — is what makes an
+unmeasured denominator a real risk rather than a pedantic one.
+
+`mechanism` is split here into **`protocol`**, this backlog's own cost, and **`git`**, which any
+project pays. That split is not in the section above, where git sits inside `mechanism`.
+
+| Bucket | Turns | Turn share | $ total | **$ share** | $/turn | Context/turn | Appended/turn |
+|---|---|---|---|---|---|---|---|
+| `protocol` | 381 | 34.3% | 37.47 | **32.8%** | 0.0983 | 102,831 | 1,822 |
+| `git` | 85 | 7.6% | 8.50 | 7.4% | 0.1000 | 110,274 | 1,620 |
+| `work` | 378 | 34.0% | 42.77 | 37.4% | 0.1132 | 109,008 | 1,994 |
+| `orientation` | 175 | 15.7% | 15.98 | 14.0% | 0.0913 | 103,696 | 2,607 |
+| `narration` | 42 | 3.8% | 4.97 | 4.4% | 0.1184 | 128,294 | 4,504 |
+| `other` | 51 | 4.6% | 4.57 | 4.0% | 0.0895 | 92,833 | 1,580 |
+| **all** | **1,112** | **100%** | **114.27** | **100%** | **0.1028** | **106,139** | **2,017** |
+
+**The finding, in one line: the protocol is 34.3% of turns and 32.8% of dollars, so the turn share
+was not overstating anything.** A protocol turn costs $0.0983 against a work turn's $0.1132 — **87%
+of a work turn, not a fraction of one.**
+
+### Why a short turn is not a cheap turn
+
+The intuition that a one-line command is cheap is an intuition about *output*. In a cached agentic
+loop the dominant per-turn cost is re-reading the conversation so far, and that is very nearly
+category-blind: context per turn is 102,831 for `protocol` against 109,008 for `work`, **5.7%
+apart**. Output differs by more — 823 tokens against 1,156 — but output is the minority of the bill.
+
+Cost per turn by position makes the same point from the other side, over sessions of 10+ turns:
+
+| Decile | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| $/turn | 0.1313 | 0.0833 | 0.0870 | 0.0997 | 0.1004 | 0.1041 | 0.1063 | 0.1043 | 0.1054 | 0.1037 |
+| Context/turn | 62,904 | 76,265 | 85,575 | 97,098 | 105,849 | 114,249 | 123,481 | 129,719 | 137,156 | 143,182 |
+
+Context per turn rises **2.3x** across a session while cost per turn stays roughly flat, because the
+growth is cache *reads* at 0.1x. The first decile is the expensive one — cache *writes*, at 1.25x,
+are what a session pays to start.
+
+**The constant worth carrying out of this table: a token held in context costs $0.50 per million per
+turn it survives.** That, not the size of any one read, is the unit everything below is priced in.
+
+### What removing a turn actually saves
+
+| Bucket | $ own request | $ compounding | **$ per turn removed** |
+|---|---|---|---|
+| `protocol` | 0.0983 | 0.0183 | **0.1166** |
+| `work` | 0.1132 | 0.0228 | 0.1359 |
+| `orientation` | 0.0913 | 0.0331 | 0.1244 |
+
+The second column is the cache reads every *later* turn no longer pays for what the removed turn
+appended. **A removed turn is worth more than its own request**, which is the opposite of the
+direction the risk was in.
+
+### Per stage, which is what a reduction is aimed at
+
+| Stage | Sessions | Turns/session | Protocol turns/session | $/session | **Protocol share of $** |
+|---|---|---|---|---|---|
+| develop | 12 | 38.6 | 12.8 | 4.03 | **29.9%** |
+| verify | 10 | 38.4 | 14.9 | 3.63 | **40.8%** |
+| queue | 5 | 36.2 | 11.8 | 4.24 | 30.8% |
+| design | 1 | 27.0 | 12.0 | 2.32 | 39.4% |
+| retro | 2 | 23.0 | 3.5 | 2.51 | 14.6% |
+
+`design` is one session and is quoted as one.
+
+### What the turn shares survive, and what they do not
+
+The classification rules were attacked before this record was written, by re-running the same
+1,112 turns with one rule changed at a time. Two results, and they point in different directions.
+
+**The published headline is fragile.** *"41.9% mechanism is more than the 34.0% spent on work"*
+holds only while git sits inside `mechanism`. Splitting git out puts mechanism at 34.3% against
+work's 34.0% — a tie — and also reclassifying purely read-shaped access to `DONE.md`, `RANKING.md`,
+`SCHEDULED.md` and `config.yml` as orientation puts it at **33.1%, below work.** Both changes are
+defensible. **The comparison of `mechanism` to `work` should not be leaned on.**
+
+**The figure a reduction is aimed at is robust.** The protocol share of turns under every variant
+tried:
+
+| Variant | Protocol share of all turns |
+|---|---|
+| published rules | 34.3% |
+| read-only sibling-file access → `orientation` | 33.1% |
+| precedence `orientation` ahead of `mechanism` | 32.2% |
+| every attack at once | **31.5%** |
+
+The worst defensible case is 31.5% against a published 34.3%. **The protocol is about one turn in
+three however the rules are bent**, and that is the figure `0085` rests on.
+
+Two smaller corrections from the same attack, both against claims made in
+`docs/decisions/001-one-command-per-stage-boundary.md` before it was measured:
+
+- **`mechanism` is barely inflated by ticket-reading scored by path.** Only **11 turns of 1,112**
+  are mechanism solely because they read a sibling backlog file in a read-shaped command — 0.37 per
+  session, not the "1–2 per session" that record first claimed. 22 more touch those files in a
+  write, which is protocol.
+- **The 4.6% `other` hides nothing that changes a conclusion.** It is 49 `Bash` turns and 6
+  `AskUserQuestion` turns; the shell turns are `cd`, bare variable assignments and reads of paths
+  matching no rule. Nothing in it is work or protocol in disguise.
+
+### The one that is a cost of the rules, not of the sessions
+
+`verify`'s git inspection is **20.5% of its mechanism turns against a 15.7% mean**, because
+`CONCURRENCY.md` prescribes an advisory dirty-path intersection before a close. That is this
+protocol's own git rather than the project's, and it is the only part of the `git` bucket a backlog
+change can reach.
+
+### Would a more linear workflow be cheaper? No — modelled at +12%
+
+The question is whether fusing `develop` and `verify` into one session would save the second
+session's startup. Priced with the constant above, for one ticket:
+
+| Term | $ |
+|---|---|
+| Carrying develop's 74,970-token climb through verify's 38.4 turns | **+1.44** |
+| Holding both skill files (~6,700 tokens) across 77 turns | +0.26 |
+| One session floor's cache write no longer paid | −0.36 |
+| Re-orientation and a second claim the fused session skips (~4 turns) | −0.40 |
+| **Net against the observed $7.66 for the pair** | **+0.94, or +12%** |
+
+**The saving people expect from fusing is small because the floor is cached; the penalty is large
+because the first stage's climb is then re-read on every turn of the second.** This is the cost
+argument only — the reason `verify` is a separate session is that it checks what the ACs say rather
+than what it remembers building, and that is a correctness argument which does not trade against 12%
+either way.
+
+### Re-running this
+
+```sh
+tools/cost-by-category.sh <transcript-store> --since 2026-08-23 --until 2026-08-24 \
+  --exclude 1860b4f4 --exclude 5c2b0c27 --exclude 26acbad7 --exclude 3ab24685 \
+  --exclude 05e441cd --exclude b5862898 --exclude fe292418 --exclude 52cc41c8 \
+  --exclude 35873f41 --exclude 873196d2 --exclude ba215ccf --exclude 1a2da19b
+```
+
+Verified 2026-09-02: 30 sessions, 1,112 turns, $114.27 — the same total the cost tables above
+publish from `tools/harvest-usage.sh`, by a second path.
+
+### What this measurement cannot see
+
+- **It prices a turn, not a fusion.** `$ own request` is what a turn was billed; a fusion that
+  replaces two turns with one keeps most of what they appended, so the honest range for a removed
+  turn is **$0.0983 to $0.1166** and the predictions below use the low end.
+- **`design` is one session**, and `unmarked` is two sessions of 5.5 turns that are attributed to no
+  stage.
+- **The rates are the published list rates** at 2026-09-02, not an invoice.
+
+
 ## The baseline — 2026-08-22, and how it was matched
 
 The published figures are $15.11 over 95 turns at an average 191,752 context tokens per turn, 85% of
