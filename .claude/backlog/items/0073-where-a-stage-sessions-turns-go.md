@@ -3,7 +3,7 @@ id: "0073"
 title: Measure where a stage session's turns and tokens actually go
 type: chore
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-30
@@ -16,8 +16,8 @@ expects:
   - tools/harvest-usage.sh
   - tests/measurement.test.sh
   - README.md
-claimed_by:
-claimed_at:
+claimed_by: "5db7"
+claimed_at: 2026-09-02T04:35:22Z
 touches:
 ---
 
