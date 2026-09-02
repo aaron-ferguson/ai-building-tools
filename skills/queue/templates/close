@@ -266,7 +266,7 @@ DHEAD="$(header_of "$DONE")"
 [ -n "$DHEAD" ] || { echo "no table header in $DONE — expected a row with an 'ID' cell" >&2; exit 1; }
 
 done_row="$(printf '%s' "$DHEAD" | awk -F'|' \
-  -v id="$ID" -v title="$title" -v type="$item_type" -v qa="$item_qa" -v today="$TODAY" -v rel="$item_rel" '
+  -v id="$ID" -v title="$title" -v type="$item_type" -v qa="$item_qa" -v today="$TODAY" -v rel="$item_rel" -v donefile="$DONE" '
   {
     out = "|"
     for (i = 2; i < NF; i++) {
@@ -275,11 +275,17 @@ done_row="$(printf '%s' "$DHEAD" | awk -F'|' \
       else if (v == "Title")  val = title
       else if (v == "Type")   val = type
       else if (v == "QA")     val = qa
-      else if (v == "Closed") val = today
+      # `Completed` and `Date` are this column under other projects' spellings. An unrecognised
+      # name still falls through to blank, because a `Notes` column is a human summary no script
+      # can author — but it says so on stderr rather than silently dropping the cell, which is how
+      # three closes in a row landed with a blank date and a blank summary in a file kept as a
+      # historical record. Silence was the worst of the available options.
+      else if (v == "Closed" || v == "Completed" || v == "Date") val = today
       else if (v == "Item")   val = "[" rel "](" rel ")"
-      else                    val = ""
+      else                  { val = ""; blank = blank (blank ? ", " : "") v }
       out = out " " val " |"
     }
+    if (blank != "") printf "note: %s: left blank (no value this script can author): %s\n", donefile, blank > "/dev/stderr"
     print out
   }')"
 
