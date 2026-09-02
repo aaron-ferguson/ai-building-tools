@@ -18,7 +18,7 @@ expects:
   - README.md
 claimed_by: "344f"
 claimed_at: 2026-09-02T05:19:51Z
-touches:
+touches: ["MEASUREMENT.md", "tools/classify-turns.sh", "tests/measurement.test.sh"]
 ---
 
 ## Problem
@@ -134,3 +134,38 @@ remove — and `0051` then has two records to fix instead of one.
 - **Routed to `develop`, not `design`.** There is no decision blocking acceptance criteria and no
   surface a person looks at: the categories are discoverable by reading the transcripts, exactly as
   `0026` was. Unfamiliar is not undecided.
+
+## Verify verdict — PASS, 2026-09-02 (token 344f)
+
+Runtime observation, not a test run: the classifier was driven at its CLI and the *Re-running this*
+recipe executed exactly as printed. **All four published tables reproduced cell for cell** — 30
+sessions, 1,112 turns, 41.9%/15.7%/34.0%/3.8%/4.6%, mixed 7.6%, mechanism composition over 466
+turns, floor 58,060 / end 130,807 / climb 72,747, own share 45.4%. AC1–AC7 hold.
+
+**Three defects found by running it, all fixed under this token in `045465d`** — every one invisible
+to a reader of the diff, which is the argument for the stage:
+
+1. **A run that matched no session printed a table of zeros and exited 0.** An empty store, a
+   mistyped window and `--exclude ''` all landed there, and `--exclude ''` excluded every session
+   because a prefix match accepts the empty string. On a pinned command carrying twelve `--exclude`
+   flags, one shell-quoting slip reproduced as a clean zero table. Now exits non-zero on both.
+2. **AC5's budget could never come due.** *The turn budget* said to re-read it on 2026-10-31
+   "against the sessions run by then" and pointed at a command pinned to `--until 2026-08-24`, which
+   returns the August figures by construction. The budget now prints its own unpinned command.
+3. **Three of the four tables dropped the `unmarked` row while their totals counted it** — 28
+   sessions against 30, 2,169,772 growth tokens against 2,182,427, 465 mechanism turns against 466.
+   No headline figure was wrong, which is why nothing caught it.
+
+**What the guard learned.** The AC-shaped assertions were greps for a word and stayed green through
+all three defects. The replacement sums each published table's rows against its own total row and
+drives the CLI for its exit code — the arithmetic-against-known-numbers shape this file's own header
+already argued for. Confirmed red against all three before the fix.
+
+**Noted, not fixed here** — `0074`'s territory or a queue item, not this ticket's:
+
+- The re-measure window recorded 57 sessions at **39.8 turns per session** against the 37.1 the
+  budget was set from. The figure the reduction aims at is drifting up, not holding still.
+- `tools/harvest-usage.sh` shares this classifier's `--exclude` prefix matching and was not examined
+  for the same empty-value defect; it is the reproducer for the cost tables above this section.
+- The `## What a turn of each category costs` tables that `0085` added to this record were not
+  covered by the new row-sum guard, which is scoped to this ticket's section.
