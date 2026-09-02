@@ -2,15 +2,16 @@
 id: "0079"
 title: Give a repo with no test runner a QA level that is a checklist
 type: feature
-next: design
-status: ready
+next:
+status: done
+closed: 2026-09-02
 qa_level: verify
 size: m
 created: 2026-09-01
 source: retro
 parent:
 blocked_by: []
-relates: ["0076", "0078"]
+relates: ["0086", "0076", "0078"]
 expects:
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
@@ -93,9 +94,28 @@ identical to one properly reviewed.
   ceremony, and this item exists because the honest answer is a review.
 - Changing what the conventions say. This is about how a change to them is checked.
 
+## Verdict — closed 2026-09-02 as merged, not as done
+
+**Merged into `0086`, which now carries this problem in full.** Nothing here is dropped: the
+problem statement, the three candidate shapes, the *who the checklist binds* question, the four
+requirement shapes and both *Out of scope* lines were copied into `0086` on 2026-09-02, which was
+retitled *Settle the `qa_level` vocabulary once* and took this item's rank — the higher of the two.
+
+**Why one ticket and not two.** Both items add a value to `qa_level`, an enum that `queue`,
+`develop` and `verify` read and that `.claude/backlog/close` enforces. Settled separately by two
+design sessions that cannot see each other's answer, they produce two independent extensions of one
+vocabulary — and `0067` is the ticket for what a cross-cutting rename costs once that has happened.
+The cost of merging is one larger design pass; the cost of not merging is a second one plus whatever
+reconciling them takes.
+
+**No acceptance criteria are ticked, and none were written** — this item was at `design`. `DONE.md`
+records it as `merged`, not as a verified close.
+
 ## Notes & decisions
 
 - Raised by the AetherWorks retro of 2026-09-01, which made three edits to that repo with no gate but
   its own judgement.
 - The distinction worth keeping: the line is **has a runner or does not**, not *product versus tooling*.
   `ai-building-tools` has `tests/*.test.sh` and goes through the normal lifecycle today.
+- **Closed 2026-09-02 as merged into `0086`.** See *Verdict* above. Closed by hand rather than by
+  `.claude/backlog/close`, which refuses any row not at `next: verify`.

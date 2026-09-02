@@ -32,9 +32,8 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0081 | Give the hand-off a script, as claim and close have | develop | ready |  |
 | 0082 | Make claim fail safe on the two paths where it currently fails open | develop | ready |  |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
-| 0079 | Give a repo with no test runner a QA level that is a checklist | design | ready |  |
+| 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | design | ready |  |
 | 0083 | Decide what a second checkout may do with the backlog | design | ready |  |
-| 0086 | Add a light QA tier that closes without a separate verify session | design | ready |  |
 | 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
 | 0039 | Build the orchestrate skill and the stage outcome schema | develop | blocked | 0036 |
 | 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
