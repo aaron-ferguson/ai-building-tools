@@ -2,8 +2,8 @@
 id: "0073"
 title: Measure where a stage session's turns and tokens actually go
 type: chore
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 size: m
 created: 2026-08-30
@@ -16,9 +16,10 @@ expects:
   - tools/harvest-usage.sh
   - tests/measurement.test.sh
   - README.md
-claimed_by: "344f"
-claimed_at: 2026-09-02T05:19:51Z
-touches: ["MEASUREMENT.md", "tools/classify-turns.sh", "tests/measurement.test.sh"]
+claimed_by:
+claimed_at:
+touches:
+closed: 2026-09-02
 ---
 
 ## Problem
@@ -94,21 +95,21 @@ remove — and `0051` then has two records to fix instead of one.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `MEASUREMENT.md`, when read, then it reports turns per session broken down by
+- [x] AC1 — Given `MEASUREMENT.md`, when read, then it reports turns per session broken down by
       stage, for a pinned set of sessions.
-- [ ] AC2 — Given `MEASUREMENT.md`, when read, then it names the turn categories it classified into,
+- [x] AC2 — Given `MEASUREMENT.md`, when read, then it names the turn categories it classified into,
       reports each category's share per stage, and names the committed code that produced the
       classification.
-- [ ] AC3 — Given that committed code, when run against the pinned session set, then it reproduces
+- [x] AC3 — Given that committed code, when run against the pinned session set, then it reproduces
       the category shares published in AC2.
-- [ ] AC4 — Given `MEASUREMENT.md`, when read, then it reports the estimated share of context growth
+- [x] AC4 — Given `MEASUREMENT.md`, when read, then it reports the estimated share of context growth
       attributable to a session's own prior turns, per stage, and states the estimator used and that
       the figure is an estimate.
-- [ ] AC5 — Given `MEASUREMENT.md`, when read, then it states a turn budget per stage as a number
+- [x] AC5 — Given `MEASUREMENT.md`, when read, then it states a turn budget per stage as a number
       with a date, and the current figure against each.
-- [ ] AC6 — Given `MEASUREMENT.md`, when read, then it names the largest category and the backlog id
+- [x] AC6 — Given `MEASUREMENT.md`, when read, then it names the largest category and the backlog id
       of the reduction ticket opened against it.
-- [ ] AC7 — Given the *Re-running this* recipe as printed, when executed, then it reproduces the
+- [x] AC7 — Given the *Re-running this* recipe as printed, when executed, then it reproduces the
       tables this ticket published, without a hand-derived exclusion list assembled at read time.
 
 ## QA plan
