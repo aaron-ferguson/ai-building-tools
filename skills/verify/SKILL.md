@@ -323,3 +323,16 @@ applies the label as a judgement about whether the dirt *looks* relevant.
 A partial pass is a FAIL with a list. Never soften a red or report a skipped check as though it ran. State
 what Step 5 did — closed, or sent back to `develop` or `queue` — and name the commit. Unrelated problems
 go to `queue` as new tickets.
+
+**End every response with a one-line verdict summary — the very last thing printed:**
+
+```
+<ID> — PASS | FAIL | ADVISORY — next: <stage>, status: <status>
+```
+
+Example: `0042 — PASS — next: done, status: done`
+Example: `0042 — FAIL — next: develop, status: ready`
+Example: `0042 — ADVISORY — next: verify, status: ready`
+
+This line appears after the evidence table and after any commit or FINDINGS note, so the outcome is
+visible at a glance without scrolling.
