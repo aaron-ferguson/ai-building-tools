@@ -461,3 +461,13 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   worse, but a field whose whole job is pointing a later session at the right files is silently
   wrong the moment a title-guessed slug drifts from the real one (pointer: items/0085 `expects:`,
   items/0048, items/0066).
+- 2026-09-02 — **The installed plugin and the checkout differ at the same version number, live.**
+  `diff -rq skills/ ~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.8/skills/` found
+  `verify/SKILL.md` differs — the checkout carries 0085's FR6 fix (the single-git-status-call rule)
+  and the installed copy at the identical `0.9.8` does not. This is the exact hazard the project's
+  own `CLAUDE.md` names ("the version number does not prove it matches") and 0061/0084 already
+  measured from the other side (a version bump can print success and re-extract nothing); this is
+  the same failure mode caught from a live session rather than a designed test. Any `/verify` run
+  against the installed plugin right now is running the pre-0085 git-status behaviour. Not queued as
+  its own ticket since 0061/0084 already own this mechanism (pointer: `.claude-plugin/plugin.json`,
+  0061, 0084, 0085 FR6).
