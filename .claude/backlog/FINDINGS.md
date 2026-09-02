@@ -404,3 +404,24 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   filename and recorded the gap in the guard's header. The marker is a design question, and it is the
   same question `citations.test.sh`'s anchoring rule already answered for `CONCURRENCY.md` — so the
   precedent exists and only needs extending. Candidate ticket.
+- 2026-09-01 [c80d] **`queue` has no operation for "this request is an existing `design` ticket's
+  undecided answer."** Aaron asked for two scripts, a `release` and a `doctor`. The first is a clean
+  Add. The second is one of the four candidate mechanisms 0061 exists to choose between, so
+  capturing it as a `develop` ticket would have pre-empted the design pass — exactly what Step 2's
+  *"guessing acceptance criteria to avoid the stage"* warns against — while capturing it as a
+  second `design` ticket would have duplicated 0061 outright. Step 1's table has no row for it.
+  **Amend** was the closest fit and is what I used, but it is described as *"add an FR to X"* and
+  its whole procedure is about widening an already-specified ticket's scope: re-check `size`, the
+  ACs, the QA plan, *Out of scope*. Folding new evidence into an unsettled design question is a
+  different operation — it can *narrow* the question rather than widen the scope, and here it
+  eliminated two of four candidate shapes. Nothing told me to report to the user that their request
+  had landed as an amendment to an existing row rather than as the ticket they asked for, which is
+  the part they would notice. Candidate ticket, and it is close to 0057's territory (queue
+  operations that exist in practice and not in the skill).
+- 2026-09-01 [c80d] **Step 3 says to assert a new ticket's placement, and is silent on the re-rank
+  it can imply for an existing row.** The evidence that placed 0084 is also an argument for
+  promoting 0061 out of the Tier 2 lower band. Step 3 covers the case where the new ticket makes
+  row 1 look wrong ("say so and propose the rerank"); it does not cover a promotion argument for a
+  row in the middle, and Step 4 assumes the user asked for a move. I recorded the argument in
+  `RANKING.md` and left the move unmade, because rows 1-10 sit under a standing instruction of
+  Aaron's — but that reasoning was mine to invent, not the skill's to supply.
