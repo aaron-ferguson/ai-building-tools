@@ -425,3 +425,18 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   row in the middle, and Step 4 assumes the user asked for a move. I recorded the argument in
   `RANKING.md` and left the move unmade, because rows 1-10 sit under a standing instruction of
   Aaron's — but that reasoning was mine to invent, not the skill's to supply.
+- 2026-09-02 [6983] **`design` Step 4 has no path for a decision whose deliverable is criteria on
+  other people's tickets.** 0085's FR2 required routing removable turns to 0066, 0081, 0047 and
+  0048; `CONCURRENCY.md`, *A stage writes only the ticket it holds*, forbids the settling session
+  from writing any of them, and that rule says explicitly that naming them in your own notes is not
+  filing them. The only legal move I could find was to hand the ticket to `queue` rather than to
+  `develop` — but Step 4's three item-scoped outcomes are develop, waiting and hand-back-to-queue-
+  because-it-is-claimed, and none of them is this. A design pass that routes work needs a stated
+  fourth outcome, or the routing dies in a settled ticket's prose (pointer: `skills/design/SKILL.md`
+  Step 4, item 0085).
+- 2026-09-02 [6983] **A ticket opened by a `develop` session at `next: design` carries no *Open
+  design question* section**, which is the section `design` Step 1 names as its contract. 0085 was
+  opened by 0073 under its FR5 and put the question under a heading of its own invention ("Why this
+  is `next: design` and not `develop`"). It was a better section than the template's — it argued why
+  the question was not guessable — but Step 1 read against nothing, and a session following it
+  literally would have stopped (pointer: `skills/develop/SKILL.md` Step 3, `templates/item.md`).
