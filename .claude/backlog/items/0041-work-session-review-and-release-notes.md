@@ -1,11 +1,11 @@
 ---
 id: "0041"
-title: Report what a work session delivered and what it cost
+title: Write release notes for what a work session delivered
 type: feature
 next: design
 status: ready
 qa_level: unit
-size: l
+size: m
 created: 2026-08-25
 source: user
 parent:
@@ -13,6 +13,8 @@ blocked_by: []
 relates: ["0016", "0026", "0036", "0039", "0037"]
 expects:
   - tools/harvest-usage.sh
+  - tools/classify-turns.sh
+  - tools/cost-by-category.sh
   - tests/measurement.test.sh
   - README.md
   - MEASUREMENT.md
@@ -52,9 +54,17 @@ Four gaps, each verifiable on disk today rather than inferred:
    session."* That session is this ticket.
 3. **The measurement exists once, as history, not as a habit.** `MEASUREMENT.md` and
    `tools/harvest-usage.sh` (0026) compute cost and context tokens per turn per skill, and record a
-   verdict for the run of 2026-08-23/24. Re-running that per work session is nobody's job, and the
-   figures that make a run readable — **cost per closed ticket, $6.01 whole-run and $4.45 across the
-   two closing gates** — are recorded for one historical run and computed for no later one.
+   verdict for the run of 2026-08-23/24. Re-running that per work session is nobody's job.
+
+   **Amended 2026-09-02 — most of this gap has since been filled, and the figures quoted here were
+   stale.** `tools/classify-turns.sh` (0073), `tools/cost-by-category.sh` and
+   `tools/floor-probe.sh` (0085) are all committed and guarded, and between them they compute cost
+   and context per turn per skill, per category, and the startup floor's composition, over any
+   window. The cost half of this ticket is now *running committed scripts over a boundary*, not
+   building a measurement. The baseline pair this item quoted — **$6.01 whole-run and $4.45 across
+   the two closing gates** — is the stale cache `MEASUREMENT.md` names this ticket by ID for
+   holding: the live pair is **$5.71 and $4.23**, and it is read from `MEASUREMENT.md` rather than
+   copied here, precisely so it cannot go stale a second time.
 4. **Two of the requested figures are computed nowhere.** `harvest-usage.sh` emits cost, tokens and
    context per turn; it emits **no elapsed wall-clock time**, so neither "time to complete a context
    window" nor "total time for the work session" is derivable from what the repo has.
@@ -74,24 +84,22 @@ file that implements them** — see *Open design question*.
 - **FR2 — Write release notes to a shareable file.** Per `launch-conventions.md`: what changed, who
   it is for, what to do, and what did **not** change. A ticket ID is provenance, not a release note;
   an entry whose only description of a change is its ID does not satisfy this.
-- **FR3 — Per-context-window metrics.** For each context window in the session: elapsed wall-clock
-  time, tokens, dollar cost, and the skill that ran in it.
-- **FR4 — Work-session totals and averages.** Total elapsed time, total cost, average elapsed time
-  per context window, average cost per context window.
-- **FR5 — Cost per closed ticket, stated against the recorded baseline.** `MEASUREMENT.md`'s
-  observed $6.01 whole-run and $4.45 develop-plus-verify figures are the comparison, so a run can be
-  read as better or worse rather than only as a number.
-- **FR6 — Every figure is re-computable.** The rate card, its source, the token counts and the
-  boundary are all stated, per 0026's FR3 precedent. A dollar figure whose arithmetic cannot be
-  re-run is not a measurement.
-- **FR7 — The computation is a committed, re-runnable script.** Not arithmetic done inside a
-  transcript: `tools/harvest-usage.sh` extended, or a sibling under `tools/`, with its guard in
-  `tests/`. This is the requirement that keeps FR3–FR6 from being a description of a mechanism with
-  no code behind it, and it is the same argument 0026's FR10 made.
-- **FR8 — The report names the boundary it counted over, and how that boundary was derived** — a run
+- **FR3 — The figures come from the committed scripts, and this ticket writes no arithmetic of its
+  own.** `tools/harvest-usage.sh` for cost and context per turn per skill, `tools/classify-turns.sh`
+  for turns per session, `tools/cost-by-category.sh` for where the money went. The report states
+  which script produced each figure and over what window, so every number is re-runnable by the
+  reader — 0026's FR3 precedent, discharged by citation rather than by new code.
+- **FR4 — Elapsed wall-clock time, which is the one figure no script emits.** Per context window and
+  per work session. This is the only measurement work left in this ticket, and it is the part of
+  Aaron's original ask that nothing since has delivered.
+- **FR5 — Cost per closed ticket, read from `MEASUREMENT.md` rather than copied into this ticket.**
+  A run reads as better or worse against the record's current pair; an item that hard-codes the pair
+  is a second cache of a live figure, which is the defect `0051` repaired and which this item was
+  itself named for holding.
+- **FR6 — The report names the boundary it counted over, and how that boundary was derived** — a run
   id, a date range, or a marker. A total whose scope a reader has to guess cannot be compared with
   the next one.
-- **FR9 — Degrade honestly where there is no run log.** The plugin is public and installed on
+- **FR7 — Degrade honestly where there is no run log.** The plugin is public and installed on
   backlogs that will never run a supervisor. Where the session boundary or an attribution cannot be
   established, the report says what it could not attribute and does not present a partial total as a
   complete one.
@@ -118,13 +126,16 @@ file that implements them** — see *Open design question*.
   `blocked_by: "0039"`, which changes when it can be built at all.
 
 - **Five sub-questions, each with a decidable answer:**
-  1. Skill, `retro` mode, `orchestrate` step, or `tools/` script?
+  1. Skill, `retro` mode, `orchestrate` step, or `tools/` script? **Weigh this against a smaller
+     ticket than the one first written** — with the cost tooling already built and guarded, the
+     deliverable is release notes plus a wrapper, which makes a seventh skill harder to justify.
   2. Does the review **require** 0039's run log, or does it work today from `DONE.md` dates plus
      transcript timestamps? If it requires it, design records the `blocked_by`.
   3. Are the release notes and the metrics **one artifact or two**? They have different audiences —
      the notes are shareable and eventually emailed; the cost figures are internal.
   4. Which clock is authoritative for elapsed time — **transcript turn timestamps** or **run-log
      event timestamps** — and does `harvest-usage.sh` grow the timing, or does a sibling own it?
+     This is now the ticket's only unbuilt measurement, per FR4.
   5. If the answer is a new skill: does a seventh skill in the suite **pay its rent**, against
      `retro`'s own argument that the cheapest nothing is the one not run, and against 0021's trim?
 
@@ -154,9 +165,12 @@ that name the invocation, the output path and the implementing file.**
 - [ ] AC4 — Given the same output, when read, then it reports total elapsed time, total cost, average
       elapsed time per context window and average cost per context window.
 - [ ] AC5 — Given the same output, when read, then it reports cost per closed ticket for the session
-      alongside `MEASUREMENT.md`'s recorded $6.01 whole-run and $4.45 develop-plus-verify figures.
-- [ ] AC6 — Given the same output, when the rate card and the token counts in it are read, then every
-      dollar figure can be recomputed from them by hand.
+      alongside the whole-run and develop-plus-verify pair **read from `MEASUREMENT.md` at the time
+      the report runs**, with the as-at date it was read — and the file contains no second copy of
+      that pair.
+- [ ] AC6 — Given the same output, when read, then every figure names the committed script that
+      produced it and the window it was computed over, so a reader can re-run it — and no dollar
+      figure in the report was computed inside a transcript.
 - [ ] AC7 — Given a backlog with no run log present, when the review runs, then it names what it
       could not attribute and does not present its totals as complete.
 - [ ] AC8 — Given the same output, when read, then it names the boundary it counted over and how that
@@ -216,9 +230,29 @@ that name the invocation, the output path and the implementing file.**
   `--until`, `--sessions` and `--exclude`, and carries 0026's privacy rule and the non-obvious
   mechanism that a turn is a distinct `message.id` because one API response is written as several
   lines each repeating the whole `usage` object. It computes **no elapsed time**. `MEASUREMENT.md`
-  holds the recorded per-skill figures and the $6.01 / $4.45 per-closed-ticket baseline.
+  holds the recorded per-skill figures and the per-closed-ticket baseline — **$5.71 / $4.23** as at
+  2026-09-02, cited rather than copied per FR5.
 - **Not `blocked_by: "0039"` today, deliberately.** `DONE.md` carries a `closed:` date per ticket and
   the transcripts carry per-turn timestamps, so a date-bounded review is computable with no run log —
-  which is also what FR9 requires for the installed-elsewhere case. Sub-question 2 is design's to
+  which is also what FR7 requires for the installed-elsewhere case. Sub-question 2 is design's to
   settle, and if it concludes the run log is required, design records the `blocked_by` then rather
   than this ticket asserting a dependency it has not established.
+- **Amended 2026-09-02, before any claim, and the scope narrowed rather than widened.** The cost
+  half of this ticket was built underneath it while it sat in the queue: `tools/classify-turns.sh`,
+  `tools/cost-by-category.sh` and `tools/floor-probe.sh` all landed on 2026-09-02 with guards, so
+  FR3–FR7 as first written would have re-specified working code. What is left that nothing else
+  covers is **the release notes** — `DONE.md` is provenance, not notes — plus **elapsed wall-clock
+  time**, which no script emits. Re-checked per `queue`'s amend rule: **`size` drops `l` → `m`**
+  (the measurement build is gone, the notes and one clock remain); **AC5 and AC6 were
+  rewritten** — AC5 cited the stale pair directly and now reads it from `MEASUREMENT.md` with an
+  as-at date, AC6 asked for arithmetic reproducible by hand and now asks which script and window
+  produced each figure; AC1–AC4 and AC7–AC9 stand; the QA plan is unchanged; *Out of scope* is
+  unchanged.
+- **The stale figures were corrected in the same pass.** `MEASUREMENT.md`, *Cost per closed ticket*,
+  names `0036`, `0040` and `0041` as holding a stale cache of $6.01/$4.45. This item now cites the
+  record instead of copying it, which is the only fix that does not decay again.
+- **Its rank rests on the token-efficiency instruction, and that claim is now weaker.** This row sits
+  above two Tier 1 rows (`0052`, `0046`) by Aaron's standing instruction of 2026-08-30. The part of
+  it that served that instruction — measuring what a run costs — is built and published; what
+  remains is a reporting feature. `RANKING.md` records that, so the next re-rank argues with a
+  current statement rather than a spent one.

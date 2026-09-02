@@ -37,7 +37,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
 | 0039 | Build the orchestrate skill and the stage outcome schema | develop | blocked | 0036 |
 | 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
-| 0041 | Report what a work session delivered and what it cost | design | ready |  |
+| 0041 | Write release notes for what a work session delivered | design | ready |  |
 | 0052 | Require an acceptance criterion to name the input that would make it red | verify | ready |  |
 | 0046 | Make the README guard list provably complete | develop | ready |  |
 | 0047 | Give the busy-lock procedure a close-time path | develop | ready |  |
