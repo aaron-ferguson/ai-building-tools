@@ -1,0 +1,17 @@
+{
+  "$comment": "Startup-floor trim. See MEASUREMENT.md, 'What the harness floor costs, and what trimming it buys'. permissions.deny removes a tool DEFINITION, not just the permission, so each name here is tokens off every turn of every session in this repo. Every tool listed was called ZERO times across this repo's transcripts, and no skill in skills/ references any of them. Re-check both before adding a name: denying a tool a session would have reached costs more turns than the floor saves.",
+  "permissions": {
+    "deny": [
+      "Agent",
+      "ListAgents",
+      "NotebookEdit",
+      "ReportFindings",
+      "ScheduleWakeup",
+      "SendMessage",
+      "ShareOnboardingGuide",
+      "WebFetch",
+      "WebSearch",
+      "Workflow"
+    ]
+  }
+}

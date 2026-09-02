@@ -529,12 +529,38 @@ to be, and the reason is that the harness had already solved it by deferring sch
 suite never calls, at 2.5x the MCP saving, plus 5,101 tokens of skill listings belonging to other
 plugins. Taken together the two are 28.0% of the floor and 7.9–8.8% of a closed ticket.
 
-Both are configuration, not code: an `.claude/settings.json` `permissions.deny` list and an MCP
-server list. **Neither has been applied.** A `settings.json` that denies tools changes every session
-in this repository including ones already running, so it is a change to make deliberately and not
-as the tail of a measurement. Against the reduction `0085` is aimed at — the backlog protocol, 32.8%
-of dollars — this whole block is a quarter of the size, and that ranking is the point of measuring
-it.
+Both are configuration, not code: a `.claude/settings.json` `permissions.deny` list and an MCP
+server list. Against the reduction `0085` is aimed at — the backlog protocol, 32.8% of dollars —
+this whole block is a quarter of the size, and that ranking is the point of measuring it.
+
+### Applied 2026-09-02, and what it actually moved
+
+Both levers were taken, on evidence of use rather than on the assumption above. **Every MCP tool
+call in this repository's 172 transcripts: zero**, against 2,500-plus in the parent workspace where
+the same servers earn their place — so the disable is scoped to this repository and nothing was
+taken away from the work that uses them. Each denied built-in was likewise called zero times here,
+and `skills/` references none of them.
+
+| | Floor |
+|---|---|
+| Before, with 14 connectors already off | 45,448 |
+| After `permissions.deny` on 10 built-in tools | 35,308 |
+| After also disabling every MCP server for this repository | **32,742** |
+
+**12,706 tokens, 28.0% of the floor** — $0.30 per session, **$0.45 per closed ticket**, 7.9% of
+$5.71, about **$451 per 1,000 tickets**. That is the measured figure for the applied configuration,
+not the modelled one: the table above predicted 12,753 and the applied change delivered 12,706, a
+0.4% miss.
+
+`deepwiki` was removed at user scope rather than disabled here, on the same evidence read across
+every project: **zero calls in roughly 450 transcripts**, in any repository, ever. Reverse it with
+`claude mcp add`. The per-repository disables are in the user config rather than in the repo, so a
+fresh clone does not inherit them and they are re-applied through `/mcp`.
+
+**What was deliberately left alone.** `Artifact`, `AskUserQuestion`, `Skill` and `ToolSearch` are all
+called here, and the deferred tools cost only their names. Disabling the `ai-context-tools` plugin
+for this repository was measured and rejected: **60 tokens**, because the 5,101 tokens of foreign
+skill listings are personal skills outside any plugin, which no project-scoped setting reaches.
 
 ### Re-running this
 
