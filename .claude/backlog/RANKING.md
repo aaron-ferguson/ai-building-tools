@@ -32,8 +32,8 @@ in above these rows by being newer or more interesting.
 | **0075, 0076, 0077** | Tier 1, and placed above every older defect deliberately: each protects **every session that works the rows below it**, and all three are `size: s`. 0075 and 0076 already have a measured cost in this repo — a stale checkout that duplicated `ec650cd` four days later and collided the 0.9.6 bump, and a tool edit committed with a broken script the repo's own suite would have caught. 0077 is the guard for the class 0076 found. | *2026-09-01*, "The AetherWorks tool sweep" |
 | **0084** | Tier 1 — the back half of the chain 0075 guards the front of, and the only row here whose failure makes every other row's fix silently not ship. Below 0075–0077 on tie-breaker 4: all three are `size: s` prose with a grep behind them, 0084 is `size: m` and a script. Above 0078 on blast radius — every machine and every consuming project, against this toolset's own improvement loop. | *2026-09-01*, "The release chain reported success and shipped nothing" |
 | **0078, 0081, 0082** | Tier 1-2. 0078 is why the other eight sat in another project's buffer for ten days: 25 findings pointing at these tools, and no route out. 0081 and 0082 are the two backlog scripts failing open — a hand-off producing the drift `--drift` exists to catch, and a claim that narrates what it is about to do wrong. Ranked among themselves, **not argued against the sweep rows below**. | *2026-09-01*, "The AetherWorks tool sweep" |
-| **0080, 0079, 0083** | The three of the nine that are decisions, so they sit under the buildable six. 0080 is recorded twice and measured the second time; 0079 is the gap that makes `qa_level` meaningless in `ai-building-conventions`; 0083 became live load the day `verify` gained a second worktree prescription. | *2026-09-01*, "The AetherWorks tool sweep" |
-| **0038, 0039, 0040, 0041** | Project 0036's three slices in dependency order, plus the review that reads 0039's run log. Promoted from ranks 27/31/32 — the orchestrator is the second half of the same instruction. 0040 stays directly under 0039 by the **regression-guard override**. | *0036 became a project*; *2026-08-30*, "What the orchestration chain's promotion cost" |
+| **0080, 0086, 0083** | The three of the nine that are decisions, so they sit under the buildable six. 0080 is recorded twice and measured the second time; **0086 holds 0079's slot** — 0079 merged into it on 2026-09-02, so the row now settles the whole `qa_level` vocabulary (a light tier *and* a level a repo with no runner can run) and cannot be worth less than 0079 was; 0083 became live load the day `verify` gained a second worktree prescription. | *2026-09-01*, "The AetherWorks tool sweep"; *2026-09-02*, "Two rows withdrawn and one merged" |
+| **0038, 0039, 0040, 0041** | Project 0036's three slices in dependency order, plus the review that reads 0039's run log. Promoted from ranks 27/31/32 — the orchestrator is the second half of the same instruction. 0040 stays directly under 0039 by the **regression-guard override**. **0041 was narrowed to release notes on 2026-09-02 and is `size: m`**; the measurement half that earned it this position is built and published, so what holds the row now is a reporting feature and the next re-rank should say whether that still beats the two Tier 1 rows below it. | *0036 became a project*; *2026-08-30*, "What the orchestration chain's promotion cost"; *2026-09-02*, "Two rows withdrawn and one merged" |
 | **0052, 0046** | Tier 1 — output that is silently wrong today. Unchanged in argument; they sit below the spine only because the spine was promoted over them, and 0042/0051 stepped past them on the prerequisite override. | *sweep 1*, "Tier 1"; *batch 2*, "Tier 1" |
 | **0047, 0045, 0060, 0054, 0065, 0050** | Tier 2, the compounding defects that fire on ordinary sessions — a lost QA verdict, a `TAKE` on held files, a findings gate that cannot settle, a verdict over a shared dirty tree. | *sweep 1*, "Tier 2"; *batch 2*, "Tier 2"; *batch 3*, "Where the six went" |
 | **0055, 0058, 0056, 0059, 0064, 0062** | Tier 2, fully-specified fixes to the stage skills' own steps, above 0048 on tie-breaker 4's *more certain* — 0048 is an open decision of the same size. | *batch 2*, "Tier 2"; *batch 3* |
@@ -41,7 +41,6 @@ in above these rows by being newer or more interesting.
 | **0066, 0063, 0067, 0043** | Tier 2, real but not accruing much; 0067 is dormant until someone starts a rename and beats 0043 only on blast radius. | *batch 3*, "Where the six went" |
 | **0007, 0006, 0008** | Project 0002's phase 1, in their original order. The recorded argument that 0008 outranks 0039 was **overridden on 2026-08-30**: the backlog stays half-migrated longer, accepted deliberately. | *0036 became a project*, "vs 0008"; *2026-08-30* |
 | **0003, 0004** | Phases 2 and 3 of project 0001, whose phase 1 is not done. | *0036 became a project*, "vs 0003 / 0004" |
-| **0037** | Not moved. Its committed row says `in-progress` over an item whose claim is cleared but uncommitted, and Step 4 forbids reordering a row under a token this session did not mint. | *2026-08-30*, "0037 was not moved" |
 | **0069, 0070, 0071, 0072** | Tier 4 capability tickets and one Tier 5 polish, from the 2026-08-26 comparison batch. | *2026-08-26*, below |
 
 **A standing instruction sits above this table.** On 2026-08-30 Aaron set token efficiency as the
@@ -65,8 +64,12 @@ re-rank is entitled to disagree with any of them:
 
 ## What would change the order
 
-- **0037's result.** It is the forward-looking measurement run; if the context saving did not
-  materialise, the tickets resting on it need rethinking rather than re-ranking.
+- **The 2026-10-31 re-measurement.** `MEASUREMENT.md`, *The turn budget*: re-run
+  `tools/classify-turns.sh --since 2026-08-25 --until 2026-10-31` against the per-stage budget. Turns
+  per session down and **dollars per session flat** is the result that says the protocol was never
+  the binding constraint, and the rows resting on that premise need rethinking rather than
+  re-ranking. This replaces `0037`, which was the forward-looking run and was withdrawn on
+  2026-09-02.
 - **Anything starting to consume `./next --findings`' count.** The promotion argument for 0038 was
   recorded and rejected only because nothing gates on that number today.
 - **A second session working prose files concurrently.** 0050 is the open decision on file scope; a
@@ -139,7 +142,9 @@ re-rank has it.
 QA tier and a ~10-turn inline-or-own-session break-even, both as pricing models rather than
 mechanisms. Two tickets captured from asking what building each would actually take.
 
-**0086 (the Light tier) is Tier 2, Compounding.** Decision 002's own *Consequences* section ranks
+**0086 (the Light tier) is Tier 2, Compounding.** *(Amended — on 2026-09-02 `0079` merged into
+0086, and the merged row took `0079`'s rank, one place above `0083` rather than immediately below
+it. The tier argument below stands; the position sentence in its last paragraph does not.)* Decision 002's own *Consequences* section ranks
 routing discipline — whether a ticket enters the full lifecycle at all — as worth more than any
 single engineering fix under it ("30% of items routed Inline instead of Standard" is the single
 largest lever in its cost table after the backlog-protocol change 0085 itself makes). Every ticket
@@ -155,7 +160,9 @@ older, still-blocked 0036 epic and the long tail of legacy `design`-stage debt b
 which are compounding at 0086's rate; they are Value or Debt-tier decisions that have simply been
 sitting.
 
-**0087 (the turn-count signal) is Tier 4, Value.** The break-even test it instruments already exists
+**0087 (the turn-count signal) is Tier 4, Value.** *(Superseded — 0087 was closed not built on
+2026-09-02; see `RANKING-HISTORY.md`, "Two rows withdrawn and one merged". The placement argument
+below is kept because it is the reasoning the withdrawal disagreed with.)* The break-even test it instruments already exists
 and is usable as a judgement call without it; building a live or calibrated signal makes that
 judgement more precise, it does not close an active leak the way 0086 does — nothing degrades if it
 waits. Compared against the 0069–0072 band (the same kind of process-instrumentation work, same

@@ -471,3 +471,21 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   against the installed plugin right now is running the pre-0085 git-status behaviour. Not queued as
   its own ticket since 0061/0084 already own this mechanism (pointer: `.claude-plugin/plugin.json`,
   0061, 0084, 0085 FR6).
+- 2026-09-02 — **the backlog has no way to close a ticket that will not be built, so three withdrawals
+  were performed by hand under the lock.** `.claude/backlog/close` refuses any row not at
+  `next: verify` (*"verify owns closing"*), which is correct for a *verified* close and leaves
+  withdraw, supersede and merge with no path at all — `0037` and `0087` were closed not built and
+  `0079` was merged into `0086`, each by a by-hand lock, row delete, `DONE.md` prepend and commit
+  that duplicates `close`'s body without its guards. Two conventions were invented at the point of
+  use and nothing enforces either: the QA column carries `not built` / `merged` instead of a
+  `qa_level`, and the acceptance criteria are deliberately left **unticked** so a withdrawal cannot
+  be read as a pass. Both belong in the skill and in the script, not in one session's judgement
+  (pointer: `.claude/backlog/close`, `skills/queue/SKILL.md`, item `0057`).
+- 2026-09-02 — **`RANKING.md` says "current state only" and is accumulating dated sections anyway.**
+  Its header splits the standing argument from the narrative the way `CONCURRENCY.md` splits from
+  `CONCURRENCY-INCIDENTS.md`, and two dated 2026-09-02 sections sit in it below the table, one of
+  which had to be marked superseded the same day it was written. The count in *The shape of this
+  backlog* — "twenty-six of the thirty-six rows" — is stale for the same reason: a file that mixes
+  current state with history gets read as neither (pointer: `.claude/backlog/RANKING.md`,
+  `.claude/backlog/RANKING-HISTORY.md`).
+

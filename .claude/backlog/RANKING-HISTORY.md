@@ -637,3 +637,81 @@ the exact drift `FINDINGS.md` recorded on 2026-08-25 and `0066` exists to report
 forbids reordering an `in-progress` row under a token this session did not mint, so the line stayed
 where it was and rows moved around it. Whoever owns that claim should either re-claim it or commit
 the release; until then its rank is not the interesting fact about it.
+
+## 2026-09-02 — Two rows withdrawn and one merged, on the cost record's own arithmetic
+
+Aaron's question, after `MEASUREMENT.md`'s harness-floor section and
+`docs/decisions/002-matching-rigour-to-stakes.md` landed: *does the token research make any queued
+row no longer worth our time?* Four rows changed. **Nothing in the protocol spine was touched** —
+`0081`, `0048`, `0047` and `0066` look like housekeeping and are the highest-value rows in the file,
+because `0085` routes to them and explicitly does not do their work.
+
+### `0037` withdrawn — the fresh-project measurement run
+
+Two load-bearing questions, both since answered more cheaply. Its FR4 (what `0028` and `0035` did to
+context per turn) is a **closed question** in `002`: all this project's prose is 13,724 of a
+58,060-token floor, so halving every word buys ~4.5%. Its FR3 (how much of `0026`'s figure was the
+suite and how much this repo) is what `tools/floor-probe.sh` measures directly, by difference
+between observed runs. And the premise broke a second time in the same way it broke the first: the
+ticket was split out of `0026` so it would measure a *settled* configuration, and `dd699f2` moved
+the floor 45,448 → 32,742 through a repository-scoped deny list a fresh project would not inherit.
+
+The forward commitment it stood in for is **scheduled, not queued** — `MEASUREMENT.md`'s
+2026-10-31 re-measurement, with its own command and its own verdict-including-"not moved" rule. What
+dies with it is FR6, effectiveness on a fresh project; that is a question about whether the suite
+works on a repo that is not this one, and if it is wanted it is a new ticket asking only that.
+
+### `0087` withdrawn — the turn-count signal
+
+Three arguments, and the first is the one that decides it: **at `002`'s ~10-turn break-even the two
+options cost the same by definition**, so a turn-accurate signal is a precise instrument aimed at
+the flattest part of the curve. The money is at the extremes, where no counter is needed to see it.
+Second, a `size: l` design-first entry priced at the Full tier's ~$8.03 for a routing aid
+contradicts `002`'s own headline: not creating a ticket buys 87%, treating it carefully buys 32%.
+Third, the residue — option 3, turning on `cost_tracking:` — makes every close append an *Actual
+cost* block, **a new per-ticket protocol step of exactly the kind `0085` is cutting**, and breaks
+this item's own FR4; the calibration it would buy is already free from `tools/classify-turns.sh` at
+the October re-measure.
+
+This reverses the placement argument recorded in `RANKING.md` the same day, which put `0087` last
+as Tier 4 Value. That argument was about *where* it ranked and took its worth as given; this one
+prices it.
+
+### `0079` merged into `0086`, and the merged row takes `0079`'s rank
+
+Both extended `qa_level` — an enum `queue`, `develop` and `verify` read and `close` enforces — and
+both sat at `design`, unclaimed. Two design sessions would have answered one question twice and left
+`0067` to reconcile the answers. `0086` absorbs `0079`'s problem, its three candidate shapes, its
+*who the checklist binds* question, its four requirement shapes as FR6–FR9, and both *Out of scope*
+lines; `size` stays `l`, because it is one more branch on the same decision rather than a second
+decision.
+
+**Rank:** the merged row takes `0079`'s position, the higher of the two, on the ground that it now
+carries `0079`'s whole problem and cannot be worth less than `0079` was. **And the tier argument is
+left standing with a correction rather than restated:** `002` prices the Light tier at −32% while
+routing an item Inline instead of Standard buys −87%, and routing needs no engineering at all. This
+row is worth building and is not the largest lever on the page.
+
+### `0041` narrowed, not moved
+
+The cost half of it was built underneath it while it sat: `tools/classify-turns.sh`,
+`tools/cost-by-category.sh` and `tools/floor-probe.sh` all landed 2026-09-02 with guards, so FR3–FR7
+as written would have re-specified working code. What survives is the release notes — `DONE.md` is
+provenance, not notes — plus elapsed wall-clock time, the one figure no script emits. `size` `l` →
+`m`; AC5 and AC6 rewritten, AC5 because it held the stale $6.01/$4.45 pair that `MEASUREMENT.md`
+names this ticket by ID for holding.
+
+**Its position was not changed and its claim to that position is weaker.** `0041` sits above two
+Tier 1 rows (`0052`, `0046`) under Aaron's standing token-efficiency instruction of 2026-08-30. The
+part of it that served that instruction is now built and published; what remains is a reporting
+feature. Left where it is rather than demoted here, because rows in that region sit under a standing
+instruction and moving one out of it is his call — recorded so the next re-rank argues with a
+current statement instead of a spent one.
+
+### The operation this exercise did not have
+
+All three closes were performed **by hand under the lock**, because `.claude/backlog/close` refuses
+any row not at `next: verify` and the backlog has no withdraw-or-supersede path. `DONE.md` now
+carries `not built` and `merged` in its QA column for the three rows, which is honest but is a
+convention invented at the point of use. Parked in `FINDINGS.md` for `0057`.
+
