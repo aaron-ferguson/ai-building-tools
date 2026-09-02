@@ -121,6 +121,13 @@ turns that needed the rule is published as `MIXED` so its influence is visible r
 | unmarked | 2 | 11 | 5.5 | 9.1% | 0.0% | 54.5% | 18.2% | 18.2% | 0.0% |
 | **all** | **30** | **1,112** | **37.1** | **41.9%** | **15.7%** | **34.0%** | **3.8%** | **4.6%** | **7.6%** |
 
+**`unmarked` is a session that ran no stage skill** — a shell, a question, a session resumed past
+its `/clear`. It is small and it is not interesting, but it is carried in **every** table below
+rather than dropped from some of them, because a row omitted from a table whose total still counts
+it leaves the reader unable to reconcile the arithmetic of a record written to be reconciled. Three
+of these four tables shipped without it; `tests/measurement.test.sh` now sums each table's rows
+against its own total row.
+
 **`narration` is 3.8%, and that kills the obvious theory.** "The sessions talk too much" was the
 first explanation anyone reached for, including this record's own ticket. Measured, a turn that
 calls no tool is one turn in twenty-six. Cutting what a session *says* cannot move a turn count that
@@ -138,6 +145,7 @@ bookkeeping around it are two different fixes. Shares are of the mechanism turns
 | queue | 71 | 9.9% | 18.3% | 25.4% | 29.6% | 4.2% | 12.7% |
 | retro | 14 | 7.1% | 0.0% | 0.0% | 42.9% | 21.4% | 28.6% |
 | design | 12 | 8.3% | 25.0% | 25.0% | 41.7% | 0.0% | 0.0% |
+| unmarked | 1 | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 100.0% |
 | **all** | **466** | **22.3%** | **20.0%** | **19.3%** | **20.2%** | **2.6%** | **15.7%** |
 
 **81.8% of the mechanism turns are the backlog protocol itself** — the scripts, the lock, `QUEUE.md`
@@ -158,6 +166,7 @@ it is running, the conventions its `CLAUDE.md` imports — and then **climbs** f
 | queue | 3 | 60,830 | 131,537 | 70,707 | 46.2% |
 | retro | 2 | 57,357 | 175,230 | 117,873 | 32.7% |
 | design | 1 | 55,409 | 99,091 | 43,682 | 55.9% |
+| unmarked | 2 | 52,988 | 91,185 | 38,197 | 58.1% |
 | **all** | **30** | **58,060** | **130,807** | **72,747** | **44.4%** |
 
 This table attributes a session by the stage in force at its **first** turn, because a floor is paid
@@ -179,6 +188,7 @@ fall means the context was pruned or the session resumed and cannot be attribute
 | queue | 415,124 | 213,262 | 51.4% | 48.6% |
 | retro | 96,479 | 38,693 | 40.1% | 59.9% |
 | design | 43,682 | 21,218 | 48.6% | 51.4% |
+| unmarked | 12,655 | 5,092 | 40.2% | 59.8% |
 | **all** | **2,182,427** | **990,678** | **45.4%** | **54.6%** |
 
 Put together, an average end-of-session context of 130,807 tokens divides roughly **44% floor, 25%
@@ -206,9 +216,22 @@ four of them, and keep everything else as it is.
 | design | 27.0 | **20** | 11.0 protocol turns to 4 |
 | retro | 23.0 | **22** | 3.0 protocol turns to 2 |
 
-Re-read with the command below on 2026-10-31 against the sessions run by then. **If the figure has
-not moved, the verdict is recorded as not moved** — this record's own history is that a modelled
-saving came in at a fifth of the model, and the number is the only thing that settles it.
+**Reproduction and re-measurement are two different commands, and the budget needs the second
+one.** *Re-running this* below is pinned to `--since 2026-08-23 --until 2026-08-24`, which is what
+makes the published figures reproducible — and what makes it useless for the due date, since run
+verbatim in October it returns these same August numbers by construction and can never show
+movement. On 2026-10-31, run this instead, over the sessions recorded since the pinned set closed:
+
+```sh
+tools/classify-turns.sh <transcript-store> --since 2026-08-25 --until 2026-10-31
+```
+
+No `--exclude` flags: those pin the *published* set and would carry August's exclusions into a
+different window. Compare its `TURNS/SESSN` column against the budget above. As at 2026-09-02 that
+window already holds 57 sessions and 2,270 turns at **39.8 turns per session** — above the 37.1 the
+budget was set from, so the figure to beat is not standing still. **If the figure has not moved, the
+verdict is recorded as not moved** — this record's own history is that a modelled saving came in at
+a fifth of the model, and the number is the only thing that settles it.
 
 ### Where the reduction aims
 

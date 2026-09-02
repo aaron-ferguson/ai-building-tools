@@ -221,6 +221,11 @@ def parse_args(argv):
             if i >= len(argv):
                 sys.exit("%s needs a value" % a)
             if a == "--exclude":
+                # An empty prefix matches every session id, so `--exclude ''` -- one shell-quoting
+                # slip on a command that carries twelve of these -- silently excluded the whole
+                # pinned set and reported zeros. Refuse it rather than classify nothing.
+                if not argv[i]:
+                    sys.exit("--exclude needs a non-empty value")
                 opts["exclude"].append(argv[i])
             else:
                 opts[a[2:]] = argv[i]
@@ -361,6 +366,13 @@ for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
         stage_row["sessions"] += 1
         add_into(totals, r)
     totals["sessions"] += 1
+
+# A run that classified nothing must not look like a run. An empty store, a mistyped date window
+# and an over-broad exclusion all used to print a fully formatted table of zeros and exit 0 --
+# a reproduction recipe whose typo reads as a successful reproduction, which is the failure this
+# record exists to make impossible (`0009`).
+if not totals["sessions"]:
+    sys.exit("no sessions matched: nothing to classify in %s" % directory)
 
 order = sorted(by_stage, key=lambda n: -by_stage[n]["turns"])
 

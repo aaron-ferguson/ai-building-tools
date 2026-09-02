@@ -663,6 +663,151 @@ else
 fi
 
 
+# ---------------------------------------------------------------------------------------------
+# 0073 verify pass, 2026-09-02 (token 344f). Three defects the verdict found by RUNNING the
+# classifier rather than reading it, each guarded here beside its fix.
+# ---------------------------------------------------------------------------------------------
+
+echo "0073 verify — a run that matches no session fails loudly instead of printing zeros"
+# THE DEFECT. An empty store, a mistyped date window and `--exclude ''` all returned a fully
+# formatted table of zeros and exit 0. That is the shape this file's own header calls the quiet
+# failure: a reproduction recipe whose typo looks like a successful reproduction. `0009` is in
+# the record because a plausible-looking wrong number was believed; a zero table is the same
+# hazard with better formatting.
+EMPTY="$SCOPE/empty-store"
+mkdir -p "$EMPTY"
+if out=$("$CLASSIFY" "$EMPTY" 2>&1); then
+  bad "0073 verify — an empty store exited 0; a run that classified nothing must not look like a run.
+Got: $(printf '%s' "$out" | head -2)"
+else
+  ok "an empty store exits non-zero"
+fi
+case "${out:-}" in
+  *"no sessions matched"*) ok "and says why: no sessions matched" ;;
+  *) bad "0073 verify — an empty store printed no 'no sessions matched'; got: $(printf '%s' "${out:-}" | head -2)" ;;
+esac
+
+echo "0073 verify — an empty --exclude value is refused, not treated as 'exclude everything'"
+# THE DEFECT. Exclusion is a prefix match, and every session id starts with the empty string, so
+# `--exclude ''` silently excluded all 30 and reported zeros. The pinned command carries twelve
+# of these flags; one shell-quoting slip on any of them reproduced as a clean zero table.
+if out=$("$CLASSIFY" "$EMPTY" --exclude '' 2>&1); then
+  bad "0073 verify — --exclude '' was accepted; an empty prefix excludes every session"
+else
+  ok "--exclude '' exits non-zero"
+fi
+case "${out:-}" in
+  *"needs a non-empty value"*) ok "and names the empty prefix as the problem" ;;
+  *) bad "0073 verify — --exclude '' gave no message naming the empty value; got: $(printf '%s' "${out:-}" | head -2)" ;;
+esac
+
+echo "0073 verify AC5 — the budget prints a command that can actually show it met or missed"
+# THE DEFECT. `The turn budget` said "Re-read with the command below on 2026-10-31 against the
+# sessions run by then", and the command below is pinned `--since 2026-08-23 --until 2026-08-24`.
+# Run verbatim in October it returns the August figures by construction and can never show
+# movement. Reproduction and re-measurement are two different recipes; the record printed one.
+# 57 sessions and 2,270 turns were already outside that window on the day it was published.
+REMEASURE="$SCOPE/remeasure-command"
+awk '/^```/{f=!f;next} f' "$BUDGET" > "$REMEASURE"
+if [ ! -s "$REMEASURE" ]; then
+  bad "0073 verify AC5 — the budget section prints no command of its own, so its due date has no procedure"
+else
+  ok "the budget section prints a command of its own"
+fi
+present "the budget's command runs the classifier" "$REMEASURE" "classify-turns.sh"
+# The one assertion that matters: it must NOT carry the published window, or it re-measures the
+# same August sessions forever. Mutate this to the pinned --until to red it.
+if grep -qF -- "--until 2026-08-24" "$REMEASURE"; then
+  bad "0073 verify AC5 — the budget's command is pinned to the published window, so it re-reads August rather than the sessions run by the due date"
+else
+  ok "the budget's command is not pinned to the published window"
+fi
+
+echo "0073 verify AC1/AC4 — every published table's rows sum to its own total row"
+# THE DEFECT. Three of the four tables dropped the `unmarked` row while their totals included it,
+# so a reader checking the arithmetic of a record built for reproducibility got a mismatch with
+# no note: 28 sessions against a published 30, 2,169,772 growth tokens against 2,182,427, 465
+# mechanism turns against 466. No headline figure was wrong, which is exactly why nothing caught
+# it. Columns are resolved by HEADER NAME, never position (`.claude/backlog/claim` records what
+# a positional parser costs).
+if python3 - "$REC" <<'PY'
+import re, sys
+
+# table-identifying header cell -> the column whose rows must sum to the total row
+CHECKS = [
+    ("Turns per session", "Turns"),
+    ("Mechanism turns",   "Mechanism turns"),
+    ("Floor share of end", "Sessions"),
+    ("Estimated own share", "Growth tokens"),
+]
+
+text = open(sys.argv[1]).read()
+# Only the section this ticket published; the cost tables above it are 0026/0051's.
+sec = re.search(r"^## Where a session.s turns go$(.*?)^## ", text, re.S | re.M)
+if not sec:
+    print("no 'Where a session's turns go' section to check")
+    sys.exit(1)
+body = sec.group(1)
+
+def cells(line):
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+def num(c):
+    c = c.replace("**", "").replace(",", "").replace("$", "").strip()
+    try:
+        return float(c)
+    except ValueError:
+        return None
+
+tables, cur = [], []
+for line in body.splitlines():
+    if line.lstrip().startswith("|"):
+        cur.append(line)
+    elif cur:
+        tables.append(cur); cur = []
+if cur:
+    tables.append(cur)
+
+failed = False
+for marker, column in CHECKS:
+    for t in tables:
+        head = cells(t[0])
+        if marker not in head:
+            continue
+        if column not in head:
+            print("table %r has no %r column" % (marker, column)); failed = True; break
+        i = head.index(column)
+        rows = [cells(r) for r in t[2:]]          # skip header and the |---| rule
+        total = rowsum = None
+        for r in rows:
+            if len(r) <= i:
+                continue
+            v = num(r[i])
+            if v is None:
+                continue
+            label = r[0].replace("**", "").strip().lower()
+            if label in ("all", "total"):
+                total = v
+            else:
+                rowsum = (rowsum or 0) + v
+        if total is None:
+            print("table %r has no total row" % marker); failed = True; break
+        if rowsum is None or abs(rowsum - total) > 0.5:
+            print("table %r: %r rows sum to %s, total row says %s"
+                  % (marker, column, rowsum, total))
+            failed = True
+        break
+    else:
+        print("no table carrying %r" % marker); failed = True
+sys.exit(1 if failed else 0)
+PY
+then
+  ok "each published table's rows sum to its own total row"
+else
+  bad "0073 verify AC1/AC4 — a published table's rows do not sum to its total row (above). A dropped stage row makes the record unreconcilable by the reader it was written for."
+fi
+
+
 echo "Privacy & data NFR — no home-directory path in any tracked file"
 # The repo is public, so a path belonging to the machine that built it is an egress of exactly
 # what the NFR row puts out of bounds: a path outside this repo. This is a guard rather than a
