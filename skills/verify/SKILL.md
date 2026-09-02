@@ -86,7 +86,11 @@ be luck.
   decided here: Step 7 derives it against the paths the verdict actually rested on, because at this
   point the pass does not yet know which files its ACs rest on.
   **Do not stash, revert or check out to tidy** — destroying another session's work is far worse than an
-  imprecise verdict.
+  imprecise verdict — and a pathspec on a `stash` does not make it safe (`CONCURRENCY.md`).
+
+**At `qa_level: e2e` the working tree cannot be the subject** — the evidence set is the whole
+application, so Step 7's intersection is never empty and no such ticket could close. Verify a named
+commit in a worktree and report its SHA (`CONCURRENCY.md`, *The working tree is shared too*).
 - `in-progress` under a token **you did not mint in this conversation** → another session's. Say whose
   it seems to be and stop; Step 1's refusal normally prevents this, so reaching here means the field
   and the claim disagree.
@@ -265,6 +269,12 @@ about to end.
 
 **On a stale contract** — the ACs no longer describe reality, so neither pass nor fail is honest —
 write why in the notes and set `next: queue, status: ready`. Do not re-specify it yourself.
+
+**On ACs only a person can clear, `status: waiting`** — the fourth branch, routinely forced into one
+of the three above. A ticket green on its scripted half whose rest needs a device or the author's eye
+is not closeable, is owed no code, and has no stale contract; sending it to `develop` only buys
+another suite run and a hand-back. Set `status: waiting`, `next` to the stage that resumes, **name
+who must do what in the item's `## Waiting on`**, tick what you cleared, release the claim.
 
 **Do not push** unless the project's conventions say a close should, or the user asks.
 

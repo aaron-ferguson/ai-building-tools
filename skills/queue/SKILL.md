@@ -59,6 +59,38 @@ Templates are in this skill's `templates/`.
 re-read on each of those edits while changing perhaps once a week. `./next` goes further, answering
 "what do I do next" in a handful of lines whether the queue holds ten rows or three hundred.
 
+**Its header is a legend, not an essay** — the same argument, applied to itself. It names what the
+columns mean and points at the reasoning; the reasoning is here, read when someone is about to change
+the schema rather than on every claim.
+
+### Why the columns are what they are
+
+Each of these is a plausible-looking change away, and the header no longer carries the argument:
+
+- **No priority column.** A priority and a position can disagree, and then nothing is unambiguous.
+- **No position number.** Line order already carries the rank, and a `#` column has to be renumbered on
+  every insert and close — turning each one-row change into a full-file rewrite, which is exactly how
+  two windows silently overwrite each other (`CONCURRENCY.md`, *Never rewrite `QUEUE.md` by hand*).
+- **Stage and state are two columns.** Merged into one, a reader cannot filter for "work I can start"
+  without already knowing which values are stages and which are states.
+- **`waiting` is not `blocked`, and the difference is who clears it** — a person, versus the ticket named
+  in `blocked_by` closing. One value for both means opening the ticket to find out which kind of stuck it
+  is, and there is nothing a session could do about either without knowing.
+- **`blocked` is derived, never a judgement.** Two consequences, neither optional: **closing a ticket
+  reconciles every row naming it in `blocked_by`, in the same commit as the close**, since a blocker that
+  clears without touching its dependents is how the cache goes stale; and `./next` offers a row on the
+  graph's answer whatever the column says. A stale `blocked` hides takeable work and no reader notices —
+  it once left four rows unavailable for a whole session.
+- **Something blocked by a non-ticket is not `blocked`.** If a person clears it the row is `waiting` with
+  the question in its `## Waiting on` section; if an external event does, capture that event as a ticket
+  and name it in `blocked_by`. There is no third case — a `blocked` the column cannot derive is a
+  `blocked` nothing can ever clear.
+- **A `design` row keeps its rank.** The work is worth what it was worth; sinking it means rediscovering
+  why it mattered later.
+- **No `Type`, `Size`, `QA` or `Item` column.** None changes a reader's behaviour at read time, and the
+  ticket is a file they open anyway. **The `ID` resolves to `items/<id>-*.md` by glob**, so the path is
+  not worth a column — it was the bulk of every row.
+
 **Use `./claim` and `./close` rather than hand-editing either**; the commit inside the lock is the
 point in both cases, and `CONCURRENCY.md`'s *A claim must be durable the moment it is made* and
 *The three scripts* are why.

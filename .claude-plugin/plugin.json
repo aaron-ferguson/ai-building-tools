@@ -1,6 +1,6 @@
 {
   "name": "ai-building-tools",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "description": "Queue, design, prototype, develop, verify and retro skills \u2014 a stack-ranked local backlog that agents work from one skill per session, verified against ai-building-conventions",
   "author": {
     "name": "Aaron Ferguson",
