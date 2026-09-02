@@ -2,8 +2,8 @@
 id: "0085"
 title: Collapse the backlog protocol from a third of every session's turns to one command per stage boundary
 type: debt
-next: design
-status: in-progress
+next: queue
+status: ready
 qa_level: verify
 size: l
 created: 2026-09-02
@@ -12,16 +12,12 @@ parent:
 blocked_by: []
 relates: ["0047", "0048", "0066", "0073", "0081", "0036"]
 expects:
-  - skills/develop/SKILL.md
+  - .claude/backlog/items/0048-remaining-backlog-write-sites.md
+  - .claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md
   - skills/verify/SKILL.md
-  - skills/queue/SKILL.md
-  - references/CONCURRENCY.md
-  - .claude/backlog/claim
-  - .claude/backlog/close
-  - .claude/backlog/next
-claimed_by: "6983"
-claimed_at: 2026-09-02T04:49:52Z
-touches:
+claimed_by:
+claimed_at:
+touches: []
 ---
 
 ## Problem
@@ -58,17 +54,20 @@ Aaron's standing instruction of 2026-08-30 — token efficiency until the sessio
 orchestrated — is what this ticket serves, and `MEASUREMENT.md` now carries the turn budget it is
 judged against: develop 30, verify 28, queue 28, design 20, retro 22, due **2026-10-31**.
 
-## Why this is `next: design` and not `develop`
+## Decision
 
-There is a real decision under it, and it is the one thing `0073` was careful not to guess: **what
-a single command per stage boundary may do on a session's behalf without weakening what the protocol
-protects.** Claim, hand-off and close each currently interleave a lock, a `QUEUE.md` edit, a
-frontmatter write, a commit and a read-back, and the protocol's rules exist because each of those
-failed once — `CONCURRENCY-INCIDENTS.md` holds the incidents. A batching that swallows the read-back
-buys turns by removing the check that made the claim durable.
+**Settled 2026-09-02.** `docs/decisions/001-one-command-per-stage-boundary.md` — the record answers
+FR1 to FR6 in full and is the shared target the routed tickets aim at.
 
-So the decision to settle first: **which of the protocol's steps are separable turns because a
-session needs to see the result, and which are only separate because nobody scripted them together.**
+In one line: **a stage boundary is one command, and a session never sees the lock.** Claim is two
+turns (`./next <stage>`, then `./claim`), hand-off is one, close is one — four boundary turns plus a
+`FINDINGS.md` append, which is exactly the four-turn protocol budget in `MEASUREMENT.md`.
+
+**What decided it:** `tools/classify-turns.sh` resolves a mechanism turn's part by first match wins,
+with `backlog script` ahead of `lock` and `queue file`, and `./claim`/`./close` never name the lock.
+So every turn counted as `lock` (20.0%) is a **by-hand** lock at a write site with no script, and
+every turn counted as `queue file` (19.3%) is `QUEUE.md` opened with no script in the same turn. The
+scripts are not the cost — 4.3 script turns against 8.5 by-hand ones per develop session.
 
 ## Functional requirements
 
@@ -91,6 +90,29 @@ session needs to see the result, and which are only separate because nobody scri
 - FR6 — Leave `git` alone, or say explicitly why not. 15.7% of the mechanism turns are git
   inspection that any project pays; it is not this backlog's cost and is out of the 34.3% figure.
 
+- FR7 — **The one gap none of the routed tickets covers:** `verify` Step 7's advisory dirty-path
+  intersection, at 20.5% of `verify`'s mechanism turns against a 15.7% mean. It is this protocol's
+  own git rather than the project's, so FR6's "leave git alone" does not reach it. Give it a form
+  that does not cost the session a turn of its own.
+
+## Amendments to file, and why this ticket cannot file them
+
+`CONCURRENCY.md`, *A stage writes only the ticket it holds*, forbids the session that settled this
+from writing them, **and naming them here is explicitly not filing them.** They need a `queue` pass,
+which is why this ticket sits at `next: queue` rather than `next: develop`. Both are dated
+2026-09-02 and are to be re-verified against the source before they are run.
+
+- **`0066` gains two FRs.** `./claim <id> --touches <paths>`, writing `touches:` inside the same lock
+  and commit — **taking paths the session names, never defaulting to `expects:`**, since `queue`
+  writes `expects:` predicted and `develop` writes `touches:` actual and never copied. And: a
+  `./next` warning must be actionable without a second read of `QUEUE.md`, which is the same class of
+  defect as its existing FR4.
+- **`0048` narrows.** Its open question asks which of *two* by-hand write sites becomes a script;
+  `0081` has since settled the hand-off half as a fourth script with its own incident behind it. What
+  is left is `queue`'s row insert and the `RANKING.md` write beside it.
+- **`0081` and `0047` need nothing filed** — both already specify their piece. `0047`'s retry belongs
+  inside the script rather than in a session's turn, which its FR2 already reaches.
+
 ## Non-functional requirements
 
 | Dimension | Requirement for this item | Convention |
@@ -109,6 +131,8 @@ session needs to see the result, and which are only separate because nobody scri
       figure per stage against the budget in `MEASUREMENT.md`, and the command that will test it.
 - [ ] AC4 — Given the lock and the `QUEUE.md` read, when the record is read, then each has an
       explicit verdict rather than being folded into a general statement about mechanism.
+- [ ] AC6 — Given a `verify` session run after FR7 lands, when its transcript is classified, then
+      the advisory dirty-path intersection costs it no turn of its own.
 - [ ] AC5 — Given `tests/claim.test.sh`, `tests/close.test.sh` and `tests/next.test.sh`, when run
       after any change this ticket makes, then all three are green.
 
@@ -138,3 +162,20 @@ session needs to see the result, and which are only separate because nobody scri
   aimed at what a session *says* or *reads*. Narration is 3.8% of turns and this project's whole
   prose is 10.2% of a session's context. The weight is in what the sessions *do* to keep the backlog
   safe for two writers, and that is a design cost, not a verbosity one.
+- **Settled 2026-09-02 by `/design`**, token `6983`, into
+  `docs/decisions/001-one-command-per-stage-boundary.md`.
+- **What the decision rejected.** *Fusing select-and-claim into one command* — the scope-overlap
+  judgement in `CONCURRENCY.md`, *The working tree is shared too*, is the session's and not the
+  script's, so a fused command would claim a row nobody saw collide; `./next --drive` already makes
+  that fusion for the orchestrator, which is a different consumer. *Cutting git inspection* — 15.7%
+  of mechanism turns, and *The git index is shared* requires more of it, not less; `git write` is
+  already at floor at 2.6% because `claim` and `close` commit internally. *Folding the `FINDINGS.md`
+  append into a script* — it is content nothing but the session can author.
+- **The trade-off accepted:** four scripts to keep in step with the templates, and one flag
+  (`--touches`) whose misuse would silently erase the distinction between predicted and actual file
+  scope. That is the single place this decision can weaken a rule, and it is why the flag takes paths
+  the session names.
+- **The prediction is recorded before the change** (FR5, and the record's own table): develop 29.8,
+  verify 27.5, queue 28.4, design 20.0, retro 22.0 turns per session, with `lock` to 0.0% of
+  mechanism turns. The verdict is read on turns per session, not on the mechanism share, because
+  turns removed from the protocol can reappear elsewhere.
