@@ -427,6 +427,159 @@ publish from `tools/harvest-usage.sh`, by a second path.
 - **The rates are the published list rates** at 2026-09-02, not an invoice.
 
 
+## What the harness floor costs, and what trimming it buys
+
+**Recorded 2026-09-02.** The section above attributed 13,724 of the 58,060-token floor to this
+project's own prose and left **~44,336 as "the harness"** — the largest single addressable block in
+this record, and the only one nobody had opened. It is opened here by `tools/floor-probe.sh`, which
+measures a floor the same way `tools/classify-turns.sh` does — the context of the first turn — and
+reads each component as the **difference between two observed runs** that differ only in that
+component. No component here is estimated.
+
+**The finding, in one line: the MCP surface is 3,668–5,127 tokens of the floor and trimming it saves
+$0.13–$0.18 per closed ticket, because the harness already defers MCP tool schemas — while ten
+built-in tool definitions this suite never calls are 9,085 tokens, 2.5x the larger lever.**
+
+### What the floor is made of
+
+Each row is a measured floor; each component is the difference from the row above.
+
+| Layer, cumulative | Floor tokens | This layer |
+|---|---|---|
+| Harness system prompt alone — outside any project, no tools, no MCP | 9,048 | 9,048 |
+| …in a git repository with no `CLAUDE.md` | 9,173 | 125 (git and env context) |
+| …in this repository, still no tools, no MCP | 16,753 | 7,580 (the `CLAUDE.md` chain) |
+| …plus every built-in tool definition | 41,817 | **25,064 (built-in tools)** |
+| …plus every configured MCP server | 45,520–47,013 | **3,668–5,127 (MCP)** |
+
+**So the ~44,336 splits roughly 29,000 tool definitions to 9,000 harness system prompt**, and the
+tool definitions are 3.2x the prompt. The MCP range is a range because it depends on how many
+remote servers answer before the session starts: 6 servers and 133 tools connected on the high run,
+fewer on the low one.
+
+**Why MCP is the small half.** The harness records a `deferred_tools_delta` — MCP tools reach the
+model as **names only**, and their schemas are fetched on demand. 133 MCP tool names are about 1,632
+tokens; the ~1,127 tokens of MCP *server instructions* are not deferred and are the denser half of
+what remains. The intuition that ~180 unused MCP tools must cost tens of thousands of tokens was the
+premise worth checking, and it is false under this harness.
+
+**Where the built-in 25,064 actually goes.** The `Skill` tool is **8,888 tokens**, of which the
+57-skill listing is 6,410 — and **5,101 of that is 51 skills belonging to other plugins**, which this
+repository never invokes. The six tools the suite does use (`Bash`, `Read`, `Edit`, `Write`, `Grep`,
+`Glob`) are 8,062 together. A fixed ~388-token framing block arrives with the first tool of any set,
+which is why these components do not sum to the total exactly.
+
+### The experiment
+
+Four configurations, three repetitions each, identical develop-stage prompt, run 2026-09-02. The
+denied set is `Workflow`, `Agent`, `ScheduleWakeup`, `ReportFindings`, `ShareOnboardingGuide`,
+`ListAgents`, `NotebookEdit`, `WebSearch`, `WebFetch`, `Artifact` — **no skill in this suite
+references any of them**, checked before the run rather than assumed.
+
+| Configuration | Mean floor | Saving | Share of floor |
+|---|---|---|---|
+| baseline — every tool, every MCP server | 45,520 | — | — |
+| MCP servers off | 41,852 | 3,668 | 8.1% |
+| 10 unused tool definitions denied | 36,435 | **9,085** | **20.0%** |
+| both | 32,767 | **12,753** | **28.0%** |
+
+The three repetitions of each configuration returned **identical** floors, so the figures carry no
+run-to-run variance at all.
+
+**`permissions.deny` in `settings.json` removes the definition, not just the permission** — the
+denied configuration was measured through a settings file, and `--disallowedTools` gives the same
+floor to the token. That makes this a durable, repository-scoped change rather than a launch flag.
+
+**The saving persists to the end of the session, which is the part `0009` got wrong.** Floor fell
+12,753 and end-of-session context fell 12,766 — a prefix token removed is removed from every turn's
+context by construction, so this is arithmetic rather than a behavioural prediction. `0009` modelled
+66% and observed 14.5% because isolation resets context per *session* and the sessions kept
+climbing; nothing equivalent applies here.
+
+### What it is worth
+
+Priced with this record's own constant — **a token held in context costs $0.50 per million per turn
+it survives** — plus the cache write the floor is paid for once. Two inputs were measured rather
+than assumed, and both correct the section above:
+
+- **The floor is written at the 1-hour TTL, exclusively.** Across the pinned 30 sessions' first
+  turns: **940,182 write tokens at 1-hour, 0 at 5-minute.** This record's convention of pricing an
+  unsplit write at the cheaper 5-minute rate does not reach the floor, which is split and is dear.
+- **54.0% of the floor is written fresh and 46.0% arrives as a warm cache read**, so a session pays
+  the write rate on about half of it.
+
+That gives **$23.68 per million floor tokens per session** of 37.1 turns. On that rate the whole
+58,060-token floor is **$1.375 per session, 36.1% of $3.809**, and the harness part is **$1.050**.
+
+| Lever | Floor tokens | $/session | $/closed ticket | Share of $5.71 | Over 1,000 tickets |
+|---|---|---|---|---|---|
+| MCP servers off | 3,668–5,127 | 0.087–0.121 | **0.13–0.18** | 2.3–3.2% | **$130–$182** |
+| 10 unused tools denied | 9,085 | 0.215 | 0.32 | 5.6% | $323 |
+| both | 12,753–14,212 | 0.302–0.337 | **0.45–0.50** | 7.9–8.8% | **$453–$505** |
+
+Per closed ticket uses this record's own 1.5 sessions per ticket — 30 sessions, 20 tickets.
+
+### The verdict
+
+**Trimming the MCP surface alone is not worth a ticket: 2.3–3.2% of a closed ticket, $130–$182 over a
+thousand of them.** It is real and it is nearly free, but it is a fifth of the block it was assumed
+to be, and the reason is that the harness had already solved it by deferring schemas.
+
+**The lever that is worth taking is the one nobody proposed** — ten built-in tool definitions the
+suite never calls, at 2.5x the MCP saving, plus 5,101 tokens of skill listings belonging to other
+plugins. Taken together the two are 28.0% of the floor and 7.9–8.8% of a closed ticket.
+
+Both are configuration, not code: an `.claude/settings.json` `permissions.deny` list and an MCP
+server list. **Neither has been applied.** A `settings.json` that denies tools changes every session
+in this repository including ones already running, so it is a change to make deliberately and not
+as the tail of a measurement. Against the reduction `0085` is aimed at — the backlog protocol, 32.8%
+of dollars — this whole block is a quarter of the size, and that ranking is the point of measuring
+it.
+
+### Re-running this
+
+The pinned session set, read back through the committed probe:
+
+```sh
+tools/floor-probe.sh --read <transcript-store> \
+  --config baseline:c80118f2,ab6ca254,a29cd503 \
+  --config mcp-off:8b5d72bd,b36d62e1,1f66291e \
+  --config deny-unused:a170a089,0c571f79,f924cdc6 \
+  --config both:32d5ee27,9b733d29,993bc517
+```
+
+Verified 2026-09-02: 45,520 / 41,852 / 36,435 / 32,767, and every saving in the experiment table.
+
+To measure a *new* harness rather than reproduce this one, `--run` launches the configurations
+instead of reading them, and the figures should be re-derived rather than compared across harness
+versions — see the caveat below.
+
+```sh
+tools/floor-probe.sh --run --reps 3 \
+  --config "baseline:--tools default" \
+  --config "both:--tools default --strict-mcp-config --mcp-config {\"mcpServers\":{}}"
+```
+
+### What this measurement cannot see
+
+- **It is pinned to one harness version.** Deferral is why MCP is cheap; a harness that stops
+  deferring, or starts deferring more, moves every figure here. The floors in the store already
+  drift — 59,200 for develop on 2026-08-23 against 45,520 for a baseline probe on 2026-09-02 — and
+  the two are **not** comparable, because the probe carries no `/develop` skill file and no
+  `CONCURRENCY.md`. Every comparison in this section is between runs made minutes apart.
+- **It measures the floor, not the work.** Denying a tool the suite has never called cannot cost
+  turns, which is why that set was checked against the skills first; denying one it *would* have
+  reached could cost more turns than the floor saves, and no run here would show it.
+- **The 12 probe sessions are in the transcript store** and will fall inside any window opened after
+  2026-08-25. They are 3-turn `unmarked` sessions and will pull a turns-per-session mean down; the
+  ids are listed above and can be excluded.
+- **The `CLAUDE.md` chain measures larger than the byte-derived figure** — about 7,580 tokens
+  against the 4,694 that 4.038 bytes per token gives for the same files, because the published
+  figure omits the parent `CLAUDE.md` and the framing that `@`-imports add. The section above is
+  left as published; this is the correction, not a rewrite of it.
+- **The rates are the published list rates** at 2026-09-02, not an invoice.
+
+
 ## The baseline — 2026-08-22, and how it was matched
 
 The published figures are $15.11 over 95 turns at an average 191,752 context tokens per turn, 85% of
