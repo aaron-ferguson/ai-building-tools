@@ -16,6 +16,32 @@ Every ticket in this section is closed. It is kept for the tie-breaker reasoning
 `0009 × 0002` collision, which is the worked example of letting one project land and re-specifying
 the other against what it finds.
 
+## 2026-09-02 — 0085 goes to row 1, on the measurement that opened it
+
+`0073` closed with the figure the whole token-efficiency spine was built to get: **41.9% of every
+turn in the suite is the backlog protocol and the git bookkeeping around it, against 34.0% on the
+work itself.** `0085` is the reduction ticket it opened under FR5.
+
+**Why row 1 and not somewhere on tier.** Aaron's standing instruction of 2026-08-30 puts token
+efficiency above the tier system until the sessions are slimmed and orchestrated, and rows 3-10 of
+the ranking already sit there on that instruction. `0085` is not a new claim on that instruction —
+it *is* the instruction's target, now with a number behind it, and it is the only row in the backlog
+whose cost is paid by every session that works every other row. `0073` occupied row 1 as the
+diagnosis; `0085` inherits the position as the fix.
+
+**What it does not outrank.** Nothing was moved to make room. `0075`-`0077` and `0084` keep their
+order below it, and their argument of 2026-09-01 stands untouched: they protect the sessions that
+will do this work.
+
+**Where this is arguable.** `0085` is `size: l` and `next: design`, so row 1 is now held by a row
+that cannot be built in one sitting, above four `size: s` rows that can. Tie-breaker 4 would invert
+that. The instruction is what overrides it, and the cost is recorded rather than hidden: if the
+design stalls, the four rows below it are what a session should take instead.
+
+**The three tickets it does not duplicate.** `0081`, `0048` and `0047` are pieces of the same target
+and stay where they are. `0085` gives them a shared figure to aim at; it does not absorb them, and
+absorbing them would have been a cross-cutting rename of the kind `0067` exists to shape.
+
 ## Current shape
 
 **Project 0009 — one skill per session — is complete except 0021**, which is back at `next: queue`. Eleven

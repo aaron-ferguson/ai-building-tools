@@ -52,6 +52,14 @@ contact — isolation resets context per *session*, not per *turn*, and a cheap 
 input is replaced by a fresh cache write at 1.25x to 2x. Full figures, method and caveats:
 [MEASUREMENT.md](MEASUREMENT.md).
 
+**Measured a third time, turn by turn, and the weight is not where anyone guessed.** Classifying
+every one of those 1,112 turns by its tool calls (`tools/classify-turns.sh`, 2026-09-02):
+**41.9% of turns are the backlog protocol and the git bookkeeping around it**, against 34.0% spent
+on the work itself, 15.7% reading to orient, and **3.8% narration**. A session's end-of-session
+context is roughly 44% the floor it started from, 25% its own prior turns and 30% what it read on
+the way; the prose this project controls is **10.2%** of it. So the lever is turns, not words: a
+turn budget per stage is declared, due 2026-10-31, and `0085` carries the reduction.
+
 **One skill per session, not one ticket per session.** This is the counter-intuitive half and the
 one most easily lost. A `queue` session should batch every related ticket it can: the expensive
 part is understanding the domain once, and reading the source material is a shared cost paid once
@@ -210,7 +218,7 @@ tests/batching.test.sh     # develop and verify state the batching rule, not the
 tests/skill-size.test.sh   # every skills/*/SKILL.md within its byte goal, or over it with a reason
 tests/reference-size.test.sh     # the same soft goal over references/*.md
 tests/external-feedback.test.sh  # no shipped file names a specific feedback product
-tests/measurement.test.sh        # the harvest arithmetic, and what MEASUREMENT.md must state
+tests/measurement.test.sh        # the harvest and classifier arithmetic, and what MEASUREMENT.md must state
 tests/reporting.test.sh          # every stage skill cites references/REPORTING.md, and that rule holds its shape
 ```
 

@@ -401,6 +401,268 @@ if [ -f "$REC" ]; then
   fi
 fi
 
+# ---------------------------------------------------------------------------------------------
+# 0073 — where a stage session's turns go
+#
+# Same two jobs as above, on the second measurement this record carries: the ARITHMETIC of
+# tools/classify-turns.sh against a fixture whose category for every turn is known by
+# construction, and WHAT WAS WRITTEN DOWN about it. Each prose assertion is scoped to the
+# section that carries the claim, for the reason 0042 recorded: a document-wide grep for
+# `mechanism` or `estimate` stays green when the section holding the figure is deleted, because
+# both words survive in the ticket-shaped prose around it.
+# ---------------------------------------------------------------------------------------------
+
+CLASSIFY="$ROOT/tools/classify-turns.sh"
+
+TURNS="$SCOPE/turns"
+BUDGET="$SCOPE/budget"
+GROWTH="$SCOPE/growth"
+AIM="$SCOPE/aim"
+if [ -f "$REC" ]; then
+  awk '/^## Where a session.s turns go$/{s=1;next} s&&/^## /{exit} s' "$REC" > "$TURNS"
+  awk '/^### The turn budget$/{s=1;next} s&&/^#+ /{exit} s' "$REC" > "$BUDGET"
+  awk '/^### What the context is made of$/{s=1;next} s&&/^#+ /{exit} s' "$REC" > "$GROWTH"
+  awk '/^### Where the reduction aims$/{s=1;next} s&&/^#+ /{exit} s' "$REC" > "$AIM"
+else
+  : > "$TURNS"; : > "$BUDGET"; : > "$GROWTH"; : > "$AIM"
+fi
+
+echo "0073 FR2 — the classifier is committed and runnable"
+if [ -x "$CLASSIFY" ]; then
+  ok "tools/classify-turns.sh exists and is executable"
+else
+  bad "0073 FR2 — no executable script at tools/classify-turns.sh"
+fi
+
+echo "0073 AC3 — the classification, against a fixture whose every turn has a known category"
+# Six turns, one per category outcome, in a session marked `develop`:
+#   1 no tool call                          -> narration
+#   2 reads the skill file                  -> orientation
+#   3 runs the claim script                 -> mechanism
+#   4 an Edit tool call                     -> work
+#   5 runs the suite                        -> work
+#   6 a shell command matching no rule      -> other
+# So turns/session is 6.0, work is 33.3%, and each of the other four is 16.7%.
+#
+# Context is built so the own-turn estimator has one arithmetic answer: context per turn climbs
+# 100 -> 200 -> ... -> 600, so growth over the five deltas is 500, and each turn emits 50 output
+# tokens, so the five prior-turn outputs total 250 -- exactly 50.0% of the growth.
+mkdir -p "$FIX/store3"
+cu() { printf '{"input_tokens":%d,"cache_read_input_tokens":0,"cache_creation_input_tokens":0,"output_tokens":50}' "$1"; }
+asst() { # asst <n> <context> <content-json>
+  printf '{"type":"assistant","timestamp":"2026-08-23T03:00:0%s.000Z","message":{"id":"msg_cls_%s","model":"claude-opus-5","content":%s,"usage":%s}}\n' \
+    "$1" "$1" "$3" "$(cu "$2")"
+}
+bash_call() { printf '[{"type":"tool_use","id":"t%s","name":"Bash","input":{"command":"%s"}}]' "$1" "$2"; }
+{
+  printf '{"type":"user","timestamp":"2026-08-23T03:00:00.000Z","message":{"role":"user","content":"<command-name>/ai-building-tools:develop</command-name>"}}\n'
+  asst 1 100 '[{"type":"text","text":"SENTINELPROSE no tool call here"}]'
+  asst 2 200 "$(bash_call 2 'cat skills/develop/SKILL.md')"
+  asst 3 300 "$(bash_call 3 './.claude/backlog/claim 0073')"
+  asst 4 400 '[{"type":"tool_use","id":"t4","name":"Edit","input":{"file_path":"MEASUREMENT.md","old_string":"SENTINELPROSE","new_string":"b"}}]'
+  asst 5 500 "$(bash_call 5 'tests/measurement.test.sh')"
+  asst 6 600 "$(bash_call 6 'echo SENTINELPROSE')"
+} > "$FIX/store3/cccccccc-0000-0000-0000-000000000000.jsonl"
+
+if [ -x "$CLASSIFY" ]; then OUT3="$("$CLASSIFY" "$FIX/store3" 2>&1 || true)"; else OUT3=""; fi
+
+# check3 <label> <needle> <what-a-miss-means>
+check3() {
+  case "$OUT3" in
+    *"$2"*) ok "$1" ;;
+    *) bad "0073 AC3 — $3; got: $(printf '%s' "$OUT3" | tr '\n' ' ' | cut -c1-240)" ;;
+  esac
+}
+check3 "turns per session is 6.0" "6.0" "expected a turns-per-session figure of 6.0"
+check3 "work is 33.3% of turns — the Edit and the suite run" "33.3" "expected work to be 33.3% of turns"
+check3 "the four single-turn categories are 16.7% each" "16.7" "expected a 16.7% share for the single-turn categories"
+check3 "own prior turns account for 50.0% of context growth" "50.0" "expected the own-turn share of growth to be 50.0%"
+check3 "the fixture session is attributed to develop" "develop" "the fixture session was not attributed to develop"
+
+for cat in mechanism orientation work narration other; do
+  case "$OUT3" in
+    *"$cat"*|*"$(printf '%s' "$cat" | tr 'a-z' 'A-Z')"*) ok "the output names the $cat category" ;;
+    *) bad "0073 FR2 — the classifier output does not name the $cat category" ;;
+  esac
+done
+
+echo "0073 AC3 — a response split across lines is classified by ALL of its blocks"
+# THE DEFECT THIS CAUGHT, and the reason it is a fixture and not a review note. A single API
+# response is written to the transcript as several lines, one per content block -- the fact
+# tools/harvest-usage.sh dedupes cost by message id to survive. The text block comes first and the
+# tool calls follow on later lines, so a classifier that keeps only the FIRST line of each id sees
+# no tool call at all and reports the turn as narration. Run against the real pinned set that read
+# 84.5% narration and 0.0% mixed, and both figures were plausible enough to publish. The fixture
+# above cannot catch it: it puts every block of a turn on one line, which no real response does.
+#
+# Two turns, blocks split across lines, same ids:
+#   turn A: a text block, then a read of the skill file   -> orientation, not mixed
+#   turn B: an Edit, then a read of the skill file        -> work by precedence, and mixed
+# So narration is 0.0%, orientation and work are 50.0% each, and mixed is 50.0%.
+mkdir -p "$FIX/store4"
+line4() { # line4 <msg-id> <context> <content-json>
+  printf '{"type":"assistant","timestamp":"2026-08-23T04:00:00.000Z","message":{"id":"msg_split_%s","model":"claude-opus-5","content":%s,"usage":%s}}\n' \
+    "$1" "$3" "$(cu "$2")"
+}
+{
+  printf '{"type":"user","timestamp":"2026-08-23T04:00:00.000Z","message":{"role":"user","content":"<command-name>/ai-building-tools:verify</command-name>"}}\n'
+  line4 a 100 '[{"type":"text","text":"SENTINELPROSE about to look at the skill"}]'
+  line4 a 100 "$(bash_call a1 'cat skills/verify/SKILL.md')"
+  line4 b 200 '[{"type":"tool_use","id":"tb1","name":"Edit","input":{"file_path":"MEASUREMENT.md","old_string":"SENTINELPROSE","new_string":"b"}}]'
+  line4 b 200 "$(bash_call b2 'cat skills/verify/SKILL.md')"
+} > "$FIX/store4/dddddddd-0000-0000-0000-000000000000.jsonl"
+
+if [ -x "$CLASSIFY" ]; then OUT4="$("$CLASSIFY" "$FIX/store4" 2>&1 || true)"; else OUT4=""; fi
+# `NF >= 10` and `exit` scope every extraction to the FIRST table. The growth table below it
+# opens its rows with the same stage name, so a bare /^verify/ returns two values and every
+# comparison against one of them fails on a string that is two numbers.
+cell4() { printf '%s\n' "$OUT4" | awk -F'|' -v c="$1" '/^verify/ && NF >= 10 {gsub(/[ %]/,"",$c); print $c; exit}'; }
+TURNS4="$(cell4 3)"
+NARR4="$(cell4 8)"
+MIXED4="$(cell4 10)"
+if [ "$TURNS4" = "2" ]; then
+  ok "the two split responses count as two turns, not four"
+else
+  bad "0073 AC3 — expected 2 turns from two split responses; got: ${TURNS4:-nothing}"
+fi
+if [ "$NARR4" = "0.0" ]; then
+  ok "a turn whose tool calls are on later lines is not counted as narration"
+else
+  bad "0073 AC3 — narration is ${NARR4:-nothing}%, not 0.0%: the classifier is reading only the first line of each response"
+fi
+if [ "$MIXED4" = "50.0" ]; then
+  ok "a turn spanning two categories across two lines is reported as mixed"
+else
+  bad "0073 AC3 — mixed is ${MIXED4:-nothing}%, not 50.0%: blocks on later lines are not reaching the precedence rule"
+fi
+case "$OUT4" in
+  *SENTINELPROSE*) bad "0073/privacy — content from the split-response fixture reached the output" ;;
+  *) ok "no content from the split-response fixture reaches the output" ;;
+esac
+
+echo "0073 FR3 — the startup floor is reported beside the climb"
+# The climb is only half the question. A session also pays a FLOOR before it does anything -- the
+# system prompt, the tool definitions, the skill file, the conventions -- and "load only what is
+# needed" acts on the floor while "fewer turns" acts on the climb. Publishing one without the
+# other invites a reduction aimed at whichever half happens to be smaller. The fixture climbs
+# 100 -> 600 across its six turns, so the floor is 100 and the climb is 500.
+case "$OUT3" in
+  *"STARTUP FLOOR"*) ok "the classifier reports the startup floor" ;;
+  *) bad "0073 FR3 — the classifier reports no startup floor, only the climb" ;;
+esac
+FLOOR3="$(printf '%s\n' "$OUT3" | awk -F'|' '/^develop/ && NF == 6 {gsub(/[ %]/,"",$3); print $3; exit}')"
+CLIMB3="$(printf '%s\n' "$OUT3" | awk -F'|' '/^develop/ && NF == 6 {gsub(/[ %]/,"",$5); print $5; exit}')"
+if [ "$FLOOR3" = "100" ]; then
+  ok "the floor is the first turn's context, 100"
+else
+  bad "0073 FR3 — expected a floor of 100; got: ${FLOOR3:-nothing}"
+fi
+if [ "$CLIMB3" = "500" ]; then
+  ok "the climb is the rise from first turn to last, 500"
+else
+  bad "0073 FR3 — expected a climb of 500; got: ${CLIMB3:-nothing}"
+fi
+
+echo "0073 FR5 — the largest category is broken down far enough to aim a reduction at"
+# `mechanism` being the largest category is not on its own a target: it spans the backlog protocol
+# and the git bookkeeping around it, and those are two different fixes. The fixture's turn 3 runs
+# the claim script, so the composition table must attribute one turn to it.
+case "$OUT3" in
+  *"MECHANISM COMPOSITION"*) ok "the classifier breaks the mechanism turns down by what they ran" ;;
+  *) bad "0073 FR5 — the classifier publishes no breakdown of the mechanism category" ;;
+esac
+if printf '%s\n' "$OUT3" | grep -qi 'backlog script'; then
+  ok "the composition names the backlog-script share"
+else
+  bad "0073 FR5 — the composition does not name the backlog-script share the fixture contains"
+fi
+
+echo "0073 privacy NFR — the classifier emits no transcript content"
+# The classifier is the one script here that READS command strings, so it is the one that could
+# publish one. The fixture puts SENTINELPROSE in a message, in an edit payload and inside a shell
+# command for exactly that reason.
+case "$OUT3" in
+  *SENTINELPROSE*) bad "0073/privacy — transcript content from the fixture reached the output" ;;
+  *) ok "no fixture message, edit payload or command string reaches the output" ;;
+esac
+BADLINE3="$(printf '%s\n' "$OUT3" | grep -vn '^[A-Za-z0-9 .,$%|:/-]*$' | head -1 || true)"
+if [ -z "$BADLINE3" ]; then
+  ok "every classifier output line is within the aggregate-figures character set"
+else
+  bad "0073/privacy — a classifier output line leaves the aggregate-figures character set: $BADLINE3"
+fi
+
+echo "0073 AC1 — the record reports turns per session, per stage"
+if [ ! -s "$TURNS" ]; then
+  bad "0073 AC1 — no \"## Where a session's turns go\" section in MEASUREMENT.md to scope to"
+else
+  ok "the turns section is present, so the assertions below have a scope"
+fi
+present "the section carries a turns-per-session figure" "$TURNS" "Turns per session"
+
+echo "0073 AC2 — the categories, their shares, and the code that produced them"
+# MUTATION THAT REDS EACH: delete the category's column from the table in that section. A
+# document-wide grep would not catch it — every one of these words also appears in FR2 of
+# `items/0073-*.md`, which is not what the reader of this record is being promised.
+present "the section names the mechanism category" "$TURNS" "echanism"
+present "the section names the orientation category" "$TURNS" "rientation"
+present "the section names the narration category" "$TURNS" "arration"
+present "the section names the classifier that produced the shares" "$TURNS" "classify-turns.sh"
+present "the section states the precedence that decides a mixed turn" "$TURNS" "recedence"
+
+echo "0073 AC4 — the context-growth split is published as an estimate, with its estimator"
+if [ ! -s "$GROWTH" ]; then
+  bad "0073 AC4 — no '### What the context is made of' subsection to scope to"
+else
+  ok "the context-growth subsection is present"
+fi
+presenti "the growth figure is labelled an estimate where it is published" "$GROWTH" "estimate"
+present "the estimator is stated, not merely claimed to exist" "$GROWTH" "own prior turns"
+
+echo "0073 AC5 — a turn budget per stage, as a number with a date"
+if [ ! -s "$BUDGET" ]; then
+  bad "0073 AC5 — no '### The turn budget' subsection to scope to"
+else
+  ok "the turn-budget subsection is present"
+fi
+if grep -qE '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]' "$BUDGET"; then
+  ok "the turn budget carries a date"
+else
+  bad "0073 AC5 — the turn budget states no date; a budget without one cannot come due"
+fi
+for stage in develop verify queue; do
+  present "the budget names a figure for $stage" "$BUDGET" "$stage"
+done
+
+echo "0073 AC6 — the largest category, and the id of the reduction ticket opened against it"
+if [ ! -s "$AIM" ]; then
+  bad "0073 AC6 — no '### Where the reduction aims' subsection to scope to"
+else
+  ok "the reduction-aim subsection is present"
+fi
+if grep -qE '\b0(0[0-9][0-9]|[1-9][0-9]{2})\b' "$AIM"; then
+  ok "the reduction aim names a four-digit backlog id"
+else
+  bad "0073 AC6 — the reduction aim names no backlog ticket, so nothing carries the reduction"
+fi
+
+echo "0073 AC7/FR6 — the classification reproduces from a pinned command, not a date window"
+CLSCMD="$SCOPE/classify-command"
+awk '/^```/{f=!f;next} f' "$TURNS" > "$CLSCMD"
+if [ ! -s "$CLSCMD" ]; then
+  bad "0073 AC7 — the turns section prints no fenced command to reproduce it"
+else
+  ok "the turns section prints a command"
+fi
+present "the printed command runs the classifier" "$CLSCMD" "classify-turns.sh"
+NEX3="$(grep -o -- '--exclude' "$CLSCMD" | wc -l | tr -d ' ')"
+if [ "$NEX3" -ge "$PINNED_EXCLUSIONS" ]; then
+  ok "the classifier command pins the same session set with $NEX3 --exclude flags"
+else
+  bad "0073 FR6 — the classifier command carries $NEX3 --exclude flags; the pinned set needs $PINNED_EXCLUSIONS"
+fi
+
+
 echo "Privacy & data NFR — no home-directory path in any tracked file"
 # The repo is public, so a path belonging to the machine that built it is an egress of exactly
 # what the NFR row puts out of bounds: a path outside this repo. This is a guard rather than a

@@ -85,6 +85,167 @@ Published until 2026-08-30 as 19 tickets, $6.01 and $4.45. One further ticket wa
 pinned, the denominator was re-read, and nothing on the page looked wrong. Tickets quoting the old
 pair — `0036`, `0040`, `0041` — hold a stale cache of this figure, not a second reading of it.
 
+## Where a session's turns go
+
+**Recorded 2026-09-02, ticket 0073.** The same 30 sessions as the tables above, the same pinned id
+set, classified turn by turn by `tools/classify-turns.sh` rather than by a session reading them.
+`0009` already paid for guessing once — it modelled a 66% saving from a wrong premise and observed
+14.5% — so the categories below are decided by committed code against tool calls on disk.
+
+**The finding, in one line: 41.9% of every turn in the suite is the backlog protocol and the git
+bookkeeping around it, which is more than the 34.0% spent on the work itself.**
+
+### What was classified, and how
+
+Five categories, fixed in the script and named in its output:
+
+| Category | What lands in it |
+|---|---|
+| `mechanism` | The backlog protocol and the git bookkeeping around it: the `claim`, `close` and `next` scripts, the lock, `QUEUE.md`, `DONE.md`, `FINDINGS.md`, `RANKING.md`, `config.yml`, and every `git` call |
+| `orientation` | Reading to find out what to do: the skill file, the conventions, a template, the ticket, this repo's own docs |
+| `work` | Changing the thing under change, and running a test |
+| `narration` | A turn that called no tool at all |
+| `other` | Matched no rule. Reported rather than folded into a neighbour, because it is the honest size of what the rules do not cover |
+
+A turn's tool calls can span categories. **The precedence is `work`, `mechanism`, `orientation`,
+`other`** — a turn that edited the change is work whatever else it also read — and the share of
+turns that needed the rule is published as `MIXED` so its influence is visible rather than assumed.
+
+| Stage | Sessions | Turns | Turns per session | mechanism | orientation | work | narration | other | mixed |
+|---|---|---|---|---|---|---|---|---|---|
+| develop | 12 | 463 | 38.6 | 38.4% | 17.3% | 37.6% | 2.4% | 4.3% | 6.3% |
+| verify | 10 | 384 | 38.4 | **49.5%** | 11.2% | 33.1% | 4.2% | 2.1% | 10.2% |
+| queue | 5 | 181 | 36.2 | 39.2% | 16.0% | 30.9% | 5.0% | 8.8% | 6.6% |
+| retro | 2 | 46 | 23.0 | 30.4% | 30.4% | 23.9% | 6.5% | 8.7% | 8.7% |
+| design | 1 | 27 | 27.0 | 44.4% | 33.3% | 14.8% | 3.7% | 3.7% | 0.0% |
+| unmarked | 2 | 11 | 5.5 | 9.1% | 0.0% | 54.5% | 18.2% | 18.2% | 0.0% |
+| **all** | **30** | **1,112** | **37.1** | **41.9%** | **15.7%** | **34.0%** | **3.8%** | **4.6%** | **7.6%** |
+
+**`narration` is 3.8%, and that kills the obvious theory.** "The sessions talk too much" was the
+first explanation anyone reached for, including this record's own ticket. Measured, a turn that
+calls no tool is one turn in twenty-six. Cutting what a session *says* cannot move a turn count that
+is 92% tool calls.
+
+### What the mechanism turns were running
+
+`mechanism` being the largest category does not yet aim anything: the backlog protocol and the git
+bookkeeping around it are two different fixes. Shares are of the mechanism turns, not of all turns.
+
+| Stage | Mechanism turns | backlog script | lock | queue file | other backlog | git write | git inspect |
+|---|---|---|---|---|---|---|---|
+| develop | 178 | 29.2% | 21.9% | 18.0% | 17.4% | 2.2% | 11.2% |
+| verify | 190 | 22.6% | 20.0% | 19.5% | 16.3% | 1.1% | 20.5% |
+| queue | 71 | 9.9% | 18.3% | 25.4% | 29.6% | 4.2% | 12.7% |
+| retro | 14 | 7.1% | 0.0% | 0.0% | 42.9% | 21.4% | 28.6% |
+| design | 12 | 8.3% | 25.0% | 25.0% | 41.7% | 0.0% | 0.0% |
+| **all** | **466** | **22.3%** | **20.0%** | **19.3%** | **20.2%** | **2.6%** | **15.7%** |
+
+**81.8% of the mechanism turns are the backlog protocol itself** — the scripts, the lock, `QUEUE.md`
+and its sibling files — and 18.3% is git. So the protocol alone is **34.3% of every turn in the
+suite**, about 12.8 turns of a develop session's 38.6, against 3 durable acts a session performs:
+claim, hand off, close.
+
+### What the context is made of
+
+Two different quantities, and a reduction aimed at one does nothing to the other. A session pays a
+**floor** before it does anything — the harness's system prompt and tool definitions, the skill file
+it is running, the conventions its `CLAUDE.md` imports — and then **climbs** from there.
+
+| Stage | Sessions | Floor tokens | End tokens | Climb tokens | Floor share of end |
+|---|---|---|---|---|---|
+| develop | 12 | 59,200 | 134,170 | 74,970 | 44.1% |
+| verify | 10 | 57,281 | 128,766 | 71,485 | 44.5% |
+| queue | 3 | 60,830 | 131,537 | 70,707 | 46.2% |
+| retro | 2 | 57,357 | 175,230 | 117,873 | 32.7% |
+| design | 1 | 55,409 | 99,091 | 43,682 | 55.9% |
+| **all** | **30** | **58,060** | **130,807** | **72,747** | **44.4%** |
+
+This table attributes a session by the stage in force at its **first** turn, because a floor is paid
+once at session start. That is a different denominator from the turn tables above, which attribute
+each turn to the stage in force at that turn — which is why `queue` shows 3 sessions here and 5
+there, and `retro` 2 and 2.
+
+**The climb's own composition is an estimate, and is published as one.** The transcripts carry usage
+totals per turn, not a breakdown of what those tokens were. The estimator: a turn's context is
+`input + cache_read + cache_creation`, so the rise from one turn to the next is what the
+conversation appended in between; the previous turn's `output_tokens` is charged against that rise
+as the share attributable to the session's **own prior turns**, and only rises are counted, since a
+fall means the context was pruned or the session resumed and cannot be attributed.
+
+| Stage | Growth tokens | Own output tokens | Estimated own share | Everything else |
+|---|---|---|---|---|
+| develop | 899,640 | 410,837 | 45.7% | 54.3% |
+| verify | 714,847 | 301,576 | 42.2% | 57.8% |
+| queue | 415,124 | 213,262 | 51.4% | 48.6% |
+| retro | 96,479 | 38,693 | 40.1% | 59.9% |
+| design | 43,682 | 21,218 | 48.6% | 51.4% |
+| **all** | **2,182,427** | **990,678** | **45.4%** | **54.6%** |
+
+Put together, an average end-of-session context of 130,807 tokens divides roughly **44% floor, 25%
+the session's own prior turns, 30% everything it read or was handed mid-session**. Own output
+includes thinking and the arguments of every tool call, so it is not a measure of prose.
+
+**How much of that floor is this project's own prose.** A develop session loads `develop/SKILL.md`
+at 6,693 tokens, `CONCURRENCY.md` at 2,337, this repo's `CLAUDE.md` at 629 and
+`CONVENTIONS_CORE.md` at 4,065 — 13,724 tokens, at the 4.038 bytes per token this record uses. That
+is **23.2% of the 59,200-token floor and 10.2% of the end-of-session context**, as at 2026-09-02.
+The rest of the floor is the harness. So halving every word this project controls buys about 5% of a
+session's context, and it is the smaller lever by roughly a factor of five.
+
+### The turn budget
+
+**A number and a date, per stage, set 2026-09-02 and due 2026-10-31.** Each is derived from the
+composition above rather than wished for: take the stage's measured backlog-protocol turns, leave
+four of them, and keep everything else as it is.
+
+| Stage | Turns per session now | Budget by 2026-10-31 | Where the cut comes from |
+|---|---|---|---|
+| develop | 38.6 | **30** | 12.8 protocol turns to 4 |
+| verify | 38.4 | **28** | 14.9 protocol turns to 4 |
+| queue | 36.2 | **28** | 11.8 protocol turns to 4 |
+| design | 27.0 | **20** | 11.0 protocol turns to 4 |
+| retro | 23.0 | **22** | 3.0 protocol turns to 2 |
+
+Re-read with the command below on 2026-10-31 against the sessions run by then. **If the figure has
+not moved, the verdict is recorded as not moved** — this record's own history is that a modelled
+saving came in at a fifth of the model, and the number is the only thing that settles it.
+
+### Where the reduction aims
+
+**The largest category is `mechanism` at 41.9% of turns, and 81.8% of it is the backlog protocol.
+The reduction ticket opened against that is `0085`.** Not the skill files: `orientation` is 15.7% of
+turns and this project's whole prose is 10.2% of a session's context.
+
+Three tickets already in the backlog are pieces of the same target and are named in `0085` rather
+than duplicated by it: `0081` scripts the hand-off, `0048` decides which remaining write sites
+become scripts, and `0047` gives the busy lock a close-time path. What `0085` adds is the figure
+they are aiming at and a single command per stage boundary.
+
+### Re-running this
+
+The store is live. What pins this classification is the same session-id set as the tables above, so
+the command carries it in full:
+
+```sh
+tools/classify-turns.sh <transcript-store> --since 2026-08-23 --until 2026-08-24 \
+  --exclude 1860b4f4 --exclude 5c2b0c27 --exclude 26acbad7 --exclude 3ab24685 \
+  --exclude 05e441cd --exclude b5862898 --exclude fe292418 --exclude 52cc41c8 \
+  --exclude 35873f41 --exclude 873196d2 --exclude ba215ccf --exclude 1a2da19b
+```
+
+Verified 2026-09-02: 30 sessions, 1,112 turns, and every cell of the four tables above.
+
+### What this measurement cannot see
+
+- **A turn is classified by its tool calls, not by its intent.** A read is orientation whatever the
+  reader meant by it, and 7.6% of turns needed the precedence rule to pick one category of two.
+- **Paths cannot tell the work from the reading of it.** A session editing `MEASUREMENT.md` as its
+  deliverable is scored the same as one consulting it, and 4.6% of turns matched no rule at all.
+- **`mechanism` includes git.** 15.7% of the mechanism turns are `git` inspection that any project
+  pays, not a cost of this backlog. The 34.3% figure excludes it; the 41.9% does not.
+- **These 30 sessions are this repository's own**, editing the files each of its sessions loads,
+  which the *not held constant* section below already records for the cost figures.
+
 ## The baseline — 2026-08-22, and how it was matched
 
 The published figures are $15.11 over 95 turns at an average 191,752 context tokens per turn, 85% of

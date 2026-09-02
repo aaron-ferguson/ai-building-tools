@@ -19,6 +19,10 @@ expects:
 claimed_by: "5db7"
 claimed_at: 2026-09-02T04:35:22Z
 touches:
+  - MEASUREMENT.md
+  - tools/classify-turns.sh
+  - tests/measurement.test.sh
+  - README.md
 ---
 
 ## Problem
