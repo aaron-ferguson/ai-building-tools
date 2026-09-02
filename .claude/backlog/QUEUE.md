@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0085 | Collapse the backlog protocol from a third of every session's turns to one command per stage boundary | queue | ready |  |
+| 0085 | Collapse the backlog protocol from a third of every session's turns to one command per stage boundary | develop | ready |  |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
 | 0076 | Make a tool edit run the target repo's suite before it commits | develop | ready |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |

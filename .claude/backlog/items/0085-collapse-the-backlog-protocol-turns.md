@@ -2,7 +2,7 @@
 id: "0085"
 title: Collapse the backlog protocol from a third of every session's turns to one command per stage boundary
 type: debt
-next: queue
+next: develop
 status: ready
 qa_level: verify
 size: l
@@ -121,8 +121,14 @@ scripts are not the cost — 4.3 script turns against 8.5 by-hand ones per devel
 
 `CONCURRENCY.md`, *A stage writes only the ticket it holds*, forbids the session that settled this
 from writing them, **and naming them here is explicitly not filing them.** They need a `queue` pass,
-which is why this ticket sits at `next: queue` rather than `next: develop`. Both are dated
-2026-09-02 and are to be re-verified against the source before they are run.
+which is why this ticket sat at `next: queue` rather than `next: develop`. Both are dated
+2026-09-02 and were re-verified against the source before they were run.
+
+**Filed 2026-09-01.** Both amendments below are now in place: `0066` carries FR6/FR7 and `0048`'s
+open design question is narrowed to the row insert plus the `RANKING.md` write. What remains on
+this ticket itself is FR7 — the decision record's own attribution table names `verify`'s advisory
+dirty-path intersection (Step 7) as **owned by `0085`**, not routed to a sibling — so this ticket
+moves to `next: develop` rather than closing here.
 
 - **`0066` gains two FRs.** `./claim <id> --touches <paths>`, writing `touches:` inside the same lock
   and commit — **taking paths the session names, never defaulting to `expects:`**, since `queue`
@@ -145,14 +151,20 @@ which is why this ticket sits at `next: queue` rather than `next: develop`. Both
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the decision record, when read, then it states for each of the three stage
+- [x] AC1 — Given the decision record, when read, then it states for each of the three stage
       boundaries the minimum turn count and, per retained turn, the `CONCURRENCY.md` rule it serves.
-- [ ] AC2 — Given the decision record, when read, then every protocol turn it calls removable names
-      the backlog id that removes it, and no removal is left unowned.
-- [ ] AC3 — Given the decision record, when read, then it states the predicted turns-per-session
+      *(Confirmed 2026-09-01: "The minimum turn count per boundary, and the rule each retained turn
+      serves" table.)*
+- [x] AC2 — Given the decision record, when read, then every protocol turn it calls removable names
+      the backlog id that removes it, and no removal is left unowned. *(Confirmed 2026-09-01:
+      "Every removable turn, and who removes it" table — every row has an owner or is Retained.)*
+- [x] AC3 — Given the decision record, when read, then it states the predicted turns-per-session
       figure per stage against the budget in `MEASUREMENT.md`, and the command that will test it.
-- [ ] AC4 — Given the lock and the `QUEUE.md` read, when the record is read, then each has an
+      *(Confirmed 2026-09-01: FR5's turns table against budget, and "re-measured … with the pinned
+      set in `MEASUREMENT.md`, *Re-running this*, as the baseline.")*
+- [x] AC4 — Given the lock and the `QUEUE.md` read, when the record is read, then each has an
       explicit verdict rather than being folded into a general statement about mechanism.
+      *(Confirmed 2026-09-01: FR3 and FR4 sections each give an explicit, separate verdict.)*
 - [x] AC7 — Given a fixture whose every turn has a known context, output and cost, when
       `tools/cost-by-category.sh` runs, then the per-category figures reconcile to the session total
       exactly (0.2550) and a cache-read-only turn prices at 0.0525.
@@ -229,3 +241,11 @@ which is why this ticket sits at `next: queue` rather than `next: develop`. Both
   - **A more linear workflow was priced and rejected on its own terms: +12%.** Fusing develop and
     verify makes the second stage re-read the first's 74,970-token climb on every turn ($1.44)
     against $0.36 saved on a floor that is cached anyway.
+- **Queue pass, 2026-09-01.** Filed both routed amendments: `0066` gained FR6 (`--touches`) and FR7
+  (generalizing FR4's `./next`-warning fix), size raised `m` → `l`; `0048`'s open design question
+  narrowed to the row insert plus the `RANKING.md` write beside it, with the former FR2 (stage
+  handoff) retired to Out of scope now that `0081` specifies it. Confirmed AC1–AC4 against the
+  decision record and ticked them. Set `next: develop`: the one piece left on this ticket itself is
+  FR7 (verify's Step 7 dirty-path form), which the decision record's own attribution table assigns
+  to `0085`, not to a sibling — there is no open decision or surface left, so `develop` rather than
+  `design`.

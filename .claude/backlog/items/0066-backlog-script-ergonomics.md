@@ -5,12 +5,12 @@ type: bug
 next: develop
 status: ready
 qa_level: unit
-size: m
+size: l
 created: 2026-08-25
 source: agent
 parent:
 blocked_by: []
-relates: ["0027", "0029", "0045"]
+relates: ["0027", "0029", "0045", "0085"]
 expects:
   - skills/queue/templates/claim
   - skills/queue/templates/close
@@ -62,6 +62,15 @@ beside the counts. It cost a session to explain rather than a script to answer.
   since that is the question the reader is actually asking.
 - FR5 — The three installed copies under `.claude/backlog/` are updated from the templates in the
   same change, per `tests/backlog-scripts-installed.test.sh` AC2.
+- FR6 — `./claim <id> --touches <paths>` writes `touches:` into the item and its `QUEUE.md` row
+  inside the same lock and commit as the claim itself, taking exactly the paths the session names
+  on the command line — **never defaulting to or deriving from `expects:`**, since `queue` writes
+  `expects:` predicted and `develop` writes `touches:` actual, and the two must never be copied
+  from one another.
+- FR7 — Bare `./next`'s report on a non-takeable row 1 states the blocking reason inline — the
+  `## Waiting on` question for a `waiting` row, or the `blocked_by` id for a `blocked` one — not
+  just the status word, so a session is not sent back to `QUEUE.md` or the item to find out why.
+  The same class of defect as FR4: a warning that requires a second read to act on.
 
 ## Non-functional requirements
 
@@ -69,6 +78,7 @@ beside the counts. It cost a session to explain rather than a script to answer.
 |---|---|---|
 | Documentation | FR3's usage text documents every mode each script has, as `./next --help` already does | `documentation-conventions.md` |
 | Progressive delivery | The scripts ship to every machine installing the plugin; the release is the version bump and the install | `progressive-delivery-conventions.md` |
+| Correctness | FR6's `touches:` write happens inside the same lock and commit as the claim — no separate, unlocked follow-up write | `CONCURRENCY.md`, *A claim must be durable the moment it is made* |
 
 ## Acceptance criteria
 
@@ -87,6 +97,15 @@ beside the counts. It cost a session to explain rather than a script to answer.
 - [ ] AC7 — Given `.claude/backlog/{claim,close,next}` compared against the templates, when
   `tests/backlog-scripts-installed.test.sh` runs, then it passes.
 - [ ] AC8 — Given the whole suite, when it runs, then every suite passes.
+- [ ] AC9 — Given `./claim <id> --touches path/a path/b`, when it succeeds, then the item's
+  `touches:` and the `QUEUE.md` row reflect exactly `path/a` and `path/b`, written in the same
+  commit as the claim.
+- [ ] AC10 — Given `./claim <id> --touches <paths>` on an item whose `expects:` names different
+  paths, when it succeeds, then `touches:` holds only the paths given on the command line — never
+  `expects:`'s paths.
+- [ ] AC11 — Given a queue whose row 1 is `waiting` or `blocked`, when bare `./next` runs, then its
+  report names the blocking reason (the waiting question, or the `blocked_by` id) inline, not just
+  the status word.
 
 ## QA plan
 
@@ -97,7 +116,9 @@ beside the counts. It cost a session to explain rather than a script to answer.
   full suite. Exercise the write-scripts against a **clone in the scratchpad**, never a live row in
   the shared table. Confirm each mutation reached the file the harness runs — `tests/next.test.sh`
   resolves its subject through `NEXT_SRC` — since mutating the backlog's own copy instead returns a
-  clean pass, which is what a check that cannot fail also returns.
+  clean pass, which is what a check that cannot fail also returns. `tests/claim.test.sh` gains
+  `--touches` cases: multiple paths, no flag (unchanged behavior), and a run against an item whose
+  `expects:` differs, to prove FR6 never copies from it.
 
 ## Out of scope
 
@@ -105,7 +126,10 @@ beside the counts. It cost a session to explain rather than a script to answer.
   readability defect as out of its own scope; the two touch `next` and want sequencing rather than
   merging.
 - The frontmatter readers' comment and list handling, which is 0044.
-- Adding modes to any script.
+- Adding modes to any script beyond FR6's `--touches`.
+- **`--touches` validating that the named paths exist, or that they match the ticket's `expects:`.**
+  The flag records what the session declares, not what it verifies — matching `expects:`'s own
+  "triage, not protection" role in the queue skill.
 
 ## Notes & decisions
 
@@ -116,3 +140,10 @@ beside the counts. It cost a session to explain rather than a script to answer.
   if that ticket changes the field; today it does not, so this is independent.
 - Ranked last of this batch. All three are real, all three are inert — nothing degrades while they
   sit — but each is small and clears the deck.
+- **Amended 2026-09-01 by `0085`'s queue pass.** FR6 and FR7 are the two FRs `0085`'s settled
+  decision (`docs/decisions/001-one-command-per-stage-boundary.md`) routed here: FR6 is the
+  `--touches` flag the decision record's *trade-off accepted* names as the one place its plan can
+  weaken a rule if misused, and FR7 generalizes FR4's fix to every non-takeable-row-1 warning, not
+  only the case FR4 already covers. **Size re-checked and raised `m` → `l`**: FR6 adds a new
+  argument and a second field written atomically inside the claim's existing lock, which is more
+  than the three original defects' scope.

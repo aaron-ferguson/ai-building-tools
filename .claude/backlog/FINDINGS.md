@@ -452,3 +452,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   worth having: the re-run reproduced all four tables, but the attack on the rules found the
   published "mechanism > work" headline flips under two defensible rule changes (pointer:
   `skills/design/SKILL.md` Step 2, `skills/develop/SKILL.md` Step 2, item 0085, `MEASUREMENT.md`).
+- 2026-09-01 — **`expects:` can name a path that never matched any file, and nothing catches it.**
+  0085's `expects:` listed `.claude/backlog/items/0048-remaining-backlog-write-sites.md` and
+  `.claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md` — neither is the real filename
+  (`0048-scripts-for-the-remaining-write-sites.md`, `0066-backlog-script-ergonomics.md`), so a
+  session opening 0085 and trying to read its `expects:` verbatim gets "file does not exist" for
+  both. `expects:` is triage, not protection, so this cost one failed read rather than anything
+  worse, but a field whose whole job is pointing a later session at the right files is silently
+  wrong the moment a title-guessed slug drifts from the real one (pointer: items/0085 `expects:`,
+  items/0048, items/0066).
