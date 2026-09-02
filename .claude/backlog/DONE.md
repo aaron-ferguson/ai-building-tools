@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0087 | Give a session a turn-count signal for the inline-or-own-session break-even | feature | not built | 2026-09-02 | [items/0087-turn-count-self-regulation-signal.md](items/0087-turn-count-self-regulation-signal.md) |
 | 0037 | Run the fresh-project end-to-end exercise against the settled configuration | chore | not built | 2026-09-02 | [items/0037-fresh-project-measurement-run.md](items/0037-fresh-project-measurement-run.md) |
 | 0073 | Measure where a stage session's turns and tokens actually go | chore | verify | 2026-09-02 | [items/0073-where-a-stage-sessions-turns-go.md](items/0073-where-a-stage-sessions-turns-go.md) |
 | 0051 | Pin the measurement record's denominator and make its recipe reproduce | bug | unit | 2026-09-01 | [items/0051-pin-the-measurement-record.md](items/0051-pin-the-measurement-record.md) |

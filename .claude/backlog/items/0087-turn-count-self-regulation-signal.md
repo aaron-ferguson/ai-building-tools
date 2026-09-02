@@ -2,8 +2,9 @@
 id: "0087"
 title: Give a session a turn-count signal for the inline-or-own-session break-even
 type: feature
-next: design
-status: ready
+next:
+status: done
+closed: 2026-09-02
 qa_level: unit
 size: l
 created: 2026-09-02
@@ -93,8 +94,51 @@ live signal is feasible at all before designing one.
 - Automatically stopping or handing off a session — the signal is advisory, per FR3, unless the
   design stage explicitly decides otherwise and says so.
 
+## Verdict — closed 2026-09-02 without being designed
+
+**The signal is worth less than the lifecycle it would enter, and the calibration half of it is
+already free.** Recorded per `measurement-conventions.md`: a ticket withdrawn is a decision with a
+reason, not a row that quietly stops appearing.
+
+**No acceptance criteria are ticked because none were ever written** — this item reached `design`
+with its FRs and ACs marked *completed by the design stage*, and it is closed before that stage ran.
+`DONE.md` records it as `not built`.
+
+Three arguments, in the order they decide it:
+
+1. **The payoff is smallest exactly where the signal fires.** The rule it would sharpen is
+   `002`'s break-even at about 10 turns. **At break-even the two options cost the same by
+   definition** — that is what break-even means — so a reading accurate to a turn or two buys
+   nothing there. The money is at the extremes: a 3-turn fix given its own ticket is $0.50 against
+   $5.71, and no counter is needed to notice that. A precise instrument aimed at the flattest part
+   of the curve.
+
+2. **It contradicts the finding it was captured from.** `002`'s headline is that *the decision that
+   costs money is whether something enters the lifecycle, not how carefully it is treated once it
+   has* — dropping the QA pass buys 32%, not creating the ticket buys 87%. This item is a `size: l`
+   design-first entry, priced at the Full tier's ~$8.03, whose deliverable is a judgement aid for
+   that same routing call.
+
+3. **Option 3 was the residue worth keeping, and it does not survive its own arithmetic.** Turning
+   on the `cost_tracking:` block (`references/TRACKER.md`, *Recording what an item cost*) makes
+   every close append an *Actual cost* block — **a new protocol step on every ticket**, which is the
+   category `0085` is cutting from 34.3% of turns, spent to calibrate a heuristic. It also breaks
+   this item's own FR4, *adds no new required manual step to every ticket*. **And the answer it
+   would buy is already free retrospectively:** `tools/classify-turns.sh` reports turns per session
+   over any window with no per-ticket cost at all, and the **2026-10-31 re-measurement**
+   (`MEASUREMENT.md`, *The turn budget*) already runs it. If the ~10-turn rule is to be checked
+   against this project's history, that is where the number comes from.
+
+**What would reopen it:** a live in-session turn count arriving as a harness capability rather than
+as something this suite has to build. The obstacle was never the rule, it was that a Markdown skill
+cannot observe the conversation it is running in — if that stops being true, the cheap version is a
+line in a skill, not a ticket.
+
 ## Notes & decisions
 
 - Captured 2026-09-02 alongside 0086, from the same discussion of
   `docs/decisions/002-matching-rigour-to-stakes.md`'s two tests (which tier, and inline-or-own-
   session) — this item is the second test, 0086 is the first.
+- **Closed 2026-09-02, not built.** See *Verdict* above. Closed by hand rather than by
+  `.claude/backlog/close`, which refuses any row not at `next: verify`; the missing
+  withdraw-or-supersede operation is parked in `FINDINGS.md` for `0057`.

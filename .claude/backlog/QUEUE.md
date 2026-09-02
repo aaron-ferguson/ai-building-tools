@@ -70,7 +70,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
 | 0071 | Add a decision-map mode for work too large or too foggy for one project ticket | design | ready |  |
 | 0072 | Archive an escalated prototype on its own branch instead of leaving it only in the working tree | develop | ready |  |
-| 0087 | Give a session a turn-count signal for the inline-or-own-session break-even | design | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
