@@ -23,6 +23,33 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
+- 2026-09-01 — **a prose comment inside a single-quoted `awk` program breaks the shell quoting, and
+  the failure names nothing about quotes.** Editing `close`'s DONE-row builder, a comment reading
+  `other projects' spellings` closed the `'...'` wrapping the whole awk script; `close.test.sh` then
+  failed 20 of 63 cases reporting an empty reconcile list and a commit carrying six extra files — a
+  signature that reads as broken reconcile logic. `close`, `claim` and `next` all embed awk this way
+  and their comments carry the reasoning, so the scripts actively invite the hazard. Cheap guard:
+  `sh -n` per script in `backlog-scripts-installed.test.sh`, which would have caught it before the
+  behavioural suite did (pointer: `skills/queue/templates/close`, `tests/close.test.sh`).
+- 2026-09-01 — **`retro` edits skills, scripts and conventions and never runs a test, so the session
+  that changes a tool is the least likely to learn it broke it.** Step 5 covers committing and
+  releasing; nothing says to run the target repo's suite. This pass committed the awk defect above
+  and found it only because I ran `tests/*.test.sh` unprompted. Two adjacent traps cost time in the
+  same pass: this repo's suite **commits inside the live repo**, so running it over uncommitted edits
+  yields failures that look like logic errors and are tree pollution — the worktree-at-HEAD
+  comparison `develop` Step 5 already prescribes is what separates them, and `retro` never mentions
+  it; and `skill-size.test.sh` rejected the first draft 1,387 bytes over goal, forcing a relocation
+  that produced a better destination than the one proposed. The guard improved the edit, which is an
+  argument for running them (pointer: `skills/retro` Steps 4-5, `tests/skill-size.test.sh`).
+- 2026-09-01 — **an entry that is both a lesson and a unit of work cannot have its lesson half
+  removed, so a processed lesson is re-read at full price by every later sweep.** Recorded here once
+  before and swept without being fixed. Measured this pass against AetherWorks' 44-entry buffer: 15
+  were pure lessons and removable; of the 29 left, at least six have had their lesson landed (the
+  fold-into-NNNN mechanism, three guards-that-cannot-fail, the `qa_level` half of two UI items) and
+  survive only because deleting them would lose `queue`'s half. Second occurrence, in a second repo,
+  which argues for building the marker rather than noting it again: either a sweeper writes one the
+  other reads, or the halves become independently removable
+  (pointer: `skills/retro` Step 4, `skills/queue` findings sweep).
 - 2026-08-24 — **a third size gate would trip the DRY trigger that 0028 correctly declined.**
   `tests/reference-size.test.sh` is the second copy of the `offenders`/`pad`/`ok`/`bad` shape;
   `coding-conventions.md`'s Tier-2 rule fires on the *third* instance, so 0028's *Out of scope*
