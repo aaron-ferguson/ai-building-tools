@@ -3,7 +3,7 @@ id: "0085"
 title: Collapse the backlog protocol from a third of every session's turns to one command per stage boundary
 type: debt
 next: queue
-status: in-progress
+status: ready
 qa_level: verify
 size: l
 created: 2026-09-02
@@ -15,8 +15,8 @@ expects:
   - .claude/backlog/items/0048-remaining-backlog-write-sites.md
   - .claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md
   - skills/verify/SKILL.md
-claimed_by: "b00a"
-claimed_at: 2026-09-02T05:11:13Z
+claimed_by:
+claimed_at:
 touches: []
 ---
 
@@ -63,6 +63,20 @@ In one line: **a stage boundary is one command, and a session never sees the loc
 turns (`./next <stage>`, then `./claim`), hand-off is one, close is one — four boundary turns plus a
 `FINDINGS.md` append, which is exactly the four-turn protocol budget in `MEASUREMENT.md`.
 
+**Verified in tokens 2026-09-02, and this was not a formality.** The decision above was reached on
+a share of *turns*. `tools/cost-by-category.sh` (new, guarded by `tests/cost-by-category.test.sh`)
+prices the same pinned set by category: the protocol is **34.3% of turns and 32.8% of dollars**, and
+a protocol turn costs **$0.0983 against a work turn's $0.1132 — 87% of one, not a fraction.** A short
+command is not a cheap turn, because the dominant per-turn cost is re-reading the cached context and
+that is category-blind (102,831 tokens against 109,008, 5.7% apart). **The denominator was right.**
+
+**One claim did not survive the attack, and it is worth recording that it was not this one.** The
+published headline *"41.9% mechanism is more than the 34.0% spent on work"* holds only while git sits
+inside `mechanism`; splitting git out makes it a tie, and also treating read-only access to
+`DONE.md`/`RANKING.md`/`SCHEDULED.md`/`config.yml` as orientation puts mechanism **below** work at
+33.1%. The protocol share itself moved only from 34.3% to 31.5% under every attack at once. Both
+results are in `MEASUREMENT.md`, *What a turn of each category costs*.
+
 **What decided it:** `tools/classify-turns.sh` resolves a mechanism turn's part by first match wins,
 with `backlog script` ahead of `lock` and `queue file`, and `./claim`/`./close` never name the lock.
 So every turn counted as `lock` (20.0%) is a **by-hand** lock at a write site with no script, and
@@ -94,6 +108,14 @@ scripts are not the cost — 4.3 script turns against 8.5 by-hand ones per devel
   intersection, at 20.5% of `verify`'s mechanism turns against a 15.7% mean. It is this protocol's
   own git rather than the project's, so FR6's "leave git alone" does not reach it. Give it a form
   that does not cost the session a turn of its own.
+
+- FR8 — **Price the categories before accepting the prediction.** A share of turns is not a share
+  of tokens, and `0009`'s history is a modelled 66% that came in at 14.5%. Measure cost and context
+  tokens per turn by category on the same pinned set, with committed code. *(Discharged 2026-09-02:
+  `tools/cost-by-category.sh`, guard green.)*
+- FR9 — **State the prediction in dollars as well as turns, and name the figure that distinguishes
+  "the turns were removed" from "the tokens were saved".** *(Discharged 2026-09-02: the decision
+  record's FR5 table and its *How to tell* table.)*
 
 ## Amendments to file, and why this ticket cannot file them
 
@@ -131,6 +153,18 @@ which is why this ticket sits at `next: queue` rather than `next: develop`. Both
       figure per stage against the budget in `MEASUREMENT.md`, and the command that will test it.
 - [ ] AC4 — Given the lock and the `QUEUE.md` read, when the record is read, then each has an
       explicit verdict rather than being folded into a general statement about mechanism.
+- [x] AC7 — Given a fixture whose every turn has a known context, output and cost, when
+      `tools/cost-by-category.sh` runs, then the per-category figures reconcile to the session total
+      exactly (0.2550) and a cache-read-only turn prices at 0.0525.
+- [x] AC8 — Given a turn that *edits* a skill file, when classified, then it is `work` and not
+      `orientation`, because `WRITES` is tested before `ORIENT`.
+- [x] AC9 — Given the output, when read, then `mechanism` is split into `protocol` and `git`, since
+      only the first is a cost this backlog can remove.
+- [x] AC10 — Given four turns whose context climbs by 10,000 each, when the marginal footprint is
+      reported, then it is 10,000 per turn, attributed to the turn that appended it rather than the
+      turn that followed.
+- [x] AC11 — Given `MEASUREMENT.md`, when read, then it carries a *What a turn of each category
+      costs* section stating the protocol-versus-work cost per turn.
 - [ ] AC6 — Given a `verify` session run after FR7 lands, when its transcript is classified, then
       the advisory dirty-path intersection costs it no turn of its own.
 - [ ] AC5 — Given `tests/claim.test.sh`, `tests/close.test.sh` and `tests/next.test.sh`, when run
@@ -179,3 +213,19 @@ which is why this ticket sits at `next: queue` rather than `next: develop`. Both
   verify 27.5, queue 28.4, design 20.0, retro 22.0 turns per session, with `lock` to 0.0% of
   mechanism turns. The verdict is read on turns per session, not on the mechanism share, because
   turns removed from the protocol can reappear elsewhere.
+- **Re-opened and verified 2026-09-02**, token `b00a`, on Aaron's instruction not to take `0073`'s
+  measurement on faith. What was done and what it found:
+  - **All four published tables reproduce exactly** from the pinned command — 30 sessions, 1,112
+    turns, and every cell.
+  - **The rules were attacked before being built on.** `mechanism` is barely inflated by
+    ticket-reading scored by path (**11 turns of 1,112**, correcting this ticket's own earlier
+    "1–2 per session"); the 4.6% `other` is `cd`, bare variable assignments and `AskUserQuestion`,
+    hiding nothing; but **the "mechanism > work" headline is fragile** and two defensible rule
+    changes flip it. The protocol share is not fragile: 31.5%–34.3% under every variant.
+  - **The gap was real and is now closed.** Nobody had priced a turn. Priced: protocol 34.3% of
+    turns and **32.8% of dollars**. The turn share was not overstating the prize.
+  - **The prediction is restated in dollars:** develop −20.6%, verify −29.9%, queue −20.4%, design
+    −26.3%, retro −6.3%; **per ticket $7.66 → $5.74, −25.1%.**
+  - **A more linear workflow was priced and rejected on its own terms: +12%.** Fusing develop and
+    verify makes the second stage re-read the first's 74,970-token climb on every turn ($1.44)
+    against $0.36 saved on a floor that is cached anyway.
