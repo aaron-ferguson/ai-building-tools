@@ -119,5 +119,68 @@ else
   bad "AC11 — the record does not state the protocol-vs-work cost per turn"
 fi
 
+# --- the durable record of what all this was for ------------------------------------------------
+#
+# The figures above are useless if the reasoning built on them lives only in a chat log or an
+# artifact. Each assertion below is anchored to the CLAIM rather than to the document, because a
+# document-wide grep for a word passes while the sentence carrying the claim is deleted — the
+# defect 0042 found in tests/measurement.test.sh. Beside each is the mutation that reds it.
+ADR1="$ROOT/docs/decisions/001-one-command-per-stage-boundary.md"
+ADR2="$ROOT/docs/decisions/002-matching-rigour-to-stakes.md"
+RME="$ROOT/README.md"
+
+echo "0085 — the decisions built on the measurement are written down, not only measured"
+if [ -f "$ADR1" ]; then ok "001, the protocol decision, is on disk"
+else bad "docs/decisions/001-one-command-per-stage-boundary.md is missing"; fi
+if [ -f "$ADR2" ]; then ok "002, the rigour-tier decision, is on disk"
+else bad "docs/decisions/002-matching-rigour-to-stakes.md is missing"; fi
+
+# The carrying constant. Reds by changing the rate, the per-turn framing, or deleting the line.
+# It is the one figure every reduction argument in both records is denominated in.
+if grep -qF '$0.50 per million, per turn it survives' "$REC"; then
+  ok "MEASUREMENT.md states the carrying constant per turn survived, not per session"
+else
+  bad "the carrying constant is gone from MEASUREMENT.md — every saving figure in docs/decisions/ is denominated in it"
+fi
+
+# The floor decomposition. Reds by dropping the harness split, which is what makes the largest
+# lever visible at all; without it the floor reads as one undifferentiated block.
+if grep -qF '44,336' "$REC"; then
+  ok "the floor is decomposed into harness against this project's prose"
+else
+  bad "the 44,336-token harness share of the floor is gone — the largest addressable block becomes invisible"
+fi
+
+# The load-bearing planning finding, and the one most likely to be softened into vagueness on a
+# later edit. Reds by removing either percentage or by rewriting them as 'a lot' and 'a little'.
+# Anchored to the two verb phrases, NOT to the bare percentages: `32%` and `87%` also appear in
+# the tier table, so grepping the figures alone passed while the sentence carrying the contrast
+# was rewritten to "buys a little"/"buys a lot". Caught by mutating this file's own subject.
+if grep -qF 'buys 32%' "$ADR2" && grep -qF 'buys 87%' "$ADR2"; then
+  ok "002 states both tier savings as numbers: the QA pass against not creating the ticket"
+else
+  bad "002 no longer contrasts 'buys 32%' (skip QA) with 'buys 87%' (never ticket it) — that contrast IS the decision"
+fi
+
+# The closed questions. A cost theory that is re-opened costs a whole session to re-kill, which is
+# why they are recorded with their numbers. Reds by deleting the table or any one row.
+# Each anchored to the phrase unique to that row rather than to its figure — `+12%` appears twice
+# in the record, so a figure-only assertion would survive the table being deleted.
+check_killed() { # <label> <fixed-string unique to that row>
+  if grep -qF -- "$2" "$ADR2"; then ok "002 keeps the closed question: $1"
+  else bad "002 dropped the closed question '$1' — the theory it kills becomes re-openable, at a session each time"; fi
+}
+check_killed "fusing develop and verify costs more than it saves" "fuse \`develop\` and \`verify\`"
+check_killed "splitting prose into load-on-demand files is not token work" "load-on-demand files"
+check_killed "cutting narration cannot move a turn count that is 92% tool calls" "one in twenty-six"
+
+# Discoverability. A record nobody is pointed at is a record nobody reads; the README is the only
+# entry point a new reader has. Reds by removing the link.
+if grep -qF 'docs/decisions/' "$RME"; then
+  ok "README points at the decisions directory"
+else
+  bad "README no longer points at docs/decisions/ — the reasoning is on disk and unreachable"
+fi
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

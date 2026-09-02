@@ -201,6 +201,31 @@ ships no default and prompts for none.
 
 ---
 
+## What this costs to run
+
+The suite measures itself, and the figures are published rather than estimated. From the pinned
+30-session run of 2026-08-23/24: **$5.71 per closed ticket**, $3.81 per session, 37.1 turns.
+
+Two things are worth knowing before planning a lot of work with it:
+
+- **A token held in context costs $0.50 per million, per turn it survives** — every turn re-reads
+  the whole conversation, so the startup floor is paid 37 times, not once. This is why 10,000 tokens
+  off the floor is worth 6.5% of a session, and why *when* something is read matters more than how
+  big it is.
+- **The expensive decision is whether something becomes a ticket, not how thorough the ticket is.**
+  Skipping the independent QA pass saves 32%; fixing it inline in the session that found it saves
+  87%. Tier by blast radius and detection latency — and never by dropping a principle, which is the
+  one thing that does not get cheaper.
+
+The measurements are in [`MEASUREMENT.md`](MEASUREMENT.md) — how they were taken, what reproduces
+them, and what they cannot see. The decisions built on them are in
+[`docs/decisions/`](docs/decisions/): [`001`](docs/decisions/001-one-command-per-stage-boundary.md)
+collapses the backlog protocol to one command per stage boundary, and
+[`002`](docs/decisions/002-matching-rigour-to-stakes.md) prices the rigour tiers and records which
+cost theories the measurement has already killed.
+
+---
+
 ## Licence
 
 MIT.

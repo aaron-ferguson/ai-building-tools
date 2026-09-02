@@ -470,6 +470,29 @@ is priced at the cheaper 5-minute rate.
 
 Every dollar figure here is recomputable from the token counts with that table.
 
+### The carrying constant, and why it is the useful form
+
+The rate table prices a token **once**. What a session actually pays is the cache-read rate applied
+**once per turn the token survives**, because every turn re-reads the whole conversation so far:
+
+> **A token held in context costs $0.50 per million, per turn it survives.**
+
+Two consequences, and they are what any reduction should be argued against:
+
+- **10,000 tokens removed from the startup floor is worth $0.248 a session — 6.5%** of a $3.81
+  session, since the floor is re-read on all 37.1 turns rather than paid once at the start.
+- The size of a single read matters far less than **how early it lands and how many turns follow
+  it.** A 5,000-token read on turn 2 of a 38-turn session costs six times the same read on turn 32.
+
+**What the floor is made of, which decides where the largest lever is.** Of the 58,060-token floor,
+this project's own prose is 13,724 and **the remaining 44,336 is the harness — the system prompt and
+the tool definitions.** At the constant above that block is about **$1.10 of a $3.81 session, 28.9%**:
+the largest single addressable block in this record, and the one nothing here has measured directly.
+
+**Where the decisions built on all of this are written down:** `docs/decisions/001-one-command-per-stage-boundary.md`
+(the protocol reduction, ticket `0085`) and `docs/decisions/002-matching-rigour-to-stakes.md` (what a
+ticket costs by tier, and how to choose one). Neither restates the figures above; both cite them.
+
 ## Effectiveness, alongside cost
 
 `0009`'s standing commitment was that effectiveness must not be traded for cost, so this is read
