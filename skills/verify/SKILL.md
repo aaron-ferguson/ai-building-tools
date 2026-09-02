@@ -88,9 +88,9 @@ be luck.
   **Do not stash, revert or check out to tidy** — destroying another session's work is far worse than an
   imprecise verdict — and a pathspec on a `stash` does not make it safe (`CONCURRENCY.md`).
 
-**At `qa_level: e2e` the working tree cannot be the subject at all** — the evidence set is the whole
-application, so Step 7's intersection is never empty and no such ticket could close here. Verify a
-named commit in a worktree and report its SHA: `CONCURRENCY.md`, *The working tree is shared too*.
+**At `qa_level: e2e` the working tree cannot be the subject** — the evidence set is the whole
+application, so Step 7's intersection is never empty and no such ticket could close. Verify a named
+commit in a worktree and report its SHA (`CONCURRENCY.md`, *The working tree is shared too*).
 - `in-progress` under a token **you did not mint in this conversation** → another session's. Say whose
   it seems to be and stop; Step 1's refusal normally prevents this, so reaching here means the field
   and the claim disagree.
@@ -173,10 +173,6 @@ which a screen or endpoint is offered adds previously unreachable states — and
 privileged action on one is now available by a route nobody reviewed. Walk those states against the
 rules the project holds elsewhere — one change put an unconfirmed discard one tap away this way, with
 every written AC passing.
-
-**A probe written to answer that is scaffolding**: put it where the project says throwaway specs go
-and remove it in the same turn, as Step 3 restores a mutation by the path it mutated. **One worth
-keeping is not deleted — it is the guard the gap called for**: say so and queue it.
 
 For each filled NFR row, confirm the requirement holds and **load the cited convention file** — the row
 says what this ticket must satisfy, the convention says what the rule is, and you check against the
@@ -266,11 +262,10 @@ about to end.
 write why in the notes and set `next: queue, status: ready`. Do not re-specify it yourself.
 
 **On ACs only a person can clear, `status: waiting`** — the fourth branch, routinely forced into one
-of the three above. A ticket green on its scripted half whose rest needs a device or the author's
-eye is not closeable (those ACs are unmet), not `develop` (no code is owed, so that session reruns
-the suite and hands it back), not `queue` (the contract is fine). Set `status: waiting`, `next` to
-the stage that resumes, and **write the item's `## Waiting on` section naming who must do what**.
-Tick the ACs you cleared, then release the claim.
+of the three above. A ticket green on its scripted half whose rest needs a device or the author's eye
+is not closeable, is owed no code, and has no stale contract; sending it to `develop` only buys
+another suite run and a hand-back. Set `status: waiting`, `next` to the stage that resumes, **name
+who must do what in the item's `## Waiting on`**, tick what you cleared, release the claim.
 
 **Do not push** unless the project's conventions say a close should, or the user asks.
 
