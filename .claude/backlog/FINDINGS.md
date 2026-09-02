@@ -440,3 +440,15 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   is `next: design` and not `develop`"). It was a better section than the template's — it argued why
   the question was not guessable — but Step 1 read against nothing, and a session following it
   literally would have stopped (pointer: `skills/develop/SKILL.md` Step 3, `templates/item.md`).
+- 2026-09-02 [b00a] **`design` Step 2 tells a session to look at prior art, the design system and
+  the conventions, and never to check the measurement the ticket rests on.** 0085 was a
+  fully-specified ticket whose every FR was denominated in a share of *turns* that no one had
+  priced in *tokens*, and a `/design` pass settled it, wrote a decision record and handed it on
+  without the gap being visible — it took Aaron to send it back. `develop` Step 2 has the rule this
+  needs in a narrower form ("a figure is a cached claim about a file it does not own; re-verify it
+  against the source"), and `design` has no equivalent even though a design pass is the stage most
+  likely to build a whole argument on one. Candidate: extend Step 2 with a fourth thing to look at
+  — the evidence the ticket cites — with the same date-stamp-and-re-verify discipline. Verified
+  worth having: the re-run reproduced all four tables, but the attack on the rules found the
+  published "mechanism > work" headline flips under two defensible rule changes (pointer:
+  `skills/design/SKILL.md` Step 2, `skills/develop/SKILL.md` Step 2, item 0085, `MEASUREMENT.md`).
