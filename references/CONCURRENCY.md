@@ -19,7 +19,10 @@ One staging area per repository, no lock, no token: any session can commit what 
   does not know yet needs **`git add -N` first**, or the pathspec fails.
 - **Stage and commit in one turn**, and **read back** (`git diff --cached --name-only`), then
   `git restore --staged` anything not yours.
-- **Never bare `git stash`**; it takes their uncommitted work. **Your message on their change → report,
+- **Never bare `git stash`** — and **`git stash push -- <paths>` is not the safe form**: like a
+  pathspec on a commit, it limits the files and not the authorship, so it takes their uncommitted
+  work under those paths. It looks equivalent to the throwaway worktree the skills recommend for
+  "did this red pre-exist?" and it is not; the worktree is the answer. **Your message on their change → report,
   never rewrite history.**
 
 ### A pathspec is necessary but **not sufficient**
@@ -62,6 +65,15 @@ claim stays invisible until something is written inside it.
   `claimed_by:` in the item, and nothing else.** A row reading `in-progress` over a tokenless item is
   drift, not ownership — `./next --drift` reports it, and no reader treats it as a claim. Report every
   dependent you skip.
+- **A criterion belonging to another ticket cannot be filed by the stage that finds it, and saying
+  "fold this into item NNNN" in your own notes is not filing it.** The rule above forbids the writing
+  session from editing that item, and no step hands the instruction to anyone else — so it survives
+  only in a closed ticket's prose, which is the one place the session performing the target will not
+  look. Measured once at six items and twelve checks, of which two had gone **false** before anyone
+  was permitted to execute them and six had already been discharged by other work. A carried
+  criterion is a claim about code it does not own and ages like any cached figure (`develop` Step 2):
+  **date-stamp it, name the item it came from, and re-verify it against the source before running
+  it** — the claiming session is the first that may, and the first that must.
 - **A stage finding a ticket at another stage refuses it** — `develop` skips `next: design`, `verify`
   refuses anything not `next: verify`. That field keeps two stages off one ticket.
 - **`verify` owns closing**, holding the verdict when it acts, so no green goes stale.
@@ -88,7 +100,15 @@ matching — that is information, not an obstacle to route around.
 closing a row (`verify`).
 
 **Hold it for the read, the write and the commit, then release in the same turn** — including where you
-decide *not* to change anything; scripts release on failure paths via a `trap`. It guards a two-second
+decide *not* to change anything; scripts release on failure paths via a `trap`. **For an agent, "the
+same turn" means the same shell invocation**: a session gets a fresh shell per tool call, so a
+`trap ... EXIT` releases the lock the moment that call returns and every later call edits and commits
+holding nothing. It is invisible — the sequence reads exactly like a correct lock and every step
+succeeds. Run the whole sequence in one call, or drop the trap and `rm -rf` explicitly at the end.
+**If you are writing a lock by hand rather than calling `./claim` or `./close`, read
+`CONCURRENCY-INCIDENTS.md` first, not after it goes wrong**: it carries three ways a by-hand lock
+leaks silently, and this one was written down seven days before a session rediscovered it, because
+nothing sends you there until you already have trouble. It guards a two-second
 operation, never an implementation.
 
 **The lock is `.claude/backlog/.lock/`, a directory, because `mkdir` is atomic on POSIX.** Put `$CLAIM`

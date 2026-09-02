@@ -176,6 +176,15 @@ guess** — variants side by side in one image, since a round trip costs the sam
 **look once per round**, compositing variants into a single sheet rather than screenshotting each
 parameter in turn.
 
+**And where a ticket's ACs are *mostly* human judgement, say up front which ones this session can
+actually close.** A ticket asking for gestures on a physical device owes no code at all: Step 4's TDD
+cycle has nothing to turn red, and Step 5's whole-suite run measures a change to one Markdown file.
+Name the ACs an agent can discharge, do those, and hand the rest over as the author's — plainly, in
+the hand-off. Without that, "built" and "not closed" are the only two vocabularies available, and the
+ticket ping-pongs between `develop` and `verify` accumulating suite runs while each stage correctly
+concludes it has nothing to do. `verify` Step 5's `waiting` branch is where such a ticket comes to
+rest; a `## Waiting on` section saying which person must do what is what makes it takeable again.
+
 **If the ticket is underspecified — no FRs, no ACs, or a stale problem statement — fix it first**, and
 update the file so the next reader gets the improved version. A ticket that can't be restated can't be
 verified.
@@ -193,7 +202,17 @@ say so and ask before building to a spec that no longer matches reality.
 mechanism works goes stale when another ticket *changes that mechanism* after this one was written —
 every file it names still untouched, so nothing in the diff looks wrong. Check what closed since this
 ticket's capture date (`DONE.md`) for anything owning the same mechanism, and treat a literal build of a
-superseded FR as the stale contract it is. One ticket enumerated a five-step procedure that a sibling
+superseded FR as the stale contract it is. **The cheap form of that check is a grep, not a reading of
+`DONE.md`: before building an FR, grep the symbol it names for a sibling item number and read that
+item.** A decision recorded at its own site is findable by the session sent to that site; one recorded
+only in `DONE.md` requires already knowing to look. Four FRs across two tickets were caught this way,
+each naming files that still existed, with prose that stayed internally consistent while becoming
+false — one would have deleted a sibling's acceptance criterion outright.
+
+**A superseded FR does not always condemn the whole ticket.** Where some FRs are stale and the rest are
+perfectly buildable, `next: design` for the ticket entire is the wrong instrument — say which FRs are
+stale and why, build the rest, and ask before splitting them out. Only the author may narrow a
+contract, and only `queue` may write the row that carries the remainder. One ticket enumerated a five-step procedure that a sibling
 had since made a six-step one; building it as written would have automated the very defect the sibling
 existed to fix.
 
@@ -208,6 +227,24 @@ recompute from it finds one input missing and either invents it or trusts the st
 discipline the backlog already applies to `blocked`: the cache reads correctly on its own, and the
 source is the authority whenever the two disagree.
 
+**And a figure is only the commonest case — the rule is about any claim a ticket makes on a file it
+does not own.** Three more shapes have bitten, all of them invisible in a diff:
+
+- **A mechanism the ticket justifies by how another file behaves.** An FR required buffering pointer
+  moves and replaying them, because "the camera establishes velocity from the move stream it has
+  seen"; the camera in fact takes each move's delta from its own map and reads only a recent window,
+  so deleting the replay reddened nothing in either engine. Verify the rationale against the source.
+  **If no assertion can tell the mechanism's presence from its absence, say so in the item** rather
+  than leaving a future reader to rediscover it.
+- **An outcome another file can veto.** An FR asking for "the smallest pan that clears the panel" was
+  unsatisfiable against a clamp in a file the ticket never named, and it failed by 0.6px — a
+  near-miss that a pixel of tolerance in the assertion would have shipped as "works". An FR that asks
+  for an outcome is an assertion about every bound that can refuse it; grep for the bound before
+  building to the FR.
+- **A criterion carried in from another ticket.** "Fold this into item NNNN" makes a claim about code
+  the carrying item does not own, and it ages exactly like a quoted figure — see *A stage writes only
+  the ticket it holds* in `CONCURRENCY.md` for who may write it and what a claiming session owes it.
+
 ---
 
 ## Step 3 — Load the conventions this item actually triggers
@@ -221,6 +258,14 @@ universal defaults.
 
 Then read exactly the convention files cited in the item's NFR table, plus the files the core's
 index names for coding and testing. Don't read all of them; don't read none.
+
+**Then grep the project's own guards for the mechanism you are about to introduce**, before writing
+code. A ticket can be blocked by a project invariant it never names: one specified a timeout constant
+in a project whose `CLAUDE.md` bans wall-clock timers outright and whose suite enforces that against
+a named allowlist, so the ticket was silently asking for an allowlist entry plus the fresh argument
+the project demands for one. Step 2 restates the item's own citations and this step loads the
+conventions its NFR table names — neither reaches an invariant the item is silent about, and the
+failure mode is an unrelated-looking test going red with the rule to be reconstructed from it.
 
 ---
 
@@ -295,7 +340,12 @@ adopts every fragile check it brushes against stops being the ticket that was ra
 3. **Record the cost if `cost_tracking:` is configured** (`references/TRACKER.md`). This session is
    the only thing that knows which ticket its tokens belonged to; `verify` appends its own share. This
    is what turns `size: m` from a guess into a calibrated estimate.
-4. **Set `next: verify`, `status: ready`, and clear `claimed_by:`, `claimed_at:` and `touches:`.** You
+4. **Set `next: verify`, `status: ready`, and clear `claimed_by:`, `claimed_at:` and `touches:`.**
+   **Correct `qa_level` here too if this session proved the declared level wrong** — a re-entry
+   carrying "`unit` was too low for a change that moves rendered geometry" as an explicit `verify`
+   verdict has nowhere else to put it, and the correction survives only as prose in *Notes &
+   decisions*, where the next QA pass will run the old level anyway. Raising it is yours; lowering it
+   is not. You
    hold neither the row nor its files any more, and the QA session claims both itself — a leftover
    `touches:` reserves files nobody is editing, which `CONCURRENCY.md` says reads as "held". Take the
    lock for the row edit and commit before releasing it.
