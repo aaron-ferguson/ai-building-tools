@@ -30,8 +30,12 @@ Two consequences, and both have cost real work:
   version than the checkout, or the same version with different bytes. A session has reported a
   rule missing that had shipped the same day. Diff the trees before concluding a rule is absent:
   `diff -rq skills/ ~/.claude/plugins/cache/ai-building-tools/ai-building-tools/<version>/skills/`
-- **The release chain is push → bump `.claude-plugin/plugin.json` → update the install → restart**,
-  and every step is silent when skipped.
+- **`tools/release` runs the release chain**: push → bump `.claude-plugin/plugin.json` → update
+  the install → restart. Every step is silent when skipped. **`claude plugin update` reporting
+  success is not evidence the bytes changed** — the cache directory is keyed by version, so when
+  the version has not moved nothing is re-extracted regardless of the reported outcome. `tools/release`
+  refuses before pushing if the version has not been bumped, then diffs the resolved install
+  directory against the source after the update (0084).
 
 ## Tests
 

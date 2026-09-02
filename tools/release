@@ -1,0 +1,205 @@
+#!/bin/sh
+#
+# tools/release -- run the release chain and verify the install matches the source.
+#
+# WHY THIS EXISTS. `claude plugin update` can report success, record a new commit sha, and extract
+# nothing: the cache directory is keyed by version, so when the version has not moved the directory
+# already exists and is not re-extracted. The recorded sha and the reported version are independent
+# of the bytes on disk -- both have been wrong independently on the same evening (0084). This
+# script enforces the version bump before any push, then diffs the resolved install directory
+# against the source; a sha equal to HEAD is never accepted as evidence on its own.
+#
+# TWO MODES.
+#   (no args)  Full chain: fetch, check divergence, check version bump, run tests, confirm push,
+#              push, update marketplace clone, update plugin install, verify, report.
+#   --verify   Standalone verification -- no push. Required:
+#                --install-path <dir>    install directory to check
+#                --checkout <dir>        source checkout to compare against
+#                --expected-sha <sha>    sha that should be recorded in plugins-json
+#              Optional:
+#                --plugins-json <path>   defaults to ~/.claude/plugins/installed_plugins.json
+#
+# --verify is what the test suite drives; the full chain is for a real release.
+#
+# Requires: git, cmp, awk, claude (CLI, full chain only)
+
+set -eu
+
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+
+PLUGIN_KEY="ai-building-tools@ai-building-tools"
+MARKETPLACE_NAME="ai-building-tools"
+MARKETPLACE_CLONE="${HOME}/.claude/plugins/marketplaces/${MARKETPLACE_NAME}"
+DEFAULT_PLUGINS_JSON="${HOME}/.claude/plugins/installed_plugins.json"
+
+# ---
+
+die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
+say()  { printf '%s\n' "$*"; }
+ok()   { printf '[ok]  %s\n' "$*"; }
+step() { printf '\n---  %s\n' "$*"; }
+
+# _json_field <file> <section-marker-or-empty> <field-name>
+# Extracts a JSON string value. Starts matching after the line that contains marker (or from line 1
+# if marker is empty), and returns the value of the first matching field.
+_json_field() {
+  awk -v marker="$2" -v field="$3" '
+    marker == ""           { in_block = 1 }
+    marker != "" && index($0, marker) { in_block = 1 }
+    in_block && index($0, "\"" field "\"") {
+      sub(".*\"" field "\": *\"", "")
+      sub(/".*/, "")
+      print
+      exit
+    }
+  ' "$1"
+}
+
+# --- verification ---------------------------------------------------------------
+
+# _run_verify <install_path> <checkout_path> <expected_sha> <plugins_json>
+# Diffs every file in install_path against checkout_path, and checks that the recorded
+# gitCommitSha in plugins_json matches expected_sha. Prints failures; exits non-zero on any.
+_run_verify() {
+  rv_install="$1" rv_checkout="$2" rv_expected_sha="$3" rv_plugins_json="$4"
+  rv_failed=0
+
+  # Byte comparison: every file in the install must be present and byte-identical in the checkout.
+  rv_diffs="$(
+    find "$rv_install" -type f | sort | while IFS= read -r f; do
+      rel="${f#${rv_install}/}"
+      src="${rv_checkout}/${rel}"
+      if [ ! -f "$src" ]; then
+        printf 'MISSING in checkout: %s\n' "$rel"
+      elif ! cmp -s "$f" "$src"; then
+        printf 'DIFFERS: %s\n' "$rel"
+      fi
+    done
+  )"
+
+  if [ -n "$rv_diffs" ]; then
+    printf '%s\n' "$rv_diffs"
+    rv_failed=1
+  fi
+
+  # SHA check: the recorded sha must match expected_sha. Byte equality alone does not pass.
+  rv_recorded="$(_json_field "$rv_plugins_json" "$PLUGIN_KEY" "gitCommitSha")"
+  if [ -z "$rv_recorded" ]; then
+    say "SHA: not found in $rv_plugins_json for $PLUGIN_KEY"
+    rv_failed=1
+  elif [ "$rv_recorded" != "$rv_expected_sha" ]; then
+    say "SHA MISMATCH: recorded $rv_recorded, expected $rv_expected_sha"
+    rv_failed=1
+  fi
+
+  return "$rv_failed"
+}
+
+# --- --verify mode --------------------------------------------------------------
+
+cmd_verify() {
+  v_install="" v_checkout="" v_sha="" v_plugins_json="$DEFAULT_PLUGINS_JSON"
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --install-path) v_install="$2";      shift 2 ;;
+      --checkout)     v_checkout="$2";     shift 2 ;;
+      --expected-sha) v_sha="$2";          shift 2 ;;
+      --plugins-json) v_plugins_json="$2"; shift 2 ;;
+      *) die "unknown option: $1" ;;
+    esac
+  done
+
+  [ -n "$v_install" ]       || die "--install-path required"
+  [ -n "$v_checkout" ]      || die "--checkout required"
+  [ -n "$v_sha" ]           || die "--expected-sha required"
+  [ -d "$v_install" ]       || die "install path not found: $v_install"
+  [ -d "$v_checkout" ]      || die "checkout path not found: $v_checkout"
+  [ -f "$v_plugins_json" ]  || die "plugins json not found: $v_plugins_json"
+
+  _run_verify "$v_install" "$v_checkout" "$v_sha" "$v_plugins_json"
+}
+
+# --- full release chain ---------------------------------------------------------
+
+cmd_release() {
+  step "1. Fetch and check divergence"
+  git -C "$ROOT" fetch origin
+  behind="$(git -C "$ROOT" rev-list HEAD..origin/main --count)"
+  if [ "$behind" -gt 0 ]; then
+    die "Checkout is $behind commits behind origin/main — pull before releasing."
+  fi
+  ok "Up to date with origin/main"
+
+  step "2. Check version"
+  source_plugin_json="$ROOT/.claude-plugin/plugin.json"
+  [ -f "$source_plugin_json" ]   || die ".claude-plugin/plugin.json not found"
+  [ -f "$DEFAULT_PLUGINS_JSON" ] || die "installed_plugins.json not found: $DEFAULT_PLUGINS_JSON"
+
+  source_version="$(_json_field "$source_plugin_json" "" "version")"
+  installed_version="$(_json_field "$DEFAULT_PLUGINS_JSON" "$PLUGIN_KEY" "version")"
+
+  [ -n "$source_version" ]    || die "Could not read version from $source_plugin_json"
+  [ -n "$installed_version" ] || die "Could not read installed version from $DEFAULT_PLUGINS_JSON"
+
+  say "Source version:    $source_version"
+  say "Installed version: $installed_version"
+
+  if [ "$source_version" = "$installed_version" ]; then
+    die "Version $source_version equals the installed version. The cache directory ~/.claude/plugins/cache/${MARKETPLACE_NAME}/${MARKETPLACE_NAME}/${source_version}/ already exists and will not be re-extracted. Bump the version in .claude-plugin/plugin.json before releasing."
+  fi
+
+  step "3. Run tests"
+  for t in "$ROOT/tests/"*.test.sh; do
+    [ -f "$t" ] || continue
+    say "  running $t"
+    "$t" || die "Test failed: $t"
+  done
+  ok "All tests passed"
+
+  step "4. Push  (explicit confirmation required)"
+  printf '\nPush %s → origin/main? [y/N] ' "$source_version"
+  read -r push_answer
+  case "$push_answer" in
+    [yY]) ;;
+    *) die "Cancelled." ;;
+  esac
+  git -C "$ROOT" push origin main
+  pushed_sha="$(git -C "$ROOT" rev-parse HEAD)"
+  ok "Pushed $pushed_sha"
+
+  step "5. Update marketplace clone"
+  git -C "$MARKETPLACE_CLONE" pull --ff-only \
+    || die "Marketplace clone update failed. Run manually: git -C $MARKETPLACE_CLONE pull --ff-only"
+  ok "Marketplace clone at $(git -C "$MARKETPLACE_CLONE" rev-parse HEAD)"
+
+  step "6. Update plugin install"
+  # claude plugin update reports success even when it extracts nothing (0084). The verify step
+  # below is the actual evidence, not this command's exit code.
+  claude plugin update "$PLUGIN_KEY" \
+    || die "Plugin update command failed. Run manually: claude plugin update $PLUGIN_KEY"
+  ok "Plugin update ran (bytes verified in step 7)"
+
+  step "7. Verify"
+  install_path="$(_json_field "$DEFAULT_PLUGINS_JSON" "$PLUGIN_KEY" "installPath")"
+  [ -n "$install_path" ] \
+    || die "Could not resolve installPath for $PLUGIN_KEY from $DEFAULT_PLUGINS_JSON"
+  [ -d "$install_path" ] \
+    || die "Install directory does not exist: $install_path — plugin update may not have extracted the new version"
+
+  _run_verify "$install_path" "$ROOT" "$pushed_sha" "$DEFAULT_PLUGINS_JSON" \
+    || die "Verification failed — install does not match source. See paths above."
+  ok "Install matches source"
+
+  step "Done"
+  say ""
+  say "Released $source_version ($pushed_sha). Restart this session to apply."
+}
+
+# --- dispatch -------------------------------------------------------------------
+
+case "${1:-}" in
+  --verify) shift; cmd_verify "$@" ;;
+  "")       cmd_release ;;
+  *)        die "Usage: tools/release [--verify --install-path <dir> --checkout <dir> --expected-sha <sha> [--plugins-json <path>]]" ;;
+esac
