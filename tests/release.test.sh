@@ -152,6 +152,16 @@ check_output "AC5: CLAUDE.md says success is not evidence" "not evidence" \
   cat "$ROOT/CLAUDE.md"
 
 # --------------------------------------------------------------------------
+# AC5 — retro/SKILL.md points to tools/release (not prose steps)
+
+check_output "AC5: retro SKILL.md names tools/release" "tools/release" \
+  cat "$ROOT/skills/retro/SKILL.md"
+
+check_output "AC5: CLAUDE.md trigger says to run tools/release when asked" \
+  "asked to release" \
+  cat "$ROOT/CLAUDE.md"
+
+# --------------------------------------------------------------------------
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
