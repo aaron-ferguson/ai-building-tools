@@ -77,9 +77,12 @@ from a real one, which is the failure this whole design prevents.
 
 ## Step 2 — Check whose tree you are testing, then run the declared level
 
-**Before running anything**, `git status --porcelain`. A second window mid-edit means the suite covers a
-file set that never existed as a coherent state: its red may belong to work half-written, its green may
-be luck.
+**Before running anything**, capture `git status --porcelain` — **in the same tool call as the first
+level command below**, e.g. `git status --porcelain; <command>`, not a turn of its own. A second window
+mid-edit means the suite covers a file set that never existed as a coherent state: its red may belong to
+work half-written, its green may be luck. **Hold the output for Step 7** — that is this check's only
+other use, and re-running it there is exactly the extra git turn `0085` removed
+(`docs/decisions/001-one-command-per-stage-boundary.md`, FR6).
 
 - Changes confined to the ticket → proceed.
 - Changes outside it → **still run**, and **record the unrelated paths as a set**. The label is not
@@ -304,8 +307,10 @@ check wearing the same word.
 State **PASS** or **FAIL** plainly, then that table: each AC and NFR row, how it was checked, the
 result, with the actual failure output for anything red.
 
-**Advisory is derived, never authored:** intersect Step 2's dirty set with Step 3's evidence set. No
-session applies the label as a judgement about whether the dirt *looks* relevant.
+**Advisory is derived, never authored:** intersect Step 2's captured dirty set with Step 3's evidence
+set. **Issue no new git command here** — a second `git status` at verdict time is not "fresher", it is
+the turn `0085` removed; the tree is either clean throughout or Step 2 already said so. No session
+applies the label as a judgement about whether the dirt *looks* relevant.
 
 - **Empty intersection → not advisory.** A plain PASS, closing by Step 5's normal path. The verdict
   names the dirty paths it excluded and states that the intersection was empty.

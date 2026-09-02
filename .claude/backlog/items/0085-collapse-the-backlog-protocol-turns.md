@@ -2,8 +2,8 @@
 id: "0085"
 title: Collapse the backlog protocol from a third of every session's turns to one command per stage boundary
 type: debt
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: l
 created: 2026-09-02
@@ -15,8 +15,8 @@ expects:
   - .claude/backlog/items/0048-remaining-backlog-write-sites.md
   - .claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md
   - skills/verify/SKILL.md
-claimed_by: "7bb0"
-claimed_at: 2026-09-02T05:51:21Z
+claimed_by:
+claimed_at:
 touches: []
 ---
 
@@ -179,8 +179,10 @@ moves to `next: develop` rather than closing here.
       costs* section stating the protocol-versus-work cost per turn.
 - [ ] AC6 — Given a `verify` session run after FR7 lands, when its transcript is classified, then
       the advisory dirty-path intersection costs it no turn of its own.
-- [ ] AC5 — Given `tests/claim.test.sh`, `tests/close.test.sh` and `tests/next.test.sh`, when run
-      after any change this ticket makes, then all three are green.
+- [x] AC5 — Given `tests/claim.test.sh`, `tests/close.test.sh` and `tests/next.test.sh`, when run
+      after any change this ticket makes, then all three are green. *(Confirmed 2026-09-02: 18, 93
+      and 175 passed respectively, 0 failed; the whole suite — every `tests/*.test.sh` — was also run
+      once and is green.)*
 
 ## QA plan
 
@@ -249,3 +251,18 @@ moves to `next: develop` rather than closing here.
   FR7 (verify's Step 7 dirty-path form), which the decision record's own attribution table assigns
   to `0085`, not to a sibling — there is no open decision or surface left, so `develop` rather than
   `design`.
+- **Develop pass, 2026-09-02.** Discharged FR7 with no new script — the removable turn was never
+  Step 2's `git status --porcelain` itself (that check is required by *Check whose tree you are
+  testing*, and stays), it was a **second** status call the old Step 7 wording invited at verdict
+  time to get a "fresher" read. Fixed in `skills/verify/SKILL.md` only: Step 2 now says to capture
+  the status in the same tool call as the first level command it runs, and to hold that output;
+  Step 7 now says explicitly to reuse it and issue no git command of its own. Added a short
+  "Resolved" note to `docs/decisions/001-one-command-per-stage-boundary.md`'s FR6 section naming the
+  mechanism and the falsifiable check (`verify`'s git-inspection share of mechanism turns back to the
+  ~15.7% mean). **AC6 cannot be ticked by this session** — it names a `verify` session run after this
+  change, classified by `tools/classify-turns.sh`, which is exactly the 2026-10-31 re-measurement
+  `MEASUREMENT.md` already commits to; this pass only makes the prediction true of the skill text.
+  Left unrelated to this ticket: `README.md`, `MEASUREMENT.md` and `tests/cost-by-category.test.sh`
+  were already dirty in the shared tree at claim time (uncommitted work referencing
+  `docs/decisions/002-matching-rigour-to-stakes.md`) — not touched, not committed, not diagnosed;
+  another session's in-progress work.

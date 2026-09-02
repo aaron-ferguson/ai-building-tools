@@ -121,6 +121,14 @@ The exception is **`verify`'s advisory dirty-path intersection** (Step 7), which
 own git rather than the project's, and which puts `verify`'s git inspection at 20.5% of its mechanism
 turns against a 15.7% mean. It is removable and it is owned by `0085` itself.
 
+**Resolved 2026-09-02, in `skills/verify/SKILL.md` itself, no new script.** The intersection needs no
+git command of its own: Step 2 already runs `git status --porcelain` once, in the same tool call as
+the first level command it kicks off, and Step 7 reuses that captured output rather than re-checking
+the tree at verdict time. The removable turn was never the check — it was a second, "fresher" status
+call at Step 7 that the old wording invited and the new wording forbids. Falsifiable the same way as
+the rest of this record: re-measured, `verify`'s git-inspection share of mechanism turns should read at
+the ~15.7% project mean rather than 20.5%.
+
 ### Every removable turn, and who removes it
 
 | Protocol turn | Turns/session | Verdict | Owner |
