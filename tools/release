@@ -1,0 +1,353 @@
+#!/bin/sh
+#
+# Run this repo's release chain in one invocation, and prove the release reached the install.
+#
+# WHY THIS EXISTS (0084). On 2026-09-01 the documented chain was followed by hand and shipped
+# nothing. `claude plugin update` printed "updated from 0.9.6 to 0.9.7", wrote a fresh
+# `gitCommitSha` into `installed_plugins.json`, and extracted no bytes: the cache directory is
+# keyed by VERSION, the version had not moved, so the directory already existed. The same evening
+# `/reload-plugins` produced the mirror image -- fresh bytes under a stale recorded version. So:
+#
+#   * the update's success line is not evidence the bytes changed;
+#   * the recorded sha is not evidence the bytes changed;
+#   * the reported version is not evidence the bytes changed.
+#
+# Only the bytes are. `release verify` therefore diffs the resolved install directory against the
+# checkout AT A NAMED COMMIT, and checks the recorded sha as a SECOND, INDEPENDENT assertion --
+# the two failure modes were observed independently and neither check catches both.
+#
+# The install directory is read from `installPath`, never constructed from the version string, so
+# what is verified is the directory the harness will actually load.
+#
+# Usage:
+#   tools/release [--bump] [--yes] [--record <f>] [--plugin <key>] [--checkout <dir>]
+#   tools/release verify [--record <f>] [--plugin <key>] [--checkout <dir>] [--commit <sha>]
+#
+# `verify` is invocable on its own (FR6) so the suite can drive it against fixture trees without
+# pushing anything or shelling out to `claude` -- a test that had to run the real chain would not
+# have been written.
+#
+# ORDER OF THE CHAIN, and the one place it is not the order the ticket lists. The version gate is
+# the cheapest refusal and needs no network, but the next version it names has to be derived from
+# the REMOTE's plugin.json (0075: a hand-picked version collided), so the fetch comes first. The
+# gate still runs before anything is committed or pushed, which is what matters.
+#
+# The bump is derived and NAMED, not silently applied: `--bump` applies it, and without that flag
+# the run refuses and tells you the version to set. A version string is a released identity, and
+# choosing one for you is the same class of act as resolving divergence, which this script does
+# not do either.
+#
+# Requires: sh, git, python3. Every step says whether it acted or was already satisfied, and the
+# whole thing is safe to re-run.
+
+set -eu
+
+ME="release"
+
+die() { printf '%s: %s\n' "$ME" "$1" >&2; exit "${2:-1}"; }
+say() { printf '%s\n' "$1"; }
+
+# --- reading the two JSON files ----------------------------------------------------------------
+
+plugin_json_field() { # <file-or-"-"> <field>
+  python3 -c 'import json,sys
+src = sys.argv[1]
+d = json.load(sys.stdin if src == "-" else open(src))
+sys.stdout.write(str(d.get(sys.argv[2], "")))' "$1" "$2"
+}
+
+record_entry() { # <record-file> <plugin-key> -> installPath TAB version TAB gitCommitSha
+  python3 -c 'import json,sys
+rec, key = sys.argv[1], sys.argv[2]
+try:
+    d = json.load(open(rec))
+except OSError as e:
+    sys.stderr.write("release: cannot read the install record %s: %s\n" % (rec, e)); sys.exit(4)
+entries = d.get("plugins", {}).get(key)
+if not entries:
+    sys.stderr.write("release: no entry for %s in %s -- is the plugin installed?\n" % (key, rec))
+    sys.exit(4)
+e = next((x for x in entries if x.get("scope") == "user"), entries[0])
+print("\t".join([e.get("installPath", ""), e.get("version", ""), e.get("gitCommitSha", "")]))' "$1" "$2"
+}
+
+version_gt() { # <a> <b> -> true when a is strictly newer than b
+  awk -v a="$1" -v b="$2" 'BEGIN {
+    na = split(a, A, "."); nb = split(b, B, ".")
+    n = na > nb ? na : nb
+    for (i = 1; i <= n; i++) {
+      x = (i <= na ? A[i] + 0 : 0); y = (i <= nb ? B[i] + 0 : 0)
+      if (x > y) exit 0
+      if (x < y) exit 1
+    }
+    exit 1 }'
+}
+
+next_patch() { # <version> -> that version with its last component incremented
+  awk -v v="$1" 'BEGIN {
+    n = split(v, A, ".")
+    A[n] = A[n] + 1
+    out = A[1]
+    for (i = 2; i <= n; i++) out = out "." A[i]
+    print out }'
+}
+
+# --- the byte comparison -----------------------------------------------------------------------
+#
+# For every blob tracked at <commit>, compare the install's copy to the commit's by object id.
+# Equal ids mean identical bytes, and git computes both, so nothing here reimplements a
+# comparison the repository already knows how to make.
+#
+# Hashes are taken in ONE `git hash-object` call rather than one per file: at 135 tracked paths
+# the per-file form is 135 processes and the difference is visible.
+#
+# `core.quotePath=false` keeps non-ASCII paths readable. A path containing a newline would break
+# the line-oriented pairing below; nothing in this repo has one, and git would have to be asked
+# for `-z` output to handle it.
+paths_that_differ() {
+  _co="$1"; _commit="$2"; _inst="$3"
+  _tmp="$(mktemp -d)"
+
+  git -C "$_co" -c core.quotePath=false ls-tree -r "$_commit" \
+    | sed -n 's/^[0-7]\{6\} blob \([0-9a-f]\{40,\}\)	\(.*\)$/\1 \2/p' > "$_tmp/tree"
+
+  : > "$_tmp/present"
+  while read -r _sha _path; do
+    if [ -f "$_inst/$_path" ]; then
+      printf '%s %s\n' "$_sha" "$_path" >> "$_tmp/present"
+    else
+      printf 'missing  %s\n' "$_path"
+    fi
+  done < "$_tmp/tree"
+
+  if [ -s "$_tmp/present" ]; then
+    cut -d' ' -f2- "$_tmp/present" | sed "s|^|$_inst/|" | tr '\n' '\0' \
+      | xargs -0 git -C "$_co" hash-object --no-filters -- > "$_tmp/hashes"
+    awk 'NR == FNR { h[FNR] = $1; next }
+         h[FNR] != $1 { printf "differs  %s\n", substr($0, index($0, " ") + 1) }' \
+      "$_tmp/hashes" "$_tmp/present"
+  fi
+
+  rm -rf "$_tmp"
+}
+
+tracked_count() { # <checkout> <commit>
+  git -C "$1" ls-tree -r --name-only "$2" | grep -c . || true
+}
+
+# --- verify ------------------------------------------------------------------------------------
+
+cmd_verify() { # uses RECORD KEY CHECKOUT COMMIT
+  ENTRY="$(record_entry "$RECORD" "$KEY")"
+  INSTALL_PATH="$(printf '%s' "$ENTRY" | cut -f1)"
+  REC_VERSION="$(printf '%s' "$ENTRY" | cut -f2)"
+  REC_SHA="$(printf '%s' "$ENTRY" | cut -f3)"
+
+  [ -n "$INSTALL_PATH" ] || die "the record has no installPath for $KEY; there is no directory to verify" 4
+  [ -d "$INSTALL_PATH" ] || die "installPath $INSTALL_PATH does not exist -- the record names a directory that is not there" 1
+
+  git -C "$CHECKOUT" cat-file -e "$COMMIT^{commit}" 2>/dev/null \
+    || die "$COMMIT is not a commit in $CHECKOUT" 2
+
+  FULL_COMMIT="$(git -C "$CHECKOUT" rev-parse "$COMMIT")"
+  DIFFS="$(paths_that_differ "$CHECKOUT" "$FULL_COMMIT" "$INSTALL_PATH")"
+  N_DIFFS="$(printf '%s' "$DIFFS" | grep -c . || true)"
+  N_TRACKED="$(tracked_count "$CHECKOUT" "$FULL_COMMIT")"
+
+  BYTES_OK=0
+  RECORD_OK=0
+  [ "$N_DIFFS" -eq 0 ] && BYTES_OK=1
+  [ "$REC_SHA" = "$FULL_COMMIT" ] && RECORD_OK=1
+
+  if [ "$BYTES_OK" -eq 1 ] && [ "$RECORD_OK" -eq 1 ]; then
+    say "$ME: verified $KEY $REC_VERSION"
+  else
+    say "$ME: FAILED -- the install does not hold $FULL_COMMIT"
+  fi
+  say "  version   $REC_VERSION"
+  say "  install   $INSTALL_PATH"
+  say "            (from installPath in $RECORD, never built from the version string)"
+
+  # The two assertions both report, always. They were observed failing independently, so a run
+  # that short-circuits one of them hands over half a diagnosis.
+  if [ "$BYTES_OK" -eq 1 ]; then
+    say "  bytes     ok -- $N_TRACKED tracked paths identical to $FULL_COMMIT"
+  else
+    say "  bytes     FAILED -- $N_DIFFS of $N_TRACKED tracked paths do not match $FULL_COMMIT:"
+    printf '%s\n' "$DIFFS" | sed 's/^/              /'
+  fi
+  if [ "$RECORD_OK" -eq 1 ]; then
+    say "  record    ok -- gitCommitSha is $FULL_COMMIT"
+  else
+    say "  record    FAILED -- gitCommitSha is $REC_SHA but the verified commit is $FULL_COMMIT;"
+    say "            that field was written by an update that extracted nothing, so it is not"
+    say "            evidence about the bytes"
+  fi
+
+  if [ "$BYTES_OK" -eq 1 ] && [ "$RECORD_OK" -eq 1 ]; then
+    say "  restart   required -- skills resolve once at session start, so this session still runs"
+    say "            the copy it started with"
+    return 0
+  fi
+  return 1
+}
+
+# --- the chain ---------------------------------------------------------------------------------
+
+cmd_release() {
+  PLUGIN_FILE="$CHECKOUT/.claude-plugin/plugin.json"
+  [ -f "$PLUGIN_FILE" ] || die "no $PLUGIN_FILE -- $CHECKOUT is not a plugin checkout" 2
+
+  ENTRY="$(record_entry "$RECORD" "$KEY")"
+  INSTALL_PATH="$(printf '%s' "$ENTRY" | cut -f1)"
+  INSTALLED_VERSION="$(printf '%s' "$ENTRY" | cut -f2)"
+
+  BRANCH="$(git -C "$CHECKOUT" rev-parse --abbrev-ref HEAD)"
+
+  # 1 — fetch. Needed before anything else because the next version is derived from the remote.
+  say "$ME: step 1/8 fetch"
+  git -C "$CHECKOUT" fetch --quiet origin
+  say "  acted     fetched origin"
+
+  # 2 — behind the remote is reported, never resolved. Resolving can mean choosing between two of
+  #     the author's own commits, which is not this script's decision to make.
+  say "$ME: step 2/8 remote position"
+  UPSTREAM="origin/$BRANCH"
+  git -C "$CHECKOUT" rev-parse --verify --quiet "$UPSTREAM" >/dev/null \
+    || die "no $UPSTREAM to compare against; push the branch first" 3
+  BEHIND="$(git -C "$CHECKOUT" rev-list --count "HEAD..$UPSTREAM")"
+  if [ "$BEHIND" -gt 0 ]; then
+    say "  STOPPED   the checkout is behind $UPSTREAM by $BEHIND commit(s)"
+    die "the checkout is behind $UPSTREAM by $BEHIND commit(s); reconcile it yourself and re-run -- this script resolves no divergence" 3
+  fi
+  say "  satisfied HEAD is not behind $UPSTREAM"
+
+  # 3 — derive the next version from the remote's plugin.json, so no version is hand-picked.
+  say "$ME: step 3/8 derive the next version"
+  REMOTE_VERSION="$(git -C "$CHECKOUT" show "$UPSTREAM:.claude-plugin/plugin.json" | plugin_json_field - version)"
+  NEXT_VERSION="$(next_patch "$REMOTE_VERSION")"
+  LOCAL_VERSION="$(plugin_json_field "$PLUGIN_FILE" version)"
+  say "  acted     $UPSTREAM is at $REMOTE_VERSION, so the next version is $NEXT_VERSION"
+  say "            (installed $INSTALLED_VERSION, local plugin.json $LOCAL_VERSION)"
+
+  # 4 — the gate. A version that is not greater than the installed one cannot take effect: the
+  #     cache directory is keyed by version, so it already exists and nothing re-extracts into it.
+  say "$ME: step 4/8 can this release take effect?"
+  if version_gt "$LOCAL_VERSION" "$INSTALLED_VERSION"; then
+    say "  satisfied local plugin.json $LOCAL_VERSION is newer than the installed $INSTALLED_VERSION"
+  elif [ "$BUMP" -eq 1 ]; then
+    python3 -c 'import json,sys
+p, v = sys.argv[1], sys.argv[2]
+d = json.load(open(p))
+d["version"] = v
+open(p, "w").write(json.dumps(d, indent=2) + "\n")' "$PLUGIN_FILE" "$NEXT_VERSION"
+    LOCAL_VERSION="$NEXT_VERSION"
+    say "  acted     bumped .claude-plugin/plugin.json to $NEXT_VERSION"
+  else
+    say "  STOPPED   local plugin.json is at $LOCAL_VERSION, not newer than the installed $INSTALLED_VERSION"
+    say "            the cache directory for that version already exists:"
+    say "              $INSTALL_PATH"
+    say "            so nothing will be re-extracted into it and the release would ship no bytes,"
+    say "            while the update still reports success"
+    die "set the version to $NEXT_VERSION (or re-run with --bump) -- nothing has been committed or pushed" 3
+  fi
+
+  # 5 — the suite. Every guard in this repo greps prose, so this is the whole of its QA.
+  say "$ME: step 5/8 tests"
+  ( cd "$CHECKOUT" && for t in tests/*.test.sh; do "$t" >/dev/null || exit 1; done ) \
+    || die "the suite is red; releasing a red tree is how a broken guard reaches every machine" 1
+  say "  acted     tests/*.test.sh green"
+
+  # 6 — commit the bump, by pathspec: another session may have staged something in this repo.
+  say "$ME: step 6/8 commit"
+  if git -C "$CHECKOUT" diff --quiet -- .claude-plugin/plugin.json; then
+    say "  satisfied .claude-plugin/plugin.json has no uncommitted change"
+  else
+    git -C "$CHECKOUT" commit -q -m "Bump the plugin version to $LOCAL_VERSION
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>" -- .claude-plugin/plugin.json
+    say "  acted     committed the bump to $LOCAL_VERSION"
+  fi
+
+  # 7 — the push IS the release: other machines install from this branch. It is confirmed here,
+  #     at the point it happens, and never implied by having run the script.
+  say "$ME: step 7/8 push -- this is the release"
+  AHEAD="$(git -C "$CHECKOUT" rev-list --count "$UPSTREAM..HEAD")"
+  if [ "$AHEAD" -eq 0 ]; then
+    say "  satisfied nothing to push"
+  else
+    if [ "$YES" -eq 1 ]; then
+      say "  acted     --yes given, pushing $AHEAD commit(s) to $UPSTREAM"
+    elif [ -r /dev/tty ]; then
+      printf '  push %s commit(s) to %s? other machines install from it [y/N] ' "$AHEAD" "$UPSTREAM"
+      read -r REPLY < /dev/tty
+      case "$REPLY" in
+        y|Y|yes|YES) : ;;
+        *) die "push declined; the bump is committed locally and nothing was released" 3 ;;
+      esac
+    else
+      die "no tty to confirm the push on; re-run with --yes if you mean to release" 3
+    fi
+    git -C "$CHECKOUT" push -q origin "$BRANCH"
+    say "  acted     pushed to $UPSTREAM"
+  fi
+  PUSHED_SHA="$(git -C "$CHECKOUT" rev-parse HEAD)"
+
+  # 8 — update the install, then prove it. Neither `claude` command's success line is evidence.
+  say "$ME: step 8/8 update the install and verify the bytes"
+  if command -v claude >/dev/null 2>&1; then
+    MARKETPLACE="${KEY#*@}"
+    claude plugin marketplace update "$MARKETPLACE" || die "marketplace update failed" 1
+    say "  acted     marketplace $MARKETPLACE updated"
+    claude plugin update "$KEY" || die "plugin update failed" 1
+    say "  acted     plugin update ran -- its success line is not evidence the bytes changed"
+  else
+    say "  skipped   no \`claude\` on PATH; update the install yourself, then re-run \`$ME verify\`"
+  fi
+
+  COMMIT="$PUSHED_SHA"
+  cmd_verify
+}
+
+# --- arguments ---------------------------------------------------------------------------------
+
+SELF_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+CHECKOUT="$(CDPATH= cd -- "$SELF_DIR/.." && pwd)"
+RECORD="$HOME/.claude/plugins/installed_plugins.json"
+KEY=""
+COMMIT=""
+BUMP=0
+YES=0
+SUB="release"
+
+case "${1:-}" in
+  verify) SUB="verify"; shift ;;
+  -h|--help) sed -n '2,45p' "$0" | sed 's/^#\{1,2\} \{0,1\}//'; exit 0 ;;
+esac
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --record)   RECORD="$2"; shift 2 ;;
+    --plugin)   KEY="$2"; shift 2 ;;
+    --checkout) CHECKOUT="$2"; shift 2 ;;
+    --commit)   COMMIT="$2"; shift 2 ;;
+    --bump)     BUMP=1; shift ;;
+    --yes)      YES=1; shift ;;
+    *) die "unknown argument: $1" 2 ;;
+  esac
+done
+
+[ -d "$CHECKOUT/.git" ] || die "$CHECKOUT is not a git checkout" 2
+
+if [ -z "$KEY" ]; then
+  NAME="$(plugin_json_field "$CHECKOUT/.claude-plugin/plugin.json" name)"
+  [ -n "$NAME" ] || die "cannot read the plugin name from $CHECKOUT/.claude-plugin/plugin.json" 2
+  KEY="$NAME@$NAME"
+fi
+
+if [ "$SUB" = "verify" ]; then
+  [ -n "$COMMIT" ] || COMMIT="$(git -C "$CHECKOUT" rev-parse HEAD)"
+  cmd_verify
+else
+  cmd_release
+fi
