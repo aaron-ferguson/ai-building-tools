@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0084 | Script the release chain and verify it against the installed bytes | bug | unit | 2026-09-03 | [items/0084-verify-the-release-reached-the-install.md](items/0084-verify-the-release-reached-the-install.md) |
 | 0079 | Give a repo with no test runner a QA level that is a checklist | feature | merged | 2026-09-02 | [items/0079-a-qa-level-for-a-repo-with-no-runner.md](items/0079-a-qa-level-for-a-repo-with-no-runner.md) |
 | 0087 | Give a session a turn-count signal for the inline-or-own-session break-even | feature | not built | 2026-09-02 | [items/0087-turn-count-self-regulation-signal.md](items/0087-turn-count-self-regulation-signal.md) |
 | 0037 | Run the fresh-project end-to-end exercise against the settled configuration | chore | not built | 2026-09-02 | [items/0037-fresh-project-measurement-run.md](items/0037-fresh-project-measurement-run.md) |

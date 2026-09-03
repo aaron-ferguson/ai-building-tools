@@ -2,8 +2,8 @@
 id: "0084"
 title: Script the release chain and verify it against the installed bytes
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -16,10 +16,10 @@ expects:
   - tests/release.test.sh
   - CLAUDE.md
   - skills/retro/SKILL.md
-claimed_by: "0830"
-claimed_at: 2026-09-03T05:59:09Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/items/0084-verify-the-release-reached-the-install.md
+closed: 2026-09-03
 ---
 
 ## Problem
@@ -93,20 +93,20 @@ that a step can be *performed*, report success, and still not have happened.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given an install directory made to differ from the checkout in exactly one file, when
+- [x] AC1 — Given an install directory made to differ from the checkout in exactly one file, when
   the verification runs against it, then it exits non-zero and prints that file's path. Restoring
   that one file is what turns it green.
-- [ ] AC2 — Given an install directory whose bytes match the checkout but whose recorded
+- [x] AC2 — Given an install directory whose bytes match the checkout but whose recorded
   `gitCommitSha` is any other commit, when the verification runs, then it exits non-zero naming the
   sha mismatch. Byte equality alone must not pass it.
-- [ ] AC3 — Given `.claude-plugin/plugin.json` at a version equal to the installed version, when
+- [x] AC3 — Given `.claude-plugin/plugin.json` at a version equal to the installed version, when
   `tools/release` starts, then it exits before any push and states that the cache directory for
   that version already exists and will not be re-extracted.
-- [ ] AC4 — Given a run where every check passes, when it finishes, then it prints the released
+- [x] AC4 — Given a run where every check passes, when it finishes, then it prints the released
   version, the pushed commit sha, and that a restart is required.
-- [ ] AC5 — Given `CLAUDE.md`, when read, then its release-chain paragraph names `tools/release` and
+- [x] AC5 — Given `CLAUDE.md`, when read, then its release-chain paragraph names `tools/release` and
   says `claude plugin update` reporting success is not evidence the bytes changed.
-- [ ] AC6 — Given `tests/release.test.sh`, when the verification's comparison is mutated to return
+- [x] AC6 — Given `tests/release.test.sh`, when the verification's comparison is mutated to return
   success unconditionally, then the suite goes red.
 
 ## QA plan
