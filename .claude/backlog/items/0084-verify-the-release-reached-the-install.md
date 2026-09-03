@@ -19,6 +19,7 @@ expects:
 claimed_by: "0830"
 claimed_at: 2026-09-03T05:59:09Z
 touches:
+  - .claude/backlog/items/0084-verify-the-release-reached-the-install.md
 ---
 
 ## Problem
