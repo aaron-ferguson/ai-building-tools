@@ -293,10 +293,14 @@ fr7 "Step 2 fuses the status capture into the first level command, not a turn of
     "in the same tool call as the first"
 fr7 "Step 2 holds that output for Step 7 instead of leaving it to be re-read" \
     "Hold the output for Step 7"
-fr7 "Step 7 intersects the set Step 2 already captured" \
-    "Step 2's captured dirty set"
-fr7 "Step 7 issues no git command of its own" \
-    "Issue no new git command here"
+fr7 "Step 7 refreshes the capture after the last evidence command, rather than trusting Step 2's" \
+    "Take a fresh capture after your last evidence-gathering command"
+fr7 "that refresh is fused onto a command, so it still costs no turn of its own" \
+    "and never a turn of its own"
+fr7 "Step 7 does not treat a clean Step 2 as a statement about the tree at verdict time" \
+    "Clean at Step 2 is not a statement about the tree at verdict"
+fr7 "Step 7 names the concurrency rule that makes a mid-pass dirty tree the normal case" \
+    "a second session starting mid-pass is the normal case here"
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

@@ -80,8 +80,8 @@ from a real one, which is the failure this whole design prevents.
 **Before running anything**, capture `git status --porcelain` — **in the same tool call as the first
 level command below**, e.g. `git status --porcelain; <command>`, not a turn of its own. A second window
 mid-edit means the suite covers a file set that never existed as a coherent state: its red may belong to
-work half-written, its green may be luck. **Hold the output for Step 7** — that is this check's only
-other use, and re-running it there is exactly the extra git turn `0085` removed
+work half-written, its green may be luck. **Hold the output for Step 7** — it is the baseline that
+step refreshes against, and neither capture is ever a turn of its own
 (`docs/decisions/001-one-command-per-stage-boundary.md`, FR6).
 
 - Changes confined to the ticket → proceed.
@@ -330,10 +330,16 @@ check wearing the same word.
 State **PASS** or **FAIL** plainly, then that table: each AC and NFR row, how it was checked, the
 result, with the actual failure output for anything red.
 
-**Advisory is derived, never authored:** intersect Step 2's captured dirty set with Step 3's evidence
-set. **Issue no new git command here** — a second `git status` at verdict time is not "fresher", it is
-the turn `0085` removed; the tree is either clean throughout or Step 2 already said so. No session
-applies the label as a judgement about whether the dirt *looks* relevant.
+**Advisory is derived, never authored:** intersect the dirty set with Step 3's evidence set. No
+session applies the label as a judgement about whether the dirt *looks* relevant.
+
+**Take a fresh capture after your last evidence-gathering command** — fused onto that command,
+`<last check>; git status --porcelain`, and never a turn of its own. Step 2's capture is current only
+while nothing has run since it. **Clean at Step 2 is not a statement about the tree at verdict time:**
+a second session starting mid-pass is the normal case here (`CONCURRENCY.md`, *The working tree is
+shared too*), and `0085`'s own verification is what falsified the premise this step used to carry —
+that the tree is either clean throughout or Step 2 already said so. It was clean at Step 2, and six
+files were dirty by the verdict, two of them inside the evidence set.
 
 - **Empty intersection → not advisory.** A plain PASS, closing by Step 5's normal path. The verdict
   names the dirty paths it excluded and states that the intersection was empty.
