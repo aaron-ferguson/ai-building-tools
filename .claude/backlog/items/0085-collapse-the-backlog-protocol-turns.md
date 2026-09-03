@@ -2,8 +2,8 @@
 id: "0085"
 title: Collapse the backlog protocol from a third of every session's turns to one command per stage boundary
 type: debt
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: l
 created: 2026-09-02
@@ -16,11 +16,9 @@ expects:
   - .claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md
   - skills/verify/SKILL.md
   - tests/cost-by-category.test.sh
-claimed_by: "0bd8"
-claimed_at: 2026-09-03T05:38:53Z
-touches:
-  - tests/cost-by-category.test.sh
-  - .claude/backlog/items/0085-collapse-the-backlog-protocol-turns.md
+claimed_by:
+claimed_at:
+touches: []
 ---
 
 ## Problem
@@ -171,11 +169,11 @@ moves to `next: develop` rather than closing here.
 - [x] AC7 — Given a fixture whose every turn has a known context, output and cost, when
       `tools/cost-by-category.sh` runs, then the per-category figures reconcile to the session total
       exactly (0.2550) and a cache-read-only turn prices at 0.0525.
-- [x] AC8 — Given a turn that *edits* a skill file, when classified, then it is `work` and not
+- [ ] AC8 — Given a turn that *edits* a skill file, when classified, then it is `work` and not
       `orientation`, because `WRITES` is tested before `ORIENT`.
-- [x] AC9 — Given the output, when read, then `mechanism` is split into `protocol` and `git`, since
+- [ ] AC9 — Given the output, when read, then `mechanism` is split into `protocol` and `git`, since
       only the first is a cost this backlog can remove.
-- [x] AC10 — Given four turns whose context climbs by 10,000 each, when the marginal footprint is
+- [ ] AC10 — Given four turns whose context climbs by 10,000 each, when the marginal footprint is
       reported, then it is 10,000 per turn, attributed to the turn that appended it rather than the
       turn that followed.
 - [x] AC11 — Given `MEASUREMENT.md`, when read, then it carries a *What a turn of each category
@@ -319,3 +317,64 @@ moves to `next: develop` rather than closing here.
   this pass followed the repo copy as the authority. The FR7 procedure was exercised deliberately
   from the repo text: Step 2's status capture was fused with the first level command, and Step 7's
   intersection reused it with no second git call.
+- **Develop pass, 2026-09-03, token `0bd8` — the three guards re-anchored, and the verdict's
+  diagnosis needed no revision.** AC8, AC9 and AC10 are each now read out of the *row* the AC is
+  about rather than out of the tool's whole output, and every one of them was driven red on the
+  defect its AC names, with each mutation confirmed landed by diffing against a copy set aside
+  (never against `HEAD`, which on this path never held the mutated bytes):
+
+  | Mutation | Guard | What red |
+  |---|---|---|
+  | `ORIENT` tested before `WRITE_TOOLS` in `category_of_call` | 25 / 2 | both AC8 assertions |
+  | `mechanism_split` returning `"protocol"` unconditionally | 22 / 5 | both AC9 assertions |
+  | `r["marg"] += rise` → `+= 0` | 24 / 3 | three AC10 assertions |
+  | `rise` credited to `turns[i + 1]` instead of `t` | 23 / 4 | all four AC10 assertions |
+  | `CACHE_READ_MULT` `0.1` → `0.2` | 22 / 5 | AC7, the control, still sound |
+  | **no-op:** `category_of_command`'s `WRITES`/`ORIENT` order | **27 / 0** | nothing, as expected |
+
+  The no-op is the control `testing-conventions.md` asks for, and it is the same trap the verify
+  pass hit: that ordering exists in a function an `Edit` tool call never reaches. A sweep with no
+  no-op cannot distinguish a thorough result from a script that stopped parsing.
+- **AC10 was unfalsifiable *structurally*, not by a slip of wording, and that is the reusable
+  finding.** One fixture cannot serve both AC7 and AC10: AC7 needs contexts whose sums reconcile to
+  an exact published decimal, and AC10 needs contexts whose rises are **unequal**, because where
+  they climb uniformly, crediting a rise to the turn that appended it and crediting it to the turn
+  that followed both yield 10,000 and differ only in which bucket carries it. No assertion over
+  that fixture can separate the two attributions at any anchoring. The fix is a **second fixture in
+  its own store directory and a second tool run** (`$FIX/ac10`, `$OUT10`) — contexts 100000 →
+  110000 → 140000 → 190000, so the correct attribution is protocol 10000 / git 30000 / work 50000 /
+  orientation 0 and the off-by-one is 0 / 10000 / 30000 / **50000 charged to the last turn, which
+  appended nothing at all**. Two cheap fixtures beat one compromised one.
+- **The guard file's fixture comment described a fixture this repo has never had, and that is
+  probably what produced the weak assertion.** The block above the fixture read
+  `turn 4  Read .../SKILL.md  orient`, where the code has always constructed an `Edit` — and AC8 is
+  precisely *"an Edit of a skill file is `work`, not `orientation`"*. Read alongside a comment
+  saying turn 4 is orientation, `case "$OUT" in *"work"*` looks like a reasonable question. **A
+  comment in a guard file is a cache of the fixture and ages exactly like a figure a ticket quotes
+  about a file it does not own** (`develop` Step 2): it reads correctly on its own, the arithmetic
+  around it stays consistent, and nothing in a diff looks wrong. Corrected in the same commit, with
+  the reason left in place.
+- **Anchoring to rows makes bucket collapses cascade, and a future reader should expect that.** The
+  AC9 mutation reds five assertions, not two: merging `git` into `protocol` also moves AC7's 0.0525
+  and two AC10 cells. That is the anchoring working — but a one-line mutation producing a
+  five-failure tally reads like a broken harness, and `testing-conventions.md` warns that an
+  implausibly large count usually *is* one.
+- **FR7's change is now guarded, closing the second half of the verify verdict.** Four assertions in
+  `tests/cost-by-category.test.sh` anchor the four claims of the two `skills/verify/SKILL.md` hunks —
+  Step 2's fused capture and its hold, Step 7's reuse and its silence on git. Reverting either hunk
+  reds two of them (25 / 2 each). Each asserted phrase sits **within one line** of the source,
+  because `grep` is line-based and a phrase straddling a wrap cannot be matched at all, which is why
+  rewrapping a guarded paragraph in this repo is a breaking change (`CLAUDE.md`).
+- **Whole suite green: 15 files, 605 assertions, 0 failed** (`cost-by-category` 19 → 27). AC5's three
+  named suites read 18 / 93 / 175, matching the develop and verify passes exactly. The tree was
+  clean at claim and at hand-off — none of the foreign dirt the previous pass had to work around.
+- **`qa_level` left at `verify`**, deliberately: this pass proved the level right rather than wrong.
+  The deliverable is a set of guards, and the only way to check a guard is to mutate the code under
+  it and watch the colour — which is `verify` Step 3's own procedure.
+- **AC8, AC9 and AC10 are left unticked for `verify` to re-take.** They stood `[x]` beside a FAIL
+  verdict, which is the file contradicting itself; and this session may not certify its own guards
+  (`develop` Step 5, *do not self-certify*). **AC6 is untouched and still cannot close** — it names a
+  `verify` session classified by `tools/classify-turns.sh`, pinned to `--until 2026-10-31` by
+  `MEASUREMENT.md`, *Re-running this*. Once AC8–AC10 are re-taken this ticket is green on everything
+  a session can reach today and waiting only on that date; the previous pass's suggestion of a
+  `SCHEDULED.md` split for AC6 is still the honest shape and still `queue`'s call.
