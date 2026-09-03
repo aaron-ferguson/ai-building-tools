@@ -126,3 +126,41 @@ indistinguishable in the git record from a clean sequential hand-off.
   carries no from-stage, so the check is that **the row's `Next` cell and the item's `next:` agree**
   — the 0087 drift class itself — and that both read `in-progress`. A row already handed off reads
   `ready`, so re-running `handoff` on it refuses rather than handing it on a second time.
+- **What was built.** `skills/queue/templates/handoff`, installed to `.claude/backlog/handoff`,
+  `tests/handoff.test.sh` (101 assertions), `handoff` added to `tests/backlog-scripts-installed.test.sh`
+  along with an `sh -n` case, `CONCURRENCY.md` gains *The release is the final act* and *The three
+  scripts* becomes *The four scripts*, and `develop` Step 5 / `verify` Step 5 route through the
+  script while keeping their by-hand fallbacks.
+- **The rename carried five anchored citations across four files**, and `tests/citations.test.sh`
+  is what made that mechanical rather than a search-and-hope — the guard exists because retitling
+  *The two scripts* to *The three scripts* broke two of them silently in August.
+- **The mutation sweep found two guards that could not fail, and they are the interesting half.**
+  - **The read-back verification is redundant by construction.** Removing it changed nothing,
+    because the up-front presence check catches every malformed fixture before the editor runs —
+    the "filter for a set, then assert over it" failure `testing-conventions.md` names, where the
+    loop body never executes. With a correct editor *no input reaches the read-back*, so the only
+    mutation that reaches it is one that breaks the editor. Two cases now do exactly that, in the
+    copy the harness runs, and assert on the read-back's own message. The script says this about
+    itself, because a guard nothing can reach is normally a defect and here it is the point: the
+    0087 failure was not a bad input, it was an edit written against the wrong value.
+  - **Releasing the lock before the commit is invisible to every other assertion.** The files end
+    up right and the commit lands, so nothing but observing the lock *at commit time* separates a
+    correct hand-off from the 29-second window. A `pre-commit` hook in the fixture is that
+    observation. This is worth reusing: `claim.test.sh` and `close.test.sh` have the same blind
+    spot, and neither script is currently proven to hold the lock through its commit.
+- **Two real defects fell out of the sweep, neither visible in a diff.**
+  - **YAML allows a block sequence at the same indentation as its key**, so `touches:` entries can
+    legally begin at column 0. The skiplist copied from `close` requires leading whitespace and
+    left them in place — a ticket reading handed off while still reserving two files, which
+    `CONCURRENCY.md` obliges the other window to treat as held. **`close` has the identical
+    skiplist and the identical defect**; not fixed here, because it is `close`'s contract and
+    `close.test.sh`'s guard. Parked in `FINDINGS.md`.
+  - **`grep -q "^touches:"` is satisfied by a *Notes & decisions* line** that happens to start that
+    way. The key the edit needs is still absent, and the refusal that followed blamed the script
+    rather than naming the missing field. Presence is now scoped to the frontmatter (`fm_has`).
+- **The step numbering in both skills now contradicts the commit order, deliberately.** `FINDINGS.md`
+  is Step 7 in `develop` and Step 6 in `verify`, but neither `./handoff` nor `./close` commits that
+  file, so the append cannot ride along and must land *before* the release. Said at the findings
+  step, where it is read, rather than only at the hand-off step.
+- **`docs/decisions/001` also names `./claim --touches`, owned by 0066** — not built here. `claim`
+  still prints the `touches:` instruction rather than writing it, which is 0082's FR1.
