@@ -1,0 +1,315 @@
+#!/bin/sh
+#
+# Hand a backlog row to the next stage: lock → re-read → edit the row and the item → commit →
+# unlock, as one atomic step.
+#
+# **The commit is why this is a script**, the same reason as `claim` and `close`. Two further
+# defects are specific to this transition, and both are invisible in the git record afterwards.
+#
+# **1. A hand-off that no-ops and commits anyway.** The by-hand form was five field edits across
+# two files. One of them was written against `status: ready` while the item read
+# `status: in-progress`, so it did not apply — and the commit did not depend on it having applied.
+# The result was a queue row reading `verify | ready` over an item reading `develop | in-progress`:
+# precisely the drift `./next --drift` exists to catch, produced by the prescribed procedure. So
+# **this script reads the result back before it writes anything into place.** All five fields land
+# — `next`, `status`, and the cleared `claimed_by:`, `claimed_at:`, `touches:` — or nothing does.
+# A no-op is a failure, never a success.
+#
+# **2. The release must be the stage's final act.** A stage that releases its claim before its last
+# write leaves the row takeable while its holder is still committing to it: 29 seconds, once,
+# between a hand-off commit and the findings commit that followed it. No lock can see this — the
+# lock guards the two-second edit, and the hole is in the ORDER of the hand-off. That rule is in
+# references/CONCURRENCY.md, 'The release is the final act'; what this script contributes is making
+# the whole hand-off one invocation, so there is nothing left to write after it.
+#
+# Usage:  .claude/backlog/handoff <id> <token> <stage> [status]
+#
+# The destination stage is an ARGUMENT and not inferred. A fixed transition table would have to
+# guess between `verify`'s three outgoing branches — `develop` on red, `queue` on a stale contract,
+# and the stage that resumes a `waiting` ticket — which is exactly where this script must refuse.
+# `status` defaults to `ready` and exists for `verify`'s `waiting` branch.
+#
+# The token is not optional and is not minted here, for `close`'s reason: ownership is memory, no
+# script can check memory, and the argument is how the session proves it.
+#
+# **Columns are resolved by header name, never by position** — the table's shape is not a contract,
+# and a fixed-index parser is the defect 0022 found in `claim`.
+#
+# **It refuses rather than guesses, on six grounds**: a destination stage or status it does not
+# recognise; a table shape it cannot read; a row it cannot find; a token that is not the one the
+# item records; a row and an item that disagree about the current stage; and either of them not
+# reading `in-progress`. The last two are the 0087 drift, caught from both sides.
+#
+# See references/CONCURRENCY.md — 'The four scripts' and 'Lock every write to QUEUE.md'.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+QUEUE="$DIR/QUEUE.md"
+LOCK="$DIR/.lock"
+
+ID="${1:-}"
+TOKEN="${2:-}"
+STAGE="${3:-}"
+STATUS="${4:-ready}"
+
+[ -n "$ID" ] && [ -n "$TOKEN" ] && [ -n "$STAGE" ] || {
+  echo "usage: handoff <id> <token> <stage> [status]" >&2
+  echo "  stage   the stage being handed TO: queue | design | develop | verify" >&2
+  echo "  status  ready (default) | waiting — a person is needed, named in '## Waiting on'" >&2
+  echo "the token is the item's claimed_by: — a hand-off is only yours if you hold the claim" >&2
+  exit 2
+}
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+
+# --- the vocabulary, checked before the lock ---------------------------------------------------
+# Both lists live in skills/queue/templates/item.md, which is the authority; they are repeated
+# here because a script cannot read prose, and a value outside them produces a row that lies about
+# what can act on it.
+case " queue design develop verify " in
+  *" $STAGE "*) ;;
+  *) echo "'$STAGE' is not a stage this backlog has — expected one of: queue, design, develop, verify" >&2
+     exit 1 ;;
+esac
+
+case "$STATUS" in
+  ready|waiting) ;;
+  blocked)
+    echo "refusing to write 'blocked': it is derived from blocked_by and never authored" >&2
+    echo "add the blocker to blocked_by: instead; whatever closes it is what clears the row" >&2
+    exit 1 ;;
+  done)
+    echo "refusing to write 'done': closing is ./close's, and it holds the verdict when it acts" >&2
+    exit 1 ;;
+  in-progress)
+    echo "refusing to write 'in-progress': a hand-off releases a claim, it does not make one" >&2
+    echo "the next session claims the row itself, with ./claim" >&2
+    exit 1 ;;
+  *)
+    echo "'$STATUS' is not a status this script may write — expected ready or waiting" >&2
+    exit 1 ;;
+esac
+
+# Anything already dirty in QUEUE.md rides along on our commit. Say which rows rather than letting
+# it happen silently.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- "$QUEUE"; then
+  echo "WARNING: QUEUE.md already has uncommitted changes; this commit will carry them:" >&2
+  git -C "$DIR" diff -U0 -- "$QUEUE" | awk '/^[+-]\| / { print "  " $0 }' >&2
+fi
+
+# --- lock --------------------------------------------------------------------------------------
+mkdir "$LOCK" 2>/dev/null || {
+  echo "backlog is locked by: $(cat "$LOCK/held-by" 2>/dev/null || echo unknown)" >&2
+  exit 1
+}
+printf 'handoff %s by %s\n%s\n' "$ID" "$TOKEN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK/held-by"
+# Release however we leave, so a failed hand-off never strands the other window.
+trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+# --- resolve the columns by name, under the lock -----------------------------------------------
+header="$(awk -F'|' '/^\|/ {
+  for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
+}' "$QUEUE")"
+[ -n "$header" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
+
+column_named() {
+  printf '%s' "$header" | awk -F'|' -v want="$1" '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
+  }'
+}
+
+missing=""
+for want in ID Next Status; do
+  [ -n "$(column_named "$want")" ] || missing="$missing $want"
+done
+[ -z "$missing" ] || {
+  echo "QUEUE.md's table is missing the column(s):$missing" >&2
+  echo "header found: $header" >&2
+  echo "a shape this script cannot read is an error, never a refusal that looks like a hand-off" >&2
+  exit 1
+}
+
+Q_ID="$(column_named ID)"
+Q_NEXT="$(column_named Next)"
+Q_STATUS="$(column_named Status)"
+
+read_cell() { printf '%s' "$1" | awk -F'|' -v c="$2" '{ v = $c; gsub(/^ +| +$/, "", v); print v }'; }
+
+# --- re-read the row under the lock ------------------------------------------------------------
+row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
+[ -n "$row" ] || { echo "no row for $ID in QUEUE.md" >&2; exit 1; }
+
+row_next="$(read_cell "$row" "$Q_NEXT")"
+row_status="$(read_cell "$row" "$Q_STATUS")"
+
+# --- the item ----------------------------------------------------------------------------------
+item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
+[ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
+
+# YAML's comment rule, as awk source text. `close` and `next` carry this same block for their own
+# readers; awk has no include, and the scripts are separate files by install contract
+# (tests/backlog-scripts-installed.test.sh AC2). Change one, change all three. It applies to
+# SCALARS as much as to lists: `develop` Step 1 invites an inline annotation, and an annotated
+# `claimed_by: "f0c3" # mine` read naively comes back as `f0c3" # mine`, refusing the holder's own
+# hand-off. `sub(/#.*/, "")` is the obvious form and it is wrong twice — see close for both.
+# `"\047"` is an apostrophe: this block is single-quoted shell.
+DECOMMENT='
+function decomment(s,   i, ch, quote, out, start) {
+  sub(/^[ \t]+/, "", s)
+  start = 1
+  ch = substr(s, 1, 1)
+  if (ch == "\"" || ch == "\047") { quote = ch; start = 2 }
+  for (i = start; i <= length(s); i++) {
+    ch = substr(s, i, 1)
+    if (quote != "" && ch == quote) { quote = ""; continue }
+    if (quote != "")                { out = out ch; continue }
+    if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
+    out = out ch
+  }
+  sub(/[ \t]+$/, "", out)
+  return out
+}
+'
+
+fm_value() {
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && index($0, key ":") == 1 {
+      print decomment(substr($0, length(key) + 2)); exit
+    }
+  ' "$1"
+}
+
+# --- the five fields must exist before any of them can be set ---------------------------------
+# An absent key has nothing for the edit to replace, and `fm_value` returns empty for it — which
+# reads as 'already cleared' for the three that get cleared. That is how the 0087 defect looked
+# from the inside, so a missing key is named here rather than diagnosed later as something else.
+absent=""
+for key in next status claimed_by claimed_at touches; do
+  grep -q "^$key:" "$item" || absent="$absent $key"
+done
+[ -z "$absent" ] || {
+  echo "$ID's frontmatter has no:$absent" >&2
+  echo "a hand-off sets next and status and clears claimed_by, claimed_at and touches — all five," >&2
+  echo "so a key that is not there is a hand-off that cannot fully apply (skills/queue/templates/item.md)" >&2
+  exit 1
+}
+
+held_by="$(fm_value "$item" claimed_by)"
+[ -n "$held_by" ] || {
+  echo "$ID records no claimed_by: — nothing holds it, so there is no claim to hand on" >&2
+  echo "a hand-off releases a claim; claim it first with ./claim $ID, or it is already handed off" >&2
+  exit 1
+}
+[ "$held_by" = "$TOKEN" ] || {
+  echo "$ID is held by token '$held_by', not '$TOKEN' — refusing to hand off another session's ticket" >&2
+  echo "a ticket is yours only if you minted its token in this conversation; ask, never take over" >&2
+  exit 1
+}
+
+item_next="$(fm_value "$item" next)"
+item_status="$(fm_value "$item" status)"
+
+# --- the 0087 drift, from both sides -----------------------------------------------------------
+# Nothing tells this script which stage it is being handed FROM, so the check is that the row and
+# the item agree about it. That disagreement IS the defect this script exists to stop reproducing,
+# so handing off over the top of it would carry a half-applied hand-off forward.
+[ "$row_next" = "$item_next" ] || {
+  echo "$ID disagrees with itself about its stage: the row reads '$row_next', the item reads '$item_next'" >&2
+  echo "that is the half-applied hand-off this script exists to prevent — reconcile them first" >&2
+  exit 1
+}
+[ "$item_status" = "in-progress" ] && [ "$row_status" = "in-progress" ] || {
+  echo "$ID is not held: the item reads '$item_status' and the row reads '$row_status', and a hand-off requires in-progress on both" >&2
+  echo "a row that is not in-progress has already been handed off, or was never claimed" >&2
+  exit 1
+}
+
+# --- build both files aside, and read them back before either is moved into place --------------
+# The whole point: the 0087 defect was an edit that did not apply and a commit that proceeded
+# regardless. Writing to temporaries and verifying them is what makes 'all five, or nothing' true
+# rather than merely intended.
+item_tmp="$(mktemp)"
+queue_tmp="$(mktemp)"
+trap 'rm -f "$item_tmp" "$queue_tmp"; rm -rf "$LOCK"' EXIT INT TERM
+
+# `touches:` is cleared with its list entries — a handed-off ticket that keeps reserving files
+# reads as held to the other window (CONCURRENCY.md, 'The working tree is shared too'). `expects:`
+# is left alone: it is the prediction the next capture calibrates on, not a reservation.
+awk -v stage="$STAGE" -v st="$STATUS" '
+  NR == 1 && /^---$/ { fm = 1; print; next }
+  fm && /^---$/      { fm = 0; print; next }
+  fm {
+    if ($0 ~ /^next:/)       { print "next: " stage; next }
+    if ($0 ~ /^status:/)     { print "status: " st;  next }
+    if ($0 ~ /^claimed_by:/) { print "claimed_by:";  next }
+    if ($0 ~ /^claimed_at:/) { print "claimed_at:";  next }
+    if ($0 ~ /^touches:/)    { print "touches:"; skiplist = 1; next }
+    if (skiplist && $0 ~ /^[ \t]+-/) { next }
+    skiplist = 0
+    print; next
+  }
+  { print }
+' "$item" > "$item_tmp"
+
+awk -F'|' -v OFS='|' -v id="$ID" -v idc="$Q_ID" -v nc="$Q_NEXT" -v sc="$Q_STATUS" \
+    -v stage="$STAGE" -v st="$STATUS" '
+  /^\|/ {
+    v = $idc; gsub(/^ +| +$/, "", v)
+    if (v == id) { $nc = " " stage " "; $sc = " " st " " }
+  }
+  { print }
+' "$QUEUE" > "$queue_tmp"
+
+# --- verify all five, and both cells, before anything moves ------------------------------------
+unapplied=""
+[ "$(fm_value "$item_tmp" next)"       = "$STAGE"  ] || unapplied="$unapplied next"
+[ "$(fm_value "$item_tmp" status)"     = "$STATUS" ] || unapplied="$unapplied status"
+[ -z "$(fm_value "$item_tmp" claimed_by)" ]         || unapplied="$unapplied claimed_by"
+[ -z "$(fm_value "$item_tmp" claimed_at)" ]         || unapplied="$unapplied claimed_at"
+[ -z "$(fm_value "$item_tmp" touches)" ]            || unapplied="$unapplied touches"
+# Present on the way in (checked above) and still present on the way out: an edit that deleted a
+# key would otherwise read as 'cleared' for the three that are cleared.
+for key in next status claimed_by claimed_at touches; do
+  grep -q "^$key:" "$item_tmp" || case "$unapplied" in
+    *" $key"*) ;;
+    *) unapplied="$unapplied $key" ;;
+  esac
+done
+
+new_row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$queue_tmp")"
+[ "$(read_cell "$new_row" "$Q_NEXT")"   = "$STAGE"  ] || unapplied="$unapplied row.Next"
+[ "$(read_cell "$new_row" "$Q_STATUS")" = "$STATUS" ] || unapplied="$unapplied row.Status"
+
+[ -z "$unapplied" ] || {
+  echo "$ID: the hand-off did not apply to:$unapplied" >&2
+  echo "nothing has been written — a partly-applied hand-off is the defect this script exists to prevent" >&2
+  echo "the item's frontmatter must carry all of: next, status, claimed_by, claimed_at, touches" >&2
+  exit 1
+}
+
+mv "$item_tmp" "$item"
+mv "$queue_tmp" "$QUEUE"
+trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+# --- commit, by pathspec, in the same breath as the edits --------------------------------------
+# Fatal if the repo cannot be committed to: the commit is the entire reason this is a script, so a
+# hand-off that leaves both shared files dirty is the failure it exists to prevent.
+git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
+  echo "not a git repository ($DIR) — QUEUE.md and the item are edited but uncommitted" >&2
+  echo "commit them by pathspec yourself before anything else touches those files" >&2
+  exit 1
+}
+# Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
+n=0
+until git -C "$DIR" commit -q -m "Hand off $ID to $STAGE [$TOKEN]" -- "$QUEUE" "$item" 2>/dev/null; do
+  n=$((n + 1))
+  [ "$n" -lt 30 ] || {
+    echo "could not commit the hand-off (git busy) — the files are edited but uncommitted" >&2
+    exit 1
+  }
+done
+
+echo "handed off $ID: $item_next -> $STAGE, status $STATUS, claim $TOKEN released"
+echo "this is the last write of the stage; anything still to record belongs in this commit or before it"
