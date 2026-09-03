@@ -3,7 +3,7 @@ id: "0085"
 title: Collapse the backlog protocol from a third of every session's turns to one command per stage boundary
 type: debt
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: l
 created: 2026-09-02
@@ -15,8 +15,8 @@ expects:
   - .claude/backlog/items/0048-remaining-backlog-write-sites.md
   - .claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md
   - skills/verify/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "9fd3"
+claimed_at: 2026-09-03T05:25:17Z
 touches: []
 ---
 
