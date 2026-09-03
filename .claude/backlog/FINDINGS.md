@@ -519,3 +519,37 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   it. Step 3 should require confirming the mutation changed the tool's **observable output**, not
   only that the substitution applied (pointer: `skills/verify/SKILL.md` Step 3,
   `../ai-building-conventions/testing-conventions.md`).
+- 2026-09-03 — **A fixture comment is a cache of the fixture, and it ages exactly like a figure a
+  ticket quotes about a file it does not own.** `tests/cost-by-category.test.sh`'s comment block
+  read `turn 4  Read .../SKILL.md  orient` where the code has always constructed an `Edit` — and
+  the AC that fixture exists for is precisely *"an Edit of a skill file is `work`, not
+  `orientation`"*. Read beside a comment asserting the opposite of the behaviour under test,
+  `case "$OUT" in *"work"*` looks like a reasonable question, which is plausibly how that
+  unfalsifiable guard came to be written. `develop` Step 2 already carries this rule for a
+  **ticket's** cached figures ("re-read the source, never the FR") and `testing-conventions.md`
+  carries it for assertions, but neither reaches a comment inside the guard file: it reads
+  correctly on its own, the arithmetic around it stays consistent, and nothing in a diff looks
+  wrong. Candidate rule for `develop` Step 4 / `verify` Step 3: before trusting a fixture, read the
+  fixture's construction, not its comment (pointer: `tests/cost-by-category.test.sh` fixture block,
+  `skills/develop/SKILL.md` Step 2, item `0085` AC8).
+- 2026-09-03 — **An acceptance criterion can be unfalsifiable *structurally*, because two ACs share
+  a fixture whose construction they need to differ on — and no amount of re-anchoring fixes it.**
+  `0085` AC7 needs contexts whose sums reconcile to an exact published decimal; AC10 needs contexts
+  whose **rises are unequal**, because where they climb uniformly, crediting a rise to the turn that
+  appended it and crediting it to the turn that followed both yield 10,000 and differ only in which
+  bucket carries it. Every anchoring over the shared fixture is green under the off-by-one. The fix
+  was a **second fixture in its own directory and a second tool run**, not a compromise fixture —
+  two cheap fixtures beat one that serves neither AC's discriminating case. Nothing in `verify`
+  Step 3 or `queue`'s falsifiability rules asks whether the fixture an AC will be checked against
+  *can* separate the defect from the correct behaviour, which is a cheaper question at capture time
+  than at verdict time (pointer: `tests/cost-by-category.test.sh`, `skills/queue/SKILL.md`
+  falsifiability rules, items `0052`, `0085`).
+- 2026-09-03 — **Anchoring an assertion to a table row makes a single-line mutation red several
+  ACs at once, and the resulting tally reads like a broken harness.** Collapsing `mechanism_split`
+  to one bucket reds five assertions across AC7, AC9 and AC10, because merging two rows moves every
+  figure derived from either. That is the anchoring working as intended, but
+  `testing-conventions.md` also warns that "an implausibly large [failure count] is usually a
+  script that stopped parsing" — so a mutation sweep over row-anchored guards needs its expected
+  **blast radius** written down beside each mutation, not just its expected colour, or the sweep's
+  own control cannot be read (pointer: `tests/cost-by-category.test.sh` AC9 comment,
+  `../ai-building-conventions/testing-conventions.md`).
