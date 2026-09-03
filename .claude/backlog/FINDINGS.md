@@ -580,3 +580,25 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   that did not run, `HEAD` unmoved), never to vocabulary, because correct prose is free to mention
   the thing it did not do. The positive rule is written down; this inverse is not (pointer:
   `tests/release.test.sh` AC3 comment, `../ai-building-conventions/testing-conventions.md`).
+- 2026-09-03 — **`0085`'s own FR7 removed the turn that catches a second session starting mid-pass.**
+  `verify` Step 7 now reads "the tree is either clean throughout or Step 2 already said so", which is
+  what licenses issuing no git command at verdict time. Verifying `0085` falsified it: Step 2 saw a
+  clean tree, and `0081` then dirtied six files including `skills/verify/SKILL.md` — inside this run's
+  evidence set — while the pass was running. Followed literally the pass would have closed on a plain
+  PASS. `CONCURRENCY.md`, *The working tree is shared too*, says that is the normal case here, so the
+  saved turn and the advisory label are in direct tension and only one can be right (pointer:
+  `skills/verify/SKILL.md` Steps 2 and 7, `docs/decisions/001-one-command-per-stage-boundary.md` FR6,
+  item `0085`).
+- 2026-09-03 — **A guard anchored to an alternation is only as strong as its weakest branch, and a
+  percentage is a weak branch.** `0085` AC11 asserts `grep -qE '87%|0\.0983|0\.1132'` over the whole
+  of `MEASUREMENT.md`; both per-turn dollar figures can be mutated to nonsense and the guard stays
+  green on `87%` alone. Anchoring to a row rather than the document — the fix AC8–AC10 already got —
+  does not help while the assertion is an OR over three tokens any one of which suffices. The
+  question to ask of an alternation is which single branch keeps it green (pointer:
+  `tests/cost-by-category.test.sh` AC11, `../ai-building-conventions/testing-conventions.md`).
+- 2026-09-03 — **`0084`'s row and its item disagree: the queue says `develop | in-progress` under
+  token `ae35`, the item says `next: verify`, `status: ready`, `claimed_by:` empty.** So `./next
+  verify` does not offer it and `./next verify` *does* report its files as claimed — a ticket that is
+  ready to QA and invisible to the stage that would take it. It looks like a hand-off that wrote the
+  item and not the row, which is the defect `0081` exists to remove. Not written by this pass: not
+  its ticket (pointer: `.claude/backlog/QUEUE.md`, item `0084`, item `0081`).

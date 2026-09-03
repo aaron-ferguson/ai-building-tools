@@ -16,10 +16,9 @@ expects:
   - .claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md
   - skills/verify/SKILL.md
   - tests/cost-by-category.test.sh
-claimed_by: "e940"
-claimed_at: 2026-09-03T05:53:02Z
-touches:
-  - .claude/backlog/items/0085-collapse-the-backlog-protocol-turns.md
+claimed_by:
+claimed_at:
+touches: []
 ---
 
 ## Problem
@@ -170,13 +169,22 @@ moves to `next: develop` rather than closing here.
 - [x] AC7 — Given a fixture whose every turn has a known context, output and cost, when
       `tools/cost-by-category.sh` runs, then the per-category figures reconcile to the session total
       exactly (0.2550) and a cache-read-only turn prices at 0.0525.
-- [ ] AC8 — Given a turn that *edits* a skill file, when classified, then it is `work` and not
+- [x] AC8 — Given a turn that *edits* a skill file, when classified, then it is `work` and not
       `orientation`, because `WRITES` is tested before `ORIENT`.
-- [ ] AC9 — Given the output, when read, then `mechanism` is split into `protocol` and `git`, since
+      *(Confirmed 2026-09-03, token `e940`: `ORIENT` tested before `WRITE_TOOLS` in
+      `category_of_call` reds both assertions, 25/2 — work totals 0.0675 not 0.1425, and an
+      orientation bucket appears at 0.0750.)*
+- [x] AC9 — Given the output, when read, then `mechanism` is split into `protocol` and `git`, since
       only the first is a cost this backlog can remove.
-- [ ] AC10 — Given four turns whose context climbs by 10,000 each, when the marginal footprint is
+      *(Confirmed 2026-09-03, token `e940`: `mechanism_split` returning `"protocol"`
+      unconditionally reds both assertions, 22/5 — protocol totals 0.1125 not 0.0525, git row
+      ABSENT.)*
+- [x] AC10 — Given four turns whose context climbs by 10,000 each, when the marginal footprint is
       reported, then it is 10,000 per turn, attributed to the turn that appended it rather than the
       turn that followed.
+      *(Confirmed 2026-09-03, token `e940`: `r["marg"] += 0` reds three, 24/3; crediting the
+      rise to `turns[i + 1]` reds all four, 23/4, with the last turn charged 50000 having appended
+      nothing.)*
 - [x] AC11 — Given `MEASUREMENT.md`, when read, then it carries a *What a turn of each category
       costs* section stating the protocol-versus-work cost per turn.
 - [ ] AC6 — Given a `verify` session run after FR7 lands, when its transcript is classified, then
@@ -379,3 +387,42 @@ moves to `next: develop` rather than closing here.
   `MEASUREMENT.md`, *Re-running this*. Once AC8–AC10 are re-taken this ticket is green on everything
   a session can reach today and waiting only on that date; the previous pass's suggestion of a
   `SCHEDULED.md` split for AC6 is still the honest shape and still `queue`'s call.
+- **Verify pass, 2026-09-03, token `e940` — PASS on everything a session can reach today, but
+  ADVISORY, so it does not close.** AC8, AC9 and AC10 were each driven red on the defect the AC
+  names, by this session's own mutations, and the develop pass's tally table reproduced **exactly**:
+  25/2, 22/5, 24/3, 23/4 for the four defects, 22/5 for the AC7 control, and **27/0 for the no-op**
+  (`category_of_command`'s `WRITES`/`ORIENT` order, which an `Edit` call never reaches). AC11's two
+  assertions were mutated too — the section rename reds one; the FR7 hunks were each reverted and
+  red their own two guards, 25/2 each. Whole suite **16 files, 633 assertions, 0 failed** (605 + the
+  28 of `release.test.sh`, new since the develop pass); AC5's three named suites read 18 / 93 / 175,
+  matching both previous passes.
+- **Why it is advisory rather than a close.** The tree was clean at Step 2 and went dirty *during*
+  the pass: another session (`0081`, token `08b7`) added `tests/handoff.test.sh` and
+  `skills/queue/templates/handoff`, then modified `.claude/backlog/close`,
+  `references/CONCURRENCY.md`, `references/CONCURRENCY-INCIDENTS.md`, `skills/queue/SKILL.md`,
+  `skills/queue/templates/close` and **`skills/verify/SKILL.md`**. The last two of those intersect
+  this run's evidence set — `skills/verify/SKILL.md` carries the four FR7 assertions, and
+  `references/CONCURRENCY.md` is what the QA plan's rule-name cross-check for AC1 reads. Step 7
+  forbids judging whether foreign dirt *looks* relevant, so the intersection is non-empty and the
+  ticket stays at `next: verify, status: ready`. **AC8–AC10 are ticked anyway**: their evidence is
+  `tools/cost-by-category.sh` and `tests/cost-by-category.test.sh`, neither of which is dirty, and
+  every mutation behind them was this session's own.
+- **FR7's own premise is false in this repo, and this pass is the counter-example.** Step 7 now
+  reads "the tree is either clean throughout or Step 2 already said so" — which is what licenses
+  issuing no git command at verdict time. Both disjuncts were false here: Step 2 said clean, and the
+  tree went dirty afterwards. A session following FR7 literally would have reported a **plain PASS
+  and closed**, against an evidence set that had moved underneath it. The turn FR7 removed is the
+  turn that catches a session starting work mid-pass, which `CONCURRENCY.md` (*The working tree is
+  shared too*) says is the normal case here. Parked in `FINDINGS.md`; it needs a ticket, and filing
+  one is not this pass's to do.
+- **AC11's second assertion is loose, though not unfalsifiable.** It is
+  `grep -qE '87%|0\.0983|0\.1132'` over the whole of `MEASUREMENT.md`. Changing *both* per-turn
+  figures while keeping the `87%` leaves it green (27/0), so the published figures can go stale
+  under it; only removing all three tokens reds it (26/1). By Step 3's own test this is not a
+  criterion failure — the outcome AC11 names, that the record states the comparison, still holds
+  under that mutation — but it is the same shape as the defect that sent AC8–AC10 back, one degree
+  weaker.
+- **AC6 remains the only unreachable criterion**, unchanged and for the reason both previous passes
+  gave: it names a `verify` session classified by `tools/classify-turns.sh`, pinned by
+  `MEASUREMENT.md`, *Re-running this*, to `--until 2026-10-31`. The `SCHEDULED.md` split is still
+  the honest shape and still `queue`'s call.
