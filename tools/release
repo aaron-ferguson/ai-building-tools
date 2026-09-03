@@ -39,6 +39,9 @@
 #
 # Requires: sh, git, python3. Every step says whether it acted or was already satisfied, and the
 # whole thing is safe to re-run.
+#
+# Exit codes:  0 verified   1 verification or a step failed   2 bad usage
+#              3 refused before releasing anything   4 the install record could not be read
 
 set -eu
 
@@ -105,24 +108,24 @@ next_patch() { # <version> -> that version with its last component incremented
 # the line-oriented pairing below; nothing in this repo has one, and git would have to be asked
 # for `-z` output to handle it.
 paths_that_differ() {
-  _co="$1"; _commit="$2"; _inst="$3"
+  _checkout="$1"; _commit="$2"; _install="$3"
   _tmp="$(mktemp -d)"
 
-  git -C "$_co" -c core.quotePath=false ls-tree -r "$_commit" \
+  git -C "$_checkout" -c core.quotePath=false ls-tree -r "$_commit" \
     | sed -n 's/^[0-7]\{6\} blob \([0-9a-f]\{40,\}\)	\(.*\)$/\1 \2/p' > "$_tmp/tree"
 
   : > "$_tmp/present"
-  while read -r _sha _path; do
-    if [ -f "$_inst/$_path" ]; then
-      printf '%s %s\n' "$_sha" "$_path" >> "$_tmp/present"
+  while read -r _blob _path; do
+    if [ -f "$_install/$_path" ]; then
+      printf '%s %s\n' "$_blob" "$_path" >> "$_tmp/present"
     else
       printf 'missing  %s\n' "$_path"
     fi
   done < "$_tmp/tree"
 
   if [ -s "$_tmp/present" ]; then
-    cut -d' ' -f2- "$_tmp/present" | sed "s|^|$_inst/|" | tr '\n' '\0' \
-      | xargs -0 git -C "$_co" hash-object --no-filters -- > "$_tmp/hashes"
+    cut -d' ' -f2- "$_tmp/present" | sed "s|^|$_install/|" | tr '\n' '\0' \
+      | xargs -0 git -C "$_checkout" hash-object --no-filters -- > "$_tmp/hashes"
     awk 'NR == FNR { h[FNR] = $1; next }
          h[FNR] != $1 { printf "differs  %s\n", substr($0, index($0, " ") + 1) }' \
       "$_tmp/hashes" "$_tmp/present"
@@ -254,7 +257,9 @@ open(p, "w").write(json.dumps(d, indent=2) + "\n")' "$PLUGIN_FILE" "$NEXT_VERSIO
 
   # 5 — the suite. Every guard in this repo greps prose, so this is the whole of its QA.
   say "$ME: step 5/8 tests"
-  ( cd "$CHECKOUT" && for t in tests/*.test.sh; do "$t" >/dev/null || exit 1; done ) \
+  # `config.yml`'s `unit` command verbatim, and unsilenced: a red release needs to say which
+  # guard went red, or the operator re-runs the whole suite to find out.
+  ( cd "$CHECKOUT" && for t in tests/*.test.sh; do "$t" || exit 1; done ) \
     || die "the suite is red; releasing a red tree is how a broken guard reaches every machine" 1
   say "  acted     tests/*.test.sh green"
 
