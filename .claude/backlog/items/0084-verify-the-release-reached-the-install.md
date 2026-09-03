@@ -19,6 +19,10 @@ expects:
 claimed_by: "ae35"
 claimed_at: 2026-09-03T05:40:48Z
 touches:
+  - tools/release                 # new
+  - tests/release.test.sh         # new
+  - CLAUDE.md
+  - skills/retro/SKILL.md         # one-line pointer only; 0075 owns this paragraph's rewrite
 ---
 
 ## Problem
