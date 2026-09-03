@@ -16,8 +16,8 @@ expects:
   - .claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md
   - skills/verify/SKILL.md
   - tests/cost-by-category.test.sh
-claimed_by: "fab9"
-claimed_at: 2026-09-03T06:24:09Z
+claimed_by:
+claimed_at:
 touches: []
 ---
 
@@ -426,3 +426,21 @@ moves to `next: develop` rather than closing here.
   gave: it names a `verify` session classified by `tools/classify-turns.sh`, pinned by
   `MEASUREMENT.md`, *Re-running this*, to `--until 2026-10-31`. The `SCHEDULED.md` split is still
   the honest shape and still `queue`'s call.
+- **FR7 amended 2026-09-03, token `fab9`, at Aaron's direction — the hole the verify pass found is
+  closed.** FR7's Step 7 wording asserted *"the tree is either clean throughout or Step 2 already said
+  so"*, and that is what licensed issuing no git command at verdict time. It is false in this repo:
+  the `e940` pass saw a clean tree at Step 2 and six dirty files by the verdict, two of them
+  (`skills/verify/SKILL.md`, `references/CONCURRENCY.md`) inside its own evidence set. Followed
+  literally the pass would have closed on a plain PASS.
+  **The fix keeps FR7's actual goal.** Step 7 now takes a fresh capture *fused onto the last
+  evidence-gathering command* — `<last check>; git status --porcelain` — so the intersection is
+  computed against a tree that has not moved since, and still costs no turn of its own. Step 2's
+  capture is demoted to the baseline that refresh compares against.
+  **Guarded, TDD, four assertions** in `tests/cost-by-category.test.sh`, each anchored to its own
+  claim rather than to the paragraph: full revert reds all four (25/4), dropping only the
+  `never a turn of its own` clause reds exactly one (28/1), dropping only the falsified-premise
+  sentences reds exactly two (27/2), and reflowing an unguarded sentence nearby reds none (29/0).
+  Whole suite green: **17 files, 744 assertions, 0 failed.**
+  **This does not re-open the `e940` verdict's ticks.** AC6 is still the only unreachable criterion,
+  and no AC covers FR7's wording — the next `verify` re-take checks the new assertions as it would
+  any other guard.
