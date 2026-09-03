@@ -25,7 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0085 | Collapse the backlog protocol from a third of every session's turns to one command per stage boundary | develop | in-progress |  |
 | 0081 | Give the hand-off a script, as claim and close have | develop | ready |  |
-| 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | design | ready |  |
+| 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | develop | ready |  |
 | 0078 | Route a finding by what it is about, not which repo you are standing in | develop | ready |  |
 | 0084 | Script the release chain and verify it against the installed bytes | develop | in-progress |  |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
