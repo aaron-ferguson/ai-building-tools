@@ -3,7 +3,7 @@ id: "0085"
 title: Collapse the backlog protocol from a third of every session's turns to one command per stage boundary
 type: debt
 next: verify
-status: in-progress
+status: ready
 qa_level: verify
 size: l
 created: 2026-09-02

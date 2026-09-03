@@ -657,3 +657,11 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   a standing trip hazard, and `docs/decisions/001` budgets the findings append as its own turn
   without saying where it sits relative to the boundary (pointer: `skills/develop/SKILL.md` Steps 5
   and 7, `skills/verify/SKILL.md` Steps 5 and 6, `docs/decisions/001-one-command-per-stage-boundary.md`).
+- 2026-09-03 — **Releasing a claim by hand has four fields and no script, and one session missed the
+  same one twice.** `./claim` sets `status: in-progress` in both the row and the item; releasing means
+  resetting both plus `claimed_by:` and `claimed_at:`. Two separate by-hand releases in one session
+  cleared the token and the row but left the item at `in-progress` — the exact row/item drift this
+  same session reported against `0084`, produced twice by the person reporting it. `claim` and `close`
+  are scripted and `handoff` now is; the release-without-close path that an advisory verdict or a
+  `waiting` outcome needs is the one still by hand (pointer: `.claude/backlog/claim`,
+  `skills/verify/SKILL.md` Steps 5 and 7, items `0085`, `0081`).
