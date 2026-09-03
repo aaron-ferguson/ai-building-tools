@@ -17,7 +17,12 @@ expects:
   - skills/verify/SKILL.md
 claimed_by: "9fd3"
 claimed_at: 2026-09-03T05:25:17Z
-touches: []
+touches:
+  - skills/verify/SKILL.md
+  - tools/cost-by-category.sh
+  - tools/classify-turns.sh
+  - tests/cost-by-category.test.sh
+  - docs/decisions/001-one-command-per-stage-boundary.md
 ---
 
 ## Problem
