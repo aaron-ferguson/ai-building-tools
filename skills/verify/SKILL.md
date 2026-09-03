@@ -216,7 +216,7 @@ earlier pass mutated the right behaviour and saw it go red.
 ```
 
 It does the whole sequence below under the lock and **commits it**, which is the step a session under
-load forgets (`CONCURRENCY.md`, *The three scripts*). It refuses rather than guessing on four grounds:
+load forgets (`CONCURRENCY.md`, *The four scripts*). It refuses rather than guessing on four grounds:
 a table shape it cannot read, a row not at `next: verify`, a token that is not the one holding the
 claim — you pass the token because ownership is memory and no script can check memory — and **an
 acceptance-criteria list it cannot tick**. That last one is yours to fix before you can close:
@@ -264,20 +264,39 @@ installed:
    tracker is (`references/TRACKER.md`) — outside the lock, since a network call must never be made
    while holding it. Failure is logged in the notes, never a blocker.
 
-**On red**, the failure reason goes in the item's *Notes & decisions* **before** you touch any field:
-what failed, the actual output, which AC. Then `next: develop, status: ready`, claim released, under the
-lock, committed. Flipping the field without the reason makes the next `develop` session re-derive the
-failure from nothing — the half most easily skipped, because the red is still fresh in a conversation
-about to end.
+**On anything but green the ticket is handed back rather than closed, and `./handoff` is how** — one
+step, and the supported path. It takes the destination stage because this stage has three of them, and
+it sets `next` and `status` and clears `claimed_by:`, `claimed_at:` and `touches:` **all five or none**,
+reading the result back first:
 
-**On a stale contract** — the ACs no longer describe reality, so neither pass nor fail is honest —
-write why in the notes and set `next: queue, status: ready`. Do not re-specify it yourself.
+```bash
+.claude/backlog/handoff 0007 8a04 develop           # red — back to the bench
+.claude/backlog/handoff 0007 8a04 queue             # stale contract — re-specify it, not you
+.claude/backlog/handoff 0007 8a04 develop waiting   # a person is needed
+```
 
-**On ACs only a person can clear, `status: waiting`** — the fourth branch, routinely forced into one
-of the three above. A ticket green on its scripted half whose rest needs a device or the author's eye
-is not closeable, is owed no code, and has no stale contract; sending it to `develop` only buys
-another suite run and a hand-back. Set `status: waiting`, `next` to the stage that resumes, **name
-who must do what in the item's `## Waiting on`**, tick what you cleared, release the claim.
+By hand, under the lock, committed before you release it — the fallback where the script is not
+installed: the same five fields, in one `Edit` per file.
+
+**Whichever branch, the reason goes in *Notes & decisions* first**, before any field moves — what
+failed, the actual output, which AC. Flipping the field without the reason makes the next `develop`
+session re-derive the failure from nothing, and it is the half most easily skipped because the red is
+still fresh in a conversation about to end.
+
+- **Red** → `develop`, `ready`.
+- **A stale contract** — the ACs no longer describe reality, so neither pass nor fail is honest →
+  `queue`, `ready`. Do not re-specify it yourself.
+- **ACs only a person can clear** → the stage that resumes, `waiting`. The fourth branch, routinely
+  forced into one of the three above: a ticket green on its scripted half whose rest needs a device or
+  the author's eye is not closeable, is owed no code, and has no stale contract, and sending it to
+  `develop` only buys another suite run and a hand-back. **Name who must do what in the item's
+  `## Waiting on`** and tick what you cleared.
+
+**The release is the final act** (`CONCURRENCY.md`, *The release is the final act*). `./close` and
+`./handoff` both commit, and from that commit the row is takeable and `./claim` will grant it — a stage
+that released before its last write once left a row claimable for 29 seconds while it was still
+committing to it, which no lock can see and which the git record cannot tell from a clean hand-off. So
+the notes, the ticks, the findings and the cost share all land **before** it.
 
 **Do not push** unless the project's conventions say a close should, or the user asks.
 
@@ -294,6 +313,10 @@ behaved unexpectedly, a scaffolding step you had to invent.
 **An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
 entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
 uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
+
+**Write and commit it *before* Step 5's close or hand-off, whatever its number here says.** Neither
+script commits `FINDINGS.md`, so the append cannot ride along in either — and after them the claim is
+gone. The steps are numbered by what they are for, not by what must be committed last.
 
 ---
 

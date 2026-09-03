@@ -340,18 +340,38 @@ adopts every fragile check it brushes against stops being the ticket that was ra
 3. **Record the cost if `cost_tracking:` is configured** (`references/TRACKER.md`). This session is
    the only thing that knows which ticket its tokens belonged to; `verify` appends its own share. This
    is what turns `size: m` from a guess into a calibrated estimate.
-4. **Set `next: verify`, `status: ready`, and clear `claimed_by:`, `claimed_at:` and `touches:`.**
-   **Correct `qa_level` here too if this session proved the declared level wrong** — a re-entry
-   carrying "`unit` was too low for a change that moves rendered geometry" as an explicit `verify`
-   verdict has nowhere else to put it, and the correction survives only as prose in *Notes &
-   decisions*, where the next QA pass will run the old level anyway. Raising it is yours; lowering it
-   is not. You
-   hold neither the row nor its files any more, and the QA session claims both itself — a leftover
-   `touches:` reserves files nobody is editing, which `CONCURRENCY.md` says reads as "held". Take the
-   lock for the row edit and commit before releasing it.
-5. **Commit by pathspec, alongside the code change** (`CONCURRENCY.md`, *The git index is shared*).
+4. **Hand it to QA with `./handoff`** — one step, and the supported path:
+
+   ```bash
+   .claude/backlog/handoff 0007 08b7 verify        # lock → re-read → row + item → commit → unlock
+   ```
+
+   It sets `next: verify` and `status: ready` and clears `claimed_by:`, `claimed_at:` and `touches:`
+   — **all five or none**, because it reads the result back before writing either file. That is not
+   theoretical: the by-hand form's `status` edit was once written against `ready` while the item read
+   `in-progress`, so it no-oped and the commit proceeded anyway, leaving a row at `verify | ready`
+   over an item at `develop | in-progress`. It refuses a token that is not yours, and a row and an
+   item that disagree about the current stage.
+
+   **Correct `qa_level` first if this session proved the declared level wrong** — a re-entry carrying
+   "`unit` was too low for a change that moves rendered geometry" as an explicit `verify` verdict has
+   nowhere else to put it, and the correction survives only as prose in *Notes & decisions*, where the
+   next QA pass will run the old level anyway. Raising it is yours; lowering it is not.
+
+   By hand, under the lock, committed before you release it — the fallback where the script is not
+   installed: set `next: verify`, `status: ready`, clear all three ownership fields, take the lock for
+   the row edit and commit before releasing it. You hold neither the row nor its files any more, and
+   the QA session claims both itself — a leftover `touches:` reserves files nobody is editing, which
+   `CONCURRENCY.md` says reads as "held".
+5. **Commit the code by pathspec in or before that same step** (`CONCURRENCY.md`, *The git index is
+   shared*). **The release is the final act** (`CONCURRENCY.md`, *The release is the final act*):
+   nothing this stage still owes may be written after the hand-off, because from that commit the row
+   is takeable and `./claim` will grant it — a stage that released first once left a row claimable for
+   29 seconds while it was still committing to it. Findings, notes and cost go in before, or into the
+   same commit.
 6. **Mirror the state if a tracker is configured** — transition to its in-review equivalent, comment
-   the commit SHAs. Failure is logged in the notes, never a blocker.
+   the commit SHAs. Failure is logged in the notes, never a blocker. A network call is not a write to
+   the row, so it may follow the release.
 
 **If you cannot get the tree green**, set `next: develop` with `status: ready` — or `waiting` with the
 reason, or a `blocked_by` entry naming the ticket that must land first, since `blocked` is derived and
@@ -395,6 +415,11 @@ behaved unexpectedly, a scaffolding step you had to invent.
 **An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
 entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
 uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
+
+**Write and commit it *before* Step 5's hand-off, whatever its number here says.** `./handoff` commits
+`QUEUE.md` and the item and nothing else, so a findings append cannot ride along in it — and after the
+hand-off the row is takeable and the claim is gone (`CONCURRENCY.md`, *The release is the final act*).
+The steps are numbered by what they are for, not by what must be committed last.
 
 ---
 
