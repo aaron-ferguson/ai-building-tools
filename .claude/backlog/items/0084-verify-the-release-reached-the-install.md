@@ -2,8 +2,8 @@
 id: "0084"
 title: Script the release chain and verify it against the installed bytes
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -16,13 +16,9 @@ expects:
   - tests/release.test.sh
   - CLAUDE.md
   - skills/retro/SKILL.md
-claimed_by: "ae35"
-claimed_at: 2026-09-03T05:40:48Z
+claimed_by:
+claimed_at:
 touches:
-  - tools/release                 # new
-  - tests/release.test.sh         # new
-  - CLAUDE.md
-  - skills/retro/SKILL.md         # one-line pointer only; 0075 owns this paragraph's rewrite
 ---
 
 ## Problem
@@ -147,3 +143,76 @@ that a step can be *performed*, report success, and still not have happened.
   `/reload-plugins`, both on 2026-09-01.
 - Captured 2026-09-01 from a live investigation, with the install record, the cache mtimes and the
   `diff -rq` output all read directly rather than reconstructed.
+
+### Built 2026-09-02 (develop, token `ae35`)
+
+**The defect was live while this was built, which is the best evidence there is.** The install sat
+at `0.9.8` with recorded sha `045fa53`, **40 commits behind** the checkout at the same version —
+`skills/verify/SKILL.md` among the differing files. Both directions were then exercised against it:
+`tools/release verify --commit 045fa53` passes (135 tracked paths identical, record matches), and
+`tools/release verify` against `HEAD` fails naming **29 of 147** paths. So the install is faithful
+to the commit it records and stale against the source, simultaneously — exactly the state the
+version number cannot express.
+
+**FR1 and AC3 pull in opposite directions, and `--bump` is how both hold.** FR1 wants the next
+version *derived and applied* in one invocation; AC3 wants a run at a version equal to the installed
+one to *refuse*. If the script always applied the bump, AC3 could never fire. Resolved: the script
+always **derives** `next = remote patch + 1` and names it; `--bump` applies it, and without the flag
+the run refuses and tells you the version to set. Choosing a released identity for the author is the
+same class of act as resolving divergence, which *Out of scope* already forbids.
+
+**One step is not in the order FR1 lists.** The version gate is the cheapest refusal and needs no
+network, but the version it names has to come from the *remote's* `plugin.json` (0075: a hand-picked
+version collided), so the fetch runs first. The gate still precedes anything committed or pushed,
+which is what AC3 actually asserts.
+
+**The comparison basis is the tracked tree at a named commit, and the direction matters.** For every
+blob in `git ls-tree -r <commit>`, the install's copy is hashed and the object ids compared — git
+computes both, so nothing reimplements a comparison the repository already knows how to make
+(`testing-conventions.md`, on harnesses that reimplement the logic under test). Because the
+direction is tree → install, install-only artefacts (`.DS_Store`, `.in_use`) are correctly silent,
+and a tracked path absent from the install reads as `missing` — which is how
+`references/REPORTING.md` went absent unnoticed. Hashes are taken in one `git hash-object` call, not
+one per file; at 147 paths the difference is visible.
+
+**A near-miss worth recording: the harness looked as though it excluded a tracked path, and did
+not.** `.claude/settings.json` is tracked and absent from the install, which reads as packaging
+exclusion — and would have justified an ignore list that quietly hid real staleness. It was added
+*after* the install's commit. Checked with `git ls-tree -r 045fa53 -- .claude/settings.json`
+(empty) rather than inferred; the harness ships the whole tracked tree, and no ignore list exists.
+
+**Both assertions were proved independently load-bearing, by mutation on the real file with the
+diff confirmed before the colour was believed** (`testing-conventions.md`). Neutering
+`paths_that_differ` to `return 0`: 6 failures. Neutering the recorded-sha comparison to
+`RECORD_OK=1`: 3 failures, a disjoint set. The suite's own AC6 case carries a mutant copy and fails
+loudly when the substitution does not land — and it did fail loudly during the manual mutation,
+because the real file was already mutated, so the guard on the guard works.
+
+**Two defects in this session's own test, both instances of a rule read from the wrong side:**
+
+- *`exits non-zero` is satisfied by the silent refusal the rule exists to forbid.* On the first
+  red run three cases printed `ok` — "a single differing file fails the verification" among them —
+  because the **absent tool** exited non-zero. Every case also asserts the message, so the reds
+  landed anyway; a suite that asserted only status would have gone green on a script that did not
+  exist.
+- The mirror image: asserting *`[Pp]ushed` is absent* from AC3's refusal reds a **correct**
+  implementation, because the correct refusal ends "nothing has been committed or pushed". Re-anchored
+  to the step that did not run and to `HEAD` being untouched.
+
+**`CLAUDE.md`'s new paragraph was rewrapped, not rewritten, to make it greppable.** The asserted
+phrase first straddled a line break, so `grep -qF` could not match it at all — the breaking change
+this project's own *Tests* section warns about, met from the authoring side rather than the editing
+side.
+
+**`skills/retro/SKILL.md` was deliberately not touched**, though `expects:` named it. Step 5's
+release-chain prose there still describes the chain by hand. This item's own notes assign that prose
+to **0075** ("whichever lands second implements against the other rather than restating it"), and
+this landed first — so pointing retro at `tools/release` is 0075's, not a rewrite of a paragraph
+another ticket is about to rewrite. `touches:` was narrowed to match.
+
+**What no automated assertion covers, stated rather than left to be discovered.** Steps 6–8 of the
+chain — the bump commit, the confirmed push, `claude plugin marketplace update` and
+`claude plugin update` — are not exercised by the suite: they need a real remote and the `claude`
+binary, and the QA plan already rules that out ("a test that has to run the real chain will not be
+written"). What *is* asserted is every refusal path before them, and the verification after them.
+AC4's report is asserted through `verify`, which is the function the chain's last step calls.
