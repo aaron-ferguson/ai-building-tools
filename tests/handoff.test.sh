@@ -318,6 +318,103 @@ assert_contains "names the field that did not apply" "$out" 'next'
 assert_unchanged "neither file was written" "$before"
 assert_contains "no commit was made" "$(git -C "$FIX" log -1 --format=%s)" 'drop next:'
 
+# --- FR2 — touches: entries at column 0 ---------------------------------------------------------
+# YAML allows a block sequence at the SAME indentation as its key, so this is a legal `touches:`.
+# A skiplist requiring leading whitespace leaves the entries behind: the ticket reads handed off
+# and still reserves two files, which `CONCURRENCY.md` says the other window must read as held.
+echo "FR2 — touches: entries written at column 0 are cleared too"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0018 | Flat list | develop | in-progress | 0000 |' 0018 develop in-progress tok0
+sed 's/^  - src\/two.ts$/- src\/two.ts/' "$FIX/.claude/backlog/items/0018-fixture.md" > "$FIX/x" && mv "$FIX/x" "$FIX/.claude/backlog/items/0018-fixture.md"
+git -C "$FIX" commit -q -m flatten -- .claude/backlog/items/0018-fixture.md
+out="$(run_handoff 0018 tok0 verify)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_no_item_line "the column-0 entry is gone" '- src/two.ts'
+
+# --- FR2 — the read-back is what catches an edit that does not apply ----------------------------
+# The only mutation that reaches it. Every refusal above has already established that the five keys
+# are present and that the row and the item agree, so a well-formed input cannot get here — which
+# is what makes this case, rather than a fixture, the proof the guard is wired to something. Break
+# the editor's `status` line in a COPY of the script and assert the read-back's own message: the
+# 0087 defect was an edit written against the wrong value, and nothing but reading the result back
+# can see it (`testing-conventions.md`, prove a new guard fails).
+echo "FR2 — an editor that silently skips a field is caught by the read-back, not committed"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0019 | Read back | develop | in-progress | 0000 |' 0019 develop in-progress tok0
+sed 's|if ($0 ~ /\^status:/)     { print "status: " st;  next }|if (0) { next }|' \
+  "$FIX/.claude/backlog/handoff" > "$FIX/broken" && mv "$FIX/broken" "$FIX/.claude/backlog/handoff"
+chmod +x "$FIX/.claude/backlog/handoff"
+if grep -q 'if (0) { next }' "$FIX/.claude/backlog/handoff"; then
+  ok "the mutation landed in the copy the harness runs"
+else
+  bad "the mutation did not apply — the case below proves nothing"
+fi
+git -C "$FIX" commit -q -m "break the editor" -- .claude/backlog/handoff
+before="$(fingerprint)"
+out="$(run_handoff 0019 tok0 verify)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "the read-back names the field that did not apply" "$out" 'did not apply to: status'
+assert_unchanged "neither file was written" "$before"
+assert_contains "no hand-off was committed" "$(git -C "$FIX" log -1 --format=%s)" 'break the editor'
+
+# --- FR2 — a body line is not a frontmatter key -------------------------------------------------
+# `grep -q "^touches:"` is satisfied by a *Notes & decisions* line that happens to start that way,
+# and the key the edit needs is still absent. Both readings refuse; only one of them says which
+# field is missing, and the other blames the script.
+echo "FR2 — a key that exists only in the body is reported as missing from the frontmatter"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0021 | Body key | develop | in-progress | 0000 |' 0021 develop in-progress tok0
+ITEM21="$FIX/.claude/backlog/items/0021-fixture.md"
+grep -v '^touches:$' "$ITEM21" | grep -v '^  - src/two.ts$' | sed 's|^  - src/one.ts$||' > "$FIX/x"
+printf '\ntouches: mentioned in prose, not a key\n' >> "$FIX/x"
+mv "$FIX/x" "$ITEM21"
+git -C "$FIX" commit -q -m "body key" -- .claude/backlog/items/0021-fixture.md
+before="$(fingerprint)"
+out="$(run_handoff 0021 tok0 verify)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the field missing from the frontmatter" "$out" "frontmatter has no: touches"
+assert_unchanged "the backlog is untouched" "$before"
+
+# --- FR2 — the read-back sees a surviving touches: list ------------------------------------------
+# The second mutation that reaches the read-back. An emptied `touches:` key over a list that
+# survived still reserves files, and `fm_value` cannot tell the two apart — the value it reads is
+# the empty string either way. Break the editor's skiplist in the copy the harness runs.
+echo "FR2 — an editor that empties touches: but leaves its entries is caught"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0022 | Stale scope | develop | in-progress | 0000 |' 0022 develop in-progress tok0
+sed 's|if (skiplist && $0 ~ /\^\[ .t\]\*- /) { next }|if (0) { next }|' \
+  "$FIX/.claude/backlog/handoff" > "$FIX/broken" && mv "$FIX/broken" "$FIX/.claude/backlog/handoff"
+chmod +x "$FIX/.claude/backlog/handoff"
+if grep -q 'if (0) { next }' "$FIX/.claude/backlog/handoff"; then
+  ok "the mutation landed in the copy the harness runs"
+else
+  bad "the mutation did not apply — the case below proves nothing"
+fi
+git -C "$FIX" commit -q -m "break the skiplist" -- .claude/backlog/handoff
+before="$(fingerprint)"
+out="$(run_handoff 0022 tok0 verify)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "the read-back names the surviving list" "$out" 'touches.entries'
+assert_unchanged "neither file was written" "$before"
+
+# --- FR1 — the lock is held THROUGH the commit, not merely around the edit -----------------------
+# `CONCURRENCY.md`, *Lock every write to `QUEUE.md`*: hold it for the read, the write AND the
+# commit. Releasing after the edit and before the commit passes every other assertion here — the
+# files are right and the commit lands — so nothing but observing the lock at commit time can tell
+# the two apart. A pre-commit hook is that observation.
+echo "FR1 — the lock is still held at the moment the commit runs"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0020 | Locked through | develop | in-progress | 0000 |' 0020 develop in-progress tok0
+cat > "$FIX/.git/hooks/pre-commit" <<'HOOK'
+#!/bin/sh
+if [ -d "$(git rev-parse --show-toplevel)/.claude/backlog/.lock" ]; then
+  echo held > "$(git rev-parse --show-toplevel)/.lock-witness"
+else
+  echo released > "$(git rev-parse --show-toplevel)/.lock-witness"
+fi
+exit 0
+HOOK
+chmod +x "$FIX/.git/hooks/pre-commit"
+out="$(run_handoff 0020 tok0 verify)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the lock was held when the commit ran" "$(cat "$FIX/.lock-witness" 2>/dev/null || echo MISSING)" 'held'
+assert_not_contains "the lock does not survive the run" "$(ls -a "$FIX/.claude/backlog")" '.lock'
+
 # --- FR1 — column order is not a contract ------------------------------------------------------
 echo "FR1 — a reordered table hands off by column name, not by index"
 scaffold '| Status | ID | Next | Title | Parent |' '|--------|------|------|-------|--------|' '| in-progress | 0014 | develop | Reordered | 0000 |' 0014 develop in-progress tok0

@@ -181,13 +181,24 @@ fm_value() {
   ' "$1"
 }
 
+# Presence, scoped to the frontmatter. `grep -q "^key:"` is not this: a line starting `touches:`
+# anywhere in the body satisfies it, and the key the edit needs is still absent.
+fm_has() {
+  awk -v key="$2" '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && index($0, key ":") == 1 { found = 1; exit }
+    END { exit !found }
+  ' "$1"
+}
+
 # --- the five fields must exist before any of them can be set ---------------------------------
 # An absent key has nothing for the edit to replace, and `fm_value` returns empty for it — which
 # reads as 'already cleared' for the three that get cleared. That is how the 0087 defect looked
 # from the inside, so a missing key is named here rather than diagnosed later as something else.
 absent=""
 for key in next status claimed_by claimed_at touches; do
-  grep -q "^$key:" "$item" || absent="$absent $key"
+  fm_has "$item" "$key" || absent="$absent $key"
 done
 [ -z "$absent" ] || {
   echo "$ID's frontmatter has no:$absent" >&2
@@ -246,7 +257,7 @@ awk -v stage="$STAGE" -v st="$STATUS" '
     if ($0 ~ /^claimed_by:/) { print "claimed_by:";  next }
     if ($0 ~ /^claimed_at:/) { print "claimed_at:";  next }
     if ($0 ~ /^touches:/)    { print "touches:"; skiplist = 1; next }
-    if (skiplist && $0 ~ /^[ \t]+-/) { next }
+    if (skiplist && $0 ~ /^[ \t]*- /) { next }
     skiplist = 0
     print; next
   }
@@ -263,6 +274,13 @@ awk -F'|' -v OFS='|' -v id="$ID" -v idc="$Q_ID" -v nc="$Q_NEXT" -v sc="$Q_STATUS
 ' "$QUEUE" > "$queue_tmp"
 
 # --- verify all five, and both cells, before anything moves ------------------------------------
+# **This is a redundancy check, and no input reaches it while the editor above is correct** — the
+# refusals have already established that every key is in the frontmatter and that the row and the
+# item agree. Said out loud because a guard nothing can reach is normally a defect: here it is the
+# point. The 0087 failure was not a bad input, it was an edit written against the wrong value, and
+# the only thing that can catch that class is reading the result back. tests/handoff.test.sh proves
+# it by breaking the editor and asserting on this message, which is the only mutation that reaches
+# it (`testing-conventions.md`, prove a new guard fails).
 unapplied=""
 [ "$(fm_value "$item_tmp" next)"       = "$STAGE"  ] || unapplied="$unapplied next"
 [ "$(fm_value "$item_tmp" status)"     = "$STATUS" ] || unapplied="$unapplied status"
@@ -272,11 +290,21 @@ unapplied=""
 # Present on the way in (checked above) and still present on the way out: an edit that deleted a
 # key would otherwise read as 'cleared' for the three that are cleared.
 for key in next status claimed_by claimed_at touches; do
-  grep -q "^$key:" "$item_tmp" || case "$unapplied" in
+  fm_has "$item_tmp" "$key" || case "$unapplied" in
     *" $key"*) ;;
     *) unapplied="$unapplied $key" ;;
   esac
 done
+# `touches:` is cleared only if its ENTRIES went too. An empty key over a surviving list still
+# reserves files, and `fm_value` cannot see it: the value it reads is the empty string either way.
+awk '
+  NR == 1 && /^---$/ { fm = 1; next }
+  fm && /^---$/      { exit }
+  fm && index($0, "touches:") == 1 { seen = 1; next }
+  seen && /^[ \t]*- / { found = 1; exit }
+  seen { exit }
+  END { exit !found }
+' "$item_tmp" && unapplied="$unapplied touches.entries"
 
 new_row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$queue_tmp")"
 [ "$(read_cell "$new_row" "$Q_NEXT")"   = "$STAGE"  ] || unapplied="$unapplied row.Next"
