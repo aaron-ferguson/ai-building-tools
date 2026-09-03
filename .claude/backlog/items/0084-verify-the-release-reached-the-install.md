@@ -3,7 +3,7 @@ id: "0084"
 title: Script the release chain and verify it against the installed bytes
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -16,8 +16,8 @@ expects:
   - tests/release.test.sh
   - CLAUDE.md
   - skills/retro/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "0830"
+claimed_at: 2026-09-03T05:59:09Z
 touches:
 ---
 
