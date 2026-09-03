@@ -22,6 +22,17 @@ expects:
 claimed_by: "08b7"
 claimed_at: 2026-09-03T05:51:00Z
 touches:
+  - skills/queue/templates/handoff          # new
+  - .claude/backlog/handoff                 # new
+  - tests/handoff.test.sh                   # new
+  - tests/backlog-scripts-installed.test.sh
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - references/CONCURRENCY.md
+  - references/CONCURRENCY-INCIDENTS.md     # 'The three scripts' citations
+  - skills/queue/SKILL.md                   # 'The three scripts' citation
+  - skills/queue/templates/close            # 'The three scripts' citation
+  - .claude/backlog/close                   # re-copy after the template edit
 ---
 
 ## Problem
@@ -104,3 +115,14 @@ indistinguishable in the git record from a clean sequential hand-off.
 
 - Both defects were recorded in AetherWorks' buffer (items 0087 and 0051) and are reproduced above
   with their commits and timestamps.
+- **FR1's signature is superseded by `docs/decisions/001-one-command-per-stage-boundary.md`**
+  (ticket `0085`, accepted 2026-09-02 — a day *after* this ticket was captured). That record
+  specifies `./handoff <id> <token> <stage>`, with the destination stage as a third argument, and
+  cites this ticket's FR4 while doing so. Built to the three-argument form, plus an optional fourth
+  positional `[status]` defaulting to `ready`: `verify` Step 5 has a `waiting` branch and a
+  `next: queue` branch, so a script that inferred the destination from a fixed transition table
+  would be guessing exactly where FR3 says it must refuse.
+- **What "a row not at the stage it is being handed *from*" (FR3) is checked against.** The command
+  carries no from-stage, so the check is that **the row's `Next` cell and the item's `next:` agree**
+  — the 0087 drift class itself — and that both read `in-progress`. A row already handed off reads
+  `ready`, so re-running `handoff` on it refuses rather than handing it on a second time.
