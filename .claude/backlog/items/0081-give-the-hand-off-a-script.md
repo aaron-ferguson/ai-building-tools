@@ -3,7 +3,7 @@ id: "0081"
 title: Give the hand-off a script, as claim and close have
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -19,8 +19,8 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by:
-claimed_at:
+claimed_by: "08b7"
+claimed_at: 2026-09-03T05:51:00Z
 touches:
 ---
 
