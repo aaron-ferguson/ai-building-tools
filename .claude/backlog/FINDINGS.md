@@ -489,3 +489,33 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   current state with history gets read as neither (pointer: `.claude/backlog/RANKING.md`,
   `.claude/backlog/RANKING-HISTORY.md`).
 
+- 2026-09-03 — **A `$0` in a skill's prose is replaced by the skill's invocation argument, silently
+  corrupting the text the session is given.** `/verify 0085` delivered `skills/verify/SKILL.md`
+  line 19 as *"a `verify` turn is the suite's cheapest at 0085.0946 and 97,965 context tokens,
+  against a baseline 0085.1203"*, where the file on disk reads `$0.0946` and `$0.1203`. Two measured
+  figures in the one paragraph that justifies this stage's rigour arrived as nonsense, and nothing
+  in the delivered text marks the substitution. Every dollar figure in every skill file in this repo
+  is exposed, and `MEASUREMENT.md` is full of them; the fix in this repo's control is to write money
+  as `USD 0.0946` or to escape it, and the sweep is a grep for `\$[0-9]` across `skills/`
+  (pointer: `skills/*/SKILL.md`, `references/*.md`).
+- 2026-09-03 — **Three of one ticket's acceptance criteria shared a single defect shape: a
+  substring `case` over a tool's whole output, satisfied by text the tool prints unconditionally.**
+  `0085`'s AC8 (`*"work"*`), AC9 (`*protocol*`, `*git*`) and AC10 (`*10000*`) all stayed green under
+  mutations that provably landed — AC10's is unfalsifiable outright, because `10000` is a substring
+  of the `ctx/turn` figures `100000`/`110000`/`115000`/`125000`. `testing-conventions.md` already
+  names the shape twice (*anchor an assertion to the claim, not the document that contains it*; *a
+  number present where the contract is that it is formatted*) and says that a suite with a known
+  systematic weakness of this shape should be swept **from a loop, not by reading for the next
+  instance**. Every guard in this repo greps prose, so the exposure is the whole suite, not one
+  file — a unit of work for `queue`, sized as a sweep of all 15 `tests/*.test.sh` for whole-output
+  and whole-file matches (pointer: `tests/cost-by-category.test.sh`, `tests/*.test.sh`, item `0063`).
+- 2026-09-03 — **`verify` Step 3's mutation rule has no answer for a project that keeps two copies of
+  the code under test, and this pass got it wrong first.** `0085` AC8 names `WRITES` being tested
+  before `ORIENT`; that ordering exists in **both** `tools/classify-turns.sh` and
+  `tools/cost-by-category.sh`, and the guard runs only the second. The first mutation was a no-op
+  that read exactly like a guard holding. `testing-conventions.md` carries the rule
+  (*confirm the mutation reached the copy the harness runs*) but `skills/verify/SKILL.md` Step 3 does
+  not point at it, and a session that has just been told to break-and-restore is the one who needs
+  it. Step 3 should require confirming the mutation changed the tool's **observable output**, not
+  only that the substitution applied (pointer: `skills/verify/SKILL.md` Step 3,
+  `../ai-building-conventions/testing-conventions.md`).
