@@ -187,8 +187,9 @@ moves to `next: develop` rather than closing here.
       nothing.)*
 - [x] AC11 — Given `MEASUREMENT.md`, when read, then it carries a *What a turn of each category
       costs* section stating the protocol-versus-work cost per turn.
-- [ ] AC6 — Given a `verify` session run after FR7 lands, when its transcript is classified, then
-      the advisory dirty-path intersection costs it no turn of its own.
+**AC6 moved to `0088` on 2026-09-03** — *"the advisory dirty-path intersection costs a `verify`
+session no turn of its own"* — because it names a classification pinned to `--until 2026-10-31` and
+so could not close here. `0088` is dormant in `SCHEDULED.md` until that date.
 - [x] AC5 — Given `tests/claim.test.sh`, `tests/close.test.sh` and `tests/next.test.sh`, when run
       after any change this ticket makes, then all three are green. *(Confirmed 2026-09-02: 18, 93
       and 175 passed respectively, 0 failed; the whole suite — every `tests/*.test.sh` — was also run
@@ -444,3 +445,9 @@ moves to `next: develop` rather than closing here.
   **This does not re-open the `e940` verdict's ticks.** AC6 is still the only unreachable criterion,
   and no AC covers FR7's wording — the next `verify` re-take checks the new assertions as it would
   any other guard.
+- **AC6 split out to `0088` on 2026-09-03**, at Aaron's direction, so this ticket could close on the
+  criteria a session can reach. It is the shape all three previous passes named and declined to
+  perform, being `queue`'s call. `.claude/backlog/close` ticks every `- [ ] AC` line unconditionally,
+  so leaving AC6 in place and closing would have recorded an unrun measurement as verified — the
+  `0044` failure mode from the other side. `0088` carries AC6 verbatim as its own AC1, plus the
+  budget comparison, the dollar re-measurement and the record-it-either-way requirement.

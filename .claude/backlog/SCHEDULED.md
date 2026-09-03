@@ -14,4 +14,4 @@ the project declared before the work started.
 
 | ID | Title | Wake | Owner | Item |
 |------|-------|------|-------|------|
-| _(none yet)_ | | | | |
+| 0088 | Re-measure the protocol turn saving 0085 predicted, and record the verdict either way | 2026-10-31 | — | `items/0088-remeasure-the-protocol-turn-saving.md` |
