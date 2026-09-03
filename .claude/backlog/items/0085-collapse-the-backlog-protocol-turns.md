@@ -2,8 +2,8 @@
 id: "0085"
 title: Collapse the backlog protocol from a third of every session's turns to one command per stage boundary
 type: debt
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: verify
 size: l
 created: 2026-09-02
@@ -15,13 +15,9 @@ expects:
   - .claude/backlog/items/0048-remaining-backlog-write-sites.md
   - .claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md
   - skills/verify/SKILL.md
-claimed_by: "9fd3"
-claimed_at: 2026-09-03T05:25:17Z
-touches:
-  - skills/verify/SKILL.md
-  - tools/cost-by-category.sh
-  - tools/classify-turns.sh
-  - tests/cost-by-category.test.sh
+claimed_by:
+claimed_at:
+touches: []
   - docs/decisions/001-one-command-per-stage-boundary.md
 ---
 
@@ -271,3 +267,53 @@ moves to `next: develop` rather than closing here.
   were already dirty in the shared tree at claim time (uncommitted work referencing
   `docs/decisions/002-matching-rigour-to-stakes.md`) — not touched, not committed, not diagnosed;
   another session's in-progress work.
+- **Verify pass, 2026-09-03, token `9fd3` — FAIL on AC8, AC9 and AC10, and the code is not what
+  failed.** All three behaviours are correct in `tools/cost-by-category.sh`; what fails is that their
+  guards in `tests/cost-by-category.test.sh` **cannot be made to go red on the defect the AC names**,
+  which `verify` Step 3 rules leaves the AC unverified, and `testing-conventions.md` (*"Anchor an
+  assertion to the claim, not to the document that contains it"*, and *"an assertion that a number is
+  present where the contract is that it is formatted"*) names as the failure shape. Each assertion is
+  a substring `case` over the tool's **whole output**, so it is satisfied by text the tool prints
+  unconditionally:
+  - **AC8** — `*"work"*`. Mutation: `category_of_call` made to test `ORIENT` before `WRITE_TOOLS`,
+    which moved the fixture's turn 4 from `work` to `orientation` (bucket table: `work 2` → `work 1`
+    plus a new `orientation 1` row, so the mutation provably landed). Guard: **19 passed, 0 failed**,
+    printing `ok the output names a work bucket` — because turn 3 (`tests/thing.test.sh`) is `work`
+    via `TESTS` whatever turn 4 does. The assertion cannot see turn 4 at all, which is the only turn
+    the AC is about. **First mutation attempted was a no-op** — `category_of_command`'s `WRITES`/
+    `ORIENT` order, which an `Edit` tool call never reaches; `testing-conventions.md`'s *"confirm the
+    mutation reached the copy the harness runs"* is what caught it, and the two classifier copies in
+    `tools/` are the two copies in question.
+  - **AC9** — `*protocol*` and `*git*`. Both words appear in the unconditional header line
+    ``mechanism` is split: `protocol` is this backlog's own cost, `git` is what any project pays`
+    (`tools/cost-by-category.sh:352`). Mutation: `mechanism_split` made to return `"protocol"`
+    always. Both AC9 assertions stayed green; the collapse was caught only **collaterally**, by
+    AC7's `0.0525`, and 18 passed / 1 failed names AC7.
+  - **AC10** — `*10000*`. The `ctx/turn` column prints `100000`, `110000`, `125000`, `115000`, each
+    of which contains `10000` as a substring, so no marginal-footprint value can red it. Mutation:
+    `r["marg"] += rise` → `+= 0`, giving `marg/turn` of **0 in every bucket**. Guard: **19 passed, 0
+    failed**. Unfalsifiable, not merely loose. The documented off-by-one is also invisible here for a
+    second reason: the fixture's contexts climb **uniformly** by 10,000, so attributing the rise to
+    the later turn yields the same 10,000 and only moves which bucket carries it.
+  - **AC7 is the control and it is sound.** `CACHE_READ_MULT` `0.1` → `0.2` reds both of its
+    assertions (`17 passed, 2 failed`). AC1–AC5 and AC11 re-verified from this session's own
+    evidence; the whole suite is green (15 files, 597 assertions, 0 failed) and AC5's three named
+    suites read 18 / 93 / 175, matching the develop pass.
+  - **Fix is to the assertions, not the tool:** anchor each to the row it is about — AC8 to turn 4's
+    bucket rather than the presence of the word, AC9 to the two bucket **rows**, AC10 to the
+    `marg/turn` cell, with a fixture whose contexts climb **unevenly** so attribution is separable.
+- **FR7's own change is unguarded, and this is separate from the FAIL above.** Reverting both hunks of
+  `skills/verify/SKILL.md` to the pre-FR7 wording leaves **all 15 guards green**. No AC covers the
+  wording (AC6 is the 2026-10-31 re-measure), so this is not a criterion failure — but in a repo whose
+  guards grep prose it is the deliverable of this develop pass sitting with nothing asserting it.
+- **AC6 structurally cannot close before 2026-10-31**, whoever runs the next pass: it names a
+  `verify` session classified by `tools/classify-turns.sh`, and `MEASUREMENT.md`, *Re-running this*
+  pins that to `--since 2026-08-25 --until 2026-10-31`. Once the three guards are fixed, this ticket
+  is green on everything a session can reach today and blocked only on a dated measurement — a
+  `SCHEDULED.md` split for AC6 is the honest shape, and it is `queue`'s call, not this pass's.
+- **This session ran the *installed* skill, which does not carry FR7.** `~/.claude/plugins/cache/
+  ai-building-tools/ai-building-tools/0.9.8/skills/verify/SKILL.md` differs from the repo at the same
+  version number by exactly the two FR7 hunks — the failure `CLAUDE.md` warns about, and the reason
+  this pass followed the repo copy as the authority. The FR7 procedure was exercised deliberately
+  from the repo text: Step 2's status capture was fused with the first level command, and Step 7's
+  intersection reused it with no second git call.
