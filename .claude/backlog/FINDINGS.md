@@ -621,3 +621,39 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   re-copied `close` from its template in between — so a level command that stops at the first red can
   report a different suite on two runs a minute apart, with no local change (pointer:
   `.claude/backlog/config.yml`, `references/CONCURRENCY.md`).
+- 2026-09-03 — **`./close` clears `touches:` with a skiplist that a legal YAML list evades, so a
+  closed ticket can go on reserving files.** YAML allows a block sequence at the *same* indentation
+  as its key, so `touches:\n- src/a.ts` is valid; `close`'s `if (skiplist && $0 ~ /^[ \t]+-/)`
+  requires leading whitespace and leaves those entries in the item. The row moves to `DONE.md` and
+  the item still names two files, which `CONCURRENCY.md` (*The working tree is shared too*) obliges
+  the other window to read as held — an invisible narrowing of what anyone else may take. Found by
+  the mutation sweep on `./handoff`, which had copied the same line; fixed there (`^[ \t]*- `) and
+  deliberately **not** fixed in `close`, whose contract and guard belong to another ticket
+  (pointer: `skills/queue/templates/close`, `tests/close.test.sh`, `skills/queue/templates/handoff`).
+- 2026-09-03 — **No backlog script is proven to hold the lock through its commit, and no ordinary
+  assertion can prove it.** `CONCURRENCY.md` (*Lock every write to `QUEUE.md`*) requires the lock to
+  cover the read, the write **and** the commit, but releasing it after the edit and before the commit
+  leaves every observable identical: correct files, a landed commit, a released lock. Mutating the
+  release earlier in `./handoff` kept its whole suite green until a `pre-commit` hook was added to the
+  fixture to witness the lock at commit time — one hook, four lines. `claim.test.sh` and
+  `close.test.sh` have the same blind spot on scripts whose commit-inside-the-lock is their entire
+  reason for existing (pointer: `tests/handoff.test.sh` "the lock is still held at the moment the
+  commit runs", `tests/claim.test.sh`, `tests/close.test.sh`).
+- 2026-09-03 — **A guard placed before the guard it protects can make it unfalsifiable, and the
+  sweep reads as coverage.** `./handoff` verifies all five frontmatter fields after editing — the
+  whole point of the ticket — and an up-front presence check, added to improve one error message,
+  caught every fixture first. Deleting the read-back entirely left the suite green: the
+  filter-then-assert failure `testing-conventions.md` names, arriving from ordering rather than from
+  the filter. The general shape: **when a cheap precondition check is added in front of an expensive
+  verification, the verification's mutation coverage is silently transferred to it.** Reaching it
+  needed a case that breaks the *implementation* in the copy the harness runs, not a case that feeds
+  it bad input (pointer: `skills/queue/templates/handoff`, `tests/handoff.test.sh`).
+- 2026-09-03 — **`develop` Step 5 and Step 7 prescribe an order the new hand-off rule forbids, and
+  the step numbers are now wrong on purpose.** Step 5 hands the ticket off; Step 7 appends to
+  `FINDINGS.md`. Neither `./handoff` nor `./close` commits that file, so the append cannot ride along
+  in the boundary commit and must precede it — otherwise the claim is gone and the row is takeable
+  while the session is still writing, which is the 29-second window the ticket exists to close. Both
+  skills now say so at the findings step, but a numbered sequence whose numbers are not the order is
+  a standing trip hazard, and `docs/decisions/001` budgets the findings append as its own turn
+  without saying where it sits relative to the boundary (pointer: `skills/develop/SKILL.md` Steps 5
+  and 7, `skills/verify/SKILL.md` Steps 5 and 6, `docs/decisions/001-one-command-per-stage-boundary.md`).
