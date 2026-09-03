@@ -30,16 +30,17 @@ Two consequences, and both have cost real work:
   version than the checkout, or the same version with different bytes. A session has reported a
   rule missing that had shipped the same day. Diff the trees before concluding a rule is absent:
   `diff -rq skills/ ~/.claude/plugins/cache/ai-building-tools/ai-building-tools/<version>/skills/`
-- **The release chain is push → bump `.claude-plugin/plugin.json` → update the install → restart**,
+- **When asked to release, or to bump the plugin version, run `tools/release` from the repo root.**
+  The chain is push → bump `.claude-plugin/plugin.json` → update the install → restart,
   and every step is silent when skipped. Worse, a step can be *performed*, report success, and
   still not have happened:
   **`claude plugin update` reporting success is not evidence the bytes changed**, and neither is
   the `gitCommitSha` it then writes into `installed_plugins.json` — the cache directory is keyed by
   version, so if the version did not move nothing is re-extracted and the record is updated anyway.
   Both halves of that record were observed wrong on the same evening, in opposite directions.
-  **Run `tools/release`**: it does the whole chain in one invocation and ends by diffing the
-  resolved install directory against the pushed commit, and `tools/release verify` makes that
-  comparison on its own.
+  `tools/release` does the whole chain in one invocation, refuses before pushing when the version
+  has not been bumped, and ends by diffing the resolved install directory against the pushed
+  commit; `tools/release verify` makes that comparison on its own.
 
 ## Tests
 

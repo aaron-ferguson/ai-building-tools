@@ -203,26 +203,15 @@ sessions it was written for.
   a dirty tree. Commit promptly rather than accumulating, and name the paths you touched when reporting.
 - **Push per each repo's own rules.** A project may treat a push as a release; the conventions and tools
   repos are the source of truth for other machines, so an unpushed edit there is lost at the next install.
-- **A skill edit has a release chain, and every step is silent when skipped**: push, bump the plugin
-  version, update the install, then **restart**. Skills resolve at session start, so the session that
-  wrote the change is the last to receive it. **Report it in one line, not a paragraph** — this fires on
-  most retros, so it is a standing cost rather than news: `Skills changed — update the plugin and restart.`
-  is the whole message. It is a consequence of an edit, never a *finding*: it does not belong in
-  `FINDINGS.md`, where it would sit un-triageable and make a healthy buffer look neglected.
-
-Verify the installed copy matches the source afterwards — a silent no-op here is the Step 3 trap one layer
-further in, and **the version number does not tell you**: an install can sit at the same version as the
-source and hold different bytes, or the bump can land while the install never happens. Diff the two
-trees and read the answer, rather than trusting either number:
-
-```bash
-diff -rq skills/ ~/.claude/plugins/cache/<plugin>/<plugin>/<version>/skills/
-```
-
-This has already cost a false finding: a session reported a rule missing from `verify` Step 2 that had
-shipped the same day, because the installed copy was 1,556 bytes behind the source. A retro that skips
-this check does not merely fail to release its own edits — it re-derives, and re-lands, work that is
-already done.
+- **A skill edit has a release chain — run `tools/release` from the repo root.** It bumps the
+  version, pushes, updates the install, and verifies the bytes match before reporting done. Run it
+  rather than performing the steps by hand: `claude plugin update` reports success even when it
+  extracts nothing, and `tools/release` is the only step that catches that (0084). Skills resolve
+  at session start, so the session that wrote the change is the last to receive it. **Report it in
+  one line, not a paragraph** — this fires on most retros, so it is a standing cost rather than
+  news: `Skills changed — ran tools/release, restart required.` is the whole message. It is a
+  consequence of an edit, never a *finding*: it does not belong in `FINDINGS.md`, where it would
+  sit un-triageable and make a healthy buffer look neglected.
 
 ---
 
