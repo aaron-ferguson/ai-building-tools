@@ -602,3 +602,22 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   ready to QA and invisible to the stage that would take it. It looks like a hand-off that wrote the
   item and not the row, which is the defect `0081` exists to remove. Not written by this pass: not
   its ticket (pointer: `.claude/backlog/QUEUE.md`, item `0084`, item `0081`).
+- 2026-09-03 — **`config.yml`'s `unit` command hides most of the suite the moment anything is red,
+  and the ticket's own guard is what gets hidden.** The command is
+  `for t in tests/*.test.sh; do "$t" || exit 1; done`, so the first red file ends the loop. Verifying
+  `0084` at its declared `unit` level, `tests/backlog-scripts-installed.test.sh` failed on `0081`'s
+  in-flight work — alphabetically first of seventeen — and the run stopped there, so
+  `tests/release.test.sh`, the guard the verdict actually rests on, never executed. Running the files
+  individually then showed sixteen green and one red. Fail-fast is right for a release gate, where
+  `tools/release` step 5 uses the same line deliberately, and wrong for a QA pass, which needs the
+  whole picture to attribute a red to a ticket. A verify session that trusted the level command's
+  first failure would report BLOCKED or FAIL on someone else's red. The two uses want opposite
+  behaviour from one config key (pointer: `.claude/backlog/config.yml` `commands.unit`,
+  `tools/release` step 5, `skills/verify/SKILL.md` Step 2).
+- 2026-09-03 — **The alphabetical accident above is load-bearing and will not repeat reliably.**
+  `backlog-scripts-installed` sorts first, so it masked everything; had the red been `next.test.sh`
+  the pass would have seen most of the suite and might never have noticed the truncation. The same
+  run also showed the file passing 23/23 ninety seconds after failing, because `0081`'s session
+  re-copied `close` from its template in between — so a level command that stops at the first red can
+  report a different suite on two runs a minute apart, with no local change (pointer:
+  `.claude/backlog/config.yml`, `references/CONCURRENCY.md`).
