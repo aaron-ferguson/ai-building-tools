@@ -2,8 +2,8 @@
 id: "0081"
 title: Give the hand-off a script, as claim and close have
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -19,20 +19,9 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by: "08b7"
-claimed_at: 2026-09-03T05:51:00Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/handoff          # new
-  - .claude/backlog/handoff                 # new
-  - tests/handoff.test.sh                   # new
-  - tests/backlog-scripts-installed.test.sh
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md     # 'The three scripts' citations
-  - skills/queue/SKILL.md                   # 'The three scripts' citation
-  - skills/queue/templates/close            # 'The three scripts' citation
-  - .claude/backlog/close                   # re-copy after the template edit
 ---
 
 ## Problem
