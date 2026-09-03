@@ -18,7 +18,8 @@ expects:
   - tests/cost-by-category.test.sh
 claimed_by: "e940"
 claimed_at: 2026-09-03T05:53:02Z
-touches: []
+touches:
+  - .claude/backlog/items/0085-collapse-the-backlog-protocol-turns.md
 ---
 
 ## Problem
