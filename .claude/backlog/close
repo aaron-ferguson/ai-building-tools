@@ -28,7 +28,7 @@
 # closing this ticket is the only event that can clear a row naming it in `blocked_by`. Leaving them
 # is a queue that lies about what is takeable, which once cost a whole session.
 #
-# See references/CONCURRENCY.md — 'The three scripts' and 'Lock every write to QUEUE.md'.
+# See references/CONCURRENCY.md — 'The four scripts' and 'Lock every write to QUEUE.md'.
 
 set -eu
 
@@ -116,9 +116,9 @@ item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
 item_rel="items/$(basename "$item")"
 
 # YAML's comment rule, as awk source text injected into both readers below. awk has no include, so
-# a shared implementation is a string rather than a file; `next` carries this same block for its own
-# two readers, and the two scripts are separate files by install contract
-# (`tests/backlog-scripts-installed.test.sh` AC2). Change one, change both.
+# a shared implementation is a string rather than a file; `next` and `handoff` carry this same block
+# for their own readers, and the scripts are separate files by install contract
+# (`tests/backlog-scripts-installed.test.sh` AC2). Change one, change all three.
 #
 # It applies to SCALARS as much as to lists: `develop` Step 1 invites an inline annotation, and an
 # annotated `claimed_by: "f0c3" # mine` used to come back as `f0c3" # mine` — which this script then

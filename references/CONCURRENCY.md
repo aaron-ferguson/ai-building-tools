@@ -134,10 +134,22 @@ the item's `claimed_by:` with `claimed_at:` (ISO-8601 UTC). **That is the token'
 conversation.** An unfamiliar token is the other window's — say so and ask, never take it over. A
 `claimed_at` hours old with no matching work is a dead session: report it and offer to release it.
 
-## The three scripts
+## The release is the final act
 
-Each encodes a rule above that is otherwise a matter of remembering. **`./claim <id> [token]`** and
-**`./close <id> <token>`** do the whole claim and the whole close under the lock and **commit** — the
-commit is the point, and a script cannot forget it. `close` is *given* its token, not minting one —
-ownership is memory. **`./next`** only reads; `--help` lists its modes. All three refuse rather
-than guess.
+**A stage releases its claim in its last write, never before it.** Release first and the row reads
+takeable while its holder is still committing to it — 29 seconds, once, between a hand-off commit
+and the findings commit that followed it, and `./claim` would have granted it, correctly, by every
+rule here. **No lock can see this**: the lock guards a two-second edit, and the hole is in the
+*order*. Afterwards the git record cannot tell it from a clean sequential hand-off. So either the
+hand-off is the stage's last write, or what remains folds into the same commit.
+
+## The four scripts
+
+Each encodes a rule above that is otherwise a matter of remembering. **`./claim <id> [token]`**,
+**`./handoff <id> <token> <stage> [status]`** and **`./close <id> <token>`** do the whole claim,
+hand-off and close under the lock and **commit** — the commit is the point, and a script cannot
+forget it. `handoff` and `close` are *given* their token, not minting one — ownership is memory.
+`handoff` takes its destination stage as an argument rather than inferring it, because `verify`
+hands off three different ways, and it reads every field back before writing either file: **all
+five land or nothing does**, a no-op being the failure it exists to stop. **`./next`** only reads;
+`--help` lists its modes. All four refuse rather than guess.

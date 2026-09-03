@@ -74,7 +74,7 @@ message, which is the whole cost, and it is cheaper than rewritten history.
 If you find source paths already staged when you arrive, they are the other window's. `git restore
 --staged <path>` takes them out of *your* commit without touching their working tree.
 
-### A backlog with no scripts — rule: *The three scripts*
+### A backlog with no scripts — rule: *The four scripts*
 
 A project may predate `./claim` and `./next`. Hand-editing under the lock is still correct, just
 easier to get wrong: the step most often forgotten is the commit inside the lock.
@@ -187,7 +187,7 @@ The wider lesson is about the ACs, not the script. The verification that found t
 criteria and all eight passed; every dependent in every fixture had a row, so no criterion could
 see the case. **A guard written against one shape of input is verified only against that shape.**
 
-### The parser that reported an empty backlog — rule: *The three scripts*
+### The parser that reported an empty backlog — rule: *The four scripts*
 
 `./next` and `./claim` read the queue table by fixed column index. When the table was pared to five
 columns, `./next` printed "0 ready of 2 rows" and `./claim` refused every row — both without

@@ -93,7 +93,7 @@ Each of these is a plausible-looking change away, and the header no longer carri
 
 **Use `./claim` and `./close` rather than hand-editing either**; the commit inside the lock is the
 point in both cases, and `CONCURRENCY.md`'s *A claim must be durable the moment it is made* and
-*The three scripts* are why.
+*The four scripts* are why.
 
 ---
 
