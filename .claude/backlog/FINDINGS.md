@@ -553,3 +553,30 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   **blast radius** written down beside each mutation, not just its expected colour, or the sweep's
   own control cannot be read (pointer: `tests/cost-by-category.test.sh` AC9 comment,
   `../ai-building-conventions/testing-conventions.md`).
+- 2026-09-03 — **A malformed `touches:` makes an in-progress row's file scope invisible to `./next`,
+  and the claiming session cannot fix it.** `0085`'s frontmatter reads `touches: []` with a YAML
+  list item on the following line, so `./next develop` printed `CLAIMED FILES — another session
+  owns these` with the id `0085 [0bd8]` and **no paths at all**. Deciding whether the top row was
+  takeable therefore cost a full read of the other session's item file — the same defect `0066`
+  FR4 names for `./next` warnings, one file over. Two halves worth separating: the scripts could
+  refuse to *print an empty holder* without saying the frontmatter is unparseable, and nothing
+  validates `touches:` at write time even though `./claim` writes the surrounding block.
+  `CONCURRENCY.md` (*A stage writes only the ticket it holds*) correctly forbids the session that
+  finds it from repairing it, so it can only be parked (pointer: `.claude/backlog/next`,
+  `.claude/backlog/claim`, items `0066`, `0085`).
+- 2026-09-03 — **`expects:` and a ticket's own *Notes* can disagree about who owns a file, and
+  `develop` Step 1 checks `expects:` against the *code* rather than against the notes.** `0084`
+  listed `skills/retro/SKILL.md` in `expects:` while its Notes assigned that same prose to `0075`
+  ("whichever lands second implements against the other rather than restating it"). Both readings
+  are internally consistent and the file plainly exists, so the grep Step 1 asks for cannot
+  separate them; only reading the notes does. A `touches:` copied from `expects:` would have
+  reserved — and rewritten — a paragraph a sibling ticket exists to rewrite (pointer:
+  `skills/develop/SKILL.md` Step 1, items `0084`, `0075`).
+- 2026-09-03 — **Asserting the *absence* of a word reds a correct implementation, and it is the
+  mirror of the rule that sent me there.** `testing-conventions.md` says assert the message, never
+  the status — so AC3's "nothing was pushed" case grepped for `[Pp]ushed` being absent. The correct
+  refusal message ends "nothing has been committed or pushed", so the guard failed a passing
+  script on its first green run. A negative assertion has to be anchored to a *state* (the step
+  that did not run, `HEAD` unmoved), never to vocabulary, because correct prose is free to mention
+  the thing it did not do. The positive rule is written down; this inverse is not (pointer:
+  `tests/release.test.sh` AC3 comment, `../ai-building-conventions/testing-conventions.md`).
