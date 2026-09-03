@@ -15,10 +15,12 @@ expects:
   - .claude/backlog/items/0048-remaining-backlog-write-sites.md
   - .claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md
   - skills/verify/SKILL.md
+  - tests/cost-by-category.test.sh
 claimed_by: "0bd8"
 claimed_at: 2026-09-03T05:38:53Z
-touches: []
-  - docs/decisions/001-one-command-per-stage-boundary.md
+touches:
+  - tests/cost-by-category.test.sh
+  - .claude/backlog/items/0085-collapse-the-backlog-protocol-turns.md
 ---
 
 ## Problem
