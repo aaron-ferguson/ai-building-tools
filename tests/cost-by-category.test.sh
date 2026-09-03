@@ -29,6 +29,19 @@ FAIL=0
 ok()  { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
 bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
 
+# One cell of one row of the bucket table, by bucket name and column number, or ABSENT when that
+# bucket has no row at all. Every assertion below reads through this rather than grepping the
+# output whole, because three of them used to grep the output whole and could not be made red:
+# `*work*`, `*protocol*` and `*git*` are each satisfied by text the tool prints unconditionally.
+#
+# `NF==8` is what scopes it to the bucket table. The "what removing one turn saves" table prints
+# rows under the same bucket names with four columns, so a `grep "^work"` matches two lines.
+#   columns: 1 bucket  2 turns  3 turn%  4 $ total  5 $ %  6 $/turn  7 ctx/turn  8 marg/turn
+cell() { # <tool-output> <bucket> <column-number>
+  printf '%s\n' "$1" | awk -v b="$2" -v c="$3" \
+    '$1==b && NF==8 { print $c; got=1 } END { if (!got) print "ABSENT" }'
+}
+
 FIX="$(mktemp -d)"
 trap 'rm -rf "$FIX"' EXIT INT TERM
 mkdir -p "$FIX/store"
@@ -38,15 +51,21 @@ if [ -x "$TOOL" ]; then ok "tools/cost-by-category.sh is present and executable"
 else bad "tools/cost-by-category.sh missing or not executable"; fi
 
 # --- the fixture -------------------------------------------------------------------------------
-# Four turns, each a different category, each with a context and an output chosen so that every
-# published figure is an exact decimal. Contexts climb by 10,000 a turn so the marginal-footprint
-# attribution has a known answer too.
+# Four turns with a context and an output chosen so that every published figure is an exact
+# decimal. THREE buckets, not four: turn 4 edits a skill file, and an edit is `work` however
+# orientation-shaped its target, which is the whole of AC8. The line below used to read
+# `Read .../SKILL.md  orient`, describing a fixture this file has never had — and a comment
+# asserting the opposite of the behaviour under test is how AC8 came to be guarded by a bare
+# `*work*`, which turn 3 satisfies on its own.
 #
 # turn 1  ./claim 0007            protocol   ctx 100000  out 100   $0.0525
 # turn 2  git status              git        ctx 110000  out 200   $0.0600
 # turn 3  tests/thing.test.sh     work       ctx 120000  out 300   $0.0675
-# turn 4  Read .../SKILL.md       orient     ctx 130000  out 400   $0.0750
+# turn 4  Edit .../SKILL.md       work       ctx 130000  out 400   $0.0750
 #                                                          TOTAL   $0.2550
+#
+# The contexts climb UNIFORMLY here, which is deliberate and is also why AC10 cannot be read off
+# this fixture. See the second one below.
 u() { printf '{"input_tokens":0,"cache_read_input_tokens":%d,"cache_creation_input_tokens":0,"output_tokens":%d}' "$1" "$2"; }
 turn() { # <n> <ctx> <out> <content-json>
   printf '{"type":"assistant","timestamp":"2026-08-23T0%s:00:00.000Z","message":{"id":"msg_cbc_%s","model":"claude-opus-5","content":%s,"usage":%s}}\n' \
@@ -62,6 +81,36 @@ turn() { # <n> <ctx> <out> <content-json>
 
 OUT="$("$TOOL" "$FIX/store" 2>&1 || true)"
 
+# --- the second fixture, for AC10 only ----------------------------------------------------------
+# AC10 is about WHICH turn a context rise is attributed to, and the fixture above cannot answer
+# it: its contexts climb uniformly by 10,000, so crediting a rise to the turn that appended it and
+# crediting it to the turn that followed both yield 10,000 and differ only in which bucket carries
+# it. This one climbs UNEVENLY, which makes the two attributions separable by value.
+#
+# turn 1  ./claim 0007         protocol   ctx 100000  appended 10000
+# turn 2  git status           git        ctx 110000  appended 30000
+# turn 3  tests/thing.test.sh  work       ctx 140000  appended 50000
+# turn 4  Read .../SKILL.md    orient     ctx 190000  appended 0 — nothing follows it
+#
+# Correct attribution:  protocol 10000  git 30000  work 50000  orientation 0
+# The off-by-one:       protocol     0  git 10000  work 30000  orientation 50000
+# Every one of the four cells moves, and the last turn is where the off-by-one is starkest: it
+# appended nothing and would be charged the largest rise in the fixture.
+mkdir -p "$FIX/ac10"
+turnb() { # <n> <ctx> <out> <content-json> — fixture 2, its own message ids and hours
+  printf '{"type":"assistant","timestamp":"2026-08-23T1%s:00:00.000Z","message":{"id":"msg_ac10_%s","model":"claude-opus-5","content":%s,"usage":%s}}\n' \
+    "$1" "$1" "$4" "$(u "$2" "$3")"
+}
+{
+  printf '{"type":"user","timestamp":"2026-08-23T10:00:00.000Z","message":{"role":"user","content":[{"type":"text","text":"<command-name>/ai-building-tools:develop</command-name>"}]}}\n'
+  turnb 1 100000 100 '[{"type":"tool_use","name":"Bash","input":{"command":".claude/backlog/claim 0007 # SENTINELCMD"}}]'
+  turnb 2 110000 200 '[{"type":"tool_use","name":"Bash","input":{"command":"git status # SENTINELCMD"}}]'
+  turnb 3 140000 300 '[{"type":"tool_use","name":"Bash","input":{"command":"tests/thing.test.sh # SENTINELCMD"}}]'
+  turnb 4 190000 400 '[{"type":"tool_use","name":"Read","input":{"file_path":"/x/skills/develop/SKILL.md"}}]'
+} > "$FIX/ac10/eeeeeeee-0000-0000-0000-00000000ac10.jsonl"
+
+OUT10="$("$TOOL" "$FIX/ac10" 2>&1 || true)"
+
 echo "0085 AC7 — the arithmetic, against a fixture whose every figure is known by construction"
 case "$OUT" in
   *0.2550*) ok "total cost 0.2550, so the per-category sums reconcile to the session total" ;;
@@ -73,33 +122,68 @@ case "$OUT" in
 esac
 
 echo "0085 AC8 — a turn that edits a skill file is work, not orientation"
-# WRITES is tested before ORIENT in the classifier, so turn 4 is `work`. This assertion exists
-# because the obvious reading of the rule list gets it backwards, and this session did.
-case "$OUT" in
-  *"work"*) ok "the output names a work bucket" ;;
-  *) bad "AC8 — no work bucket in the output" ;;
-esac
+# WRITE_TOOLS is tested before ORIENT in `category_of_call`, so turn 4 — an Edit of a SKILL.md —
+# is `work`. This assertion exists because the obvious reading of the rule list gets it backwards,
+# and a session did.
+#
+# ANCHORED TO TURN 4's OWN CONTRIBUTION, not to the word `work` appearing somewhere. The former
+# assertion was `case "$OUT" in *"work"*`, which turn 3 satisfies through TESTS whatever turn 4
+# does: reordering `category_of_call` to test ORIENT before WRITE_TOOLS moved turn 4 into a new
+# `orientation` bucket and the guard still printed 19 passed, 0 failed. Turn 4 costs 0.0750 and
+# turn 3 costs 0.0675, so the `work` row's `$ total` says which of the two are in it.
+#   Reds by: `category_of_call` testing ORIENT before WRITE_TOOLS in tools/cost-by-category.sh —
+#   and note that mutating `category_of_command`'s order instead is a no-op, because an Edit tool
+#   call never reaches it. That is the copy-the-harness-runs trap in testing-conventions.md.
+if [ "$(cell "$OUT" work 4)" = "0.1425" ]; then
+  ok "work totals 0.1425 — turn 3 at 0.0675 plus turn 4 at 0.0750, so the skill-file Edit is in it"
+else
+  bad "AC8 — work totals $(cell "$OUT" work 4), not 0.1425: turn 4's Edit of a SKILL.md is not classified work"
+fi
+if [ "$(cell "$OUT" orientation 4)" = "ABSENT" ]; then
+  ok "no orientation bucket exists — nothing in this fixture reads a file, so turn 4 cannot hide there"
+else
+  bad "AC8 — an orientation bucket appeared at $(cell "$OUT" orientation 4): turn 4 was classified orientation"
+fi
 
 echo "0085 AC9 — mechanism is split into protocol and git, which are different fixes"
-case "$OUT" in
-  *protocol*) ok "the split names protocol separately from git" ;;
-  *) bad "AC9 — no protocol bucket: mechanism unsplit cannot aim a reduction (0073 FR5)" ;;
-esac
-case "$OUT" in
-  *git*) ok "the split names git separately from protocol" ;;
-  *) bad "AC9 — no git bucket" ;;
-esac
+# ANCHORED TO THE TWO BUCKET ROWS, each by the single fixture turn it should contain. The former
+# assertions were `*protocol*` and `*git*` over the whole output, and both words appear in the
+# unconditional header line two lines above the table — so collapsing `mechanism_split` to return
+# "protocol" always left both green, and the collapse was caught only collaterally, by AC7.
+#   Reds by: `mechanism_split` returning "protocol" unconditionally — the git row goes ABSENT and
+#   protocol totals turn 1 plus turn 2 at 0.1125.
+if [ "$(cell "$OUT" protocol 4)" = "0.0525" ]; then
+  ok "a protocol row of its own, holding turn 1 alone at 0.0525"
+else
+  bad "AC9 — protocol totals $(cell "$OUT" protocol 4), not turn 1's 0.0525: mechanism is not split as published"
+fi
+if [ "$(cell "$OUT" git 4)" = "0.0600" ]; then
+  ok "a git row of its own, holding turn 2 alone at 0.0600 — the share this backlog cannot remove"
+else
+  bad "AC9 — git totals $(cell "$OUT" git 4), not turn 2's 0.0600: mechanism unsplit cannot aim a reduction (0073 FR5)"
+fi
 
 echo "0085 AC10 — the marginal footprint is attributed to the turn that APPENDED it"
-# Each turn's context is 10,000 above its predecessor, so every turn but the last has a marginal
-# footprint of exactly 10000. Attributing the rise to the LATER turn — the obvious off-by-one —
-# would put 10000 against git/work/orientation and 0 against protocol.
-case "$OUT" in
-  *10000*) ok "a marginal footprint of 10000 per turn is reported" ;;
-  *) bad "AC10 — expected a 10000 marginal footprint; an off-by-one attributes the rise to the wrong turn" ;;
-esac
+# Read off the SECOND fixture, whose contexts climb unevenly, and out of the `marg/turn` cell of
+# each bucket row. The former assertion was `*10000*` over the whole output of the first fixture,
+# and could not be red on any defect: that fixture's `ctx/turn` column prints 100000, 110000,
+# 120000 and 130000, each of which contains `10000` as a substring. Zeroing the accumulator
+# outright — `r["marg"] += rise` to `+= 0` — gave a marg/turn of 0 in every bucket and the guard
+# printed 19 passed, 0 failed.
+#   Reds by: zeroing that accumulator, or attributing `rise` to `turns[i + 1]` instead of `t`.
+ac10() { # <label> <bucket> <expected marg/turn>
+  got="$(cell "$OUT10" "$2" 8)"
+  if [ "$got" = "$3" ]; then ok "$1"
+  else bad "AC10 — $2 reports a marginal footprint of $got, not the $3 it appended: $1"; fi
+}
+ac10 "protocol appended 10000 and is charged 10000" protocol 10000
+ac10 "git appended 30000 and is charged 30000, not protocol's 10000" git 30000
+ac10 "work appended 50000 and is charged 50000, not git's 30000" work 50000
+ac10 "orientation is last, appended nothing, and is charged 0 rather than work's 50000" orientation 0
 
 echo "0085 — privacy: this tool reads command strings and edit payloads, so it could publish one"
+OUT="$OUT
+$OUT10"   # both fixtures, so a second run cannot be the one that leaks
 case "$OUT" in
   *SENTINELCMD*)     bad "privacy — a shell command string from the fixture reached the output" ;;
   *SENTINELPAYLOAD*) bad "privacy — an edit payload from the fixture reached the output" ;;
@@ -181,6 +265,38 @@ if grep -qF 'docs/decisions/' "$RME"; then
 else
   bad "README no longer points at docs/decisions/ — the reasoning is on disk and unreachable"
 fi
+
+# --- FR7: the change this ticket made to the verify skill ---------------------------------------
+#
+# FR7 is the one piece of work 0085 kept for itself rather than routing to a sibling: `verify`'s
+# advisory dirty-path intersection was costing the session a second `git status` at verdict time,
+# 20.5% of verify's mechanism turns against a 15.7% mean. The fix was prose — Step 2 captures the
+# status in the same tool call as the first level command and holds it, Step 7 reuses that and
+# issues no git command of its own.
+#
+# NOTHING ASSERTED IT. Reverting both hunks to the pre-FR7 wording left all fifteen guards green,
+# so a develop pass's entire deliverable could be undone by an edit that read as a tidy-up. In a
+# repo whose guards grep prose, an unguarded prose change is an unguarded change.
+#
+# Anchored to the four claims rather than to the sections carrying them, and each phrase sits
+# within one line of the source: `grep` is line-based, so a phrase straddling a line break cannot
+# be matched at all, which is why rewrapping a guarded paragraph here is a breaking change
+# (CLAUDE.md). Reds by reverting either hunk.
+VER="$ROOT/skills/verify/SKILL.md"
+
+echo "0085 FR7 — verify pays no turn of its own for the dirty-path intersection"
+fr7() { # <label> <fixed-string that must survive in skills/verify/SKILL.md>
+  if grep -qF -- "$2" "$VER"; then ok "$1"
+  else bad "FR7 — skills/verify/SKILL.md no longer says \"$2\": the turn 0085 removed comes back"; fi
+}
+fr7 "Step 2 fuses the status capture into the first level command, not a turn of its own" \
+    "in the same tool call as the first"
+fr7 "Step 2 holds that output for Step 7 instead of leaving it to be re-read" \
+    "Hold the output for Step 7"
+fr7 "Step 7 intersects the set Step 2 already captured" \
+    "Step 2's captured dirty set"
+fr7 "Step 7 issues no git command of its own" \
+    "Issue no new git command here"
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
