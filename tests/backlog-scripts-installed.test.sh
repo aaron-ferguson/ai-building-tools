@@ -2,9 +2,10 @@
 #
 # Guard for the script install in this repo's own backlog (0027).
 #
-# This repo ships next, claim and close as skills/queue/templates/ and instantiates them into a
-# *new* project's backlog at queue Step 0. This backlog predates that step, so the one project
-# developing the scripts was the only project without them — six sessions hit it on 2026-08-23.
+# This repo ships next, claim, close and handoff as skills/queue/templates/ and instantiates them
+# into a *new* project's backlog at queue Step 0. This backlog predates that step, so the one
+# project developing the scripts was the only project without them — six sessions hit it on
+# 2026-08-23.
 #
 # What this guards is not what the scripts do (they have their own suites) but that the copies
 # exist, run, and have not drifted from the templates. The fix direction is one-way: a divergence
@@ -24,7 +25,7 @@ set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 BACKLOG="$ROOT/.claude/backlog"
 TEMPLATES="$ROOT/skills/queue/templates"
-SCRIPTS="next claim close"
+SCRIPTS="next claim close handoff"
 
 [ -d "$BACKLOG" ]   || { echo "no backlog at $BACKLOG" >&2; exit 2; }
 [ -d "$TEMPLATES" ] || { echo "no templates at $TEMPLATES" >&2; exit 2; }
@@ -35,7 +36,7 @@ FAIL=0
 ok()  { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
 bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
 
-echo "AC1 — all three are installed and executable"
+echo "AC1 — all four are installed and executable"
 for s in $SCRIPTS; do
   if [ -f "$BACKLOG/$s" ]; then ok "$s exists"; else bad "$s missing from .claude/backlog/"; fi
   if [ -x "$BACKLOG/$s" ]; then ok "$s is executable"; else bad "$s is not executable (chmod +x)"; fi
@@ -49,6 +50,20 @@ for s in $SCRIPTS; do
     ok "$s matches its template"
   else
     bad "$s has diverged from skills/queue/templates/$s — fix the template and re-copy, never the copy"
+  fi
+done
+
+echo "AC5 — each copy parses under /bin/sh"
+# A copy that has diverged is caught above; a copy that is byte-identical to a template with a
+# syntax error is not, and the first thing either would do is fail at the moment a session is
+# mid-hand-off. `sh -n` is the cheapest check that the shipped bytes are runnable at all (0081).
+for s in $SCRIPTS; do
+  if [ ! -f "$TEMPLATES/$s" ]; then
+    bad "$s — cannot parse, the template is missing"
+  elif sh -n "$TEMPLATES/$s" 2>/dev/null; then
+    ok "$s parses"
+  else
+    bad "$s does not parse under /bin/sh: $(sh -n "$TEMPLATES/$s" 2>&1 | head -3)"
   fi
 done
 
@@ -72,7 +87,7 @@ done
 
 echo "AC7 — queue Step 0 covers a backlog that predates the scripts"
 STEP0="$(awk '/^## Step 0/,/^## Step 1/' "$ROOT/skills/queue/SKILL.md")"
-# Asserted inside Step 0, not the whole file: the scaffold case already names all three scripts, so
+# Asserted inside Step 0, not the whole file: the scaffold case already names every script, so
 # a file-wide grep passes on the very prose this case exists to sit beside.
 if printf '%s' "$STEP0" | grep -qF 'already exists can still be missing the scripts'; then
   ok "Step 0 names the existing-backlog case"
