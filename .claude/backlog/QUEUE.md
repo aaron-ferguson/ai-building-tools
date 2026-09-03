@@ -24,15 +24,15 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0085 | Collapse the backlog protocol from a third of every session's turns to one command per stage boundary | develop | ready |  |
+| 0081 | Give the hand-off a script, as claim and close have | develop | ready |  |
+| 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | design | ready |  |
+| 0078 | Route a finding by what it is about, not which repo you are standing in | develop | ready |  |
+| 0084 | Script the release chain and verify it against the installed bytes | develop | ready |  |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
 | 0076 | Make a tool edit run the target repo's suite before it commits | develop | ready |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
-| 0084 | Script the release chain and verify it against the installed bytes | develop | ready |  |
-| 0078 | Route a finding by what it is about, not which repo you are standing in | develop | ready |  |
-| 0081 | Give the hand-off a script, as claim and close have | develop | ready |  |
 | 0082 | Make claim fail safe on the two paths where it currently fails open | develop | ready |  |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
-| 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | design | ready |  |
 | 0083 | Decide what a second checkout may do with the backlog | design | ready |  |
 | 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
 | 0039 | Build the orchestrate skill and the stage outcome schema | develop | blocked | 0036 |
