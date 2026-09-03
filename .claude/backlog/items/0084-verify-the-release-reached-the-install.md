@@ -217,3 +217,46 @@ chain — the bump commit, the confirmed push, `claude plugin marketplace update
 binary, and the QA plan already rules that out ("a test that has to run the real chain will not be
 written"). What *is* asserted is every refusal path before them, and the verification after them.
 AC4's report is asserted through `verify`, which is the function the chain's last step calls.
+
+### Verified 2026-09-03 (verify, token `0830`)
+
+**Every AC was driven at the CLI, not read.** `tools/release` is a shell script, so its surface is
+the terminal; the suite was run as the declared `unit` level and then each AC exercised against real
+fixture trees in a scratchpad.
+
+- **AC1** — a fixture install copied from the live one, differing in exactly one appended line of
+  `README.md`: `bytes FAILED -- 1 of 135 tracked paths`, `differs README.md`, exit 1. Restoring that
+  one file returned `bytes ok -- 135 tracked paths identical`.
+- **AC2** — same fixture, bytes untouched, `gitCommitSha` set to another commit: `bytes ok` and
+  `record FAILED`, exit 1. Byte equality did not carry it, and the two assertions reported
+  independently in the same run.
+- **AC3** — reached only via an up-to-date fixture checkout, because against this repo the run
+  stopped earlier at step 2 (the checkout was 3 commits behind origin, which is 0075's NFR working).
+  On the fixture: `STOPPED local plugin.json is at 0.9.8, not newer than the installed 0.9.8`, naming
+  the cache directory and `set the version to 0.9.9`, exit 3, with the fixture's HEAD unmoved.
+- **AC4** — driven in a sealed sandbox (bare repo as origin, synthetic plugin, stubbed `claude`)
+  rather than against the real remote, since the real path pushes. Full chain green, exit 0, printing
+  version `0.9.9`, the pushed sha, and `restart required`.
+- **AC5** — `CLAUDE.md:40` names `tools/release`; `:36` carries the not-evidence sentence.
+- **AC6** — `paths_that_differ` mutated to `return 0` in the real file: `tests/release.test.sh` went
+  **6 failed**, and its own guard-on-the-guard fired loudly (`the mutation did not land`) exactly as
+  the build notes predicted, because the substitution was then a no-op. Restored; back to 28/0.
+
+**The headline probe: a `claude` stub that lies the way the real one did.** It printed
+`✔ Plugin "demoplug" updated from 0.9.9 to 0.9.10`, rewrote `gitCommitSha` to the pushed commit, and
+extracted no bytes. The run reported `record ok` and still **failed on bytes**, naming
+`skills/demo.md`. That is the 2026-09-01 defect reproduced end to end and caught — and it is the case
+the sha check alone would have passed, which is FR3's whole argument.
+
+**The defect is still live in this repo's own install**, which is the standing evidence: bare
+`tools/release verify` fails at **37 of 152** paths against `HEAD`, while
+`--commit 045fa53` passes at 135/135. Faithful to the commit it records and stale against source,
+simultaneously. `skills/verify/SKILL.md` is among the 37 — so this session ran a stale copy of the
+skill that verified it, which is exactly what `CLAUDE.md` warns about.
+
+- Probes that held: unknown flag → exit 2 naming it; unreadable record → exit 4; unknown plugin key →
+  exit 4 (`is the plugin installed?`); non-repo `--checkout` → exit 2; re-run with nothing to do →
+  every step `satisfied`, nothing re-pushed.
+- **FR5 proved by construction**, not by reading: an `installPath` of `.../oddpath` recorded at
+  version `77.77.77` verified clean, so the directory is genuinely read from the record.
+- The real install record and `tools/release` were byte-identical to their starting state afterwards.
