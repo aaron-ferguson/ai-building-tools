@@ -101,9 +101,12 @@ item file is the worse failure: the lessons belonging *in* an item pile up in `F
 then serves as an unofficial queue for writes nothing is permitted to perform. Observed twice, on the
 same three entries.
 
-- **The line is `claimed_by:`, not the writer.** Append only to an item whose `claimed_by:` is empty.
-  An unclaimed item has no session to surprise and the next claimant reads it fresh; a claimed one is
-  the exact case the rule above protects.
+- **The line is `claimed_by:`, not the writer.** Append only to an item whose `claimed_by:` is empty
+  **and whose `status:` is not `done`**. An unclaimed live item has no session to surprise and the next
+  claimant reads it fresh; a claimed one is the exact case the rule above protects. **A closed ticket
+  is unclaimed too, and that is the trap**: it satisfies an emptiness check while nobody will ever read
+  what you wrote. One accumulator ticket absorbed carried criteria for six days after it closed, the
+  sessions arguing over the carry mechanism never having asked whether the target was still open.
 - **Take the lock like any other writer.** The boundary already names `FINDINGS.md` and the item
   files, so this was never an exemption — only a gap in that rule's examples.
 - **Append, never run the queue**: no creating, ranking, claiming, closing or restaging a row. Those
