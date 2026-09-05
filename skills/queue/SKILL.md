@@ -166,8 +166,19 @@ downstream reads it.
 
 **Claim an ID under the lock** — reading `next_id`, using it, and writing back the increment unlocked is
 how two parallel runs both take 29. Release in the same turn; the item file, ranking and the row are all
-unlocked. Before using the number, confirm no `items/<id>-*.md` exists: if one does the counter drifted
-behind reality, so take the next free number and fix `next_id` rather than overwriting someone's ticket.
+unlocked.
+
+**Mint from the disk, not from the counter: the id is `max(items on disk) + 1`, and `next_id` is then
+corrected to match.** The counter is a cache and it drifts — a session found it reading `94` against an
+`items/` already holding `0094`, `0095` and `0096`, and the collision it predicted happened in the very
+next run: a new ticket was written as `0094-…`, alongside the closed `0094-…`, and **committed** before
+anyone noticed. A lock does not fix this, because the counter was not racing anyone; it was simply
+stale. Nor does the older instruction to "confirm no `items/<id>-*.md` exists" — that is a check on the
+number rather than on the write, it reads as satisfied by a listing taken a moment ago for another
+purpose, and it fails open: nothing about writing the file, committing it, or editing `QUEUE.md`
+refuses when the id is taken. Deriving from the disk makes the failure unreachable instead. The cleanup
+is the expensive part if you get it wrong — the queue and `DONE.md` disambiguate by title, but every
+cross-reference in prose ("item 0094") is ambiguous across the repo's whole history until renumbered.
 
 **Write the Problem section from evidence, not paraphrase.** A repro, error text, a screenshot path goes
 in verbatim; details living only in this conversation are lost the moment it ends.
@@ -202,7 +213,13 @@ it in an FR and the FR is false the day the set grows, having read green the who
 always-on rules apply to every ticket and need no row.
 
 **Set `qa_level` now, at queue time** — the decision that stops QA rigour quietly sliding session to
-session. The levels are `testing-conventions.md`'s pyramid; what this skill adds is where each one lands.
+session. **It must be a level the project's `config.yml` can actually resolve to a command**, checked
+against that file rather than recalled: a level with no command leaves the QA session nothing to run,
+and it is discovered at the far end of the pipeline by the one stage that cannot fix it. **And write it
+exactly once, in the frontmatter.** A QA plan that also states a `Level:` line can disagree with the
+field — both written by the same pass, differing by a multi-minute suite — and `verify` then has to pick
+between two answers the ticket gave with equal confidence. The plan describes *what* to exercise; the
+frontmatter says at which level. The levels are `testing-conventions.md`'s pyramid; what this skill adds is where each one lands.
 **`unit`** for pure logic, no wiring changed. **`integration`** where it crosses a seam. **`e2e`** for a
 critical journey whose breakage is unacceptable, or a change only manifesting through the real build —
 needs a one-line justification of why integration can't cover it, and there should be few. **`verify`**
@@ -246,6 +263,24 @@ contradicted, and `verify` closing on it records a check nobody ran. The underly
   added *after* the paragraph a window should stop at leaves every presence assertion satisfied by
   the real paragraph, so the suite is green under bug and fix alike. The discriminating mutation
   **moves** a phrase across the boundary.
+- **Figures that cannot tell the old rule from the new one.** An AC asserting a display does *not*
+  change is only a criterion if its own numbers disagree under the two rules: `12.02` rounding to `12`
+  under both is green before the change and after it. Pick the values deliberately, and check the
+  figure against **every formatter that renders it** — one AC pinned a source's yield as unchanged
+  while the same number reached the screen through a second formatter as the pool readout, where it
+  moved visibly, which made the criterion unsatisfiable rather than merely weak.
+- **A criterion quantifying over a whole screen** — "the panel contains no `<value>`" — is unverifiable
+  wherever that value arrives by more than one path, and it fails in the direction that looks fine: the
+  clause only bites when someone reads the entire rendered panel, so it passes by default. Name the
+  element instead ("the Yield row shows…").
+
+**An AC set can span every FR and still miss the defect, because every AC measures the same instant.**
+Where an FR describes a *state* — "the subject is visible", "where the player is looking is theirs" —
+at least one AC must **act again afterwards and re-assert**. Persistence is a separate claim from
+establishment. One ticket's five ACs all asserted against the moment a panel opened; each was
+mutation-proved able to fail, all five genuinely held, and an 8px drag immediately afterwards put the
+subject back under the panel — the item's own problem statement returning, with no criterion able to
+see it.
 
 **Check a QA plan's absence assertions against the guards already shipped**, or the plan demands the
 removal of a phrase an existing test requires and the next session must choose between its own
@@ -263,6 +298,20 @@ proposed defaults.
 in *Notes & decisions*.** Never leave it blank for a later stage to work out: deciding whether
 acceptance criteria can be written **is** the design question, and you answer it here with the code
 already open. The recorded reason lets a later reader tell a considered skip from an oversight.
+
+**Those two exits govern a ticket *entering* the pipeline. A ticket re-entering it has a third.** A row
+sent back from `verify` because its *contract* was wrong arrives with its code already built and green,
+and both permitted exits are then wrong: `design` has no open decision to settle, and `develop` would
+claim the row, re-run a green suite and hand it straight back. **Where the re-specify changes only
+criteria and leaves every FR's code standing, set `next: verify`** and say why in the note. Where any FR
+gains code, it is a `develop` row like any other.
+
+**And a re-specify that leaves code standing owes `develop` a one-line state-of-the-code header** — the
+SHA and the verdict, opening the *Re-specified* note: *"The code at `3c3a93b` is right and stays."* This
+is not decoration. `develop`'s re-entry guidance reads a `verify` verdict as "what turned out to be
+wrong", and a session opening a ticket whose feature is already built must otherwise re-derive whether
+the diff is another window's mid-work — which costs exactly the orientation the batch rule exists to
+save. Measured on the return leg: that one sentence was what made the ticket cheap.
 
 **Two triggers send a ticket to `design`:**
 
@@ -406,8 +455,21 @@ For each entry that is a unit of work:
 3. **Rank per Step 3** once specified. A parked finding gets no rank bonus for having been noticed
    recently; that is the recency trap.
 
+**Check the entry is still true before specifying it.** The buffer is where staleness is most likely —
+an entry sits for weeks while the code moves under it — and a fully-specified row describing behaviour
+that no longer exists is worse than no row. Two entries in one sweep had been discharged by later work:
+a missing test file that now exists, and a click-swallowing bug whose cause a later change had removed.
+`develop` Step 2 has the right instrument and it applies here unchanged — **grep the symbol the entry
+names, not just `DONE.md`**, because a fix that landed outside the lifecycle leaves no row behind.
+
 **Remove only the entries you processed, and commit in the same turn**, by pathspec. Leaving a processed
 entry is re-read by the next sweep; removing an unprocessed one loses `retro`'s half.
+
+**For an entry that is *both* work and lesson, annotate it in place rather than choosing.** Deleting it
+loses `retro`'s half; leaving it untouched makes the next sweep pay to read it again, which on a large
+buffer is the dominant cost. Neither is acceptable, so append the row its work half became — *"filed as
+item 0108; kept for the lesson, do not re-file"* — and leave the entry for `retro`. The same marker is
+what `retro` writes from the other side, so one convention serves both sweepers.
 
 ### The external source (opt-in)
 
