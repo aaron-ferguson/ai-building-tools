@@ -93,7 +93,20 @@ step refreshes against, and neither capture is ever a turn of its own
 
 **At `qa_level: e2e` the working tree cannot be the subject** — the evidence set is the whole
 application, so Step 7's intersection is never empty and no such ticket could close. Verify a named
-commit in a worktree and report its SHA (`CONCURRENCY.md`, *The working tree is shared too*).
+commit in a worktree and report its SHA (`CONCURRENCY.md`, *The working tree is shared too*). **Take the
+worktree before running anything**, rather than running in the checkout and reaching for one once a red
+turns out to belong to nobody. The verdict has to be pinned to a SHA either way, so the ordering is the
+whole saving: `git worktree add --detach <path> <sha>` plus a `node_modules` symlink costs about ten
+seconds, against the twenty minutes a session spends attributing another window's in-progress edit to
+its own ticket — or, worse, reporting a FAIL for it.
+
+**A whole-project gate takes the same treatment at every level, not only at `e2e`.** Typecheck and lint
+compile or scan the entire project by construction, so they collect every foreign path in the tree
+exactly as an e2e run does. Measured: a `qa_level: unit` pass ran 1365 unit tests green and had
+`tsc --noEmit` fail on another window's half-written file that its ticket never mentions. **Whenever the
+dirty set captured above is non-empty and the level's commands include a whole-project gate, run that
+gate in a worktree at a named commit.** A session that stops at such a red sends a correct ticket back
+to `develop` naming a file it never touched.
 - `in-progress` under a token **you did not mint in this conversation** → another session's. Say whose
   it seems to be and stop; Step 1's refusal normally prevents this, so reaching here means the field
   and the claim disagree.
@@ -110,6 +123,13 @@ the repo copy as the authority, and say which copy executed.
 
 The `qa_level` was set at queue time. Run **that** level and everything below it — levels are
 cumulative, on the pyramid in `testing-conventions.md`.
+
+**The frontmatter field is the authority when an item disagrees with itself.** An item can carry two
+answers — `qa_level: e2e` in its frontmatter and `**Level:** integration` in its own QA plan, both
+written by the same pass — and they can differ by a multi-minute browser suite. Run the frontmatter's
+level and **report the disagreement as drift**. Do not quietly honour the prose on the grounds that it
+is the more specific of the two, and do not split the difference; `queue` owns not writing the level
+twice.
 
 | Level | Run |
 |---|---|
@@ -150,14 +170,42 @@ regression closes unchecked, and `verify` closes on ticked ACs.
 **A green check is only evidence if it could have been red, and confirming that is your job rather than
 the implementer's** — they have already convinced themselves, and distrusting that is why this pass is
 separate. For each AC resting on an automated check, break the behaviour it exists to catch, confirm it
-goes red, then restore it **by the path you mutated and no other** (`git checkout -- <that path>`); a
-bare `git checkout -- .` destroys the other window's uncommitted work in the tree Step 2 warned
-about.
+goes red, then restore it.
+
+**Mutate only what is committed.** `git checkout -- <path>` restores that file to `HEAD` — not to the
+state you found it in — so running it over a fix you have not yet committed **deletes the fix**,
+silently and with no error. The mutation run that follows then reports unrelated reds, which read as a
+surprising finding rather than as self-inflicted damage, and get chased as a signal. Commit first, then
+break it. Restore **by the path you mutated and no other**; a bare `git checkout -- .` additionally
+destroys the other window's uncommitted work in the tree Step 2 warned about. Where something genuinely
+cannot be committed first, copy it to a scratch path and restore from that copy — and end the sequence
+with a control run, because it is that run's **green** that licenses every red before it.
 
 The failure mode is not a check wired to nothing, which is obvious. It is a check that runs, asserts,
 and measures something *adjacent* to the defect — a drag ending off the element under test, so the click
 never lands there and it passes against deliberately broken code. Budget this for the checks you would
 cite when closing; **a check that cannot be made to fail leaves its AC unverified.**
+
+**Mutate at the altitude the AC is written at, not the altitude of the test you would cite.** "Break the
+behaviour the check exists to catch" invites mutating *inside* the module under test, and the gap
+between those two altitudes is exactly where an adjacent measurement hides: an AC reading "mute, reload,
+still muted" rests naturally on a storage module's round-trip test, and deleting the **call site** one
+layer up leaves 945 unit tests green while the AC is broken end to end. Ask what the AC claims, then
+break that, wherever it lives.
+
+**Never trust a mutation you did not run.** A ticket arrives with a mutation table in its build notes —
+"render only the active panel → reddens *travels as one unit*" — and such a table reads as discharged
+evidence, which makes it the cheapest thing in a handoff to accept on faith. It is a *claim about* the
+guards, not the guards. Re-run any mutation whose result you would cite: one recorded table named the
+wrong AC as the one that reddened, and three file headers recorded a measurement that was **inverted in
+both directions**, which is what hid an AC having no behavioural guard anywhere. "Never trust a tick you
+did not write" extends here without exception, and a confident tone in a header is not evidence.
+
+**A mutation that does not redden is a result to publish, not a gap to paper over.** When nothing
+catches a change, the tempting move is to invent an assertion narrow enough to make it load-bearing — a
+threshold chosen precisely so the thing under test becomes necessary. That manufactures a guard for a
+decision taken on other grounds and tests nothing. Record the gap in the item and in the close note, and
+leave it uncovered.
 
 **Then ask what the mutation changed: the AC's named outcome, or only the message.** If the outcome
 the AC names still holds against deliberately broken code, **the AC is unverified** and that is the
@@ -298,6 +346,29 @@ that released before its last write once left a row claimable for 29 seconds whi
 committing to it, which no lock can see and which the git record cannot tell from a clean hand-off. So
 the notes, the ticks, the findings and the cost share all land **before** it.
 
+**Where that person needs the code somewhere they can reach it, the deploy belongs to this branch.** A
+device-only AC is not waiting on anybody until the fix is on the surface they will actually look at, and
+a ticket resting at `waiting` beside a URL that does not carry the change cannot be cleared by anyone.
+**Deploy from a clean worktree at the verified SHA, never from the checkout** — the checkout can hold
+another session's uncommitted work, and shipping that to the only environment there is, under a commit
+message about your ticket, is precisely the action a concurrent session must not take. The measured
+recipe costs about a minute: copy any gitignored project link into the worktree first (`cp -R .vercel
+<worktree>` or the equivalent — a fresh worktree has none, and this step is **not** optional), deploy
+from there, then confirm by **content rather than status code**, since a protected or cached URL answers
+200 regardless. Building the worktree afterwards and comparing the emitted asset filename against the one
+the live alias serves is the cheap check that works: a content-hashed filename is a fingerprint of the
+input, so a match is real evidence the alias carries that commit. Record the SHA and that evidence in
+`## Waiting on` beside the person and the check.
+
+**On a red whose cause is another ticket's landed change, `next: develop` — and say so in as many
+words.** The fifth shape, and the one that reads as each of the other four in turn. The mechanism under
+test is correct; its *fixture* is not. A sibling ticket retired a refusal, so two selections a spec
+relied on being different became byte-identical, and the check went red with nothing wrong in the
+component it names. That is not a stale contract — the AC still says the right thing — and it is not the
+code failing. Re-anchoring a spec is code work, so it routes to `develop`; what makes it cheap rather
+than expensive is that the send-back must **name the commit that moved the ground and state that the
+mechanism was cleared**. Without that line the next session opens a correct component and debugs it.
+
 **Do not push** unless the project's conventions say a close should, or the user asks.
 
 ---
@@ -340,6 +411,14 @@ a second session starting mid-pass is the normal case here (`CONCURRENCY.md`, *T
 shared too*), and `0085`'s own verification is what falsified the premise this step used to carry —
 that the tree is either clean throughout or Step 2 already said so. It was clean at Step 2, and six
 files were dirty by the verdict, two of them inside the evidence set.
+
+**That prohibition is on re-deriving the label, not on ever reading the tree again**, and one read is
+legitimate — the one Step 3 requires, confirming a mutation was restored without collateral. `HEAD` can
+advance mid-pass and the tree go clean underneath you, because the other sessions commit their own work;
+a `git status --porcelain` printing nothing is then ambiguous between *they committed* and *I destroyed
+their uncommitted work*, and nothing but a fresh read separates those. Read it for that purpose, and do
+not let what it shows move the label: the intersection is computed from Step 2's capture, whatever the
+tree says now.
 
 - **Empty intersection → not advisory.** A plain PASS, closing by Step 5's normal path. The verdict
   names the dirty paths it excluded and states that the intersection was empty.
