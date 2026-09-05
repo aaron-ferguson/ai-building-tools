@@ -40,7 +40,7 @@
 # item records; a row and an item that disagree about the current stage; and either of them not
 # reading `in-progress`. The last two are the 0087 drift, caught from both sides.
 #
-# See references/CONCURRENCY.md — 'The four scripts' and 'Lock every write to QUEUE.md'.
+# See references/CONCURRENCY.md — 'The four scripts' and 'Lock every write to the backlog directory'.
 
 set -eu
 
