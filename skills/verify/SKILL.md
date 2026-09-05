@@ -338,7 +338,10 @@ still fresh in a conversation about to end.
   forced into one of the three above: a ticket green on its scripted half whose rest needs a device or
   the author's eye is not closeable, is owed no code, and has no stale contract, and sending it to
   `develop` only buys another suite run and a hand-back. **Name who must do what in the item's
-  `## Waiting on`** and tick what you cleared.
+  `## Waiting on`** and tick what you cleared. **`qa_manual:` declares this split at queue time** —
+  read it rather than inferring the branch from the QA plan's prose, and build `## Waiting on` from
+  what it names. Absent where the ACs plainly need a person anyway, take the branch and say so in the
+  verdict: the field is optional, so its silence is not evidence that every AC is scripted.
 
 **The release is the final act** (`CONCURRENCY.md`, *The release is the final act*). `./close` and
 `./handoff` both commit, and from that commit the row is takeable and `./claim` will grant it — a stage

@@ -232,6 +232,15 @@ which matches literally: a replacement quoting a phrase the file happens to wrap
 matches nothing, and it reads as the text being absent rather than split across a newline. Quote within
 one line, or anchor on a line you have just read.
 
+**Write `qa_manual:` where some ACs can be observed by no runner** — a physical device, a person's eye
+— naming which ACs, on what surface and who: `AC1-AC3 — iPhone Safari, the author`. It does not replace
+`qa_level`, which keeps naming the runner for the scripted half; a split ticket carries both, and a
+split is the common case. **Do not reach for a `device` level instead**: a level names a command, and
+one resolving to none leaves the *scripted* ACs unrun — the same defect mirrored. Measured on a ticket
+whose first three ACs needed an iPhone, authored `e2e` with *"then device"* in the QA plan's prose, so
+QA was directed at a browser suite structurally unable to see the behaviour while the device half
+survived only in a section the frontmatter contradicted.
+
 **Estimate `size`** — `s` one sitting, `m` a focused session, `l` multiple sessions or needs a design
 decision first. Input to tie-breaker 4 only, never moving a ticket between tiers.
 

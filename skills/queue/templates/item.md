@@ -18,6 +18,11 @@ next: queue | design | develop | verify
 # ticket in `SCHEDULED.md` is `scheduled` with a `wake:` date.
 status: ready | waiting | blocked | in-progress | done
 qa_level: verify | unit | integration | e2e
+# OPTIONAL, and only where some ACs can be observed by NO runner — a physical device, a person's
+# eye. Free text naming which ACs, on what surface, and who: `AC1-AC3 — iPhone Safari, the author`.
+# It does not replace `qa_level`, which keeps naming the runner that discharges the scripted half;
+# a split ticket carries both. Absent means every AC is scripted.
+qa_manual:
 # Rough cost, so a session can see what it's taking on WITHOUT reordering the queue.
 # s = one sitting · m = a focused session · l = multiple sessions or needs a design decision first.
 size: s | m | l
