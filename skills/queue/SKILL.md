@@ -107,13 +107,22 @@ test/lint/typecheck commands rather than guessing. Leave `tracker:`, `cost_track
 (`references/TRACKER.md`, `references/EXTERNAL-FEEDBACK.md`). Never invent a project key: a ticket
 mirrored into the wrong project is noise on someone else's board.
 
-**A backlog that already exists can still be missing the scripts.** Check for `next`, `claim` and
-`close` every time you open one, not only when you create one: every backlog predating them has
-none, and the project that develops them was the last to get them — six sessions hit that before it
-became a ticket. Copy the three, `chmod +x`, commit. **The templates are the source and a fix flows
-one way** — a copy that needs to differ is a defect in the template, fixed there and re-copied.
-Editing the copy leaves the project running one set of rules and shipping another, and nothing
-reports it.
+**A backlog that already exists can still be missing the scripts — or be running stale copies of
+them.** Check every executable in this skill's `templates/`, plus `item.md`, each time you open a
+backlog rather than only when you create one: every backlog predating a script has none, and the
+project that develops them is the last to receive them — six sessions hit that before it became a
+ticket. **Compare the bytes, not a version string.** Drift is silent and fast: one project was
+measured 582 lines behind, re-synced, and behind again the same day when an upstream release added a
+script it did not have. A version line would be a second thing to keep true, and the release chain
+already learned the harder half of this — a reported success can extract nothing, and only a
+byte-level comparison catches it. Re-copy whatever is absent or differs, `chmod +x`, commit.
+
+**Which files that covers, and which it must never touch.** The executables and `item.md` belong to
+the plugin and are replaced whenever they differ. `config.yml`, `QUEUE.md`, `DONE.md`, `FINDINGS.md`
+and `RANKING.md` belong to the project — seeded once at scaffold, never overwritten, because they
+hold the project's own content. **The templates are the source and a fix flows one way** — a copy
+that needs to differ is a defect in the template, fixed there and re-copied. Editing the copy leaves
+the project running one set of rules and shipping another, and nothing reports it.
 
 **Resolve the conventions now**, per `references/CONVENTIONS.md`, and record the path in `config.yml`
 under `conventions.path` so the next session doesn't re-derive it. If nothing resolves, do not scaffold —

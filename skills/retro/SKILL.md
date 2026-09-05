@@ -83,6 +83,13 @@ marks a dual entry: append the destination you chose and *"deferred <date>, not 
 sweepers already remove only what they processed, which is right; what neither has without this is a way
 to say **read, kept, not yet placed**.
 
+**A deferred destination is a claim, so open it before you name it.** Step 3's grep fires only for the
+findings that survive the gate, which leaves a deferral's destination the one choice nothing checks —
+and in the buffer it then reads exactly like a landed finding. Measured: three entries deferred to an
+item scoped to a different question entirely, which the next retro re-derived at full price before
+noticing the pointer resolved to nothing. Name a destination you have actually opened, or write that
+none exists yet — *"needs a row, none exists"* is a useful marker and a wrong one is worse than none.
+
 **An entry may already carry a marker from the other sweeper** — *"filed as item 0108; kept for the
 lesson, do not re-file"*. That is `queue` handing you the lesson half of an entry whose work half is
 done: take the lesson and remove the entry, and do not re-open the work.
