@@ -397,7 +397,7 @@ is what licenses the reds before it.
 for a live run before starting one (`pgrep -f <runner>`), and wait on it rather than racing: a
 background `until` loop on the worker process is clean and costs nothing, where the obvious fallback — a
 throwaway worktree — needs its own `node_modules` and is not actually cheap. Neither this skill nor
-`CONCURRENCY.md` can say *who* yields, so the rule is simply that the session arriving second waits.
+`CONCURRENCY.md` names which session yields, so the rule is simply that the one arriving second waits.
 
 ### Then stop, in this order
 
