@@ -367,10 +367,15 @@ paths_overlap() {
 # An uncommitted queue is a claim only one session can see: whoever commits QUEUE.md next carries
 # these rows under their own message, and the first anyone notices is a confusing diff.
 warn_dirty() {
-  if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- "$QUEUE"; then
+  # **Pathspec here is relative to `$DIR`, deliberately — do not "tidy" it back to `$QUEUE`.** It is
+# absolute, and on a case-insensitive filesystem `$DIR` can spell the repo path in a different case
+# from `git rev-parse --show-toplevel`, which makes an absolute pathspec read as *outside the repo*.
+# With a single pathspec there is no second file to compare against, so the check degrades to a
+# silent pass instead of a loud wrong answer — the direction that loses work rather than time.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- QUEUE.md; then
     printf 'WARNING: QUEUE.md has uncommitted row changes — commit yours now, and do not commit rows\n'
     printf '         you did not claim (references/CONCURRENCY.md). Changed rows:\n'
-    git -C "$DIR" diff -U0 -- "$QUEUE" | awk -F'|' -v s="$STATUS" -v n="$NEXT" '
+    git -C "$DIR" diff -U0 -- QUEUE.md | awk -F'|' -v s="$STATUS" -v n="$NEXT" '
       /^[+-]\| / {
         id = $2; gsub(/^[+-] *| *$/, "", id)
         nx = $n; gsub(/^ +| +$/, "", nx)

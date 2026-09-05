@@ -51,9 +51,16 @@ TODAY="$(date -u +%Y-%m-%d)"
 
 # Anything already dirty in the two shared files will ride along on our commit. Say which rows
 # rather than letting it happen silently.
-if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- "$QUEUE" "$DONE"; then
+# **Pathspecs here are relative to `$DIR`, deliberately — do not "tidy" them back to `$QUEUE`/`$DONE`.**
+# Those are absolute, and on a case-insensitive filesystem `$DIR` can spell the repo path in a
+# different case from `git rev-parse --show-toplevel` (both spellings of this repo are live). An
+# absolute pathspec in the other case reads as *outside the repo*, and `git diff -- <a> <b>` then
+# stops being "are these two files dirty?" and silently becomes a two-file comparison of QUEUE.md
+# against DONE.md — printing every row as changed, which reads as another session having rewritten
+# both shared files wholesale. This warning's whole job is to be believed, so it must not cry wolf.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- QUEUE.md DONE.md; then
   echo "WARNING: QUEUE.md/DONE.md already have uncommitted changes; this commit will carry them:" >&2
-  git -C "$DIR" diff -U0 -- "$QUEUE" "$DONE" | awk '/^[+-]\| / { print "  " $0 }' >&2
+  git -C "$DIR" diff -U0 -- QUEUE.md DONE.md | awk '/^[+-]\| / { print "  " $0 }' >&2
 fi
 
 # --- lock -------------------------------------------------------------------------------------

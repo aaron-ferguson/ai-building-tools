@@ -40,9 +40,14 @@ TOKEN="${2:-$(head -c2 /dev/urandom | xxd -p)}"
 # Warn about anything already dirty in the queue before we add to it. With both windows using
 # this script the file should be clean; if it is not, our commit will carry those rows too, so
 # say which ones rather than letting it happen silently.
-if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- "$QUEUE"; then
+# **Pathspec here is relative to `$DIR`, deliberately — do not "tidy" it back to `$QUEUE`.** It is
+# absolute, and on a case-insensitive filesystem `$DIR` can spell the repo path in a different case
+# from `git rev-parse --show-toplevel`, which makes an absolute pathspec read as *outside the repo*.
+# With a single pathspec there is no second file to compare against, so the check degrades to a
+# silent pass instead of a loud wrong answer — the direction that loses work rather than time.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- QUEUE.md; then
   echo "WARNING: QUEUE.md already has uncommitted changes; this commit will carry them:" >&2
-  git -C "$DIR" diff -U0 -- "$QUEUE" | awk '/^[+-]\| / { print "  " $0 }' >&2
+  git -C "$DIR" diff -U0 -- QUEUE.md | awk '/^[+-]\| / { print "  " $0 }' >&2
 fi
 
 # --- lock -------------------------------------------------------------------------------------
