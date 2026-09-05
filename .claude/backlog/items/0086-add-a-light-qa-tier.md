@@ -177,6 +177,13 @@ merge exists to prevent.
 - [ ] **AC10** — Given `docs/decisions/002`, when read, then its Light row states the mechanism and
       −26%/−18%, and `docs/decisions/003` exists and cites the shipped mechanism. *Red when:* the −32%
       figure survives anywhere as a live price.
+- [ ] **AC11** — Given an item at `qa_level: verify` in a repo with no `review:` block in
+      `config.yml`, when `verify` reads it after this change, then it resolves exactly as it does
+      today — the scripted assertion the item's QA plan names — and `review`'s missing configuration
+      is never consulted. *Red when:* `review` is implemented by repurposing the `verify` level
+      rather than adding a value beside it, which is the reading FR8 and the schema line disagreed
+      about until 2026-09-05. This is AC9's argument applied to the other field: additive means the
+      untouched value keeps working, and that is proved rather than asserted.
 
 ## QA plan
 
@@ -198,6 +205,9 @@ merge exists to prevent.
 ## Out of scope
 
 - Retroactively reclassifying any already-queued ticket's `qa_level`.
+- **Renaming the `verify` level to `review`.** They are different levels and both survive — see
+  *Notes & decisions*, 2026-09-05. A rename is a cross-cutting one across 51 items in this backlog
+  alone plus every other project's, which is `0067`'s subject and not a side effect of this ticket.
 - Adding a test runner to `ai-building-conventions`. The artifact is prose; a runner would be
   ceremony, and the second half exists because the honest answer there is a review.
 - Changing what the conventions themselves say. This is about how a change to them is checked.
@@ -277,7 +287,7 @@ merge exists to prevent.
   once a field is in place; adding one is cheaper than overloading one.
 
   **How the two values sit against each other.** Orthogonal, and the schema says so rather than the
-  prose: `qa_level ∈ {review, unit, integration, e2e}` is *what is checked*; `close_by ∈ {verify,
+  prose: `qa_level ∈ {verify, review, unit, integration, e2e}` is *what is checked*; `close_by ∈ {verify,
   develop}` is *who closes*. Their one interaction is a refusal, not a rule to remember —
   `qa_level: review` can never carry `close_by: develop`, because a review's checks are judgement and
   FR3 admits only assertions (FR12).
@@ -306,3 +316,41 @@ merge exists to prevent.
   **A factual correction to this ticket's own capture.** FR5 as captured cited "`MEASUREMENT.md`'s tier
   table". There is no tier table there — `MEASUREMENT.md` line 673 only points at `002`. Carried into
   FR13.
+
+- **Ambiguity settled 2026-09-05 — `review` is added beside `verify`; neither replaces the other.**
+  FR8 says the enum *"gains"* `review`, while *How the two values sit against each other* wrote the
+  schema as `{review, unit, integration, e2e}` — omitting `verify` and so reading as a rename. The
+  two differ by 51 items in this backlog alone. **FR8 is right; the schema line had simply dropped a
+  member while contrasting `qa_level` with `close_by`, and it is corrected.**
+
+  Three things in this ticket already decide it, none of them needing a new judgement:
+
+  1. **No FR migrates anything.** Fourteen FRs — seven for `close_by`, five for `review`, two for the
+     record — and not one touches an existing item's `qa_level`. A rename across 51 items with no
+     migration FR, no AC and no mention in the QA plan is an omission in one sentence, not a design.
+  2. ***Out of scope* already forbids it**, in a line written at capture: *"Retroactively
+     reclassifying any already-queued ticket's `qa_level`."* That is exactly what a rename is.
+  3. **The rejected option (b) proves they are distinct.** (b) was *"`verify` plus a required
+     checklist section"* — overloading the existing level to serve the review case — and it was
+     rejected for blunting the refusal FR9 depends on. **If `review` were a rename of `verify`, (b)
+     would be the chosen answer rather than a rejected alternative.**
+
+  And they mean different things, which is why both are needed. `verify` is *no runner, but a
+  mechanical check*: the `queue` skill requires *"a scripted assertion the ticket names explicitly —
+  a grep, a path check, a schema validation"*, supplied by the item. `review` is *no runner and no
+  mechanical check*: FR8's checks are judgement, its content is a checklist configured per repo
+  (FR9), and it is explicitly not on the pyramid and not cumulative. Collapsing them would put a
+  prose review and a grep under one word and lose the refusal that tells them apart.
+
+  **The rename has a real argument, and it is not this ticket's.** `qa_level: verify` and the *stage*
+  `verify` are one word for two things, and "run verify at level verify" is genuinely confusing —
+  which is why the schema line's slip is an easy one to make and reads as deliberate. But that is a
+  cross-cutting rename over every project using this backlog, `0067` exists to decide what shape such
+  a rename takes, and `0086` already `relates:` to it. Doing it here would be a second decision
+  smuggled into a ticket already at `size: l`. **Recorded so the next reader does not re-open it: if
+  the collision is worth fixing, it is `0067`'s to shape and its own ticket to execute.**
+
+  Checked against the amend rule (`queue`, *Amend*): this **narrows** the ticket rather than widening
+  it — the additive reading is the one every existing FR and AC was written against — so **`size`
+  stays `l`**, the QA plan is unchanged, and the only additions are AC11 and the *Out of scope* line
+  above. Found from outside while settling AetherWorks 0119 (whether `qa_level: none` is a level).
