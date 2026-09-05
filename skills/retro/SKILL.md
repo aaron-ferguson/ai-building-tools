@@ -74,6 +74,19 @@ and a parked entry survives compaction, an interrupted session, and the gap betw
 the reason stated. **If the file has grown far past the cadence threshold, that is itself a finding** —
 retros are not running, or not emptying.
 
+**And far past the threshold changes how this skill runs, not only what it reports.** A buffer at nine
+times the threshold cannot be drained in one pass: Step 2's proposal becomes a large artifact in its own
+right, the user reasonably scopes it down, and every entry not chosen goes back **unchanged, with nothing
+recording that it was read and triaged** — so the next retro pays full price to re-derive the same
+clustering. Work in ranked slices instead, and mark what you considered and deferred the same way `queue`
+marks a dual entry: append the destination you chose and *"deferred <date>, not yet written"*. The two
+sweepers already remove only what they processed, which is right; what neither has without this is a way
+to say **read, kept, not yet placed**.
+
+**An entry may already carry a marker from the other sweeper** — *"filed as item 0108; kept for the
+lesson, do not re-file"*. That is `queue` handing you the lesson half of an entry whose work half is
+done: take the lesson and remove the entry, and do not re-open the work.
+
 Then read *across* the entries rather than down them, because that is the view no single session had:
 
 - **The same thing hit more than once.** Three sessions tripping on one template step is a rule; one
