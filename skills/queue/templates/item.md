@@ -151,8 +151,12 @@ Written any other way — `- **AC1** —` is the one that happened — it ticks 
 
 ## QA plan
 
-- **Level:** <verify | unit | integration | e2e> — chosen at queue time, not at develop time.
-- **Why this level:** <one line; e2e needs a reason that unit + integration can't cover it>
+**The level is `qa_level:` in the frontmatter, chosen at queue time, and is not restated here.**
+Two copies can disagree — both written by the same pass, differing by a multi-minute suite — and
+`verify` then has to pick between two answers the ticket gave with equal confidence. This section
+says *what* to exercise; the frontmatter says at which level.
+
+- **Why that level:** <one line; e2e needs a reason that unit + integration can't cover it>
 - **Specific checks:** <suites to run, journeys to drive, manual steps if any>
 
 ## Out of scope
