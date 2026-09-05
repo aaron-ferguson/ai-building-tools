@@ -110,6 +110,21 @@ real below; a candidate with no `expects:` still costs a look. On overlap, take 
 row and name what you stepped over. If every row collides, say there is nothing safe to develop
 (`CONCURRENCY.md`, *The working tree is shared too*).
 
+**Re-run `./next` immediately before `./claim`.** A claim landing between the two is invisible to the
+comparison you just made: `./next develop` offered a row seventeen seconds after another session's claim
+commit, and the collision surfaced only on a re-run — then the *second* candidate collided too, on files
+that session declared a minute after claiming. `./claim` re-reads under the lock, so the **row** is
+safe either way; the **file-scope** check above has no such re-read and is the half that goes stale. One
+extra call, and it catches the window.
+
+**Run the staleness grep before you claim, not after.** Step 2 tells you to grep the symbol an FR names
+before building to it; the same grep against the symbol the **Problem** section names belongs here,
+because a row whose bug no longer reproduces should never be claimed at all. One ticket sat `ready` at
+the top of the queue for five days describing a failure that a passing deploy had already fixed ad hoc
+in another session — the fix landed outside the lifecycle, so no `DONE.md` row and no closed item ever
+mentioned it, and nothing in selection had a cue to look. `DONE.md` cannot answer this; only the code
+can.
+
 **Claim it with `./claim`** — one step, and the supported path:
 
 ```bash
@@ -175,6 +190,13 @@ implement to the full standard against an answer you have. Two habits follow: **
 guess** — variants side by side in one image, since a round trip costs the same either way — and
 **look once per round**, compositing variants into a single sheet rather than screenshotting each
 parameter in turn.
+
+**The same rule holds when the acceptance is a *listen* rather than a look, and the artifact changes.**
+A committed standalone HTML bench that plays the candidates on demand beat a screenshot outright: it
+worked on the author's other device, it survived the session, and — because the synthesis maths *is* the
+spec — the thing approved by ear was literally the thing shipped. Two rounds settled four sounds. Reach
+for whatever artifact lets the author answer the question directly; the batch is the principle, the
+image is only its commonest form.
 
 **And where a ticket's ACs are *mostly* human judgement, say up front which ones this session can
 actually close.** A ticket asking for gestures on a physical device owes no code at all: Step 4's TDD
@@ -244,6 +266,21 @@ does not own.** Three more shapes have bitten, all of them invisible in a diff:
 - **A criterion carried in from another ticket.** "Fold this into item NNNN" makes a claim about code
   the carrying item does not own, and it ages exactly like a quoted figure — see *A stage writes only
   the ticket it holds* in `CONCURRENCY.md` for who may write it and what a claiming session owes it.
+- **An illustrative example inside an acceptance criterion — a quoted figure in prose clothing.** An AC
+  reading "selections offering different sections (a node with three, an unbuilt conduit with two)"
+  describes a *board state*, and it ages exactly like a number while reading as colour rather than as
+  an assertion, which is what makes it the more inviting of the two. Neither half of that parenthetical
+  was reachable: generated boards had carried no unbuilt conduit since a sibling item, and where one
+  did exist the node offered two sections rather than three. **Two sessions read past it** — one
+  anchored the spec elsewhere and it worked by luck until a third ticket landed. Before building to an
+  AC's example, confirm the state it describes exists.
+- **An instruction that contradicts a house pattern established elsewhere in the repo.** A ticket said
+  "grab CC0 audio" while the project's own committed practice — two sibling generator scripts, each
+  saying in as many words that assets are *drawn rather than committed as opaque binaries* — pointed
+  the other way. This is not a stale FR: nothing changed under it, and the ticket was arguably never
+  right. The tell was cheap, two files in the same directory, and the check is the sibling grep already
+  prescribed above. A scope reversal is the author's call, so surface it rather than silently obeying
+  either side.
 
 ---
 
@@ -313,12 +350,28 @@ before anything ran them. Handing a red tree to a QA session spends that session
 report. If the tree is too entangled to judge, run it in a throwaway worktree (`git worktree add`) and
 remove it in the same turn.
 
+**An *untracked* file is the cheap case and needs no worktree at all.** `git status` settles it in one
+call: a file git has never seen is definitionally neither your change nor the tree's baseline, so it is
+another session mid-TDD. Nine failures once came from an untracked test file another window was still
+writing — and a worktree at the base commit would not have contained it, so the comparison the step
+sends you to could not have been run. Exclude it, say you did, and move on.
+
 **Red in a file you *did* touch has two owners, and telling them apart is the whole job.** Your change
 either **falsified** a check — it asserts a rule this ticket deliberately reverses, and rewriting it is
 part of the work — or **exposed** one already fragile, where the ticket merely added load, data or
 timing it could not absorb. Both look identical: a plausible assertion about behaviour you just
 changed. The throwaway worktree separates them — run the check at the commit before your work, under
 the same conditions. Green there means it is yours.
+
+**Where two sessions' commits interleave, no single commit answers the question, and the worktree is
+built by replay rather than by checkout.** With three sessions committing, the history can run: your
+first commit, then their breaking commit, then your second — so your own tip reproduces *their* red,
+and the commit before your work proves only that the red is not in your first commit. Neither is the
+comparison you want. Build the state that is exactly your work on a clean base:
+`git worktree add --detach <path> <last commit before your first>`, symlink `node_modules`, then
+`git cherry-pick <your commits>`. About two minutes, and the failure it prevents is expensive in the
+wrong direction — meeting a red at your own tip, the natural next move is to start debugging your own
+change. **The resulting SHA is throwaway and must never be reported as a verified commit.**
 
 **That settles it only for a deterministic check, and the failure is confidently backwards.** Where
 the check samples anything the runner re-rolls — a seed, a generated fixture, wall-clock pacing, a
@@ -330,6 +383,21 @@ repeating showed 1 failure in 6 **at the baseline** against 0 in 6 on the workin
 
 Fix the first. **Queue the second rather than stabilising it inside this ticket** — a ticket that
 adopts every fragile check it brushes against stops being the ticket that was ranked.
+
+**If you mutation-check your own guards here, mutate only what is committed.** `git checkout -- <path>`
+restores that file to `HEAD` rather than to the state you found it in, so reverting a mutation over a
+fix you have not committed **deletes the fix** — silently, with no error, and the run that follows
+reports unrelated reds that read as a surprising finding rather than as self-inflicted damage. The trap
+is that the same script shape is perfectly safe inside a worktree pinned to a commit, which is where
+most sessions first use it. Commit the fix, then break it. Where something genuinely cannot be committed
+first, copy it to a scratch path and restore from that copy, and finish with a control run whose green
+is what licenses the reds before it.
+
+**And a whole-suite run is a shared resource on a project whose browser suite forbids overlap.** Check
+for a live run before starting one (`pgrep -f <runner>`), and wait on it rather than racing: a
+background `until` loop on the worker process is clean and costs nothing, where the obvious fallback — a
+throwaway worktree — needs its own `node_modules` and is not actually cheap. Neither this skill nor
+`CONCURRENCY.md` can say *who* yields, so the rule is simply that the session arriving second waits.
 
 ### Then stop, in this order
 
