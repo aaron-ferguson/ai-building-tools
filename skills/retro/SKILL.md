@@ -186,6 +186,12 @@ sessions it cannot help, generalising late makes every project rediscover it.
 **Workflow versus principle decides between rungs 3 and 4**, and `references/CONVENTIONS.md` gives the
 test: *would this still be true if the backlog did not exist?* Yes → a convention. No → a skill.
 
+**A lesson belonging to an existing item goes into that item**, off the ladder — but only where its
+`claimed_by:` is empty, per `references/CONCURRENCY.md` *A session with no ticket writes only what is
+unheld*. Date-stamp what you append and name where it came from; the claiming session is the first
+that may re-verify it, and the first that must. Where the target is **held**, you are blocked: leave
+the entry in the buffer and say so in the report — never write that it has been filed.
+
 ---
 
 ## Step 4 — Write it, and empty what you processed
@@ -196,6 +202,14 @@ the rule prevents, not the reasoning that convinced you of it.
 
 If a destination check changed your mind about *where* something goes, say so before writing — that is
 the disagreement the user is most likely to have.
+
+**Take the backlog lock for every write inside `.claude/backlog/`.** Draining `FINDINGS.md` and
+appending to an item are both inside the boundary, and `retro` holds no claim token that would make its
+writes visible otherwise. Read, write, commit and release in **one shell invocation** — a session gets a
+fresh shell per tool call, so a `trap ... EXIT` releases the lock the moment that call returns and every
+later call runs holding nothing, which reads exactly like a correct lock. See
+`references/CONCURRENCY.md` *Lock every write to the backlog directory*, and `CONCURRENCY-INCIDENTS.md`
+before writing one by hand.
 
 **Then remove from `FINDINGS.md` only the entries you processed**, and commit in the same turn, by
 pathspec. Leave the units of work: `queue`'s sweep specifies and ranks those, and deleting one here loses

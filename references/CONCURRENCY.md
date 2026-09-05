@@ -93,6 +93,26 @@ claim stays invisible until something is written inside it.
   refuses anything not `next: verify`. That field keeps two stages off one ticket.
 - **`verify` owns closing**, holding the verdict when it acts, so no green goes stale.
 
+## A session with no ticket writes only what is unheld
+
+`retro` is not a stage — no `next:` value names it and it holds no row — so the rule above has no
+subject covering it, and every check built on claim tokens is blind to its writes. Refusing it the
+item file is the worse failure: the lessons belonging *in* an item pile up in `FINDINGS.md`, which
+then serves as an unofficial queue for writes nothing is permitted to perform. Observed twice, on the
+same three entries.
+
+- **The line is `claimed_by:`, not the writer.** Append only to an item whose `claimed_by:` is empty.
+  An unclaimed item has no session to surprise and the next claimant reads it fresh; a claimed one is
+  the exact case the rule above protects.
+- **Take the lock like any other writer.** The boundary already names `FINDINGS.md` and the item
+  files, so this was never an exemption — only a gap in that rule's examples.
+- **Append, never run the queue**: no creating, ranking, claiming, closing or restaging a row. Those
+  belong to `queue` and `verify`, and reaching for them pulls their machinery into a session that
+  needs none of it.
+- **A carried criterion ages the same** — date-stamp it, name its source, and leave the re-verifying
+  to the claiming session, which is the first that may.
+- **Blocked by a held target, record it**: write "this still needs a row", never "this has a row".
+
 ---
 
 # Part 2 — When the queue is a local file
@@ -112,7 +132,7 @@ matching — that is information, not an obstacle to route around.
 ## Lock every write to the backlog directory
 
 **Every write, no exemptions**: claiming an ID (`queue`), claiming a row (`develop`, `verify`),
-closing a row (`verify`).
+closing a row (`verify`), draining the buffer or appending to an unheld item (`retro`).
 
 **The lock covers the backlog *directory*, not `QUEUE.md` alone**, and the difference is not academic.
 Claiming an ID is on that list, but the file it actually mutates is `config.yml` — so a rule written as
