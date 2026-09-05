@@ -82,6 +82,13 @@ claim stays invisible until something is written inside it.
   criterion is a claim about code it does not own and ages like any cached figure (`develop` Step 2):
   **date-stamp it, name the item it came from, and re-verify it against the source before running
   it** — the claiming session is the first that may, and the first that must.
+- **A stage may record what still needs filing; it may never state that it has been filed.** The rule
+  above stops the write and nothing stops the *claim about* the write, which is the worse artifact: a
+  build session correctly concluded that only `queue` could file its follow-up, said so in its own
+  notes, and then wrote into the project's **design authority** that the work "is queued as its own
+  item" — where no such row existed and the next reader had no reason to doubt it. An unbuilt
+  requirement quietly lost its home. Write "this still needs a row", never "this has a row", unless you
+  are looking at the row.
 - **A stage finding a ticket at another stage refuses it** — `develop` skips `next: design`, `verify`
   refuses anything not `next: verify`. That field keeps two stages off one ticket.
 - **`verify` owns closing**, holding the verdict when it acts, so no green goes stale.
@@ -102,10 +109,16 @@ column** — renumbering *is* that rewrite. Different rows need no coordination.
 Read the row again right before the `Edit`. `Edit` fails rather than guessing when `old_string` stops
 matching — that is information, not an obstacle to route around.
 
-## Lock every write to `QUEUE.md`
+## Lock every write to the backlog directory
 
 **Every write, no exemptions**: claiming an ID (`queue`), claiming a row (`develop`, `verify`),
 closing a row (`verify`).
+
+**The lock covers the backlog *directory*, not `QUEUE.md` alone**, and the difference is not academic.
+Claiming an ID is on that list, but the file it actually mutates is `config.yml` — so a rule written as
+"every write to `QUEUE.md`" leaves the counter unlocked on a correct reading of the protocol, and it is
+a read-modify-write on a shared file exactly like a `ready` → `in-progress` transition. `config.yml`,
+`FINDINGS.md`, `RANKING.md` and the item files are all inside the boundary.
 
 **Hold it for the read, the write and the commit, then release in the same turn** — including where you
 decide *not* to change anything; scripts release on failure paths via a `trap`. **For an agent, "the

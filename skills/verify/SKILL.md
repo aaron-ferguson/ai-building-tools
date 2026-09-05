@@ -306,8 +306,8 @@ installed:
    report; its own session will see the drift.
 4. **Commit by pathspec** — with the `Co-Authored-By` trailer (`git-conventions.md`) — **then**
    release the lock. The order matters: the lock guards the commit,
-   not just the edit, because the commit takes `QUEUE.md` whole (`CONCURRENCY.md`, *Lock every write to
-   `QUEUE.md`*).
+   not just the edit, because the commit takes `QUEUE.md` whole (`CONCURRENCY.md`, *Lock every write to the
+   backlog directory*).
 5. Record this session's cost share if `cost_tracking:` is configured, and mirror the close if a
    tracker is (`references/TRACKER.md`) — outside the lock, since a network call must never be made
    while holding it. Failure is logged in the notes, never a blocker.

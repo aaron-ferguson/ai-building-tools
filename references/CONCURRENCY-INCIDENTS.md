@@ -15,7 +15,7 @@ end. Rule names are the headings in `CONCURRENCY.md`.
 
 ## Live-conflict procedures
 
-### A busy or stale lock — rule: *Lock every write to `QUEUE.md`*
+### A busy or stale lock — rule: *Lock every write to the backlog directory*
 
 ```bash
 BACKLOG=".claude/backlog"
@@ -128,7 +128,7 @@ leads: one ticket declared four implementation files and went on to edit three s
 helper and the runner's config, because a change that alters what a behaviour **means** reaches every
 test that drives it.
 
-### The rule that was narrowed and widened back — rule: *Lock every write to `QUEUE.md`*
+### The rule that was narrowed and widened back — rule: *Lock every write to the backlog directory*
 
 The rule once locked only the two literal read-modify-writes — claiming an ID and claiming a row —
 and exempted closing a row on the reasoning that a close is "a single-line edit to a row only you

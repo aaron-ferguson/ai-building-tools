@@ -24,7 +24,7 @@ went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09
 is relaxed** — the rigour is all in the 15% that was output.
 
 **This skill states no standards of its own** — usable, accessible and consistent are defined by the
-project's conventions and cited, never restated. Resolve them per `references/CONVENTIONS.md`; if none
+project's conventions and cited, never restated. Resolve them per `references/CONVENTIONS.md` at the plugin root; if none
 resolve, stop as that file directs, because a verdict against no standard looks identical to a real
 one.
 
@@ -114,7 +114,11 @@ This step is most of the skill's value.
 
 1. Record the answer and what it rejected in *Notes & decisions*.
 2. Write the FRs and given/when/then ACs the answer unblocks. If it unblocks none, it did not settle the
-   question — say so rather than moving the stage.
+   question — say so rather than moving the stage. **Unless the ticket arrived already specified**, in
+   which case the job is to validate and extend rather than to author: `queue` can write full FRs and
+   ACs on a ticket that still carries one open decision, and against that shape "unblocks none" reads as
+   a false negative. Say which existing criteria the answer confirms, which it changes, and which it
+   adds — an answer that leaves every one of them untouched is the real negative.
 3. Delete the *Open design question* section, set `next: develop` / `status: ready`, and commit by
    pathspec in the same turn.
 
