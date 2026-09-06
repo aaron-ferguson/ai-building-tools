@@ -760,8 +760,13 @@ scaffold
 seal
 out="$(run_next --help)" && rc=0 || rc=$?
 assert_rc       "exits 0"        "$rc" 0
-assert_contains "lists --drive"    "$out" '--drive'
-assert_contains "lists --findings" "$out" '--findings'
+# Anchored to each mode's own line in the listing, never to the bare flag: `--drive` also appears
+# in the trailing paragraph explaining the exit codes, so `assert_contains '--drive'` is satisfied
+# by prose while `usage()` documents no such mode — a user running --help cannot then discover it
+# exists (`testing-conventions.md`, anchor an assertion to the claim, not to the document that
+# contains it). The `--findings` twin was genuine when written and carries the same defect shape.
+assert_contains "lists --drive as a mode"    "$out" './next --drive'
+assert_contains "lists --findings as a mode" "$out" './next --findings'
 
 echo "0038 AC11 — the findings gate has its own code, distinct from a dispatch"
 scaffold
