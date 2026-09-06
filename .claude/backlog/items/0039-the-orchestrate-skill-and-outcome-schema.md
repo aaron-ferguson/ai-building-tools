@@ -385,3 +385,19 @@ inherited.
   repo's rate is inflated because its tickets are *about* the tooling, so every one surfaces tooling
   defects. A project whose tickets are about a product should expect longer runs. Worth revisiting
   if the first supervised run spends more on retros than on tickets.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **FR3's once-per-run gate is now a consequence rather than a workaround.** `retro` Step 4 states the
+  invariant FR3 was compensating for: **no entry survives the pass that read it**, and a retro's own
+  Step 6 parks are the *next* pass's input rather than residue from this one (`b9a5ee0`). A supervisor
+  re-deriving statelessly after a retro therefore reads a small, fresh count instead of a
+  still-over-threshold one the retro itself inflated. Evaluating the gate once per run stays correct —
+  it is what stops a park-and-redispatch loop in the unplanned case — but FR3 no longer rests on the
+  buffer being structurally unable to drain, and its rationale is worth re-reading when this is built.
+- **`retro` Step 2's "propose, then wait" has no correct answer in an unattended end-of-run retro**,
+  which is the mode FR4 creates. The gate exists so a rejected finding costs nothing to have proposed,
+  and it is right when a human is driving; a supervisor cannot answer it. FR4 should say what the
+  supervised pass does instead — proceed on the skill's own recommendation and report what it chose,
+  or stop and hand the proposal back as part of the checklist. Parked rather than decided here: it is
+  FR4's scope, not `retro`'s.

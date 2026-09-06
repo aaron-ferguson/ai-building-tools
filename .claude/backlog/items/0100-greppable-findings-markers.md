@@ -109,3 +109,18 @@ signal from one filed last week. `./next --findings` already counts entries agai
   match it, and counting both, is mechanical.
 - FR5 exists because this item's own evidence is the three spellings in the live buffer; leaving them
   would make AC1's guard true and the file it guards still unreadable.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **The marker vocabulary this item specifies was superseded on 2026-09-05; re-read FR1 before
+  building it.** `retro` Step 4 now defines **four terminal dispositions** — landed, absorbed, filed,
+  dropped — and requires that every entry a pass reads leaves the buffer in all four; `queue` Step 5's
+  marker was rewritten to hand an entry over rather than park it (`b9a5ee0`). So FR1's *"one canonical
+  form for each marker"* is now four dispositions plus the deferral rather than two markers, FR3's
+  `./next --findings` counts should follow that same set, and FR5's *"three spellings already in this
+  repo's `FINDINGS.md`"* is stale — the sweep of 2026-09-05 drained the file. **The problem this item
+  exists for is unchanged and still unbuilt**: the forms are prose, nothing counts them, and the count
+  of each is what says whether retros are keeping up.
+- **The outcome that was actually missing was *absorbed*** — an existing row already carries the whole
+  lesson, so nothing new is written but the row is named and appended to. Without it, eight entries
+  marked *"kept for the lesson"* sat through two sweeps because neither sweeper could finish them.

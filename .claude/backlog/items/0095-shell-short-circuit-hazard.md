@@ -90,3 +90,17 @@ by the next one.
   every session in this repo and already carries the `## Tests` section describing the suite.
 - `CLAUDE.md` is not covered by `tests/skill-size.test.sh` or `tests/reference-size.test.sh`, so
   there is no size gate to argue with here.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **A second shell hazard of the same class, and it widens FR1's subject.** zsh aborts an unmatched
+  glob **before the command runs**, so a redirection cannot silence it: a by-hand id-collision check
+  written as `ls "$B/items/$id-"*.md >/dev/null 2>&1` printed fifteen `no matches found:` lines while
+  the `if` around it still evaluated correctly — the redirection belongs to a command zsh never
+  executed, so the noise reads as fifteen failures in the middle of a successful locked write. Under
+  `set -e` with no `if` wrapper it aborts the run instead, and its error names a path rather than a
+  cause. The backlog scripts are `sh`, where an unmatched glob falls through literally, so this bites
+  only by-hand work — the same population FR1 is written for. **The develop pass decides** whether the
+  note stays under `CLAUDE.md`'s `## Tests` heading, whose subject is guard authoring, or whether that
+  section becomes a short shell-hazards note carrying both this and the `set -e` short-circuit. FR2's
+  one-copy rule applies either way.
