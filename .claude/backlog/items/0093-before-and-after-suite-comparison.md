@@ -50,6 +50,14 @@ output is unchanged"*. On this repo that comparison has three gotchas, none of t
    comparison is **pre-boundary against post-boundary, both replayed against the current tree** —
    and neither of them is the working copy.
 
+4. **A worktree outside the parent directory cannot resolve the conventions.** `config.yml`'s
+   `conventions.path: ../ai-building-conventions` resolves relative to the repo root, so a worktree
+   placed anywhere but beside the real checkout makes `tests/citations.test.sh` report *"no
+   conventions directory resolved from config.yml"* — one failure in twenty, on a guard that is
+   correct to fail. Observed 2026-09-05 pre-flighting a findings sweep in a scratchpad worktree,
+   where it read as a red caused by the change under test. The fix is a symlink beside the
+   worktree, or placing the worktree as a sibling of the real checkout.
+
 `develop` already covers the interleaved-commits case with a cherry-pick replay, and `verify`
 already covers the e2e worktree. Neither covers a shell suite that resolves its own root, and
 neither covers base selection for an *output-unchanged* comparison as distinct from a
@@ -69,6 +77,9 @@ neither covers base selection for an *output-unchanged* comparison as distinct f
 - FR4 — The rule is written once and cited from the second skill rather than copied, per
   `CONVENTIONS_CORE.md`'s context-rent rule; the two skills must not carry two copies that can
   drift.
+- FR6 — Both state that a worktree or extracted tree used for comparison must be able to resolve
+  `conventions.path`, and how — the path is relative to the repo root and every conventions-citing
+  guard fails loudly without it.
 - FR5 — A guard asserts that both skills reach the rule — the code that keeps FR1–FR3 from
   surviving in only one of them.
 
@@ -96,6 +107,10 @@ neither covers base selection for an *output-unchanged* comparison as distinct f
   asserting all three terms reddens.
 - [ ] AC5 — Given FR5's guard, when `skills/verify/SKILL.md`'s citation of the rule is deleted, then
   the guard fails and names `verify`. Red if it passes.
+- [ ] AC7 — Given the written recipe, when the worktree clause is read, then it states that
+  `conventions.path` is relative to the repo root and names the symlink or sibling placement as the
+  fix. Red-making mutation: deleting the word `relative`, which leaves a rule that does not say why
+  the location matters and reddens the guard asserting the term.
 - [ ] AC6 — Given both skills after the change, when `tests/skill-size.test.sh` and
   `tests/citations.test.sh` run, then each reports `0 failed`.
 
@@ -105,7 +120,9 @@ neither covers base selection for an *output-unchanged* comparison as distinct f
   scripted assertions are FR5's guard and the greps in AC1, AC3 and AC4.
 - **Specific checks:** the new guard, `tests/skill-size.test.sh`, `tests/citations.test.sh`. Then
   actually run the recipe once end to end on a real suite, since a recipe that is merely written
-  down is the failure this item exists to fix.
+  down is the failure this item exists to fix. For AC7, actually place a worktree outside the parent
+  directory and confirm `tests/citations.test.sh` reds, then apply the documented fix and confirm it
+  greens — the recipe is only worth having if it clears a red a session would otherwise misread.
 
 ## Out of scope
 
@@ -120,6 +137,11 @@ neither covers base selection for an *output-unchanged* comparison as distinct f
 - Routed to `develop`: all three answers were reached and recorded by the sessions that hit them. No
   decision blocks the criteria; what is missing is that the answers live in three `FINDINGS.md`
   entries rather than in the two steps that send sessions there.
+- **Amended 2026-09-05, before any claim.** A fourth gotcha was found pre-flighting the sweep that
+  filed this item, in the worktree that pre-flight used. Re-checked against the wider scope, per
+  `queue` Step 1: `size` stays `m` — it is one more clause in a list the item already writes, not a
+  new surface; the QA plan's named checks gain the AC7 run; *Out of scope* is unchanged, since the
+  conventions path is part of making a comparison copy run and not part of automating it.
 - Which skill holds the rule and which cites it is FR4's constraint but not a design question — the
   comparison is run by both, and `develop` Step 5 already carries the neighbouring worktree
   guidance, so it is the natural home.

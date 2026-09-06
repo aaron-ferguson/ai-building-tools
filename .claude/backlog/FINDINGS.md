@@ -138,3 +138,13 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   fixed paths; this bites only the by-hand sequence, which is what `retro` and every withdraw-by-hand
   close use (pointer: `references/CONCURRENCY-INCIDENTS.md` *A busy or stale lock*, `skills/retro/SKILL.md` Step 4).
   — filed as item 0091 on 2026-09-05 by queue; kept for the lesson, do not re-file.
+
+- 2026-09-05 — **zsh aborts an unmatched glob before the command runs, so `>/dev/null 2>&1` does
+  not silence it.** A by-hand id-collision check written as `ls "$B/items/$id-"*.md >/dev/null 2>&1`
+  printed fifteen `no matches found:` lines to the terminal while the `if` around it still evaluated
+  correctly — the redirection belongs to a command zsh never executed, so the noise reads as fifteen
+  failures in the middle of an otherwise successful locked write. Harmless there; the same construct
+  with `set -e` and no `if` wrapper aborts the run instead, and its error names a path rather than a
+  cause. The backlog scripts are `sh`, where an unmatched glob falls through literally and this
+  cannot happen — it bites only the by-hand sequence, which is what a sweep uses (pointer:
+  `skills/queue/SKILL.md` Step 2 *Mint from the disk*, `references/CONCURRENCY-INCIDENTS.md`).
