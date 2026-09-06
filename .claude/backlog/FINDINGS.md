@@ -273,3 +273,17 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the wording was invented here and the next retro will invent a different one. Both markers want to
   be greppable, because the count of each is what says whether retros are keeping up
   (pointer: `skills/retro/SKILL.md` Step 1, `.claude/backlog/FINDINGS.md`).
+
+- 2026-09-05 — **a by-hand locked write can release the lock having committed nothing, and the
+  sequence reads as success.** Landing two items in one shell invocation, the commit was written as
+  `git commit -m … -- $paths` with `paths` accumulated in a loop. **zsh does not word-split an
+  unquoted parameter expansion**, so git received one argument of two space-joined paths and refused
+  with `pathspec … did not match any file(s)`. The `rm -rf` released the lock on the next line
+  regardless, leaving both item files edited and `FINDINGS.md` drained **uncommitted** in a shared
+  tree — the *uncommitted claim* failure shape, arriving from a direction the lock cannot see:
+  `CONCURRENCY-INCIDENTS.md` names three ways a by-hand lock leaks and all three are about the lock
+  outliving the turn, not about the commit inside it failing while the release succeeds. Two cheap
+  guards: name every pathspec literally rather than through a variable, and check `git status` is
+  clean before releasing rather than after. The scripts are immune because they commit their own
+  fixed paths; this bites only the by-hand sequence, which is what `retro` and every withdraw-by-hand
+  close use (pointer: `references/CONCURRENCY-INCIDENTS.md` *A busy or stale lock*, `skills/retro/SKILL.md` Step 4).
