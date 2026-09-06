@@ -2,8 +2,8 @@
 id: "0082"
 title: Make claim fail safe on the two paths where it currently fails open
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -16,13 +16,9 @@ expects:
   - .claude/backlog/claim
   - tests/claim.test.sh
   - references/CONCURRENCY.md
-claimed_by: "5af1"
-claimed_at: 2026-09-06T01:54:54Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/claim
-  - .claude/backlog/claim
-  - tests/claim.test.sh
-  - references/CONCURRENCY.md
 ---
 
 ## Problem
