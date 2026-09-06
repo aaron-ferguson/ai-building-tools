@@ -583,3 +583,69 @@ process — checked, so Step 4's newly-reachable pass finds no privileged path t
 **Advisory, and it does not touch this verdict — third pass unchanged.** `items/0037-*.md` was
 uncommitted throughout, another session's claim. `grep -rln 0037 tests/` is empty, so it cannot
 reach the suite; nothing was stashed or reverted.
+
+### Re-entry 2026-09-06 (third) — both fixtures in, and the sweep rule itself reaches only one layer
+
+- **The two the verdict asked for are in, each proven red on exactly its own assertions.** Deleting
+  `findings_gate`'s malformed escalation (`if [ "$gbad" != 0 ]` → `if false`) reds all four of the
+  new case's assertions; deleting phase A's no-ticket branch (`if [ -z "$lid" ]` → `if false`) reds
+  all three of its. **No production code changed** — third verdict running where the branch was
+  right and only the evidence was missing.
+
+- **The full ladder sweep confirms the verdict's own claim: all 27 decision sites red, control
+  silent.** Built from every `decide` call site plus every `NOTE`-and-continue, driven from a loop,
+  with a no-op comment reword as the control. The two implausibly-large counts were probed by hand
+  rather than trusted — `rank walk: develop arm` (31 red) turns every develop dispatch into
+  `ESCALATE … which no routing rule covers`, and `phase A entered at all` (23 red) drops every
+  `--completed` case through to the rank walk. Both are real behaviour, not a parse failure.
+
+- **The gap is that the sweep rule is scoped to decision sites, and a decision's *content* is
+  computed a layer below them.** `takeable_develop`, `gate_from` and `depth_stopper` produce the
+  DEPTH line and the gate list — AC29's whole subject — but no `decide` is called inside them, so
+  three passes of "enumerate every call site of `decide`" walked straight past all thirteen of their
+  branches. **Eight were free to delete with the suite at `182 passed, 0 failed`:**
+
+  | Silent site | What its deletion did |
+  |---|---|
+  | `depth_stopper` `design\|queue` arm | row falls to the unknown-next arm — same id, different reason |
+  | `depth_stopper` `waiting` halt | a row waiting on a person stops being what the run runs dry at |
+  | `depth_stopper` unknown-next arm | an unroutable `next:` value no longer named as the stopper |
+  | `depth_stopper` end-of-queue fallback | prints anything at all in place of `the end of the queue` |
+  | `depth_stopper` in-progress skip | halts on a row another session holds |
+  | `depth_stopper` blocked skip | halts on a row nothing is asking a person about |
+  | `takeable_develop` in-progress/waiting filter | counts gates this run cannot take |
+  | `takeable_develop` blocked filter | same |
+
+  The clearest instance is AC29's own fixture, and it is the shape this ticket has now bounced for
+  twice: it asserted the stopper as `'0103'`, the **id**, so deleting the `design|queue` arm let the
+  row fall through to the unknown-next arm, which prints that same id with a different reason and
+  keeps the assertion green. Eight fixtures added; all thirteen sites now red, control silent.
+
+- **So the rule the last three passes handed forward is still short, and this is the general form.**
+  "Mutate every branch" became "mutate every `decide` call site" became, correctly, "plus every
+  `NOTE`-and-continue". The version that would have caught these is about the **output** rather than
+  the control flow: **every branch whose deletion can change any character the mode prints is a site,
+  whether or not it decides anything.** For `--drive` that is the two ladders *and* every helper
+  whose return value is interpolated into a decision or a DEPTH line. Enumerate from the printed
+  line backwards, not from the ladder outwards.
+
+- **A sweep driver that asserts before it restores poisons its own next run, and the control is the
+  only thing that catches it.** My first driver checked `assert frag in line` *before* the
+  restore step; an off-by-two line number fired that assert mid-run and left the control mutation
+  sitting in the working tree. The next run then copied that mutated file as its baseline, so the
+  control diffed clean and reported `mutation did not land` — which is the only reason it surfaced at
+  all. Two things follow. Restore in a `finally`, never on the happy path. And the control earns its
+  place for a second reason the conventions do not name: it catches a **baseline that already
+  contains a mutation**, not only an unstable harness. A poisoned baseline is worse than a flaky one,
+  because every subsequent "silent" reading is measured against the wrong file.
+
+- **Mutations were reverted from a copy taken before the first one, never with
+  `git checkout -- <path>`.** `develop` Step 5 warns that `checkout` restores to `HEAD` rather than
+  to the state you found; here the fixtures were committed before any mutation ran, so `checkout`
+  would in fact have been safe — the copy is the habit that stays correct when it is not.
+
+**Suite:** `200 passed, 0 failed` in `next.test.sh`; **858 passed, 0 failed across all 21
+`tests/*.test.sh`** — every runner this project has, run individually rather than fail-fast, per
+`config.yml`. File scope stayed inside `expects:`; only `tests/next.test.sh` was edited.
+`skills/queue/templates/next` and `.claude/backlog/next` are byte-identical to each other and
+unchanged from `HEAD`.
