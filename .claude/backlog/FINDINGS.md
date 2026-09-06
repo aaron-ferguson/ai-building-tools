@@ -68,16 +68,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   items `0081`, `0082`).
   — filed as item 0090 on 2026-09-05 by queue; kept for the lesson, do not re-file.
 
-- 2026-09-05 — **The trailer scope question above is answered by `skills/develop/SKILL.md` Step 1**,
-  which says a lifecycle commit is not exempt from `Co-Authored-By`, and by
-  `references/CONCURRENCY.md` *The git index is shared*, which requires it of every AI-assisted
-  commit. `handoff` now carries it; `claim` and `close` still do not, and **still need a row** — none
-  exists. Worth recording for its own sake: the answer was already written down in two files the
-  ticket cites, and both a build pass and a QA pass read the question as open. A "scope decision" that
-  the repo's own prose already settles is cheaper to look up than to escalate (pointer:
-  `skills/queue/templates/{claim,close}`, `git-conventions.md` *Co-authorship*, items `0081`, `0082`).
-  — filed as item 0090 on 2026-09-05 by queue; kept for the lesson, do not re-file.
-
 - 2026-09-05 — **A row claimed and then released records no reason, so the next session re-derives
   it.** `0086` was claimed by `f7c0` and handed straight back to `develop | ready` 58 seconds later
   (`bdf2cdc` → `6eba29c`), with no note in the item and nothing in the queue. This session then spent
@@ -105,16 +95,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   (pointer: `skills/queue/templates/{close,handoff}`, item `0082` FR3).
   — filed as item 0090 on 2026-09-05 by queue; kept for the lesson, do not re-file.
 
-- 2026-09-05 — **`retro` Step 4 takes the backlog lock for every write inside `.claude/backlog/`, and
-  Step 6 tells the same session to append to `FINDINGS.md` without mentioning it.** Both steps are in
-  one skill, the file is plainly inside the boundary Step 4 names, and the two disagree only by
-  omission — so a session that follows Step 6 literally, after correctly locking in Step 4, appends
-  unlocked and reads as having done the whole pass properly. This pass noticed only because it was
-  holding the lock already and asked whether it could drop it before parking. `develop` Step 7 and
-  `verify` Step 6 append to the same file and are worth checking for the same gap
-  (pointer: `skills/retro/SKILL.md` Steps 4 and 6, `references/CONCURRENCY.md` *Lock every write*).
-  — filed as item 0091 on 2026-09-05 by queue; kept for the lesson, do not re-file.
-
 - 2026-09-05 — **Step 1's ranked-slice instruction has a marker for a deferral and none for "no
   destination exists".** Draining an 84-entry buffer at 10.5x the threshold, 40 entries resolved to an
   existing row and 15 did not — and for those 15 the skill's own advice ("*needs a row, none exists*
@@ -123,21 +103,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   be greppable, because the count of each is what says whether retros are keeping up
   (pointer: `skills/retro/SKILL.md` Step 1, `.claude/backlog/FINDINGS.md`).
   — filed as item 0100 on 2026-09-05 by queue; kept for the lesson, do not re-file.
-
-- 2026-09-05 — **a by-hand locked write can release the lock having committed nothing, and the
-  sequence reads as success.** Landing two items in one shell invocation, the commit was written as
-  `git commit -m … -- $paths` with `paths` accumulated in a loop. **zsh does not word-split an
-  unquoted parameter expansion**, so git received one argument of two space-joined paths and refused
-  with `pathspec … did not match any file(s)`. The `rm -rf` released the lock on the next line
-  regardless, leaving both item files edited and `FINDINGS.md` drained **uncommitted** in a shared
-  tree — the *uncommitted claim* failure shape, arriving from a direction the lock cannot see:
-  `CONCURRENCY-INCIDENTS.md` names three ways a by-hand lock leaks and all three are about the lock
-  outliving the turn, not about the commit inside it failing while the release succeeds. Two cheap
-  guards: name every pathspec literally rather than through a variable, and check `git status` is
-  clean before releasing rather than after. The scripts are immune because they commit their own
-  fixed paths; this bites only the by-hand sequence, which is what `retro` and every withdraw-by-hand
-  close use (pointer: `references/CONCURRENCY-INCIDENTS.md` *A busy or stale lock*, `skills/retro/SKILL.md` Step 4).
-  — filed as item 0091 on 2026-09-05 by queue; kept for the lesson, do not re-file.
 
 - 2026-09-05 — **zsh aborts an unmatched glob before the command runs, so `>/dev/null 2>&1` does
   not silence it.** A by-hand id-collision check written as `ls "$B/items/$id-"*.md >/dev/null 2>&1`
@@ -148,3 +113,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   cause. The backlog scripts are `sh`, where an unmatched glob falls through literally and this
   cannot happen — it bites only the by-hand sequence, which is what a sweep uses (pointer:
   `skills/queue/SKILL.md` Step 2 *Mint from the disk*, `references/CONCURRENCY-INCIDENTS.md`).
+
+- 2026-09-05 — **`queue`'s *"kept for the lesson, do not re-file"* marker has no correct reading when
+  the lesson and the work are the same edit.** Three entries carried it into this retro; for two, the
+  whole lesson was prose that `0091` FR1 and FR3 already specify, so *take the lesson* and *do not
+  re-open the work* name one act and contradict each other. Landing the prose by hand would have
+  half-stranded a `ready` row, and the entries were instead drained with nothing written — which the
+  marker does not describe either. In a repo whose product **is** prose, most retro destinations are
+  also `develop` rows, so this is the normal case here rather than an edge (pointer:
+  `skills/retro/SKILL.md` Step 1, `skills/queue/SKILL.md` Step 5, item `0100`).

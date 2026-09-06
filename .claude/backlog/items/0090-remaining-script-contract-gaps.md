@@ -129,3 +129,11 @@ correctly forbidden from widening someone else's contract.
   demonstrated in `handoff`. Nothing is undecided.
 - Filed as one ticket rather than four: same three files, same three suites, same reviewer. Split,
   each session pays to re-read all three scripts.
+- **The `Co-Authored-By` scope question FR4 answers was never open** (`FINDINGS.md` 2026-09-05,
+  landed here by `retro`). `skills/develop/SKILL.md` Step 1 already says *"A lifecycle commit is not
+  exempt from it"*, and `CONCURRENCY.md` *The git index is shared* requires the trailer of every
+  AI-assisted commit — yet a build pass and a QA pass both read the question as undecided and
+  escalated it. The reach defect is **where that sentence sits**: item 4 of Step 1's *by-hand* claim
+  sequence, which a session running `./claim` never executes, so the requirement reads as a property
+  of the by-hand commit rather than of the scripts'. FR4 is what closes that, and no new rule was
+  written — a second copy of a rule that did not fire weakens both.
