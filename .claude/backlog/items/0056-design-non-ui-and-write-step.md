@@ -136,3 +136,37 @@ invisible.
   wording was proposed there verbatim. Nothing is undecided.
 - FR7 is smaller than the others and kept because the failure it prevents is the largest: a settled
   mechanism that would have passed every test in the repo while running with no conventions loaded.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+Three entries, all on Step 4, and all in the gap FR3 and FR4 leave: this ticket gives Step 4 the
+lock and the `expects:` re-check, and still does not say who **owns** the row while that write
+happens or where a decision's consequences go when they land outside the ticket.
+
+- **Step 4 tells an unclaimed ticket's session to write it, never says to claim it, and offers no
+  release path once it has** (FINDINGS 2026-08-30). `CONCURRENCY.md` *A stage writes only the ticket
+  it holds* says "claim the row you write", so settling 0074 meant claiming, writing, then clearing
+  `claimed_by:` and the `in-progress` row **by hand** — `./close` is for closing and nothing reverses
+  a claim. FR3 and FR4 both amend this step, so the same edit should decide whether `design` claims
+  at all and, if it does, what hands the row back. The release-by-hand half is 0048's (`.claude/backlog/claim`,
+  and the release-without-close path it names); the *whether design claims* half is this ticket's,
+  and answering only one of them leaves Step 4 telling a session to take a claim it cannot give up.
+- **Step 4 has no outcome for a decision whose deliverable is criteria on other people's tickets**
+  (FINDINGS 2026-09-02 `[6983]`). 0085's FR2 required routing removable turns to 0066, 0081, 0047
+  and 0048; *A stage writes only the ticket it holds* forbids the settling session from writing any
+  of them, and says explicitly that naming them in your own notes is **not** filing them. The only
+  legal move that session could find was to hand the ticket to `queue` rather than to `develop` —
+  but Step 4's item-scoped outcomes are develop, waiting, and hand-back-because-it-is-claimed, and
+  none of them is this. FR5 is the nearest and does not cover it: FR5 splits *this* ticket's work
+  into a second row, where this routes criteria onto rows that already exist. Without a stated
+  outcome the routing dies in a settled ticket's prose, which is the failure mode that rule's own
+  incident describes.
+- **A ticket opened at `next: design` by a `develop` session carries no *Open design question*
+  section** (FINDINGS 2026-09-02 `[6983]`), which is the section Step 1 names as its contract. 0085
+  was opened by 0073 under its FR5 and put the question under a heading of its own invention ("Why
+  this is `next: design` and not `develop`") — a better section than the template's, because it
+  argued why the question was not guessable, but Step 1 read against nothing and a session following
+  it literally would have stopped. This one lands outside this ticket's `expects:`: the fix is in
+  `skills/develop/SKILL.md` Step 3 and `templates/item.md`, not in `design`. Recorded here because
+  it is Step 1's contract that breaks, and whoever builds this is the session most likely to notice
+  the other half is missing.

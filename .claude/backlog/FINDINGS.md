@@ -116,16 +116,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   references/CONVENTIONS.md "Resolution order").
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
 
-- 2026-08-30 — **`design` Step 4 tells an unclaimed ticket's session to write it and never says to
-  claim it, and there is no release path once it has.** `CONCURRENCY.md` *A stage writes only the
-  ticket it holds* says "claim the row you write", so settling 0074 meant claiming, writing,
-  then clearing `claimed_by:` and the `in-progress` row by hand — `./close` is for closing and
-  nothing reverses a claim. 0056 already has this step's missing lock (FR3) and `expects:`
-  re-check (FR4) but not ownership, so the same edit should decide whether `design` claims at all
-  and, if it does, what hands the row back (pointer: skills/design/SKILL.md Step 4, items/0056,
-  items/0048, .claude/backlog/claim).
-  — read and triaged 2026-09-05 by retro: belongs to item 0056, deferred, not yet written.
-
 - 2026-08-30 — **Thinking is ~70.5% of a session's output tokens and its text is not retained in
   the transcript, so the largest output term cannot be measured from the record.** Stored
   `thinking` blocks carry an empty `thinking` field and a ~3,000-character `signature`, so 0074's
@@ -163,17 +153,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   order work is checked in. The user caught it; nothing in the skill or the scripts would have
   (pointer: skills/verify/SKILL.md Step 1, .claude/backlog/next).
   — read and triaged 2026-09-05 by retro: belongs to item 0058, deferred, not yet written.
-
-- 2026-08-30 — **The release chain has no re-check step, and a sibling session closed a ticket in the
-  middle of one.** A release audit found the install 14 files behind at the *same* version number,
-  decided what to ship on the basis that 0042 and 0044 were both unverified, and was about to push
-  when the user stopped it because another session had just finished — which had verified and closed
-  0042, changing the premise the release decision rested on. `CONCURRENCY.md`'s *Re-read immediately
-  before you write* is scoped to `QUEUE.md` rows, so nothing covers the longer read-decide-push gap,
-  and the release chain in CLAUDE.md is a four-step sequence with no instruction to re-verify state
-  before executing it. Every step is silent when skipped, including this missing one (pointer:
-  CLAUDE.md *This project is the tool its sessions are running*, references/CONCURRENCY.md).
-  — read and triaged 2026-09-05 by retro: belongs to item 0061, deferred, not yet written.
 
 - 2026-08-30 — **`verify` Step 3's mutation sweep needs the pre-change suite to compare against, and
   a suite's own `ROOT` resolution makes that awkward in a way each session rediscovers.** Checking
@@ -254,25 +233,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   only the in-tree route and its `git checkout -- <that path>` restore.
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
 
-- 2026-09-02 [6983] **`design` Step 4 has no path for a decision whose deliverable is criteria on
-  other people's tickets.** 0085's FR2 required routing removable turns to 0066, 0081, 0047 and
-  0048; `CONCURRENCY.md`, *A stage writes only the ticket it holds*, forbids the settling session
-  from writing any of them, and that rule says explicitly that naming them in your own notes is not
-  filing them. The only legal move I could find was to hand the ticket to `queue` rather than to
-  `develop` — but Step 4's three item-scoped outcomes are develop, waiting and hand-back-to-queue-
-  because-it-is-claimed, and none of them is this. A design pass that routes work needs a stated
-  fourth outcome, or the routing dies in a settled ticket's prose (pointer: `skills/design/SKILL.md`
-  Step 4, item 0085).
-  — read and triaged 2026-09-05 by retro: belongs to item 0056, deferred, not yet written.
-
-- 2026-09-02 [6983] **A ticket opened by a `develop` session at `next: design` carries no *Open
-  design question* section**, which is the section `design` Step 1 names as its contract. 0085 was
-  opened by 0073 under its FR5 and put the question under a heading of its own invention ("Why this
-  is `next: design` and not `develop`"). It was a better section than the template's — it argued why
-  the question was not guessable — but Step 1 read against nothing, and a session following it
-  literally would have stopped (pointer: `skills/develop/SKILL.md` Step 3, `templates/item.md`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0056, deferred, not yet written.
-
 - 2026-09-01 — **`expects:` can name a path that never matched any file, and nothing catches it.**
   0085's `expects:` listed `.claude/backlog/items/0048-remaining-backlog-write-sites.md` and
   `.claude/backlog/items/0066-three-wrong-answers-in-the-scripts.md` — neither is the real filename
@@ -283,18 +243,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   wrong the moment a title-guessed slug drifts from the real one (pointer: items/0085 `expects:`,
   items/0048, items/0066).
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
-
-- 2026-09-02 — **The installed plugin and the checkout differ at the same version number, live.**
-  `diff -rq skills/ ~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.8/skills/` found
-  `verify/SKILL.md` differs — the checkout carries 0085's FR6 fix (the single-git-status-call rule)
-  and the installed copy at the identical `0.9.8` does not. This is the exact hazard the project's
-  own `CLAUDE.md` names ("the version number does not prove it matches") and 0061/0084 already
-  measured from the other side (a version bump can print success and re-extract nothing); this is
-  the same failure mode caught from a live session rather than a designed test. Any `/verify` run
-  against the installed plugin right now is running the pre-0085 git-status behaviour. Not queued as
-  its own ticket since 0061/0084 already own this mechanism (pointer: `.claude-plugin/plugin.json`,
-  0061, 0084, 0085 FR6).
-  — read and triaged 2026-09-05 by retro: belongs to item 0061, deferred, not yet written.
 
 - 2026-09-02 — **`RANKING.md` says "current state only" and is accumulating dated sections anyway.**
   Its header splits the standing argument from the narrative the way `CONCURRENCY.md` splits from

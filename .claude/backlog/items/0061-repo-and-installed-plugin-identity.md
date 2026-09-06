@@ -143,3 +143,33 @@ Cannot be written until the design question is settled. These hold regardless:
   narrower than when it was written: what can a session with **no source tree** read that is
   evidence about its own bytes? A `size: m` still looks right, and the tier argument is unchanged
   in kind but now has a measured instance behind it rather than only vigilance.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **The drift was caught live, from the running side, which is the half the amendment above was
+  measured from the other end of** (FINDINGS 2026-09-02). `diff -rq skills/
+  ~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.8/skills/` found
+  `verify/SKILL.md` differing: the checkout carried 0085's FR6 fix (the single-git-status-call rule)
+  and the installed copy at the identical `0.9.8` did not, so every `/verify` run against the
+  installed plugin at that moment was running the pre-0085 git-status behaviour. Same failure mode
+  as the 2026-09-01 measurement, arrived at from a live session rather than a designed test, and it
+  sharpens FR1's *when*: the session that needs the answer is mid-pass, not mid-release.
+- **The release chain has no re-check step, and a sibling session invalidated one mid-flight**
+  (FINDINGS 2026-08-30). A release audit found the install 14 files behind at the same version
+  number, decided what to ship on the basis that 0042 and 0044 were both unverified, and was about
+  to push when the user stopped it — another session had just verified and closed 0042, changing the
+  premise the decision rested on. `CONCURRENCY.md` *Re-read immediately before you write* is scoped
+  to a `QUEUE.md` row and nothing covers the longer read-decide-push gap, which is where a release
+  decision lives. This is adjacent to FR1 rather than inside it, and it is the shape the **release
+  check attached to the bump** candidate has to survive: a check that reads state once and pushes
+  minutes later is protecting the wrong instant.
+- **A data point for "what can a session with no source tree read about its own bytes"**
+  (verified by this retro, 2026-09-05). The cache keeps **every** past version as its own directory —
+  fourteen of them here, `0.4.1` through `0.9.15` — and a skill's loaded base directory names the one
+  the session actually resolved from. So the comparison a session can make is against the directory
+  it was loaded from by name, rather than against whatever `/plugin list` or `installed_plugins.json`
+  reports, which is content-grounded in FR5's sense on the *install* side even though the source half
+  still needs a checkout. Checked at the time of writing: the checkout is `0.9.15`, `diff -rq` against
+  the `0.9.15` cache directory is empty, and the `0.9.14` directory still differs in eight files —
+  so a stale directory sitting beside a current one is the normal state, not a fault, and any guard
+  built on "the cache differs from the repo" has to name **which** directory it means.
