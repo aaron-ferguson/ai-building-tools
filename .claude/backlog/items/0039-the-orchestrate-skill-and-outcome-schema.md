@@ -611,3 +611,12 @@ nonetheless records `lastUpdated: 2026-09-06T05:20:06` against `gitCommitSha: 95
 has six skills and no `orchestrate`; its `verify` has no AC20 instruction. This is `CLAUDE.md`'s
 documented failure mode observed live, in both halves at once. **The re-entry needs its own version
 bump** — `tools/release` — or the next session verifies a copy that still does not exist.
+
+**One convention breach in the diff, flagged rather than scored against an AC.**
+`tools/validate-json-schema.py` is the repo's first standalone `.py` and carries **no type hints**
+on any of its three functions (`type_ok`, `validate`, `main`), against `CONVENTIONS_CORE.md`'s
+*"Python with full type hints"* — a principle, not a preference. It is a **pre-existing repo-wide
+pattern** (every python embedded in `tools/*.sh` is unhinted too), so scoping the whole debt to this
+ticket is arguable and `develop` should decide; what is not arguable is that this change is where a
+new file adopted it. There is no NFR row for it, which is why it surfaced in Step 4's always-on pass
+rather than in the table.
