@@ -884,6 +884,107 @@ assert_rc       "exits 0 — dispatch"                 "$rc" 0
 assert_contains "dispatches the first gate"          "$out" 'DISPATCH  develop 0101'
 assert_contains "reports the depth"                  "$out" 'DEPTH     2'
 assert_contains "names what the run would halt on"   "$out" '0103'
+# The id alone does not pin `depth_stopper`'s design|queue arm: with that arm deleted the row
+# falls to the unknown-next arm, which prints the same id and a different reason. AC29 asks for
+# what stops it, so assert the reason (`testing-conventions.md`, pin a ladder arm by its wording).
+assert_contains "and why it halts there"             "$out" "0103 (next: design — a person decides)"
+
+# --- AC29 — the stopper's other arms, each pinned by its wording rather than by the id ---------
+echo "0038 AC29 — the depth line halts on a waiting row and says a person holds it"
+scaffold
+add_row 0101 'A takeable row' develop ready    0091
+add_row 0102 'Held for an answer' develop waiting 0092
+add_ticket 0101 develop ready   '[]' 0091 a/one.md
+add_ticket 0102 develop waiting '[]' 0092 b/two.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"                    "$rc" 0
+assert_contains "the waiting row is not a takeable gate" "$out" 'DEPTH     1'
+assert_contains "and it is what the run runs dry at"     "$out" '0102 (waiting on a person)'
+
+echo "0038 AC29 — the depth line halts on a next: value no rule covers, and says so"
+scaffold
+add_row 0101 'A takeable row' develop     ready 0091
+add_row 0102 'An unknown stage' frobnicate ready 0092
+add_ticket 0101 develop    ready '[]' 0091 a/one.md
+add_ticket 0102 frobnicate ready '[]' 0092 b/two.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"               "$rc" 0
+assert_contains "names the unroutable stage as the stopper" "$out" "0102 (next: 'frobnicate' — no routing rule covers it)"
+
+echo "0038 AC29 — a queue nothing halts on runs dry at its end rather than at a row"
+scaffold
+add_row 0101 'A takeable row' develop ready 0091
+add_row 0102 'A verify row'   verify  ready 0092
+add_ticket 0101 develop ready '[]' 0091 a/one.md
+add_ticket 0102 verify  ready '[]' 0092 b/two.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"          "$rc" 0
+assert_contains "runs dry at the end, not at a row" "$out" 'runs dry at the end of the queue'
+
+# `depth_stopper` steps over exactly what the rank walk steps over — in-progress and blocked.
+# Without these two cases either skip can be deleted and the line then halts on a row no person
+# is being asked anything about, naming it as the thing that stops the run.
+echo "0038 AC29 — the depth line steps over an in-progress row rather than halting on it"
+scaffold
+add_row 0101 'A takeable row'    develop ready       0091
+add_row 0102 'Held by a session' design  in-progress 0092
+add_row 0103 'The real stopper'  design  ready       0093
+add_ticket 0101 develop ready       '[]' 0091 a/one.md
+add_ticket 0102 design  in-progress '[]' 0092 b/two.md
+add_ticket 0103 design  ready       '[]' 0093 c/three.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 0 — dispatch"                     "$rc" 0
+assert_contains     "halts on the row a person can act on"   "$out" 'runs dry at 0103'
+assert_not_contains "not on the one another session holds"   "$out" 'runs dry at 0102'
+
+echo "0038 AC29 — the depth line steps over a blocked row rather than halting on it"
+scaffold
+add_row 0101 'A takeable row'   develop ready   0091
+add_row 0102 'Still blocked'    design  blocked 0092
+add_row 0103 'The real stopper' design  ready   0093
+add_row 0090 'The open blocker' verify  ready   0090
+add_ticket 0101 develop ready   '[]'       0091 a/one.md
+add_ticket 0102 design  blocked '["0090"]' 0092 b/two.md
+add_ticket 0103 design  ready   '[]'       0093 c/three.md
+add_ticket 0090 verify  ready   '[]'       0090 d/four.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 0 — dispatch"                   "$rc" 0
+assert_contains     "halts on the row nothing blocks"      "$out" 'runs dry at 0103'
+assert_not_contains "not on the one still blocked"         "$out" 'runs dry at 0102'
+
+# The gate count is the other half of AC29, and the pool it counts is filtered three ways. A row
+# another session holds, a row waiting on a person and a row still blocked are all rows this run
+# cannot take, so counting any of them reports a depth the driver cannot actually spend.
+echo "0038 AC29 — in-progress and waiting rows are not counted as takeable gates"
+scaffold
+add_row 0101 'A takeable row'    develop ready       0091
+add_row 0102 'Held by a session' develop in-progress 0092
+add_row 0103 'Held for an answer' develop waiting    0093
+add_ticket 0101 develop ready       '[]' 0091 a/one.md
+add_ticket 0102 develop in-progress '[]' 0092 b/two.md
+add_ticket 0103 develop waiting     '[]' 0093 c/three.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"               "$rc" 0
+assert_contains "counts only the row this run can take" "$out" 'DEPTH     1'
+
+echo "0038 AC29 — a blocked row is not counted as a takeable gate"
+scaffold
+add_row 0101 'A takeable row'   develop ready   0091
+add_row 0102 'Still blocked'    develop blocked 0092
+add_row 0090 'The open blocker' verify  ready   0090
+add_ticket 0101 develop ready   '[]'       0091 a/one.md
+add_ticket 0102 develop blocked '["0090"]' 0092 b/two.md
+add_ticket 0090 verify  ready   '[]'       0090 d/four.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"                     "$rc" 0
+assert_contains "counts only the row nothing blocks"     "$out" 'DEPTH     1'
 
 echo "0038 FR8 — tickets sharing a parent are one gate, dispatched together"
 scaffold
