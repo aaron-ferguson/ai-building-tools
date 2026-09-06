@@ -10,6 +10,60 @@ section for the argument it records, not for the state of the queue.
 
 ---
 
+## 2026-09-05 — The findings sweep of 2026-09-05
+
+Twenty-six entries in `FINDINGS.md` against a `findings_threshold` of 8. `retro` had already read
+and marked fifteen of them *"no destination exists yet, needs a row"*; the other eleven were
+unread. This sweep filed **fifteen rows (0089-0103)** and left the eleven unread entries in place,
+annotated, for `retro`'s half.
+
+**One entry was discharged rather than filed.** *"A parked finding's factual claims decay and
+`queue` Step 5 has no re-verification step"* — Step 5 now carries exactly that instruction
+(`skills/queue/SKILL.md:476`). Two more had moved under their entries: the install-contract entry
+described *three* installed scripts and there are now four, which strengthened it into 0103; and
+the develop-Step-5/7 ordering entry was two-thirds landed, leaving only the clause in
+`docs/decisions/001` that still tells a session to fold the `FINDINGS.md` append into a boundary
+commit no script makes — that residue became 0091 FR4.
+
+**Nothing from this sweep was placed above the cost-reduction set.** `RANKING.md` records the
+standing instruction of 2026-08-30, reaffirmed 2026-09-02, that token efficiency outranks
+everything until the sessions are slimmed and orchestrated, and its own advice that a sweep of
+comparable size compares its clusters against the existing rows rather than inserting above them.
+None of these fifteen moves the protocol-turn figure. The nearest argument is 0093 — three sessions
+in a row hand-built the same throwaway comparison scaffolding — but that is rediscovery cost inside
+a stage, not the boundary cost 0085 and 0081 target, so it went to the head of the stage-skill
+cluster and no higher.
+
+**Where the clusters went, and the comparison that placed each.**
+
+- **0090 under 0082.** Same class, same three files, and 0082 is its prerequisite in the literal
+  sense — 0090 FR2 edits the region of `claim` that 0082 is verifying, so it carries
+  `blocked_by: ["0082"]` rather than a note. It beats 0080 and 0083 on tie-breaker 4: four known
+  defects with corrective shapes already demonstrated in `handoff`, against two open decisions.
+- **0089 between 0052 and 0046.** The regret operator was not needed. 0052 is the rule and 0089 is
+  the sweep that applies it to twenty-one existing guards, so the prerequisite override puts the
+  rule first; both sit above 0046 on blast radius, the guards being the whole safety net in a repo
+  with no test runner.
+- **0091 and 0092 above the Tier 2 group,** on tie-breaker 1. 0091's blast radius is every by-hand
+  backlog write in every project — the park step in six skills instructs the `FINDINGS.md` append
+  without the lock — against 0047's single close-time path.
+- **0093 and 0094 at the head of the stage-skill cluster,** above 0055 on blast radius: they hit
+  every build and every QA session, where 0055 fills gaps in one skill's steps.
+- **0096 and 0095 below 0063 and above 0067.** 0063 protects every prose guard and so outranks
+  both; 0067 is dormant until someone starts a rename, and both of these bite on ordinary sessions.
+- **0100 and 0101 above the capability tickets,** on tie-breaker 4 — `s` and certain against three
+  `l`-shaped rows — and not above the project slices, which hold their existing argument.
+- **0097 leads the Tier 5 tail on tie-breaker 3.** The residual method for thinking tokens is
+  reconstructable from 0074's working today and would have to be re-derived in a month; its reader
+  is the 2026-10-31 re-measurement `RANKING.md` already names as a thing that would change this
+  order.
+
+**Where this sweep is arguable.** 0089 is a `size: l` sweep of twenty-one files placed in the Tier 1
+band. If it turns out to be three sessions rather than one, the honest move is to split it by file
+group rather than to sink it — the tier is right and the size is the uncertain part.
+
+---
+
 ## Before the 2026-08-25 sweeps — 0009, 0002 and the first graph phases
 
 Every ticket in this section is closed. It is kept for the tie-breaker reasoning and for the

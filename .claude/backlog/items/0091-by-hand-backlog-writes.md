@@ -1,0 +1,131 @@
+---
+id: "0091"
+title: Make a by-hand backlog write take the lock and prove its commit landed
+type: bug
+next: develop
+status: ready
+qa_level: verify
+size: m
+created: 2026-09-05
+source: agent
+parent:
+blocked_by: []
+relates: ["0048"]
+expects:
+  - references/CONCURRENCY.md
+  - references/CONCURRENCY-INCIDENTS.md
+  - skills/retro/SKILL.md
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - skills/design/SKILL.md
+  - skills/prototype/SKILL.md
+  - skills/queue/SKILL.md
+  - docs/decisions/001-one-command-per-stage-boundary.md
+  - tests/citations.test.sh
+claimed_by:
+claimed_at:
+touches:
+---
+
+## Problem
+
+Three separate failures of the same by-hand write, all of them silent.
+
+1. **The park step never mentions the lock.** `retro` Step 4 says *"Take the backlog lock for every
+   write inside `.claude/backlog/`"* (`retro/SKILL.md:213`). Step 6, in the same skill, tells the
+   same session to append to `FINDINGS.md` and does not. The two disagree only by omission, so a
+   session that locks correctly in Step 4 and then follows Step 6 literally appends **unlocked** and
+   reads as having done the whole pass properly. The identical park step is in `develop` Step 7,
+   `verify` Step 6, `design`, `prototype` and `queue` Step 7 — **five more copies, none of which
+   names the lock** — against `CONCURRENCY.md` *Lock every write to the backlog directory*, which
+   names `FINDINGS.md` explicitly.
+
+2. **A by-hand locked write can release the lock having committed nothing, and the sequence reads as
+   success.** Landing two items in one shell invocation, the commit was written as
+   `git commit -m … -- $paths` with `paths` accumulated in a loop. **zsh does not word-split an
+   unquoted parameter expansion**, so git received one argument of two space-joined paths and
+   refused with *"pathspec … did not match any file(s)"*. The `rm -rf` released the lock on the next
+   line regardless, leaving both item files edited and `FINDINGS.md` drained **uncommitted** in a
+   shared tree — the *uncommitted claim* failure shape, arriving from a direction the lock cannot
+   see. `CONCURRENCY-INCIDENTS.md` names three ways a by-hand lock leaks and all three are about the
+   lock outliving the turn, not about the commit inside it failing while the release succeeds. The
+   scripts are immune because they commit their own fixed paths; this bites only the by-hand
+   sequence, which is what `retro` and every withdraw-by-hand close use.
+
+3. **`docs/decisions/001` tells a session to do what both skills now forbid.** Its FR2 says *"Fold
+   it into the boundary commit where the shell invocation allows"* of the `FINDINGS.md` append
+   (`001:79`). Neither `./handoff` nor `./close` commits `FINDINGS.md`, so it cannot ride along, and
+   `develop` Step 7 and `verify` Step 6 both now say to write and commit it **before** the boundary.
+   The decision record is the authority a session consults when the skills' step numbers look wrong,
+   and it currently sends them the other way.
+
+## Functional requirements
+
+- FR1 — The park step in `develop`, `verify`, `design`, `prototype`, `queue` and `retro` states that
+  the `FINDINGS.md` append is a write inside the backlog directory and takes the lock, citing
+  `CONCURRENCY.md` rather than restating it.
+- FR2 — `CONCURRENCY.md`'s by-hand-lock rule requires two things of the commit inside the lock:
+  **every pathspec named literally, never through a variable**, and **`git status` confirmed clean
+  for those paths before the release**, not after.
+- FR3 — `CONCURRENCY-INCIDENTS.md` gains the zsh word-split incident as a fourth way a by-hand lock
+  leaks — the first that is about the commit failing while the release succeeds, rather than about
+  the lock outliving the turn.
+- FR4 — `docs/decisions/001` FR2's *"fold it into the boundary commit"* clause is corrected to match
+  what the scripts actually commit, and says the append precedes the boundary commit.
+- FR5 — A guard asserts FR1 across all six skills: the park section of each names the lock. This is
+  the code that executes FR1, without which the rule is prose six files can drift from
+  independently.
+
+## Non-functional requirements
+
+| Dimension | Requirement for this item | Convention |
+|---|---|---|
+| Documentation | FR3's incident is written as an incident with its observed sequence, not as a restated rule; `CONCURRENCY.md` keeps the rule and `-INCIDENTS.md` keeps the story | `documentation-conventions.md` |
+
+## Acceptance criteria
+
+- [ ] AC1 — Given the six skill files, when FR5's guard runs, then it reports `0 failed`. Red-making
+  change: deleting the lock sentence from `skills/design/SKILL.md`'s park step — the guard names
+  that file and fails.
+- [ ] AC2 — Given `references/CONCURRENCY.md`, when it is searched for the literal phrase
+  `never through a variable`, then it is found on a single line. Red before this item: the phrase is
+  absent.
+- [ ] AC3 — Given `references/CONCURRENCY.md`, when it is searched for the phrase describing the
+  pre-release status check, then the rule states the check happens **before** the release. Red-making
+  mutation: moving the word `before` to `after` — the guard asserting the ordering reddens.
+- [ ] AC4 — Given `references/CONCURRENCY-INCIDENTS.md`, when its list of ways a by-hand lock leaks
+  is read, then it names four, the fourth being a commit that fails while the release succeeds.
+  Red-making mutation: deleting that entry, which returns the count to three.
+- [ ] AC5 — Given `docs/decisions/001-one-command-per-stage-boundary.md`, when the `FINDINGS.md`
+  clause is read, then it does not instruct folding the append into the boundary commit. Red-making
+  input: today's file, which does.
+- [ ] AC6 — Given all six skills after FR1, when `tests/citations.test.sh` and the reference and
+  skill size gates run, then each reports `0 failed`. Red if the added sentences push a file past
+  its goal without a recorded reason.
+
+## QA plan
+
+- **Why that level:** no runner applies — the change is prose in six skills, two references and a
+  decision record. The scripted assertions are FR5's guard plus the greps AC2–AC5 name.
+- **Specific checks:** run FR5's new guard, `tests/citations.test.sh`, `tests/skill-size.test.sh`
+  and `tests/reference-size.test.sh` individually. Then apply AC1's and AC4's mutations and confirm
+  each reddens the named guard, and reverts green.
+
+## Out of scope
+
+- Giving the by-hand write a script. That is `0048`'s open decision — *which* remaining write sites
+  become scripts — and this item makes the by-hand path safe **while** it exists rather than
+  removing it.
+- The lock's busy and stale paths, which `CONCURRENCY-INCIDENTS.md` already covers.
+- `retro` Step 4 itself, which already states the rule correctly.
+
+## Notes & decisions
+
+- Routed to `develop`: `CONCURRENCY.md` already decides that every write inside the backlog
+  directory takes the lock, and names `FINDINGS.md`. The six park steps are an omission, not an open
+  question.
+- The three problems are one ticket because they are one act — a session writing to the backlog
+  without a script — and they touch the same two references and the same six skills. Split, each
+  session re-reads all eight files.
+- The grep phrases in AC2 and AC3 are deliberately short enough to survive a reflow onto one line;
+  `0063` is the general fix and this item does not depend on it.

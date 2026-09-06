@@ -1,0 +1,128 @@
+---
+id: "0089"
+title: Sweep the guards for assertions that cannot fail
+type: bug
+next: develop
+status: ready
+qa_level: unit
+size: l
+created: 2026-09-05
+source: agent
+parent:
+blocked_by: []
+relates: ["0052", "0063"]
+expects:
+  - tests/backlog-scripts-installed.test.sh
+  - tests/batching.test.sh
+  - tests/citations.test.sh
+  - tests/claim.test.sh
+  - tests/close.test.sh
+  - tests/cost-by-category.test.sh
+  - tests/external-feedback.test.sh
+  - tests/falsifiable-acs.test.sh
+  - tests/floor-probe.test.sh
+  - tests/graph-fields.test.sh
+  - tests/handoff.test.sh
+  - tests/last-line.test.sh
+  - tests/measurement.test.sh
+  - tests/money-in-skill-prose.test.sh
+  - tests/next.test.sh
+  - tests/qa-level-once.test.sh
+  - tests/reference-size.test.sh
+  - tests/release.test.sh
+  - tests/reporting.test.sh
+  - tests/retro-tool-edit.test.sh
+  - tests/skill-size.test.sh
+claimed_by:
+claimed_at:
+touches:
+---
+
+## Problem
+
+Three of `0085`'s acceptance criteria shared one defect shape and all three closed the ticket
+green. AC8 (`*"work"*`), AC9 (`*protocol*`, `*git*`) and AC10 (`*10000*`) were substring `case`
+matches over a tool's **whole output**, satisfied by text the tool prints unconditionally; every
+one stayed green under mutations that provably landed. AC10 cannot fail at all — `10000` is a
+substring of the `ctx/turn` figures `100000`, `110000`, `115000` and `125000` that the same output
+carries.
+
+`testing-conventions.md` names the shape twice — *anchor an assertion to the claim, not the
+document that contains it*, and *a number present where the contract is that it is formatted* — and
+says a suite with a **known systematic weakness of this shape is swept from a loop, not by reading
+for the next instance**.
+
+Every guard in this repo greps prose, and there is no test runner behind them
+(`.claude/backlog/config.yml`, `commands.unit`). The suite is the only safety net the repo has, so
+the exposure is all 21 files in `tests/`, not the one where it was found. A guard that cannot fail
+reads exactly like a guard that passes, and it closed a ticket.
+
+Found while verifying `0085` (pointer: `tests/cost-by-category.test.sh`, item `0063`).
+
+## Functional requirements
+
+- FR1 — Every assertion in `tests/*.test.sh` that matches against a command's **whole captured
+  output** or a **whole file** is re-anchored to the specific line, element or claim it is about,
+  or is deleted with its reason recorded in this item's *Notes & decisions*.
+- FR2 — Every assertion whose needle is a **substring of another value the same output carries** is
+  re-anchored so the two cannot be confused. `10000` inside `100000` is the worked instance; the
+  sweep looks for the class.
+- FR3 — Each re-anchored assertion is **mutation-proved**: the sweep records, per file, the change
+  applied to the subject under test that turned the assertion red, and that it went green again on
+  revert. An assertion for which no such mutation can be found is not re-anchored — it is deleted.
+- FR4 — The sweep is driven **from a loop over all 21 files**, not by reading for the next
+  instance, and the list of files examined is recorded so a later reader can tell an examined-clean
+  file from an unexamined one.
+- FR5 — A guard implements FR1 and FR2 as a standing rule: a new test file added to `tests/` is
+  checked for whole-output and whole-file matching, so the class cannot return silently.
+
+## Non-functional requirements
+
+| Dimension | Requirement for this item | Convention |
+|---|---|---|
+| Documentation | The per-file mutation evidence from FR3 is written into this item as the sweep runs, not reconstructed at the end | `documentation-conventions.md` |
+
+## Acceptance criteria
+
+- [ ] AC1 — Given the sweep is complete, when `grep -n 'case "\$out"' tests/*.test.sh` is run, then
+  every remaining hit is against a variable holding a **single extracted line or field**, not a
+  whole command's output. Red if any hit matches a variable assigned from an unfiltered command
+  substitution.
+- [ ] AC2 — Given `tests/cost-by-category.test.sh`, when the figure the AC10-shaped assertion tests
+  is changed in the subject from `10000` to `9999`, then that assertion goes **red**. Red-making
+  input: today's code, where the assertion passes with the figure absent because `100000` contains
+  it.
+- [ ] AC3 — Given each file the sweep re-anchored, when this item's *Notes & decisions* is read,
+  then it names for that file the mutation applied and the assertion that went red under it. Red if
+  any re-anchored file has no such entry.
+- [ ] AC4 — Given a new file `tests/zz-whole-output.test.sh` that matches a substring against a
+  whole command's output, when the suite is run, then FR5's guard **fails and names that file**.
+  Red if the guard passes, or if it fails without naming the file.
+- [ ] AC5 — Given the whole suite after the sweep, when `for t in tests/*.test.sh; do "$t" || true;
+  done` is run against an unmodified tree, then every file reports `0 failed`. Red if any assertion
+  was re-anchored onto a claim the code does not actually make.
+
+## QA plan
+
+- **Why that level:** the change is to the test files themselves and the assertions are the
+  deliverable, so the runner that exercises them is the suite. `unit` is this project's whole
+  suite (`config.yml`).
+- **Specific checks:** run the suite file-by-file (`for t in tests/*.test.sh; do "$t" || true;
+  done`) rather than through `config.yml`'s fail-fast `unit` line, so one red does not mask the
+  twenty behind it. Then re-apply two of the FR3 mutations at random and confirm the named
+  assertion reddens.
+
+## Out of scope
+
+- The rewrap-survival matcher — that is `0063`, and an assertion re-anchored here still breaks on a
+  reflow until `0063` lands. Where the two touch the same line, leave the reflow problem alone.
+- Writing new coverage. This sweep fixes assertions that cannot fail; it does not add assertions
+  for behaviour nothing checks.
+- `skills/**` prose. The defect is in the guards, not in the rules they guard.
+
+## Notes & decisions
+
+- Routed to `develop` rather than `design`: the corrective shape is already named by
+  `testing-conventions.md` and demonstrated in this repo, so no decision blocks the criteria.
+- `size: l` because it is 21 files and FR3 requires a mutation per re-anchored assertion. It is a
+  sweep, and the batching rule applies inside it: one session, one loop.
