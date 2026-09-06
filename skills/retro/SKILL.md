@@ -229,6 +229,18 @@ it silently. Leaving an entry you *did* process is how the next retro pays to re
 An edit that is not committed is a draft, and a skill edit that is not released is invisible to the
 sessions it was written for.
 
+- **Run the target repo's suite before the commit that carries the edit** — the `unit` command in
+  that repo's `config.yml`. A repo with no configured command is said to have none, never skipped in
+  silence. The session that changes a tool is the one least likely to learn it broke that tool, and
+  the break is invisible until another session trips on it: one retro found a shell-quoting defect
+  already committed in `close`, whose failure signature named nothing about quotes (0076).
+- **A red is your edit's until proven otherwise.** This repo's suite commits inside the live repo, so
+  running it over uncommitted edits produces failures that read as logic errors and are tree
+  pollution; the worktree comparison `develop` Step 5 prescribes is what tells the two apart. Remove
+  that worktree in the same turn (`testing-conventions.md`, *Stop what you started*).
+- **A guard that rejects the edit is an editor, not a gate.** Relocate first, exempt second: a size
+  or prose rejection is information about where the rule belongs, and what gets recorded is the
+  relocation it forced, never an exemption.
 - **Commit by pathspec**, in the same turn as the edit, per the project's git conventions and
   `references/CONCURRENCY.md` at the plugin root. A retro often edits several repos at once — the
   project, the conventions, the tools — so commit each in its own repo with its own message rather than
