@@ -23,6 +23,9 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
+| 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
+| 0039 | Build the orchestrate skill and the stage outcome schema | develop | blocked | 0036 |
+| 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
 | 0081 | Give the hand-off a script, as claim and close have | verify | ready |  |
 | 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | develop | ready |  |
 | 0078 | Route a finding by what it is about, not which repo you are standing in | develop | ready |  |
@@ -33,9 +36,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | develop | blocked |  |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
 | 0083 | Decide what a second checkout may do with the backlog | design | ready |  |
-| 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
-| 0039 | Build the orchestrate skill and the stage outcome schema | develop | blocked | 0036 |
-| 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
 | 0041 | Write release notes for what a work session delivered | design | ready |  |
 | 0052 | Require an acceptance criterion to name the input that would make it red | verify | ready |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |

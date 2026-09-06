@@ -32,7 +32,8 @@ in above these rows by being newer or more interesting.
 | **0074, 0042, 0051, 0073** | **The token-efficiency spine, now all four closed** — `0073` published the figure and opened `0085`, which inherits row 1. Placed on Aaron's stated priority of 2026-08-30 rather than on tier. 0074 is takeable now and needs no diagnosis; 0042 → 0051 → 0073 is a prerequisite chain, since 0073 publishes measurement figures 0051 must first make reproducible. | *2026-08-30*, "The gap the re-rank found first" and "Why 0073 is blocked by 0051" |
 | **0081, 0086, 0078, 0084** | Pulled out of the 2026-09-01 sweep and placed directly under 0085 on 2026-09-02, by Aaron's explicit instruction: these four *are* the cost-reduction set, not merely Tier 1-2 defects. 0081 removes the hand-off's manual mechanism — the same category of turn-cost 0085 cuts, and 0085's own `relates:`. 0086 prices the Light QA tier (32% saving) into the vocabulary. 0078 is why 25 tooling findings sat unreachable for ten days — without it, defects like the rest of this sweep have no route in at all. 0084 sits last of the four: not itself a cost cut, but the guarantee that 0085's and 0081's savings actually reach the installed bytes rather than reporting success and shipping nothing. Order within the four follows that dependency logic, not the tier table. | *2026-09-02*, "Cost-reduction set promoted above the sweep" |
 | **0075, 0076, 0077, 0082, 0090, 0080, 0083** | The remainder of the 2026-09-01 sweep, relative order unchanged. Correctly-tiered defects — 0075/0076/0077 protect every session working the rows below them, 0082/0080 are backlog scripts failing open, 0090 is the four gaps 0081 and 0082 left behind in the other two scripts and sits directly under its prerequisite, 0083 is live load since `verify` gained a second worktree prescription — but none moves the cost figure the promoted four above target. | *2026-09-01*, "The AetherWorks tool sweep" |
-| **0038, 0039, 0040, 0041** | Project 0036's three slices in dependency order, plus the review that reads 0039's run log. Promoted from ranks 27/31/32 — the orchestrator is the second half of the same instruction. 0040 stays directly under 0039 by the **regression-guard override**. **0041 was narrowed to release notes on 2026-09-02 and is `size: m`**; the measurement half that earned it this position is built and published, so what holds the row now is a reporting feature and the next re-rank should say whether that still beats the two Tier 1 rows below it. | *0036 became a project*; *2026-08-30*, "What the orchestration chain's promotion cost"; *2026-09-02*, "Two rows withdrawn and one merged" |
+| **0038, 0039, 0040** | **Rows 1–3 since 2026-09-05, on Aaron's instruction to get to 0039 as fast as the graph allows.** 0038 is 0039's only `blocked_by` and sits above it by the **prerequisite override**; 0040 stays directly under 0039 by the **regression-guard override**, because 0036 names shipping 0039 and stalling before 0040 as the one sequencing mistake available here — a runnable unattended loop with no lock policy, on a lock whose stranding blocks every claim and close in the repository. | *2026-09-05*, "Orchestrate goes to the top" |
+| **0041** | Project 0036's review slice, left where it was when the three above it were promoted past it. **Narrowed to release notes on 2026-09-02 and `size: m`**; the measurement half that earned it this position is built and published, so what holds the row now is a reporting feature and the next re-rank should say whether that still beats the two Tier 1 rows below it. | *0036 became a project*; *2026-09-02*, "Two rows withdrawn and one merged" |
 | **0052, 0089, 0046** | Tier 1 — output that is silently wrong today. Unchanged in argument; they sit below the spine only because the spine was promoted over them, and 0042/0051 stepped past them on the prerequisite override. **0089 was inserted between them on 2026-09-05**: 0052 is the rule that a criterion must name what would make it red, 0089 is the sweep of the twenty-one guards that already fail it — the rule outranks the sweep that applies it, and both outrank 0046 on blast radius. | *sweep 1*, "Tier 1"; *batch 2*, "Tier 1" |
 | **0091, 0092** | The 2026-09-05 sweep's top pair, above the Tier 2 group on tie-breaker 1. 0091 is every by-hand write to the backlog directory in every project — six skills instruct the `FINDINGS.md` append without the lock `CONCURRENCY.md` requires, and a by-hand lock was observed on 2026-09-05 releasing after a commit that had refused. 0092 is its guard: no script is proven to hold the lock through its commit and no ordinary assertion can prove it, which is 0089's class of defect on the one property the scripts exist for. | *2026-09-05*, "The findings sweep of 2026-09-05" |
 | **0047, 0045, 0060, 0054, 0065, 0050** | Tier 2, the compounding defects that fire on ordinary sessions — a lost QA verdict, a `TAKE` on held files, a findings gate that cannot settle, a verdict over a shared dirty tree. | *sweep 1*, "Tier 2"; *batch 2*, "Tier 2"; *batch 3*, "Where the six went" |
@@ -54,8 +55,33 @@ and not by the tier system, so a re-rank that disagrees with them is disagreeing
 instruction. The cost is recorded rather than hidden: two Tier 1 rows (0052, 0046) sit below work
 that nothing is bleeding from.
 
-**Reaffirmed 2026-09-02.** Aaron confirmed the instruction stands — orchestrate (0039, blocked on
-0038) waits for the cost figure to move first — and named the four rows (0081, 0086, 0078, 0084)
+**Superseded 2026-09-05 — orchestrate goes first, and the standing instruction bends to it.** Aaron
+asked for 0039 as high as the graph permits: *"I really want to get to ticket 39 so that I can finish
+building the orchestrate skill … That way, everything else that we build that could improve something
+has that as active context instead of just 'something will eventually do.'"* That is the same person
+overriding his own 2026-08-30 sequencing, and the argument is not impatience — it is that 0039 is the
+row every *later* row's cost is measured against, so building it early is the cost lever rather than a
+detour from one. **The instruction below is not withdrawn**: token efficiency remains the ordering
+principle for everything under row 3, and 0086 and 0078 keep their places at the head of it. What
+changed is that the orchestrator is now counted as part of that set rather than as its reward.
+
+**What the promotion cost, stated rather than hidden.** 0081, 0086, 0078, 0075, 0076, 0077, 0082 and
+0090 each drop three places. The three verify rows in that set (0081, 0076, 0082) lose almost nothing
+in practice — `./next verify` reads its own stage, so a verify session still takes the topmost of them
+whatever sits above it at `develop` — and this is the reason the promotion is cheap. **0086 and 0078
+genuinely wait**, and 0086 is `size: l`.
+
+**Two rows this re-rank deliberately did not promote above 0039, and why.** 0082 (`claim` failing
+open on two paths) and 0090 (the four contract gaps left in `claim`, `close` and `handoff`) are the
+scripts a supervisor drives unattended, so there is a real argument for taking them first. It loses on
+the prerequisite override running the other way: neither blocks *building* 0039, both block *trusting*
+an unattended run, and 0040 already owns that hardening directly below 0039. 0082 is at `next: verify`
+and closes on its own lane; 0090 unblocks the moment it does. **If a run is ever left unsupervised
+before 0090 lands, that is the gap it is running over.**
+
+**Reaffirmed 2026-09-02, and now partly overtaken by the note above.** Aaron confirmed the instruction
+stood at that date — orchestrate (0039, blocked on 0038) waits for the cost figure to move first — and
+named the four rows (0081, 0086, 0078, 0084)
 that belong beside 0085 as the actual cost-reduction set, promoted above the rest of the
 2026-09-01 sweep. He also described what 0039 must do: run a small, bounded chunk of work per
 supervised session and minimise cross-session conflict so runs stay cheap. **No new ticket was
