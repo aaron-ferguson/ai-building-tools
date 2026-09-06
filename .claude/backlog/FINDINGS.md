@@ -666,3 +666,19 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `waiting` outcome needs is the one still by hand (pointer: `.claude/backlog/claim`,
   `skills/verify/SKILL.md` Steps 5 and 7, items `0085`, `0081`).
 
+- 2026-09-05 — **`pgrep` is the wrong wait condition for a shared suite, because the thing to wait for
+  is a *sequence* of runs, not a run.** `develop` Step 5 says the session arriving second waits and
+  prescribes `pgrep -f <runner>`. A concurrent `verify` session was running mutation batches over
+  `tests/claim.test.sh` and `skills/queue/templates/handoff` — `sed -i.bak`, run, restore, next file —
+  so `pgrep` reads clear in every gap between them, and a whole-suite run started in one of those gaps
+  reads another session's deliberately-broken file as a red of its own. The condition that actually
+  holds is *no runner process **and** a clean `git status`, sustained over several samples*, which this
+  session had to invent (pointer: `skills/develop/SKILL.md` Step 5, item `0076`).
+- 2026-09-05 — **A `verify` session's file scope is invisible: `./claim` tells it to declare `touches:`
+  and nothing checks that it did.** `0081` sat `in-progress` for the whole of this session with
+  `touches:` empty, so the only scope signal available to a second session was the `expects:` `queue`
+  predicted for its *develop* pass — which is stale by construction once develop has handed off, and
+  is what three rows above `0076` were stepped over on. The rule reads *assume held*, and assuming
+  held on a stale prediction costs the top of the queue: `0086`, `0078` and `0075` were all refused on
+  it while the session that held the files was in fact editing neither `develop` nor `verify`
+  (pointer: `references/CONCURRENCY.md` *The working tree is shared too*, items `0081`, `0086`).
