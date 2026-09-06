@@ -15,6 +15,7 @@ expects:
   - skills/queue/templates/claim
   - .claude/backlog/claim
   - tests/claim.test.sh
+  - references/CONCURRENCY.md
 claimed_by: "5af1"
 claimed_at: 2026-09-06T01:54:54Z
 touches:
