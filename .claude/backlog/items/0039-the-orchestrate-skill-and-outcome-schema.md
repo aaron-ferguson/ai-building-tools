@@ -25,13 +25,22 @@ expects:
 claimed_by: "21cb"
 claimed_at: 2026-09-06T20:21:45Z
 touches:
-  - skills/orchestrate/SKILL.md
-  - skills/orchestrate/outcome.schema.json  # the single copy of the FR13 shape
-  - skills/verify/SKILL.md                  # AC20 only: relocate the evidence table
+  - skills/orchestrate/SKILL.md                 # new
+  - skills/orchestrate/outcome.schema.json      # new
+  - skills/verify/SKILL.md
+  - skills/queue/templates/item.md              # NOT in expects: — AC20 needs a section to write into
   - README.md
   - .claude-plugin/plugin.json
-  - tests/skill-size.test.sh
-  - tests/orchestrate.test.sh                # new
+  - .claude-plugin/marketplace.json             # NOT in expects: — it enumerates the skills too
+  - tests/orchestrate.test.sh                   # new
+  - tests/last-line.test.sh                     # NOT in expects: — its skill list was hardcoded
+  - tests/reporting.test.sh                     # NOT in expects: — same
+  - tools/harvest-usage.sh                      # NOT in expects: — AC13's three figures
+  - tools/validate-json-schema.py               # new, NOT in expects:
+  - .gitignore                                  # NOT in expects: — the marker must never commit
+# `tests/skill-size.test.sh` was in expects: and is deliberately NOT touched: it already derives
+# its subjects from skills/*/SKILL.md, so the new skill came under it with no edit. The QA plan's
+# "widened by exactly one file" was written against a list that no longer exists.
 ---
 
 ## Problem
@@ -137,9 +146,15 @@ re-derives a routing rule of its own.
 
   **The schema is supplied by the invoker and lives in exactly one file** —
   `skills/orchestrate/outcome.schema.json`. A stage is launched with
-  `claude -p --json-schema <that file>`, which validates at the tool-call layer, so stdout is the
-  object or the stage failed. Confirmed by running it, 2026-08-24: a three-field outcome came back
-  as 64 bytes of JSON and nothing else. **So no stage skill has to describe the shape, and none
+  `claude -p --json-schema "$(cat <that file>)"`, which validates at the tool-call layer, so stdout
+  is the object or the stage failed.
+
+  **Corrected 2026-09-06, in build:** this FR read `--json-schema <that file>` and cited a
+  2026-08-24 run as confirmation. **The flag does not take a path.** Passing the filename fails
+  with `Error: --json-schema is not valid JSON: JSON Parse error: Unrecognized token '/'`. The
+  inline form above works and was confirmed by running it — the object came back and nothing else
+  — and it keeps this FR's actual requirement, which is that the shape is declared in one file and
+  supplied by the invoker rather than described by any stage. **So no stage skill has to describe the shape, and none
   should** — one invoker-supplied schema is the single source, which is the argument 0038's FR9
   already makes for `next`.
 - **FR14 — Trimming the report moves detail to disk; it does not delete it.** Every kind of thing
@@ -249,8 +264,11 @@ inherited.
   against the budget. All three land in the run log and the ticket's `cost_tracking:`.
 - [ ] **AC14 — cost per closed ticket includes the supervisor's own spend.** Given a completed run,
   when the supervisor reports, then it states cost per closed ticket against this repo's observed
-  figures — **$6.01 across all stages, $4.45 counting only develop and verify** (`MEASUREMENT.md`)
-  — and not total spend. **The supervisor's own spend is in the numerator**: it attributes to no
+  figures — **$5.71 across all stages, $4.23 counting only develop and verify** (`MEASUREMENT.md`)
+  — and not total spend. **Corrected 2026-09-06, in build:** this AC quoted **$6.01 / $4.45**,
+  which `MEASUREMENT.md` itself records as the figures published *until 2026-08-30*, superseded
+  when a twentieth ticket closed and the denominator was re-read. That file names `0036`, `0040`
+  and `0041` as holding the stale pair; this ticket held it too and was not on the list. **The supervisor's own spend is in the numerator**: it attributes to no
   ticket's `cost_tracking:`, so a figure summed from the stages alone omits the one cost this
   project adds and reports a win that is partly unmeasured overhead.
 - [ ] **AC15 — the supervisor holds no claim and no row.** Given a run at any point, when the item
@@ -392,6 +410,74 @@ inherited.
   repo's rate is inflated because its tickets are *about* the tooling, so every one surfaces tooling
   defects. A project whose tickets are about a product should expect longer runs. Worth revisiting
   if the first supervised run spends more on retros than on tickets.
+
+### From the build session, 2026-09-06 (token 21cb)
+
+- **`--json-schema` takes inline JSON, not a path, and the whole slice rested on it.** See the
+  correction in FR13. What is worth carrying forward is the *shape* of the error: the FR cited a
+  run that confirmed it, the citation was specific and dated, and it was still wrong — a claim
+  about an external tool ages exactly like a quoted figure, and re-running it cost one command.
+
+- **Two more defects only a real dispatch could find, both invisible in prose.**
+  **Without `< /dev/null` the nested CLI waits on stdin** and then prints
+  `Warning: no stdin data received in 3s` **into the stream the supervisor parses as JSON** — so a
+  perfectly good stage reads as a schema failure and the supervisor escalates on it. And
+  **`--max-budget-usd 0.05` returns `Error: Exceeded USD budget` rather than the object**, because
+  a session pays its ~20k-token floor before doing anything at all; USD 0.25 passed. A cap set
+  below the floor fails every stage identically and reads exactly like a broken CLI. Both are now
+  in the dispatch block, and the first is guarded per invocation.
+
+- **AC1's untested premise is now tested and holds.** A nested `claude -p` dispatched from inside a
+  Claude Code session returns a schema-validated object on stdout in about three seconds. AC22's
+  probe is that dispatch, run for real on every suite run, skipping loudly with a named reason
+  where no CLI is present.
+
+- **The QA plan's `--bare` guard could not be written as specified.** It asked for "a grep
+  asserting `--bare` appears nowhere in `skills/orchestrate/`" — but the skill has to *explain* why
+  `--bare` is disqualifying, so a plain absence grep reds exactly the file that documents the rule
+  best. This is the negative-assertion trap `testing-conventions.md` names: anchor to a state, not
+  to vocabulary. The guard now looks for the flag **inside fenced code blocks** — where an
+  invocation lives — and checks the prose separately and positively. Same treatment for
+  `--dangerously-skip-permissions`.
+
+- **`tests/skill-size.test.sh` needed no edit, and the QA plan's "widened by exactly one file" is
+  stale.** It derives its subjects from `skills/*/SKILL.md`, so `orchestrate` came under it the
+  moment the file existed. `tests/last-line.test.sh` and `tests/reporting.test.sh` did **not** —
+  both carried a hardcoded six-skill list, so the new skill joined the set they govern without
+  joining the set they check. Both now derive, taking the tree root as a parameter so their fixture
+  cases keep their own authored trees.
+
+- **Three guards of my own could not fail when first written, and each was found by mutation.**
+  Recorded because the shapes recur. (1) With no schema on disk the validator exits 2, and
+  `valid()` folded that into "invalid" — so every refusal case was green against a schema that did
+  not exist. (2) `additionalProperties: false` had no coverage at all: the singular-object case is
+  refused for *missing `tickets`*, so mutating the keyword to `true` changed nothing. (3) The
+  `< /dev/null` check was one entry in a sweep over *all* fenced blocks concatenated, so deleting
+  the redirect from the dispatch left the probe's satisfying it. All three now fail on the defect
+  they name.
+
+- **A fixture that could not tell two implementations apart.** AC13's run-log fixture first had two
+  dispatches and two outcomes, so a script counting outcomes instead of dispatches produced
+  identical figures and the mutation came back green — on the one line that chooses between them.
+  It now records three dispatches and two outcomes, which is also the honest shape: a run killed
+  with a stage in flight never has equal counts, and is the run whose figures matter most.
+
+- **A real bug in the single-instance marker, and the wrong diagnosis it produced.** The documented
+  `mkdir .claude/backlog/runs/.active` fails on a backlog that has never been driven, because
+  `runs/` does not exist — and `|| echo busy` then reports *another supervisor holds this backlog*,
+  on the first run, with no second supervisor anywhere. Fixed with `mkdir -p` on the parent; the
+  marker is gitignored, because committed it makes every clone report a busy backlog.
+
+- **What this session could NOT verify, stated plainly for the QA pass.** AC1's "the ticket is left
+  at `next: verify, status: ready` with its claim released" and AC4's "the session claims and
+  closes each of the two individually" are properties of a **real supervised run against a real
+  backlog**, and no fixture here reaches them — what is tested is that a nested dispatch works, and
+  that the skill instructs the rest. AC6, AC7, AC8, AC12, AC15, AC17 and AC21 are likewise guarded
+  as prose: the greps prove the rule is written down, never that a session obeyed it. The first
+  real supervised run is what closes that gap, and `0040` is where its recovery behaviour belongs.
+
+- **`cost_tracking:` and `tracker:` are both absent from `config.yml`**, so neither was recorded nor
+  mirrored. Not an omission — they are off unless configured.
 
 ### From `FINDINGS.md`, landed 2026-09-05
 
