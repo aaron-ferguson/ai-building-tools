@@ -682,3 +682,18 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   held on a stale prediction costs the top of the queue: `0086`, `0078` and `0075` were all refused on
   it while the session that held the files was in fact editing neither `develop` nor `verify`
   (pointer: `references/CONCURRENCY.md` *The working tree is shared too*, items `0081`, `0086`).
+- 2026-09-05 — **All three backlog scripts commit without the `Co-Authored-By` trailer that
+  `git-conventions.md` requires of every AI-assisted commit.** Found verifying `0081`, whose own NFR
+  table names the trailer, so it is that ticket's red — but `claim` and `close` have the same gap and
+  fixing only `handoff` leaves the three inconsistent. What is undecided is the scope: whether a
+  script-generated bookkeeping commit counts as AI-assisted (it is made on a session's behalf, so this
+  session read it as yes), or whether the convention should exempt them and the NFR row was the error
+  (pointer: `skills/queue/templates/{claim,close,handoff}`, `git-conventions.md` *Co-authorship*,
+  items `0081`, `0082`).
+- 2026-09-05 — **A mutation sweep on `skills/queue/templates/handoff` collides with
+  `handoff.test.sh`'s own internal mutation cases**, which copy the script and break it deliberately.
+  Mutating the source makes those cases report *the mutation did not apply — the case below proves
+  nothing* and the run exits before printing a tally, so an external mutation reads as a harness
+  failure rather than as the red it actually is. The tally-less output is the tell. Any script whose
+  guard mutates its own copy has this shape, so `claim.test.sh` and `close.test.sh` will too
+  (pointer: `tests/handoff.test.sh` lines ~343 and ~382, item `0081`).
