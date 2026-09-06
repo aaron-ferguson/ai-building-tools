@@ -730,3 +730,45 @@ every mutation was reverted.
 
 **Not advisory.** `git status --porcelain` was empty at Step 2 and empty again after the last
 evidence command — no dirty paths at all, so the intersection with the evidence set is empty.
+
+### Re-entry 2026-09-06 (fourth) — the one fixture asked for, and why the pair was asymmetric
+
+- **The verdict's fix is in, both halves, each proven red on its own.** `next.test.sh:763–764` now
+  assert `'./next --drive'` and `'./next --findings'` — the mode's own line in the listing — rather
+  than the bare flag. Reproduced the defect first: against a `usage()` with `--drive` dropped from
+  the synopsis and its five-line description block deleted, the **pre-fix** assertions gave
+  `200 passed, 0 failed`; after the fix the same mutation gives `199 passed, 1 failed`, failing on
+  `lists --drive as a mode` alone. Mutating the `--findings` listing away instead reds only
+  `lists --findings as a mode`. **No production code changed** — fourth verdict running where the
+  branch was right and only the evidence was missing.
+
+- **Why one half of the pair was evidence and the other was not, which the verdict left open.** It
+  is not that `--findings` was written more carefully: it is that the token `--findings` happens to
+  appear nowhere in `usage()` outside the synopsis and its own line, while `--drive` appears twice
+  more in the trailing exit-code paragraph. So the twin's strength was an accident of which words
+  the surrounding prose reached for, and it would have decayed the moment anyone wrote a sentence
+  mentioning `--findings` — which the ticket's own Documentation NFR makes likely, since that
+  paragraph exists to explain these two modes. **A guard whose colour depends on the vocabulary of
+  neighbouring prose is not weak, it is unstable**: it can turn from evidence into non-evidence
+  through an edit that touches no assertion and no branch. That is the argument for anchoring even
+  the half that currently reds, and it is why the verdict was right to ask for both.
+
+- **The three `--findings` sites the verdict tabled are deliberately untouched.** It says in as many
+  words that whether they earn fixtures is `queue`'s call and that they sit outside AC6, whose two
+  entry shapes and third-shape guard are all red under mutation. Inventing assertions for them here
+  would be this stage writing a contract nobody agreed to. They still need a row; **as of this
+  session no such row exists** — the absent-`FINDINGS.md` early return is the one to weigh first,
+  since its deletion spends the usage-error code on a well-formed invocation in exactly the
+  unmigrated install the Compatibility NFR is about.
+
+**Suite:** `200 passed, 0 failed` in `next.test.sh`; **858 passed, 0 failed across all 21
+`tests/*.test.sh`** — every runner this project has, run individually rather than fail-fast
+(`config.yml`). Assertion totals are unchanged from the last re-entry because two assertions were
+re-anchored, not added.
+
+**Copies.** `skills/queue/templates/next`, `.claude/backlog/next` and the installed `0.9.16` plugin
+copy are all three byte-identical, checked after the last restore. Every mutation was reverted from
+a pristine copy taken before the first one, never with `git checkout`.
+
+**Not advisory.** `git status --porcelain` showed only this ticket's own `tests/next.test.sh`
+throughout; no foreign dirty paths at all.
