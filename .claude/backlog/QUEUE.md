@@ -29,7 +29,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
 | 0076 | Make a tool edit run the target repo's suite before it commits | develop | in-progress |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
-| 0082 | Make claim fail safe on the two paths where it currently fails open | develop | ready |  |
+| 0082 | Make claim fail safe on the two paths where it currently fails open | develop | in-progress |  |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
 | 0083 | Decide what a second checkout may do with the backlog | design | ready |  |
 | 0038 | Add the drive and findings routing modes to next | develop | ready | 0036 |
