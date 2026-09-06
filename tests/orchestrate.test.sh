@@ -408,8 +408,11 @@ else
   bad "AC19 — the skill does not state the permissions rule"
 fi
 
-echo "AC19 — a dispatch is capped and scoped"
-for want in -\-max-budget-usd -\-allowed-tools -\-add-dir -\-session-id -\-setting-sources; do
+echo "AC19/AC1 — a dispatch is capped, scoped, and does not block on stdin"
+# `< /dev/null` is in this sweep because it is a real defect this ticket hit rather than a
+# tidiness rule: without it the nested CLI waits on stdin and prints its warning INTO the stream
+# the supervisor parses as JSON, so a good stage reads as a schema failure and Step 4 escalates.
+for want in -\-max-budget-usd -\-allowed-tools -\-add-dir -\-session-id -\-setting-sources '< /dev/null'; do
   if fenced "$SKILL" | grep -qF -- "$want"; then
     ok "the dispatch block carries $want"
   else
@@ -673,9 +676,16 @@ fi
 #
 # The fixture is GENERATED with known counts rather than read from the live transcript store: the
 # store grows, and a guard that reads it goes red for reasons that have nothing to do with the code
-# (testing-conventions.md). Context climbs 20000 -> 20800 -> 21600 -> 22400 over four turns across
-# two dispatches, so the floor is 20000, the growth is (22400-20000)/2 = 1200 per cycle, and turns
-# per cycle is 4/2 = 2.0. Nothing else in the fixture can produce those three numbers.
+# (testing-conventions.md). Context climbs 20000 -> 24500 in steps of 900 over six turns, across
+# THREE dispatches of which only two returned an outcome. So the floor is 20000, the growth is
+# (24500-20000)/3 = 1500 per cycle, and turns per cycle is 6/3 = 2.0.
+#
+# THE UNEQUAL DISPATCH AND OUTCOME COUNTS ARE THE POINT. The first version of this fixture had two
+# of each, so a script counting outcomes instead of dispatches produced identical numbers and the
+# mutation came back green -- a fixture that cannot tell the two apart, guarding the one line that
+# chooses between them. Counting outcomes here yields 2250 and 3.0 instead, and both cases red. It
+# is also the honest shape: a run killed with a stage in flight is exactly the run whose figures
+# matter most, and it never has equal counts.
 echo "AC13 — harvest-usage reports floor, growth and turns per cycle over a run log"
 
 HARVEST="$ROOT/tools/harvest-usage.sh"
@@ -687,7 +697,7 @@ import json, sys
 root = sys.argv[1]
 lines = []
 lines.append({"type": "user", "message": {"content": "<command-name>/orchestrate</command-name>"}})
-for i, ctx in enumerate((20000, 20800, 21600, 22400)):
+for i, ctx in enumerate((20000, 20900, 21800, 22700, 23600, 24500)):
     lines.append({
         "type": "assistant",
         "message": {
@@ -708,6 +718,7 @@ events = [
     {"event": "outcome",  "run_id": "r1", "stage": "develop", "at": "2026-09-06T01:00:00Z"},
     {"event": "dispatch", "run_id": "r1", "stage": "verify",  "at": "2026-09-06T02:00:00Z"},
     {"event": "outcome",  "run_id": "r1", "stage": "verify",  "at": "2026-09-06T03:00:00Z"},
+    {"event": "dispatch", "run_id": "r1", "stage": "develop", "at": "2026-09-06T04:00:00Z"},
 ]
 with open(f"{root}/run.jsonl", "w") as fh:
     for e in events:
@@ -722,12 +733,12 @@ case "$out" in
 $out" ;;
 esac
 case "$out" in
-  *"GROWTH"*1200*) ok "growth is reported as an absolute figure per cycle (1200)" ;;
-  *) bad "AC13 — no GROWTH of 1200 per cycle in the output:
+  *"GROWTH"*1500*) ok "growth is reported as an absolute figure per cycle (1500)" ;;
+  *) bad "AC13 — no GROWTH of 1500 per cycle in the output:
 $out" ;;
 esac
 case "$out" in
-  *"TURNS"*2.0*) ok "turns per cycle is reported (2.0 over 2 cycles)" ;;
+  *"TURNS"*2.0*) ok "turns per cycle is reported (2.0 over 3 cycles)" ;;
   *) bad "AC13 — no TURNS per cycle of 2.0 in the output:
 $out" ;;
 esac
@@ -742,10 +753,19 @@ esac
 first="$(python3 -c 'import json,sys
 ctxs=[json.loads(l)["message"]["usage"]["input_tokens"] for l in open(sys.argv[1]) if json.loads(l)["type"]=="assistant"]
 print(ctxs[0], ctxs[-1])' "$RUNDIR/transcripts/run.jsonl")"
-if [ "$first" = "20000 22400" ]; then
+if [ "$first" = "20000 24500" ]; then
   ok "the fixture climbs, so first and last are distinguishable"
 else
   bad "AC13 — the fixture does not climb ($first); the FLOOR case cannot fail"
+fi
+
+# The second premise, and the one the first version of this fixture failed silently.
+disp="$(grep -c '"event": "dispatch"' "$RUNDIR/run.jsonl" || true)"
+outc="$(grep -c '"event": "outcome"' "$RUNDIR/run.jsonl" || true)"
+if [ "$disp" != "$outc" ]; then
+  ok "the fixture records $disp dispatches against $outc outcomes, so the two are distinguishable"
+else
+  bad "AC13 — the fixture has $disp of each; a script counting outcomes instead of dispatches cannot be caught"
 fi
 
 echo "AC13/FR7 — the script's default budget and the skill's stated budget agree"
@@ -760,6 +780,97 @@ if [ -n "$skill_n" ] && [ "$skill_n" = "$tool_budget" ]; then
   ok "the skill states $skill_budget turns per cycle and the tool defaults to $tool_budget"
 else
   bad "AC13/FR7 — the skill states '${skill_budget:-nothing}' and the tool defaults to '${tool_budget:-nothing}'; they must be the same number"
+fi
+
+echo "AC4/AC5 — the dispatch unit is a gate, and verify is a separate process"
+
+if grep -qF 'dispatch unit is a gate' "$SKILL"; then
+  ok "the skill states the dispatch unit is a gate rather than a row"
+else
+  bad "AC4 — the skill does not state that a gate is the dispatch unit; one session per row regresses the saving"
+fi
+if grep -qiE 'must not self-certify|not self-certify' "$SKILL"; then
+  ok "the skill states that a stage must not self-certify, which is why verify is a new process"
+else
+  bad "AC5 — the skill does not say why verify is dispatched rather than judged here"
+fi
+if grep -qE 'verifies nothing|runs no test' "$SKILL"; then
+  ok "the skill states that the supervisor itself verifies nothing"
+else
+  bad "AC5 — the skill does not state that the supervisor runs no test and writes no verdict"
+fi
+
+echo "AC14 — cost per closed ticket, with the supervisor's own spend in the numerator"
+# Case-insensitive: the phrase opens a bullet, and a presence grep that pins one casing reds a
+# subject that is present and correct (testing-conventions.md).
+if grep -qiF 'cost per closed ticket' "$SKILL"; then
+  ok "the skill reports cost per closed ticket rather than total spend"
+else
+  bad "AC14 — the skill does not name cost per closed ticket; total spend is a figure a longer run always wins"
+fi
+if grep -qF 'attributes to no ticket' "$SKILL"; then
+  ok "the skill states that the supervisor's own spend attributes to no ticket and must be added in"
+else
+  bad "AC14 — the skill does not say the supervisor's spend is unattributed; a sum over the stages silently omits it"
+fi
+# The figures a skill quotes about MEASUREMENT.md are a cache of that file, and this pair has gone
+# stale once already (0036, 0040 and 0041 still hold the pre-2026-08-30 numbers). The guard reads
+# both files and compares, so the next time the denominator moves this reds instead of drifting.
+recorded="$(grep -oE '\*\*USD [0-9]+\.[0-9]+\*\*' "$SKILL" | grep -oE '[0-9]+\.[0-9]+' | tr '\n' ' ' | sed 's/ $//')"
+source_figs="$(grep -oE 'is \*\*\$[0-9]+\.[0-9]+ per closed ticket\*\*' "$ROOT/MEASUREMENT.md" | grep -oE '[0-9]+\.[0-9]+' | tr '\n' ' ' | sed 's/ $//')"
+if [ -n "$recorded" ] && [ "$recorded" = "$source_figs" ]; then
+  ok "the skill's quoted figures ($recorded) match MEASUREMENT.md's"
+else
+  bad "AC14 — the skill quotes [${recorded:-nothing}] where MEASUREMENT.md records [${source_figs:-nothing}]; a quoted figure is a cache and this one has gone stale before"
+fi
+if grep -qF 'recompute both from `MEASUREMENT.md`' "$SKILL"; then
+  ok "the skill tells the reader to recompute rather than quote"
+else
+  bad "AC14 — the skill quotes figures without saying they are a cache to be recomputed"
+fi
+
+echo "AC17 — a resuming supervisor derives its position and does not restore it"
+if grep -qF 'It is not state' "$SKILL"; then
+  ok "the skill states the log is provenance rather than state"
+else
+  bad "AC17 — the skill does not say the log is not state; a resuming session would restore from it"
+fi
+if grep -qF 'Delete the log between two sessions' "$SKILL"; then
+  ok "the skill states that deleting the log does not change the next action"
+else
+  bad "AC17 — the skill does not state the falsifiable half: that the log is not consulted for what to do next"
+fi
+if grep -qF 'exactly three things' "$SKILL"; then
+  ok "the skill enumerates the three things the log IS read for"
+else
+  bad "AC17 — the skill does not bound what the log is read for"
+fi
+
+echo "AC21 — the report carries what the run learned"
+if grep -qF 'findings-parked count' "$SKILL"; then
+  ok "the report carries the findings-parked count"
+else
+  bad "AC21 — the report carries no findings-parked count; nothing shows the run is learning anything"
+fi
+
+echo "AC23 — the plugin still declares its skill set, and this one is in it"
+for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json; do
+  if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$ROOT/$f" 2>/dev/null; then
+    ok "$f parses"
+  else
+    bad "AC23 — $f no longer parses; the plugin would not load at all"
+  fi
+  if grep -qF 'orchestrate' "$ROOT/$f"; then
+    ok "$f names the orchestrate skill"
+  else
+    bad "AC24 — $f does not name the orchestrate skill"
+  fi
+done
+sec="$(awk '/^\| Skill \| Does \| Phase \|/ { inside = 1 } inside && /^\|/ { print } inside && !/^\|/ { inside = 0 }' "$README")"
+if printf '%s' "$sec" | grep -qF '/orchestrate'; then
+  ok "README's skill table lists /orchestrate"
+else
+  bad "AC24 — README's skill table does not list /orchestrate"
 fi
 
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"

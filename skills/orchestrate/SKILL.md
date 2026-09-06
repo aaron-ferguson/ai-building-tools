@@ -118,9 +118,9 @@ writes a line, and those are shared across tickets touching the same files. Spli
 sessions re-pays that per ticket while every test still passes.
 
 **`develop` is followed by `verify`, and you verify nothing yourself.** A ticket left at
-`next: verify, status: ready` gets a **new** process running `verify` on it. A stage must not
-self-certify, which is the whole reason there are two stages; a supervisor that reads a green and
-closes the ticket has become the self-certification it was avoiding.
+`next: verify, status: ready` gets a **new** process running `verify` on it.
+**A stage must not self-certify** — that is the whole reason there are two stages, and a supervisor
+that reads a green and closes the ticket has become the self-certification it was avoiding.
 
 **Stay answerable while a stage runs, and do not poll.** The user can ask what is happening,
 redirect the run to a specific ticket, hold it or stop it at any point. Answer from the run log and
@@ -283,11 +283,12 @@ a release.
 What belongs on the screen and what belongs on disk is `references/REPORTING.md` at the plugin
 root. Three things it cannot say, because they are specific to a run rather than to a stage:
 
-- **Cost per closed ticket, with your own spend in the numerator.** Not total spend, which a longer
-  run always wins. This repo's observed figures are **USD 5.71 per closed ticket across all
-  stages** and **USD 4.23 counting only develop and verify** — recompute both from `MEASUREMENT.md`
-  rather than quoting these, since the denominator moves every time a ticket closes. **The
-  supervisor attributes to no ticket's `cost_tracking:`**, so a figure summed from the stage
+- **The cost per closed ticket, with your own spend in the numerator.** Not total spend, which a
+  longer run always wins. This repo's observed figures, across all stages and then counting only
+  develop and verify, are **USD 5.71** and **USD 4.23** — but recompute both from `MEASUREMENT.md`
+  rather than quoting these, because a quoted figure is a cache of another file and this
+  particular pair has gone stale once already. The denominator moves every time a ticket closes.
+  **The supervisor attributes to no ticket's `cost_tracking:`**, so a figure summed from the stage
   outcomes alone omits the one cost this skill adds and reports a win that is partly unmeasured
   overhead.
 - **The bound, as three figures rather than a ratio.** `tools/harvest-usage.sh <transcript-dir>

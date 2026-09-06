@@ -12,13 +12,17 @@ verify it without asking a single clarifying question.
 | `/develop` | Takes the top `ready` item, builds it TDD, and stops at `next: verify` | Build |
 | `/verify` | Checks a change against the item's written acceptance criteria, then closes it or sends it back | Check |
 | `/retro` | Sweeps the parked findings of many sessions and lands the lessons where they get read again | Learn |
+| `/orchestrate` | Drives the loop: dispatches each stage as its own session and routes on what comes back | Drive |
 
 `/design` and `/prototype` split the Design phase by output: **tell me** versus **show me**.
 Default to `/design` — escalation is cheap, a prototype you didn't need is not. `/design` never
 invokes `/prototype`; it names what a prototype would have to settle and leaves the call to you.
 
-**No skill invokes another.** `/develop` stops at `next: verify` and names the command; `/verify`
-closes; `/retro` runs on its own cadence over what many sessions parked. Building an item, checking
+**No skill invokes another, and `/orchestrate` is not an exception.** `/develop` stops at
+`next: verify` and names the command; `/verify` closes; `/retro` runs on its own cadence over what
+many sessions parked. `/orchestrate` *dispatches* the others as separate processes rather than
+pulling them into its own context — which is the same rule, honoured by a different mechanism, and
+why a supervised stage costs what a hand-typed one costs. Building an item, checking
 it, and learning from it are three jobs, and the last two are the ones that get cut short when one
 session owns all three — so the handoff travels on disk, through the ticket's `next` field and
 `FINDINGS.md`, rather than in a conversation that is about to end. `/retro` is the only skill here
