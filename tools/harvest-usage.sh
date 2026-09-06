@@ -26,13 +26,21 @@
 #   --sessions         one row per session as well as the per-skill table
 #   --exclude          drop a session by id prefix, repeatable; for the in-flight session that
 #                      produced the harvest, whose own cost is not yet complete
+#   --run              a supervised run's log (.claude/backlog/runs/<id>.jsonl). Adds the three
+#                      figures a supervisor is bounded by (0039 AC13): the per-turn FLOOR, the
+#                      per-cycle GROWTH as an absolute number, and TURNS per cycle against a
+#                      budget. A RATIO of supervisor to stage spend is deliberately not among
+#                      them -- it cannot go red, because a longer run improves it while the
+#                      supervisor gets steadily worse.
+#   --budget           turns-per-cycle budget to judge against (default DEFAULT_TURN_BUDGET).
+#                      Keep it equal to the number skills/orchestrate/SKILL.md states.
 #
 # Requires: sh and python3. No packages — a one-directory JSON read does not earn a dependency.
 
 set -eu
 
 if [ $# -lt 1 ]; then
-  echo "usage: $0 <transcript-dir> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--sessions] [--exclude <prefix>]" >&2
+  echo "usage: $0 <transcript-dir> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--sessions] [--exclude <prefix>] [--run <run-log.jsonl> [--budget N]]" >&2
   exit 2
 fi
 
@@ -51,6 +59,10 @@ RATES = {
     "claude-sonnet-5": (3.00, 15.00),
     "claude-haiku-4-5": (1.00, 5.00),
 }
+# The turns-per-cycle budget skills/orchestrate/SKILL.md states. Two files carry this number and
+# tests/orchestrate.test.sh reads BOTH and compares them, rather than restating it a third time.
+DEFAULT_TURN_BUDGET = 3
+
 CACHE_READ_MULT = 0.1
 CACHE_WRITE_5M_MULT = 1.25
 CACHE_WRITE_1H_MULT = 2.0
@@ -130,18 +142,21 @@ def marker_skill(message):
 
 
 def parse_args(argv):
-    opts = {"since": None, "until": None, "sessions": False, "exclude": []}
+    opts = {"since": None, "until": None, "sessions": False, "exclude": [],
+            "run": None, "budget": DEFAULT_TURN_BUDGET}
     i = 0
     while i < len(argv):
         a = argv[i]
         if a == "--sessions":
             opts["sessions"] = True
-        elif a in ("--since", "--until", "--exclude"):
+        elif a in ("--since", "--until", "--exclude", "--run", "--budget"):
             i += 1
             if i >= len(argv):
                 sys.exit("%s needs a value" % a)
             if a == "--exclude":
                 opts["exclude"].append(argv[i])
+            elif a == "--budget":
+                opts["budget"] = int(argv[i])
             else:
                 opts[a[2:]] = argv[i]
         else:
@@ -216,6 +231,83 @@ def add_into(dst, src):
     dst["days"] |= src["days"]
 
 
+def turn_contexts(path, opts):
+    """Every turn's context on one session's transcript, in order. Order is the whole point: the
+    FLOOR is the first turn, never the smallest and never the last, and a run that read the wrong
+    end would still print a plausible number."""
+    out, seen = [], set()
+    for line in open(path, errors="replace"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("type") != "assistant":
+            continue
+        msg = d.get("message", {})
+        usage = msg.get("usage")
+        if not usage:
+            continue
+        mid = msg.get("id")
+        if mid in seen:
+            continue
+        seen.add(mid)
+        out.append(context_of(usage))
+    return out
+
+
+def cycles_in(path):
+    """How many stage dispatches the run log records. A cycle is a dispatch: the supervisor's
+    turn count is divided by this, so counting outcomes instead would undercount a run that was
+    killed with a stage in flight -- exactly the run whose figures matter most."""
+    n = 0
+    for line in open(path, errors="replace"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("event") == "dispatch":
+            n += 1
+    return n
+
+
+def report_run_bound(directory, opts):
+    """FR7's three figures for one supervised run. Prints nothing and returns False when the log
+    names no dispatch -- a floor divided by zero cycles is not a bound, and printing a placeholder
+    for it is how an unmeasured run comes to look measured."""
+    log = opts["run"]
+    if not os.path.exists(log):
+        print("RUN LOG %s does not exist; no bound reported" % log)
+        return False
+    cycles = cycles_in(log)
+    contexts = []
+    for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
+        contexts.extend(turn_contexts(path, opts))
+    if not contexts:
+        print("RUN no priced turns in %s; no bound reported" % directory)
+        return False
+    if cycles < 1:
+        print("RUN LOG %s records no dispatch; no bound reported" % log)
+        return False
+    floor = contexts[0]
+    turns = len(contexts)
+    growth = (contexts[-1] - floor) / float(cycles)
+    per_cycle = turns / float(cycles)
+    print("")
+    print("RUN BOUND over %d cycles and %d turns, from %s" % (cycles, turns, os.path.basename(log)))
+    print("FLOOR    %d tokens — the first turn's context, before any run state exists" % floor)
+    print("GROWTH   %.0f tokens per cycle — absolute, not a share of anything" % growth)
+    print("TURNS    %.1f per cycle against a budget of %d — %s"
+          % (per_cycle, opts["budget"],
+             "within" if per_cycle <= opts["budget"] else "OVER"))
+    return True
+
+
 def row(name, r):
     turns = r["turns"] or 1
     return "%-10s| %6d | %7d | %10.2f | %8.4f | %12d | %10d" % (
@@ -280,4 +372,7 @@ if opts["sessions"]:
           % ("SESSION", "SESSNS", "TURNS", "COST USD", "USD/TURN", "CONTEXT TOK", "CTX/TURN"))
     for sid, skills, r in sorted(session_rows, key=lambda x: -x[2]["cost"]):
         print(row(sid, r) + " | " + skills)
+
+if opts["run"]:
+    report_run_bound(directory, opts)
 PY

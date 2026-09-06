@@ -290,11 +290,12 @@ root. Three things it cannot say, because they are specific to a run rather than
   supervisor attributes to no ticket's `cost_tracking:`**, so a figure summed from the stage
   outcomes alone omits the one cost this skill adds and reports a win that is partly unmeasured
   overhead.
-- **The bound, as three figures rather than a ratio.** Run `tools/harvest-usage.sh` over this
-  session's own transcript and report the per-turn **floor**, the per-cycle **growth** as an
-  absolute number, and **turns per cycle** against the budget in the section above. A ratio of
-  supervisor to stage spend cannot go red — a longer run improves it while the supervisor gets
-  worse. All three land in the run log.
+- **The bound, as three figures rather than a ratio.** `tools/harvest-usage.sh <transcript-dir>
+  --run .claude/backlog/runs/<run-id>.jsonl` prints the per-turn **floor**, the per-cycle
+  **growth** as an absolute number, and **turns per cycle** against the budget in the section
+  above. A ratio of supervisor to stage spend cannot go red — a longer run improves it while the
+  supervisor gets steadily worse — which is why none of the three is one. All three land in the
+  run log.
 - **What the run learned.** Every cycle's findings-parked count, and the pointers worth opening.
   This is the only signal left that the run is learning anything.
 

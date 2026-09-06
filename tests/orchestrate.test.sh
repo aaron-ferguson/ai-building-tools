@@ -664,5 +664,103 @@ else
   esac
 fi
 
+# ------------------------------------------------------------------------------------------------
+# AC13 — the bound is measured as three figures, not as a ratio.
+#
+# WHY NOT A RATIO. Supervisor spend over stage spend cannot go red: a longer run improves it while
+# the supervisor gets steadily worse, so the one number that looks like a bound is the one number
+# that never reports one. Floor, growth and turns-per-cycle each can.
+#
+# The fixture is GENERATED with known counts rather than read from the live transcript store: the
+# store grows, and a guard that reads it goes red for reasons that have nothing to do with the code
+# (testing-conventions.md). Context climbs 20000 -> 20800 -> 21600 -> 22400 over four turns across
+# two dispatches, so the floor is 20000, the growth is (22400-20000)/2 = 1200 per cycle, and turns
+# per cycle is 4/2 = 2.0. Nothing else in the fixture can produce those three numbers.
+echo "AC13 — harvest-usage reports floor, growth and turns per cycle over a run log"
+
+HARVEST="$ROOT/tools/harvest-usage.sh"
+RUNDIR="$FIX/harvest"
+mkdir -p "$RUNDIR/transcripts"
+
+python3 - "$RUNDIR" <<'INNER'
+import json, sys
+root = sys.argv[1]
+lines = []
+lines.append({"type": "user", "message": {"content": "<command-name>/orchestrate</command-name>"}})
+for i, ctx in enumerate((20000, 20800, 21600, 22400)):
+    lines.append({
+        "type": "assistant",
+        "message": {
+            "id": f"msg_{i}",
+            "model": "claude-opus-5",
+            "usage": {"input_tokens": ctx, "cache_read_input_tokens": 0,
+                      "cache_creation_input_tokens": 0, "output_tokens": 100},
+        },
+        "timestamp": f"2026-09-06T0{i}:00:00Z",
+    })
+with open(f"{root}/transcripts/run.jsonl", "w") as fh:
+    for line in lines:
+        fh.write(json.dumps(line) + "\n")
+
+events = [
+    {"event": "run_started",  "run_id": "r1", "at": "2026-09-06T00:00:00Z"},
+    {"event": "dispatch", "run_id": "r1", "stage": "develop", "at": "2026-09-06T00:01:00Z"},
+    {"event": "outcome",  "run_id": "r1", "stage": "develop", "at": "2026-09-06T01:00:00Z"},
+    {"event": "dispatch", "run_id": "r1", "stage": "verify",  "at": "2026-09-06T02:00:00Z"},
+    {"event": "outcome",  "run_id": "r1", "stage": "verify",  "at": "2026-09-06T03:00:00Z"},
+]
+with open(f"{root}/run.jsonl", "w") as fh:
+    for e in events:
+        fh.write(json.dumps(e) + "\n")
+INNER
+
+out="$("$HARVEST" "$RUNDIR/transcripts" --run "$RUNDIR/run.jsonl" 2>&1 || true)"
+
+case "$out" in
+  *"FLOOR"*20000*) ok "the floor is the FIRST turn's context (20000), not the last or the largest" ;;
+  *) bad "AC13 — no FLOOR of 20000 in the output:
+$out" ;;
+esac
+case "$out" in
+  *"GROWTH"*1200*) ok "growth is reported as an absolute figure per cycle (1200)" ;;
+  *) bad "AC13 — no GROWTH of 1200 per cycle in the output:
+$out" ;;
+esac
+case "$out" in
+  *"TURNS"*2.0*) ok "turns per cycle is reported (2.0 over 2 cycles)" ;;
+  *) bad "AC13 — no TURNS per cycle of 2.0 in the output:
+$out" ;;
+esac
+case "$out" in
+  *"budget"*) ok "turns per cycle is reported against a budget" ;;
+  *) bad "AC13 — turns per cycle is reported with nothing to judge it against" ;;
+esac
+
+# The floor case above separates a script reading the FIRST turn from one reading the last only
+# because the fixture climbs. Assert that it does, or the case proves nothing (testing-conventions.md,
+# a throwaway probe needs its own premise asserted).
+first="$(python3 -c 'import json,sys
+ctxs=[json.loads(l)["message"]["usage"]["input_tokens"] for l in open(sys.argv[1]) if json.loads(l)["type"]=="assistant"]
+print(ctxs[0], ctxs[-1])' "$RUNDIR/transcripts/run.jsonl")"
+if [ "$first" = "20000 22400" ]; then
+  ok "the fixture climbs, so first and last are distinguishable"
+else
+  bad "AC13 — the fixture does not climb ($first); the FLOOR case cannot fail"
+fi
+
+echo "AC13/FR7 — the script's default budget and the skill's stated budget agree"
+# Derived from both files rather than restated here: two places carrying the same number silently
+# diverge, and the guard that restates it a third time is the one that hides the divergence.
+skill_budget="$(grep -oE 'budget of ([a-z]+) turns per cycle' "$SKILL" | head -1 | awk '{print $3}')"
+tool_budget="$(grep -oE 'DEFAULT_TURN_BUDGET = [0-9]+' "$HARVEST" | head -1 | awk '{print $3}')"
+case "$skill_budget" in
+  three) skill_n=3 ;; two) skill_n=2 ;; four) skill_n=4 ;; five) skill_n=5 ;; *) skill_n="" ;;
+esac
+if [ -n "$skill_n" ] && [ "$skill_n" = "$tool_budget" ]; then
+  ok "the skill states $skill_budget turns per cycle and the tool defaults to $tool_budget"
+else
+  bad "AC13/FR7 — the skill states '${skill_budget:-nothing}' and the tool defaults to '${tool_budget:-nothing}'; they must be the same number"
+fi
+
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]
