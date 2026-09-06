@@ -3,7 +3,7 @@ id: "0086"
 title: Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-09-02
@@ -27,8 +27,8 @@ expects:
   - tests/close-by.test.sh
   - docs/decisions/003-who-may-close-a-ticket.md
   - .claude/backlog/items/0079-a-qa-level-for-a-repo-with-no-runner.md
-claimed_by:
-claimed_at:
+claimed_by: "f7c0"
+claimed_at: 2026-09-06T01:52:39Z
 touches:
 ---
 
