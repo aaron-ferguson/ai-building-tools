@@ -21,13 +21,8 @@ expects:
 claimed_by: "40e5"
 claimed_at: 2026-09-06T16:50:19Z
 touches:
-  - .claude/backlog/next
   - skills/queue/templates/next
   - tests/next.test.sh
-  - .claude/backlog/config.yml
-  - skills/queue/templates/config.yml
-  - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
-  - README.md               # not predicted: line 208's test inventory names next's modes
 ---
 
 ## Problem
