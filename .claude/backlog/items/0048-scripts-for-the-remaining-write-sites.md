@@ -145,3 +145,19 @@ rather than `next: develop`. AC1 is fixed regardless:
 - **Size re-checked and kept at `l`.** Losing the handoff half shrinks the decision, but the
   `RANKING.md` write adds a second file to the one remaining site with the same "is it locked"
   question outstanding, so the decision is not obviously smaller than before.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **The release-without-close path is the write site with a script-shaped failure and no script**
+  (FINDINGS 2026-09-03). `./claim` sets `status: in-progress` in **both** the row and the item, so
+  releasing means resetting both plus `claimed_by:` and `claimed_at:` — four fields across two
+  files. Two separate by-hand releases in one session cleared the token and the row and left the
+  item at `in-progress`: the same row/item drift that session had just reported against `0084`,
+  produced twice by the person reporting it. That is the exact argument this ticket's Notes call
+  "the general rule this repo keeps rediscovering", with a fresh instance and a named site. `claim`
+  and `close` are scripted and `handoff` now is; the release an advisory verdict or a `waiting`
+  outcome needs is the one still done by hand, and `skills/verify/SKILL.md` Steps 5 and 7 are where
+  it is prescribed. Whether it is a fifth script, a mode on `claim`, or out of scope beside the
+  `RANKING.md` question is the design call — but it is a candidate site the open question does not
+  currently list, and `0056`'s Step 4 needs the same path for a `design` pass that claims a row and
+  must give it back.

@@ -110,3 +110,19 @@ the transcript.
   Whether `/verify` still collides could not be confirmed from inside this session; the `design`
   collision was confirmed from the skill listing this session was given. The FRs are written against
   the class so that neither answer changes the work.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **The `/verify` instance, recorded in full — and it belongs beside the note above that the ticket
+  does not rest on it** (FINDINGS 2026-08-30). What was observed: typing `/verify` in this repo
+  loaded a bundled Claude Code skill of the same name — a runtime-observation skill whose opening
+  rules are "Don't run tests. Don't typecheck" and "the scope is a diff" — rather than
+  `ai-building-tools:verify`, which reads a ticket's acceptance criteria and whose declared
+  `qa_level` for almost every row in this backlog **is** a scripted assertion. The two are not merely
+  different, they are inverses on the one instruction that matters. A session following the loaded
+  skill would have refused to run `tests/reporting.test.sh`, reported SKIP for "no runtime surface",
+  and closed nothing, because the bundled skill has no concept of a backlog row. It was caught only
+  because the operator noticed the base directory in the skill header — which is the detection method
+  FR1 is meant to replace, and evidence that it works when someone happens to look. The same
+  collision is available for `design` and `run`. The finding's own fix direction matches FR1–FR4: a
+  distinguishing name, or a line telling a session to invoke the plugin-qualified form explicitly.

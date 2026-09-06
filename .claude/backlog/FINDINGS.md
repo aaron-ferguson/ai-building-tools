@@ -23,16 +23,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
-- 2026-09-01 — **a prose comment inside a single-quoted `awk` program breaks the shell quoting, and
-  the failure names nothing about quotes.** Editing `close`'s DONE-row builder, a comment reading
-  `other projects' spellings` closed the `'...'` wrapping the whole awk script; `close.test.sh` then
-  failed 20 of 63 cases reporting an empty reconcile list and a commit carrying six extra files — a
-  signature that reads as broken reconcile logic. `close`, `claim` and `next` all embed awk this way
-  and their comments carry the reasoning, so the scripts actively invite the hazard. Cheap guard:
-  `sh -n` per script in `backlog-scripts-installed.test.sh`, which would have caught it before the
-  behavioural suite did (pointer: `skills/queue/templates/close`, `tests/close.test.sh`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0077, deferred, not yet written.
-
 - 2026-08-24 — **a third size gate would trip the DRY trigger that 0028 correctly declined.**
   `tests/reference-size.test.sh` is the second copy of the `offenders`/`pad`/`ok`/`bad` shape;
   `coding-conventions.md`'s Tier-2 rule fires on the *third* instance, so 0028's *Out of scope*
@@ -66,18 +56,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   and a sweep that specifies faithfully ships a ticket built on a stale premise — which reads
   exactly like a well-specified one (pointer: skills/queue/SKILL.md Step 5, items/0063, items/0064).
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
-
-- 2026-08-25 — **a claim released in the working tree but not committed reads as neither held nor
-  free, and no mode reports it.** `0037`'s row says `in-progress` in the committed `QUEUE.md` while
-  its item file, dirty and uncommitted, has `claimed_by:` cleared and `status: waiting`.
-  `CONCURRENCY.md`'s *A stage writes only the ticket it holds* defines held as "a non-empty
-  `claimed_by:` in the item, and nothing else", so the item reads free; the row reads taken;
-  `./next develop` printed `0037 [no token] none declared — assume held, ask`; and `./next --drift`
-  said "no drift" because it only compares the Status column against `blocked_by`. The rule that
-  makes a claim durable is stated for the *claim* and not for the *release*, so a release is
-  invisible in exactly the same way a claim would be (pointer: references/CONCURRENCY.md, items/0049,
-  items/0066).
-  — read and triaged 2026-09-05 by retro: belongs to item 0049, deferred, not yet written.
 
 - 2026-08-25 — **checking "the output is unchanged" needs the HEAD copy of a suite run from inside
   the repo, and nothing says so.** 0053's AC1 is a byte-comparison against today's output, so the
@@ -126,34 +104,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   (pointer: items/0073, items/0074, tools/harvest-usage.sh, MEASUREMENT.md).
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
 
-- 2026-08-30 — **A stale claim whose release is sitting uncommitted in the shared tree has no rule
-  in `develop` Step 1, and the two rules that apply give opposite answers.** 0037 reads
-  `in-progress` with an empty `touches:` and an `expects:` overlapping this ticket's, so *The
-  working tree is shared too* says its files are held and the candidate must be stepped over. But
-  its `claimed_at` is five days old and the working tree holds an uncommitted edit setting it to
-  `waiting` with the token cleared, which *Claim tokens* calls a dead session to report and offer
-  to release. Nothing says which wins, and the deadlock is self-sustaining: the release edit
-  cannot be committed by any session but 0037's own (*A stage writes only the ticket it holds*),
-  so it stays uncommitted and every later session re-derives the same ambiguity from scratch. The
-  narrow question — may a session step over a *stale* in-progress row's file scope, and who may
-  land an abandoned release — belongs with 0049 (what a claim token guarantees) or 0050 (file
-  scope where the prose files are the product) (pointer: skills/develop/SKILL.md Step 1,
-  references/CONCURRENCY.md, items/0037, items/0049, items/0050).
-  — read and triaged 2026-09-05 by retro: belongs to item 0049, deferred, not yet written.
-
-- 2026-08-30 — **`verify` Step 1 gives no argument-less default a session actually reaches for, and
-  "most recently handed off" is the wrong one.** This session opened `/verify` with no ID, derived
-  the candidates by grepping item frontmatter for `next: verify`, and took the ticket whose handoff
-  commit was newest — 0042, ranked *third* of the three ready rows. `./next verify` prints `TAKE
-  0053`, which is what Step 1 says to use, but the instruction sits in a subordinate clause ("With
-  no argument, `./next verify` prints the topmost row") in a step whose headline is about refusing
-  and claiming. Handoff recency is a plausible-looking substitute for rank because the newest
-  handoff is the freshest in a session's context, and nothing reds when it is used: the ticket
-  verifies fine, it is just the wrong one, so the queue's ranking silently stops governing the
-  order work is checked in. The user caught it; nothing in the skill or the scripts would have
-  (pointer: skills/verify/SKILL.md Step 1, .claude/backlog/next).
-  — read and triaged 2026-09-05 by retro: belongs to item 0058, deferred, not yet written.
-
 - 2026-08-30 — **`verify` Step 3's mutation sweep needs the pre-change suite to compare against, and
   a suite's own `ROOT` resolution makes that awkward in a way each session rediscovers.** Checking
   0053's AC1 ("output unchanged") meant running the pre-0053 and post-0053 copies of three suites
@@ -175,31 +125,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   tests/reporting.test.sh `audit`).
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
 
-- 2026-08-30 — **`./next verify`'s collision warning flagged the two rows that declared *nothing*,
-  while the collision that actually cost the close came through a `touches:` that was declared
-  properly.** The banner read "0053 [b673] none declared — assume held, ask" and the same for 0074;
-  0053 turned out to share no path with 0044 at all, and 0074 — which had just committed a full
-  `touches:` list naming `skills/verify/SKILL.md` — was the one that made the verdict advisory. The
-  warning keys on absence of a declaration, which is the cheaper signal, and says nothing about a
-  declared overlap with the row it is offering. That cross-check is exactly 0045, and this is a
-  worked case for it: the useful output would have been "0044's evidence set meets 0074's declared
-  touches at skills/verify/SKILL.md" (pointer: items/0045, .claude/backlog/next, items/0074).
-  — read and triaged 2026-09-05 by retro: belongs to item 0045, deferred, not yet written.
-
-- 2026-08-30 — **A bundled Claude Code skill named `verify` shadows this plugin's `/verify`, and its
-  first instruction is the inverse of ours.** Typing `/verify` in this repo loaded
-  `bundled-skills/…/verify` — a runtime-observation skill whose opening rules are "Don't run tests.
-  Don't typecheck" and "the scope is a diff" — rather than `ai-building-tools:verify`, which reads a
-  ticket's acceptance criteria and whose declared `qa_level` for almost every ticket in this backlog
-  *is* a scripted assertion. A session that followed the loaded skill would have refused to run
-  `tests/reporting.test.sh`, reported SKIP for "no runtime surface", and closed nothing, because the
-  bundled skill has no concept of a backlog row. It was caught only because the operator noticed the
-  base directory in the skill header. The same collision is available for `design` and `run`. The fix
-  direction is either a distinguishing name or a line in this repo's `CLAUDE.md` telling a session to
-  invoke the plugin-qualified `ai-building-tools:verify` explicitly (pointer: CLAUDE.md,
-  skills/verify/SKILL.md, items/0064).
-  — read and triaged 2026-09-05 by retro: belongs to item 0064, deferred, not yet written.
-
 - 2026-08-30 — **`references/REPORTING.md` attributes the same requirement numbering to two different
   tickets, three sections apart.** Line 37 cites "0039 FR14" and line 57 cites "0036 FR13"; both FR13
   and FR14 are *defined* only in `items/0039`, which inherited 0036's numbering when 0036 was split
@@ -209,20 +134,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   this file: any reference to an FR number in the 0036/0039 pair needs saying which ticket's list it
   means (pointer: references/REPORTING.md:37, references/REPORTING.md:57, items/0036, items/0039).
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
-
-- 2026-08-30 [0045] `./next --drive` selects develop rows with `takeable_develop`, which skips
-  `in-progress` rows but crosses nothing against their `touches:` — so a driver can dispatch a row
-  that `./next develop` now refuses as COLLIDES. 0045's ACs all name `./next <stage>`, so this was
-  left alone rather than widened mid-ticket. Worth a row, or 0039's to absorb.
-  — read and triaged 2026-09-05 by retro: belongs to item 0045, deferred, not yet written.
-
-- 2026-08-30 [0f0a] **`./next verify` correctly offered no row, and `verify` Step 1 has no branch
-  for that.** The only `next: verify` row was 0053 and it collided with 0045's live `touches:`, so
-  the script printed COLLIDES and "nothing here is safe to take" — the right answer, and not one of
-  the cases Step 1 enumerates (a row for you, a row at another stage, no ticket at all). A session
-  reading Step 1 literally has to invent whether to wait, take it anyway, or stop. It resolved
-  itself here only because 0045 landed mid-session.
-  — read and triaged 2026-09-05 by retro: belongs to item 0058, deferred, not yet written.
 
 - 2026-08-30 [61a0] **`verify` Step 3 tells you to mutate the working tree, but on this repo the
   files under test are shared prose another live session predicts** — 0051's evidence set was
@@ -265,27 +176,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   file — a unit of work for `queue`, sized as a sweep of all 15 `tests/*.test.sh` for whole-output
   and whole-file matches (pointer: `tests/cost-by-category.test.sh`, `tests/*.test.sh`, item `0063`).
 
-- 2026-09-03 — **A malformed `touches:` makes an in-progress row's file scope invisible to `./next`,
-  and the claiming session cannot fix it.** `0085`'s frontmatter reads `touches: []` with a YAML
-  list item on the following line, so `./next develop` printed `CLAIMED FILES — another session
-  owns these` with the id `0085 [0bd8]` and **no paths at all**. Deciding whether the top row was
-  takeable therefore cost a full read of the other session's item file — the same defect `0066`
-  FR4 names for `./next` warnings, one file over. Two halves worth separating: the scripts could
-  refuse to *print an empty holder* without saying the frontmatter is unparseable, and nothing
-  validates `touches:` at write time even though `./claim` writes the surrounding block.
-  `CONCURRENCY.md` (*A stage writes only the ticket it holds*) correctly forbids the session that
-  finds it from repairing it, so it can only be parked (pointer: `.claude/backlog/next`,
-  `.claude/backlog/claim`, items `0066`, `0085`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0066, deferred, not yet written.
-
-- 2026-09-03 — **`0084`'s row and its item disagree: the queue says `develop | in-progress` under
-  token `ae35`, the item says `next: verify`, `status: ready`, `claimed_by:` empty.** So `./next
-  verify` does not offer it and `./next verify` *does* report its files as claimed — a ticket that is
-  ready to QA and invisible to the stage that would take it. It looks like a hand-off that wrote the
-  item and not the row, which is the defect `0081` exists to remove. Not written by this pass: not
-  its ticket (pointer: `.claude/backlog/QUEUE.md`, item `0084`, item `0081`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0081, deferred, not yet written.
-
 - 2026-09-03 — **`./close` clears `touches:` with a skiplist that a legal YAML list evades, so a
   closed ticket can go on reserving files.** YAML allows a block sequence at the *same* indentation
   as its key, so `touches:\n- src/a.ts` is valid; `close`'s `if (skiplist && $0 ~ /^[ \t]+-/)`
@@ -316,16 +206,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   without saying where it sits relative to the boundary (pointer: `skills/develop/SKILL.md` Steps 5
   and 7, `skills/verify/SKILL.md` Steps 5 and 6, `docs/decisions/001-one-command-per-stage-boundary.md`).
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
-
-- 2026-09-03 — **Releasing a claim by hand has four fields and no script, and one session missed the
-  same one twice.** `./claim` sets `status: in-progress` in both the row and the item; releasing means
-  resetting both plus `claimed_by:` and `claimed_at:`. Two separate by-hand releases in one session
-  cleared the token and the row but left the item at `in-progress` — the exact row/item drift this
-  same session reported against `0084`, produced twice by the person reporting it. `claim` and `close`
-  are scripted and `handoff` now is; the release-without-close path that an advisory verdict or a
-  `waiting` outcome needs is the one still by hand (pointer: `.claude/backlog/claim`,
-  `skills/verify/SKILL.md` Steps 5 and 7, items `0085`, `0081`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0048, deferred, not yet written.
 
 - 2026-09-05 — **All three backlog scripts commit without the `Co-Authored-By` trailer that
   `git-conventions.md` requires of every AI-assisted commit.** Found verifying `0081`, whose own NFR

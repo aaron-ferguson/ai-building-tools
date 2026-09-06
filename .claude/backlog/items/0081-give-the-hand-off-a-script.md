@@ -222,3 +222,17 @@ commits that predate its first: `tests/citations.test.sh` on
 `tests/skill-size.test.sh` on `skills/retro/SKILL.md` being 38 bytes over goal (commit `16d7f9c`, no
 in-progress row owns it). `tests/last-line.test.sh` was excluded from the run as untracked — another
 window mid-TDD, which `develop` Step 5 says is settled by `git status` alone.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **A live instance of the exact drift this ticket removes, found while it was still open**
+  (FINDINGS 2026-09-03). `0084`'s row and its item disagreed: the queue said `develop | in-progress`
+  under token `ae35`, the item said `next: verify`, `status: ready`, `claimed_by:` empty. The effect
+  is the pair of symptoms worth keeping — `./next verify` did **not** offer it, and `./next develop`
+  **did** report its files as claimed, so a ticket that was ready to QA was invisible to the stage
+  that would take it while still reserving scope against the stage that would not. It looks like a
+  hand-off that wrote the item and not the row, which is the 0087 failure in mirror image: there the
+  edit missed the item's fields, here it missed the row's. The session that found it correctly did
+  not repair it — not its ticket. Useful to the QA pass as the shape to check `handoff`'s read-back
+  against: **all five fields land or none does** has to hold in both directions, and only one of them
+  is what 0087 demonstrated.

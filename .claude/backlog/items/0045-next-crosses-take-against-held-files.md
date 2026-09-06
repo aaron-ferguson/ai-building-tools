@@ -164,10 +164,26 @@ about. Deciding 0005 was safe meant opening 0026's item file — the read Step 1
 - **Not done, deliberately: `--drive` still selects without this check.** `takeable_develop` skips
   `in-progress` rows but crosses nothing against `touches:`, so a driver can dispatch `develop` on
   a row the take loop would now refuse. Every AC here names `./next <stage>`, and *Out of scope*
-  keeps the file-scope rule itself with 0050 — parked in `FINDINGS.md` rather than widened here.
+  keeps the file-scope rule itself with 0050 — parked rather than widened here. The buffer entry
+  was drained 2026-09-05 and this bullet is now its only record, so it wants a row of its own or
+  0039's to absorb it.
 
 - **The live backlog demonstrated FR5 within a minute of the change landing.** `./next develop`
   reported 0038 colliding with this very ticket's `touches:`, and printed 0051 — claimed by another
   session that had not yet written `touches:` — as `none declared; predicted by expects: …`. Both
   paths of the change exercised against real rows, not only fixtures.
 
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **A worked case for FR3, and it is the case the old output got backwards** (FINDINGS 2026-08-30).
+  Verifying 0044, the collision warning flagged the two rows that declared **nothing** — "0053
+  [b673] none declared — assume held, ask", and the same for 0074 — while the collision that
+  actually cost the close came through a `touches:` that had been declared properly: 0053 shared no
+  path with 0044 at all, and 0074, which had just committed a full `touches:` list naming
+  `skills/verify/SKILL.md`, was the one that made the verdict advisory. The old warning keyed on the
+  **absence** of a declaration, which is the cheaper signal, and said nothing about a declared
+  overlap with the row it was offering. The output this ticket's FR3 asks for is exactly the missing
+  line: *"0044's evidence set meets 0074's declared `touches:` at `skills/verify/SKILL.md`"*. Worth
+  the QA pass confirming that the built behaviour names the intersecting path and the holding id in
+  that direction too, not only for the row it steps over.

@@ -147,3 +147,20 @@ beside the counts. It cost a session to explain rather than a script to answer.
   only the case FR4 already covers. **Size re-checked and raised `m` → `l`**: FR6 adds a new
   argument and a second field written atomically inside the claim's existing lock, which is more
   than the three original defects' scope.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **A malformed `touches:` makes a held row's file scope invisible, and the claiming session cannot
+  fix it** (FINDINGS 2026-09-03). `0085`'s frontmatter read `touches: []` with a YAML list item on
+  the following line, so `./next develop` printed `CLAIMED FILES — another session owns these` with
+  the id `0085 [0bd8]` and **no paths at all**. Deciding whether the top row was takeable therefore
+  cost a full read of the other session's item file — which is the read FR4 exists to remove, one
+  file over: FR2 distinguishes a legitimately empty `touches:` from an undeclared one, and this is a
+  third state neither covers, *unparseable*. Two halves worth separating. The scripts could refuse
+  to print an empty holder without saying the frontmatter does not parse — a warning naming a holder
+  and no paths is a warning that cannot be acted on, the same class of defect as FR4 and FR7.
+  And nothing validates `touches:` at write time even though `./claim` writes the surrounding block,
+  which is FR6's territory: the flag that writes the field is the cheapest place to reject a
+  malformed one. `CONCURRENCY.md` (*A stage writes only the ticket it holds*) correctly forbade the
+  session that found it from repairing the row, so a bad value can only be parked — which is an
+  argument for rejecting it at write time rather than tolerating it at read time.

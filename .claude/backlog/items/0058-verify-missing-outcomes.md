@@ -126,3 +126,27 @@ defect exactly as precisely as quoting it.
 - FR4 is stated as a rule about the verdict rather than about privacy generally, because the failure
   was specific: the leak arrived from the direction of *explaining* it, in the one section written
   to be trusted.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+Two more Step 1 outcomes, both neighbours of FR1 and neither covered by it.
+
+- **Step 1 has no argument-less default a session actually reaches for, and "most recently handed
+  off" is the wrong one** (FINDINGS 2026-08-30). A session opened `/verify` with no ID, derived the
+  candidates by grepping item frontmatter for `next: verify`, and took the ticket whose handoff
+  commit was newest — 0042, ranked **third** of the three ready rows. `./next verify` prints
+  `TAKE 0053`, which is what Step 1 says to use, but the instruction sits in a subordinate clause
+  ("With no argument, `./next verify` prints the topmost row") inside a step whose headline is about
+  refusing and claiming. Handoff recency is a plausible substitute because the newest handoff is the
+  freshest thing in a session's context, and **nothing reds when it is used**: the ticket verifies
+  fine, it is just the wrong one, so the queue's ranking silently stops governing the order work is
+  checked in. The user caught it; neither the skill nor the scripts would have.
+- **`./next verify` can correctly offer no row, and Step 1 has no branch for that** (FINDINGS
+  2026-08-30 `[0f0a]`). The only `next: verify` row was 0053 and it collided with 0045's live
+  `touches:`, so the script printed COLLIDES and "nothing here is safe to take" — the right answer,
+  and none of the three cases Step 1 enumerates (a row for you, a row at another stage, no ticket at
+  all). A session reading Step 1 literally has to invent whether to wait, take it anyway, or stop.
+  It resolved itself only because 0045 landed mid-session. This is distinct from FR1's every-row-held
+  case: there the rows are **claimed**, here the row is free and its *files* are not, which is the
+  outcome 0045's FR4 now produces deliberately — so the tool has grown a state the skill does not
+  name.

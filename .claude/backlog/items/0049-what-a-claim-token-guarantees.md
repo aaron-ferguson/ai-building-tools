@@ -113,3 +113,26 @@ Cannot be written until the design question is settled. These two hold regardles
 - FR2 and AC2 are separable from the decision and stated now on purpose: 0010's stale token is a
   live defect whatever the token turns out to mean, and leaving it out would let the whole ticket
   sit behind a decision while a known-wrong row stayed in the tree.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **A claim released in the working tree but not committed reads as neither held nor free, and the
+  deadlock is self-sustaining** (FINDINGS 2026-08-25 and 2026-08-30, one situation seen twice).
+  `0037`'s row said `in-progress` in the committed `QUEUE.md` while its item file, dirty and
+  uncommitted, had `claimed_by:` cleared and `status: waiting`. So: the item reads free, because
+  *A stage writes only the ticket it holds* defines held as a non-empty `claimed_by:` **and nothing
+  else**; the row reads taken; `./next develop` printed `0037 [no token] none declared — assume held,
+  ask`; and `./next --drift` said "no drift", because it compares the Status column against
+  `blocked_by` only. **The rule that makes a claim durable is stated for the claim and not for the
+  release**, so a release is invisible in exactly the way *A claim must be durable the moment it is
+  made* exists to stop a claim being — which is this ticket's question asked about the other end of
+  the token's life, and belongs beside FR1 rather than in a separate row.
+  Five days later the same row gave `develop` Step 1 two rules with opposite answers: *The working
+  tree is shared too* says an `in-progress` row with an empty `touches:` and an overlapping
+  `expects:` must be stepped over, while *Claim tokens* says a `claimed_at` five days old with no
+  matching work is a dead session to report and offer to release. Nothing says which wins. And the
+  deadlock feeds itself: the release edit cannot be committed by any session but 0037's own, so it
+  stays uncommitted and every later session re-derives the same ambiguity from scratch. The narrow
+  question — **may a session step over a stale `in-progress` row's file scope, and who may land an
+  abandoned release** — sits between this ticket and 0050; the *who may land it* half is this
+  ticket's, since it is a statement about what the token guarantees once its holder is gone.

@@ -81,3 +81,27 @@ suite ran at all.
 
 - The defect that prompted this was introduced and fixed inside the AetherWorks retro of 2026-09-01;
   the fix shipped in `e3514b4`/`e5ad319`. This item is the guard, not the fix.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **The failure signature, which is the thing the guard has to beat.** The incident this ticket
+  guards, recorded in full: a comment reading `other projects' spellings` inside `close`'s
+  single-quoted `awk` DONE-row builder closed the `'...'` wrapping the whole program, and
+  `close.test.sh` then failed **20 of 63 cases, reporting an empty reconcile list and a commit
+  carrying six extra files** — a signature that reads as broken reconcile logic and names nothing
+  about quotes. `close`, `claim` and `next` all embed `awk` this way and their comments carry the
+  reasoning, so the scripts actively invite the hazard. AC3's requirement that the message say the
+  syntax is broken rather than that the copy diverged is what stands between a future session and
+  that same twenty-minute misdiagnosis (FINDINGS 2026-09-01).
+- **Part of FR1 has already been built by another ticket, so re-check before implementing**
+  (verified 2026-09-05). `0081` added an `sh -n` case to `tests/backlog-scripts-installed.test.sh`
+  citing this hazard, and `SCRIPTS` is now `next claim close handoff` — four scripts, not three.
+  What that case does **not** yet do, checked against the file: it parses `$TEMPLATES/$s` in both
+  branches, so the **installed copy under `.claude/backlog/` is never parsed**, and it runs as AC5,
+  *after* the byte-identical comparison rather than before it — the two things FR1 and FR2
+  respectively ask for. FR3's convention is likewise part-landed and not as a stated rule: the
+  apostrophe hazard is explained in comments inside `next`, `close` and `handoff`
+  (`"\047"` is that apostrophe — this block is single-quoted shell) and in
+  `tests/citations.test.sh`, but nowhere as one rule where the scripts are documented. So this
+  ticket is smaller than it was written and is not empty; whoever takes it should re-scope rather
+  than assume either.
