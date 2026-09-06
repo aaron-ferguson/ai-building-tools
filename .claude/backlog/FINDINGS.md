@@ -697,3 +697,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   failure rather than as the red it actually is. The tally-less output is the tell. Any script whose
   guard mutates its own copy has this shape, so `claim.test.sh` and `close.test.sh` will too
   (pointer: `tests/handoff.test.sh` lines ~343 and ~382, item `0081`).
+- 2026-09-05 — **The throwaway worktree `develop` Step 5 prescribes silently changes what this repo's
+  suite means, because `config.yml`'s conventions path is relative to the repo's *parent*.**
+  `conventions.path: ../ai-building-conventions` does not resolve from a worktree in
+  `scratchpad/`, so `citations.test.sh` reds with *"no conventions directory resolved"* — a red
+  produced by where the worktree was put, in the exact procedure a session runs to find out whether a
+  red is its own. Siting the worktree beside a symlinked conventions directory fixes it and is a step
+  nothing tells you to take. Step 5 names `node_modules` as the thing a worktree needs symlinked;
+  in this repo it is the conventions directory (pointer: `skills/develop/SKILL.md` Step 5,
+  `.claude/backlog/config.yml`, item `0076`).

@@ -115,6 +115,14 @@ two things it would otherwise have released:
   bytes of headroom, and `0075` adds to this same step. It is the next edit here that has to answer
   the payback test, not this one.
 
+- **The live tree carries one red that is not this ticket's.** `citations.test.sh` AC1 reports
+  ``skills/queue/templates/claim`` citing *"The # working tree is shared too"*, which entered with
+  commit `3588524` (item `0082`, another session) — a new comment paragraph wraps a `CONCURRENCY.md`
+  citation across a comment line, so the guard reads the `#` as part of the rule name. It is the
+  *"rewrapping a guarded paragraph is a breaking change"* hazard in `CLAUDE.md`, arriving from the
+  other direction. **The whole suite is green at `28e48f6`, this ticket's tip** — 19 files, 800
+  assertions, 0 failed, run in a worktree sited beside a symlinked conventions directory.
+
 - **Taken out of rank order, deliberately.** `0086`, `0078` and `0075` all rank above this row and
   all three collide with the file scope held by `0081`'s live `verify` session (`skills/develop/SKILL.md`,
   `skills/verify/SKILL.md`, with `touches:` empty, so held). `0086` was claimed and released
