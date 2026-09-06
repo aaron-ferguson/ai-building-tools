@@ -126,3 +126,53 @@ Cannot be written until the design question is settled. These hold regardless:
 - Deliberately **not** bundled with 0045. That ticket implements the rule as it stands and is
   correct under any of the four shapes; this one asks whether the rule is right. Bundling would
   hold a needed tool fix behind an open decision.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+Five entries, and they narrow the *Open design question* rather than answering it. Each is a way
+today's file-level scope fails that none of the four candidate shapes is obviously safe from, so
+each is a test the chosen shape has to pass.
+
+- **The declared scope is wrong in both directions, and both cost the top of the queue** (FINDINGS
+  2026-08-30 and 2026-09-05). Over-declaration first: `touches:` has no way to say *named in an AC
+  but not edited*, so 0053 declared `README.md` because AC5 names it, AC5 needed no change, and
+  until the claim was released `./next develop` reported 0051, 0038 and 0046 as COLLIDES against a
+  file nobody had open. `develop` Step 1 tells a session to **widen** `touches:` the moment work
+  reaches further and says nothing about narrowing it the moment work turns out not to — the cost
+  of the over-declaration is visible to every other session and invisible to the one holding it.
+  Under-declaration second, and worse: a `verify` session's file scope is invisible, because
+  `./claim` tells it to declare `touches:` and nothing checks that it did. `0081` sat `in-progress`
+  for a whole session with `touches:` empty, so the only scope signal available to a second session
+  was the `expects:` `queue` had predicted for its **develop** pass — stale by construction once
+  develop has handed off. *The working tree is shared too* says to read that as *assume held*, and
+  assuming held on a stale prediction refused `0086`, `0078` and `0075` while the session actually
+  holding the files was editing neither `develop` nor `verify`. AC1's "every takeable row collides"
+  case is reachable from either direction, and neither is a real collision.
+- **A scope is a snapshot, and it goes stale inside the session that declared it** (FINDINGS
+  2026-08-30 and 2026-09-03). `develop` reads the held file set once at claim and never again, but
+  Step 5 runs the full suite an hour later: 0053's `./next develop` reported no claimed files, 0045
+  then claimed and began editing `skills/queue/templates/next` and `tests/next.test.sh` mid-session,
+  and the Step 5 run came back with 11 `next.test.sh` failures plus a red
+  `backlog-scripts-installed.test.sh` in files 0053 never touched. Step 5 has the worktree recipe
+  for telling whose red it is, but frames it as diagnosis after the fact; a `./next --claimed`
+  re-read costs one line and answers it before the suite is run. The snapshot-vs-subscription gap is
+  structural — any session long enough to build something can be overtaken — and it applies to the
+  *other* side of the comparison too: `expects:` and a ticket's own *Notes* can disagree about who
+  owns a file, and Step 1 checks `expects:` against the **code** rather than against the notes.
+  `0084` listed `skills/retro/SKILL.md` in `expects:` while its Notes assigned that same prose to
+  `0075` ("whichever lands second implements against the other rather than restating it"); both
+  readings are internally consistent and the file plainly exists, so the grep Step 1 asks for cannot
+  separate them and only reading the notes does. A `touches:` copied from `expects:` would have
+  reserved and rewritten a paragraph a sibling ticket exists to rewrite.
+- **Some fixes need a scope no claim can express, which is a constraint on the sub-file shape**
+  (FINDINGS 2026-08-30). A comment shared byte-identically across three files cannot be improved by
+  the session holding two of them. The note above the suites' shared helpers reads "each carry this
+  pair" and now covers two pairs (`saw`/`saw_on_pass` and `assert_rc`/`assert_rc_nonzero`) — the
+  exact imprecision that let `assert_rc` reach `next.test.sh` and `close.test.sh` and miss
+  `claim.test.sh`, which is what bounced 0053 from verify. Tightening it inside 0053 meant editing
+  `tests/next.test.sh`, held by 0045, so the fix was written and then backed out: half-changing it
+  leaves the three copies disagreeing, which is worse than the imprecision. There is no "shared
+  prose" unit a claim can hold, so this class of fix is only ever available to a session holding
+  every copy at once. A scope smaller than a file does not help here; the unit needed is *larger*
+  than a file and spans three of them, which is an argument for the rank-against-the-held-set shape
+  over the sub-file one.

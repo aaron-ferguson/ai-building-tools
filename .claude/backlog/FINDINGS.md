@@ -280,38 +280,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   means (pointer: references/REPORTING.md:37, references/REPORTING.md:57, items/0036, items/0039).
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
 
-- 2026-08-30 — **A comment shared byte-identically across three files cannot be improved by the
-  session that holds two of them.** The note above the suites' shared helpers reads "each carry this
-  pair" and now covers two pairs (`saw`/`saw_on_pass` and `assert_rc`/`assert_rc_nonzero`) — the
-  exact imprecision that let `assert_rc` reach `next.test.sh` and `close.test.sh` and miss
-  `claim.test.sh`, which is what bounced 0053 from verify. Tightening it in 0053 meant editing
-  `tests/next.test.sh`, held by 0045 [296c], so it was written and then backed out: half-changing it
-  leaves the three disagreeing, which is worse than the imprecision. There is no "shared prose" unit
-  a claim can hold, so this class of fix is only ever available to a session holding every copy at
-  once (pointer: tests/claim.test.sh:74, tests/close.test.sh:153, tests/next.test.sh:255, items/0053).
-  — read and triaged 2026-09-05 by retro: belongs to item 0050, deferred, not yet written.
-
-- 2026-08-30 — **`develop` reads the held file set once at claim and never again, but Step 5 runs the
-  full suite an hour later.** 0053's `./next develop` reported no claimed files; 0045 [296c] then
-  claimed and began editing `skills/queue/templates/next` and `tests/next.test.sh` mid-session, so the
-  Step 5 run came back with 11 `next.test.sh` failures and a red `backlog-scripts-installed.test.sh`
-  in files 0053 never touched. Step 5 has the worktree recipe for telling whose red it is, but it is
-  framed as diagnosis after the fact; a `./next --claimed` re-read costs one line and answers it
-  before the suite is even run. The snapshot-vs-subscription gap is structural — any session long
-  enough to build something can be overtaken (pointer: skills/develop/SKILL.md Step 5,
-  references/CONCURRENCY.md Rule 6, .claude/backlog/next, items/0053).
-  — read and triaged 2026-09-05 by retro: belongs to item 0050, deferred, not yet written.
-
-- 2026-08-30 — **`touches:` has no way to say "named in an AC but not edited", so an untouched
-  declared file blocks other rows for the life of the claim.** 0053 declared `README.md` because AC5
-  names it; AC5 needed no change, and until the claim was released `./next develop` reported 0051,
-  0038 and 0046 as COLLIDES against a file nobody had open. The skill tells a session to *widen*
-  `touches:` the moment work reaches further and says nothing about narrowing it the moment work
-  turns out not to; the cost of the over-declaration is visible to every other session and invisible
-  to the one holding it (pointer: skills/develop/SKILL.md Step 1, references/CONCURRENCY.md Rule 6,
-  items/0053).
-  — read and triaged 2026-09-05 by retro: belongs to item 0050, deferred, not yet written.
-
 - 2026-08-30 [0045] `./next --drive` selects develop rows with `takeable_develop`, which skips
   `in-progress` rows but crosses nothing against their `touches:` — so a driver can dispatch a row
   that `./next develop` now refuses as COLLIDES. 0045's ACs all name `./next <stage>`, so this was
@@ -434,16 +402,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `.claude/backlog/claim`, items `0066`, `0085`).
   — read and triaged 2026-09-05 by retro: belongs to item 0066, deferred, not yet written.
 
-- 2026-09-03 — **`expects:` and a ticket's own *Notes* can disagree about who owns a file, and
-  `develop` Step 1 checks `expects:` against the *code* rather than against the notes.** `0084`
-  listed `skills/retro/SKILL.md` in `expects:` while its Notes assigned that same prose to `0075`
-  ("whichever lands second implements against the other rather than restating it"). Both readings
-  are internally consistent and the file plainly exists, so the grep Step 1 asks for cannot
-  separate them; only reading the notes does. A `touches:` copied from `expects:` would have
-  reserved — and rewritten — a paragraph a sibling ticket exists to rewrite (pointer:
-  `skills/develop/SKILL.md` Step 1, items `0084`, `0075`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0050, deferred, not yet written.
-
 - 2026-09-03 — **`0084`'s row and its item disagree: the queue says `develop | in-progress` under
   token `ae35`, the item says `next: verify`, `status: ready`, `claimed_by:` empty.** So `./next
   verify` does not offer it and `./next verify` *does* report its files as claimed — a ticket that is
@@ -492,16 +450,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `waiting` outcome needs is the one still by hand (pointer: `.claude/backlog/claim`,
   `skills/verify/SKILL.md` Steps 5 and 7, items `0085`, `0081`).
   — read and triaged 2026-09-05 by retro: belongs to item 0048, deferred, not yet written.
-
-- 2026-09-05 — **A `verify` session's file scope is invisible: `./claim` tells it to declare `touches:`
-  and nothing checks that it did.** `0081` sat `in-progress` for the whole of this session with
-  `touches:` empty, so the only scope signal available to a second session was the `expects:` `queue`
-  predicted for its *develop* pass — which is stale by construction once develop has handed off, and
-  is what three rows above `0076` were stepped over on. The rule reads *assume held*, and assuming
-  held on a stale prediction costs the top of the queue: `0086`, `0078` and `0075` were all refused on
-  it while the session that held the files was in fact editing neither `develop` nor `verify`
-  (pointer: `references/CONCURRENCY.md` *The working tree is shared too*, items `0081`, `0086`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0050, deferred, not yet written.
 
 - 2026-09-05 — **All three backlog scripts commit without the `Co-Authored-By` trailer that
   `git-conventions.md` requires of every AI-assisted commit.** Found verifying `0081`, whose own NFR
