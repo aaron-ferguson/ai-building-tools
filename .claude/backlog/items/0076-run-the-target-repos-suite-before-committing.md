@@ -17,6 +17,8 @@ expects:
 claimed_by: "5db3"
 claimed_at: 2026-09-06T01:53:44Z
 touches:
+  - skills/retro/SKILL.md
+  - tests/skill-prose.test.sh   # new — created by this ticket
 ---
 
 ## Problem
