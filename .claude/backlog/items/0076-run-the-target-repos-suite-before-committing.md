@@ -18,7 +18,7 @@ claimed_by: "5db3"
 claimed_at: 2026-09-06T01:53:44Z
 touches:
   - skills/retro/SKILL.md
-  - tests/skill-prose.test.sh   # new — created by this ticket
+  - tests/retro-tool-edit.test.sh   # new — the predicted skill-prose.test.sh, renamed; see notes
 ---
 
 ## Problem
@@ -96,3 +96,26 @@ two things it would otherwise have released:
 ## Notes & decisions
 
 - Captured by the AetherWorks retro of 2026-09-01.
+
+- **Built 2026-09-05. The guard is `tests/retro-tool-edit.test.sh`, not the predicted
+  `tests/skill-prose.test.sh`.** Every guard in this repo is named for the claim it makes —
+  `qa-level-once`, `falsifiable-acs`, `citations`, `batching` — and a name for a *category* of prose
+  is the one shape that invites accretion, since nothing in it says what does not belong. `0075`
+  writes its QA plan as *"extend `tests/skill-prose.test.sh` (or add a case where the retro guards
+  live)"*, so this file is that home and 0075 needs no new one.
+
+- **One assertion passed before the rule existed, and that is the finding.** FR4's check was first
+  written as the phrase `in the same turn`, which Step 5's pre-existing *Commit by pathspec* bullet
+  already satisfies — so it was green over a file with no worktree rule in it at all, the
+  guard-that-cannot-fail shape `testing-conventions.md` names. Caught only because the red run was
+  read case by case rather than by its tally. Anchored to `worktree in the same turn`, which nothing
+  but the new rule can satisfy.
+
+- **`skills/retro/SKILL.md` is now 19,619 bytes against `skill-size.test.sh`'s 20,190 goal** — 571
+  bytes of headroom, and `0075` adds to this same step. It is the next edit here that has to answer
+  the payback test, not this one.
+
+- **Taken out of rank order, deliberately.** `0086`, `0078` and `0075` all rank above this row and
+  all three collide with the file scope held by `0081`'s live `verify` session (`skills/develop/SKILL.md`,
+  `skills/verify/SKILL.md`, with `touches:` empty, so held). `0086` was claimed and released
+  (token `f7c0`) on discovering the overlap; nothing was edited under it.
