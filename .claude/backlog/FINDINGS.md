@@ -722,3 +722,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   ticket cites, and both a build pass and a QA pass read the question as open. A "scope decision" that
   the repo's own prose already settles is cheaper to look up than to escalate (pointer:
   `skills/queue/templates/{claim,close}`, `git-conventions.md` *Co-authorship*, items `0081`, `0082`).
+- 2026-09-05 — **`tests/citations.test.sh` reds on the shipped tree, and the red is the guard's own
+  line-wrap blind spot, not a stale citation.** `skills/queue/templates/claim` cites *The working tree
+  is shared too* across a line break inside a shell comment, so the guard reads the citation as
+  `"The # working tree is shared too"` and reports a rule that does not exist. It predates this
+  session (last touched by `3588524`, and nothing here edits that file). The fix is either stripping a
+  leading `# ` when the citation continues onto the next comment line, or keeping such a citation on
+  one line — the same rewrap hazard `CLAUDE.md` records for every prose guard, now hitting the guard
+  rather than the guarded. This **needs a row**; none exists (pointer: `tests/citations.test.sh`,
+  `skills/queue/templates/claim:22`).

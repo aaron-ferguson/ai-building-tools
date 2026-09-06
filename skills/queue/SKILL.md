@@ -544,3 +544,18 @@ uncommitted it is one `git stash` from gone. Anything whose home is obvious goes
 What belongs on the screen and what belongs on disk is `references/REPORTING.md` at the plugin root.
 The instance of it that bites this stage: the item file is the detail, so name its path rather than
 echoing it back — everything a session would quote from it, it just wrote there.
+
+**End on the hand-off line, the very last thing printed:**
+
+```
+<ID> — QUEUED | RE-SPECIFIED | PARKED — next: <stage>, status: <status>
+```
+
+Example: `0107 — QUEUED — next: develop, status: ready`
+Example: `0107 — QUEUED — next: design, status: ready` — specified, with one decision still open.
+Example: `0108 — RE-SPECIFIED — next: develop, status: ready` — bounced back and now specified again.
+Example: `0109 — PARKED — next: queue, status: ready` — captured unspecified, deliberately out of `QUEUE.md`.
+
+**A sweep that wrote several rows prints one line each, in rank order, with nothing between or after
+them.** That block is the only place a reader sees what the whole sweep produced without opening
+`QUEUE.md`, and one summary line covering five tickets hides the four that are not the interesting one.

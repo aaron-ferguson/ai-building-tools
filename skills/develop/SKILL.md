@@ -500,3 +500,16 @@ Two things it cannot say, because they are specific to this stage:
   `next: verify` is reporting a state it did not reach, and the QA pass is what reaches it.
 - **Name the two commands a following session runs** — `/verify <id>` to close it, and `/retro` if
   the buffer is worth sweeping. Each in its own session, and neither is invoked here.
+
+**End on the hand-off line, the very last thing printed:**
+
+```
+<ID> — BUILT | RED | BLOCKED — next: <stage>, status: <status>
+```
+
+Example: `0081 — BUILT — next: verify, status: ready`
+Example: `0081 — RED — next: develop, status: ready` — the tree would not go green; it stays here.
+Example: `0081 — BLOCKED — next: develop, status: waiting` — or a `blocked_by` entry naming the ticket.
+
+`BUILT` is not `done` and the line is what stops it being read as one: the stage on it is `verify`,
+which is the pass that closes the ticket. There is no verdict word here that closes anything.

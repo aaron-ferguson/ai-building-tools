@@ -292,3 +292,16 @@ Then the three things the user cannot see for themselves, and would not find on 
 - **Whether a restart is required** — see Step 5. No explanation unless asked.
 
 If nothing surfaced, say that plainly.
+
+**End on the hand-off line, the very last thing printed:**
+
+```
+- — RETRO — next: <command>
+```
+
+Example: `- — RETRO — next: restart, then /queue 0107`
+Example: `- — RETRO — next: nothing — buffer clear, 4 lessons landed`
+
+The ID slot is a dash and a command stands in for a stage: this skill holds no row. **When Step 5 ran
+`tools/release`, the restart belongs here** — nothing this session wrote reaches a session until it
+happens, and it is the first thing a long report loses.

@@ -321,6 +321,19 @@ The instance that bites this stage: **the artifact is the deliverable and the pa
 report** — a prototype narrated in prose is a prototype nobody opened. Name the level built, the file,
 and the question the user is being asked to look at and answer.
 
+**End on the hand-off line, the very last thing printed:**
+
+```
+<KEY or -> — PROTOTYPED (level <N>) — next: <command>
+```
+
+Example: `PROJ-1234 — PROTOTYPED (level 2) — next: /design — modal vs page is still open`
+Example: `- — PROTOTYPED (level 1) — next: /queue` — an ad-hoc idea that now has enough shape to file.
+Example: `PROJ-1234 — PROTOTYPED (level 3) — next: your review at prototypes/proj-1234-filing/`
+
+This skill moves no backlog row, so the stage slot names the command — or, where the next move is the
+user's, the path they open. A prototype whose last line is a path is one somebody looks at.
+
 ---
 
 ## Error Handling

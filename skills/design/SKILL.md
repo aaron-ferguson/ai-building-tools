@@ -161,3 +161,18 @@ is worse than an admitted gap, because it gets built. That is a refusal, and it 
 
 A prototype the decision now needs is what this session needs from the user, and the command that
 builds it is part of saying so.
+
+**End on the hand-off line, the very last thing printed:**
+
+```
+<ID> — DECIDED | HANDED TO QUEUE | BLOCKED — next: <stage>, status: <status>
+```
+
+Example: `0042 — DECIDED — next: develop, status: ready`
+Example: `0042 — HANDED TO QUEUE — next: design, status: in-progress` — Step 4's claimed-ticket path,
+where you wrote nothing and the row is unchanged; the line says so rather than implying you moved it.
+Example: `0042 — BLOCKED — next: design, status: waiting` — it has to be seen before it can be decided.
+Example: `- — DECIDED — next: /queue` — a standing or one-off question that holds no row.
+
+A refusal is `BLOCKED`, never a quiet `DECIDED`: an answer that rests on a fact nobody has reads
+identically to a settled one once it is a line in someone's scrollback.

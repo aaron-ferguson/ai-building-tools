@@ -68,3 +68,27 @@ somewhere durable, named by the fourth row.
 The failure this forbids is specific and has happened in this project: a step with no visible output
 is the kind that gets quietly dropped — parking a finding, running the full suite, releasing a claim.
 Routing a step's output to disk is fine. Routing it nowhere removes the step.
+
+## The hand-off line
+
+**Every stage ends on one line, and it is the very last thing printed:**
+
+```
+<ID> — <VERDICT> — next: <stage>, status: <status>
+```
+
+It is what a reader who scrolled nothing at all still sees: what this session did to the ticket, and
+which stage takes it next. That reader is usually the next session, which otherwise opens the backlog
+to work out what the last one left — and `verify` shipped this line first precisely because a verdict
+buried mid-report was read as the opposite of what it said.
+
+The verdict word and the values a stage may legitimately print are **that skill's own**, stated in its
+closing step: only the stage knows which outcomes it can reach, and a shared list of them would be
+wrong for every skill at once. What is shared is the shape and the position.
+
+**A session that holds no row** — `retro`, an ad-hoc `prototype`, a standing `design` question — writes
+a dash in the ID slot and names the command that runs next in place of a stage: `next: /queue`.
+Holding no ticket is not an exemption; "nothing to hand off" is itself the answer a reader needs.
+
+Nothing follows it. Not a sign-off, not a closing offer, not one more caveat — a line with prose under
+it is not the last line, and the scroll it saves is the entire feature.

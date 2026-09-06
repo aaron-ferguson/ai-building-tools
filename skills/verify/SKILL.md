@@ -445,5 +445,5 @@ Example: `0042 — PASS — next: done, status: done`
 Example: `0042 — FAIL — next: develop, status: ready`
 Example: `0042 — ADVISORY — next: verify, status: ready`
 
-This line appears after the evidence table and after any commit or FINDINGS note, so the outcome is
-visible at a glance without scrolling.
+This line appears after the evidence table and after any commit or FINDINGS note. Every stage ends on
+one in this shape; the verdict words above are the ones this stage can reach.
