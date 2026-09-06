@@ -194,3 +194,48 @@ a red. Both cases were live in one ticket.
 - **TDD was clean on FR1–FR6 and not on AC6.** The prose guard was written first, run red on 14
   cases, then made green. The conventions checker was written before its fixtures, with red proven
   afterwards by the live mutation above. Recorded rather than smoothed over.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+Four entries, and each names a shape FR2's list does not yet carry.
+
+- **An AC can be unfalsifiable *structurally*, because two ACs share a fixture whose construction
+  they need to differ on** (FINDINGS 2026-09-03). `0085` AC7 needs contexts whose sums reconcile to
+  an exact published decimal; AC10 needs contexts whose **rises are unequal**, because where they
+  climb uniformly, crediting a rise to the turn that appended it and crediting it to the turn that
+  followed both yield 10,000 and differ only in which bucket carries it. Every anchoring over the
+  shared fixture is green under the off-by-one, so no amount of re-anchoring fixes it — the fix was a
+  **second fixture in its own directory and a second tool run**, two cheap fixtures beating one that
+  serves neither AC's discriminating case. Neither `verify` Step 3 nor FR1's rule asks whether the
+  fixture an AC will be checked against *can* separate the defect from the correct behaviour, and
+  that is a much cheaper question at capture time than at verdict time.
+- **An AC that globs the test directory lets another session rewrite its contract mid-verify**
+  (FINDINGS 2026-08-30). 0044's AC9 — "given the whole suite, when `for t in tests/*.test.sh` runs,
+  then every suite passes" — was being verified while another session created
+  `tests/reporting.test.sh` as an untracked file, so the set the AC quantifies over grew by one
+  unfinished guard while the verdict was being formed. Nothing went red, because that run used a
+  pinned clone, but the AC as written is satisfied against a moving target and two sessions can hold
+  contradictory true answers to it at the same moment. This is FR1's own requirement in a form FR2
+  does not list: **a glob names no input**. The fix direction is to pin such an AC to a commit or
+  enumerate the suites it means. Note that this ticket's own AC7 is exactly that glob, and so is
+  AC9 in several sibling rows — whoever builds this decides whether the rule applies to itself.
+- **An interface-conversion AC wants the call-site count, not a prose note listing what was done**
+  (FINDINGS 2026-08-30). 0053 routed `close.test.sh`'s eight inline `[ "$rc" -eq 0 ] && ok … || bad …`
+  lines through new `assert_rc` helpers and recorded that in its notes, while leaving
+  `claim.test.sh`'s five identical lines untouched and `close.test.sh`'s own line 402 unconverted —
+  the twin of the line it *did* convert at 193, same shape, same file. Nothing failed: the suites are
+  green, the flag works, and AC4's "all three honour it" is satisfied by three suites honouring it to
+  three different depths. The gap is visible only by counting `saw:` lines against `ok` lines (13 of
+  18 in claim, 92 of 93 in close), which no AC asked for and no guard measures. A partial conversion
+  reading as a complete one is the same silent-untruth failure this ticket exists for.
+- **An AC can require exactly the assertion `testing-conventions.md` warns against, and nothing says
+  which wins** (FINDINGS 2026-08-30). 0074's AC1 asks a guard to check each skill cites the rule
+  "exactly once"; the convention says *assert membership, never cardinality*, because "names exactly
+  one X" goes quietly false the day a sibling adds a second — which is this ticket's own 0007 AC2
+  case. Here the count genuinely **is** the contract: FR1 of that ticket is "stated in one place,
+  cited never restated", so a second copy is the defect, and the guard was written to the AC with the
+  reasoning recorded in its header. The judgement was sound and was made **silently** by the
+  implementing session. `develop` Step 2 says to restate the contract and Step 3 says to load the
+  conventions; neither says what to do when they collide, and the cheap answer — follow the AC so
+  `verify` passes — is not obviously the right one. FR5 is the nearest hook: an AC that knowingly
+  overrides a convention should have to say so where the next reader will see it.

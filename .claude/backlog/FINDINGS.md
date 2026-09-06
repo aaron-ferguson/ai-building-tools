@@ -164,19 +164,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   (pointer: skills/verify/SKILL.md Step 1, .claude/backlog/next).
   — read and triaged 2026-09-05 by retro: belongs to item 0058, deferred, not yet written.
 
-- 2026-08-30 — **0042's batching AC4 binds the date to the literal word `dated`, so a reword that
-  keeps the date bound to its figure still reds the guard.** Rewriting "capture-side and dated
-  **2026-08-22**" to "capture-side, from **2026-08-22**" leaves the figure carrying its own date in
-  exactly the position the assertion exists to require, and `tests/batching.test.sh` reports 12
-  passed, 1 failed. The regex `dated[^0-9]{0,4}20[0-9][0-9]-...` is a good binding and the fix is
-  a real one — this is the residual cost of it, not an argument against it. But
-  `testing-conventions.md` warns in the same rule that a guard whose reds can be artefacts of
-  unrelated correct work teaches everyone to discount its reds, and the comment beside the
-  assertion, which is careful to disclaim rewrap-proofness, does not mention that the anchor word
-  itself is now load-bearing prose (pointer: tests/batching.test.sh AC4, skills/develop/SKILL.md
-  batching paragraph, items/0063).
-  — read and triaged 2026-09-05 by retro: belongs to item 0063, deferred, not yet written.
-
 - 2026-08-30 — **The release chain has no re-check step, and a sibling session closed a ticket in the
   middle of one.** A release audit found the install 14 files behind at the *same* version number,
   decided what to ship on the basis that 0042 and 0044 were both unverified, and was about to push
@@ -187,19 +174,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   before executing it. Every step is silent when skipped, including this missing one (pointer:
   CLAUDE.md *This project is the tool its sessions are running*, references/CONCURRENCY.md).
   — read and triaged 2026-09-05 by retro: belongs to item 0061, deferred, not yet written.
-
-- 2026-08-30 — **A "convert the helpers" ticket has no way to state which call sites it converted, so
-  a partial conversion reads as a complete one.** 0053 routed `close.test.sh`'s eight inline
-  `[ "$rc" -eq 0 ] && ok … || bad …` lines through new `assert_rc` helpers and recorded that in the
-  notes, but left `claim.test.sh`'s five identical lines untouched and `close.test.sh`'s own line 402
-  unconverted — the twin of the line it *did* convert at 193, same shape, same file. Nothing failed:
-  the suites are green, the flag works, and AC4's "all three honour it" is satisfied by three suites
-  that honour it to three different depths. The gap is only visible by counting `saw:` lines against
-  `ok` lines (13 of 18 in claim, 92 of 93 in close), which no AC asked for and no guard measures.
-  A ticket that changes an interface at N call sites wants the call-site count as an acceptance
-  criterion, not a prose note listing the ones that were done (pointer:
-  tests/claim.test.sh:120,130,140,147,158, tests/close.test.sh:402, items/0053).
-  — read and triaged 2026-09-05 by retro: belongs to item 0052, deferred, not yet written.
 
 - 2026-08-30 — **`verify` Step 3's mutation sweep needs the pre-change suite to compare against, and
   a suite's own `ROOT` resolution makes that awkward in a way each session rediscovers.** Checking
@@ -212,18 +186,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   (pointer: items/0053 notes, verify SKILL.md Step 3).
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
 
-- 2026-08-30 — **A ticket's AC can require exactly the assertion `testing-conventions.md` warns
-  against, and nothing in `develop` says which wins.** 0074's AC1 asks a guard to check each skill
-  cites the rule "exactly once"; `testing-conventions.md` says *assert membership, never
-  cardinality*, because "names exactly one X" goes quietly false the day a sibling adds a second.
-  Here the count IS the contract — FR1 is "stated in one place, cited never restated", so a second
-  copy is the defect — and the guard was written to the AC with the reasoning recorded in its header.
-  But that judgement was made silently by the implementing session. Step 2 tells `develop` to restate
-  the contract and Step 3 to load the conventions; neither says what to do when they collide, and the
-  cheap answer (follow the AC, so `verify` passes) is not obviously the right one (pointer:
-  tests/reporting.test.sh header, items/0074 AC1).
-  — read and triaged 2026-09-05 by retro: belongs to item 0052, deferred, not yet written.
-
 - 2026-08-30 — **The `set -e` short-circuit trap is recorded in the guard where it was found, so the
   next guard author hits it again.** Writing `[ "$n" -eq 0 ] && echo "FAIL …"` as a statement inside
   an audit function makes the function exit non-zero on the CLEAN path, which `set -e` turns into a
@@ -233,17 +195,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the warning lives in one of them (pointer: tests/reference-size.test.sh `offenders`,
   tests/reporting.test.sh `audit`).
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
-
-- 2026-08-30 — **An acceptance criterion that globs the test directory lets another session rewrite
-  its contract mid-verify.** 0044 AC9 is "given the whole suite, when `for t in tests/*.test.sh`
-  runs, then every suite passes". During this pass 3895 created `tests/reporting.test.sh` as an
-  untracked file, so the set AC9 quantifies over grew by one unfinished guard while the verdict was
-  being formed. Nothing red — the run used a pinned clone — but the AC as written is satisfied
-  against a moving target, and two sessions can hold contradictory true answers to it at the same
-  moment. This is the same class as 0052's requirement that an AC name the input that would make it
-  red: a glob names no input. The fix direction is either pinning such an AC to a commit or
-  enumerating the suites it means (pointer: items/0044 AC9, items/0052, tests/).
-  — read and triaged 2026-09-05 by retro: belongs to item 0052, deferred, not yet written.
 
 - 2026-08-30 — **`./next verify`'s collision warning flagged the two rows that declared *nothing*,
   while the collision that actually cost the close came through a `touches:` that was declared
@@ -302,15 +253,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   session could read that 1 as a real red. The copy needs a `git init` + commit first. Step 3 names
   only the in-tree route and its `git checkout -- <that path>` restore.
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
-
-- 2026-09-01 [becd] **Falsifiability at phrase level is blocked on a citation marker this repo has not
-  decided on.** Resolving a cited *rule phrase* inside a conventions file needs to tell a citation from
-  emphasis, and italics carry emphasis throughout: three existing spots (`skills/retro/SKILL.md` x2,
-  `skills/verify/SKILL.md` x1) are emphasis directly after a conventions filename. 0052 resolved the
-  filename and recorded the gap in the guard's header. The marker is a design question, and it is the
-  same question `citations.test.sh`'s anchoring rule already answered for `CONCURRENCY.md` — so the
-  precedent exists and only needs extending. Candidate ticket.
-  — read and triaged 2026-09-05 by retro: belongs to item 0063, deferred, not yet written.
 
 - 2026-09-02 [6983] **`design` Step 4 has no path for a decision whose deliverable is criteria on
   other people's tickets.** 0085's FR2 required routing removable turns to 0066, 0081, 0047 and
@@ -374,20 +316,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   instance**. Every guard in this repo greps prose, so the exposure is the whole suite, not one
   file — a unit of work for `queue`, sized as a sweep of all 15 `tests/*.test.sh` for whole-output
   and whole-file matches (pointer: `tests/cost-by-category.test.sh`, `tests/*.test.sh`, item `0063`).
-
-- 2026-09-03 — **An acceptance criterion can be unfalsifiable *structurally*, because two ACs share
-  a fixture whose construction they need to differ on — and no amount of re-anchoring fixes it.**
-  `0085` AC7 needs contexts whose sums reconcile to an exact published decimal; AC10 needs contexts
-  whose **rises are unequal**, because where they climb uniformly, crediting a rise to the turn that
-  appended it and crediting it to the turn that followed both yield 10,000 and differ only in which
-  bucket carries it. Every anchoring over the shared fixture is green under the off-by-one. The fix
-  was a **second fixture in its own directory and a second tool run**, not a compromise fixture —
-  two cheap fixtures beat one that serves neither AC's discriminating case. Nothing in `verify`
-  Step 3 or `queue`'s falsifiability rules asks whether the fixture an AC will be checked against
-  *can* separate the defect from the correct behaviour, which is a cheaper question at capture time
-  than at verdict time (pointer: `tests/cost-by-category.test.sh`, `skills/queue/SKILL.md`
-  falsifiability rules, items `0052`, `0085`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0052, deferred, not yet written.
 
 - 2026-09-03 — **A malformed `touches:` makes an in-progress row's file scope invisible to `./next`,
   and the claiming session cannot fix it.** `0085`'s frontmatter reads `touches: []` with a YAML
@@ -468,28 +396,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   ticket cites, and both a build pass and a QA pass read the question as open. A "scope decision" that
   the repo's own prose already settles is cheaper to look up than to escalate (pointer:
   `skills/queue/templates/{claim,close}`, `git-conventions.md` *Co-authorship*, items `0081`, `0082`).
-
-- 2026-09-05 — **`tests/citations.test.sh` reds on the shipped tree, and the red is the guard's own
-  line-wrap blind spot, not a stale citation.** `skills/queue/templates/claim` cites *The working tree
-  is shared too* across a line break inside a shell comment, so the guard reads the citation as
-  `"The # working tree is shared too"` and reports a rule that does not exist. It predates this
-  session (last touched by `3588524`, and nothing here edits that file). The fix is either stripping a
-  leading `# ` when the citation continues onto the next comment line, or keeping such a citation on
-  one line — the same rewrap hazard `CLAUDE.md` records for every prose guard, now hitting the guard
-  rather than the guarded. This **needs a row**; none exists (pointer: `tests/citations.test.sh`,
-  `skills/queue/templates/claim:22`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0063, deferred, not yet written.
-
-- 2026-09-05 — **The citations red recorded above was introduced by `0082`'s own first commit and is
-  now fixed, so it needs no row.** `3588524` is that commit, and the entry above reads it as
-  pre-existing because `git log` on the file was the only evidence available to a session that did
-  not hold the ticket — which is the correct read of that evidence and still the wrong answer. The
-  wrap is unwrapped and `tests/citations.test.sh` is green. What survives as a real finding is the
-  guard's blind spot itself: **a rule citation that wraps across a comment break cannot be matched
-  and is reported as stale**, so the guard's failure mode on a *correct* citation is a false
-  accusation rather than a miss. That half **still needs a row**; none exists (pointer:
-  `tests/citations.test.sh`, `skills/queue/templates/claim`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0063, deferred, not yet written.
 
 - 2026-09-05 — **A row claimed and then released records no reason, so the next session re-derives
   it.** `0086` was claimed by `f7c0` and handed straight back to `develop | ready` 58 seconds later
