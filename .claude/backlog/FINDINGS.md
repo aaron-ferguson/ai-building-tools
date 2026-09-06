@@ -706,3 +706,19 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   nothing tells you to take. Step 5 names `node_modules` as the thing a worktree needs symlinked;
   in this repo it is the conventions directory (pointer: `skills/develop/SKILL.md` Step 5,
   `.claude/backlog/config.yml`, item `0076`).
+- 2026-09-05 — **`skills/retro/SKILL.md` is 38 bytes over `tests/skill-size.test.sh`'s goal, and no
+  in-progress row owns it.** It arrived committed in `16d7f9c` from a session that has since
+  finished, so the red is in the shared tree with nobody to hand it back to — the case
+  `develop` Step 5 has no branch for, since its advice ("another session's red is theirs to fix and
+  yours to report") assumes a session still exists to report it to. The fix is an authoring decision
+  about retro's own content — trim, or record a justification naming what was considered for
+  relocation — so a build session on an unrelated ticket cannot take it. This **still needs a row**;
+  none exists (pointer: `tests/skill-size.test.sh`, `skills/retro/SKILL.md`, item `0081`).
+- 2026-09-05 — **The trailer scope question above is answered by `skills/develop/SKILL.md` Step 1**,
+  which says a lifecycle commit is not exempt from `Co-Authored-By`, and by
+  `references/CONCURRENCY.md` *The git index is shared*, which requires it of every AI-assisted
+  commit. `handoff` now carries it; `claim` and `close` still do not, and **still need a row** — none
+  exists. Worth recording for its own sake: the answer was already written down in two files the
+  ticket cites, and both a build pass and a QA pass read the question as open. A "scope decision" that
+  the repo's own prose already settles is cheaper to look up than to escalate (pointer:
+  `skills/queue/templates/{claim,close}`, `git-conventions.md` *Co-authorship*, items `0081`, `0082`).

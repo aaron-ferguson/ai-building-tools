@@ -185,3 +185,43 @@ is therefore not local to this script: either all three scripts gain the trailer
 exempts script-generated bookkeeping commits and the NFR row is the thing that is wrong. **If the
 answer is the latter, send this to `queue` rather than editing the NFR row here.** Parked in
 `FINDINGS.md` because the scope decision is not this ticket's to take alone.
+
+### Develop 2026-09-05 [792e] — the trailer red, fixed for `handoff` only
+
+**The scope question was resolved by the repo's own prose, not by judgement.** The verify verdict
+offered two branches — all three scripts gain the trailer, or the convention exempts
+script-generated bookkeeping commits. `skills/develop/SKILL.md` Step 1 already answers it in as many
+words: *"A lifecycle commit is not exempt from it."* `references/CONCURRENCY.md` *The git index is
+shared* says the same, requiring the trailer of "every AI-assisted commit". So the NFR row is right
+and FR1's "same shape as `claim` and `close`" describes the mechanism, not the message.
+
+**What changed.** `COAUTHOR` is a named constant at the top of the script, next to `DIR`/`QUEUE`/
+`LOCK`, and the commit takes a **second `-m`**. The second `-m` is the whole mechanism: git puts a
+blank line between the two, which is what makes the line a trailer git will parse rather than prose
+in the body.
+
+**The generic name is deliberate.** `git-conventions.md` prints `Claude <noreply@anthropic.com>`, and
+a script cannot know which model is driving the session that invoked it. `skills/queue/SKILL.md`
+writes `<model>` as a placeholder for a human-authored commit; a script has no such placeholder to
+fill, so it uses the convention's own literal.
+
+**The guard reads through git's trailer parser, not through `grep`.** `%(trailers:key=Co-Authored-By,
+valueonly)` is the assertion, because the rule is that the commit *carries a trailer* — a `grep` of
+the body is satisfied by the word appearing anywhere, which is the "anchor the assertion to the
+claim" failure `testing-conventions.md` names. Two mutations prove it, plus a no-op control
+(104/0 both before and after):
+
+- **drop `-m "$COAUTHOR"`** → 103/1, the defect the guard exists to catch.
+- **fold the trailer into the subject `-m`** → 103/1, and the subject assertion still passes. This is
+  the mutation a `grep`-based guard could not have seen, and it is why the parser is used.
+
+**`claim` and `close` still carry the same gap, and it is not fixed here.** `claim` is `0082`'s file
+and held by another session; `close` is nobody's right now but is outside this ticket's `touches:`.
+Both **still need a row** — no such row exists as of this writing.
+
+**Two reds in the suite are not this ticket's**, both in files this session never opened and both from
+commits that predate its first: `tests/citations.test.sh` on
+`skills/queue/templates/claim` (commit `3588524`, `0082`, held by `5af1`) and
+`tests/skill-size.test.sh` on `skills/retro/SKILL.md` being 38 bytes over goal (commit `16d7f9c`, no
+in-progress row owns it). `tests/last-line.test.sh` was excluded from the run as untracked — another
+window mid-TDD, which `develop` Step 5 says is settled by `git status` alone.
