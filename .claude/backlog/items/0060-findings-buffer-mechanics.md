@@ -151,3 +151,37 @@ Cannot be written until the design question is settled. These hold regardless:
 - The header's own reasoning — that nothing is tagged at write time, because classification at the
   moment of noticing is the friction worth avoiding — is a constraint on the answer, not an
   objection to it. A marker written on the way out costs the sweeper, not the noticer.
+- **Evidence from the 2026-09-05 retro, which ran this buffer at 84 entries — 10.5x the threshold.**
+  Recorded here rather than in `FINDINGS.md` because it bears directly on the open design question
+  above. Four things that pass could see and no earlier one could:
+  - **The composition of a large buffer, measured.** Of 84 entries: **21** were lessons a retro
+    could land, **40** belonged to an existing ticket, **15** had no destination anywhere, and
+    **8** were `queue`'s work half. So roughly half of a buffer at volume is neither a lesson nor
+    a unit of work but an **unrouted note about a row that already exists** — a third category the
+    header does not name, and the one that makes the count in *The retro gate counts a number retro
+    cannot reduce* behave as it does. A gate counting "entries a retro could act on" would have read
+    **21**, not 84.
+  - **The per-entry marker was run in practice, and its format was wrong in a way worth pinning.**
+    That pass wrote one as **trailing prose** on each deferred entry — `— read and triaged
+    2026-09-05 by retro: belongs to item NNNN, deferred, not yet written.` It records the routing
+    correctly and buys the next sweeper nothing, because partitioning the file still requires
+    reading every entry to its end. A marker earns its keep only if it is greppable **at the entry's
+    head**: a token after the date, `- 2026-09-05 [->0060] — **what happened.**`, partitions with one
+    `grep` and preserves the `^- (\*\*)?20[0-9]{2}-` line shape every reader and `count_findings`
+    depend on. If the design picks the marker shape, this is an argument for where it sits, not only
+    for whether it exists.
+  - **A refinement of the write-time constraint, not a challenge to it.** *Notes* above holds that
+    classification at the moment of noticing is the friction worth avoiding, and that stands. But
+    most of those 40 entries already carry the parking session's token (`[becd]`, `[0051]`,
+    `[0f0a]`), so those sessions knew which row they held. Naming the row you were holding is not
+    classification — it is not a rung, a destination or a lessons/work call, and it is already in
+    the session's head. Whether that cheap hint is admissible under the same constraint is a
+    question the design pass should answer explicitly rather than inherit.
+  - **A scope gap in this ticket.** FR2 states what a sweep does at volume for **`queue` Step 5**.
+    `retro`'s own Step 1 and Step 2 have the same problem and are covered by no FR here and by no
+    row anywhere: "work in ranked slices" never says ranked by *what*, the Step 2 gate has no
+    smaller form when the proposal is itself a large artifact, and Step 1's expiry is time-based
+    when the pressure is volume-based — nothing expired at 84 entries, because the oldest was 12
+    days old. *Out of scope* excludes `retro`'s **cadence**, which this is not. Either FR2 widens to
+    both sweepers or that half needs its own row; the claiming session should decide which and say
+    so.
