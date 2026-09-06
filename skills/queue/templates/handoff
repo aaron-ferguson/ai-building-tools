@@ -48,6 +48,13 @@ DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 QUEUE="$DIR/QUEUE.md"
 LOCK="$DIR/.lock"
 
+# `git-conventions.md` *Co-authorship* asks for this trailer on ALL AI-assisted commits, and a
+# lifecycle commit a script makes on a session's behalf is one — skills/develop/SKILL.md Step 1
+# says so in as many words: "A lifecycle commit is not exempt from it." The generic name is
+# deliberate: the script cannot know which model is driving it, and guessing wrong is worse than
+# the convention's own literal.
+COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+
 ID="${1:-}"
 TOKEN="${2:-}"
 STAGE="${3:-}"
@@ -331,7 +338,9 @@ git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
 }
 # Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
 n=0
-until git -C "$DIR" commit -q -m "Hand off $ID to $STAGE [$TOKEN]" -- "$QUEUE" "$item" 2>/dev/null; do
+# A second -m is what makes the trailer a trailer: git separates the two with a blank line, so
+# `%(trailers:...)` parses it rather than it being prose in the body.
+until git -C "$DIR" commit -q -m "Hand off $ID to $STAGE [$TOKEN]" -m "$COAUTHOR" -- "$QUEUE" "$item" 2>/dev/null; do
   n=$((n + 1))
   [ "$n" -lt 30 ] || {
     echo "could not commit the hand-off (git busy) — the files are edited but uncommitted" >&2

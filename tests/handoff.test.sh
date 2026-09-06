@@ -194,6 +194,21 @@ assert_contains "the hand-off is committed" "$(git -C "$FIX" log -1 --format=%s)
 assert_contains "nothing is left uncommitted" "clean$(git -C "$FIX" status --porcelain)" 'clean'
 assert_not_contains "the lock is released" "$(ls -a "$FIX/.claude/backlog")" '.lock'
 
+# --- NFR (Git) — the commit carries the Co-Authored-By trailer ---------------------------------
+# `git-conventions.md` *Co-authorship* asks for the trailer on **all** AI-assisted commits, and a
+# lifecycle commit this script makes on a session's behalf is one — `develop` Step 1 says so in as
+# many words: "A lifecycle commit is not exempt from it." Read through git's own trailer parser
+# rather than grepping the body, so a line that merely looks like a trailer cannot satisfy it: the
+# rule is that the commit CARRIES a trailer, not that the word appears somewhere in the message.
+echo "NFR Git — the hand-off commit carries the Co-Authored-By trailer"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0003 | A held row | develop | in-progress | 0000 |' 0003 develop in-progress tok0
+out="$(run_handoff 0003 tok0 verify)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "git parses a Co-Authored-By trailer on the hand-off commit" \
+  "$(git -C "$FIX" log -1 --format='%(trailers:key=Co-Authored-By,valueonly)')" \
+  'Claude <noreply@anthropic.com>'
+assert_contains "the subject still names the hand-off" "$(git -C "$FIX" log -1 --format=%s)" 'Hand off 0003 to verify [tok0]'
+
 # --- FR2 — the fourth positional is the status; waiting is a legal destination -----------------
 echo "FR2 — an explicit status is honoured, so verify's waiting branch has a command"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0002 | Needs a person | verify | in-progress | 0000 |' 0002 verify in-progress tok0
