@@ -648,3 +648,85 @@ reach the suite; nothing was stashed or reverted.
 `config.yml`. File scope stayed inside `expects:`; only `tests/next.test.sh` was edited.
 `skills/queue/templates/next` and `.claude/backlog/next` are byte-identical to each other and
 unchanged from `HEAD`.
+
+### QA 2026-09-06 (fourth pass) — FAIL: AC11's `--help` clause is asserted by prose outside the mode list
+
+**Everything the last re-entry claims is confirmed, and its sweep is complete for the mode it was
+scoped to.** Suite green — `200 passed, 0 failed` in `next.test.sh`, `858 passed, 0 failed` across
+all 21 `tests/*.test.sh`, run individually rather than fail-fast (`config.yml`). I rebuilt the
+mutation list from scratch rather than inheriting it — 65 mutations over `skills/queue/templates/next`,
+restore-in-`finally` from a pristine copy taken before the first one, baseline re-copied per
+mutation, one no-op comment reword as the control. **The control was silent and 62 of the other 64
+reddened**, including all thirteen helper sites the last re-entry added and every branch of both
+`--drive` ladders. `git checkout` was not used for any restore.
+
+**The gap is the same defect shape, in the one AC clause that is about documentation rather than
+routing.** `usage()` can stop documenting `--drive` as a mode — dropped from the synopsis line and
+its whole five-line description block deleted — and the suite stays at `200 passed, 0 failed`:
+
+```
+mutant --help:
+usage: ./next [<stage> | --waiting | --drift | --findings | --help]
+
+  ./next             counts by stage and by status, plus anything another session holds
+  ./next <stage>     the first takeable row for that stage, and its size
+  ./next --waiting   every waiting row with the question it is waiting on
+  ./next --drift     every row whose Status column disagrees with its blocked_by; exits 1 if any
+  ./next --findings  how many entries FINDINGS.md holds, and the threshold a driver gates on
+  ./next --help      this
+```
+
+`next.test.sh:763` is `assert_contains "lists --drive" "$out" '--drive'`, and what satisfies it is
+the trailing paragraph *"--drive spends a code per outcome…"* — prose explaining the exit codes, not
+a listing of the mode. A user running `--help` against that mutant cannot discover `--drive` exists.
+AC11 requires *"`./next --help` lists `--drive` and `--findings`"* and the NFR Documentation row
+requires *"`./next --help` lists both new modes"*, so **AC11 is unmet for the `--drive` half**. Its
+twin at `:764` is genuine — `--findings` appears only in the synopsis and its own description line,
+and the same mutation reds it. One half of one pair is evidence and the other is not, which is why
+reading the two adjacent lines does not show it.
+
+The fix is to pin the mode's own line rather than the bare flag, for both halves:
+`assert_contains "lists --drive as a mode" "$out" './next --drive'`. **No production code is wrong** —
+fourth pass running where the branch is right and only the evidence is missing.
+
+**Three more sites are free to delete with the suite green, all in `--findings`, and none is
+AC-named — recorded rather than failed, and deliberately not papered over with an invented
+assertion.** They are published here because the next pass would otherwise rediscover them:
+
+| Silent site | What its deletion does |
+|---|---|
+| `count_findings` preamble skip (`!body { next }`) | a dated bullet written *above* the `---` rule is counted; hand-probed at 1 entry → 2 |
+| `--findings` at-or-over-threshold state line | `2 entries; threshold 2` reports `under the threshold`; `grep "at or over" tests/` is empty |
+| `--findings` absent-file early return | `0 entries; threshold 8` at rc 0 becomes `awk: can't open file` at **rc 2** |
+
+The third is the one to weigh: it is exactly the unmigrated install the Compatibility NFR is about
+(no `findings_threshold` key, no `FINDINGS.md`), the state three passes running have certified by
+hand in prose and never by fixture, and its failure mode spends the *usage-error* code on a
+well-formed invocation. Whether these three earn fixtures is `queue`'s call, not this pass's — they
+sit outside AC6, which names only the two entry shapes and the third-shape guard, and all four of
+those are red under mutation.
+
+**Why a sweep that ran, with a control, still left them: the enumeration rule is scoped to a mode
+rather than to the change.** The last re-entry's rule is right and its own sentence names its limit
+— *"For `--drive` that is the two ladders and every helper…"*. This ticket ships **two** modes. Every
+`--drive` site is pinned; `--findings` was never enumerated, because the three prior defects were all
+in `--drive` and the rule grew to fit them. Scope the sweep to the diff, not to the mode whose defect
+prompted the last rule. Parked in `FINDINGS.md` with the `--help` lesson, which generalises to every
+`--help` guard in `tests/`.
+
+**Non-functional requirements, re-checked rather than inherited.** Compatibility holds: `next verify`,
+`--drift`, `--waiting` all still exit 0 against the real backlog and an unknown stage still exits 2;
+`next.test.sh`'s pre-existing-invocation case reds 2 when the required-column check drops `Status`;
+mutating `ID`/`NEXT`/`STATUS` back to fixed indices reds 2/2/3 and `rows()`'s header recognition reds
+50, so FR18 is real. Documentation holds **except** the `--help` clause above: the threshold key
+ships in `skills/queue/templates/config.yml` with a comment naming both readers and exit code 5, and
+`retro`'s SKILL.md points at the key rather than carrying a second number (`skills/retro/SKILL.md:43`).
+Step 4's newly-reachable pass: nothing in either mode writes, locks, or launches a process — both are
+pure reads that print one line.
+
+**Copies.** `tests/next.test.sh` executes `skills/queue/templates/next`; that file, `.claude/backlog/next`
+and the installed `0.9.16` plugin copy are all three byte-identical, and identical to `HEAD` after
+every mutation was reverted.
+
+**Not advisory.** `git status --porcelain` was empty at Step 2 and empty again after the last
+evidence command — no dirty paths at all, so the intersection with the evidence set is empty.
