@@ -372,6 +372,96 @@ inherited.
 - **One supervisor across several repositories.** FR12 is one backlog.
 - **A dashboard or reporting UI.** FR10's log is on disk and read by a session.
 
+## QA evidence
+
+**Pass of 2026-09-06, token `6782`. Verdict FAIL** — the change is correct as delivered, but three
+criteria rest on a guard that cannot fail on the defect the criterion names, so three ACs are
+unverified. `qa_level: unit`; suite is `for t in tests/*.test.sh` (`config.yml`), run per file to
+attribute a red. All 22 files green, `tests/orchestrate.test.sh` 97 passed / 0 failed / **0
+skipped** — the 0 skipped matters: AC22's probe dispatched for real on this host.
+
+**Which copy executed.** The repo copy is the authority and is what was checked. The `verify` skill
+*running* this session resolved from `~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.16/`,
+whose bytes **predate this change** — see the finding below. This table was written per the repo
+copy's instruction, which the installed copy does not yet carry.
+
+**Method for every AC below: break the behaviour the criterion names, at the criterion's altitude,
+confirm the guard reddens, restore.** Control run afterwards was green across all 22 files, which is
+what licenses the reds. Every mutation was applied to committed files and restored with
+`git checkout -- <the path mutated>`.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 | `--bare` inserted into the dispatch invocation | ✅ `FAIL AC1/AC19 — the skill's own invocation carries --bare` |
+| AC1 | `< /dev/null` deleted from the dispatch block only, probe keeping its own | ✅ `FAIL AC1 — 1 of 2 claude -p invocations do not redirect stdin`. Deleting it from the *probe* only reddens too, so the check is genuinely per-invocation |
+| AC2 | `tickets` flipped from array to a singular object in the schema | ✅ `FAIL AC2 — a legitimate three-ticket gate was REFUSED: $.tickets: expected type object, got list` (3 reds) |
+| AC2/AC3 | `additionalProperties` flipped to `true` on the envelope, then on a ticket entry | ✅ both redden separately — `a complete envelope carrying a stray 'verdict' validated` / `a complete ticket entry carrying a stray 'cost_usd' validated` |
+| AC3 | `verdict` enum keyword disabled | ✅ `FAIL AC3 — an out-of-vocabulary 'verdict' validated; the supervisor would route on a value no stage means` |
+| AC4 | *"The dispatch unit is a gate, not a row"* deleted | ✅ `FAIL AC4 — the skill does not state that a gate is the dispatch unit` |
+| AC5 | *"A stage must not self-certify"* deleted | ✅ `FAIL AC5 — the skill does not say why verify is dispatched rather than judged here` |
+| AC6 | the three once-per-run gate sentences deleted | ✅ `FAIL AC6 — the skill does not state that the findings gate fires once per run` |
+| AC7 | the marked-checklist clause deleted from the release-chain rule | ✅ `FAIL AC7 — the skill does not hand the release chain over as a marked checklist` |
+| AC8 | the no-push bullet deleted | ✅ `FAIL AC8 — the skill does not state the no-push rule with its "ship it" exclusion` |
+| AC12 | the no-polling rule and its cost sentence deleted | ✅ `FAIL AC12 — the skill does not forbid polling; a turn spent on no change is the cost driver` |
+| AC13 | `floor = contexts[0]` → `contexts[-1]`; then cycles counted from `outcome` events instead of `dispatch` | ✅ both redden (`no FLOOR of 20000`, `no GROWTH of 1500 per cycle`, `no TURNS per cycle of 2.0`). The fixture records 3 dispatches against 2 outcomes, so the two are genuinely distinguishable |
+| AC14 | quoted figures staled back to `6.01 / 4.45` | ✅ `FAIL AC14 — the skill quotes [6.01 4.45] where MEASUREMENT.md records [5.71 4.23]` |
+| AC15 | *"It never claims a row and never mints a claim token"* deleted | ✅ `FAIL AC15 — the skill does not state that it holds no row` |
+| **AC16** | fixture half genuine — drives the real `./next` over a backlog with an orphaned claim; `--drift` exits 0, `0002` offered, `0001` not. **Prose half: the orphaned-claim rule deleted from Step 5 → still green.** | ❌ **unverified** — see gap 3 below |
+| AC17 | *"The log is provenance. It is not state"* deleted; separately, the delete-the-log sentence deleted | ✅ both redden — `the skill does not say the log is not state` / `does not state the falsifiable half` |
+| AC18 | `mkdir -p .claude/backlog/runs` line deleted | ✅ `FAIL AC18 — the skill takes the marker without creating runs/ first; on a fresh backlog the first supervisor is told the run is busy`. The fixture also proves the case can fire (a bare `mkdir` of the marker does fail with `runs/` absent) |
+| **AC19** | `--dangerously-skip-permissions` inserted into the dispatch → red. `--allowed-tools`, `--add-dir`, `--session-id`, `--setting-sources` each deleted from the dispatch → each reddens by name. **`--max-budget-usd` deleted from the dispatch → still green.** | ❌ **partially unverified** — see gap 1 below |
+| AC20 | verify's write-to-item-file instruction deleted → 3 reds; template's `## QA evidence` heading renamed → `FAIL AC20 — templates/item.md has no QA evidence section` | ✅ properly section-anchored, and the "before the close" clause is asserted separately |
+| **AC21** | the findings-parked count deleted from Step 8, the report step the criterion names → **still green** | ❌ **unverified** — see gap 2 below |
+| AC22 | a shim `claude` returning `{"probe":"WRONG"}` put on PATH | ✅ `FAIL AC22 — the probe did not return the fixed object; a supervisor on this host would drive nothing. Got: {probe:WRONG}`. With PATH emptied it skips loudly: `SKIP AC22 — no claude on PATH; the nested-dispatch premise under AC1 is UNVERIFIED in this run` — and in the real run it did **not** skip, so AC1's nested-dispatch premise is tested on this host |
+| AC23 | whole suite per file: 22/22 green, 0 failures anywhere. `orchestrate` removed from `plugin.json`'s description → red. The only stage-skill change is verify's AC20 write | ✅ |
+| AC24 | README's *One skill per session* section reverted to person-types-it wording | ✅ `FAIL AC24 — README's One skill per session does not mention the supervised loop` |
+| AC27 | the depth sentence relocated below `## Step 3` | ✅ `FAIL AC27 — the depth report is not stated before the dispatch step (depth 186, dispatch 138)`. Anchored to line order, which is the criterion |
+
+### NFRs
+
+| Dimension | How it was checked | Result |
+|---|---|---|
+| Security | `security-conventions.md` read. AC8 and AC19 mutations both redden; `--dangerously-skip-permissions` and `--bare` are absent from every fenced invocation and the prose says why. Newly-reachable states walked: the marker directory, the stage subprocess's granted tools, the spend cap. No secret in the diff (`grep -inE '(api[_-]?key\|secret\|token *=\|password\|sk-ant)'` over the range returns only the skill's own prose about `--bare` forcing API-key auth) | ✅ |
+| Observability | `observability-conventions.md` read. Step 5 states one JSON line per event under `.claude/backlog/runs/`, with a UTC timestamp and the run id, appended as it happens | ✅ stated; no guard asserts the run-log *format*, which is a fixture nothing yet produces — noted, not failed |
+| Performance | `measurement-conventions.md` read. FR7's three numbers are stated in the skill and instrumented in `tools/harvest-usage.sh` in the same change; AC13's two mutations both redden; the tool's `DEFAULT_TURN_BUDGET = 3` and the skill's stated three-turn budget are asserted to agree | ✅ |
+| Dependencies | `dependency-conventions.md` read. `validate-json-schema.py` documents why it is 114 lines of stdlib rather than `pip install jsonschema`, and states what it is not. The `claude` CLI's absence is handled by a real probe with a named fallback (AC22) | ⚠️ met in behaviour; the CLI is nowhere **named as a dependency** in README — see findings |
+| Compatibility | `api-conventions.md` read. All 22 pre-existing test files green; the outcome shape is supplied by the invoker, so no stage skill describes it and a hand-driven session is unchanged | ✅ |
+| Documentation | `documentation-conventions.md` read. README's *One skill per session* describes both paths; AC24's mutation reddens; the build session's learnings are recorded in *Notes & decisions* in the same change | ✅ |
+
+**Privacy pass** (always-on, `data-privacy-conventions.md`): the change adds a new on-disk record,
+`.claude/backlog/runs/<run-id>.jsonl`. `.gitignore` excludes only `.active/`, deliberately and with
+the reason written down — so the **run logs are committed**, into a public repo. Correct for this
+project (`company: none`) and the log is meant as the human's record, but the schema's `escalation`
+field is free prose from a stage, so it is the field to watch if this plugin is ever run on a
+backlog carrying company material. Flagged, not failed.
+
+### The three gaps, and why they fail rather than annotate
+
+Each is the adjacent-measurement shape `verify` Step 3 names: the guard runs, asserts, and measures
+something *next to* the defect. In all three the delivered artifact is **correct** — the fix is to
+the guard, not to the skill.
+
+1. **AC19 — the spend cap.** `fenced "$SKILL"` concatenates *every* fenced block before grepping, so
+   the Step 1 probe's `--max-budget-usd 0.25` (line 68) satisfies the check on the Step 3 dispatch
+   (line 147). Deleting the cap from the dispatch leaves the suite at `97 passed, 0 failed`. The
+   other four flags in the same loop redden by name because they appear in one block only. This is
+   the identical shape this session's own build notes record fixing for `< /dev/null` — *"one entry
+   in a sweep over all fenced blocks concatenated"* — one loop above.
+2. **AC21 — the findings-parked count.** `grep -qF 'findings-parked count' "$SKILL"` over the whole
+   file. The phrase occurs three times; two are in Step 4 describing the schema envelope. Deleting
+   it from Step 8, the report step the criterion is written about, leaves the suite green.
+3. **AC16 — the orphaned claim.** `grep -qF 'Claim tokens'` over the whole file. That citation also
+   appears in Step 7 for an unrelated rule, so deleting Step 5's *"never a row to take over"*
+   sentence leaves the suite green.
+
+**The fix is cheap and already demonstrated in this same file**: AC20's guard extracts its section
+before grepping and AC27's compares line numbers. The same treatment for these three — scope the
+cap check to the dispatch block, scope AC21 to the report section, and anchor AC16 to the sentence
+rather than the citation.
+
+**Not carried out here on purpose.** Inventing an assertion at QA time would manufacture a guard for
+a decision taken on other grounds; the gap is published and left uncovered for `develop`.
+
 ## Notes & decisions
 
 - **The design decision of 2026-08-24 and Aaron's review amendment of the same day both live in
@@ -488,3 +578,36 @@ inherited.
   supervised pass does instead — proceed on the skill's own recommendation and report what it chose,
   or stop and hand the proposal back as part of the checklist. Parked rather than decided here: it is
   FR4's scope, not `retro`'s.
+
+### From the QA pass, 2026-09-06 (token 6782) — FAIL
+
+**The change is correct as delivered; three of its guards are not.** Full per-AC evidence is in
+`## QA evidence` above. The suite is green (22/22 files, `orchestrate` 97/0/0, 0 skipped) and every
+mutation at a criterion's own altitude reddened except three:
+
+- **AC19's spend cap** — `fenced "$SKILL"` concatenates all fenced blocks, so the Step 1 probe's
+  `--max-budget-usd 0.25` satisfies the check on the Step 3 dispatch. Deleting the cap from the
+  dispatch leaves the suite at `97 passed, 0 failed`.
+- **AC21's findings-parked count** — a whole-file grep for a phrase that occurs three times, twice
+  in Step 4's schema description. Deleting it from Step 8, the report step the AC names, is green.
+- **AC16's orphaned-claim rule** — a whole-file grep for `Claim tokens`, a citation Step 7 also
+  carries. Deleting Step 5's *"never a row to take over"* is green.
+
+**All three are the same shape, and this session already found and fixed it once** — the build notes
+above record exactly it for `< /dev/null` (*"one entry in a sweep over all fenced blocks
+concatenated"*), one loop above the AC19 check that still has it. Worth reading as one defect in the
+sweep rather than three unlucky greps.
+
+**The fix pattern is in the same file already**: AC20's guard extracts its section before grepping,
+AC27's compares line numbers. Scope the cap check to the dispatch block, AC21 to the report section,
+and AC16 to the sentence rather than the citation. Not done here — inventing an assertion at QA time
+manufactures a guard for a decision taken on other grounds.
+
+**Not a reason for the FAIL, but the next session should know:** the installed plugin at
+`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.16/` **predates this whole change**.
+`0.9.16` was set by `9528098`, 23 commits before `56b2566` claimed this ticket, so the version never
+moved during the work and the version-keyed cache was never re-extracted — `installed_plugins.json`
+nonetheless records `lastUpdated: 2026-09-06T05:20:06` against `gitCommitSha: 9528098`. The install
+has six skills and no `orchestrate`; its `verify` has no AC20 instruction. This is `CLAUDE.md`'s
+documented failure mode observed live, in both halves at once. **The re-entry needs its own version
+bump** — `tools/release` — or the next session verifies a copy that still does not exist.
