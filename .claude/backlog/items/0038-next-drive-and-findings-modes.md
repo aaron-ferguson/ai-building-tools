@@ -773,3 +773,72 @@ a pristine copy taken before the first one, never with `git checkout`.
 
 **Not advisory.** `git status --porcelain` showed only this ticket's own `tests/next.test.sh`
 throughout; no foreign dirty paths at all.
+
+### QA 2026-09-06 (fifth pass) — PASS
+
+**The re-entry's fix is real, it is the only thing that changed, and I reproduced the defect it
+closes rather than inheriting the claim.** Rolling `next.test.sh:763–764` back to the pre-fix bare-flag
+form and deleting `--drive`'s five-line description block from `usage()` gives `200 passed, 0 failed`;
+with the anchored assertions in place the same mutation gives `199 passed, 1 failed`, failing on
+`lists --drive as a mode` alone. Deleting `--findings`' description line reds only
+`lists --findings as a mode`. Both halves are now evidence, and the re-entry's account of *why* the
+twin looked genuine is confirmed by the asymmetry: the bare `--findings` assertion also survives its
+description line being deleted, because the token still stands in the synopsis.
+
+**Suite:** `200 passed, 0 failed` in `next.test.sh`; **858 passed, 0 failed across all 21
+`tests/*.test.sh`**, run individually rather than fail-fast per `config.yml`.
+
+**Mutation sweep rebuilt from scratch, not inherited.** 62 mutations over
+`skills/queue/templates/next`, each applied to a pristine copy taken before the first one and
+restored from that copy in a `finally`; `git checkout` was not used for any restore; one no-op
+comment reword as the control. **The control was silent and 56 of the other 61 reddened.** The
+sweep covered both modes and both `--drive` ladders, every helper behind the DEPTH line, the four
+exit-code constants, the column-name resolution, and — new this pass — the pre-existing code
+0038 *wraps* rather than adds.
+
+| AC | Checked by | Result |
+|---|---|---|
+| AC6 | both entry shapes dropped from `count_findings` (`196`/`195 passed`), `bad = 1` → `bad = 0` (`195`), non-numeric threshold accepted (`199`) | red |
+| AC9 | every phase-A branch and every rank-walk branch mutated in turn — waiting, in-progress, design, queue, acquired blocker, verify bounce, same-stage guard, DONE.md lookup, became-a-project, walk skips, walk cases, run-complete → escalate; all red. The **faithful naive implementation** (route on `next:` alone, same-stage guard gone) reds 7 assertions | red |
+| AC10 | rank-walk `*)` default flipped to DISPATCH (`199`) | red |
+| AC11 | `RUN_COMPLETE=3`→`0` (`199`), `FINDINGS_GATE`→`0` (`199`), `ESCALATE`→`3` (`186`), unknown `--drive` arg ignored (`199`), second `--completed` accepted (`164`), and both `--help` mode lines (`199` each) | red |
+| AC28 | `ID`/`Next`/`Status` back to fixed indices (`198`/`198`/`197`), required-column refusal removed (`198`), `rows()` header recognised by cell 2 (`198`) | red |
+| AC29 | every `depth_stopper` arm, the blocked and in-progress skips, the end-of-queue text, `gates` frozen at 1, and `decide()` dropping `depth_line` (`188`) | red |
+
+**Non-functional requirements, re-checked rather than inherited.** Compatibility: `next verify`,
+`next develop`, `--waiting`, `--drift` and the bare summary all still exit 0 against the real
+backlog, an unknown stage still exits 2, and a table with an `ID` header but a non-canonical shape
+still refuses at rc 1 with `unexpected table shape` — 0038's `if [ "${1:-}" != "--drive" ]` wrapper
+is itself pinned, since both inverting it and deleting it red AC28's reordered-table fixture.
+Documentation now holds in full: `--help` lists both modes *and* that listing is guarded,
+`findings_threshold` ships in `skills/queue/templates/config.yml` with a comment naming both readers
+and exit code 5, and `skills/retro/SKILL.md:43` points at the key rather than carrying a second
+number. Step 4's newly-reachable pass: both modes are pure reads — no write, no lock, no process —
+so nothing this change makes reachable can act.
+
+**Five sites are still free to delete with the suite green. None is AC-named; recorded rather than
+failed, and deliberately not papered over with an invented assertion.** Three are the ones the
+fourth verdict tabled, reproduced independently here; two are new, and both are in the code this
+ticket wraps rather than the code it adds.
+
+| Silent site | What its deletion does | Status |
+|---|---|---|
+| `count_findings` preamble skip | a bullet above the `---` rule is counted | tabled 4th pass |
+| `--findings` at-or-over-threshold state line | `2 entries; threshold 2` reads `under the threshold` | tabled 4th pass |
+| `--findings` absent-file early return | `0 entries` at rc 0 becomes `awk: can't open file` at rc 2 | tabled 4th pass |
+| the fixed-shape condition itself (`[ "$shape" = "ID/Title/Next/Status/Parent" ]` → `[ 1 ]`) | pre-existing modes stop refusing a table they cannot read; `grep -rn 'unexpected table shape' tests/` is **empty** | **new** |
+| `name_row`'s search for an `ID` cell → take the first `\|` row | equivalent on every fixture, wrong on a `QUEUE.md` with any earlier pipe row | **new** |
+
+The fourth of those is the one to weigh, and it is why it is not a fail: exit 1 on an unreadable
+table is a pre-existing `next` exit code, which AC11's compatibility clause names and the AC11
+fixture does not exercise (it covers rc 0 four ways and rc 2). But the branch **is** present and
+correct by observation, the wrapper this ticket added around it is pinned in both directions, and
+AC11's "it exercises" requirement is scoped to `--drive`. Writing a fixture for it here would be
+this stage inventing a contract. It still needs a row; **as of this session no such row exists**,
+and neither do rows for the three tabled above.
+
+**Not advisory.** `git status --porcelain` was empty at Step 2 and empty again after the last
+evidence command — no dirty paths at all, so the intersection with the evidence set is empty.
+
+**Copies.** `skills/queue/templates/next`, `.claude/backlog/next` and the installed `0.9.16` plugin
+copy are all three byte-identical, checked after the last restore and identical to `HEAD`.
