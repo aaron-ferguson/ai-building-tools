@@ -21,13 +21,9 @@ expects:
 claimed_by: "57bd"
 claimed_at: 2026-09-06T17:57:01Z
 touches:
-  - .claude/backlog/next
-  - skills/queue/templates/next
-  - tests/next.test.sh
-  - .claude/backlog/config.yml
-  - skills/queue/templates/config.yml
-  - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
-  - README.md               # not predicted: line 208's test inventory names next's modes
+  - skills/queue/templates/next   # mutated and restored by this QA pass
+  - .claude/backlog/next          # compared byte-for-byte against the template
+  - tests/next.test.sh            # the guards this verdict rests on
 ---
 
 ## Problem
