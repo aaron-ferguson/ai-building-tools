@@ -405,6 +405,58 @@ argument only — the reason `verify` is a separate session is that it checks wh
 than what it remembers building, and that is a correctness argument which does not trade against 12%
 either way.
 
+### Would the re-entry after a FAIL be cheaper in the verify window? No — measured at +$0.37 to +$0.74
+
+A narrower proposal than fusing, and it has to be priced separately: keep `develop` and `verify`
+isolated, but when `verify` FAILs a ticket, do the re-entry development **in the verify session's own
+window** instead of handing off to a fresh `develop`. The window already holds the diagnosis, so the
+saving is a whole session's floor plus the re-orientation a fresh session spends re-reading an item
+file that has grown a verdict.
+
+**The premise it rests on is that a re-entry is short, and it is not.** All four re-entry `develop`
+sessions in the corpus, identified by pairing each `Hand off <id> to develop` commit with the next
+`Claim <id>` and mapping the minted token to the session that first wrote it:
+
+| Ticket | Verify FAIL session, end context | Re-entry floor | Carried differential | Re-entry turns | Penalty |
+|---|---|---|---|---|---|
+| 0024 | 118,160 | 59,064 | 59,096 | 31 | $0.92 |
+| 0023 | 126,737 | 59,243 | 67,494 | 40 | $1.35 |
+| 0081 | 173,029 | 52,821 | 120,208 | 42 | $2.52 |
+| 0038 | 151,554 | 53,435 | 98,119 | 33 | $1.62 |
+| **mean** | **142,370** | **56,141** | **86,229** | **36.5** | **$1.60** |
+
+Priced with the same $0.50 per million per turn constant. Against that, the saving is the floor's
+cache write (−$0.36) plus 4–7 orientation turns at $0.1244 (−$0.50 to −$0.87): **−$0.86 to −$1.23**.
+**Net +$0.37 to +$0.74 per bounced ticket.** Three of the four are clear losses; only 0024, the pair
+with both the smallest differential and the shortest re-entry, comes out near even.
+
+**A re-entry is 36.5 turns against a develop-stage mean of 44 — 17% shorter, not the targeted fix the
+proposal assumes.** Break-even sits at 28.5 turns for the mean differential, so the observed sessions
+are the wrong side of it. The re-entry still pays Step 5's whole-suite run, the mutation sweep, the
+green-tree discipline and the hand-off; what it saves is the claim and part of the orientation, and
+those are the small terms.
+
+**The effectiveness half is worse than the cost half, and it decides it.** A re-entry `develop`
+session climbs 67,909 tokens on average. Added to the FAILing verify session's end context, three of
+the four land at 219,753, 221,852 and 230,734 — **over a 200k window, so they compact mid-work.**
+Compaction discards the verify context that was the entire reason to stay in the window, which makes
+the proposal self-cancelling in exactly the cases where the diagnosis is richest and the saving would
+be largest.
+
+**And the independent read is load-bearing, which the record shows directly.** On 0038, `verify`'s
+first pass filed the bounce-branch assertion under *Not defects* — "worth an `assert_contains` next
+time that block is open; not worth a red on its own". The fresh `develop` session that picked it up
+overturned that triage ("It is worth more than that"), proved three pre-existing assertions stayed
+green under mutation, and generalised the result into the rule that a ladder with a catch-all `else`
+has its outcome asserted rather than its branch. `verify`'s next pass then found the same defect
+class on a third branch. A session continuing its own work carries its own severity judgment forward;
+it had already written the sentence saying the thing was not worth pursuing.
+
+**Where the idea does survive**: a defect `verify` has fully characterized whose fix is **test-side
+only** — it holds the mutation and knows the exact absent assertion. That is a subset small enough to
+be a rule in `verify` rather than a change to the stage boundary, and it is not what these four
+sessions were.
+
 ### Re-running this
 
 ```sh
