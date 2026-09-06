@@ -83,6 +83,35 @@ valid() {
 # why <document-file> — the validator's reasons, for a failure message that says what was wrong.
 why() { python3 "$VALIDATE" "$SCHEMA" "$1" 2>&1 || true; }
 
+# section <file> <heading-text> — the body under that `## ` heading, up to the next `## `, with
+# all whitespace flattened to single spaces.
+#
+# TWO DEFECTS, ONE HELPER, and the second is why it flattens.
+#
+# SCOPE. A criterion written about one step of the skill is not satisfied by the phrase appearing
+# in some other step. Three cases here asserted with a whole-file grep and so measured something
+# NEXT TO the defect they name (the 2026-09-06 QA pass): AC21's `findings-parked count` occurs
+# three times, twice in Step 4 describing the schema envelope, so deleting it from Step 8 -- the
+# report step the criterion is written about -- left the suite green. Same for AC16's citation,
+# which Step 7 also carries. Extracting the section first is the fix, and AC20's guard below was
+# already doing it.
+#
+# FLATTENING. `grep` is line-based, so an asserted phrase that straddles a line break cannot be
+# matched AT ALL, and reflowing a paragraph is then a breaking change to a guard (CLAUDE.md).
+# AC20's comment records that arriving as a red against a correct implementation. Flattening the
+# section before matching removes the whole class: the assertion is about what the section SAYS,
+# and where the words wrap is not part of the criterion.
+section() {
+  awk -v want="$2" '
+    index($0, "## " want) == 1 { inside = 1; next }
+    /^## / { inside = 0 }
+    inside
+  ' "$1" 2>/dev/null | tr '\n' ' ' | tr -s ' '
+}
+
+# says <file> <heading-text> <phrase> — 0 when that section states that phrase.
+says() { section "$1" "$2" | grep -qF -- "$3"; }
+
 # ------------------------------------------------------------------------------------------------
 echo "AC2 — the schema is a single committed file that parses"
 
@@ -409,11 +438,76 @@ else
 fi
 
 echo "AC19 — a dispatch is capped and scoped"
+
+# ASSERTED PER DISPATCH BLOCK, for the reason the `< /dev/null` case below records: `fenced`
+# concatenates EVERY fenced block before grepping, so a flag present in one invocation satisfies
+# the check on another. Measured (2026-09-06 QA pass): deleting `--max-budget-usd` from the Step 3
+# dispatch left the suite at 97 passed / 0 failed, because Step 1's probe carries a cap of its
+# own. The other four reddened only by the accident of appearing in one block.
+#
+# WHAT IDENTIFIES A DISPATCH, and why it is not any of the five flags. Anchoring the set on a flag
+# under test makes the check vacuous exactly when it should red: delete `--allowed-tools` and the
+# block stops being a dispatch, so nothing is left to fail. Identity comes from the PROMPT instead
+# -- a dispatch is the invocation whose prompt is a stage's slash command, which is what makes it
+# a dispatched stage in AC19's sense. Derived, so a second dispatch block added later is under the
+# rule the day it lands.
+dispatch_blocks() {
+  awk '
+    /^```/ { if (infence) { if (body ~ /claude -p/ && body ~ /'"'"'\/(develop|verify|queue|design|prototype|retro)/) print NR
+                            infence = 0; body = "" }
+             else { infence = 1 } ; next }
+    infence { body = body "\n" $0 }
+  ' "$1" 2>/dev/null || true
+}
+# probe_blocks — the Step 1 no-op. Counted only to prove the partition below is exhaustive.
+probe_blocks() {
+  awk '
+    /^```/ { if (infence) { if (body ~ /claude -p/ && body ~ /"probe"/) print NR
+                            infence = 0; body = "" }
+             else { infence = 1 } ; next }
+    infence { body = body "\n" $0 }
+  ' "$1" 2>/dev/null || true
+}
+
+# claude_blocks — every fenced invocation, the universe the partition below is taken over.
+claude_blocks() {
+  awk '
+    /^```/ { if (infence) { if (body ~ /claude -p/) print NR; infence = 0; body = "" }
+             else { infence = 1 } ; next }
+    infence { body = body "\n" $0 }
+  ' "$1" 2>/dev/null || true
+}
+
+n_dispatch="$(dispatch_blocks "$SKILL" | grep -c . || true)"
+n_probe="$(probe_blocks "$SKILL" | grep -c . || true)"
+n_claude_blocks="$(claude_blocks "$SKILL" | grep -c . || true)"
+
+if [ "$n_dispatch" -ge 1 ]; then
+  ok "the skill carries $n_dispatch stage-dispatch invocation(s) for the flag rules to bind to"
+else
+  bad "AC19 — no stage-dispatch invocation found in the skill; every flag check below would pass vacuously"
+fi
+
+# THE PARTITION. Without it, renaming the prompt drops a block out of BOTH sets and the flag loop
+# goes quiet rather than red. Every `claude -p` in the file is either the probe or a dispatch;
+# an invocation that is neither is an unclassified one escaping the rule, and it is loud.
+if [ "$((n_dispatch + n_probe))" = "$n_claude_blocks" ]; then
+  ok "every claude -p invocation is classified ($n_dispatch dispatch, $n_probe probe)"
+else
+  bad "AC19 — $n_claude_blocks claude -p invocations but only $((n_dispatch + n_probe)) classified; one is under no flag rule"
+fi
+
 for want in -\-max-budget-usd -\-allowed-tools -\-add-dir -\-session-id -\-setting-sources; do
-  if fenced "$SKILL" | grep -qF -- "$want"; then
-    ok "the dispatch block carries $want"
+  missing_flag="$(awk -v want="$want" '
+    /^```/ { if (infence) { if (body ~ /claude -p/ && body ~ /'"'"'\/(develop|verify|queue|design|prototype|retro)/ && index(body, want) == 0) print ++n
+                            infence = 0; body = "" }
+             else { infence = 1 } ; next }
+    infence { body = body "\n" $0 }
+  ' "$SKILL" | grep -c . || true)"
+  if [ "$missing_flag" = 0 ] && [ "$n_dispatch" -ge 1 ]; then
+    ok "every dispatch block carries $want"
   else
-    bad "AC19/AC1 — the dispatch block does not carry $want"
+    bad "AC19/AC1 — $missing_flag of $n_dispatch dispatch block(s) do not carry $want"
   fi
 done
 
@@ -692,10 +786,20 @@ else
   skip "AC16 — .claude/backlog/next is not installed in this checkout, so the fixture cannot be driven"
 fi
 
-if grep -qF 'Claim tokens' "$SKILL"; then
-  ok "the skill routes an orphaned claim to CONCURRENCY.md's ownership rule rather than taking it over"
+# SCOPED TO STEP 5, and anchored to the RULE rather than to the citation. Asserted as a whole-file
+# grep for `Claim tokens` it could not fail on the defect it names: Step 7 cites the same rule for
+# an unrelated reason, so deleting Step 5's "never a row to take over" -- the sentence that IS the
+# criterion -- left the suite green (2026-09-06 QA pass). The falsifiable half is what the
+# supervisor is told to DO with the claim, which is nothing.
+if says "$SKILL" "Step 5" 'never a row to take over'; then
+  ok "Step 5 says an orphaned claim is reported, never taken over"
 else
-  bad "AC16 — the skill does not say what to do with a claim a killed stage left behind"
+  bad "AC16 — Step 5 does not say what to do with a claim a killed stage left behind; a supervisor that adopts it holds a row it is not working"
+fi
+if says "$SKILL" "Step 5" 'Claim tokens'; then
+  ok "Step 5 routes it to CONCURRENCY.md's ownership rule"
+else
+  bad "AC16 — Step 5 states the rule without citing where ownership is defined"
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -902,10 +1006,17 @@ else
 fi
 
 echo "AC21 — the report carries what the run learned"
-if grep -qF 'findings-parked count' "$SKILL"; then
+
+# SCOPED TO STEP 8, the report step the criterion is written about. The phrase occurs three times
+# in this skill and two of them are Step 4 describing the schema envelope -- so the whole-file
+# grep this replaces stayed green with the count deleted from the report itself (2026-09-06 QA
+# pass). AC21 is the only guard on FR6's "the run surfaces what it learned", and FR13 removed the
+# narrative that would otherwise have carried it, so measuring the wrong section leaves the loop
+# free to run smoothly and teach nobody anything.
+if says "$SKILL" "Step 8" 'findings-parked count'; then
   ok "the report carries the findings-parked count"
 else
-  bad "AC21 — the report carries no findings-parked count; nothing shows the run is learning anything"
+  bad "AC21 — Step 8's report carries no findings-parked count; nothing shows the run is learning anything"
 fi
 
 echo "AC23 — the plugin still declares its skill set, and this one is in it"
