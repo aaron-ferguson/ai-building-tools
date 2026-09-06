@@ -70,25 +70,29 @@ sessions recorded, not the decisions taken in them** — a choice the user alrea
 which is cheaper and more reliable than reconstructing them afterwards — the context was hot at the time,
 and a parked entry survives compaction, an interrupted session, and the gap between sessions.
 
+**Two modes, and which you are in decides what you reach for before reading a single entry.** An
+**end-of-run retro** closes a supervised session: small buffer, one session, context still hot, so
+*landed* and *filed* are cheap and almost always right. A **cadence retro** fires on the threshold or
+the week: cold and cross-session, most entries already have rows, so *absorbed* and *deferred* dominate.
+
 **Expire what has gone stale.** Anything older than about two weeks is dropped rather than processed, with
 the reason stated. **If the file has grown far past the cadence threshold, that is itself a finding** —
 retros are not running, or not emptying.
 
 **And far past the threshold changes how this skill runs, not only what it reports.** A buffer at nine
-times the threshold cannot be drained in one pass: Step 2's proposal becomes a large artifact in its own
-right, the user reasonably scopes it down, and every entry not chosen goes back **unchanged, with nothing
-recording that it was read and triaged** — so the next retro pays full price to re-derive the same
-clustering. Work in ranked slices instead, and mark what you considered and deferred the same way `queue`
-marks a dual entry: append the destination you chose and *"deferred <date>, not yet written"*. The two
-sweepers already remove only what they processed, which is right; what neither has without this is a way
-to say **read, kept, not yet placed**.
+times the threshold cannot be drained in one pass, and forcing it is the wrong trade: effectiveness
+first, across as many passes as it takes. Work in ranked slices — **read fewer entries and finish
+each**, rather than reading all and marking most. `FINDINGS.md` is **transit, not residence**: an entry
+you never reached waits untouched; one you *read* leaves in that pass, per Step 4. What must never
+happen is a later pass re-deriving triage an earlier one already did.
 
-**A deferred destination is a claim, so open it before you name it.** Step 3's grep fires only for the
-findings that survive the gate, which leaves a deferral's destination the one choice nothing checks —
-and in the buffer it then reads exactly like a landed finding. Measured: three entries deferred to an
-item scoped to a different question entirely, which the next retro re-derived at full price before
-noticing the pointer resolved to nothing. Name a destination you have actually opened, or write that
-none exists yet — *"needs a row, none exists"* is a useful marker and a wrong one is worse than none.
+**A deferral records what was established, never what was guessed.** It hands the next pass the
+expensive judgment — lesson, unit of work, or both — so that pass buys only the writing. It must not
+carry an unverified destination: Step 3's grep fires only for findings that survive the gate, so a
+deferral's destination is the one choice nothing checks, and it then reads exactly like a landed
+finding. Measured: three entries deferred to an item scoped to a different question entirely, which the
+next retro re-derived at full price before noticing the pointer resolved to nothing. Name a destination
+you have opened, or write that none exists yet — a wrong one is worse than none.
 
 **An entry may already carry a marker from the other sweeper** — *"filed as item 0108; kept for the
 lesson, do not re-file"*. That is `queue` handing you the lesson half of an entry whose work half is
@@ -218,9 +222,25 @@ later call runs holding nothing, which reads exactly like a correct lock. See
 `references/CONCURRENCY.md` *Lock every write to the backlog directory*, and `CONCURRENCY-INCIDENTS.md`
 before writing one by hand.
 
-**Then remove from `FINDINGS.md` only the entries you processed**, and commit in the same turn, by
-pathspec. Leave the units of work: `queue`'s sweep specifies and ranks those, and deleting one here loses
-it silently. Leaving an entry you *did* process is how the next retro pays to read it again.
+**Every entry you read gets one of four dispositions — landed, absorbed, filed or dropped — and
+`FINDINGS.md` is the home of none of them.** The buffer surfaces a lesson; it never keeps one.
+
+- **Landed** — written into the file that governs it, this session. Report the path.
+- **Absorbed** — an existing row already carries the whole lesson. Not a silent drop: the report
+  **names the row and appends** one dated line to its *Notes & decisions*, so the session that claims
+  it does not re-derive what you established.
+- **Filed** — the lesson needs work that does not exist yet, so write the row now while it is fresh.
+  **A pure unit of work is filed, not handed back**: you have paid to understand it and `queue` would
+  pay again. Beyond what this pass can specify, defer it per Step 1 rather than leave it unmarked.
+- **Dropped** — stale, or an observation that cannot answer Step 1's question. Record the reason.
+
+**Land it now unless the change cannot be complete in this session** — a rule this project would
+demand a new guard for, or anything touching code. Half-landing strands the row that specified the
+other half and leaves it reading as stale.
+
+**Then empty what you read**, and commit in the same turn, by pathspec:
+**no entry survives the pass that read it**. Your own Step 6 parks are the next pass's input rather
+than residue left by this one, which is why a healthy buffer is rarely empty and never stale.
 
 ---
 

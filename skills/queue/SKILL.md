@@ -486,8 +486,14 @@ entry is re-read by the next sweep; removing an unprocessed one loses `retro`'s 
 **For an entry that is *both* work and lesson, annotate it in place rather than choosing.** Deleting it
 loses `retro`'s half; leaving it untouched makes the next sweep pay to read it again, which on a large
 buffer is the dominant cost. Neither is acceptable, so append the row its work half became — *"filed as
-item 0108; kept for the lesson, do not re-file"* — and leave the entry for `retro`. The same marker is
-what `retro` writes from the other side, so one convention serves both sweepers.
+item 0108 <date>; lesson half open"* — and hand the entry to `retro`.
+
+**The marker hands the entry over; it does not make it a resident.** `FINDINGS.md` is transit for every
+entry in it, and `retro` is the terminal sweeper: the next pass to read this one gives it a disposition
+and removes it, whether or not it writes anything new (`retro` Step 4). So the marker says what *you*
+established — the row the work became — and never that the entry is finished with. Earlier wording
+asked the next sweeper not to re-file it, which read as *leave it alone* and left eight entries sitting
+in the buffer through two sweeps because no outcome existed for *"the row already carries the lesson"*.
 
 ### The external source (opt-in)
 
