@@ -2,8 +2,8 @@
 id: "0076"
 title: Make a tool edit run the target repo's suite before it commits
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: s
 created: 2026-09-01
@@ -14,11 +14,9 @@ relates: ["0075", "0077"]
 expects:
   - skills/retro/SKILL.md
   - tests/skill-prose.test.sh
-claimed_by: "5db3"
-claimed_at: 2026-09-06T01:53:44Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/retro/SKILL.md
-  - tests/retro-tool-edit.test.sh   # new — the predicted skill-prose.test.sh, renamed; see notes
 ---
 
 ## Problem
