@@ -15,8 +15,8 @@ description: >
 Turn what many sessions learned into edits in the places that get read again.
 
 **One skill per session.** Run this skill in its own conversation; the backlog carries the handoff — the
-ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of $15.11
-went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09** isolated. **No standard
+ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of USD 15.11
+went on context handling** at **191,752 tokens per turn**, modelling to **~USD 5.09** isolated. **No standard
 is relaxed** — the rigour is all in the 15% that was output.
 
 **The finding is not the deliverable — the edit is.** A lesson that reaches only a report dies with the
@@ -45,7 +45,7 @@ and read by `./next --findings`, so the number lives in one place rather than he
 **weekly** if the buffer fills slower, whichever comes first. Only the count is mechanical; "or weekly"
 has no reading and stays your judgement. Running after
 every ticket would mostly find nothing, and the cheapest nothing is the one not run: measured, `retro` cost
-**$5.50**, 36% of the run, at the lowest output per turn of any phase, because it ran last where context
+**USD 5.50**, 36% of the run, at the lowest output per turn of any phase, because it ran last where context
 was largest.
 
 **This skill takes the lessons; `queue` takes the units of work.** Two sweepers, one file, neither waiting

@@ -19,8 +19,8 @@ not an artifact: `/prototype` builds something to look at, this works out what s
 down why.
 
 **One skill per session.** Run this skill in its own conversation; the backlog carries the handoff — the
-ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of $15.11
-went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09** isolated. **No standard
+ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of USD 15.11
+went on context handling** at **191,752 tokens per turn**, modelling to **~USD 5.09** isolated. **No standard
 is relaxed** — the rigour is all in the 15% that was output.
 
 **This skill states no standards of its own** — usable, accessible and consistent are defined by the
@@ -29,7 +29,7 @@ resolve, stop as that file directs, because a verdict against no standard looks 
 one.
 
 **It writes the ticket it settled, when nobody else holds it.** Handing the answer back to `queue` to be
-typed in costs that skill's whole instruction file — measured at 5,699 tokens, five turns and **$0.67**
+typed in costs that skill's whole instruction file — measured at 5,699 tokens, five turns and **USD 0.67**
 for one ticket. The rule against writing existed so two sessions could not write one item, so it applies
 exactly when one does. **How to tell:** `claimed_by:` set and the row `in-progress`. Unclaimed → you
 write it (Step 4). Claimed → hand off.

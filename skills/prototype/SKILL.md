@@ -9,8 +9,8 @@ Generates a prototype at one of three fidelity levels — diagram, clickable HTM
 component — for any ticket or ad-hoc feature idea.
 
 **One skill per session.** Run this skill in its own conversation; the backlog carries the handoff — the
-ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of $15.11
-went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09** isolated. **No standard
+ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of USD 15.11
+went on context handling** at **191,752 tokens per turn**, modelling to **~USD 5.09** isolated. **No standard
 is relaxed** — the rigour is all in the 15% that was output.
 
 ## Configuration

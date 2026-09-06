@@ -16,8 +16,8 @@ change against a **written contract**.
 
 **One skill per session.** Run this skill in its own conversation; the backlog carries the handoff — the
 ticket's `next` field and `FINDINGS.md`, never a conversation. **Observed 2026-08-23/24** over 30 isolated
-sessions: a `verify` turn is the suite's cheapest at **$0.0946 and 97,965 context tokens**, against a
-baseline $0.1203 at 151,669 (`MEASUREMENT.md`). **No standard is relaxed** — the rigour is all in the
+sessions: a `verify` turn is the suite's cheapest at **USD 0.0946 and 97,965 context tokens**, against a
+baseline USD 0.1203 at 151,669 (`MEASUREMENT.md`). **No standard is relaxed** — the rigour is all in the
 fifth of spend that is output.
 
 **One gate per invocation, not one ticket.** The same batching case applies for the same reason:

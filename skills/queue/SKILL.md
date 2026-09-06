@@ -20,8 +20,8 @@ Turn something the user just said into a fully specified, stack-ranked ticket a 
 weeks later and implement without asking a single clarifying question.
 
 **One skill per session.** Run this skill in its own conversation; the backlog carries the handoff — the
-ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of $15.11
-went on context handling** at **191,752 tokens per turn**, modelling to **~$5.09** isolated. **No standard
+ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of USD 15.11
+went on context handling** at **191,752 tokens per turn**, modelling to **~USD 5.09** isolated. **No standard
 is relaxed** — the rigour is all in the 15% that was output. Batch every related ticket into
 one capture session: isolation is per skill, not per ticket, because reading the source material is a
 shared cost paid once.
