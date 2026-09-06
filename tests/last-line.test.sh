@@ -44,7 +44,20 @@ set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 
 RULE="references/REPORTING.md"
-SKILLS="design develop prototype queue retro verify"
+# skills_in <root> — every skill in that tree, derived from the directories rather than listed.
+#
+# It was a hardcoded list, and the day `orchestrate` landed the list was green by construction:
+# a guard that enumerates its own subjects cannot notice a new one, and the moment a rule most
+# needs checking is the moment a new member joins the set it governs
+# (testing-conventions.md). Taking <root> as a parameter is what lets the fixture cases below
+# keep AUTHORED trees — each derives its own six, and the real run derives whatever ships.
+skills_in() {
+  root="${1:?skills_in needs a tree root}"
+  for d in "$root"/skills/*/SKILL.md; do
+    [ -f "$d" ] || continue
+    basename "$(dirname "$d")"
+  done
+}
 PHRASE="the very last thing printed"
 
 PASS=0
@@ -96,7 +109,7 @@ audit() {
     echo "FAIL  $RULE does not say what a session that holds no row puts in the ID slot"
   fi
 
-  for skill in $SKILLS; do
+  for skill in $(skills_in "$root"); do
     file="skills/$skill/SKILL.md"
     if [ ! -f "$root/$file" ]; then
       echo "FAIL  $file does not exist — the skill set this guard covers has moved"
@@ -117,7 +130,7 @@ audit() {
     fi
   done
 
-  echo "COUNT $(printf '%s' "$SKILLS" | wc -w | tr -d ' ') skills"
+  echo "COUNT $(skills_in "$root" | wc -l | tr -d ' ') skills"
   return 0
 }
 
