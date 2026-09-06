@@ -30,7 +30,9 @@ cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
 trap cleanup EXIT INT TERM
 
 # --- fixture ----------------------------------------------------------------------------------
-# $1 header row, $2 separator row, $3 the single data row, $4 the id that row carries.
+# $1 header row, $2 separator row, $3 the single data row, $4 the id that row carries, and $5 the
+# item's `expects:` block — the whole key, so a case can supply `expects:` bare or with entries
+# under it. It defaults to bare, which is what every case written before 0082 assumed.
 scaffold() {
   cleanup
   FIX="$(mktemp -d)"
@@ -49,8 +51,10 @@ scaffold() {
 id: "$4"
 title: Fixture
 status: ready
+${5:-expects:}
 claimed_by:
 claimed_at:
+touches:
 ---
 
 ## Problem
@@ -113,6 +117,14 @@ $3"; fi
   if [ "$2" -ne 0 ]; then ok "$1"; saw_on_pass "$seen"; else
     bad "$1"; saw "wanted any exit but 0
 $seen"; fi
+}
+
+# `assert_contains` is satisfied by a string that has *grown*, so it cannot say "unchanged". A
+# refusal's second half is exactly that claim (0082 AC4), and asserting it loosely is the shape
+# `testing-conventions.md` calls a guard that runs and cannot fail.
+assert_eq() {
+  if [ "$2" = "$3" ]; then ok "$1"; saw_on_pass "$2"; else
+    bad "$1"; echo "         expected exactly:"; saw "$3"; echo "         got:"; saw "$2"; fi
 }
 
 # Match the whole line rather than looking a cell up by index: a harness that reimplements the
@@ -179,6 +191,74 @@ scaffold '| Status | ID | Title | Next | Parent |' '|--------|------|-------|---
 out="$(run_claim 0005)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "the Status cell is the one that changed" '| in-progress | 0005 | Reordered | develop | 0000 |'
+
+# --- 0082 AC1, AC2 — a provisional touches: is written from expects: --------------------------
+# The defect: `claim` committed the row and the ownership keys and then *printed* an instruction
+# to set `touches:` by hand, so the one field the other window reads to decide what is safe to
+# take was the only part of the claim that was neither written nor committed. AetherWorks 0091
+# ran to completion with none.
+echo "0082 AC1 — expects: is written as a provisional touches:, inside the claim commit"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0006 | Has expects | develop | ready | 0000 |' 0006 'expects:
+  - src/alpha.ts
+  - tests/alpha.test.ts'
+out="$(run_claim 0006)" && rc=0 || rc=$?
+item="$(cat "$FIX/.claude/backlog/items/0006-fixture.md")"
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "touches: carries the whole expects list" "$item" 'touches:
+  - src/alpha.ts
+  - tests/alpha.test.ts
+---'
+assert_contains "expects: is left as queue wrote it" "$item" 'expects:
+  - src/alpha.ts'
+# Written is not committed, and committed is the whole reason this is a script. Assert on the
+# commit's own diff rather than on the file, so a write left dirty cannot pass.
+assert_contains "the provisional scope is IN the claim commit" \
+  "$(git -C "$FIX" show --format= -U0 HEAD -- .claude/backlog/items/0006-fixture.md)" \
+  '+  - src/alpha.ts'
+assert_contains "nothing is left uncommitted" "clean$(git -C "$FIX" status --porcelain)" 'clean'
+assert_contains "the report says to narrow it" "$out" 'NARROW it'
+assert_not_contains "does not tell the session the field is unset" "$out" 'now set touches:'
+
+# --- 0082 AC3 — no expects: keeps today's behaviour -------------------------------------------
+# A provisional scope invented from nothing would be worse than none (FR2), so the bare case has
+# to stay bare AND say so — silence here reads as "a scope was written".
+echo "0082 AC3 — an item with no expects: claims as it does today, and the report says so"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0007 | No expects | develop | ready | 0000 |' 0007
+out="$(run_claim 0007)" && rc=0 || rc=$?
+item="$(cat "$FIX/.claude/backlog/items/0007-fixture.md")"
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "touches: is left empty" "$item" 'touches:
+---'
+assert_contains "the item is still claimed" "$item" 'claimed_by: "tok0"'
+assert_contains "the report says the scope is unset" "$out" 'unset'
+
+# --- 0082 AC4, AC5 — a foreign uncommitted QUEUE.md edit is refused, not narrated --------------
+# The defect: `claim` detected another session's uncommitted row edit, said its commit would
+# carry it, and committed anyway — AetherWorks 0091's row is attributed to `Claim 0034 [fc89]`.
+# A script holding the lock can refuse instead of narrating.
+echo "0082 AC4 — a foreign uncommitted QUEUE.md edit is refused and nothing is changed"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0008 | Ready row | develop | ready | 0000 |' 0008
+printf '| 0009 | Another session mid-edit | develop | in-progress | 0000 |\n' >> "$FIX/.claude/backlog/QUEUE.md"
+before_queue="$(cat "$FIX/.claude/backlog/QUEUE.md")"
+before_item="$(cat "$FIX/.claude/backlog/items/0008-fixture.md")"
+before_head="$(git -C "$FIX" rev-parse HEAD)"
+before_index="$(git -C "$FIX" diff --cached --name-only)"
+out="$(run_claim 0008)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the row it would have carried" "$out" '0009 | Another session mid-edit'
+assert_contains "says what to do about it" "$out" 'restore'
+assert_eq "QUEUE.md is byte-identical" "$(cat "$FIX/.claude/backlog/QUEUE.md")" "$before_queue"
+assert_eq "the item is byte-identical" "$(cat "$FIX/.claude/backlog/items/0008-fixture.md")" "$before_item"
+assert_eq "the index is untouched" "$(git -C "$FIX" diff --cached --name-only)" "$before_index"
+assert_eq "no claim was committed" "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
+assert_contains "the lock is not left behind" "none$(ls "$FIX/.claude/backlog/.lock" 2>/dev/null)" 'none'
+
+echo "0082 AC5 — that refusal reads as its own ground, not as one of the other three"
+assert_contains "says it is refusing, not warning" "$out" 'refusing to claim'
+assert_contains "names the actual cause" "$out" 'uncommitted'
+assert_not_contains "is not the stage refusal" "$out" 'not ready'
+assert_not_contains "is not the table-shape refusal" "$out" 'Status column'
+assert_not_contains "is not the missing-row refusal" "$out" 'no row for'
 
 # --- result -----------------------------------------------------------------------------------
 echo

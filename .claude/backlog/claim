@@ -12,8 +12,14 @@
 #
 # Usage:  .claude/backlog/claim <id> [token]
 #
-# `touches:` stays a hand edit afterwards: only you know what you are about to open, and it must
-# be widened the moment the work reaches further than you declared.
+# **`touches:` is written here, provisionally, from the item's `expects:`.** It used to be printed
+# as an instruction, which made the one field the other window reads to decide what is safe to take
+# the only part of a claim that was neither written nor committed atomically — and it was skipped
+# exactly as often as that invites. `expects:` is a prediction and not a verified scope, so the
+# session still has to narrow it to what it will actually open and widen it the moment the work
+# reaches further; a provisional scope is wrong in the direction that costs a suboptimal pick,
+# where an absent one is read as "every file this item names is held" (`CONCURRENCY.md`, *The
+# working tree is shared too*). An item with no `expects:` gets no invented scope and is told so.
 #
 # **Columns are resolved by header name, never by position.** The table's shape is not a contract:
 # it was pared from eight columns to five, and a parser keyed on a fixed index then read every
@@ -37,17 +43,31 @@ ID="${1:-}"
 
 TOKEN="${2:-$(head -c2 /dev/urandom | xxd -p)}"
 
-# Warn about anything already dirty in the queue before we add to it. With both windows using
-# this script the file should be clean; if it is not, our commit will carry those rows too, so
-# say which ones rather than letting it happen silently.
+# --- the fourth refusal: a foreign edit this claim's commit would carry ------------------------
+# This script used to *warn* here and commit anyway, which is the shape a warning always has: it
+# was right, it was read, and the other window's row went into the git record under this claim's
+# message all the same (AetherWorks 0091, carried by `Claim 0034 [fc89]`). A pathspec limits a
+# commit to the paths it names and never to the changes you made, so there is no version of the
+# commit below that can leave a foreign row behind — the only fix is upstream, and a script
+# holding the lock can refuse where a person under load cannot.
+#
+# **Before the lock, deliberately.** A refusal that has taken the lock has something to undo, and
+# a refusal that has edited the row has something worse; refusing here is the only point at which
+# "changes nothing" is true by construction rather than by cleanup (0082 AC4).
+#
 # **Pathspec here is relative to `$DIR`, deliberately — do not "tidy" it back to `$QUEUE`.** It is
 # absolute, and on a case-insensitive filesystem `$DIR` can spell the repo path in a different case
 # from `git rev-parse --show-toplevel`, which makes an absolute pathspec read as *outside the repo*.
 # With a single pathspec there is no second file to compare against, so the check degrades to a
 # silent pass instead of a loud wrong answer — the direction that loses work rather than time.
 if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- QUEUE.md; then
-  echo "WARNING: QUEUE.md already has uncommitted changes; this commit will carry them:" >&2
+  echo "refusing to claim $ID: QUEUE.md holds uncommitted changes this claim's commit would carry" >&2
+  echo "the rows that would land under 'Claim $ID [$TOKEN]':" >&2
   git -C "$DIR" diff -U0 -- QUEUE.md | awk '/^[+-]\| / { print "  " $0 }' >&2
+  echo "commit them by pathspec if they are yours; if they are another session's, leave them alone" >&2
+  echo "and wait, or 'git restore -- .claude/backlog/QUEUE.md' if you know they are stray" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
 fi
 
 # --- lock -------------------------------------------------------------------------------------
@@ -118,25 +138,53 @@ item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
 
 now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 tmp="$(mktemp)"
-# The two ownership keys are *replaced* where they exist and *added* where they do not. An item
+count="$(mktemp)"
+# The ownership keys are *replaced* where they exist and *added* where they do not. An item
 # written before the template carried them has nothing to replace, and a silent skip is the worst
 # outcome available: the row says claimed, the script says claimed, and the item file records no
 # owner at all — so the "did I mint this token?" test in CONCURRENCY.md has nothing to read.
-awk -v tok="$TOKEN" -v now="$now" '
+# `touches:` is the third such key and is written the same way, from `expects:` (0082 FR1).
+#
+# One pass, and one parser: the entry count the report below branches on is written out by this
+# awk rather than recomputed by a second one, because two parsers of the same frontmatter drift
+# and the drift is silent — the file would say one thing and the report another.
+#
+# The array is `want[]` and not `exp[]`: `exp` is an awk BUILT-IN (exponential), and using it as
+# an array name is a parse error reported as `illegal statement` on the line that reads it, which
+# points at the loop rather than at the name.
+#
+# Every rule is guarded on `fm`. Without it the `intou`/`inexp` list rules would swallow an
+# indented bullet in the item's PROSE, which is a data-loss bug that no assertion about
+# frontmatter can see.
+awk -v tok="$TOKEN" -v now="$now" -v cf="$count" '
   NR == 1 && /^---$/ { fm = 1; print; next }
   fm && /^---$/      {
-    if (!by) { print "claimed_by: \"" tok "\""; added = 1 }
-    if (!at) { print "claimed_at: " now;         added = 1 }
+    if (!by)  { print "claimed_by: \"" tok "\""; added = 1 }
+    if (!at)  { print "claimed_at: " now;         added = 1 }
+    if (!tou && n) { print "touches:"; for (i = 1; i <= n; i++) print want[i]; added = 1 }
     fm = 0
-    if (added) print "note: item predated the ownership keys; added them" > "/dev/stderr"
+    if (added) print "note: item predated some of the claim keys; added them" > "/dev/stderr"
     print; next
   }
+  fm && /^expects:/    { inexp = 1; print; next }
+  fm && inexp && /^[ \t]+-/ { want[++n] = $0; print; next }
+  fm && inexp          { inexp = 0 }
+  fm && /^touches:/    {
+    print "touches:"
+    for (i = 1; i <= n; i++) print want[i]
+    tou = 1; intou = 1; next
+  }
+  fm && intou && /^[ \t]+-/ { next }
+  fm && intou          { intou = 0 }
   fm && /^claimed_by:/ { print "claimed_by: \"" tok "\""; by = 1; next }
   fm && /^claimed_at:/ { print "claimed_at: " now;         at = 1; next }
   fm && /^status:/     { print "status: in-progress"; next }
   { print }
+  END { print n + 0 > cf }
 ' "$item" > "$tmp"
 mv "$tmp" "$item"
+N_EXPECTS="$(cat "$count")"
+rm -f "$count"
 
 # --- commit, by pathspec, in the same breath as the edit --------------------------------------
 # Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
@@ -149,4 +197,10 @@ if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
 fi
 
 echo "claimed $ID with token $TOKEN"
-echo "now set touches: in $item before you open anything"
+if [ "${N_EXPECTS:-0}" -gt 0 ]; then
+  echo "touches: is set provisionally from expects: ($N_EXPECTS paths) — NARROW it in $item to"
+  echo "what you will actually open, and widen it the moment the work reaches further"
+else
+  echo "touches: is unset: $ID declares no expects:, and a scope invented from nothing would be"
+  echo "worse than none — set it in $item before you open anything"
+fi
