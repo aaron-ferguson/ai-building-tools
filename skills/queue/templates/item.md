@@ -163,6 +163,12 @@ says *what* to exercise; the frontmatter says at which level.
 
 What this item deliberately does not do, so `develop` doesn't scope-creep.
 
+## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+Each AC and NFR row, how it was checked, and the actual output — the table `verify` produces at its
+verdict, kept where a reader finds it after the session that produced it has ended. Empty until a QA
+pass has run; a closed ticket with an empty one is a ticket whose ticks assert a check nobody can see.
+
 ## Notes & decisions
 
 Appended as work happens — non-obvious mechanisms, disproved theories, why an approach was

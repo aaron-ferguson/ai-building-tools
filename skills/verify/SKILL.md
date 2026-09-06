@@ -414,6 +414,17 @@ check wearing the same word.
 State **PASS** or **FAIL** plainly, then that table: each AC and NFR row, how it was checked, the
 result, with the actual failure output for anything red.
 
+**Write that same table into the item file, under `## QA evidence`, before Step 5 closes or hands
+off the ticket.** It is the QA record of the ticket, and the item is where a reader looks for it a
+month later; on the screen alone it dies with the session, which for a closed ticket means the
+evidence that each criterion was actually checked is gone while the ticks that assert it remain.
+Append the section if the item has none — older tickets predate it. **Before, not after**: `./close`
+and `./handoff` commit the item, so a table written afterwards needs a second commit, and after
+either of them the claim is gone (`CONCURRENCY.md`, *The release is the final act*).
+
+This is a hand-driven improvement and not a supervised-only one — it costs one write, and it is
+what makes a closed ticket auditable by anyone who was not in the room.
+
 **Advisory is derived, never authored:** intersect the dirty set with Step 3's evidence set. No
 session applies the label as a judgement about whether the dirt *looks* relevant.
 

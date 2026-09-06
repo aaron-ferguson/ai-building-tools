@@ -65,7 +65,8 @@ one:
 
 ```sh
 claude -p --json-schema '{"type":"object","properties":{"probe":{"type":"string"}},"required":["probe"],"additionalProperties":false}' \
-  --max-budget-usd 0.05 'Return the object with probe set to the string ok. Nothing else.'
+  --max-budget-usd 0.25 'Return the object with probe set to the string ok. Nothing else.' \
+  < /dev/null
 ```
 
 The fixed object comes back, or this host cannot drive a loop. **Where it cannot, say so plainly
@@ -138,7 +139,8 @@ claude -p \
   --setting-sources user,project \
   --allowed-tools '<the tools that stage needs>' \
   --max-budget-usd <cap> \
-  '/develop 0039 0086'
+  '/develop 0039 0086' \
+  < /dev/null
 ```
 
 Every flag earns its place, and two of them are load-bearing in a way that is not obvious:
@@ -152,11 +154,21 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
   files `config.yml` points the stage at, and the stage stops — correctly, and confusingly.
 - **`--setting-sources`** is stated rather than inherited, so a stage's settings are a property of
   the dispatch and not of whatever shell the supervisor happened to start in.
+- **`< /dev/null` is load-bearing, not tidiness.** Without it the nested CLI waits on stdin and
+  then prints *"Warning: no stdin data received in 3s"* **into the stream you are parsing as
+  JSON** — so a perfectly good stage reads as one that failed the schema, and Step 4 escalates on
+  it. Redirect stdin on every dispatch, the probe included.
 
 **`--bare` is disqualifying and appears nowhere.** It skips CLAUDE.md auto-discovery, which means
 **no conventions** — and a stage that builds without them passes every test in `tests/`, because
 nothing greps a subprocess's loaded context. It also forces API-key auth, putting a secret in an
 unattended loop's environment on a separate billing path.
+
+**A cap below the startup floor fails every stage identically.** The probe above was written at
+USD 0.05 and returned `Error: Exceeded USD budget` rather than the object — not because the work
+was expensive, but because a session pays its ~20k-token floor before it does anything at all. A
+cap set below that reads exactly like a broken CLI. Size a stage's cap against this repo's observed
+per-session figures in `MEASUREMENT.md`, never against a guess at how small the work is.
 
 **Authority is the narrowest that works, and it does not outlive the process.**
 `--dangerously-skip-permissions` appears nowhere. Each stage gets the tools it needs and a spend

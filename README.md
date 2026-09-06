@@ -83,6 +83,23 @@ rigour is what caught a real zip-bomb vulnerability every acceptance criterion i
 passed over, and a test that stayed green with the guard it existed for deleted. Both live in the
 15% of spend that was output. What moved is *where* work happens, not what is required of it.
 
+**Who types the next command — a person, or `/orchestrate`.** Every stage ends by naming the
+command that follows it, and for most of this suite's life a person typed it. `/orchestrate` runs
+that command instead: it dispatches each stage as its own `claude -p` process, reads back one
+schema-validated outcome, and routes on `./next --drive` until the queue runs dry or the findings
+gate ends the run in a retro. **Isolation is unchanged, which is the point** — a supervised stage is
+a separate session with its own context, exactly as a hand-typed one is, so nothing above is traded
+away for the automation.
+
+**Both paths are first-class, and a hand-driven session cannot tell the difference.** No stage skill
+knows whether a supervisor invoked it; the outcome shape is supplied by the invoker rather than
+described by the stage, so running `develop` by hand behaves as it always did. What a supervisor
+adds is that the steps with no visible output of their own — parking a finding, running the full
+suite, releasing a claim — stop depending on a person remembering them.
+
+**What it will not do on its own**: answer a design question, narrow a contract, queue new work,
+push, bump a version, install, or release. Those are escalations, and the run stops and says so.
+
 Full reasoning: *The Context Tax* and *Splitting the Suite* (2026-08-22/23). Observed figures and
 the verdict: [MEASUREMENT.md](MEASUREMENT.md).
 
