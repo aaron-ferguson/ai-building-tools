@@ -282,6 +282,16 @@ does not own.** Three more shapes have bitten, all of them invisible in a diff:
   prescribed above. A scope reversal is the author's call, so surface it rather than silently obeying
   either side.
 
+**And the nearest cache of all sits inside a file the ticket does own.** A comment beside a fixture is
+a cache of the fixture, and it ages exactly like a quoted figure while sitting where none of the shapes
+above reach. One read `turn 4  Read .../SKILL.md  orient` where the code had always constructed an
+`Edit` — and the acceptance criterion that fixture existed for was precisely *an Edit of a skill file
+is `work`, not `orientation`*. Read beside a comment asserting the opposite of the behaviour under
+test, a substring match over the whole output looks like a reasonable question, which is plausibly how
+that unfalsifiable guard came to be written. Nothing in a diff looks wrong: the comment reads correctly
+on its own and the arithmetic around it stays consistent. **Before trusting a fixture, read its
+construction, never its comment.**
+
 ---
 
 ## Step 3 — Load the conventions this item actually triggers

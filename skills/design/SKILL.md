@@ -63,6 +63,13 @@ In this order, because each can make the next unnecessary.
    are then descriptions rather than citations.
 3. **The conventions.** Read the files the core's index names for design, UI and accessibility — read
    them, do not recall them. Cite the file when the answer turns on a rule.
+4. **The evidence the ticket rests on.** A design pass is the stage most likely to build a whole
+   argument on one cited figure and the least likely to be caught at it: a fully-specified ticket whose
+   every requirement was denominated in a share of *turns* that nobody had priced in *tokens* was
+   settled, recorded and handed on before the gap was visible, and it took the user to send it back.
+   `develop` Step 2 carries the discipline in its narrower form — a figure a ticket quotes about a file
+   it does not own is a cache, not a fact — so re-read the source rather than the requirement, and
+   date-stamp what you re-verified.
 
 **If the question touches user-facing UI, accessibility is not optional** and does not wait to be asked
 about. Check contrast on any colored-text pairing you propose, and confirm the interaction works from the

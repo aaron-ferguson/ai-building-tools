@@ -201,6 +201,16 @@ wrong AC as the one that reddened, and three file headers recorded a measurement
 both directions**, which is what hid an AC having no behavioural guard anywhere. "Never trust a tick you
 did not write" extends here without exception, and a confident tone in a header is not evidence.
 
+**Confirm the break landed before a green run means anything.** A `sed` that matched nothing, a
+substitution of a string the file does not contain, or a mutation applied to the copy you have been
+reading rather than the one the harness runs all return a clean pass — indistinguishable from a guard
+that holds, and the rule below then publishes it as a gap that is not there. Check that the diff is
+non-empty, that it reached **the copy the harness runs** (`testing-conventions.md` carries this where a
+project keeps two), and that the tool's **observable output** moved, not merely that the substitution
+applied. Where the guard under test mutates its own copy, an external mutation collides with its
+internal cases and the run exits **with no tally**; that missing tally is the tell, and it reads as a
+broken harness rather than as the red it is.
+
 **A mutation that does not redden is a result to publish, not a gap to paper over.** When nothing
 catches a change, the tempting move is to invent an assertion narrow enough to make it load-bearing — a
 threshold chosen precisely so the thing under test becomes necessary. That manufactures a guard for a
