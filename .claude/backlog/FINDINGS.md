@@ -731,3 +731,40 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   one line — the same rewrap hazard `CLAUDE.md` records for every prose guard, now hitting the guard
   rather than the guarded. This **needs a row**; none exists (pointer: `tests/citations.test.sh`,
   `skills/queue/templates/claim:22`).
+- 2026-09-05 — **The citations red recorded above was introduced by `0082`'s own first commit and is
+  now fixed, so it needs no row.** `3588524` is that commit, and the entry above reads it as
+  pre-existing because `git log` on the file was the only evidence available to a session that did
+  not hold the ticket — which is the correct read of that evidence and still the wrong answer. The
+  wrap is unwrapped and `tests/citations.test.sh` is green. What survives as a real finding is the
+  guard's blind spot itself: **a rule citation that wraps across a comment break cannot be matched
+  and is reported as stale**, so the guard's failure mode on a *correct* citation is a false
+  accusation rather than a miss. That half **still needs a row**; none exists (pointer:
+  `tests/citations.test.sh`, `skills/queue/templates/claim`).
+- 2026-09-05 — **A row claimed and then released records no reason, so the next session re-derives
+  it.** `0086` was claimed by `f7c0` and handed straight back to `develop | ready` 58 seconds later
+  (`bdf2cdc` → `6eba29c`), with no note in the item and nothing in the queue. This session then spent
+  the same analysis reaching the same answer — its `expects:` overlaps `0081`'s live claim on
+  `skills/develop/SKILL.md` and `skills/verify/SKILL.md`. `./handoff` takes a destination stage and
+  no reason, and no step in `develop` requires one when it releases rather than completes, so a row
+  put back untouched is indistinguishable from one never taken. This **still needs a row**; none
+  exists (pointer: `.claude/backlog/handoff`, `skills/develop/SKILL.md` Step 5, item `0086`).
+- 2026-09-05 — **`./claim` writes the row to `QUEUE.md` before it checks that the item file exists**,
+  so a row whose item is missing or misnamed leaves `QUEUE.md` edited, uncommitted and unlocked — the
+  same fail-open shape `0082` was written to close, on a third path `0082` does not name and so could
+  not take. `claim:136` is the `mv`, `claim:140` the refusal. Cheap to fix (resolve the item above the
+  row edit), and deliberately left: only the author may widen a contract. This **still needs a row**;
+  none exists (pointer: `skills/queue/templates/claim`).
+- 2026-09-05 — **`0082` replaced warn-and-carry in `claim`; `close` and `handoff` still have it,
+  verbatim.** `close:62` and `handoff:103` both detect that their commit will carry another session's
+  uncommitted rows, print a warning, and commit anyway. The argument FR3 makes for refusing is not
+  specific to claiming: a pathspec limits a commit to paths and never to authorship, and all three
+  scripts hold the lock when they decide. `0082`'s *Out of scope* covers only other files, not other
+  scripts, so this is a sibling row rather than a widening. This **still needs a row**; none exists
+  (pointer: `skills/queue/templates/{close,handoff}`, item `0082` FR3).
+- 2026-09-05 — **`expects:` and `touches:` usually end with the same last entry, so a substring edit
+  anchored on that entry silently writes the wrong block.** Widening this ticket's `touches:` with a
+  match on `"  - tests/claim.test.sh\nclaimed_by:"` appended to `expects:` instead — `expects:` is the
+  block that abuts `claimed_by:`, and both lists held the same three paths, so the anchor was unique
+  and wrong. It committed cleanly and read correctly in isolation. Anchor a frontmatter list edit on
+  the key that FOLLOWS the block (`---` for `touches:`), never on a shared entry (pointer:
+  `skills/queue/templates/item.md`, `develop` Step 1).
