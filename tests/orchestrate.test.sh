@@ -177,6 +177,35 @@ else
   ok "a singular object is refused"
 fi
 
+echo "AC3 — a stray field is refused, on the envelope and on a ticket entry"
+
+# The singular case above is refused for MISSING `tickets`, not for the twelve fields it carries
+# that do not belong — so on its own it says nothing about `additionalProperties`. Mutating that
+# keyword to `true` left the whole file green, which is the wired-but-adjacent failure
+# `testing-conventions.md` describes. These two cases are the ones that actually reach it: a
+# COMPLETE envelope, plus one field that should not be there.
+python3 - "$FIX/gate-of-three.json" "$FIX" <<'INNER'
+import json, sys
+out = sys.argv[2]
+doc = json.load(open(sys.argv[1]))
+doc["verdict"] = "built"          # a per-ticket field smuggled onto a complete envelope
+json.dump(doc, open(f"{out}/stray-envelope-field.json", "w"))
+doc = json.load(open(sys.argv[1]))
+doc["tickets"][0]["cost_usd"] = 0.5   # an envelope field smuggled onto a complete ticket entry
+json.dump(doc, open(f"{out}/stray-ticket-field.json", "w"))
+INNER
+
+if valid "$FIX/stray-envelope-field.json"; then
+  bad "AC3 — a complete envelope carrying a stray 'verdict' validated; additionalProperties is not pinned"
+else
+  ok "a stray field on a complete envelope is refused"
+fi
+if valid "$FIX/stray-ticket-field.json"; then
+  bad "AC3 — a complete ticket entry carrying a stray 'cost_usd' validated; additionalProperties is not pinned"
+else
+  ok "a stray field on a complete ticket entry is refused"
+fi
+
 echo "AC3 — a partial object is refused rather than proceeded on"
 
 python3 - "$FIX/gate-of-three.json" "$FIX" <<'PY'
