@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Stage outcome",
+  "description": "What one stage session returns to a supervisor. Supplied by the invoker as `claude -p --json-schema \"$(cat this file)\"`, so no stage skill describes this shape and none should. An envelope over an ARRAY because a develop or verify gate handles several tickets in one session: singular, it reports one verdict and silently drops the rest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "stage",
+    "session_id",
+    "commits",
+    "cost_usd",
+    "findings_parked",
+    "conventions_resolved",
+    "escalation",
+    "tickets"
+  ],
+  "properties": {
+    "stage": {
+      "description": "Which skill ran. Not a `next:` value — `retro` and `prototype` are stages that hold no row.",
+      "enum": ["queue", "design", "prototype", "develop", "verify", "retro"]
+    },
+    "session_id": {
+      "description": "The UUID the supervisor pre-assigned at dispatch, echoed back. Pre-assigned rather than reported so the transcript path is a dispatch-time fact in the run log, findable when the supervisor is dead.",
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "commits": {
+      "description": "Every commit SHA this session landed, in order. Empty is legitimate: a stage can correctly conclude there was nothing to write.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" }
+    },
+    "cost_usd": {
+      "description": "What this session spent. The supervisor's own spend is NOT in here — it belongs to no ticket, and a cost-per-closed-ticket figure summed from these alone omits it.",
+      "type": "number",
+      "minimum": 0
+    },
+    "findings_parked": {
+      "description": "How many entries this session appended to FINDINGS.md. The only signal left that the run is learning anything, once the stage narrative is trimmed.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "conventions_resolved": {
+      "description": "The conventions directory this session actually resolved, or null if none did. Null is a legitimate value and an escalation, never a silent pass: a stage that built against no standard is the failure `config.yml` makes conventions mandatory to prevent.",
+      "type": ["string", "null"]
+    },
+    "escalation": {
+      "description": "One sentence naming what a person must decide, or null. Null means the stage finished on its own terms; it does not mean every ticket passed.",
+      "type": ["string", "null"]
+    },
+    "tickets": {
+      "description": "One entry per ticket this session handled, in the order it handled them. Empty for a stage that holds no row.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "verdict", "next", "status", "detail"],
+        "properties": {
+          "id": {
+            "description": "The four-digit backlog id.",
+            "type": "string",
+            "pattern": "^[0-9]{4}$"
+          },
+          "verdict": {
+            "description": "The word this stage's own hand-off line prints, lowercased. Each stage reaches only its own subset; the schema carries the union because one schema serves every stage.",
+            "enum": [
+              "queued", "re-specified", "parked",
+              "decided", "handed-to-queue",
+              "prototyped",
+              "built", "red", "blocked",
+              "pass", "fail", "advisory"
+            ]
+          },
+          "next": {
+            "description": "The stage the ticket now sits at, as written in its frontmatter. `done` is terminal and is the only value that is not a skill.",
+            "enum": ["queue", "design", "develop", "verify", "done"]
+          },
+          "status": {
+            "description": "The ticket's state, as written in its frontmatter.",
+            "enum": ["ready", "waiting", "blocked", "in-progress", "done"]
+          },
+          "detail": {
+            "description": "A path — and where useful an anchor — to where this ticket's detail actually landed: its Notes & decisions, its QA evidence, FINDINGS.md, or the run log. FR14's guarantee that the trim moved the detail rather than deleting it is only checkable because this field exists.",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
