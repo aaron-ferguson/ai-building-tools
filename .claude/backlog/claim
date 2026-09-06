@@ -18,8 +18,11 @@
 # exactly as often as that invites. `expects:` is a prediction and not a verified scope, so the
 # session still has to narrow it to what it will actually open and widen it the moment the work
 # reaches further; a provisional scope is wrong in the direction that costs a suboptimal pick,
-# where an absent one is read as "every file this item names is held" (`CONCURRENCY.md`, *The
-# working tree is shared too*). An item with no `expects:` gets no invented scope and is told so.
+# where an absent one is read as "every file this item names is held".
+# See `CONCURRENCY.md`, *The working tree is shared too* — and keep that citation on ONE line: the
+# guard in tests/citations.test.sh is line-based, so a rule name wrapped across a comment break
+# reads as "The # working tree is shared too" and is reported as stale.
+# An item with no `expects:` gets no invented scope and is told so.
 #
 # **Columns are resolved by header name, never by position.** The table's shape is not a contract:
 # it was pared from eight columns to five, and a parser keyed on a fixed index then read every

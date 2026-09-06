@@ -40,7 +40,15 @@ in one component, unwarned.
   Overlap means pick differently: take the next clear `ready` row, name the one you stepped over. All
   rows collide → nothing is developable right now.
 - **`queue` writes `expects:`** (predicted, code open); **`develop` writes `touches:` on claim**
-  (actual, checked against the code, never copied). Why two fields: `CONCURRENCY-INCIDENTS.md`.
+  (actual, checked against the code). Why two fields: `CONCURRENCY-INCIDENTS.md`.
+- **The claim writes `touches:`, not the session afterwards** — `./claim` seeds it from `expects:`
+  and says so, because the version that printed the instruction instead made the one field the
+  other window reads the only part of a claim that was neither written nor committed atomically,
+  and a ticket ran to completion with none. What the seed is not is a *verified* scope: narrow it
+  to what you will actually open, and widen it as the work reaches further. **The rule that
+  `touches:` is never a copy of `expects:` is about what you leave behind, not about what the
+  script starts you with** — an unnarrowed copy still claims files you are not in, which is the
+  suboptimal pick this pair of fields exists to avoid.
 - **Widen `touches:` as the work reaches further**, and read an **empty `touches:` on an `in-progress`
   row as *its files are held*** — silence is not permission. That is a statement about file scope; who
   holds the *row* is the item's token alone (*A stage writes only the ticket it holds*).
