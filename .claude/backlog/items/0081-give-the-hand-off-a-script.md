@@ -25,10 +25,6 @@ touches:
   - skills/queue/templates/handoff
   - .claude/backlog/handoff
   - tests/handoff.test.sh
-  - tests/backlog-scripts-installed.test.sh
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - references/CONCURRENCY.md
 ---
 
 ## Problem
