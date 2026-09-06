@@ -136,3 +136,48 @@ read that suite before claiming learns this, and `queue` has no reason to open i
   proposes both acceptable answers explicitly — either is a correct close.
 - FR7 is here rather than in a concurrency ticket because `expects:` is written by `queue`, at
   capture time, and that is the only moment the coupling can be predicted cheaply.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+Five entries, all of the same shape as the four operations above: something sessions do routinely,
+composed by hand at the point of use. Three more operations, and none of them is a variant of the
+ones already specified.
+
+- **Re-rank against a stated priority is an operation, and Step 4's mechanics do not scale to one**
+  (FINDINGS 2026-08-30, two entries, and 2026-09-01 `[c80d]`). Step 4 describes a move as two
+  single-line edits each preceded by a fresh read, which is right for one row; a session asked to
+  make token efficiency the top priority moved ten rows and inserted two, and twenty sequential
+  edits across twenty tool calls is slower **and** less safe than one locked rebuild asserting the
+  row set is preserved modulo the additions. `./claim` and `./close` are granted that rebuild
+  exemption by *Never rewrite `QUEUE.md` by hand* for exactly this reason, so a re-rank is either a
+  fourth script or a stated exemption. Two things the step also assumes and should not. It assumes
+  the rows the user wants promoted **exist** — here none did, so the re-rank had to run Steps 2 and
+  3 inside Step 4 before it had anything to order, and nothing says to check that the theme being
+  promoted is represented before reordering; a session skipping that check produces a confident
+  re-rank of rows that do not serve the stated priority. And Step 3 asserts a *new* ticket's
+  placement while staying silent on the re-rank that placement can imply for an **existing** row:
+  the evidence that placed 0084 was also an argument for promoting 0061 out of the Tier 2 lower
+  band, Step 3 covers only the case where the new ticket makes row 1 look wrong, and Step 4 assumes
+  the user asked for a move. That session recorded the argument in `RANKING.md` and left the move
+  unmade because rows 1–10 sit under a standing instruction — reasoning it had to invent.
+- **Folding new evidence into an unsettled `design` ticket is not *amend*** (FINDINGS 2026-09-01
+  `[c80d]`). Asked for a `release` script and a `doctor` script, the first was a clean Add and the
+  second was one of the four candidate mechanisms 0061 exists to choose between: capturing it as a
+  `develop` ticket would have pre-empted the design pass — Step 2's *"guessing acceptance criteria
+  to avoid the stage"* — and capturing it as a second `design` ticket would have duplicated 0061
+  outright. **Amend** was the closest fit and was used, but it is described as *"add an FR to X"*
+  and its whole procedure is about widening an already-specified ticket: re-check `size`, the ACs,
+  the QA plan, *Out of scope*. This operation can **narrow** the question instead — here it
+  eliminated two of four candidate shapes. And nothing told that session to report to the user that
+  their request had landed as an amendment to an existing row rather than as the ticket they asked
+  for, which is the part the user notices.
+- **Withdraw, supersede and merge have no path at all, so three closes were performed by hand**
+  (FINDINGS 2026-09-02). `.claude/backlog/close` refuses any row not at `next: verify`, per *`verify`
+  owns closing*, which is right for a **verified** close and leaves a ticket that will not be built
+  with nowhere to go: `0037` and `0087` were closed not built and `0079` was merged into `0086`,
+  each by a by-hand lock, row delete, `DONE.md` prepend and commit duplicating `close`'s body
+  without its guards. Two conventions were invented at the point of use and nothing enforces
+  either — the QA column carries `not built` / `merged` in place of a `qa_level`, and the
+  acceptance criteria are left deliberately **unticked** so a withdrawal cannot be read as a pass.
+  Both belong in the skill and in the script. This one reaches `close` as well as `queue`, so it
+  may not be wholly this ticket's.

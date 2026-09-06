@@ -116,27 +116,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   references/CONVENTIONS.md "Resolution order").
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
 
-- 2026-08-30 — **`queue` has no operation for a re-rank against a stated priority, and Step 4's
-  mechanics do not scale to one.** Step 4 describes a move as two single-line edits each preceded by
-  a fresh read, which is right for one row. This session moved ten and inserted two; twenty
-  sequential edits across twenty tool calls is slower *and* less safe than one locked rebuild that
-  asserts the row set is preserved modulo the additions. `./claim` and `./close` are granted the
-  rebuild exemption by *Never rewrite `QUEUE.md` by hand* for exactly that reason — holding the lock
-  while they rebuild — and a re-rank does the same thing with no named permission, so it is either
-  a fourth script or a stated exemption (pointer: skills/queue/SKILL.md Step 4,
-  references/CONCURRENCY.md, items/0048, items/0065).
-  — read and triaged 2026-09-05 by retro: belongs to item 0057, deferred, not yet written.
-
-- 2026-08-30 — **Step 4 assumes the rows the user wants promoted already exist, and here none of
-  them did.** Asked to make token efficiency the top priority, the honest answer was that the
-  backlog held no ticket aimed at turns-per-session — the lever `MEASUREMENT.md` itself names — so
-  the re-rank had to run Step 2 and Step 3 inside Step 4 before it had anything to order, and rank
-  the results by the instruction rather than by the tiers. Nothing in the skill says to check that
-  the theme being promoted is represented before reordering; a session that skipped the check would
-  have produced a confident re-rank of rows that do not serve the stated priority (pointer:
-  skills/queue/SKILL.md Steps 2–4, items/0073, items/0074).
-  — read and triaged 2026-09-05 by retro: belongs to item 0057, deferred, not yet written.
-
 - 2026-08-30 — **`design` Step 4 tells an unclaimed ticket's session to write it and never says to
   claim it, and there is no release path once it has.** `CONCURRENCY.md` *A stage writes only the
   ticket it holds* says "claim the row you write", so settling 0074 meant claiming, writing,
@@ -365,31 +344,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   precedent exists and only needs extending. Candidate ticket.
   — read and triaged 2026-09-05 by retro: belongs to item 0063, deferred, not yet written.
 
-- 2026-09-01 [c80d] **`queue` has no operation for "this request is an existing `design` ticket's
-  undecided answer."** Aaron asked for two scripts, a `release` and a `doctor`. The first is a clean
-  Add. The second is one of the four candidate mechanisms 0061 exists to choose between, so
-  capturing it as a `develop` ticket would have pre-empted the design pass — exactly what Step 2's
-  *"guessing acceptance criteria to avoid the stage"* warns against — while capturing it as a
-  second `design` ticket would have duplicated 0061 outright. Step 1's table has no row for it.
-  **Amend** was the closest fit and is what I used, but it is described as *"add an FR to X"* and
-  its whole procedure is about widening an already-specified ticket's scope: re-check `size`, the
-  ACs, the QA plan, *Out of scope*. Folding new evidence into an unsettled design question is a
-  different operation — it can *narrow* the question rather than widen the scope, and here it
-  eliminated two of four candidate shapes. Nothing told me to report to the user that their request
-  had landed as an amendment to an existing row rather than as the ticket they asked for, which is
-  the part they would notice. Candidate ticket, and it is close to 0057's territory (queue
-  operations that exist in practice and not in the skill).
-  — read and triaged 2026-09-05 by retro: belongs to item 0057, deferred, not yet written.
-
-- 2026-09-01 [c80d] **Step 3 says to assert a new ticket's placement, and is silent on the re-rank
-  it can imply for an existing row.** The evidence that placed 0084 is also an argument for
-  promoting 0061 out of the Tier 2 lower band. Step 3 covers the case where the new ticket makes
-  row 1 look wrong ("say so and propose the rerank"); it does not cover a promotion argument for a
-  row in the middle, and Step 4 assumes the user asked for a move. I recorded the argument in
-  `RANKING.md` and left the move unmade, because rows 1-10 sit under a standing instruction of
-  Aaron's — but that reasoning was mine to invent, not the skill's to supply.
-  — read and triaged 2026-09-05 by retro: belongs to item 0057, deferred, not yet written.
-
 - 2026-09-02 [6983] **`design` Step 4 has no path for a decision whose deliverable is criteria on
   other people's tickets.** 0085's FR2 required routing removable turns to 0066, 0081, 0047 and
   0048; `CONCURRENCY.md`, *A stage writes only the ticket it holds*, forbids the settling session
@@ -431,18 +385,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   its own ticket since 0061/0084 already own this mechanism (pointer: `.claude-plugin/plugin.json`,
   0061, 0084, 0085 FR6).
   — read and triaged 2026-09-05 by retro: belongs to item 0061, deferred, not yet written.
-
-- 2026-09-02 — **the backlog has no way to close a ticket that will not be built, so three withdrawals
-  were performed by hand under the lock.** `.claude/backlog/close` refuses any row not at
-  `next: verify` (*"verify owns closing"*), which is correct for a *verified* close and leaves
-  withdraw, supersede and merge with no path at all — `0037` and `0087` were closed not built and
-  `0079` was merged into `0086`, each by a by-hand lock, row delete, `DONE.md` prepend and commit
-  that duplicates `close`'s body without its guards. Two conventions were invented at the point of
-  use and nothing enforces either: the QA column carries `not built` / `merged` instead of a
-  `qa_level`, and the acceptance criteria are deliberately left **unticked** so a withdrawal cannot
-  be read as a pass. Both belong in the skill and in the script, not in one session's judgement
-  (pointer: `.claude/backlog/close`, `skills/queue/SKILL.md`, item `0057`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0057, deferred, not yet written.
 
 - 2026-09-02 — **`RANKING.md` says "current state only" and is accumulating dated sections anyway.**
   Its header splits the standing argument from the narrative the way `CONCURRENCY.md` splits from
