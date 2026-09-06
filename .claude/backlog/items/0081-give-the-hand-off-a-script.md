@@ -2,8 +2,8 @@
 id: "0081"
 title: Give the hand-off a script, as claim and close have
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -19,12 +19,9 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by: "792e"
-claimed_at: 2026-09-06T02:11:31Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/handoff
-  - .claude/backlog/handoff
-  - tests/handoff.test.sh
 ---
 
 ## Problem
