@@ -96,3 +96,49 @@ refuses rather than guesses on three other grounds.
 
 - Both paths recorded in AetherWorks' buffer, 2026-08-24, items 0034 and 0091, with the carrying commit
   named above.
+- **Built 2026-09-05 [5af1]. All five FRs land; the whole suite (20 scripts) is green.** Commits:
+  `3588524` (FR1–FR4 and the guards), `<FR5 commit>` (FR5 and a citation unwrap).
+- **The refusal goes before the lock, and that placement is the requirement rather than a tidiness
+  choice.** AC4 asks for "leaves the tree exactly as it found it", and there are two ways to satisfy
+  it: refuse before anything is created, or undo what was. Only the first is true by construction —
+  the second has to be right about every path out, including the ones `set -eu` takes. The check was
+  already sitting above the lock as a warning, so refusing there cost nothing.
+- **`exp` is an awk built-in (exponential), and using it as an array name is a parse error reported
+  as `illegal statement` on the line that READS the array**, not the line that names it. The first
+  implementation used `exp[++n]` and the message pointed at the `for` loop. Renamed `want[]`, and the
+  trap is recorded in the script beside it.
+- **Every rule in the frontmatter awk is guarded on `fm`, and dropping that guard is a data-loss bug
+  no assertion about frontmatter can see.** The `inexp`/`intou` list rules match `/^[ \t]+-/`; without
+  `fm` they would also swallow an indented bullet in the item's *prose*, silently, on every claim.
+- **One parser, not two.** The report branches on how many `expects:` entries there were, and the
+  obvious implementation is a second awk over the same frontmatter. The count is written out by the
+  awk that does the rewrite instead: two parsers of one format drift, and the drift is silent — the
+  file would say one thing and the report another, which is the class of defect this ticket is about.
+- **The mutation sweep, 2026-09-05, against `skills/queue/templates/claim` — the copy the harness
+  runs, not `.claude/backlog/claim`.** No-op control: 42/0. Refusal deleted (warn-and-carry restored):
+  4 red. Refusal exits 0: 1 red — only the status assertion, which is the right shape, since AC4's
+  message assertions are about *what it says* and stay true. `touches:` block written empty: 2 red.
+  `expects:` entries never collected: 3 red. The unset branch made unconditional: 1 red. The fix was
+  committed BEFORE the sweep, because `git checkout -- <path>` restores to `HEAD` and would otherwise
+  have deleted it (`develop` Step 5).
+- **FR5 was blocked for part of this session and the wait was the right call.** `references/CONCURRENCY.md`
+  sits in `0081`'s `expects:` and `0081` really did edit it while building (`c6862fb`), so it was held
+  under *The working tree is shared too* — `touches:` was empty, which reads as *its files are held*.
+  Building FR1–FR4 and handing off with FR5 undone would have shipped a live contradiction: the script
+  copies `expects:` into `touches:` while the rule said "never copied". Waited for `0081` to release,
+  then wrote it. The author made this call; it is recorded because the next reader will see one ticket
+  editing a file another ticket predicted and should know it was not an oversight.
+- **What FR5 actually needed was narrower than it reads.** The captured FR says the wording "licenses
+  the gap", but `CONCURRENCY.md` already said `touches:` is written *on claim*. The live contradiction
+  was the parenthetical **"never copied"**, which the new script falsifies. The rule is kept and scoped
+  — never-a-copy is about what a session leaves behind, not about what the script starts it with —
+  rather than deleted, because an unnarrowed copy is still the wrong scope.
+- **`skills/queue/templates/item.md`'s `touches:` comment needed no edit** and was not touched: it
+  already reads "`develop` writes it on claim by verifying `expects:` against the code", which the new
+  behaviour satisfies. Worth saying because that file is the obvious second place to look, and it is
+  held by `0086`.
+- **Three adjacent defects found and deliberately not fixed**, all parked in `FINDINGS.md`: `claim`
+  edits the row before checking the item file exists (a third fail-open path this ticket does not
+  name); `close` and `handoff` still warn-and-carry verbatim; and the `count` temp file leaks on an
+  awk failure exactly as the pre-existing `tmp` does — fixing only the new one would leave the file
+  inconsistent with itself.
