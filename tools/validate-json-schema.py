@@ -19,17 +19,24 @@ about stages, verdicts or tickets, only about JSON Schema keywords.
 Usage:  validate-json-schema.py <schema.json> <document.json>
 Exit:   0 valid, 1 invalid (reasons on stdout, one per line), 2 usage/parse error.
 """
+# Annotations are postponed so the hints below can use `dict[str, ...]` and `X | Y` on the
+# python3 this repo actually meets -- 3.9 evaluates neither at runtime, and the suite is meant
+# to run wherever python3 does (`dependency-conventions.md`). Hints are required rather than
+# optional here: `CONVENTIONS_CORE.md` makes "Python with full type hints" a principle.
+from __future__ import annotations
+
 import json
 import re
 import sys
+from typing import Any
 
-TYPES = {
+TYPES: dict[str, type | tuple[type, ...]] = {
     "object": dict, "array": list, "string": str,
     "number": (int, float), "integer": int, "boolean": bool, "null": type(None),
 }
 
 
-def type_ok(value, name):
+def type_ok(value: Any, name: str) -> bool:
     if name == "integer":
         return isinstance(value, int) and not isinstance(value, bool)
     if name == "number":
@@ -42,7 +49,7 @@ def type_ok(value, name):
     return isinstance(value, expected) and not isinstance(value, bool)
 
 
-def validate(doc, schema, path="$"):
+def validate(doc: Any, schema: dict[str, Any], path: str = "$") -> list[str]:
     """Return a list of human-readable reasons the document fails the schema."""
     errors = []
 
@@ -92,7 +99,7 @@ def validate(doc, schema, path="$"):
     return errors
 
 
-def main(argv):
+def main(argv: list[str]) -> int:
     if len(argv) != 3:
         sys.stderr.write("usage: validate-json-schema.py <schema.json> <document.json>\n")
         return 2
