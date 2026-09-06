@@ -22,6 +22,7 @@ touches:
   - skills/queue/templates/claim
   - .claude/backlog/claim
   - tests/claim.test.sh
+  - references/CONCURRENCY.md
 ---
 
 ## Problem
