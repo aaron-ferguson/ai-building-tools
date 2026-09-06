@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0038 | Add the drive and findings routing modes to next | feature | unit | 2026-09-06 | [items/0038-next-drive-and-findings-modes.md](items/0038-next-drive-and-findings-modes.md) |
 | 0085 | Collapse the backlog protocol from a third of every session's turns to one command per stage boundary | debt | verify | 2026-09-03 | [items/0085-collapse-the-backlog-protocol-turns.md](items/0085-collapse-the-backlog-protocol-turns.md) |
 | 0084 | Script the release chain and verify it against the installed bytes | bug | unit | 2026-09-03 | [items/0084-verify-the-release-reached-the-install.md](items/0084-verify-the-release-reached-the-install.md) |
 | 0079 | Give a repo with no test runner a QA level that is a checklist | feature | merged | 2026-09-02 | [items/0079-a-qa-level-for-a-repo-with-no-runner.md](items/0079-a-qa-level-for-a-repo-with-no-runner.md) |

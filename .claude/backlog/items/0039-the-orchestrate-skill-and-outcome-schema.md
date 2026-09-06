@@ -3,7 +3,7 @@ id: "0039"
 title: Build the orchestrate skill and the stage outcome schema
 type: feature
 next: develop
-status: blocked
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25

@@ -2,8 +2,8 @@
 id: "0038"
 title: Add the drive and findings routing modes to next
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -18,12 +18,10 @@ expects:
   - skills/queue/templates/config.yml
   - skills/retro/SKILL.md   # FR3 only: point the cadence at the config key, no second number
   - README.md               # not predicted: line 208's test inventory names next's modes
-claimed_by: "57bd"
-claimed_at: 2026-09-06T17:57:01Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next   # mutated and restored by this QA pass
-  - .claude/backlog/next          # compared byte-for-byte against the template
-  - tests/next.test.sh            # the guards this verdict rests on
+closed: 2026-09-06
 ---
 
 ## Problem
@@ -145,11 +143,11 @@ lives here.
 
 **AC numbers are 0036's**, with two additions numbered on from its highest (AC27).
 
-- [ ] **AC6 (counting half) — the count is right and the format is pinned.** Given a fixture
+- [x] **AC6 (counting half) — the count is right and the format is pinned.** Given a fixture
   holding both entry formats — `- <date> — **lead.**` and `- **<date> — lead.**` — when
   `./next --findings` counts it, then the count includes both; and given a third shape, then the
   format guard fails.
-- [ ] **AC9 — every row of FR8's table is routed as the table says, with one fixture each.** Given
+- [x] **AC9 — every row of FR8's table is routed as the table says, with one fixture each.** Given
   a backlog in each FR8 state in turn — verify bounce, `next: design`, `next: queue`, stale
   contract, `waiting` top row, genuinely `blocked` top row, **advisory PASS**,
   **develop→`design`**, **develop→`develop` on a red tree**, **develop→`waiting`**,
@@ -161,19 +159,19 @@ lives here.
   case it exits **run-complete and not escalate**; in the became-a-project case it neither errors
   nor loops; and in the same-stage-twice case, **given the same backlog with no completed outcome
   supplied**, it dispatches rather than escalating.
-- [ ] **AC10 — anything unrecognised stops rather than proceeding.** Given a backlog state
+- [x] **AC10 — anything unrecognised stops rather than proceeding.** Given a backlog state
   matching no routing rule, when `./next --drive` is run, then it escalates rather than falling
   through to a default action.
-- [ ] **AC11 — the codes are the named ones, and both modes are tested.** Given the fixtures
+- [x] **AC11 — the codes are the named ones, and both modes are tested.** Given the fixtures
   above, when `tests/next.test.sh` runs, then it exercises `./next --drive` for each routing
   outcome and each escalation, asserting the printed decision **and** the exit code against FR9's
   table — with `0` (dispatch) and `3` (run complete) asserted as **distinct**. Every pre-existing
   `next` exit code still means what it meant, and `./next --help` lists `--drive` and `--findings`.
-- [ ] **AC28 — the new modes survive a column move.** Given a `QUEUE.md` whose table columns are
+- [x] **AC28 — the new modes survive a column move.** Given a `QUEUE.md` whose table columns are
   reordered and carry one extra column the script does not know, when `--drive` runs against it,
   then it returns the same decision it returns against the current shape; and given a table with
   no `Status` column, then it fails loudly rather than reading every row as empty.
-- [ ] **AC29 — one read answers depth as well as the decision.** Given a backlog with two
+- [x] **AC29 — one read answers depth as well as the decision.** Given a backlog with two
   takeable develop gates followed by a `next: design` row, when `./next --drive` is run once,
   then its output states how many takeable gates deep the backlog is and what stops it — without
   a second invocation.
