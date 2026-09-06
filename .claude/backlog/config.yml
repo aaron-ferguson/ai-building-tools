@@ -30,6 +30,15 @@ routing:
 # This project has no test runner: the suite is the shell scripts in tests/, each self-contained
 # and each printing its own "N passed, M failed" tally. `unit` runs all of them, which is what
 # develop Step 5's "the project's whole test suite" means here — there is nothing else to run.
+# `unit` is FAIL-FAST, and the two things that read it want opposite behaviour from it. The
+# `|| exit 1` ends the loop at the first red file, so nothing after it runs. That is right for
+# `tools/release` step 5, which uses this same line as a release gate. It is wrong for a QA pass:
+# verifying 0084 at this level, backlog-scripts-installed.test.sh failed on another session's
+# in-flight work — alphabetically first of seventeen — and the run stopped there, so
+# tests/release.test.sh, the guard that verdict actually rested on, never executed. Sixteen were
+# green. A verify session trusting the first failure reports BLOCKED or FAIL on someone else's
+# red, and the masking is an alphabetical accident that will not repeat reliably. To attribute a
+# red, run the files individually instead: for t in tests/*.test.sh; do "$t" || true; done
 commands:
   unit: for t in tests/*.test.sh; do "$t" || exit 1; done
   integration:
