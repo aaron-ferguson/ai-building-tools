@@ -618,3 +618,67 @@ pattern** (every python embedded in `tools/*.sh` is unhinted too), so scoping th
 ticket is arguable and `develop` should decide; what is not arguable is that this change is where a
 new file adopted it. There is no NFR row for it, which is why it surfaced in Step 4's always-on pass
 rather than in the table.
+
+### From the re-entry build session, 2026-09-06 (token 6c77)
+
+**Scope: the three unfalsifiable guards and the untyped validator. The skill itself was correct as
+delivered and is unchanged** — `git diff` over this session touches `tests/orchestrate.test.sh` and
+`tools/validate-json-schema.py` only. That is the shape the QA verdict asked for: the fix was to the
+guards, not to the artifact.
+
+- **All three now fail on the defect their criterion names, each proven by mutation with the
+  masking phrase left in the file.** AC19: deleting `--max-budget-usd` from the Step 3 dispatch reds
+  `1 of 1 dispatch block(s) do not carry --max-budget-usd` while Step 1's probe keeps its own cap
+  (`grep -c` still 1). AC21: deleting the count from Step 8 reds while Step 4's two occurrences
+  remain (`grep -c` still 2). AC16: deleting Step 5's *"never a row to take over"* reds while Step
+  7's citation remains (`grep -c` still 1). The other four AC19 flags redden individually too, and
+  the control run afterwards is 100/0/0 — which is what licenses the reds.
+
+- **AC19's set is identified by the prompt, never by a flag under test, and the partition is the
+  half worth keeping.** Anchoring "which block is a dispatch" on `--allowed-tools` would make the
+  check vacuous exactly when it should red: delete the flag and the block stops being a dispatch, so
+  nothing is left to fail. Identity comes from the stage slash-command in the prompt instead. That
+  moves the vacuity risk to the prompt, so every `claude -p` block is partitioned into probe or
+  dispatch and an unclassified one is loud — renaming the prompt now reds seven checks rather than
+  silently emptying the set. **This is the general repair for a derived-subject guard: derive the
+  set, then assert the set is exhaustive.**
+
+- **`section()` flattens whitespace before matching, and that was not gold-plating.** AC16's target
+  sentence straddles a line break in the skill (`*Claim` / `tokens*`), so a line-based grep cannot
+  match it at all — the hazard `CLAUDE.md` names, met live. Flattening also removes the class AC20's
+  own comment records having been bitten by. A criterion is about what a section *says*; where the
+  words wrap is not part of it.
+
+- **The mechanical check proposed in `FINDINGS.md` for this defect class catches one of these three,
+  and the misses are instructive** — parked as its own entry. It under-counts a phrase that wraps
+  (so it is blind to AC16 for the same line-based reason the guard was), and it does not recognise a
+  guard over a *filtered* stream as whole-file (so it is blind to AC19's `fenced "$SKILL" | grep`).
+  Ran it over this file after the fix: two remaining candidates, both examined and both sound —
+  AC2's `outcome.schema.json` is a genuinely file-level criterion, and AC7's `checklist` is saved by
+  its conjunct, `marked` occurring exactly once. **No further unfalsifiable guard found in this
+  file**, but by examination rather than by the check.
+
+- **The untyped validator: fixed for this ticket's own new file, deliberately not swept.**
+  `CONVENTIONS_CORE.md` makes type hints a principle, and this diff is where the repo's first
+  standalone `.py` adopted the unhinted pattern, so the file is this ticket's to fix. The
+  pre-existing embedded python in `tools/*.sh` is the same breach and is **not** fixed here — that
+  is the adjacent problem `develop` Step 4 says to queue rather than absorb. It **still needs a
+  row**, along with the `ast`-based guard that would hold the rule for the next new file; no such
+  row exists as of this writing. Annotations are postponed via `from __future__ import annotations`
+  because the python3 actually present is 3.9, which evaluates neither `X | Y` nor the builtin
+  generics at runtime. Behaviour unchanged: all three exit codes checked by hand.
+
+- **NOT DONE, and it needs the user: the release.** The QA pass established that the installed
+  plugin at `0.9.16` predates this whole change — confirmed again this session, the install has six
+  skills and no `orchestrate`. `CLAUDE.md` says the remedy is `tools/release`, whose chain begins
+  with a **push to `main`**, and there are 46 unpushed commits. `CONVENTIONS_CORE.md` requires
+  specific approval for a push that lands on a shared branch or triggers a deploy, and `develop`
+  Step 5 says building a ticket is not authority to publish it — so this session did not run it.
+  **This does not block the QA pass**: the repo copy is the authority and is what `verify` checks,
+  which is what the previous pass did. It blocks any session that would *run* the orchestrate skill.
+
+- **`cost_tracking:` and `tracker:` remain absent from `config.yml`**, so again neither recorded nor
+  mirrored. Off unless configured.
+
+- **`qa_level: unit` is correct and unchanged.** The change is test-side plus one non-behavioural
+  file; the suite is the whole of what can judge it.
