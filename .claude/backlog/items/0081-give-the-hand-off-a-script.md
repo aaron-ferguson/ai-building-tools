@@ -153,3 +153,32 @@ indistinguishable in the git record from a clean sequential hand-off.
   step, where it is read, rather than only at the hand-off step.
 - **`docs/decisions/001` also names `./claim --touches`, owned by 0066** — not built here. `claim`
   still prints the `touches:` instruction rather than writing it, which is 0082's FR1.
+
+### Verify 2026-09-05 [c67f] — FAIL on one NFR row, all seven ACs green
+
+**All 7 ACs pass, driven against the real script**, not read: the happy path moves all five fields
+and both cells in one invocation and commits by pathspec (2 files, lock released after); the three
+refusals each print their own message and leave a `cksum` fingerprint of the whole backlog directory
+unchanged; `./next --drift` exits zero after; template and installed copy are byte-identical and both
+pass `sh -n`; `develop` and `verify` name the command and keep their fallbacks; `CONCURRENCY.md`
+carries *The release is the final act* with the 29-second window.
+
+**Five mutations were re-run rather than taken from the build notes, and all five redden** (control
+101/0 both before and after): token guard neutered 98/3, in-progress guard 96/5, stage-agreement
+guard 99/2, `touches:` skiplist narrowed to require leading whitespace → FAILs, and — the one worth
+recording — **releasing the lock before the commit reds exactly one assertion**, the `pre-commit`
+hook witness, confirming the build note's claim that nothing else can see that defect.
+
+**The red: the commit carries no `Co-Authored-By` trailer**, which this item's own NFR table requires
+("Commits by pathspec inside the lock, carrying the `Co-Authored-By` trailer"). Observed directly —
+`git log -1 --format=%B` on a real hand-off prints the subject alone. `git-conventions.md`
+*Co-authorship* asks for it on **all** AI-assisted commits, and a commit a session's script makes on
+its behalf was read here as AI-assisted.
+
+**This item contradicts itself, and `develop` may reasonably resolve it the other way.** FR1 asks for
+"the same shape as `claim` and `close`" — and neither of those carries the trailer either, so
+`handoff` matched its siblings exactly as FR1 asked while missing what the NFR row asked. The choice
+is therefore not local to this script: either all three scripts gain the trailer, or the convention
+exempts script-generated bookkeeping commits and the NFR row is the thing that is wrong. **If the
+answer is the latter, send this to `queue` rather than editing the NFR row here.** Parked in
+`FINDINGS.md` because the scope decision is not this ticket's to take alone.
