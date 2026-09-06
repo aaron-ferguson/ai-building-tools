@@ -408,17 +408,47 @@ else
   bad "AC19 — the skill does not state the permissions rule"
 fi
 
-echo "AC19/AC1 — a dispatch is capped, scoped, and does not block on stdin"
-# `< /dev/null` is in this sweep because it is a real defect this ticket hit rather than a
-# tidiness rule: without it the nested CLI waits on stdin and prints its warning INTO the stream
-# the supervisor parses as JSON, so a good stage reads as a schema failure and Step 4 escalates.
-for want in -\-max-budget-usd -\-allowed-tools -\-add-dir -\-session-id -\-setting-sources '< /dev/null'; do
+echo "AC19 — a dispatch is capped and scoped"
+for want in -\-max-budget-usd -\-allowed-tools -\-add-dir -\-session-id -\-setting-sources; do
   if fenced "$SKILL" | grep -qF -- "$want"; then
     ok "the dispatch block carries $want"
   else
     bad "AC19/AC1 — the dispatch block does not carry $want"
   fi
 done
+
+echo "AC1 — EVERY invocation redirects stdin, not merely one of them"
+
+# `< /dev/null` is guarded because it is a real defect this ticket hit rather than a tidiness rule:
+# without it the nested CLI waits on stdin and then prints "Warning: no stdin data received in 3s"
+# INTO the stream the supervisor parses as JSON, so a good stage reads as a schema failure.
+#
+# IT IS ASSERTED PER BLOCK, and that is the whole point. Written as one more entry in the sweep
+# above -- which concatenates every fenced block in the file -- deleting the redirect from the
+# DISPATCH left the guard green, because the probe block still carried one. A check that filters
+# for a set and then asserts over the set cannot see a member go missing
+# (testing-conventions.md). The subjects are DERIVED: every fenced block invoking `claude -p` is
+# under the rule, so a third invocation added later is covered the day it lands.
+blocks_missing_stdin() {
+  awk '
+    /^```/ { if (infence) { if (body ~ /claude -p/ && body !~ /< \/dev\/null/) print ++n; infence = 0; body = "" }
+             else { infence = 1 } ; next }
+    infence { body = body "\n" $0 }
+  ' "$1" 2>/dev/null || true
+}
+n_claude="$(awk '/^```/ { if (infence) { if (body ~ /claude -p/) n++; infence = 0; body = "" } else infence = 1; next } infence { body = body "\n" $0 } END { print n + 0 }' "$SKILL")"
+missing="$(blocks_missing_stdin "$SKILL" | grep -c . || true)"
+
+if [ "$n_claude" -ge 2 ]; then
+  ok "the skill carries $n_claude claude -p invocations, so a per-block check has something to compare"
+else
+  bad "AC1 — only $n_claude claude -p invocation found; the per-block check cannot distinguish one from all"
+fi
+if [ "$missing" = 0 ]; then
+  ok "every claude -p invocation redirects stdin"
+else
+  bad "AC1 — $missing of $n_claude claude -p invocations do not redirect stdin; one of them will parse a warning as JSON"
+fi
 
 echo "AC2 — the skill points at the schema file rather than restating the shape"
 if grep -qF 'skills/orchestrate/outcome.schema.json' "$SKILL"; then
