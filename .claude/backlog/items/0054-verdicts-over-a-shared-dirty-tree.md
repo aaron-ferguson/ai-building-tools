@@ -125,3 +125,50 @@ because the verifier happened to re-run the suite at the end.
   first, a worktree at your own last commit, pin the snapshot. Nothing is undecided.
 - FR5 and AC5 are the cheapest half and the one that prevents the worst outcome: a verdict that is
   advisory before it starts, because the previous stage left its own work in the tree.
+
+### From `FINDINGS.md`, landed 2026-09-05
+
+- **What makes *advisory* near-certain here is the width of the evidence set, not the dirtiness of
+  the tree** (FINDINGS 2026-08-30, two entries). `tests/measurement.test.sh`'s privacy assertion
+  greps the whole repo through `git grep`, which reads the **working tree** — confirmed empirically
+  in a throwaway repo — so every tracked file joins the evidence set of any verdict resting on that
+  suite, and an AC of the form "the whole suite passes" (0042's AC6) pulls it into every close. A
+  Documentation NFR reaches the same place by a different route: 0044's row required its fourth
+  refusal ground to land in `skills/verify/SKILL.md` Step 5, so that path is in the evidence set by
+  the row's own wording, and `skills/**/SKILL.md` is the one surface every suite-wide ticket edits.
+  0044 verified green on nine ACs and three NFRs and still could not close, because 0074 held that
+  file uncommitted; the substance agreed in both copies, and Step 7 correctly refuses that as
+  grounds to close. So this ticket's rule needs an evidence set narrower than "every path the
+  assertion touched": a repo-wide guard excluded by name, and a path a row cites for
+  *documentation* not carried on the same terms as one an assertion executed.
+- **The dirty set moves during the pass, so the label has to be re-taken at verdict time — and
+  `0085` removed the turn that would catch it** (FINDINGS 2026-08-30 `[0f0a]` and 2026-09-03).
+  Within one session the dirty set changed three times — `tests/next.test.sh` held by 0045, then
+  `tests/measurement.test.sh` held by 0051, then nothing — and the advisory label flipped with it.
+  Step 2 takes the snapshot once and Step 7 intersects it, but the label describes the state the
+  verdict *closes against*, which is the state at close time. `0085`'s FR7 then made Step 7 read
+  "the tree is either clean throughout or Step 2 already said so", which is what licenses issuing
+  no git command at verdict time; verifying `0085` falsified it, Step 2 having seen a clean tree
+  before `0081` dirtied six files including `skills/verify/SKILL.md`, inside that run's evidence
+  set, mid-pass. Followed literally the pass closes on a plain PASS. `CONCURRENCY.md` *The working
+  tree is shared too* says a second session starting mid-pass is the normal case here, so the saved
+  turn and the advisory label are in direct tension and only one can be right. The check belongs
+  immediately before `./close`, with the AC run re-done when a path in the evidence set moved —
+  possibly a Step 5 line rather than a Step 2 one.
+- **`pgrep` is the wrong wait condition for a shared suite, because the thing to wait for is a
+  *sequence* of runs** (FINDINGS 2026-09-05, from `0076`). `develop` Step 5 tells the session
+  arriving second to wait, and prescribes `pgrep -f <runner>`. A concurrent `verify` was running
+  mutation batches over `tests/claim.test.sh` and `skills/queue/templates/handoff` — `sed -i.bak`,
+  run, restore, next file — so `pgrep` reads clear in every gap between runs, and a whole-suite run
+  started in one of those gaps reads another session's deliberately-broken file as a red of its
+  own. The condition that actually holds is *no runner process **and** a clean `git status`,
+  sustained over several samples*, which that session had to invent. This is FR1's failure arriving
+  through the step's own remedy rather than through the result.
+- **FR2's worktree remedy produces a false red in this repo unless the conventions directory sits
+  beside it** (FINDINGS 2026-09-05, from `0076`). `.claude/backlog/config.yml` carries
+  `conventions.path: ../ai-building-conventions`, which resolves against the repo's *parent*, so a
+  throwaway worktree under `scratchpad/` makes `citations.test.sh` red with *"no conventions
+  directory resolved"* — a red produced by where the worktree was put, inside the exact procedure a
+  session runs to find out whether a red is its own. Siting the worktree beside a symlinked
+  conventions directory fixes it, and nothing says to. Step 5 names `node_modules` as the thing a
+  worktree needs symlinked; in this repo it is the conventions directory, and FR2 should say so.

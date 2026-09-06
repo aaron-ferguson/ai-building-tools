@@ -185,19 +185,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   (pointer: skills/verify/SKILL.md Step 1, .claude/backlog/next).
   — read and triaged 2026-09-05 by retro: belongs to item 0058, deferred, not yet written.
 
-- 2026-08-30 — **`measurement.test.sh`'s privacy assertion greps the whole repo through `git grep`,
-  which reads the *working tree*, so every tracked file lands in the evidence set of any verdict
-  resting on that suite.** Confirmed empirically in a throwaway repo: `git grep` with no flags
-  matches uncommitted content in tracked files. `verify` Step 7 derives *advisory* by intersecting
-  the dirty set with the evidence set, so on this repo that intersection is non-empty whenever
-  *any* tracked file is dirty, however unrelated — and 0042's AC6 ("the whole suite passes") pulls
-  the privacy check into every close. Taken literally this means no ticket whose ACs run the full
-  suite can ever close over a dirty tree. It did not bite here only because the one dirty file was
-  committed by its owning session mid-run. Either Step 7 needs a notion of evidence narrower than
-  "every path the assertion touched", or a repo-wide guard needs to be excluded from the evidence
-  set by name (pointer: tests/measurement.test.sh privacy NFR block, skills/verify/SKILL.md Step 7).
-  — read and triaged 2026-09-05 by retro: belongs to item 0054, deferred, not yet written.
-
 - 2026-08-30 — **0042's batching AC4 binds the date to the literal word `dated`, so a reword that
   keeps the date bound to its figure still reds the guard.** Rewriting "capture-side and dated
   **2026-08-22**" to "capture-side, from **2026-08-22**" leaves the figure carrying its own date in
@@ -267,22 +254,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the warning lives in one of them (pointer: tests/reference-size.test.sh `offenders`,
   tests/reporting.test.sh `audit`).
   — read and triaged 2026-09-05 by retro: no destination exists yet, needs a row.
-
-- 2026-08-30 — **A Documentation NFR row that cites a skill file makes *advisory* near-certain in
-  this repo, and the mechanism is not the repo-wide-grep one already parked above.** 0044's
-  Documentation row requires its fourth refusal ground to land in `skills/verify/SKILL.md` Step 5,
-  so that path is in the evidence set by the row's own wording — and `skills/**/SKILL.md` is the
-  one surface every suite-wide ticket edits, so it is dirty whenever any of them is in flight. It
-  was: 0074 holds it in `touches:` and had it uncommitted, and 0044 verified green on all nine ACs
-  and all three NFRs yet could not close. The general shape is that this plugin's tickets are
-  *about* the prose files, so documentation NFRs routinely name a file another ticket is legitimately
-  rewriting, and Step 7's intersection reads a scheduling collision as evidence contamination. Worth
-  noting the substance agreed — the fourth-refusal text was intact in both the committed and working
-  copies — and Step 7 explicitly refuses that as grounds to close, correctly, since 3895's edit is
-  unfinished. The narrow question is whether an evidence set should carry a path a row cites for
-  *documentation* on the same terms as one an assertion executed (pointer: items/0044 Documentation
-  NFR, skills/verify/SKILL.md Step 7, items/0074, items/0050).
-  — read and triaged 2026-09-05 by retro: belongs to item 0054, deferred, not yet written.
 
 - 2026-08-30 — **An acceptance criterion that globs the test directory lets another session rewrite
   its contract mid-verify.** 0044 AC9 is "given the whole suite, when `for t in tests/*.test.sh`
@@ -367,16 +338,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   that `./next develop` now refuses as COLLIDES. 0045's ACs all name `./next <stage>`, so this was
   left alone rather than widened mid-ticket. Worth a row, or 0039's to absorb.
   — read and triaged 2026-09-05 by retro: belongs to item 0045, deferred, not yet written.
-
-- 2026-08-30 [0f0a] **The dirty set that decides `verify`'s advisory label changed three times
-  inside one session**, and the label flipped with it: `tests/next.test.sh` held by 0045, then
-  `tests/measurement.test.sh` held by 0051, then nothing. Step 2 takes the tree snapshot once at
-  the start and Step 7 intersects it, but the label describes the state the verdict *closes
-  against* — which is the state at close time, not at claim time. 0053's own notes had already
-  reached "re-check the held file set before a full-suite run"; this session says the check has to
-  be re-taken immediately before `./close`, and the AC run re-done when a path in the evidence set
-  moved. Possibly a Step 5 line rather than a Step 2 one.
-  — read and triaged 2026-09-05 by retro: belongs to item 0054, deferred, not yet written.
 
 - 2026-08-30 [0f0a] **`./next verify` correctly offered no row, and `verify` Step 1 has no branch
   for that.** The only `next: verify` row was 0053 and it collided with 0045's live `touches:`, so
@@ -541,17 +502,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `skills/develop/SKILL.md` Step 1, items `0084`, `0075`).
   — read and triaged 2026-09-05 by retro: belongs to item 0050, deferred, not yet written.
 
-- 2026-09-03 — **`0085`'s own FR7 removed the turn that catches a second session starting mid-pass.**
-  `verify` Step 7 now reads "the tree is either clean throughout or Step 2 already said so", which is
-  what licenses issuing no git command at verdict time. Verifying `0085` falsified it: Step 2 saw a
-  clean tree, and `0081` then dirtied six files including `skills/verify/SKILL.md` — inside this run's
-  evidence set — while the pass was running. Followed literally the pass would have closed on a plain
-  PASS. `CONCURRENCY.md`, *The working tree is shared too*, says that is the normal case here, so the
-  saved turn and the advisory label are in direct tension and only one can be right (pointer:
-  `skills/verify/SKILL.md` Steps 2 and 7, `docs/decisions/001-one-command-per-stage-boundary.md` FR6,
-  item `0085`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0054, deferred, not yet written.
-
 - 2026-09-03 — **`0084`'s row and its item disagree: the queue says `develop | in-progress` under
   token `ae35`, the item says `next: verify`, `status: ready`, `claimed_by:` empty.** So `./next
   verify` does not offer it and `./next verify` *does* report its files as claimed — a ticket that is
@@ -601,16 +551,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `skills/verify/SKILL.md` Steps 5 and 7, items `0085`, `0081`).
   — read and triaged 2026-09-05 by retro: belongs to item 0048, deferred, not yet written.
 
-- 2026-09-05 — **`pgrep` is the wrong wait condition for a shared suite, because the thing to wait for
-  is a *sequence* of runs, not a run.** `develop` Step 5 says the session arriving second waits and
-  prescribes `pgrep -f <runner>`. A concurrent `verify` session was running mutation batches over
-  `tests/claim.test.sh` and `skills/queue/templates/handoff` — `sed -i.bak`, run, restore, next file —
-  so `pgrep` reads clear in every gap between them, and a whole-suite run started in one of those gaps
-  reads another session's deliberately-broken file as a red of its own. The condition that actually
-  holds is *no runner process **and** a clean `git status`, sustained over several samples*, which this
-  session had to invent (pointer: `skills/develop/SKILL.md` Step 5, item `0076`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0054, deferred, not yet written.
-
 - 2026-09-05 — **A `verify` session's file scope is invisible: `./claim` tells it to declare `touches:`
   and nothing checks that it did.** `0081` sat `in-progress` for the whole of this session with
   `touches:` empty, so the only scope signal available to a second session was the `expects:` `queue`
@@ -629,17 +569,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   session read it as yes), or whether the convention should exempt them and the NFR row was the error
   (pointer: `skills/queue/templates/{claim,close,handoff}`, `git-conventions.md` *Co-authorship*,
   items `0081`, `0082`).
-
-- 2026-09-05 — **The throwaway worktree `develop` Step 5 prescribes silently changes what this repo's
-  suite means, because `config.yml`'s conventions path is relative to the repo's *parent*.**
-  `conventions.path: ../ai-building-conventions` does not resolve from a worktree in
-  `scratchpad/`, so `citations.test.sh` reds with *"no conventions directory resolved"* — a red
-  produced by where the worktree was put, in the exact procedure a session runs to find out whether a
-  red is its own. Siting the worktree beside a symlinked conventions directory fixes it and is a step
-  nothing tells you to take. Step 5 names `node_modules` as the thing a worktree needs symlinked;
-  in this repo it is the conventions directory (pointer: `skills/develop/SKILL.md` Step 5,
-  `.claude/backlog/config.yml`, item `0076`).
-  — read and triaged 2026-09-05 by retro: belongs to item 0054, deferred, not yet written.
 
 - 2026-09-05 — **The trailer scope question above is answered by `skills/develop/SKILL.md` Step 1**,
   which says a lifecycle commit is not exempt from `Co-Authored-By`, and by
