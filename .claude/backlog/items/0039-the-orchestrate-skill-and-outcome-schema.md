@@ -2,8 +2,8 @@
 id: "0039"
 title: Build the orchestrate skill and the stage outcome schema
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -22,8 +22,8 @@ expects:
 # `skills/develop/SKILL.md` is deliberately absent: the schema is supplied by the invoker, so no
 # stage skill has to describe the FR13 shape, and develop is already over the skill-size goal
 # with a recorded reason. See 0036's review amendment, the scope cut.
-claimed_by: "6c77"
-claimed_at: 2026-09-06T21:27:17Z
+claimed_by:
+claimed_at:
 touches:
   # Re-entry of 2026-09-06 (token 6c77). The artifact was correct as delivered; what is
   # being fixed is three guards that cannot fail, plus the untyped new .py file.
