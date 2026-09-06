@@ -77,8 +77,14 @@ answer. What is forbidden is appearing to drive a loop you are not driving.
 directory because `mkdir` is atomic:
 
 ```sh
+mkdir -p .claude/backlog/runs                       # the parent, which a fresh backlog lacks
 mkdir .claude/backlog/runs/.active 2>/dev/null || echo busy
 ```
+
+**The `-p` line is not tidiness.** Without it, a backlog that has never been driven has no `runs/`,
+the second `mkdir` fails on the missing parent, and `|| echo busy` reports *another supervisor holds
+this backlog* — on the first run, with no second supervisor anywhere. An absent parent and a busy
+marker have to be distinguishable, and one line is what distinguishes them.
 
 Busy → read `.active/held-by` for the run id, the pid and the UTC timestamp, and say who holds it
 rather than double-driving the queue. **A marker whose pid is no longer alive is stale**: say that

@@ -575,6 +575,31 @@ if grep -qF 'mkdir .claude/backlog/runs/.active' "$SKILL"; then
 else
   bad "AC18/FR12 — the skill does not name the single-instance marker"
 fi
+
+# The marker's PARENT has to exist first, and this is not pedantry. On a backlog that has never
+# been driven there is no runs/ directory, so `mkdir …/runs/.active` fails on the missing parent
+# and `|| echo busy` reports that ANOTHER SUPERVISOR HOLDS THE RUN — the wrong diagnosis, on the
+# first run, with no second supervisor anywhere. The rule is that a busy marker and an absent
+# parent are distinguishable, and the fixture is a backlog with neither.
+echo "AC18 — an absent runs/ directory is not reported as a busy marker"
+FRESH="$FIX/fresh/.claude/backlog"
+mkdir -p "$FRESH"
+if mkdir "$FRESH/runs/.active" 2>/dev/null; then
+  bad "AC18 — the fixture is wrong: mkdir succeeded with no parent, so this case proves nothing"
+else
+  ok "a bare mkdir of the marker does fail when runs/ is absent (the case can fire)"
+fi
+mkdir -p "$FRESH/runs"
+if mkdir "$FRESH/runs/.active" 2>/dev/null; then
+  ok "with runs/ created first, the marker is taken"
+else
+  bad "AC18 — the marker could not be taken even with its parent present"
+fi
+if grep -qF 'mkdir -p .claude/backlog/runs' "$SKILL"; then
+  ok "the skill creates runs/ before reaching for the marker"
+else
+  bad "AC18 — the skill takes the marker without creating runs/ first; on a fresh backlog the first supervisor is told the run is busy"
+fi
 if grep -qiE 'pid is no longer alive|stale' "$SKILL"; then
   ok "the skill says what a stale marker is and that it may be taken over"
 else

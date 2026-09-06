@@ -2,3 +2,6 @@
 *.log
 .claude/backlog/.lock/
 .claude/backlog/claims/
+# The single-instance marker, never the run logs beside it. Committed, a marker makes every clone
+# of this repo report that a supervisor is already driving the backlog.
+.claude/backlog/runs/.active/
