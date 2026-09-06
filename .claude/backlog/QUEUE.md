@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0039 | Build the orchestrate skill and the stage outcome schema | verify | in-progress | 0036 |
+| 0039 | Build the orchestrate skill and the stage outcome schema | develop | ready | 0036 |
 | 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | blocked | 0036 |
 | 0081 | Give the hand-off a script, as claim and close have | verify | ready |  |
 | 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | develop | ready |  |

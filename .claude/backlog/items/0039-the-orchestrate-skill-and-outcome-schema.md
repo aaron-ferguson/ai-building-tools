@@ -2,8 +2,8 @@
 id: "0039"
 title: Build the orchestrate skill and the stage outcome schema
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -22,16 +22,9 @@ expects:
 # `skills/develop/SKILL.md` is deliberately absent: the schema is supplied by the invoker, so no
 # stage skill has to describe the FR13 shape, and develop is already over the skill-size goal
 # with a recorded reason. See 0036's review amendment, the scope cut.
-claimed_by: "6782"
-claimed_at: 2026-09-06T21:09:06Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/orchestrate/SKILL.md
-  - skills/orchestrate/outcome.schema.json  # the single copy of the FR13 shape
-  - skills/verify/SKILL.md                  # AC20 only: relocate the evidence table
-  - README.md
-  - .claude-plugin/plugin.json
-  - tests/skill-size.test.sh
-  - tests/orchestrate.test.sh                # new
 # `tests/skill-size.test.sh` was in expects: and is deliberately NOT touched: it already derives
 # its subjects from skills/*/SKILL.md, so the new skill came under it with no edit. The QA plan's
 # "widened by exactly one file" was written against a list that no longer exists.
