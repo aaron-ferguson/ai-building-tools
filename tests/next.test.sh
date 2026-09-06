@@ -775,6 +775,36 @@ assert_rc       "exits 5 — the findings gate" "$rc" 5
 assert_contains "dispatches retro"            "$out" 'retro'
 assert_contains "states the count"            "$out" '2'
 
+# `findings_gate` carries its own shape check, on a different code path from `--findings` mode's:
+# AC6's guard fixture exercises the reporting path and reaches none of this. Ungated, a driver
+# proceeds on a count the script has already established is low, which is this ticket's Problem
+# section arriving through the driver rather than the reporting path.
+echo "0038 AC11 — --drive escalates rather than dispatching on a FINDINGS.md shape it cannot count"
+scaffold
+set_threshold 8
+add_row 0101 'A takeable row' develop ready 0091
+add_ticket 0101 develop ready '[]' 0091 a/one.md
+add_findings "$(printf -- '- 2026-01-02 — a bare-date entry.\n- a bullet with no date at all, which neither shape covers.')"
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"                  "$rc" 4
+assert_contains     "names the unrecognised shape"        "$out" 'an entry shape the count does not recognise'
+assert_contains     "points at the offending line"        "$out" 'MALFORMED'
+assert_not_contains "dispatches nothing on a bad count"   "$out" 'DISPATCH'
+
+# `--completed <stage>` with no id is the form `usage` documents as `[:<id>]` optional — a stage
+# that finished owing no ticket of its own. Ungated, a continuable run stops and asks a person,
+# and the message it stops with carries a blank where the ticket id should be.
+echo "0038 AC11 — a completed stage with no ticket of its own chooses the next gate"
+scaffold
+add_row 0101 'A takeable row' develop ready 0091
+add_ticket 0101 develop ready '[]' 0091 a/one.md
+seal
+out="$(run_next --drive --completed develop)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"                "$rc" 0
+assert_contains "says the stage owed no ticket"     "$out" 'finished with no ticket of its own'
+assert_contains "and dispatches the next gate"      "$out" 'DISPATCH  develop 0101'
+
 # Every pre-existing invocation keeps the code it always returned. `next <stage>` spending 0 on
 # "nothing is takeable" is the collision --drive exists to avoid, and it must NOT be corrected
 # here: three closed tickets and two scripts read that 0.
