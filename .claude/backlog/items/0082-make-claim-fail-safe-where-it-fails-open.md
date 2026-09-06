@@ -97,7 +97,7 @@ refuses rather than guesses on three other grounds.
 - Both paths recorded in AetherWorks' buffer, 2026-08-24, items 0034 and 0091, with the carrying commit
   named above.
 - **Built 2026-09-05 [5af1]. All five FRs land; the whole suite (20 scripts) is green.** Commits:
-  `3588524` (FR1–FR4 and the guards), `<FR5 commit>` (FR5 and a citation unwrap).
+  `3588524` (FR1–FR4 and the guards), ``5df1c11`` (FR5 and a citation unwrap).
 - **The refusal goes before the lock, and that placement is the requirement rather than a tidiness
   choice.** AC4 asks for "leaves the tree exactly as it found it", and there are two ways to satisfy
   it: refuse before anything is created, or undo what was. Only the first is true by construction —
