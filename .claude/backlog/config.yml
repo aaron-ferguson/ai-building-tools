@@ -30,7 +30,8 @@ findings_threshold: 8
 #
 # Read from the lock DIRECTORY's mtime, never from `held-by`: `claim` writes no timestamp there
 # where `close` and `handoff` both do, so the commonest holder is the one a timestamp read cannot
-# see. Fixing that is item 0047's, not the driver's.
+# see. Fixing `claim` is not the driver's job and STILL NEEDS A ROW — 0047 is the busy-lock
+# procedure, which is a different question.
 lock_stale_seconds: 900
 
 # Per-stage spend cap a driver passes as `--max-budget-usd`, in USD.
