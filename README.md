@@ -1,8 +1,8 @@
 # AI Building Tools
 
-Five skills that give a project a **stack-ranked local backlog any agent can work from**:
-queue a piece of feedback once, and weeks later a cold session can pick it up, build it, and
-verify it without asking a single clarifying question.
+A suite of skills that give a project a **stack-ranked local backlog any agent can work
+from**: queue a piece of feedback once, and weeks later a cold session can pick it up, build
+it, and verify it without asking a single clarifying question.
 
 | Skill | Does | Phase |
 |---|---|---|
@@ -137,6 +137,28 @@ alone. You cannot usefully adopt these tools alone — with no standard to check
 would issue verdicts that look identical whether or not anything was actually verified, and
 that silent equivalence is worse than being blocked. So the skills stop and tell you how to
 wire it up instead.
+
+---
+
+## Requirements
+
+**Every skill but one needs nothing beyond the harness it already runs in.** The skills are
+markdown, the backlog is text, and the scripts under `.claude/backlog/` and the guards in `tests/`
+are POSIX `sh` with `grep`, `awk` and `python3` — all of which a machine running Claude Code
+already has.
+
+**`/orchestrate` is the exception, and it is a real dependency: it requires the `claude` CLI on
+PATH**, authenticated, and able to be dispatched from inside the session doing the supervising. It
+drives the loop by launching each stage as its own `claude -p` subprocess, so there is no fallback
+binary and nothing bundled — an unauthenticated CLI and a nested session that is refused
+permission both fail here exactly as an absent one does.
+
+**Where that dispatch cannot be made, `/orchestrate` fails closed and says so**, rather than
+appearing to drive a loop it is not driving: before the first real stage it dispatches a trivial
+no-op and checks the answer, and on anything other than the fixed object coming back it degrades
+to **the hand-driven loop** — naming the command for you to run in a new session, which is what
+every other skill in the suite does anyway. Nothing else is affected, and no other skill notices
+the CLI is missing.
 
 ---
 

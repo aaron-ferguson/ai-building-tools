@@ -603,6 +603,47 @@ else
   bad "AC22 — the skill does not state the degraded fallback"
 fi
 
+echo "Dependencies NFR — the claude CLI is NAMED as a requirement, not merely handled"
+
+# WHY THIS IS AN NFR CASE AND NOT AN AC CASE. The Dependencies row asks for TWO conjuncts:
+# "Name it, AND say what the suite does where it is unavailable". AC22 above is the whole of the
+# second -- the probe, and the stated fallback. NOTHING covered the first, and no AC does, which
+# is how the one binary this suite depends on stayed unnamed through two QA passes that each read
+# that row and each scored it (⚠️ on 2026-09-06, ❌ on 2026-09-07). An NFR with no criterion has
+# no guard unless one is written against the row itself.
+#
+# SECTION-ANCHORED, because `claude` is not a rare word in this README: it is in the `/plugin`
+# commands, in `~/.claude/` paths, and in the plugin's own lineage. A whole-file grep for it is
+# green by construction and would measure something next to the defect rather than the defect
+# (testing-conventions.md -- anchor an assertion to the claim, not to the document that contains
+# it). Five conjuncts, each one phrase, so each reddens on its own deletion.
+req="$(section "$README" "Requirements")"
+if [ -n "$req" ]; then
+  ok "README has a Requirements section"
+else
+  bad "Dependencies NFR — README has no Requirements section; nothing tells an installer what the suite needs"
+fi
+if printf '%s' "$req" | grep -qiE 'claude.{0,2}cli'; then
+  ok "the Requirements section names the claude CLI"
+else
+  bad "Dependencies NFR — README's Requirements section does not name the claude CLI; /orchestrate's one binary dependency is unnamed"
+fi
+if printf '%s' "$req" | grep -qF 'PATH'; then
+  ok "the Requirements section says the CLI has to be on PATH"
+else
+  bad "Dependencies NFR — README does not say the claude CLI must be on PATH; 'requires the CLI' is not an installable statement"
+fi
+if printf '%s' "$req" | grep -qF 'orchestrate'; then
+  ok "the requirement is attributed to /orchestrate, not to the whole suite"
+else
+  bad "Dependencies NFR — README's Requirements section does not say which skill needs the CLI, so it reads as a requirement of all seven"
+fi
+if printf '%s' "$req" | grep -qiF 'hand-driven'; then
+  ok "the Requirements section states what happens where the CLI is unavailable"
+else
+  bad "Dependencies NFR — README names the dependency without saying what the suite does without it; the row asks for both conjuncts"
+fi
+
 echo "AC24 — README describes the supervised loop alongside the hand-driven one"
 sec="$(awk '/^## One skill per session/ { inside = 1; next } /^## / { inside = 0 } inside' "$README")"
 if printf '%s' "$sec" | grep -qF 'orchestrate'; then
