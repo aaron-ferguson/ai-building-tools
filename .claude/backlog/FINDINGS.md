@@ -44,3 +44,14 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   slightly differently. Worth noting 0091 is the row for making a by-hand write take the lock at
   all — it will have to resolve this to be specifiable (pointer: `skills/queue/SKILL.md` Step 2,
   `references/CONCURRENCY.md` *Lock every write to the backlog directory*, item 0091).
+- 2026-09-07 — **Claiming an ID is a mandated write to `config.yml`, so every capture session
+  collides with whatever ticket holds that file — and `queue` has no rule for it.** `./next develop`
+  reported `COLLIDES 0105 | .claude/backlog/config.yml — held by 0040 [ef8e]` and the same for 0086,
+  while this capture had *already* bumped `next_id` in that file under the lock, because Step 2
+  requires it. So the collision the scripts report is one a capture session structurally cannot
+  avoid and cannot resolve by taking a different row: it is not taking a row. Distinct from 0106,
+  whose four defects are about `claim` seeding, a non-building stage reserving a build scope, an
+  unused reservation, and a re-claim discarding a narrowing — none is "a write no ticket owns".
+  Either `config.yml` is outside the `touches:` regime for the counter specifically, or capture's
+  write needs to be visible to it; today it is neither (pointer: `skills/queue/SKILL.md` Step 2,
+  item 0106, item 0083 for the second-checkout half).
