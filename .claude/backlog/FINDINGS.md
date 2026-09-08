@@ -23,47 +23,24 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
-- 2026-09-07 — **`retro` has no answer for a workspace holding several backlogs, and picked one by
-  judgement.** Invoked from `/Documents/AI`, which is not a repo and has no backlog, with four
-  beneath it: this repo (22 entries, 2.75x threshold), `ai-building-conventions` (3), `Probation`
-  (4, all invalidated) and `jury-config` (0). Step 1 says "`.claude/backlog/FINDINGS.md` is the
-  input, and the only one" — singular, and there is no resolution order for the plural case, no
-  equivalent of `CONVENTIONS.md`'s numbered ladder, and nothing saying whether a cadence retro
-  sweeps one buffer or all of them. Swept all four on freshness and threshold, which was defensible
-  and was invention. Note the interaction with `findings_threshold`: it is per-project, so four
-  buffers each at 6 entries never trips a gate while the workspace holds 24 unswept findings
-  (pointer: `skills/retro/SKILL.md` Step 1, `references/CONVENTIONS.md`'s resolution order as the
-  shape this lacks).
-- 2026-09-07 — **The line-wrap hazard bites the author, not only the guard, and it did so on the
-  edit that landed the rule about it.** Minutes after landing *"count on flattened text: a
-  line-based count returns one for a phrase that wraps across a line break"* in
-  `testing-conventions.md`, an anchored edit to `skills/develop/SKILL.md` failed because the anchor
-  `Same discipline the backlog already applies` is stored as `Same\ndiscipline …` — `str.find`
-  returned -1 and the assertion fired. This repo's `CLAUDE.md` records the hazard for *grep in a
-  guard*; nothing records it for *anchored editing of these files*, which is how every prose change
-  here is made. An anchor must be chosen from within one source line, the same discipline as an
-  assertion, and the failure is at least loud where a guard's is silent (pointer:
-  `CLAUDE.md` "rewrapping a guarded paragraph is a breaking change", `skills/retro/SKILL.md` Step 4).
-- 2026-09-07 — **`retro` Step 5's release chain and one-line report assume the pass edited one
-  repo.** This pass edited three — this repo (skills, references, tests, backlog),
-  `ai-building-conventions` (`testing-conventions.md`, root `FINDINGS.md`) and `Probation` (buffer
-  only). Step 5 says commit each in its own repo, which is clear; the *release* half is not, because
-  `tools/release` exists here and nowhere else, and the prescribed one-line report
-  (`Skills changed — ran tools/release, restart required.`) has no form for "released one of three,
-  pushed the other two, third needs nothing". Reported it in full instead (pointer:
-  `skills/retro/SKILL.md` Step 5 and Step 7).
-- 2026-09-07 — **`retro` Step 5 tells a session to run `tools/release` and an agent session cannot
-  complete it, stopping mid-chain with the version bump already committed.** Step 7 of the chain
-  confirms the push on `/dev/tty`. An agent's shell has no controlling terminal, so the device does
-  not exist — macOS answers `/dev/tty: Device not configured` — and the script correctly dies with
-  exit 3 and *"no tty to confirm the push on; re-run with --yes if you mean to release"*. The
-  script's behaviour is right and its usage line documents `--yes`. What is wrong is the
-  instruction: `retro` Step 5 says "run `tools/release` from the repo root" and every agent-run
-  retro will therefore hit a stop **after** steps 1-6 have acted, with the bump committed, the
-  suite run and nothing pushed — a half-released state that reads like a failure. Two candidate
-  fixes, and the second is probably the real one: Step 5 names `--yes` for a non-interactive
-  session; or the push approval moves to where the *user* actually grants it (this pass asked via
-  the harness before invoking the chain at all, which is the right order and left the chain's own
-  prompt redundant). Note the interaction with `git-conventions.md`: the chain's prompt exists to
-  hold the confirm-a-release rule, so removing it needs the approval to be evidenced somewhere else
-  (pointer: `skills/retro/SKILL.md` Step 5, `tools/release` lines 285-294, item 0075).
+- 2026-09-07 — **`queue` Step 0 has the same missing resolution order this sweep just filed against
+  `retro` Step 1, and its failure mode is worse.** Step 0 says "Find `.claude/backlog/` at the
+  project root. If it doesn't exist, scaffold it" — invoked from `/Documents/AI`, which is not a
+  repo and holds no backlog, the literal instruction is to **create one there**, in a directory
+  `git` does not track, while four real backlogs sit beneath it. `retro`'s version of this gap
+  sweeps the wrong buffer; this one manufactures a fifth. Not folded into 0111, whose design
+  question is about which buffers a *sweep* reads: this is a create-or-refuse decision at scaffold
+  time, and the answer to one does not settle the other. Nearest live row is 0111 (pointer:
+  `skills/queue/SKILL.md` Step 0, item 0111, item 0101 for the conventions half of the same shape).
+- 2026-09-07 — **`queue` Step 2 and `CONCURRENCY.md` disagree about what the lock covers, in one
+  sentence each, and a session has to pick.** Step 2: *"Release in the same turn; the item file,
+  ranking and the row are all unlocked."* `CONCURRENCY.md`, *Lock every write to the backlog
+  directory*: *"Every write, no exemptions … `config.yml`, `FINDINGS.md`, `RANKING.md` and the item
+  files are all inside the boundary."* Followed `CONCURRENCY.md` as the named authority — the queue
+  skill's own preamble sends you there before writing anything — and held the lock across the
+  `QUEUE.md` edits, the 0060 amendment and `RANKING.md`. That is the stricter reading and it cost a
+  lock held for minutes, which `CONCURRENCY-INCIDENTS.md` sanctions but also advises against
+  ("keep every edit that is not to `QUEUE.md` outside it"), so all three documents are pulling
+  slightly differently. Worth noting 0091 is the row for making a by-hand write take the lock at
+  all — it will have to resolve this to be specifiable (pointer: `skills/queue/SKILL.md` Step 2,
+  `references/CONCURRENCY.md` *Lock every write to the backlog directory*, item 0091).
