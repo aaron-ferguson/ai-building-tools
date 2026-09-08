@@ -22,13 +22,6 @@ expects:
 claimed_by: "02ee"
 claimed_at: 2026-09-08T01:42:30Z
 touches:
-  - skills/queue/templates/handoff
-  - .claude/backlog/handoff
-  - tests/handoff.test.sh
-  - tests/backlog-scripts-installed.test.sh
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - references/CONCURRENCY.md
 ---
 
 ## Problem
@@ -81,18 +74,19 @@ indistinguishable in the git record from a clean sequential hand-off.
 
 ## Acceptance criteria
 
-1. `./handoff <id> <token>` moves a row and its item between stages, committed inside the lock, in one
-   invocation.
-2. Given an item whose `status:` does not match what the edit expects, it **refuses and changes
-   nothing**, with a message naming the mismatch — the 0087 case.
-3. It refuses a token that does not hold the claim, and a row not at the expected stage, each with its
-   own message and no file changed.
-4. After a successful hand-off, `./next --drift` exits zero for that row.
-5. `sh -n` passes and the installed copy is byte-identical to the template
-   (`tests/backlog-scripts-installed.test.sh`).
-6. `develop` and `verify` name `./handoff` as the supported path and keep the by-hand fallback.
-7. `CONCURRENCY.md` states that the release is a stage's final act, with the 29-second window as its
-   reason.
+- [ ] AC1 — `./handoff <id> <token>` moves a row and its item between stages, committed inside the
+  lock, in one invocation.
+- [ ] AC2 — Given an item whose `status:` does not match what the edit expects, it **refuses and
+  changes nothing**, with a message naming the mismatch — the 0087 case.
+- [ ] AC3 — It refuses a token that does not hold the claim, and a row not at the expected stage,
+  each with its own message and no file changed.
+- [ ] AC4 — After a successful hand-off, `./next --drift` exits zero for that row.
+- [ ] AC5 — `sh -n` passes and the installed copy is byte-identical to the template
+  (`tests/backlog-scripts-installed.test.sh`).
+- [ ] AC6 — `develop` and `verify` name `./handoff` as the supported path and keep the by-hand
+  fallback.
+- [ ] AC7 — `CONCURRENCY.md` states that the release is a stage's final act, with the 29-second
+  window as its reason.
 
 ## QA plan
 
