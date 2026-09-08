@@ -13,7 +13,7 @@ conventions:
 # a withdrawal burns the ID. Set to 111 by the 2026-09-07 retro, which issued 0105-0110 and left
 # 0104 permanently unissued so those citations resolve to nothing durably rather than silently
 # re-pointing at unrelated work. The withdrawal path itself is still wrong — see item 0105.
-next_id: 111
+next_id: 115
 
 # How many FINDINGS.md entries before a driver runs a retro instead of the next ticket. Read by
 # `./next --findings` and gated on by `./next --drive` (exit 5). Left at retro's stated cadence
