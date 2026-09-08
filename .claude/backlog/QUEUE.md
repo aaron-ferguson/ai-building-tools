@@ -29,7 +29,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0078 | Route a finding by what it is about, not which repo you are standing in | develop | ready |  |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
-| 0082 | Make claim fail safe on the two paths where it currently fails open | verify | in-progress |  |
+| 0082 | Make claim fail safe on the two paths where it currently fails open | verify | ready |  |
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | develop | blocked |  |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
 | 0083 | Decide what a second checkout may do with the backlog | design | ready |  |
