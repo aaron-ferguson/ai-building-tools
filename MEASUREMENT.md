@@ -452,10 +452,32 @@ has its outcome asserted rather than its branch. `verify`'s next pass then found
 class on a third branch. A session continuing its own work carries its own severity judgment forward;
 it had already written the sentence saying the thing was not worth pursuing.
 
-**Where the idea does survive**: a defect `verify` has fully characterized whose fix is **test-side
-only** — it holds the mutation and knows the exact absent assertion. That is a subset small enough to
-be a rule in `verify` rather than a change to the stage boundary, and it is not what these four
-sessions were.
+**The narrow case that looked like it might survive does not, and the reason is frequency rather than
+price.** A defect `verify` has fully characterized whose fix is **test-side only** — it holds the
+mutation and knows the exact absent assertion — was the one shape worth pricing separately. Classifying
+all four bounces by what their FAIL verdict actually blamed:
+
+| Ticket | What the FAIL blamed | Test-side only? |
+|---|---|---|
+| 0023 | `close`'s reachability walk rewrote item files it did not hold | No — production code |
+| 0024 | `.claude/backlog/QUEUE.md` still carried the superseded definition | No — live project file |
+| 0081 | `handoff` emitted no `Co-Authored-By` trailer | No — production code |
+| 0038 | *"No production code changed — only the evidence was missing"* | **Yes** |
+
+**One instance in four bounces, across 90 claims.** Three of the four reds were production defects,
+which is `verify` working as intended — the stage exists to find them, and a session that found one
+has no business fixing it in the window that diagnosed it. So the eligible population is roughly one
+ticket a quarter at this repo's observed rate, against a paragraph in the most-read skill file and an
+exception to *one skill per session*. That loses on context rent alone (`CONVENTIONS_CORE.md`, *Every
+rule pays rent in context*), before the independence argument is even reached.
+
+**Recorded because the intuition is a good one and will recur.** The reasoning that gets you here —
+the window already holds the diagnosis, so re-reading it is waste — is sound, and it is wrong for two
+measured reasons that are not obvious in advance: a re-entry is 36.5 turns rather than the short fix it
+feels like, and the case where the diagnosis is cheapest to reuse is the rarest one. Item 0104 was
+written to gate this behind a measurement and **withdrawn on 2026-09-07** when the eligibility count
+above was taken and failed its own kill criterion before any work started; the ticket is at `7764732`
+if the shape is ever wanted again.
 
 ### Re-running this
 
