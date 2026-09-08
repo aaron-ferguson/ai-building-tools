@@ -185,3 +185,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   to it. `verify` has no gate on that count — only `./next --drive` does — so a hand-driven session
   can keep filling it indefinitely. Noted rather than acted on; `0060` owns how the buffer is
   emptied and gated.
+- 2026-09-08 — **`queue`'s re-specify has no rule for withdrawing a *criterion*, and the obvious
+  move breaks citations.** `0081` came back with AC4's instrument broken and its subject correct;
+  deleting AC4 renumbers AC5–AC7, which `tests/handoff.test.sh` cites by number in four section
+  comments and which two QA verdicts cite in evidence tables. The skill's *Withdrawing a ticket*
+  section has exactly this reasoning for ids ("a citation silently re-pointed at unrelated work is
+  one nobody can see") and it is stated only of `next_id`. Resolved here by marking FR5 and AC4
+  withdrawn in place and keeping the numbers, but that was invented, not read. Still needs a row:
+  either `queue` Step 2's re-specify case states the rule for FR/AC numbering, or it says why a
+  criterion differs from an id.
