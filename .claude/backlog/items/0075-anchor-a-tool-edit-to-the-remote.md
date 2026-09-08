@@ -64,12 +64,12 @@ install against the checkout; nothing compares the checkout against the remote.
 
 ## Acceptance criteria
 
-1. `skills/retro/SKILL.md` instructs a fetch of every repo it will edit before Step 3's destination
-   checks, and says a stale destination check is not evidence.
-2. The release chain in `retro` Step 5 names the fetch as its first step.
-3. The version-bump instruction says the next version is derived from the remote's current version,
-   and names the collision that occurred.
-4. Mutating the fetch sentence out of `skills/retro/SKILL.md` turns the new guard red.
+- [ ] AC1 — `skills/retro/SKILL.md` instructs a fetch of every repo it will edit before Step 3's destination
+  checks, and says a stale destination check is not evidence.
+- [ ] AC2 — The release chain in `retro` Step 5 names the fetch as its first step.
+- [ ] AC3 — The version-bump instruction says the next version is derived from the remote's current version,
+  and names the collision that occurred.
+- [ ] AC4 — Mutating the fetch sentence out of `skills/retro/SKILL.md` turns the new guard red.
 
 ## QA plan
 

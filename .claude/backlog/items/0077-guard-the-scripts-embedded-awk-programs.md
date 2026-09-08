@@ -57,12 +57,12 @@ suite ran at all.
 
 ## Acceptance criteria
 
-1. `tests/backlog-scripts-installed.test.sh` runs `sh -n` on each of the three templates and each
-   installed copy.
-2. Introducing an apostrophe inside a template's `awk` comment turns that test red, naming the script.
-3. The failure message says the script's syntax is broken, not that it diverged from its template.
-4. The convention against apostrophes in embedded `awk` comments is stated where the scripts are
-   documented, with the quoting as its reason.
+- [ ] AC1 — `tests/backlog-scripts-installed.test.sh` runs `sh -n` on each of the three templates and each
+  installed copy.
+- [ ] AC2 — Introducing an apostrophe inside a template's `awk` comment turns that test red, naming the script.
+- [ ] AC3 — The failure message says the script's syntax is broken, not that it diverged from its template.
+- [ ] AC4 — The convention against apostrophes in embedded `awk` comments is stated where the scripts are
+  documented, with the quoting as its reason.
 
 ## QA plan
 

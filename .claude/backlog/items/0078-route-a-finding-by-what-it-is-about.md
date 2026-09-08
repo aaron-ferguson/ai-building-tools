@@ -73,12 +73,12 @@ people's reports arriving *into* a project's queue. Nothing carries a project's 
 
 ## Acceptance criteria
 
-1. `develop`, `verify` and `retro`'s park steps route a tool finding to the tool repo's buffer and
-   everything else to the local one.
-2. The rule names how the destination repo is resolved, and says to stop rather than guess.
-3. The install-only fallback is stated: park locally with a marker naming the destination.
-4. The privacy constraint on writing into a public tool repo is stated at the routing rule.
-5. Deleting the routing sentence from any one of the three skills turns a guard red.
+- [ ] AC1 — `develop`, `verify` and `retro`'s park steps route a tool finding to the tool repo's buffer and
+  everything else to the local one.
+- [ ] AC2 — The rule names how the destination repo is resolved, and says to stop rather than guess.
+- [ ] AC3 — The install-only fallback is stated: park locally with a marker naming the destination.
+- [ ] AC4 — The privacy constraint on writing into a public tool repo is stated at the routing rule.
+- [ ] AC5 — Deleting the routing sentence from any one of the three skills turns a guard red.
 
 ## QA plan
 
