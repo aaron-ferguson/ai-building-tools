@@ -18,7 +18,7 @@ claimed_by: "add1"
 claimed_at: 2026-09-08T01:24:02Z
 touches:
   - skills/retro/SKILL.md
-  - tests/skill-prose.test.sh
+  - tests/retro-tool-edit.test.sh
 ---
 
 ## Problem
