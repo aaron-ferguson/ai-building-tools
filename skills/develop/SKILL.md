@@ -249,6 +249,30 @@ recompute from it finds one input missing and either invents it or trusts the st
 discipline the backlog already applies to `blocked`: the cache reads correctly on its own, and the
 source is the authority whenever the two disagree.
 
+**The same holds for any claim a ticket makes about an external tool's interface, and re-running it
+costs one command.** A dated *"confirmed by running it"* ages exactly like a quoted figure, and it
+reads as stronger evidence, which is what makes it worse. One ticket's FR said a stage is launched
+with `claude -p --json-schema <path>`, citing a run from three weeks earlier; the flag does not take
+a path — it fails with `--json-schema is not valid JSON: JSON Parse error: Unrecognized token '/'` —
+and the inline `"$(cat f.json)"` form is what works. Two more surfaced in the same three-second
+probe, neither visible in any prose: a nested `claude -p` **must redirect stdin** or it waits and
+then prints `Warning: no stdin data received in 3s` *into the stream being parsed as JSON*, so a
+good subprocess reads as a schema failure; and `--max-budget-usd` set below a session's startup
+floor returns `Error: Exceeded USD budget` rather than a result, which reads identically to a
+broken CLI. Probe the interface before building on it — a version bump you did not make is enough
+to invalidate the claim.
+
+**And a QA plan's named check can itself be wrong; the plan is not the authority on what is
+checkable.** The staleness rules above cover an FR and an AC. A plan's *specific checks* are written
+at capture time, against code the author may not have opened, and inherit none of that scrutiny.
+One plan asked for "a grep asserting `--bare` appears nowhere in `skills/orchestrate/`" — but the
+skill has to *explain* why `--bare` is disqualifying, so the check as specified reds exactly the
+file that documents the rule best. That is the negative-assertion trap `testing-conventions.md`
+already names, arriving from a ticket rather than from an author. Where a plan's check cannot be
+written as stated, write the one carrying the same claim — here, the flag must appear in no
+**fenced code block**, with the prose checked separately and positively — and record the
+substitution in the item's notes, because the next QA pass reads the plan, not the note.
+
 **And a figure is only the commonest case — the rule is about any claim a ticket makes on a file it
 does not own.** Three more shapes have bitten, all of them invisible in a diff:
 

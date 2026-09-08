@@ -59,6 +59,17 @@ Stopping is correct here. A backlog item queued with no NFR standard, or verifie
 standard, looks exactly like one that was done properly — and that silent equivalence is worse
 than the inconvenience of being blocked.
 
+**A ladder fails open at every rung but the last, and that is the failure mode to watch.** Step 3
+is loud. Steps 1 and 2 are not: a `conventions.path` pointing at a directory that holds nothing
+falls through to the `CLAUDE.md` import, which resolves, so the session gets correct conventions
+and nobody learns the config is wrong. One project ran that way for weeks — `../ai-building-conventions`
+from a nested repo resolved to a directory that did not exist, masked by a correct `../../` import
+one rung below. **A broken explicit setting hidden by a working fallback is strictly worse than one
+that fails loudly**, because nothing surfaces it: it can only be found by reading the file, and the
+day the fallback is edited away it becomes a stop with no obvious cause. So where step 1 is present
+and does not resolve, say so and keep going — a fallback that silently rescues a broken
+configuration has repaired the session and not the project.
+
 ---
 
 ## What to load once it resolves
