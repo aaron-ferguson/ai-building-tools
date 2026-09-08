@@ -42,9 +42,10 @@ the nastiest failure in the design: a stage killed mid-work leaves a claim held,
 possibly the lock taken, and a ticket half-built. 0039's AC16 covers the *supervisor* being killed,
 which is a different and easier case — there the tree is clean. **Orphan detection is not enough on
 its own: a dirty tree is not something `./next --drift` can see.** And the cap itself, guessed
-rather than derived, is the thing that fires: this repo's observed figures are **$4.45–$6.01 per
-closed ticket** (`MEASUREMENT.md`), so a gate of three tickets under a $1 cap is a stage killed by
-arithmetic on its first run.
+rather than derived, is the thing that fires: this repo's observed figures are **USD 4.23 and
+USD 5.71 per closed ticket** (`MEASUREMENT.md`, as at 2026-08-30 — corrected on 2026-09-08 from the
+pre-2026-08-30 pair this ticket was written with, which that file names this id as still holding),
+so a gate of three tickets under a USD 1 cap is a stage killed by arithmetic on its first run.
 
 This is hardening on a loop that has to exist first, which is why it is the third slice rather than
 folded into 0039.
@@ -136,3 +137,51 @@ resolves.
   0039 shipped without this is a runnable unattended loop with no lock policy, which is exactly the
   hazard FR15 exists for. It is ranked directly below 0039 for that reason and not merely by
   dependency order.
+
+### Built 2026-09-08, claim `ef8e`
+
+**The lock's age cannot come from `held-by`, and that is the one thing a session would get wrong
+here.** `claim:81` writes `claim <id> by <token>` and no timestamp; `close:71` and `handoff:112`
+both write one. So the *commonest* holder of the lock — a claim — is exactly the one a timestamp
+read cannot see, and a supervisor prescribing that read would work in every test against a
+close-held lock while silently calling every claim-held lock ageless. `CONCURRENCY.md`'s *Lock
+every write* says to put a timestamp there, so the protocol and the script already disagree and
+nothing was reading the field closely enough to notice. The age comes from the lock **directory's**
+mtime, which `mkdir` sets on every path. Repairing `claim` is *Out of scope* here and sits next to
+item 0047; **it still needs a row and does not have one** — parked in `FINDINGS.md`.
+
+**The guard runs the prescribed check rather than grepping for it**, which is what makes the above
+falsifiable: an aged fixture, a fresh one and no-lock-at-all, with the aged fixture's `held-by`
+written in `claim`'s shape. Swapping the mtime read for a `held-by` read reds on the *fresh*
+fixture, calling a lock taken a second ago aged — verified by mutation, with four others.
+
+**AC26's subject did not exist.** It asserts "the cap in `config.yml`" while *Out of scope* assigns
+setting the cap to 0039, which delivered it as a prose sizing instruction in Step 3 and no key. The
+derivation assertion has no subject without the key, so the key is added here — that is what "makes
+it derived rather than guessed" requires, and it is not the same act as choosing the number.
+
+**`NF == 8` is not a table selector.** The first derivation guard read MEASUREMENT.md's per-stage
+figures by pipe-field count and returned **74,970** — the context-token table's mean, two tables
+below the one intended — as though it were a dollar figure. Every citation resolved and the
+arithmetic stayed self-consistent. Now the table is selected by its header and the **column index
+is read from that header**, so adding a column cannot silently move what is read.
+
+**A `$` followed by a digit in skill prose is substituted before the session sees the file**
+(`tests/money-in-skill-prose.test.sh`). The lock-age block was first drafted with an awk field
+reference that `/orchestrate 0040` would have delivered as `print 00402`. A `sed` substitution
+avoids the class. Step 3's grep for the project's own guards is what caught it, ahead of the guard.
+
+**Over the size goal by ~900 bytes, recorded rather than cut.** Payback test (`skill-size.test.sh`):
+B is about 2,100, giving p = 89%, and Step 7 is read by every run before it dispatches anything, so
+(a) is not cleared; the policy is mandatory the moment a lock is met, so (b) fails outright. Both
+fail, relocation is rejected, and the justification is recorded.
+
+**Two reds in the tree are not this ticket's.** `tests/measurement.test.sh`'s privacy NFR fails on a
+home-directory path in `items/0060` and in the untracked `items/0111`. At this ticket's base commit
+`fb481a0` that file carried none; the path arrived in `b9d11af`, which landed *after* this ticket's
+implementation commit. Another session's, reported rather than touched — but worth its own row,
+because **this repo is public** and the guard is a privacy NFR.
+
+**Not done here:** `cost_tracking:` is not configured in this backlog, so no cost was recorded, and
+`stage_budget_usd` is derived from `MEASUREMENT.md` instead — the same history by another route,
+and what the config comment cites.

@@ -55,3 +55,34 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   Either `config.yml` is outside the `touches:` regime for the counter specifically, or capture's
   write needs to be visible to it; today it is neither (pointer: `skills/queue/SKILL.md` Step 2,
   item 0106, item 0083 for the second-checkout half).
+
+- 2026-09-08 — **`claim` writes `held-by` without the timestamp `CONCURRENCY.md` mandates, and
+  `close` and `handoff` both write one.** *Lock every write to the backlog directory* says to put
+  `$CLAIM` **and a UTC timestamp** in `.lock/held-by`; `claim:81` writes `claim <id> by <token>` and
+  stops, where `close:71` and `handoff:112` both `printf` a date. So the lock's commonest holder is
+  the one holder whose `held-by` cannot be dated, and any reader written against the protocol —
+  0040's driver was the first — works perfectly in testing against a close-held lock and silently
+  treats every claim-held lock as ageless. 0040 sidestepped it by reading the lock **directory's**
+  mtime, which `mkdir` sets on every path, but that is the driver declining to depend on the field
+  rather than the field being fixed. **This still needs a row and does not have one**; `claim` was
+  *Out of scope* for 0040, and only `queue` may file it. Adjacent to 0047, which is about the
+  busy-lock *procedure* rather than about what `held-by` records (pointer: `.claude/backlog/claim`
+  line 81, `references/CONCURRENCY.md` *Lock every write*, item 0040 *Notes & decisions*).
+
+- 2026-09-08 — **`tests/measurement.test.sh`'s privacy NFR is red on a home-directory path in a
+  tracked item file, in a repo whose `CLAUDE.md` says "This repo is public".** `items/0060` line 81
+  and the untracked `items/0111` line 29 both publish `/Users/<name>/Documents/AI`. The path arrived
+  in `b9d11af`, so this is a live red rather than an old one, and the guard that catches it is not
+  in the same file as the sweep that introduced it. Two things worth separating in whoever picks
+  this up: the paths themselves, and the fact that a **capture** session can write a tracked file
+  that reds a guard nothing in `queue`'s own steps runs (pointer: `tests/measurement.test.sh`
+  *Privacy & data NFR*, commit `b9d11af`).
+
+- 2026-09-08 — **`develop` Step 1 tells you to check `expects:` against in-progress `touches:`, and
+  the obvious way to find in-progress items returns closed ones.** `grep -l "claimed_by: [^ ]"
+  items/*.md` matched five items, all of them `status: done` with a stale token still in the
+  frontmatter — `close` and `handoff` clear the row but at least five closed items carry a token
+  they were never stripped of. The real answer was `./next develop`, which prints the held file set
+  and showed none. Cheap to get wrong in the direction that *stops* work: a session reading those
+  five as live scope collisions concludes there is nothing safe to develop (pointer: `develop`
+  SKILL.md Step 1, `items/0010`, `0023`, `0044`, `0048`, `0049`).
