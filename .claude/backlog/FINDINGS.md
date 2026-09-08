@@ -52,3 +52,18 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   (`Skills changed — ran tools/release, restart required.`) has no form for "released one of three,
   pushed the other two, third needs nothing". Reported it in full instead (pointer:
   `skills/retro/SKILL.md` Step 5 and Step 7).
+- 2026-09-07 — **`retro` Step 5 tells a session to run `tools/release` and an agent session cannot
+  complete it, stopping mid-chain with the version bump already committed.** Step 7 of the chain
+  confirms the push on `/dev/tty`. An agent's shell has no controlling terminal, so the device does
+  not exist — macOS answers `/dev/tty: Device not configured` — and the script correctly dies with
+  exit 3 and *"no tty to confirm the push on; re-run with --yes if you mean to release"*. The
+  script's behaviour is right and its usage line documents `--yes`. What is wrong is the
+  instruction: `retro` Step 5 says "run `tools/release` from the repo root" and every agent-run
+  retro will therefore hit a stop **after** steps 1-6 have acted, with the bump committed, the
+  suite run and nothing pushed — a half-released state that reads like a failure. Two candidate
+  fixes, and the second is probably the real one: Step 5 names `--yes` for a non-interactive
+  session; or the push approval moves to where the *user* actually grants it (this pass asked via
+  the harness before invoking the chain at all, which is the right order and left the chain's own
+  prompt redundant). Note the interaction with `git-conventions.md`: the chain's prompt exists to
+  hold the confirm-a-release rule, so removing it needs the approval to be evidenced somewhere else
+  (pointer: `skills/retro/SKILL.md` Step 5, `tools/release` lines 285-294, item 0075).
