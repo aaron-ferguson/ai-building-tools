@@ -3,7 +3,7 @@ id: "0040"
 title: Harden the supervised loop against a held lock and a budget-killed stage
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -15,9 +15,13 @@ expects:
   - tests/orchestrate.test.sh
   - .claude/backlog/config.yml
   - skills/queue/templates/config.yml
-claimed_by:
-claimed_at:
+claimed_by: "ae47"
+claimed_at: 2026-09-08T14:09:36Z
 touches:
+  - skills/orchestrate/SKILL.md
+  - tests/orchestrate.test.sh
+  - .claude/backlog/config.yml
+  - skills/queue/templates/config.yml
 ---
 
 ## Problem
