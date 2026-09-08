@@ -30,21 +30,35 @@ expects:
 claimed_by: "b708"
 claimed_at: 2026-09-08T23:36:23Z
 touches:
+  # NARROWED from expects: 2026-09-08 by b708, checked against the code.
+  # Corrections to expects:, for the next capture to calibrate on:
+  #   - `.claude/backlog/close` is the INSTALLED COPY. The edit target is
+  #     `skills/queue/templates/close`, re-copied afterwards — the fix direction is one-way
+  #     (tests/backlog-scripts-installed.test.sh AC2). Same for `next`, which expects: omitted
+  #     entirely even though AC8 names its take line.
+  #   - `MEASUREMENT.md` is NOT touched: FR13 already says so, and re-read confirms it holds no
+  #     tier table, only the pointer at line 673.
+  #   - `references/TRACKER.md` is not touched either; nothing in FR1-FR14 reaches it.
+  #   - `.claude/backlog/config.yml` is not touched: this repo has a runner, so it must NOT gain a
+  #     `review:` block — AC6's fixture needs a config WITHOUT one. The documented shape goes in
+  #     `skills/queue/templates/config.yml`, which expects: omitted.
+  #   - `items/0079-…` is not touched; it closed as `merged` on 2026-09-02 and CONCURRENCY.md
+  #     forbids writing a `status: done` item.
+  - skills/queue/templates/close
+  - .claude/backlog/close
+  - skills/queue/templates/next
+  - .claude/backlog/next
+  - skills/queue/templates/item.md
+  - skills/queue/templates/config.yml
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - skills/queue/SKILL.md
-  - skills/queue/templates/item.md
-  - .claude/backlog/close
-  - .claude/backlog/config.yml
-  - references/TRACKER.md
-  - MEASUREMENT.md
-  - docs/decisions/002-matching-rigour-to-stakes.md
   - tests/close.test.sh
-  - tests/next.test.sh
+  - tests/close-by.test.sh          # new
   - tests/graph-fields.test.sh
-  - tests/close-by.test.sh
-  - docs/decisions/003-who-may-close-a-ticket.md
-  - .claude/backlog/items/0079-a-qa-level-for-a-repo-with-no-runner.md
+  - tests/next.test.sh
+  - docs/decisions/002-matching-rigour-to-stakes.md
+  - docs/decisions/003-who-may-close-a-ticket.md   # new
 ---
 
 ## Problem
