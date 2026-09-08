@@ -2,8 +2,8 @@
 id: "0040"
 title: Harden the supervised loop against a held lock and a budget-killed stage
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -15,13 +15,10 @@ expects:
   - tests/orchestrate.test.sh
   - .claude/backlog/config.yml
   - skills/queue/templates/config.yml
-claimed_by: "ae47"
-claimed_at: 2026-09-08T14:09:36Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/orchestrate/SKILL.md
-  - tests/orchestrate.test.sh
-  - .claude/backlog/config.yml
-  - skills/queue/templates/config.yml
+closed: 2026-09-08
 ---
 
 ## Problem
@@ -80,14 +77,14 @@ resolves.
 
 **AC numbers are 0036's.**
 
-- [ ] **AC25 — the supervisor never takes or breaks the lock.** Given a run at any point, when
+- [x] **AC25 — the supervisor never takes or breaks the lock.** Given a run at any point, when
   `.claude/backlog/.lock/` is inspected, then it was never created by the supervisor and never
   removed by it. **Given a lock older than the configured age with no live stage process**, when
   the supervisor acts, then it escalates, naming the lock's age and the process from the FR10 log
   that should have held it — and dispatches nothing. **Given a lock younger than that age**, then
   it waits rather than escalating, because a lock in use is the normal case and it is held for
   seconds.
-- [ ] **AC26 — a stage killed by its spend cap leaves a state the escalation describes.** Given a
+- [x] **AC26 — a stage killed by its spend cap leaves a state the escalation describes.** Given a
   stage dispatched with a cap it exceeds mid-work, when it is killed, then the supervisor escalates
   with the ticket's claim token, the dirty paths and the lock state named — and starts nothing
   further. Given that escalation, when a human follows it, then no information needed to recover is
@@ -184,3 +181,55 @@ because **this repo is public** and the guard is a privacy NFR.
 **Not done here:** `cost_tracking:` is not configured in this backlog, so no cost was recorded, and
 `stage_budget_usd` is derived from `MEASUREMENT.md` instead — the same history by another route,
 and what the config comment cites.
+
+## QA evidence
+
+Verified 2026-09-08, claim `ae47`, at `qa_level: unit` — the whole `tests/` suite, run file-by-file
+rather than fail-fast per `config.yml`'s attribution note. Frontmatter level and the QA plan's
+`**Level:** unit` agree, so no drift to report. The **repo** copy is the authority and is what the
+guards read (`ROOT`); the session itself ran the installed plugin at **0.9.17**, one version behind
+the repo's 0.9.18, and `skills/orchestrate/SKILL.md` is among the four files that differ between
+them — so this verdict is about the repo copy, not the copy that executed.
+
+| Criterion | How it was checked | Result |
+|---|---|---|
+| **AC25** — never takes or breaks the lock | Direct state read of every fenced block in `skills/orchestrate/`: the only lock operations are `[ -d "$LOCK" ]` and `stat`; both `mkdir`s target `runs/`, not the lock. Guard `no fenced block ... removes the lock` reds on an inserted literal remover (M2b) | **pass** |
+| **AC25** — aged lock escalates, names the age, dispatches nothing | The prescribed block is *extracted and run* against three authored fixtures. Aged (mtime 2026-01-01, `held-by` in `claim`'s no-timestamp shape) → `aged 1788876767`, so the age is named. Prose guards for `dispatches nothing` and `run log` both red under mutation | **pass** |
+| **AC25** — younger lock waits | Fresh fixture → `fresh <age>`; no-lock fixture prints nothing and decides nothing. `waits rather than escalating` reds when reworded (M3) | **pass** |
+| **AC25** — the age is config, not a number in a skill | `lock_stale_seconds: 900` in `.claude/backlog/config.yml` and in `skills/queue/templates/config.yml`; removing either reds (M4, M8) | **pass** |
+| **AC26** — escalation names claim token, dirty paths, lock state | Three separate `says` assertions over Step 7. `the dirty paths` reds when reworded — and note the phrase spans a line break in the source, which matches only because `section()` flattens the section with `tr '\n' ' '` (M5) | **pass** |
+| **AC26** — over-budget exit routed, run stops | `not read as a crash` and `starts nothing further` both red when reworded | **pass** |
+| **AC26** — the cap is derived, and the derivation is stated beside it | `stage_budget_usd` present in config and template; template ships the key with the instruction and no figure (a planted figure reds). Every cited mean checked against MEASUREMENT.md's `$/session` table by header-derived column: develop 4.03, verify 3.63, retro 2.51 — all three match, and rounding one citation reds (M6) | **pass, with a gap** |
+| **Security NFR** — no authority the loop lacked | Step 7 assigns releasing the claim, cleaning the tree and removing the lock to a human; Step 8 states it never claims a row or mints a token | **pass** |
+| **Observability NFR** — escalation on disk, timestamped, before the user | Step 7 states it lands in the run log timestamped before it reaches the user, carrying token, dirty paths and lock state. Prose is the artifact here; the timestamp half carries no guard of its own | **pass, unguarded** |
+| Always-on conventions (`CONVENTIONS_CORE.md`) | Public-repo/privacy pass over the four touched files: no home-directory path, no company material. Build notes record the learning in-change | **pass** |
+
+**Mutations re-run rather than taken on trust** (the build notes' table was not accepted as
+evidence): 11 in total, each confirmed to land by a non-empty diff and each restored by pathspec,
+with a green control run at the end (130 passed, 0 failed). The headline one holds — swapping the
+directory-mtime read for a `held-by` timestamp read reds on the **fresh** fixture (`aged
+1788876767`), calling a lock taken a second ago aged, exactly as recorded.
+
+**Two mutations did not redden, and are published rather than papered over** (`verify` Step 3):
+
+- `rm -rf "$LOCK"` in a fenced block — the skill's own idiom — leaves the suite at 130 passed; so
+  does a path built through a variable. Only the literal `.lock` spelling reds. The delivered prose
+  is clean either way, so AC25 is verified on state; the coverage is what is thin.
+- `retro: 99.00`, citation left intact, leaves the suite at 130 passed. The cap's *figure* is
+  unguarded; only its citation is. The shipped figures are self-consistent under mean x 1.5 rounded
+  to the nearest five cents, but that granularity is unstated, so a literal RECOMPUTE gives 6.04
+  and 3.76.
+
+Both are parked in `FINDINGS.md` (commit `bb9a16c`) and **still need rows**; neither is a defect in
+what this ticket delivered.
+
+**Pre-existing red, not this ticket's.** `tests/measurement.test.sh` — *Privacy & data NFR* — fails
+on home-directory paths in `FINDINGS.md`, `items/0060` and `items/0111`. `git log -S` dates the path
+to `b9d11af`, which landed after this ticket's implementation commit `5c16447`, and the guard is
+green at `5c16447` in a detached worktree (106 passed, 0 failed). Reported, not touched. It is
+already in `FINDINGS.md` and **still needs a row** — this repo is public and the guard is a privacy
+NFR. Every other file in the suite is green.
+
+**Tree state.** Clean at Step 2 and clean again at verdict time, so the intersection with this
+run's evidence set is empty and the verdict is not advisory.
+
