@@ -9,7 +9,10 @@ project: <Project Name>
 conventions:
   path: ../ai-building-conventions
 
-# Monotonic. capture claims this number for a new item, then increments it.
+# Monotonic: this counter only ever rises. `queue` claims this number for a new item, then
+# increments it. A withdrawal BURNS the id — it never decrements this, and it keeps the item file
+# marked `status: withdrawn` so a citation resolves to that rather than to nothing. Note ids are
+# minted as `max(items on disk) + 1`, so this value is a cache of the disk and the disk wins.
 next_id: 1
 
 # How many entries FINDINGS.md has to hold before a driver stops dispatching tickets and runs a

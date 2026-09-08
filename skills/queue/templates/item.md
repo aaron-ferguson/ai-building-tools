@@ -11,12 +11,14 @@ next: queue | design | develop | verify
 # ticket's row has moved to `DONE.md`. `blocked` is DERIVED and never authored: it holds when
 # `blocked_by` names a ticket that is not `done`, so it is written by whatever closes that
 # ticket, never typed as a judgement. `./next --drift` reports where it has gone stale.
+# `withdrawn` = terminal the other way: the work is not being done. The file STAYS as the
+# record — the id is burned, never reissued, and this file is what a citation to it resolves to.
 # `waiting` and `blocked` are not one value because
 # different things clear them: a person answering, versus another ticket closing. Merged,
 # telling which would mean opening the ticket. Two values sit off the stack rank and so out of
 # this list: a project is `active` (see `parent:` below — its `next:` stays empty), and a dormant
 # ticket in `SCHEDULED.md` is `scheduled` with a `wake:` date.
-status: ready | waiting | blocked | in-progress | done
+status: ready | waiting | blocked | in-progress | done | withdrawn
 qa_level: verify | unit | integration | e2e
 # OPTIONAL, and only where some ACs can be observed by NO runner — a physical device, a person's
 # eye. Free text naming which ACs, on what surface, and who: `AC1-AC3 — iPhone Safari, the author`.

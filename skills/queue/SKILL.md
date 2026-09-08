@@ -142,6 +142,7 @@ report the missing wiring and stop. A backlog whose tickets cite no standard can
 | "sweep the findings", "import the reported feedback" | **Surface parked work** (Step 5) |
 | a ticket sits at `next: queue` — bare `/queue`, or an ID | **Re-specify** it (Step 2), then **skip Step 3**: it already has a rank and keeps it |
 | "add an FR to X", "this ticket also needs Y" | **Amend** an already-specified ticket (Step 2) |
+| "drop X", "we're not doing X after all" | **Withdraw** it — see below. The work goes; the id never does |
 
 Adding is the default when the intent is ambiguous — but only where there is something to capture. A
 bare invocation with nothing new to record is the **re-specify** case, not an Add: `next: queue` is the
@@ -163,6 +164,26 @@ change, and neither is optional:
   *Out of scope*** against the new shape, and record the reason in *Notes & decisions*. That re-check
   is where the work actually is; the FR itself is the cheap part. Never amend a claimed ticket — its
   session is building against the contract you are changing.
+
+### Withdrawing a ticket — the work goes, the id is burned
+
+A withdrawal is the one operation that can make an existing citation resolve to the **wrong**
+ticket rather than to none, so it has two rules and neither is optional:
+
+- **`next_id` only ever rises. A withdrawn id is burned, never recycled.** An id is a stable
+  identifier, and `product-readiness-conventions.md` puts those among the decisions that cannot be
+  retrofitted once anything cites one. A citation left pointing at nothing is a dead link the
+  reader can see; a citation silently re-pointed at unrelated work is one nobody can.
+- **Keep the item file as the record** — `status: withdrawn`, `next:` emptied, and a dated line in
+  *Notes & decisions* saying why. It is the record a citation resolves to instead of nothing, and
+  it is also what actually burns the number: ids are minted as `max(items on disk) + 1`, so the
+  counter alone cannot hold a gap the disk has re-opened.
+
+Then remove the row from `QUEUE.md`, under the lock and committed in the same turn, like every
+other backlog write.
+
+Neither rule was written down until 0105, and `3b72d38` broke both at once — it deleted the item
+file *and* decremented the counter, queueing up a third issue of an id two guards already cited.
 
 Read-only operations don't need the conventions resolved; anything that writes a ticket does.
 

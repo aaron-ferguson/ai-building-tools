@@ -709,5 +709,75 @@ case "$out" in
   *) bad "0105 FR3 — expected the empty-id-set FAIL, got: ${out:-<nothing>}" ;;
 esac
 
+# ---------------------------------------------------------------------------
+# 0105 — the rule that stops an unresolvable item-ID citation being created
+# ---------------------------------------------------------------------------
+#
+# The block above is the DETECTOR: it reds once a citation has already gone bad. This is the RULE,
+# and it lives in the one operation that can create the defect. A withdrawal removes the work and
+# must not remove the identifier — reissuing a withdrawn id does not make a citation stale, which a
+# reader can see, it makes the citation resolve to DIFFERENT WORK, which nobody can.
+#
+# Both halves went wrong together at 3b72d38, which deleted the item file AND reset the counter.
+# Deleting the file is the half that is easy to miss: ids are minted as `max(items on disk) + 1`,
+# so the file on disk is what actually burns the number, and the counter alone cannot.
+#
+# Asserted against a FLATTENED section, never a line, because grep is line-based and rewrapping a
+# guarded paragraph would otherwise be a breaking change (CLAUDE.md).
+
+# flat_section <file> <start-substring> <end-regex> — the section, newlines collapsed to spaces.
+flat_section() {
+  awk -v start="$2" -v endre="$3" '
+    !inw && index($0, start) { inw = 1; printf "%s ", $0; next }
+    inw && $0 ~ endre { exit }
+    inw { printf "%s ", $0 }
+  ' "$1" | tr -s ' '
+}
+
+# says <label> <haystack> <phrase> — one assertion, printing what it looked for when it misses.
+says() {
+  case "$2" in
+    *"$3"*) ok "$1" ;;
+    *) bad "$1 — did not find \"$3\"" ;;
+  esac
+}
+
+QSKILL="$ROOT/skills/queue/SKILL.md"
+WD="$(flat_section "$QSKILL" '### Withdrawing a ticket' '^## ')"
+
+echo "0105 AC5/FR4 — queue has a withdrawal path at all"
+if [ -n "$WD" ]; then
+  ok "the withdrawal section is present in skills/queue/SKILL.md"
+else
+  bad "0105 FR4 — skills/queue/SKILL.md has no \"### Withdrawing a ticket\" section"
+fi
+
+echo "0105 AC1/FR1 — the withdrawal path says the counter never falls"
+says "FR1 — next_id only ever rises"          "$WD" 'only ever rises'
+says "FR1 — and the id is burned, not freed"  "$WD" 'never recycled'
+
+echo "0105 AC5/FR2 — the withdrawal path says what record it leaves, and why deleting it is the defect"
+says "FR2 — the item file is kept as the record"        "$WD" 'Keep the item file as the record'
+says "FR2 — marked with the withdrawn status"           "$WD" 'status: withdrawn'
+says "FR2 — deleting it is what re-opens the number"    "$WD" 'max(items on disk) + 1'
+
+echo "0105 FR4 — the path names the rule it is holding, rather than asserting the rule itself"
+says "FR4 — the stable-identifier convention is named" "$WD" 'product-readiness-conventions.md'
+
+echo "0105 FR2 — withdrawn is in the shipped status vocabulary, or the path above cannot be followed"
+IT="$ROOT/skills/queue/templates/item.md"
+says "FR2 — the status line offers withdrawn" "$(flat_section "$IT" 'status: ready' '^qa_level')" \
+  '| withdrawn'
+says "FR2 — and says the file stays as the record" \
+  "$(flat_section "$IT" '# Whether anything can act at all' '^status:')" 'the id is burned'
+
+echo "0105 NFR — both config.yml next_id comments say the counter only rises, and what a withdrawal does"
+for cfg in "$ROOT/skills/queue/templates/config.yml" "$ROOT/.claude/backlog/config.yml"; do
+  rel="${cfg#$ROOT/}"
+  body="$(flat_section "$cfg" '# Monotonic' '^next_id:')"
+  says "NFR — $rel says the counter only rises"        "$body" 'only ever rises'
+  says "NFR — $rel says what a withdrawal does instead" "$body" 'withdrawal'
+done
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]
