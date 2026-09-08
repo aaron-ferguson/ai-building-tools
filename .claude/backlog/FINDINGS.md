@@ -202,3 +202,13 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   silently in the direction that matters — a shrinking count is exactly how a deleted guard would
   present. Still needs a row: either `verify` Step 7 requires the tally to be pasted from a command
   rather than summed by the session, or the suite gains a runner that prints one total.
+
+- 2026-09-08 — **`CONVENTIONS.md` rung 3's "do not search the filesystem for a directory that looks
+  right" now has three call sites, and the file it lives in is scoped to conventions only.** 0111
+  settled today by citing it for the findings buffer, 0078 FR2 cites it for the tool repo, and it
+  was written for the conventions directory. The prohibition and the stop-rather-than-guess refusal
+  are the general rule; the conventions ladder is one instance of it. Both citing tickets put
+  "changing `CONVENTIONS.md`'s own ladder" out of scope, so nothing owns the generalisation and the
+  fourth per-project file to need it will cite a conventions file for a reason unrelated to
+  conventions. Possible row: split the refusal into a resolution reference the ladder itself cites
+  (pointer: `references/CONVENTIONS.md`, items 0111, 0078).
