@@ -1,6 +1,6 @@
 # 002 — Matching rigour to stakes, at a measured price
 
-**Date:** 2026-09-02 · **Status:** accepted · **Supersedes nothing** · **Related:** `001`, tickets `0073`, `0085`
+**Date:** 2026-09-02 · **Status:** accepted · **Supersedes nothing** · **Related:** `001`, `003`, tickets `0073`, `0085`, `0086`
 
 ## Context
 
@@ -50,15 +50,29 @@ thoroughness.**
 | Tier | What it is | Cost | vs standard | When |
 |---|---|---|---|---|
 | **Inline** | No ticket. Fixed in the session that found it, 5–10 turns | $0.50–1.00 | **−87%** | Reversible, obvious, and wrong would show within minutes |
-| **Light** | Ticket, built, self-checked. No separate QA pass | $3.89 | −32% | Internal tooling and scripts, where failure surfaces on the next run |
+| **Light** | Ticket, built, closed by the build session — `close_by: develop`, gated on every AC citing a committed assertion | $4.20 | **−26%** | Internal tooling and scripts, where failure surfaces on the next run |
 | **Standard** | Queued, built, independently verified against written criteria | **$5.71** | — | The default. Anything anyone but you depends on |
 | **Full** | A design pass first, then the standard lifecycle at a higher QA level | ~$8.03 | +41% | Expensive to reverse, or on the retrofit list below |
 
 Inline and Light are modelled from the measured stage costs; Standard is measured directly.
 
+**Light was priced at $3.89/−32% here until 2026-09-08, and that figure was wrong** — it deleted the
+QA stage's cost entirely. Something must still run the suite and tick the criteria, and `verify`'s
+measured share is **$1.82 per closed ticket** ($36.32 over 20 in `MEASUREMENT.md`), already less than
+half a `verify` session's $3.63 because the stage amortizes across tickets. Add the build session's
+own close, 2–4 turns at $0.1044: **$4.20, −26%.** The mechanism that realises it is `close_by:
+develop` (`003`), shipped 2026-09-08.
+
+**A further ~−18% is PROJECTED AND NOT YET MEASURED.** `0085` landed on 2026-09-03 and its table
+projects `verify` from 38.4 turns to 28, which would cut that stage's share to ~$1.33 and light's edge
+to ~$1.02. `MEASUREMENT.md`'s re-measurement is pinned to `--since 2026-08-25 --until 2026-10-31` and
+has not been run, so **no post-`0085` figure exists**: treat −18% as a forecast until that date, and
+do not quote it as a price. Publishing a projection as a measurement is the defect this row already
+had once.
+
 ### The finding that should change how work is planned
 
-**Dropping the independent QA pass — the saving that feels large — buys 32%. Not creating the ticket
+**Dropping the independent QA pass — the saving that feels large — buys 26%. Not creating the ticket
 at all buys 87%.** The factor between the cheapest real tier and the most thorough is about 2×; the
 factor between inline and the full lifecycle is more than 10×.
 

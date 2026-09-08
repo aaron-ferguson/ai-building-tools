@@ -435,6 +435,20 @@ throwaway worktree — needs its own `node_modules` and is not actually cheap. N
 
 ### Then stop, in this order
 
+**First read the item's `close_by:`, because it decides which ending this stage has.** Absent or
+`verify` → steps 1-6 below, unchanged, and the ticket goes to a QA session. **`close_by: develop`
+→ this session closes it**: run steps 1-3, then tick each AC against the assertion you just proved
+red-then-green, and call `./close <id> <token>` in place of `./handoff`. Report the close, not
+`/verify <id>`. `close` re-checks the eligibility itself and refuses a criterion citing no committed
+guard, so a close that goes through is the gate agreeing with you rather than trusting you.
+
+**`develop` may RAISE `close_by` from `develop` to `verify`, and may never set or lower it to
+`develop`.** The raise is the useful half: a session finding an AC that is not a real assertion —
+its verdict is a reading, an eyeball, a judgement — hands the ticket to an independent pass, and
+says in *Notes & decisions* which criterion it was. **This is a different field from `qa_level`, so
+that field's own raise-only rule below does not reach it by implication.** Lowering into the tier is
+`queue`'s alone, because narrowing a contract is the author's call.
+
 1. Run the review checklist the conventions define for changed code. A build-quality gate, not QA.
 2. **Write down what you learned while the item file is open** — a mechanism, a disproved theory, a
    rule that misled you — per the conventions' documentation rules, in *Notes & decisions*. The QA
@@ -546,4 +560,9 @@ Example: `0081 — RED — next: develop, status: ready` — the tree would not 
 Example: `0081 — BLOCKED — next: develop, status: waiting` — or a `blocked_by` entry naming the ticket.
 
 `BUILT` is not `done` and the line is what stops it being read as one: the stage on it is `verify`,
-which is the pass that closes the ticket. There is no verdict word here that closes anything.
+which is the pass that closes the ticket. There is no verdict word here that closes anything —
+**except on a `close_by: develop` ticket, the one case where this stage is also the closing one.**
+There the line reads `<ID> — CLOSED — next: , status: done`, and it is a claim about a `./close`
+that returned zero, never about a suite you ran and read yourself.
+
+Example: `0081 — CLOSED — next: , status: done` — a light ticket, closed here by `./close`.

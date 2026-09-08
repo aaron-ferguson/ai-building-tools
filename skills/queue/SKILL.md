@@ -255,7 +255,14 @@ critical journey whose breakage is unacceptable, or a change only manifesting th
 needs a one-line justification of why integration can't cover it, and there should be few. **`verify`**
 where no test runner applies (docs, config, tooling), requiring a **scripted assertion** the ticket names
 explicitly — a grep, a path check, a schema validation; if you cannot write one the ticket needs sharper
-ACs, not this level. **A grep over prose must survive reflow** — match a phrase short enough to stay on
+ACs, not this level. **`review`** where there is no runner **and no mechanical check either**, because
+the artifact is prose and every check is judgement — does the rule earn its context rent, is it a
+principle or a preference, does it contradict a rule stated elsewhere. It is not on the pyramid and so
+is **not cumulative**, its content comes from `review: checklist:` in `config.yml`, and a ticket
+declaring it where nothing is configured is refused on exactly the same ground as `unit` with no
+command. **`verify` and `review` are different levels and both are live** — `verify` is *no runner but
+a mechanical check*, `review` is *neither* — so collapsing them loses the refusal that tells them
+apart; renaming either is `0067`'s subject and not a side effect of a ticket. **A grep over prose must survive reflow** — match a phrase short enough to stay on
 one line, or collapse newlines before matching; rewrapping a paragraph moves a phrase across a line break
 and reds an assertion whose text still says the right thing. **The same break defeats an `Edit`**,
 which matches literally: a replacement quoting a phrase the file happens to wrap between two words
@@ -270,6 +277,21 @@ one resolving to none leaves the *scripted* ACs unrun — the same defect mirror
 whose first three ACs needed an iPhone, authored `e2e` with *"then device"* in the QA plan's prose, so
 QA was directed at a browser suite structurally unable to see the behaviour while the device half
 survived only in a section the frontmatter contradicted.
+
+**Set `close_by` now too, and this skill is the only one that may.** It answers *who closes*, which is
+a different question from `qa_level`'s *what is checked* — two orthogonal fields, because one enum
+holding both drifts. **`verify` is the default and an absent field means it.** **`develop`** is the
+light tier: the session that built the ticket closes it, paying no second session's startup floor,
+worth about **−26%** against the measured cost per ticket (`docs/decisions/003-who-may-close-a-ticket.md`).
+
+**Write `close_by: develop` only where every acceptance criterion is discharged by a committed
+automated assertion, named on the AC line, which the build session will prove red before green.** No
+criterion whose verdict is a reading, a judgement or an eyeball — this is the *"name what would make
+each AC red"* rule promoted from advice to a precondition, and `close` enforces it mechanically:
+a criterion citing no committed guard refuses the close by name. Two consequences worth knowing here
+rather than discovering at the far end. A light ticket with **no** criteria is refused too, since
+"every criterion is an assertion" is vacuously true of none. And **`qa_level: review` can never carry
+`close_by: develop`** — a review's checks are judgement, so the pair is refused.
 
 **Estimate `size`** — `s` one sitting, `m` a focused session, `l` multiple sessions or needs a design
 decision first. Input to tie-breaker 4 only, never moving a ticket between tiers.

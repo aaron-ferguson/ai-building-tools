@@ -134,13 +134,28 @@ twice.
 | Level | Run |
 |---|---|
 | `verify` | the scripted assertion the QA plan names, plus lint/typecheck if present. It must be *executed* and its output shown — read-and-eyeballed is not verified |
+| `review` | every line of the checklist `config.yml`'s `review: checklist:` names, plus lint/typecheck if present. **Not on the pyramid, so not cumulative** — nothing else is implied |
 | `unit` | lint, typecheck, unit suite scoped to the change |
 | `integration` | the above, plus the integration suite across the seams touched |
 | `e2e` | the above, plus the journeys the QA plan names |
 
+**`verify` and `review` are two levels, not one word for the same thing.** `verify` is *no runner
+applies, but a mechanical check does* — the grep or path check the item names. `review` is *no
+runner and no mechanical check either*, for a repo whose artifact is prose: its checks are judgement,
+and the checklist is where they live.
+
+**At `qa_level: review`, record one checkbox per checklist line** in a `## Review checklist` section
+of the item, the way Step 3 records an AC's evidence — the line, then what you concluded about this
+change. **`close` refuses a checklist of bullets with not one box ticked**, on the same grounds as its
+refusal for unticked ACs: a review declared and never performed closes with a full list of bullets,
+and `DONE.md` cannot tell it from a performed one. That refusal is the one mechanical assertion
+standing behind this whole level, so do not tick a line you did not read.
 
 **If the declared level has no command in `config.yml`, stop and say so** — substituting a lower level is
-the silent downgrade the per-ticket declaration exists to prevent.
+the silent downgrade the per-ticket declaration exists to prevent. **`review` is not exempt: with no
+`review:` block configured, stop.** It is the level most likely to look like it needs no command, and
+allowing that would mean a level can legitimately resolve to nothing — after which this refusal can
+never fire again, for any level.
 
 **A configured level with no tests yet is an empty set, not a red.** Levels being cumulative, an
 `integration` ticket on a young project runs a unit command over an empty directory, and most runners

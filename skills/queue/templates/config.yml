@@ -44,6 +44,23 @@ stage_budget_usd:
   verify:
   retro:
 
+# Optional, and deliberately absent. `qa_level: review` is the level for a repo whose artifact is
+# PROSE and whose checks are judgement — a conventions or documentation repo, where `develop`'s TDD
+# cycle has nothing to turn red and an NFR table citing accessibility for a wording edit is
+# theatre. It is not on `testing-conventions.md`'s pyramid, so it is NOT cumulative: it runs the
+# checklist below plus any configured `lint`/`typecheck`, and implies nothing else.
+#
+# The checklist file belongs to THE REPO BEING CHECKED, and its lines CITE the conventions rather
+# than restating them — a restated rule is a rule that drifts, and `verify` would then check the
+# stale copy.
+#
+# WITH NO BLOCK HERE, A `qa_level: review` ITEM IS REFUSED, on exactly the same ground as `unit`
+# with no command. That refusal is the whole point of declaring a level per ticket, so `review`
+# must never be a level that legitimately has no command — otherwise the refusal can never fire
+# again and a silent downgrade becomes available everywhere.
+review:
+  checklist: <e.g. docs/review-checklist.md — a file in THIS repo, one check per line>
+
 # Commands qa runs per level. Omit a level the project genuinely doesn't have —
 # qa will refuse an item whose qa_level has no command rather than silently skip it.
 commands:
