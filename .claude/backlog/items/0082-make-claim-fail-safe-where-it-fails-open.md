@@ -19,10 +19,6 @@ expects:
 claimed_by: "c525"
 claimed_at: 2026-09-08T01:43:10Z
 touches:
-  - skills/queue/templates/claim
-  - .claude/backlog/claim
-  - tests/claim.test.sh
-  - references/CONCURRENCY.md
 ---
 
 ## Problem
@@ -70,13 +66,15 @@ refuses rather than guesses on three other grounds.
 
 ## Acceptance criteria
 
-1. Claiming an item with a non-empty `expects:` writes those paths as `touches:` in the claim commit.
-2. The report says to narrow the provisional scope, and does not imply the field is unset.
-3. An item with no `expects:` claims as it does today, and the report says the scope is unset.
-4. With a foreign uncommitted edit to `QUEUE.md` present, `claim` **refuses**, names the affected rows,
-   and leaves `QUEUE.md`, the item and the index byte-identical.
-5. That refusal's message is distinct from the token, stage and table-shape refusals.
-6. Each refusal branch, mutated away, turns `tests/claim.test.sh` red.
+- [ ] AC1 — Claiming an item with a non-empty `expects:` writes those paths as `touches:` in the
+  claim commit.
+- [ ] AC2 — The report says to narrow the provisional scope, and does not imply the field is unset.
+- [ ] AC3 — An item with no `expects:` claims as it does today, and the report says the scope is
+  unset.
+- [ ] AC4 — With a foreign uncommitted edit to `QUEUE.md` present, `claim` **refuses**, names the
+  affected rows, and leaves `QUEUE.md`, the item and the index byte-identical.
+- [ ] AC5 — That refusal's message is distinct from the token, stage and table-shape refusals.
+- [ ] AC6 — Each refusal branch, mutated away, turns `tests/claim.test.sh` red.
 
 ## QA plan
 
