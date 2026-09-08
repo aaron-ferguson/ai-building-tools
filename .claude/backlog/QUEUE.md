@@ -29,7 +29,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | develop | ready |  |
 | 0078 | Route a finding by what it is about, not which repo you are standing in | develop | ready |  |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
-| 0076 | Make a tool edit run the target repo's suite before it commits | verify | ready |  |
+| 0076 | Make a tool edit run the target repo's suite before it commits | verify | in-progress |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
 | 0082 | Make claim fail safe on the two paths where it currently fails open | verify | ready |  |
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | develop | blocked |  |

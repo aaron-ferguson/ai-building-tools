@@ -3,7 +3,7 @@ id: "0076"
 title: Make a tool edit run the target repo's suite before it commits
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: s
 created: 2026-09-01
@@ -14,9 +14,11 @@ relates: ["0075", "0077"]
 expects:
   - skills/retro/SKILL.md
   - tests/skill-prose.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "add1"
+claimed_at: 2026-09-08T01:24:02Z
 touches:
+  - skills/retro/SKILL.md
+  - tests/skill-prose.test.sh
 ---
 
 ## Problem
