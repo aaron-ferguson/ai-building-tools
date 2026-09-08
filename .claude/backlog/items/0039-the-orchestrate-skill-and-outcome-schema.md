@@ -2,8 +2,8 @@
 id: "0039"
 title: Build the orchestrate skill and the stage outcome schema
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -22,8 +22,8 @@ expects:
 # `skills/develop/SKILL.md` is deliberately absent: the schema is supplied by the invoker, so no
 # stage skill has to describe the FR13 shape, and develop is already over the skill-size goal
 # with a recorded reason. See 0036's review amendment, the scope cut.
-claimed_by: "68c9"
-claimed_at: 2026-09-08T01:07:49Z
+claimed_by:
+claimed_at:
 touches:
   # Second re-entry of 2026-09-07 (token 68c9). Scope is the ONE gap the 1b58 QA pass
   # failed on: the Dependencies NFR's naming half. The artifact and its guards are correct.
