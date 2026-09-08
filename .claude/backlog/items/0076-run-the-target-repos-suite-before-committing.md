@@ -73,11 +73,12 @@ two things it would otherwise have released:
 
 ## Acceptance criteria
 
-1. `skills/retro/SKILL.md` requires the target repo's suite to run before the commit that carries a
-   tool edit.
-2. It names the live-repo-commit pollution and the worktree-at-`HEAD` comparison as the discriminator.
-3. It says a rejecting guard is answered by relocating first, exempting second.
-4. Deleting the suite-run sentence turns the new guard red.
+- [ ] AC1 — `skills/retro/SKILL.md` requires the target repo's suite to run before the commit that
+  carries a tool edit.
+- [ ] AC2 — It names the live-repo-commit pollution and the worktree-at-`HEAD` comparison as the
+  discriminator.
+- [ ] AC3 — It says a rejecting guard is answered by relocating first, exempting second.
+- [ ] AC4 — Deleting the suite-run sentence turns the new guard red.
 
 ## QA plan
 
