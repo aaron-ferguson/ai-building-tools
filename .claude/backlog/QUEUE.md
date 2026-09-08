@@ -25,7 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | develop | in-progress |  |
 | 0078 | Route a finding by what it is about, not which repo you are standing in | develop | ready |  |
-| 0111 | Give retro a resolution order for a workspace holding more than one backlog | design | ready |  |
+| 0111 | Give retro a resolution order for a workspace holding more than one backlog | develop | ready |  |
 | 0114 | Let an agent-run retro complete its release chain instead of stopping half-released | design | ready |  |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
