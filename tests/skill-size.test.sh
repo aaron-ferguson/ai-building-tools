@@ -89,6 +89,7 @@ justification() {
     skills/queue/SKILL.md)     echo "0035 — considered relocating the specification rules; rejected on (a), because every other stage reads them and p is zero — there is no branch here that any run skips" ;;
     skills/develop/SKILL.md)   echo "0035 — considered relocating its worked anecdotes; rejected on both: they are already the one-clause statement of the failure each rule prevents, so moving them leaves a rule with no failure named, and they are read on every run" ;;
     skills/retro/SKILL.md)     echo "0104 — considered relocating Step 4's four dispositions and Step 1's two modes; rejected on both: a run reaches them before it can triage a single entry, so p is zero, and each is mandatory the moment the buffer is non-empty" ;;
+    skills/orchestrate/SKILL.md) echo "0040 — considered relocating Step 7's lock policy and budget-kill recovery, the ~2,100 bytes that put this file over; rejected on BOTH conditions: p is 89% against a section every run reads before it dispatches anything, so nothing shows the branch is skipped, and the policy is mandatory the moment a lock is met — which is exactly when a step behind a pointer gets skipped, and the failure it prevents is a driver stealing a lock from a working stage" ;;
     skills/verify/SKILL.md)    echo "0052 — considered relocating Step 3's mutation guidance to a pointer file; rejected on (b), because it is mandatory the moment an AC rests on an automated check, and a mandatory step behind a pointer is a step that gets skipped" ;;
     *) return 0 ;;
   esac

@@ -22,6 +22,37 @@ next_id: 115
 # number to make the gate quiet would hide exactly what it exists to show (0036).
 findings_threshold: 8
 
+# How long a held `.claude/backlog/.lock/` may be before a driver escalates instead of waiting on
+# it (`orchestrate` Step 7). A lock in use is held for seconds; every figure above it is a stage
+# that died holding it, which blocks every future claim and close in the repo until a human clears
+# it. 900s is two orders of magnitude above the normal hold and well under a stage's own runtime,
+# so a live stage is never escalated and a dead one is not waited on for a session.
+#
+# Read from the lock DIRECTORY's mtime, never from `held-by`: `claim` writes no timestamp there
+# where `close` and `handoff` both do, so the commonest holder is the one a timestamp read cannot
+# see. Fixing that is item 0047's, not the driver's.
+lock_stale_seconds: 900
+
+# Per-stage spend cap a driver passes as `--max-budget-usd`, in USD.
+#
+# DERIVED, NOT CHOSEN. Every figure is MEASUREMENT.md's "Per stage, which is what a reduction is
+# aimed at" table, `$/session` column, 30 sessions as at 2026-08-30: develop 4.03, verify 3.63,
+# retro 2.51 per session. Each base is that mean times 1.5, because the mean is not the maximum and
+# a cap that fires mid-work is strictly worse than no cap — it leaves a held claim, a dirty tree and
+# possibly a taken lock. `per_extra_ticket` is the same mean again, added once per ticket beyond the
+# first in a gate, since a gate's saving is the startup floor and not the work.
+#
+# RECOMPUTE from that table rather than rounding these; a quoted figure is a cache of another file,
+# and this repo has already shipped one that went stale. A cap below a session's ~20k-token startup
+# floor fails every stage identically and reads exactly like a broken CLI.
+stage_budget_usd:
+  develop: 6.05          # 4.03 x 1.5
+  verify: 5.45           # 3.63 x 1.5
+  retro: 3.75            # 2.51 x 1.5
+  per_extra_ticket:
+    develop: 4.03
+    verify: 3.63
+
 # Where work in this project is tracked.
 #   local — this backlog is the source of truth. May live in a public repo.
 #   jira  — Jira is the source of truth; this backlog holds a pulled slice, company policy

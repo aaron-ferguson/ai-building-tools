@@ -91,7 +91,7 @@ why() { python3 "$VALIDATE" "$SCHEMA" "$1" 2>&1 || true; }
 # SCOPE. A criterion written about one step of the skill is not satisfied by the phrase appearing
 # in some other step. Three cases here asserted with a whole-file grep and so measured something
 # NEXT TO the defect they name (the 2026-09-06 QA pass): AC21's `findings-parked count` occurs
-# three times, twice in Step 4 describing the schema envelope, so deleting it from Step 8 -- the
+# three times, twice in Step 4 describing the schema envelope, so deleting it from the report step -- the
 # report step the criterion is written about -- left the suite green. Same for AC16's citation,
 # which Step 7 also carries. Extracting the section first is the fix, and AC20's guard below was
 # already doing it.
@@ -1054,10 +1054,10 @@ echo "AC21 — the report carries what the run learned"
 # pass). AC21 is the only guard on FR6's "the run surfaces what it learned", and FR13 removed the
 # narrative that would otherwise have carried it, so measuring the wrong section leaves the loop
 # free to run smoothly and teach nobody anything.
-if says "$SKILL" "Step 8" 'findings-parked count'; then
+if says "$SKILL" "Step 9" 'findings-parked count'; then
   ok "the report carries the findings-parked count"
 else
-  bad "AC21 — Step 8's report carries no findings-parked count; nothing shows the run is learning anything"
+  bad "AC21 — Step 9's report carries no findings-parked count; nothing shows the run is learning anything"
 fi
 
 echo "AC23 — the plugin still declares its skill set, and this one is in it"
@@ -1078,6 +1078,265 @@ if printf '%s' "$sec" | grep -qF '/orchestrate'; then
   ok "README's skill table lists /orchestrate"
 else
   bad "AC24 — README's skill table does not list /orchestrate"
+fi
+
+# ------------------------------------------------------------------------------------------------
+# 0040 — FR15/FR16, the two ways an unattended loop strands the whole repository.
+#
+# BOTH CRITERIA ARE ABOUT STATE ON DISK THE SUPERVISOR READS AND REFUSES TO CHANGE, which is why
+# these are not all greps. A `.lock/` directory with a given age, and a config key with or without
+# its derivation, are constructible — so the age mechanism and the derivation rule are exercised
+# for real, and only the instructions to a session stay prose.
+#
+# WHY THE AGE MECHANISM IS RUN RATHER THAN READ. `claim` writes `claim <id> by <token>` into
+# `.lock/held-by` with NO TIMESTAMP, where `close` and `handoff` both write one — so a lock age
+# taken from `held-by` is unavailable on exactly the path that holds the lock most often, and a
+# skill prescribing it would read as correct and work in testing against a close-held lock. The
+# guard extracts the block the skill actually prescribes and runs it against an aged fixture and a
+# fresh one; prescribing the `held-by` read instead reds on the aged fixture.
+
+echo "AC25 — the supervisor never takes or breaks the lock"
+
+LOCKSTEP="Step 7"
+
+if says "$SKILL" "$LOCKSTEP" 'never takes it and never breaks it'; then
+  ok "the skill states the supervisor neither takes nor breaks the lock"
+else
+  bad "AC25 — $LOCKSTEP does not state the lock policy; the tempting answer is to break it and carry on"
+fi
+
+# NO DISPATCHABLE PATH REMOVES THE LOCK.
+#
+# Anchored to STATE, not to vocabulary: correct prose is free to NAME `rm -rf .claude/backlog/.lock`
+# in the sentence forbidding it, and an absence grep over the whole file would red that correct
+# file (testing-conventions.md, a negative assertion anchors to a state). The reachable state in an
+# instruction file is its FENCED BLOCKS — the only text a session copies and runs — so the check
+# extracts those and asserts none of them removes the lock.
+#
+# Derived over every file in skills/orchestrate/ rather than over a named list, so a second file
+# added to that directory is under the check the day it lands (testing-conventions.md, a guard that
+# enumerates its own subjects cannot notice a new one).
+fenced() {
+  awk '/^```/ { inside = !inside; next } inside' "$1"
+}
+removers=""
+for f in "$ROOT"/skills/orchestrate/*; do
+  [ -f "$f" ] || continue
+  hit="$(fenced "$f" | grep -nE '(rm|rmdir|unlink)[^|]*\.lock' || true)"
+  [ -n "$hit" ] && removers="$removers $(basename "$f"):$hit"
+done
+if [ -z "$removers" ]; then
+  ok "no fenced block in skills/orchestrate/ removes the lock"
+else
+  bad "AC25 — a dispatchable path removes the lock:$removers — a driver stealing a lock from a stage that is still working"
+fi
+
+# THE AGE MECHANISM, RUN. The skill prescribes one block; the guard finds it by the config key it
+# must read, writes it out, and runs it in two authored backlogs. Nothing here is reimplemented —
+# a helper that parses the lock the way the skill parses it would pass and fail with it
+# (testing-conventions.md, a helper that reimplements the logic under test).
+# ONE block, not the union of them. `fenced` concatenates every block in the file with nothing
+# between — it drops the fence lines, so two adjacent blocks abut and no separator survives to split
+# them on. Extracting "the block containing the token" has to be done at the fence.
+agecheck="$FIX/agecheck.sh"
+awk -v tok='lock_stale_seconds' '
+  /^```/ {
+    if (inside) { if (hit) { for (i = 0; i < n; i++) print buf[i]; exit } ; n = 0; hit = 0 }
+    inside = !inside; next
+  }
+  inside { buf[n++] = $0; if (index($0, tok)) hit = 1 }
+' "$SKILL" > "$agecheck" 2>/dev/null || true
+
+mkbacklog() {   # mkbacklog <dir> <stale-seconds>
+  mkdir -p "$1/.claude/backlog"
+  printf 'project: fixture\nlock_stale_seconds: %s\n' "$2" > "$1/.claude/backlog/config.yml"
+}
+
+if [ -s "$agecheck" ] && grep -q 'lock_stale_seconds' "$agecheck"; then
+  ok "the skill prescribes a runnable lock-age check that reads lock_stale_seconds"
+
+  AGED="$FIX/aged"; mkbacklog "$AGED" 900
+  mkdir -p "$AGED/.claude/backlog/.lock"
+  # `claim`'s held-by, verbatim in shape: an id and a token, and NO timestamp. A mechanism reading
+  # a date out of this file has nothing to read, which is the defect this fixture exists to catch.
+  printf 'claim 0001 by ab12\n' > "$AGED/.claude/backlog/.lock/held-by"
+  touch -t 202601010000 "$AGED/.claude/backlog/.lock"
+  out="$( cd "$AGED" && sh "$agecheck" 2>&1 || true )"
+  if printf '%s' "$out" | grep -qi 'aged'; then
+    ok "an aged lock is classified aged from the directory itself, with no timestamp in held-by"
+  else
+    bad "AC25 — the prescribed check did not call a lock from 2026-01-01 aged; it printed [$out]"
+  fi
+
+  FRESH="$FIX/fresh"; mkbacklog "$FRESH" 900
+  mkdir -p "$FRESH/.claude/backlog/.lock"
+  printf 'claim 0002 by cd34\n' > "$FRESH/.claude/backlog/.lock/held-by"
+  out="$( cd "$FRESH" && sh "$agecheck" 2>&1 || true )"
+  if printf '%s' "$out" | grep -qi 'fresh'; then
+    ok "a lock taken a moment ago is classified fresh — the normal case, held for seconds"
+  else
+    bad "AC25 — the prescribed check did not call a just-taken lock fresh; it printed [$out]"
+  fi
+
+  NOLOCK="$FIX/nolock"; mkbacklog "$NOLOCK" 900
+  out="$( cd "$NOLOCK" && sh "$agecheck" 2>&1 || true )"
+  if [ -z "$out" ]; then
+    ok "no lock at all decides nothing and says nothing"
+  else
+    bad "AC25 — the prescribed check spoke about a lock that does not exist: [$out]"
+  fi
+else
+  bad "AC25 — the skill prescribes no runnable lock-age check naming lock_stale_seconds; the age is then a session's guess"
+  bad "AC25 — an aged lock is unclassifiable without that check"
+  bad "AC25 — a fresh lock is unclassifiable without that check"
+  bad "AC25 — an absent lock is unclassifiable without that check"
+fi
+
+# The two branches, separately. An alternation is only as strong as its weakest branch, and here
+# the wrong branch is the expensive one: escalating a lock held for two seconds stops a healthy run.
+if says "$SKILL" "$LOCKSTEP" 'dispatches nothing'; then
+  ok "an aged lock stops dispatch"
+else
+  bad "AC25 — $LOCKSTEP does not say an aged lock dispatches nothing"
+fi
+if says "$SKILL" "$LOCKSTEP" 'waits rather than escalating'; then
+  ok "a lock younger than the configured age is waited on, not escalated"
+else
+  bad "AC25 — $LOCKSTEP does not say a young lock is waited on; a lock in use is the normal case"
+fi
+if says "$SKILL" "$LOCKSTEP" 'run log'; then
+  ok "the escalation names the process that should have held it, from the run log"
+else
+  bad "AC25 — the escalation does not join the lock to the run log; the holder is then unnameable"
+fi
+
+if awk '/^lock_stale_seconds:/ { print $2 }' "$ROOT/.claude/backlog/config.yml" | grep -qE '^[0-9]+$'; then
+  ok "config.yml carries lock_stale_seconds as a whole number"
+else
+  bad "AC25 — config.yml has no lock_stale_seconds; the age is a number inside a skill, which is the one place FR15 says it must not be"
+fi
+if awk '/^lock_stale_seconds:/ { print }' "$ROOT/skills/queue/templates/config.yml" | grep -q .; then
+  ok "the queue template ships lock_stale_seconds, so a new backlog has the key"
+else
+  bad "AC25 — skills/queue/templates/config.yml omits lock_stale_seconds; every new project's driver has no age to read"
+fi
+
+# ------------------------------------------------------------------------------------------------
+echo "AC26 — a stage killed by its spend cap leaves a state the escalation describes"
+
+# Three separate assertions rather than one alternation: a human following the escalation needs all
+# three, and an alternation stays green on whichever branch survives (testing-conventions.md).
+# The definite article is load-bearing. `a claim token` occurs in the step listing what the
+# supervisor never does, so the bare phrase was green there before this criterion had a section at
+# all — a guard measuring something next to the defect it names (testing-conventions.md).
+for phrase in 'the claim token' 'the dirty paths' 'the lock state'; do
+  if says "$SKILL" "$LOCKSTEP" "$phrase"; then
+    ok "the escalation names $phrase"
+  else
+    bad "AC26 — the escalation does not name $phrase; recovering it needs the dead stage's transcript"
+  fi
+done
+if says "$SKILL" "$LOCKSTEP" 'not read as a crash'; then
+  ok "an over-budget exit is routed as an escalation rather than read as a crash"
+else
+  bad "AC26 — the skill does not route the over-budget exit; the cap's own kill reads as a broken CLI"
+fi
+if says "$SKILL" "$LOCKSTEP" 'starts nothing further'; then
+  ok "the supervisor starts nothing further after a budget kill"
+else
+  bad "AC26 — the skill does not stop the run after a budget kill; the next stage inherits a held claim and a dirty tree"
+fi
+
+# THE DERIVATION, CROSS-READ AGAINST ITS SOURCE.
+#
+# A bare number is what this rejects: the block of comments directly above the key must carry the
+# per-session figures it was derived from, and those figures are read out of MEASUREMENT.md rather
+# than restated here — so the day that table moves, this reds instead of drifting. The same shape
+# as AC14's guard above, and for the same reason: a figure a file quotes about another file is a
+# cache (develop Step 2).
+derivation() {
+  awk '
+    /^stage_budget_usd:/ { print buf; exit }
+    /^#/                 { buf = buf " " $0; next }
+                         { buf = "" }
+  ' "$1" | tr -s ' '
+}
+
+CFG="$ROOT/.claude/backlog/config.yml"
+if grep -q '^stage_budget_usd:' "$CFG"; then
+  ok "config.yml carries the per-stage spend cap"
+else
+  bad "AC26 — config.yml carries no stage_budget_usd; the cap stays a guess inside a skill"
+fi
+
+why_derived="$(derivation "$CFG")"
+missing=""
+for stage in develop verify retro; do
+  # SELECTED BY ITS HEADER, and the column INDEX is read from that header rather than written here.
+  # A field count is not a selector: MEASUREMENT.md holds three per-stage tables and two of them
+  # are eight pipe-fields wide, so `NF == 8` first returned the context-token table's 74,970 as
+  # though it were a dollar figure — a guard reading the wrong table, with every figure resolving.
+  # Deriving the index means adding a column to that table cannot silently move what is read.
+  fig="$(awk -F'|' -v s=" $stage " '
+    /\$\/session/ { for (i = 1; i <= NF; i++) if ($i ~ /\$\/session/) col = i; intable = 1; next }
+    !/^\|/         { intable = 0 }
+    intable && col && $2 == s { gsub(/[ *]/, "", $col); print $col; exit }
+  ' "$ROOT/MEASUREMENT.md")"
+  if [ -z "$fig" ]; then
+    bad "HARNESS — MEASUREMENT.md's per-stage \$/session table has no row for $stage"
+  elif printf '%s' "$why_derived" | grep -qF -- "$fig"; then
+    ok "the cap's derivation cites MEASUREMENT.md's $stage figure of USD $fig per session"
+  else
+    missing="$missing $stage($fig)"
+  fi
+done
+if [ -n "$missing" ]; then
+  bad "AC26 — the cap is stated without the figures it came from:$missing — the next person to change it rounds it instead"
+fi
+
+# A BARE NUMBER FAILS. Fed the exact defect the rule exists to catch, so the check above is not
+# merely wired to a file that happens to be correct (testing-conventions.md, prove a new guard fails).
+BARE="$FIX/bare.yml"
+printf 'project: fixture\nstage_budget_usd:\n  develop: 6.00\n' > "$BARE"
+if [ -z "$(derivation "$BARE")" ]; then
+  ok "a cap with no derivation above it is rejected"
+else
+  bad "HARNESS — the derivation reader accepted a bare cap; every case above is then unfalsifiable"
+fi
+ANNOTATED="$FIX/annotated.yml"
+printf '# derived from MEASUREMENT.md: 4.03 per develop session\nstage_budget_usd:\n  develop: 6.00\n' > "$ANNOTATED"
+if printf '%s' "$(derivation "$ANNOTATED")" | grep -qF '4.03'; then
+  ok "a cap with its derivation above it is read"
+else
+  bad "HARNESS — the derivation reader missed a stated derivation; the real check would red a correct config"
+fi
+
+# The template has no history to derive from, so it must ship the INSTRUCTION and no number. A
+# figure copied into a template is a derivation for somebody else's project.
+TPL="$ROOT/skills/queue/templates/config.yml"
+if grep -q '^stage_budget_usd:' "$TPL"; then
+  ok "the queue template ships the stage_budget_usd key"
+else
+  bad "AC26 — the template omits stage_budget_usd; a new backlog's driver has no cap to read"
+fi
+# Written to REQUIRE THE KEY first. Asking only "is there a digit under stage_budget_usd" is green
+# when the key is absent entirely — a filter that matches nothing and then asserts over it, green
+# precisely when the thing it guards has gone missing (testing-conventions.md).
+tpl_state="$(awk '
+  /^stage_budget_usd:/ { key = 1; inside = 1; next }
+  /^[^ #]/             { inside = 0 }
+  inside && /[0-9]/    { fig = 1 }
+  END { print (key ? (fig ? "figure" : "instruction-only") : "absent") }
+' "$TPL")"
+case "$tpl_state" in
+  instruction-only) ok "the template ships the key with no cap figure, only the derivation instruction" ;;
+  figure)  bad "AC26 — the template ships a cap figure; it has no cost_tracking history, so that number is another project's derivation" ;;
+  *)       bad "AC26 — the template has no stage_budget_usd key at all, so there is nothing to ship a figure under" ;;
+esac
+if derivation "$TPL" | grep -qF 'cost_tracking'; then
+  ok "the template tells a project to derive its cap from cost_tracking history"
+else
+  bad "AC26 — the template does not say where the cap comes from; the first number written there will be a guess"
 fi
 
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"

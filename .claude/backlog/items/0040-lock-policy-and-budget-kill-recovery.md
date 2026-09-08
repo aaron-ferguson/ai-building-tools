@@ -20,6 +20,7 @@ claimed_at: 2026-09-08T02:59:23Z
 touches:
   - skills/orchestrate/SKILL.md
   - tests/orchestrate.test.sh
+  - tests/skill-size.test.sh
   - .claude/backlog/config.yml
   - skills/queue/templates/config.yml
 ---

@@ -266,7 +266,44 @@ a release.
 
 ---
 
-## Step 7 — What this never does
+## Step 7 — A held lock, and a stage killed by its cap
+
+Both strand the whole repository rather than one ticket, and neither is anything `./next --drift`
+can see.
+
+**The lock is not the supervisor's to take. It never takes it and never breaks it** — every `claim`
+and `close` in the repo waits behind a broken one, including sessions this run knows nothing about,
+and the tempting answer is a driver stealing a lock from a stage that is still working. Age it from
+the **directory**, never from `held-by`: `claim` writes no timestamp there where `close` and
+`handoff` both do, so the commonest holder is the one a timestamp read cannot see.
+
+```sh
+LOCK=.claude/backlog/.lock
+[ -d "$LOCK" ] || exit 0
+stale=$(sed -n 's/^lock_stale_seconds: *//p' .claude/backlog/config.yml)
+mtime=$(stat -f %m "$LOCK" 2>/dev/null || stat -c %Y "$LOCK")
+age=$(( $(date -u +%s) - mtime ))
+[ "$age" -gt "$stale" ] && echo "aged $age" || echo "fresh $age"
+```
+
+**Fresh** — it **waits rather than escalating**. A lock in use is the normal case and is held for
+seconds. **Aged** — it escalates, naming the age and the ticket `held-by` records, joined through
+the **run log** to the stage process that should have held it, and **dispatches nothing**.
+
+**A stage killed by `--max-budget-usd` is worse than a killed supervisor**, whose tree is at least
+clean: here the claim is held, the tree is dirty and the lock may be taken. That exit routes as an
+escalation and is **not read as a crash**. The escalation names **the claim token**, **the dirty
+paths** and **the lock state**, so nothing needed to recover it lives only in the dead stage's
+transcript, and it lands in the run log timestamped before it reaches the user. Then the supervisor
+**starts nothing further**. Releasing that claim, cleaning that tree and removing that lock are a
+human's, every one — recovery is not authority this loop was given.
+
+**The cap is `stage_budget_usd` in `config.yml`, derived from `cost_tracking:` history and recorded
+with the derivation beside it**, never a figure chosen here and never one rounded later.
+
+---
+
+## Step 8 — What this never does
 
 - **It never pushes, bumps a version, installs, or restarts** without the user approving that
   specific action in that session. "Ship it" earlier in the session is not that approval, however
@@ -284,7 +321,7 @@ a release.
 
 ---
 
-## Step 8 — Report
+## Step 9 — Report
 
 What belongs on the screen and what belongs on disk is `references/REPORTING.md` at the plugin
 root. Three things it cannot say, because they are specific to a run rather than to a stage:

@@ -20,6 +20,27 @@ next_id: 1
 # weekly if the buffer fills slower" has no fixture and stays a human's judgement.
 findings_threshold: 8
 
+# How long a held `.claude/backlog/.lock/` may be before a driver escalates instead of waiting on
+# it (`orchestrate` Step 7). Seconds. A lock in use is held for seconds; anything far above that is
+# a stage that died holding it, and it blocks every claim and close in the repo until a human
+# clears it. Read from the lock DIRECTORY's mtime, never from `held-by`, which the claim path
+# writes without a timestamp.
+lock_stale_seconds: 900
+
+# Per-stage spend cap a driver passes as `--max-budget-usd`, in USD. DELIBERATELY UNSET: this is
+# the one key a template must not fill in. A number shipped here is another project's derivation,
+# and a cap below a session's startup floor kills every stage identically while reading exactly
+# like a broken CLI.
+#
+# Fill it from THIS project's own `cost_tracking:` history once there is some — the mean cost per
+# session for each stage, with headroom because the mean is not the maximum, plus that mean again
+# per ticket beyond the first in a gate — and record the figures it came from beside it, so the
+# next person to change it re-derives rather than rounds.
+stage_budget_usd:
+  develop:
+  verify:
+  retro:
+
 # Commands qa runs per level. Omit a level the project genuinely doesn't have —
 # qa will refuse an item whose qa_level has no command rather than silently skip it.
 commands:
