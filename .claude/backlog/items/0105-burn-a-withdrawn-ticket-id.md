@@ -19,9 +19,12 @@ expects:
 claimed_by: "61a6"
 claimed_at: 2026-09-08T14:25:41Z
 touches:
-  - .claude/backlog/config.yml       # the counter, and the comment that documents it as monotonic
-  - skills/queue/SKILL.md            # the withdrawal path that currently recycles
-  - tests/citations.test.sh          # where an item-ID citation check belongs
+  - .claude/backlog/config.yml
+  - skills/queue/SKILL.md
+  - skills/queue/templates/item.md
+  - tests/citations.test.sh
+  - tests/retro-tool-edit.test.sh
+  - tests/skill-size.test.sh
 ---
 ## Problem
 
