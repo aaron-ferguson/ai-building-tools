@@ -84,6 +84,31 @@ touches:
 ITEM
 }
 
+# add_item_close_by <id> <status> <blocked_by> <close_by-line>
+# The line is passed WHOLE so a case can hand in the empty string and get an item with no
+# `close_by:` key at all — which is the default-reading half of 0086 AC8.
+add_item_close_by() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: develop
+status: $2
+qa_level: unit
+$4
+size: s
+blocked_by: $3
+expects:
+  - some/file.md
+claimed_by:
+claimed_at:
+touches:
+---
+
+## Problem
+ITEM
+}
+
 # A held item whose frontmatter lists are written out verbatim, so a case can put a YAML comment,
 # a quoted path or a comment-only entry where a real session would. `add_item`'s fixed blocks
 # cannot express any of those, and the comment handling is the whole subject of 0031.
@@ -1236,6 +1261,30 @@ seal
 out="$(run_next develop)" && rc=0 || rc=$?
 assert_not_contains "no TAKE across a live verify claim" "$out" 'TAKE      0001'
 assert_contains     "and the collision is reported"      "$out" 'COLLIDES  0001'
+
+# --- 0086 AC8 — the take line carries close_by ------------------------------------------------
+# A develop session reads this one line to decide what it is taking on, and `close_by` decides
+# whether that session closes the ticket itself or hands it to a QA pass. Printed unconditionally,
+# so the pair of cases below is the point: the DEFAULT is asserted as well as the opted-in value,
+# because a conditional print would leave the commonest branch with no case on it at all.
+echo "0086 AC8 — the take line prints close_by alongside size and qa"
+scaffold
+add_row 0001 'A light ticket' develop ready 0000
+add_item_close_by 0001 ready '[]' 'close_by: develop'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+assert_contains "the whole take line, in order" "$out" 'TAKE      0001 | A light ticket | size s | qa unit | close develop'
+
+echo "0086 AC8/AC9 — and an item with no close_by: line reads as verify, not as blank"
+scaffold
+add_row 0001 'An ordinary ticket' develop ready 0000
+add_item_close_by 0001 ready '[]' ''
+assert_not_contains "the fixture really has no close_by: line" "$(cat "$FIX/.claude/backlog/items/0001-fixture.md")" 'close_by'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+assert_contains "absent prints the default, never an empty field" "$out" 'TAKE      0001 | An ordinary ticket | size s | qa unit | close verify'
 
 # --- result -----------------------------------------------------------------------------------
 echo

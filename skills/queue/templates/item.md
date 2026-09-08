@@ -19,7 +19,31 @@ next: queue | design | develop | verify
 # this list: a project is `active` (see `parent:` below — its `next:` stays empty), and a dormant
 # ticket in `SCHEDULED.md` is `scheduled` with a `wake:` date.
 status: ready | waiting | blocked | in-progress | done | withdrawn
-qa_level: verify | unit | integration | e2e
+# What is checked, and by which runner. `unit`/`integration`/`e2e` are `testing-conventions.md`'s
+# pyramid and are CUMULATIVE. The two below it are not on the pyramid and imply nothing else:
+# `verify` = no runner applies, but a MECHANICAL check does — a grep, a path check, a schema
+# validation the ticket names explicitly. `review` = no runner and no mechanical check either,
+# because the artifact is prose and the checks are judgement; its content is a checklist
+# configured per repo (`review: checklist:` in `config.yml`), and a ticket declaring it where
+# nothing is configured is REFUSED rather than quietly dropped to a lower level.
+# `verify` and `review` are both live and neither replaces the other.
+qa_level: verify | review | unit | integration | e2e
+# WHO CLOSES, which is a different question from what is checked — two orthogonal fields, never
+# one enum, because an enum holding both drifts. `verify` (the DEFAULT, and what an absent field
+# means) = an independent pass reads the criteria and closes. `develop` = the light tier: the
+# session that BUILT it closes it, paying no second session's startup floor.
+#
+# `develop` IS PERMITTED ONLY where every acceptance criterion is discharged by a committed
+# automated assertion, NAMED ON THE AC LINE, which the build session proved red before green. No
+# criterion whose verdict is a reading, a judgement or an eyeball — the tier is safe only where
+# there is no belief to be wrong about, and the two recorded times the independent gate bit in
+# this repo, it bit on AC quality rather than on code. `.claude/backlog/close` enforces this
+# mechanically and refuses the close otherwise.
+#
+# `queue` SETS this field. `develop` may RAISE it from `develop` to `verify` when it finds a
+# criterion that is not a real assertion, and may never set or lower it to `develop`.
+# `qa_level: review` can never carry `close_by: develop` — a review's checks are judgement.
+close_by: verify | develop
 # OPTIONAL, and only where some ACs can be observed by NO runner — a physical device, a person's
 # eye. Free text naming which ACs, on what surface, and who: `AC1-AC3 — iPhone Safari, the author`.
 # It does not replace `qa_level`, which keeps naming the runner that discharges the scripted half;
@@ -160,6 +184,10 @@ says *what* to exercise; the frontmatter says at which level.
 
 - **Why that level:** <one line; e2e needs a reason that unit + integration can't cover it>
 - **Specific checks:** <suites to run, journeys to drive, manual steps if any>
+
+At `qa_level: review` the checks come from the checklist `config.yml` names, and `verify` records
+one ticked box per checklist line in a `## Review checklist` section it adds below. `close` refuses
+a checklist of bullets with no box ticked, so an unperformed review cannot be closed as a clean one.
 
 ## Out of scope
 

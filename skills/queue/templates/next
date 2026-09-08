@@ -776,8 +776,15 @@ if [ -n "${1:-}" ]; then
       collided=1
       continue
     fi
-    printf 'TAKE      %s | %s | size %s | qa %s\n' \
-      "$id" "$(field "$row" "$TITLE")" "$(fm "$it" size)" "$(fm "$it" qa_level)"
+    # `close_by` is printed unconditionally, ABSENT OR NOT, rather than only when it is `develop`.
+    # It decides whether the develop session closes the ticket itself or hands it to a QA pass, so a
+    # session reading this line has to be able to tell "the default" from "the field was never
+    # read" — and a conditional print makes the commonest branch the one no case can assert on
+    # (0086 AC8).
+    take_close_by="$(fm "$it" close_by)"
+    [ -n "$take_close_by" ] || take_close_by=verify
+    printf 'TAKE      %s | %s | size %s | qa %s | close %s\n' \
+      "$id" "$(field "$row" "$TITLE")" "$(fm "$it" size)" "$(fm "$it" qa_level)" "$take_close_by"
     printf 'EXPECTS   %s\n' "${exp:-not predicted — check this one by hand}"
     took=1
     break

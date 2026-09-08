@@ -125,7 +125,7 @@ absent "the superseded \`container ticket\` wording is gone" "$ITEM" "container 
 
 echo
 echo "NFR migration — additive only: no pre-existing frontmatter key was dropped"
-for key in id title type next status qa_level size created source expects claimed_by claimed_at touches; do
+for key in id title type next status qa_level close_by size created source expects claimed_by claimed_at touches; do
   if printf '%s\n' "$FM" | grep -q "^$key:"; then
     ok "\`$key:\` survives"
   else
