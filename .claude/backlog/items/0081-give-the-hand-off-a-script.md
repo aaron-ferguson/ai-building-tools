@@ -2,7 +2,7 @@
 id: "0081"
 title: Give the hand-off a script, as claim and close have
 type: feature
-next: queue
+next: verify
 status: ready
 qa_level: unit
 size: m
@@ -62,7 +62,13 @@ indistinguishable in the git record from a clean sequential hand-off.
 4. **The release is the final act.** Either the hand-off commit is the last write of the stage, or the
    release is folded into the same commit as the stage's final writes. The skills' hand-off steps say
    so, and say why no lock can catch the alternative.
-5. **`./next --drift` reports zero for the row handed off**, checked before and after.
+5. ~~**`./next --drift` reports zero for the row handed off**, checked before and after.~~
+   **Withdrawn 2026-09-08 — the instrument cannot see the property.** `./next --drift` compares the
+   `Status` column against `blocked_by` and reads neither the item's `next:` nor its `status:`
+   (`next:473-494`), so it prints `no drift` over exactly the row/item disagreement FR2 exists to
+   prevent — confirmed by mutation, `verify [9840]`. FR2's *all five, or it fails* is what carries
+   this requirement, and the report's blindness is **`0115`**. Numbering kept: `tests/handoff.test.sh`
+   and this item's two QA verdicts cite these numbers, and a renumber re-points a citation silently.
 
 ## Non-functional requirements
 
@@ -80,7 +86,14 @@ indistinguishable in the git record from a clean sequential hand-off.
   changes nothing**, with a message naming the mismatch — the 0087 case.
 - [ ] AC3 — It refuses a token that does not hold the claim, and a row not at the expected stage,
   each with its own message and no file changed.
-- [ ] AC4 — After a successful hand-off, `./next --drift` exits zero for that row.
+- [ ] AC4 — Given a successful hand-off, when `./next --drift` runs, then it exits zero for that
+  row — **recorded as evidence of nothing**, and tickable on that basis alone. `--drift` compares the
+  `Status` column against `blocked_by` only and reads no item field, so its zero is returned equally
+  by a correct `handoff` and by one with `mv "$queue_tmp" "$QUEUE"` removed (driven, mutation diffed
+  first, `verify [9840]`). The atomicity AC4 was written to check is carried by **AC1** (all five
+  item fields and both row cells move in one commit) and **AC2** (a row and item that disagree going
+  in are refused, from both sides). The blind report is **`0115`**, which also makes
+  `tests/handoff.test.sh:461-472` a guard that can fail. Do not tick this as *verified by `--drift`*.
 - [ ] AC5 — `sh -n` passes and the installed copy is byte-identical to the template
   (`tests/backlog-scripts-installed.test.sh`).
 - [ ] AC6 — `develop` and `verify` name `./handoff` as the supported path and keep the by-hand
@@ -100,6 +113,12 @@ indistinguishable in the git record from a clean sequential hand-off.
 
 - Changing what a hand-off means, or which stages hand to which. Only the mechanism.
 - Retrofitting the 29-second window into closed tickets' history.
+- **`./next`, and what `--drift` can see.** That is `0115`. `next` only reads and commits nothing,
+  and widening this ticket into it would mean re-opening a build that is finished and green to fix a
+  criterion's instrument rather than its subject.
+- **`tests/handoff.test.sh:461-472`, the AC4 case.** It becomes a live guard the moment `--drift`
+  gains the check, so it is `0115`'s to fix rather than a case to delete here (`0089` is the standing
+  sweep for its class).
 
 ## Notes & decisions
 
@@ -237,6 +256,33 @@ window mid-TDD, which `develop` Step 5 says is settled by `git status` alone.
   not repair it — not its ticket. Useful to the QA pass as the shape to check `handoff`'s read-back
   against: **all five fields land or none does** has to hold in both directions, and only one of them
   is what 0087 demonstrated.
+
+### Re-specified 2026-09-08 [queue] — AC4's instrument, not the code
+
+**The code at `2344d29` is right and stays.** Verify `[9840]` drove all seven ACs and all three NFR
+rows against the real script and re-ran ten mutations, control 104/0 before and after every one:
+six ACs and every NFR row green, the whole suite green at baseline and at verdict (23 files, 1,134
+assertions, 0 failed). Nothing in `skills/queue/templates/handoff`, `.claude/backlog/handoff` or
+`tests/handoff.test.sh` needs to change, which is why this returns to `verify` and not to `develop` —
+no FR gains code.
+
+**What changed here, and only this.** FR5 and AC4 both named `./next --drift` as the instrument for
+FR2's *all five, or it fails*. It cannot answer that question: `--drift` is a `Status`-column-versus-
+`blocked_by` cache check (`next:473-494`) and reads no item field at all, so its zero exit survives
+the queue write being mutated out of `handoff` — which is the `0087` drift itself. Both are now the
+observation `queue` Step 2 requires of a criterion whose reproduction lies outside the ticket's own
+scope, each naming `0115` as the fix.
+
+**Why not simply delete AC4.** Two verdicts and one test file cite these numbers by position, and
+`queue`'s rule for a withdrawn id applies to a withdrawn criterion for the same reason: a citation
+left pointing at nothing is a dead link a reader can see, and one silently re-pointed at different
+work is not.
+
+**Why `verify` gets it back rather than closing it here.** `./close` closes on ticked ACs, and AC4
+was the only unticked one; the tick is a statement about what was checked, and only the stage that
+drives the check may make it. What `verify` owes this pass is the six PASS rows re-confirmed and AC4
+ticked as the recorded observation above — not a re-run of the ten-mutation sweep, which
+`[9840]` already reproduced independently of the build notes.
 
 ## QA evidence
 

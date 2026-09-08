@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0081 | Give the hand-off a script, as claim and close have | queue | ready |  |
+| 0081 | Give the hand-off a script, as claim and close have | verify | ready |  |
 | 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | develop | ready |  |
 | 0078 | Route a finding by what it is about, not which repo you are standing in | develop | ready |  |
 | 0111 | Give retro a resolution order for a workspace holding more than one backlog | design | ready |  |
@@ -31,6 +31,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
 | 0106 | Make touches mean one thing across claim, close and a transient mutation | develop | ready |  |
+| 0115 | Make --drift see a row and its item disagreeing, as three files say it does | develop | ready |  |
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | develop | ready |  |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
 | 0083 | Decide what a second checkout may do with the backlog | design | ready |  |
