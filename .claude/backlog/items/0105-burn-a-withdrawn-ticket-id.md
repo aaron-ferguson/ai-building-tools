@@ -94,6 +94,41 @@ re-pointing. That removes the urgency and none of the defect: the withdrawal pat
 
 ## Notes & decisions
 
+- 2026-09-08 — **The Problem section is wrong on a material point, and git is the only thing that
+  could say so.** It states the first `0104` "landed 2026-09-05 at commit `b9a5ee0`" as an issued id.
+  `git log --all --diff-filter=A -- '.claude/backlog/items/0104-*'` returns exactly ONE addition —
+  `7764732`, the withdrawn in-window-verify ticket — and `git log -S'| 0104 |'` finds no other row.
+  `b9a5ee0` is a `retro` landing that touched no backlog file at all: no row, no item file, no id
+  claim. The five citations therefore named an id that **no ticket held when they were written**,
+  and which was afterwards issued to unrelated work. That is worse than the ticket describes, and
+  it is not reachable by `develop` Step 2's grep — a grep answers "does this still exist", and the
+  claim here was about what once did. For a ticket asserting an id's history, `git log --diff-filter=A`
+  over `items/<id>-*` is the check.
+- 2026-09-08 — **AC3 and *Out of scope* cannot both be satisfied, and the resolution is FR2's own
+  mechanism.** AC3 wants the guard red on the five live citations; Step 5 wants a green tree; *Out
+  of scope* forbids rewriting them and then, in its next sentence, calls what they should say "the
+  claiming session's call". Taking the second sentence: the citations were repointed at `b9a5ee0`,
+  the commit that actually landed the work, which resolves permanently in git and cannot be
+  reissued. AC3's live red was observed first and is reproducible — `perl -pi -e 's/b9a5ee0 AC1/0404
+  AC1/' tests/retro-tool-edit.test.sh` reds the shipped-tree case naming the file and the id.
+- 2026-09-08 — **A tombstone item file was considered for 0104 and rejected.** It would have made
+  the citations resolve without touching them, satisfying *Out of scope* literally — but they would
+  then have resolved to the **withdrawn in-window-verify ticket**, which is different work. That is
+  precisely the silent re-pointing this ticket exists to prevent, arriving through the fix.
+- 2026-09-08 — **The guard's first run reported three unresolved citations, not two: the third was
+  its own source.** `tests/` is covered, so `tests/citations.test.sh` is covered, so a fixture id
+  written there in an anchored form is a real citation of an unissued id. Anchoring spares the
+  fixture TREE and not the source that authors it. Fixed with `UNISSUED=0404`, so the literal never
+  appears anchored in a covered file; the header says why.
+- 2026-09-08 — **FR3's scope was deliberately widened from `tests/` to `cited_files()` plus
+  `tests/`.** Probed first: repo-wide the same matcher finds 59 citations and the same single
+  unresolved id, so the widening cost nothing and covers the skills and references where an id is
+  just as citable. Reusing `cited_files()` also keeps the set derived rather than enumerated.
+- 2026-09-08 — **`measurement.test.sh` is red on a privacy NFR that is not this ticket's.** Three
+  files publish a home-directory path: `FINDINGS.md:74`, `items/0060:81`, `items/0111:29`, last
+  written by `bb9a16c` and `b9d11af`. Reproduced at base commit `0f73d4e` in a throwaway worktree,
+  so it pre-dates this work. Left alone; it still needs a row.
+
 - 2026-09-07 — Filed by `retro` from `FINDINGS.md`. The ID burn was executed by that retro (see
   Problem); the counter now stands at 111 with 0104 unissued. Verified before filing: `next_id: 104`,
   `0104` absent from `QUEUE.md` and `DONE.md`, no `items/0104-*`, five citations in two test files.

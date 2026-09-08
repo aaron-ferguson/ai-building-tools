@@ -109,3 +109,22 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   yields 6.04 and 3.76 and reads as drift (pointer: `.claude/backlog/config.yml`
   `stage_budget_usd`, `tests/orchestrate.test.sh` *AC26*).
 
+- 2026-09-08 — **`skills/queue/templates/config.yml` still names skills that were renamed.** Line 1
+  reads "Read by the capture, develop, and qa skills"; the suite ships `queue`, `develop` and
+  `verify`. Every project scaffolded from this template inherits the wrong names. Left alone as
+  adjacent to 0105, which rewrote only the `next_id` comment two lines below it. This still needs a row.
+- 2026-09-08 — **`measurement.test.sh`'s privacy NFR has been red since before 0105 was claimed.**
+  Three tracked files publish `/Users/<name>/Documents/AI`: `FINDINGS.md:74`, `items/0060:81` and
+  `items/0111:29` — the last two committed at `b9d11af`, which tracked a file whose own untracked
+  status a finding had relied on. Reproduced at `0f73d4e`. This still needs a row.
+- 2026-09-08 — **A ticket asserting an id's history cannot be checked by `develop` Step 2's grep.**
+  0105's Problem statement said an id had been issued to work that in fact never claimed it; only
+  `git log --all --diff-filter=A -- 'items/<id>-*'` could tell. Step 2 prescribes grepping the symbol
+  an FR names, which answers "does this still exist" and not "did this ever". Worth a sentence in
+  the skill — a claim about the past needs a history check, not a file check.
+- 2026-09-08 — **A guard whose file scope includes `tests/` also covers its own source, and its
+  fixture literals become real citations.** 0105's new item-ID check reported `tests/citations.test.sh`
+  on its first run, correctly: the unresolvable id its fixtures need was spelled in an anchored form
+  in a covered file. Fixed locally with a variable, but the shape generalises to any guard that
+  scans the directory it lives in.
+
