@@ -26,7 +26,7 @@ touches:
 what that path resolves against or what happens when it resolves to nothing.** The opening
 sentence is *"`.claude/backlog/FINDINGS.md` is the input, and the only one"*.
 
-**Measured 2026-09-07.** `/retro` was invoked from `/Users/aaronferguson/Documents/AI`, which is
+**Measured 2026-09-07.** `/retro` was invoked from `/Users/<name>/Documents/AI`, which is
 not a git repository and holds no backlog, with four beneath it: `ai-building-tools` (22 entries,
 2.75x this project's `findings_threshold: 8`), `ai-building-conventions` (3), `neumo_repos/Probation`
 (4, all invalidated by that backlog's retirement on 2026-09-04) and `tools/jury-config` (0). The

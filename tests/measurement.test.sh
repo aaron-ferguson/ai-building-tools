@@ -817,7 +817,31 @@ echo "Privacy & data NFR — no home-directory path in any tracked file"
 # transcript store makes of it. Both platforms are covered — a contributor on Linux leaks the
 # same fact. Neither form is written out anywhere in this file, and the pattern puts a bracket
 # before the word, so the guard cannot match its own text and report the repo dirty.
-HOME_PATH_PAT='[-/](Users|home)[-/]'
+# WHAT IS A LEAK IS THE NAME, NOT THE WORD `Users`. The pattern therefore requires a literal
+# name character after the separator, which is what makes a REDACTED path pass: a finding that
+# has to describe this defect writes the placeholder form, and the earlier pattern — bare
+# `[-/](Users|home)[-/]` — flagged it identically to a real username. Measured 2026-09-08: of six
+# flagged lines, four were redacted prose ABOUT the leak and two were real, and the pressure that
+# creates is backwards — it pushes an author away from naming the problem precisely, and it means
+# the entry recording the fix cannot be written without reddening the guard that wanted it.
+# `<name>`, `{name}` and `$USER` all pass; every real username still fails, in both spellings.
+HOME_PATH_PAT='[-/](Users|home)[-/][A-Za-z0-9._-]'
+
+# FALSIFICATION CONTROL, because an exemption nothing tests is how a privacy guard goes quietly
+# green. The samples are ASSEMBLED rather than written, for this block's own reason above: a
+# literal real-shaped path here would be a tracked home path and the guard would flag itself —
+# the same trap tests/citations.test.sh solves with UNISSUED.
+U='U'; H='h'
+for sample in "/${U}sers/alice/Documents/AI" "-${U}sers-alice-Documents-AI" "/${H}ome/alice/src"; do
+  printf '%s' "$sample" | grep -qE "$HOME_PATH_PAT" \
+    && ok "Privacy & data NFR — the pattern still catches a real home path (${sample})" \
+    || bad "Privacy & data NFR — the pattern MISSED a real home path (${sample}) — the exemption is too wide"
+done
+for sample in "/${U}sers/<name>/Documents/AI" "/${U}sers/{name}/src" "/${H}ome/\$USER/src"; do
+  printf '%s' "$sample" | grep -qE "$HOME_PATH_PAT" \
+    && bad "Privacy & data NFR — the pattern flagged a redacted path (${sample}) — the exemption did not apply" \
+    || ok "Privacy & data NFR — a redacted path is not a leak (${sample})"
+done
 if ! git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
   bad "Privacy & data NFR — cannot check: $ROOT is not a git repository, so the tracked set is unknown"
 elif leaked=$(git -C "$ROOT" grep -nE "$HOME_PATH_PAT"); then

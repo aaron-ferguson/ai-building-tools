@@ -78,7 +78,7 @@ anything older than about two weeks.
   of the decision.
 - **A second axis the gate has, added by the `queue` sweep of 2026-09-07.** `findings_threshold` is
   **per-project**, and a workspace holds several. Measured that day from
-  `/Users/aaronferguson/Documents/AI`: four backlogs beneath it holding 22, 3, 4 and 0 entries —
+  `/Users/<name>/Documents/AI`: four backlogs beneath it holding 22, 3, 4 and 0 entries —
   and had they been distributed 6/6/6/6, **no gate anywhere would have tripped while 24 findings sat
   unswept**. So "what does the gate count" has a scope half as well as a kind half: entries a retro
   can act on, *in which buffers*. It is recorded here rather than given its own row because it is
