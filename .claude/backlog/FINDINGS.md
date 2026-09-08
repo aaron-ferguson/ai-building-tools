@@ -69,14 +69,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   busy-lock *procedure* rather than about what `held-by` records (pointer: `.claude/backlog/claim`
   line 81, `references/CONCURRENCY.md` *Lock every write*, item 0040 *Notes & decisions*).
 
-- 2026-09-08 — **`tests/measurement.test.sh`'s privacy NFR is red on a home-directory path in a
-  tracked item file, in a repo whose `CLAUDE.md` says "This repo is public".** `items/0060` line 81
-  and the untracked `items/0111` line 29 both publish `/Users/<name>/Documents/AI`. The path arrived
-  in `b9d11af`, so this is a live red rather than an old one, and the guard that catches it is not
-  in the same file as the sweep that introduced it. Two things worth separating in whoever picks
-  this up: the paths themselves, and the fact that a **capture** session can write a tracked file
-  that reds a guard nothing in `queue`'s own steps runs (pointer: `tests/measurement.test.sh`
-  *Privacy & data NFR*, commit `b9d11af`).
 
 - 2026-09-08 — **`develop` Step 1 tells you to check `expects:` against in-progress `touches:`, and
   the obvious way to find in-progress items returns closed ones.** `grep -l "claimed_by: [^ ]"
@@ -113,10 +105,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   reads "Read by the capture, develop, and qa skills"; the suite ships `queue`, `develop` and
   `verify`. Every project scaffolded from this template inherits the wrong names. Left alone as
   adjacent to 0105, which rewrote only the `next_id` comment two lines below it. This still needs a row.
-- 2026-09-08 — **`measurement.test.sh`'s privacy NFR has been red since before 0105 was claimed.**
-  Three tracked files publish `/Users/<name>/Documents/AI`: `FINDINGS.md:74`, `items/0060:81` and
-  `items/0111:29` — the last two committed at `b9d11af`, which tracked a file whose own untracked
-  status a finding had relied on. Reproduced at `0f73d4e`. This still needs a row.
 - 2026-09-08 — **A ticket asserting an id's history cannot be checked by `develop` Step 2's grep.**
   0105's Problem statement said an id had been issued to work that in fact never claimed it; only
   `git log --all --diff-filter=A -- 'items/<id>-*'` could tell. Step 2 prescribes grepping the symbol
@@ -128,14 +116,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   in a covered file. Fixed locally with a variable, but the shape generalises to any guard that
   scans the directory it lives in.
 
-- 2026-09-08 — **The privacy guard cannot tell a redacted home path from a real one, so the finding
-  that describes the leak counts as one.** `measurement.test.sh:820` matches `[-/](Users|home)[-/]`,
-  which fires on `/Users/<name>/Documents/AI` exactly as it does on the real username. Two of the
-  four flagged lines — `FINDINGS.md:74` and `:117` — are already redacted prose *about* the leak;
-  only `items/0060:81` and `items/0111:29` publish a real path. Verifying 0105 grew the hit list
-  from three to four, because `cb224ab` parked the finding in the form the guard rejects. Whoever
-  fixes the real two cannot green the guard without rewording the entries that record the problem,
-  which is the wrong pressure. The matcher wants a redaction-placeholder exemption. Still needs a row.
 - 2026-09-08 — **0105's item-ID matcher reads any zero-padded four-digit number in an anchored form
   as a citation, so a file mode or a clock time reds the guard.** Appending `# chmod 0644 — the mode
   the lock file gets.` and `# The nightly driver starts at (0900).` to a covered file produces two
@@ -156,3 +136,15 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   That is the altitude gap `verify` Step 3 warns about, arriving structurally rather than by
   oversight. `qa_manual:` was empty, so the split was never declared at queue time. The general
   question — how a prose-executed repo verifies a behavioural AC — is bigger than one row.
+- 2026-09-08 — **LANDED at `2a69aa9`: the published home paths are redacted, and the privacy guard
+  no longer calls a redaction a leak.** Both halves were one defect. `items/0060:81` and
+  `items/0111:29` published a real username in a public repo; the username was load-bearing in
+  neither sentence, so both are now the placeholder form. The guard's bare `[-/](Users|home)[-/]`
+  could not tell that form from a real path — at its worst six flagged lines, four of them redacted
+  prose *about* the defect, including the entry that recorded it — so it now requires a literal name
+  character after the separator, and carries a both-directions control whose samples are assembled
+  rather than written. Falsified three ways: widening the exemption reds the three real-path cases,
+  restoring the old pattern reds the three redaction cases, and a fresh real path in a tracked file
+  still reds the live check. Suite green, 23 files. **The remaining half needs a row:** nothing in
+  `queue`'s or `capture`'s own steps runs this guard, so a sweep session can commit a tracked file
+  that reds it and not find out — which is exactly how `b9d11af` introduced these two.
