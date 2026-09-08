@@ -81,7 +81,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0099 | Return RANKING.md to current state only | develop | ready |  |
 | 0102 | Decide what happens when the size-gate regime's two deferred triggers fire | design | ready |  |
 | 0098 | Disambiguate the FR citations the 0036 split left behind | develop | ready |  |
-| 0104 | Gate and specify an in-window verify fix for test-side-only reds | develop | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
