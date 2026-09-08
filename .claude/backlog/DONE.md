@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0105 | Burn a withdrawn ticket's ID, and make an item-ID citation resolvable | bug | unit | 2026-09-08 | [items/0105-burn-a-withdrawn-ticket-id.md](items/0105-burn-a-withdrawn-ticket-id.md) |
 | 0040 | Harden the supervised loop against a held lock and a budget-killed stage | feature | unit | 2026-09-08 | [items/0040-lock-policy-and-budget-kill-recovery.md](items/0040-lock-policy-and-budget-kill-recovery.md) |
 | 0039 | Build the orchestrate skill and the stage outcome schema | feature | unit | 2026-09-08 | [items/0039-the-orchestrate-skill-and-outcome-schema.md](items/0039-the-orchestrate-skill-and-outcome-schema.md) |
 | 0076 | Make a tool edit run the target repo's suite before it commits | bug | unit | 2026-09-08 | [items/0076-run-the-target-repos-suite-before-committing.md](items/0076-run-the-target-repos-suite-before-committing.md) |

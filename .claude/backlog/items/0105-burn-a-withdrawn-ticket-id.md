@@ -2,8 +2,8 @@
 id: "0105"
 title: Burn a withdrawn ticket's ID, and make an item-ID citation resolvable
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 qa_manual:
 size: s
@@ -16,12 +16,10 @@ expects:
   - .claude/backlog/config.yml       # the counter, and the comment that documents it as monotonic
   - skills/queue/SKILL.md            # the withdrawal path that currently recycles
   - tests/citations.test.sh          # where an item-ID citation check belongs
-claimed_by: "933b"
-claimed_at: 2026-09-08T15:13:37Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/config.yml       # the counter, and the comment that documents it as monotonic
-  - skills/queue/SKILL.md            # the withdrawal path that currently recycles
-  - tests/citations.test.sh          # where an item-ID citation check belongs
+closed: 2026-09-08
 ---
 ## Problem
 
@@ -65,14 +63,14 @@ re-pointing. That removes the urgency and none of the defect: the withdrawal pat
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a withdrawal, when it completes, then `next_id` is unchanged or higher, never lower.
-- [ ] AC2 — Given a citation in `tests/` naming an item ID that is in neither table nor `items/`,
+- [x] AC1 — Given a withdrawal, when it completes, then `next_id` is unchanged or higher, never lower.
+- [x] AC2 — Given a citation in `tests/` naming an item ID that is in neither table nor `items/`,
   when the citation guard runs, then it reds and names the ID and the citing file.
-- [ ] AC3 — Given the five existing `0104` citations, when the guard runs, then it reds on them —
+- [x] AC3 — Given the five existing `0104` citations, when the guard runs, then it reds on them —
   proving the guard sees the live instance rather than a fixture only.
-- [ ] AC4 — Given the guard, when a fixture citing a resolvable ID is checked, then it passes, so
+- [x] AC4 — Given the guard, when a fixture citing a resolvable ID is checked, then it passes, so
   the guard is not green-by-filter.
-- [ ] AC5 — Deleting the burn sentence from `queue`'s withdrawal path turns a guard red.
+- [x] AC5 — Deleting the burn sentence from `queue`'s withdrawal path turns a guard red.
 
 ## QA plan
 
@@ -129,3 +127,45 @@ re-pointing. That removes the urgency and none of the defect: the withdrawal pat
 - 2026-09-07 — Filed by `retro` from `FINDINGS.md`. The ID burn was executed by that retro (see
   Problem); the counter now stands at 111 with 0104 unissued. Verified before filing: `next_id: 104`,
   `0104` absent from `QUEUE.md` and `DONE.md`, no `items/0104-*`, five citations in two test files.
+
+- 2026-09-08 — **AC1 is closed on the rule being stated, not on an observed withdrawal, because
+  nothing in this repo performs one.** No script withdraws a ticket and none mints an id — both are
+  `queue` prose — so AC1's outcome ("`next_id` unchanged or higher") has no runner at any level, and
+  the guard asserts the sentence in the operation that performs the withdrawal instead. Under this
+  repo's architecture the prose *is* the program, which is why that is the strongest surface
+  available rather than a substitute for one; it is still weaker than a behavioural check, and the
+  general gap is parked in `FINDINGS.md` rather than hidden behind a tick. The check is falsifiable:
+  changing `only ever rises` to `never falls` reds it alone, 45/1.
+
+## QA evidence
+
+**Level run:** `unit` (frontmatter and QA plan agree — no drift). Whole suite per-file per
+`config.yml`'s attribution note, 23 files: **22 green, 1 red**, the red pre-existing (below).
+Tree clean at Step 2 and at the verdict, so the advisory intersection is empty.
+**Copy executed:** the repo at `13835d9`. The live plugin install is `0.9.18`, whose
+`skills/queue/SKILL.md` carries no withdrawal section — this change is committed but unpushed, so
+it is not live. The repo copy is the authority per `SOURCE`.
+
+| Row | How it was checked | Result |
+|---|---|---|
+| AC1 — a withdrawal never decreases `next_id` | No code performs a withdrawal or mints an id (grepped `claim`/`close`/`handoff`/`next`: no `withdraw`, no `next_id` writer), so the outcome has no runner. Checked as the stated rule: `citations.test.sh` case `0105 AC1/FR1`. Falsified by changing `only ever rises` → `never falls` in `skills/queue/SKILL.md` | **PASS, by proxy** — mutation red 45/1, one case named. Closed on the rule, not an observed withdrawal; see the note above and `FINDINGS.md` |
+| AC2 — an unresolvable citation reds, naming id and file | Fixture case `0105 AC2`; then live, repointing `b9a5ee0 AC1` → `0404 AC1` in `tests/retro-tool-edit.test.sh` | **PASS** — `FAIL tests/retro-tool-edit.test.sh cites item 0404, which is in no table and has no item file` (45/1) |
+| AC3 — the guard reds on the live instance, not a fixture only | `0105 AC3` reports the real corpus: `every item-ID citation resolves — 112 ids, 59 cited`. Mutation as AC2 above reds that same case | **PASS** — live corpus is the subject; the five former `0104` citations were repointed at `b9a5ee0`, which resolves permanently |
+| AC4 — a resolvable citation passes, not green-by-filter | `0105 AC4` asserts `COUNT 1 ids, 1 cited` on a baseline fixture; both empty-set branches (`no ticket ids extracted`, `no item-ID citations extracted`) red when the sets are emptied | **PASS** — the guard fails loudly on an empty set rather than passing |
+| AC5 — deleting the burn sentence reds a guard | Three mutations: the phrase alone (45/1, one case); both bullets (40/6); heading renamed to `### Dropping a ticket` (39/7, the "present at all" case first) | **PASS** — reds at single-phrase granularity, and a rewrite cannot slip the section out silently |
+| NFR Documentation — both `next_id` comments say the counter only rises, and what a withdrawal does | `0105 NFR` over `skills/queue/templates/config.yml` and `.claude/backlog/config.yml`; falsified by stripping `only ever rises` from the template | **PASS** — mutation red 45/1, `documentation-conventions.md` checked |
+| FR2 vocabulary — `withdrawn` is shipped, not just described | `0105 FR2` over `skills/queue/templates/item.md`; falsified by removing `| withdrawn` from the status line | **PASS** — mutation red 45/1 |
+| FR3 recognition — three anchored forms, and what is excluded | Each form (`NNNN —`, `NNNN ACn`, `(NNNN)`) reddens independently; money `$0.0007`, a uuid and `add_ticket 0199` arguments extract as `0007` only; a table row with no item file still resolves | **PASS** — no one branch keeps the alternation green |
+| FR3 scope — the widening past `tests/` actually works | No fixture writes under `skills/`, so that half was claim-only. Appended `Attributed to an unissued ticket (0404).` to `skills/develop/SKILL.md` | **PASS** — `FAIL skills/develop/SKILL.md cites item 0404, …` |
+| FR4 — the path names the rule it holds | `0105 FR4` asserts `product-readiness-conventions.md` inside the flattened section | **PASS** — mutation red |
+| Step 4 — what the change made newly reachable | The change adds `status: withdrawn` and a rowless-item state no script knew. Built one in a worktree: `./next --drift` → `no drift`, exit 0; `./next verify` does not offer it; `graph-fields`, `next`, `qa-level-once`, `item-ac-form`, `falsifiable-acs` all green with the unknown status present | **PASS** — no unreviewed state created |
+| Always-on privacy pass | `measurement.test.sh` red: `a tracked file publishes a home-directory path`. Reproduced identically at base `0f73d4e` in a worktree | **PRE-EXISTING, not this ticket.** Flagged set grew 3 → 4 because `cb224ab` parked the finding using `/Users/<name>/…`, which the matcher `[-/](Users|home)[-/]` cannot distinguish from a real path. Only `items/0060:81` and `items/0111:29` publish a real username, both pre-base. Parked |
+
+**Mutation control:** every red above restored by pathspec (`git checkout -- <path>`), and the
+final control run is green — `46 passed, 0 failed`, 0 dirty paths. That green is what licenses the
+reds before it.
+
+**Findings parked at `838b6ee`:** the privacy matcher counting a redacted path as a leak; the
+item-ID matcher reading file modes (`0644 —`) and clock times (`(0900)`) as citations; the
+covered-set seam that includes `QUEUE.md` but not `DONE.md`, `FINDINGS.md` or `items/`; and the
+altitude gap under AC1. None of them blocks this ticket; all four need rows.
