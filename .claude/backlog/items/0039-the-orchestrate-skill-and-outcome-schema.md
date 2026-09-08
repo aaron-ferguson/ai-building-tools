@@ -379,6 +379,108 @@ inherited.
 
 ## QA evidence
 
+**Pass of 2026-09-07, token `1b58`. Verdict FAIL** — every one of the 24 acceptance criteria is
+now verified and falsifiable at its own altitude, including the three the previous pass sent back.
+The FAIL rests on **one NFR conjunct**: the Dependencies row says *"Name it, and say what the suite
+does where it is unavailable"*, and the `claude` CLI is named as a dependency **nowhere** in the
+repo. The behaviour half is met and guarded; the naming half is not.
+
+`qa_level: unit` (frontmatter and QA plan agree — no drift). Suite is `for t in tests/*.test.sh`
+(`config.yml`), run **per file** to attribute a red rather than fail-fast. Baseline and control both
+**22/22 files green**, `tests/orchestrate.test.sh` **100 passed / 0 failed / 0 skipped** — the 0
+skipped is load-bearing: AC22's probe dispatched a real nested `claude -p` on this host.
+
+**Which copy executed.** The repo copy is the authority and is what was checked. The `verify` skill
+running this session resolved from
+`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.16/`, whose install carries six
+skills and **no `orchestrate`** — it still predates this whole change, exactly as the previous pass
+recorded. The version was **not** bumped by the re-entry despite `touches:` naming
+`.claude-plugin/plugin.json` for that purpose; the re-entry diff (`3e6ac1f..HEAD`) touches
+`tests/orchestrate.test.sh` and `tools/validate-json-schema.py` only.
+
+**Method for every AC: break the behaviour the criterion names, at the criterion's own altitude,
+confirm the guard reddens, restore by the mutated path only.** Every mutation was applied to
+committed files; the harness refused any substitution whose diff was empty, so a `sed` that matched
+nothing could not read as a guard that held. Control run afterwards was 22/22 green, which is what
+licenses every red below. Two of my own mutations landed at the wrong altitude and are reported as
+such rather than as guard defects.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 | real nested dispatch run by hand — `claude -p --json-schema '{...probe...}' --max-budget-usd 0.25 < /dev/null` | ✅ returned `{"probe":"ok"}`, exit 0. The untested premise under AC1 holds on this host |
+| AC1 | `--bare` inserted into the Step 3 dispatch | ✅ `FAIL AC1/AC19 — the skill's own invocation carries --bare` |
+| AC1 | `< /dev/null` deleted from the dispatch block only | ✅ `FAIL AC1 — 1 of 2 claude -p invocations do not redirect stdin` — per-invocation, not per-file |
+| AC1 | `CLAUDE.md auto-discovery` / `no conventions` both reworded | ✅ `FAIL AC1 — the skill bans --bare without saying it means no conventions` |
+| AC2 | `tickets` flipped array → object (targeted at **tickets**, not `commits`) | ✅ `FAIL AC2 — a legitimate three-ticket gate was REFUSED: $.tickets: expected type object, got list` |
+| AC2 | the schema path replaced by prose throughout the skill | ✅ `FAIL AC2 — the skill does not name the schema file it dispatches with` |
+| AC3 | `additionalProperties` → true, on the envelope and on a ticket entry separately | ✅ both redden by name (`stray 'verdict'` / `stray 'cost_usd'`) |
+| AC3 | `verdict` enum keyword disabled | ✅ `FAIL AC3 — an out-of-vocabulary 'verdict' validated` |
+| AC3 | `detail` dropped from `required` | ✅ `FAIL AC3 — a ticket entry missing 'detail' validated` |
+| AC3 | `minimum: 0` dropped; `minLength: 1` → `0` | ✅ redden separately (`negative-cost`, `empty-detail`). Deleting the `minLength` **line** instead broke JSON validity and the harness reported `HARNESS the validator could not run` rather than a refusal — the `valid()` helper's exit-2 guard doing exactly its stated job |
+| AC4 | *"The dispatch unit is a gate, not a row"* reworded | ✅ `FAIL AC4 — the skill does not state that a gate is the dispatch unit` |
+| AC5 | *"A stage must not self-certify"* reworded; separately `runs no test`/`verifies nothing` | ✅ both redden |
+| AC6 | `once per run` reworded throughout | ✅ `FAIL AC6 — the skill does not state that the findings gate fires once per run` |
+| AC7 | *"each marked / done or outstanding"* deleted — the phrase **wraps a line**, so the deletion had to span the break | ✅ `FAIL AC7 — the skill does not hand the release chain over as a marked checklist`. `checklist` occurs twice but `marked` exactly once, so the conjunct is load-bearing |
+| AC8 | `"Ship it"` reworded | ✅ `FAIL AC8 — the skill does not state the no-push rule with its "ship it" exclusion` |
+| AC12 | *"and do not poll"* reworded | ✅ `FAIL AC12 — the skill does not forbid polling` |
+| AC13 | `floor = contexts[0]` → `contexts[-1]` | ✅ `FAIL AC13 — no FLOOR of 20000 in the output` |
+| AC13 | cycles counted from `outcome` events instead of `dispatch` | ✅ `FAIL AC13 — no GROWTH of 1500 per cycle` — the fixture records 3 dispatches against 2 outcomes, so the two are genuinely distinguishable |
+| AC13 | `DEFAULT_TURN_BUDGET` 3 → 4 | ✅ `FAIL AC13/FR7 — the skill states 'three' and the tool defaults to '4'` |
+| AC14 | quoted figures staled back to `6.01 / 4.45` | ✅ `FAIL AC14 — the skill quotes [6.01 4.45] where MEASUREMENT.md records [5.71 4.23]` |
+| AC14 | `attributes to no ticket` reworded; separately the recompute-from-`MEASUREMENT.md` clause | ✅ both redden |
+| AC15 | *"It never claims a row and never mints a claim token"* reworded | ✅ `FAIL AC15 — the skill does not state that it holds no row` |
+| **AC16** | **prose half, RESCOPED BY THE RE-ENTRY:** Step 5's *"never a row to take over"* deleted, Step 7's `Claim tokens` citation left in place | ✅ `FAIL AC16 — Step 5 does not say what to do with a claim a killed stage left behind` — **now fails on the defect it names** |
+| **AC16** | **fixture half:** the real `./next` made to offer the orphaned row. **Both** defences had to be broken — the `ready\|blocked` status filter *and* the `touches:` collision check independently refuse it | ✅ `FAIL AC16 — the orphaned claim on 0001 was offered as takeable`. Breaking only the status filter left it green, correctly: the reader still refused. See findings — the guard's start-anchoring is fragile |
+| AC17 | `It is not state`, `Delete the log between two sessions`, `exactly three things` each reworded | ✅ all three redden separately |
+| AC18 | `mkdir -p .claude/backlog/runs` deleted; separately the marker path reworded | ✅ `FAIL AC18 — the skill takes the marker without creating runs/ first` / `does not name the single-instance marker`. The fixture's own second `mkdir` genuinely fails, so the case can fire |
+| **AC19** | **RESCOPED BY THE RE-ENTRY:** `--max-budget-usd` deleted from the **Step 3 dispatch only**, Step 1's probe keeping its own cap | ✅ `FAIL AC19/AC1 — 1 of 1 dispatch block(s) do not carry --max-budget-usd` — **now fails on the defect it names**; the old whole-file sweep stayed green here |
+| AC19 | `--allowed-tools`, `--add-dir`, `--session-id`, `--setting-sources` each deleted from the dispatch | ✅ each reddens **by name**, `1 of 1 dispatch block(s)` |
+| AC19 | the dispatch **prompt** renamed so the block is neither probe nor dispatch | ✅ `FAIL AC19 — 2 claude -p invocations but only 1 classified; one is under no flag rule` — the partition is exhaustive, so the set cannot silently empty |
+| AC19 | `--dangerously-skip-permissions` / `--bare` sought in every fenced block | ✅ absent. Whole-file **by design** here: a must-appear-nowhere criterion is only made more sensitive by concatenation |
+| AC20 | verify's write-to-item-file instruction reworded; `## QA evidence` renamed in verify; renamed in `templates/item.md` | ✅ three separate reds, incl. `templates/item.md has no QA evidence section` |
+| **AC21** | **RESCOPED BY THE RE-ENTRY:** the count deleted from **Step 8**, the report step the criterion names | ✅ `FAIL AC21 — Step 8's report carries no findings-parked count` — **now fails on the defect it names** |
+| AC21 | control: the same phrase deleted from **Step 4** instead (schema description) | ✅ stayed green, correctly — the section scoping is real. `grep -c` over the file still answers 3 |
+| AC22 | shim `claude` on PATH returning `{"probe":"WRONG"}` | ✅ `FAIL AC22 — the probe did not return the fixed object... Got: {"probe":"WRONG"}` |
+| AC22 | PATH emptied of `claude` | ✅ `SKIP AC22 — no claude on PATH; the nested-dispatch premise under AC1 is UNVERIFIED in this run` — loud, and a skip that reads as a pass is what it exists to catch |
+| AC22 | the degraded-fallback sentence reworded | ✅ `FAIL AC22 — the skill does not state the degraded fallback` |
+| AC23 | whole suite per file, 22/22 green, 0 failures anywhere; `plugin.json` made unparseable | ✅ `FAIL AC23 — plugin.json no longer parses; the plugin would not load at all`. The only stage-skill change remains verify's AC20 write |
+| AC24 | `orchestrate` renamed in `plugin.json`; `/orchestrate` removed from README's skill table; README's *One skill per session* body replaced with person-types-it wording | ✅ three separate reds |
+| AC27 | the depth report **relocated** below `## Step 3` (deleting its lead line alone left the asserted phrase in place and stayed green — my mutation, re-aimed) | ✅ `FAIL AC27 — the depth report is not stated before the dispatch step (depth 139, dispatch 137)` |
+
+### NFRs
+
+| Dimension | How it was checked | Result |
+|---|---|---|
+| Security | `security-conventions.md` read. `--dangerously-skip-permissions` and `--bare` absent from every fenced block; the single `--bare` occurrence is the prose banning it (line 168). AC8 and AC19 mutations both redden. Secrets scan over the ticket's full range returns nothing. Newly-reachable states walked: the marker directory, the stage subprocess's granted tools, the spend cap | ✅ |
+| Observability | `observability-conventions.md` read. Step 5 states one JSON line per event under `.claude/backlog/runs/<run-id>.jsonl`, each with a UTC timestamp and the run id, appended as it happens | ✅ stated; still **no guard asserts the log's format** — a fixture nothing yet produces. Noted, not failed |
+| Performance | `measurement-conventions.md` read. FR7's three numbers are stated and instrumented in `tools/harvest-usage.sh` in the same change; all three AC13 mutations redden; tool default and skill prose asserted to agree | ✅ |
+| Dependencies | `dependency-conventions.md` read. `validate-json-schema.py` documents why it is stdlib rather than `pip install jsonschema`. The CLI's absence is handled by a real probe with a named fallback, both proven falsifiable | ❌ **the naming half is unmet** — `grep -rin 'claude CLI\|requires the claude\|depends on the claude'` over every tracked `.md` returns **nothing**, and README has no requirements/prerequisites statement. The row asks for both conjuncts |
+| Compatibility | `api-conventions.md` read. All 22 test files green; the outcome shape is supplied by the invoker, so no stage skill describes it and a hand-driven session is unchanged | ✅ |
+| Documentation | `documentation-conventions.md` read. README's *One skill per session* describes both paths and its skill table lists `/orchestrate`; both mutations redden | ✅ |
+
+**Privacy pass** (always-on, `data-privacy-conventions.md`): unchanged from the previous pass and
+re-confirmed — the run logs under `.claude/backlog/runs/` are committed into a public repo, correct
+for `company: none`, with the schema's free-prose `escalation` field the one to watch if this plugin
+is ever run on a backlog carrying company material. Flagged, not failed.
+
+**Always-on `CONVENTIONS_CORE.md` pass:** the re-entry's type-hint fix checked directly — all three
+`def`s in `tools/validate-json-schema.py` now carry annotated args and a return type, the module
+constant is annotated, and `from __future__ import annotations` is correct for the python3 actually
+present (**3.9.6**, confirmed). Behaviour unchanged, verified by hand rather than from the build
+note: exit **0** on a valid envelope, **1** on a document missing required properties, **2** on
+unparseable JSON and on wrong argument count.
+
+### The one gap
+
+**Dependencies NFR, naming half.** Nothing in the repo tells an installer that `/orchestrate`
+requires a `claude` binary on PATH. The row's own stated failure — *"silently not working"* — is
+prevented by AC22's probe, so this is documentation rather than behaviour, and the fix is one line
+in `README.md`. It was flagged as ⚠️ by the 2026-09-06 pass and carried forward unaddressed; the
+re-entry's narrowed `touches:` did not narrow the ticket's contract, and closing would tick an NFR
+that is not met.
+
+### Previous pass
+
 **Pass of 2026-09-06, token `6782`. Verdict FAIL** — the change is correct as delivered, but three
 criteria rest on a guard that cannot fail on the defect the criterion names, so three ACs are
 unverified. `qa_level: unit`; suite is `for t in tests/*.test.sh` (`config.yml`), run per file to
@@ -625,6 +727,40 @@ pattern** (every python embedded in `tools/*.sh` is unhinted too), so scoping th
 ticket is arguable and `develop` should decide; what is not arguable is that this change is where a
 new file adopted it. There is no NFR row for it, which is why it surfaced in Step 4's always-on pass
 rather than in the table.
+
+### From the QA pass, 2026-09-07 (token `1b58`) — FAIL
+
+**The three guards the last pass sent this back for are fixed, and each was re-proved by my own
+mutation rather than read off the build note.** AC19's cap now reds from the Step 3 dispatch alone
+while Step 1's probe keeps its own (`1 of 1 dispatch block(s)`); AC21 reds from Step 8 while Step
+4's two occurrences remain; AC16's Step 5 rule reds while Step 7's `Claim tokens` citation remains.
+The partition added to AC19 is the better half of that fix: renaming the dispatch prompt now reds
+*"2 claude -p invocations but only 1 classified"* rather than silently emptying the set. All 24 ACs
+verified, 22/22 test files green, control run green.
+
+**The FAIL is one NFR conjunct, and it is a one-line fix.** The Dependencies row reads *"The
+`claude` CLI as a launchable subprocess is a new dependency for a suite that is currently portable
+markdown and POSIX `sh`. **Name it**, and say what the suite does where it is unavailable."* The
+second conjunct is met and guarded (AC22's probe plus the stated fallback, both falsifiable). The
+first is not: `grep -rin 'claude CLI|requires the claude|depends on the claude'` over every tracked
+`.md` returns nothing, and README carries no requirements or prerequisites statement at all. The
+2026-09-06 pass flagged this as ⚠️ and it was carried forward; the re-entry's narrowed `touches:`
+narrowed the work, not the contract, and closing would tick an NFR that is not met.
+
+**What to do:** name the `claude` CLI as a runtime requirement of `/orchestrate` in `README.md`,
+alongside what the suite does without it — that the probe fails closed and the loop degrades to the
+hand-driven path. One or two lines. Nothing else in the artifact is owed anything.
+
+**Not scored against an AC, but the next session needs it:** `touches:` names
+`.claude-plugin/plugin.json` *"# version bump — the install predates this change"*, and **no bump
+happened**. The re-entry diff (`3e6ac1f..HEAD`) touches `tests/orchestrate.test.sh` and
+`tools/validate-json-schema.py` only; the repo is still at `0.9.16` and the install at that version
+carries six skills and no `orchestrate`. That is not a QA failure — the repo copy is the authority
+and is what this pass checked — but the skill still **cannot be run by anybody**, and `tools/release`
+begins with a push to `main` with 49 commits unpushed, which needs Aaron's explicit approval
+(`CONVENTIONS_CORE.md`). Fold the README line into the same re-entry, then the release is one
+approval for both.
+
 
 ### From the re-entry build session, 2026-09-06 (token 6c77)
 
