@@ -183,7 +183,7 @@ Then remove the row from `QUEUE.md`, under the lock and committed in the same tu
 other backlog write.
 
 Neither rule was written down until 0105, and `3b72d38` broke both at once — it deleted the item
-file *and* decremented the counter, queueing up a third issue of an id two guards already cited.
+file *and* decremented the counter, queueing up a reissue of an id two guards already cited.
 
 Read-only operations don't need the conventions resolved; anything that writes a ticket does.
 
