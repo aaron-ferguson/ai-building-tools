@@ -115,20 +115,26 @@ in_window "AC3 — relocate first, exempt second"        "$W" 'Relocate first, e
 in_window "AC3 — and the relocation is what gets recorded" "$W" 'never an exemption'
 
 # ---------------------------------------------------------------------------
-# 0104 — the buffer has no residents. Step 4 gives every entry it read a terminal
+# b9a5ee0 — the buffer has no residents. Step 4 gives every entry it read a terminal
 # disposition; Step 1 says which disposition a pass should be reaching for before
 # it reads anything, and what a deferral is allowed to claim.
+#
+# CITED BY COMMIT, NOT BY TICKET ID, because this work had no ticket: a retro landed it
+# directly. These four labels named an id that no ticket held when they were written, and
+# which was afterwards issued to unrelated work and withdrawn — so they resolved to nothing,
+# and were one reissue away from resolving to the wrong thing. A commit resolves permanently
+# and cannot be reissued. See tests/citations.test.sh, which now reds on the same mistake.
 # ---------------------------------------------------------------------------
 
 STEP4='## Step 4 — Write it, and empty what you processed'
 END4='^## Step 5'
 W4C="$(window "$RETRO" "$STEP4" "$END4")"
 
-echo "0104 AC1 — the step that empties the buffer names four terminal dispositions"
+echo "b9a5ee0 AC1 — the step that empties the buffer names four terminal dispositions"
 in_window "AC1 — the four dispositions are named together" "$W4C" 'landed, absorbed, filed or dropped'
 in_window "AC1 — and every one removes the entry"          "$W4C" 'no entry survives the pass that read it'
 
-echo "0104 AC2 — landing now is the default, and the test against filing is stated"
+echo "b9a5ee0 AC2 — landing now is the default, and the test against filing is stated"
 in_window "AC2 — the land-or-file test is completeness in this session" "$W4C" 'complete in this session'
 in_window "AC2 — absorbed is not silent: the row is named and written to"  "$W4C" 'names the row and appends'
 
@@ -136,11 +142,11 @@ STEP1='## Step 1 — Read the buffer'
 END1='^## Step 2'
 W1C="$(window "$RETRO" "$STEP1" "$END1")"
 
-echo "0104 AC3 — Step 1 names the two modes, so a pass knows what it is reaching for"
+echo "b9a5ee0 AC3 — Step 1 names the two modes, so a pass knows what it is reaching for"
 in_window "AC3 — the end-of-run mode is named" "$W1C" 'end-of-run retro'
 in_window "AC3 — the cadence mode is named"    "$W1C" 'cadence retro'
 
-echo "0104 AC4 — a deferral records established triage, never an unverified destination"
+echo "b9a5ee0 AC4 — a deferral records established triage, never an unverified destination"
 in_window "AC4 — a deferral records what was established" "$W1C" 'records what was established'
 in_window "AC4 — the buffer converges rather than emptying in one pass" "$W1C" 'transit, not residence'
 

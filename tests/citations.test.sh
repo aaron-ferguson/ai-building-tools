@@ -477,5 +477,237 @@ case "$dir" in
   *) bad "0052 FR7 — conventions_dir returned \"${dir:-<nothing>}\", not the conv directory" ;;
 esac
 
+# ---------------------------------------------------------------------------
+# 0105 — item-ID citations resolve to a ticket that exists
+# ---------------------------------------------------------------------------
+#
+# THE THIRD KIND, and the one with the worst failure mode. A rule name that stops resolving
+# resolves to NOTHING, and the reader knows they are lost. A ticket id is a NUMBER on a monotonic
+# counter, so a stale one silently RE-POINTS at whatever ticket is issued that id next, and the
+# reader is confidently sent somewhere real and wrong.
+#
+# That is not hypothetical here. `0104` was cited by four case labels in tests/retro-tool-edit.test.sh
+# and one recorded size justification in tests/skill-size.test.sh before any ticket held it; the id
+# was then issued to an unrelated ticket (7764732), withdrawn (3b72d38), and the withdrawal reset
+# the counter so it was about to be issued a third time. Nothing in the repo could see any of it.
+#
+# HOW AN ITEM-ID CITATION IS RECOGNISED — read this before adding a citation the guard does not see.
+#
+# Four-digit numbers are everywhere in this suite: money ($0.0525), uuid fixtures
+# (aaaaaaaa-0000-0000-...), and DELIBERATELY FAKE ticket ids inside authored fixture trees
+# (`add_ticket 0199 develop ready`, a blocker `0404` with no item file). So a citation is an
+# ANCHORED span, exactly as a rule name is:
+#
+#   NNNN —      an id opening a labelled claim — the form every case label in this suite uses
+#   NNNN ACn    an id naming one of that ticket's acceptance criteria
+#   (NNNN)      a parenthesised attribution — the form the file headers use
+#
+# and never where the digits are preceded by `.`, `-` or another digit, which is what keeps money
+# and uuids out with no exemption list. A fixture id is spared for a structural reason rather than
+# a listed one: fixtures pass ids as ARGUMENTS and as paths, never in one of the three forms above.
+# So a new fixture never needs registering, and that is the whole point of anchoring.
+#
+# The consequence to know, in both directions: an id written in running prose with no anchor is not
+# checked, by design; and an id you WANT checked should be written in one of the three forms.
+#
+# ONE CONSEQUENCE FOR THIS FILE ITSELF, found by the guard on its first run. `tests/` is covered,
+# so this file is covered, so an unresolvable id written here in an anchored form IS a citation and
+# is reported — correctly. A fixture tree is spared, but the source that AUTHORS it is not. Hence
+# UNISSUED below: the id a fixture needs to be unresolvable is carried in a variable so the
+# anchored literal never appears in a covered file. Prose about an id is free ("cites item 0404")
+# because that is not one of the three forms.
+#
+# THE RESOLVABLE SET is the union of every place a ticket can be recorded — `items/` on disk, and
+# the ID column of QUEUE.md, DONE.md and SCHEDULED.md. The union rather than the disk alone
+# because the three tables and the directory are written by different operations, and a guard that
+# trusts one of them inherits whichever is behind.
+
+# item_ids <root> — every ticket id the backlog can resolve, one per line.
+item_ids() {
+  root="${1:?item_ids needs a tree root}"
+  ls "$root/.claude/backlog/items/" 2>/dev/null | sed -n 's/^\([0-9][0-9][0-9][0-9]\).*/\1/p'
+  for t in QUEUE DONE SCHEDULED; do
+    f="$root/.claude/backlog/$t.md"
+    [ -f "$f" ] && awk -F'|' '/^\| *[0-9][0-9][0-9][0-9] *\|/ { gsub(/ /, "", $2); print $2 }' "$f"
+  done
+  return 0
+}
+
+# item_citing_files <root> — the files whose item-ID citations are checked. `cited_files` already
+# derives the prose side; `tests/` is added because that is where the live defect was and where
+# FR3 asked for the check. DERIVED on both halves: a new skill or a new test file joins the set by
+# existing, which is what stops the guard going quietly green on a subject nobody registered.
+item_citing_files() {
+  root="${1:?item_citing_files needs a tree root}"
+  cited_files "$root"
+  for f in "$root"/tests/*.test.sh; do
+    [ -f "$f" ] && printf '%s\n' "$f"
+  done
+  return 0
+}
+
+# item_citations <root> — "<path><TAB><id>" per distinct id cited in each file.
+item_citations() {
+  root="${1:?item_citations needs a tree root}"
+  item_citing_files "$root" | while IFS= read -r file; do
+    grep -oE '(^|[^.0-9-])0[0-9]{3}( —| AC[0-9])|\(0[0-9]{3}\)' "$file" 2>/dev/null |
+      grep -oE '0[0-9]{3}' | sort -u | while read -r id; do
+        [ -n "$id" ] && printf '%s\t%s\n' "$file" "$id"
+      done
+  done
+  return 0
+}
+
+# item_audit <root> — FAIL / COUNT lines, in audit()'s shape.
+item_audit() {
+  root="${1:?item_audit needs a tree root}"
+  ids="$(item_ids "$root" | sort -u)"
+  cites="$(item_citations "$root")"
+  nid="$(printf '%s' "$ids" | grep -c . || true)"
+  ncite="$(printf '%s' "$cites" | grep -c . || true)"
+
+  # An empty set on either side makes every comparison below pass, so it is reported as a defect
+  # in its own right — the same reasoning as audit()'s FR6 branch, and the same failure this
+  # suite's own conventions call filtering for a set and then asserting over it.
+  [ "$nid" -eq 0 ] &&
+    echo "FAIL  no ticket ids extracted from items/, QUEUE.md, DONE.md or SCHEDULED.md — the id recognition stopped matching"
+  [ "$ncite" -eq 0 ] &&
+    echo "FAIL  no item-ID citations extracted from any covered file — the citation recognition stopped matching"
+  if [ "$nid" -eq 0 ] || [ "$ncite" -eq 0 ]; then
+    echo "COUNT $nid ids, $ncite cited"
+    return 0
+  fi
+
+  printf '%s\n' "$cites" | while IFS='	' read -r file id; do
+    [ -n "$id" ] || continue
+    printf '%s\n' "$ids" | grep -qxF "$id" ||
+      echo "FAIL  ${file#$root/} cites item $id, which is in no table and has no item file"
+  done
+
+  echo "COUNT $nid ids, $ncite cited"
+}
+
+echo "0105 AC3 — the shipped tree cites no item id that resolves to nothing"
+iout="$(item_audit "$ROOT")"
+icounts="$(printf '%s\n' "$iout" | grep '^COUNT ' || true)"
+istale="$(printf '%s\n' "$iout" | grep '^FAIL ' || true)"
+if [ -z "$istale" ]; then
+  ok "every item-ID citation resolves — ${icounts#COUNT }"
+else
+  OLDIFS="$IFS"; IFS='
+'
+  for l in $istale; do bad "${l#FAIL  }"; done
+  IFS="$OLDIFS"
+fi
+
+# An id no fixture backlog holds, carried in a variable so this file never spells it in an anchored
+# form and so never cites it for real. See ONE CONSEQUENCE FOR THIS FILE ITSELF above.
+UNISSUED=0404
+
+# mkidfix <dir> — a minimal backlog whose one ticket, 0007, is cited once in each recognised form,
+# alongside every shape of four-digit number the guard must NOT read as a citation.
+mkidfix() {
+  dir="${1:?mkidfix needs a target directory}"
+  rm -rf "$dir"
+  mkdir -p "$dir/references" "$dir/skills/develop" "$dir/skills/queue/templates" \
+           "$dir/.claude/backlog/items" "$dir/tests"
+  printf -- '---\nid: "0007"\n---\n' > "$dir/.claude/backlog/items/0007-a-fixture-ticket.md"
+  printf '| ID | Title |\n|----|-------|\n| 0007 | A fixture ticket |\n' \
+    > "$dir/.claude/backlog/QUEUE.md"
+  printf '# Fixture protocol\n\n## The first fixture rule\n\nBody.\n' \
+    > "$dir/references/CONCURRENCY.md"
+  cat > "$dir/tests/fixture.test.sh" <<'IDFIXTURE'
+#!/bin/sh
+# The guard the fixture ticket asked for (0007).
+echo "0007 AC1 — the first criterion"
+echo "0007 — the labelled claim"
+# Numbers that are not citations: a price of $0.0007, a uuid aaaaaaaa-0007-0000-0000-000000000000,
+# and fixture tickets passed as arguments.
+add_ticket 0199 develop ready
+mkitem 0000 develop blocked
+IDFIXTURE
+  printf 'mkitem %s develop blocked\n' "$UNISSUED" >> "$dir/tests/fixture.test.sh"
+}
+
+echo "0105 AC2 — a citation of an id in no table and with no item file fails, naming both"
+mkidfix "$FIX/i"
+mutate "$FIX/i/tests/fixture.test.sh" "s/0007 AC1/$UNISSUED AC1/" "re-point one citation at an unissued id"
+out="$(item_audit "$FIX/i")"
+case "$out" in
+  *"FAIL  tests/fixture.test.sh cites item $UNISSUED, which is in no table and has no item file"*)
+    ok "the unresolvable citation is reported with its file and the id it used" ;;
+  *) bad "0105 AC2 — expected an unresolvable-id FAIL, got: ${out:-<nothing>}" ;;
+esac
+
+echo "0105 AC4 — a citation of a resolvable id passes, so the guard is not green-by-filter"
+mkidfix "$FIX/i"
+out="$(item_audit "$FIX/i")"
+case "$out" in
+  *'FAIL '*) bad "0105 AC4 — the baseline fixture already failed: $out" ;;
+  *'COUNT 1 ids, 1 cited'*)
+    ok "the resolvable id is seen and the tree passes — COUNT is id-per-file, deduplicated" ;;
+  *) bad "0105 AC4 — expected 1 id and 1 cited pair, got: ${out:-<nothing>}" ;;
+esac
+
+echo "0105 FR3 — money, uuids and fixture arguments are not read as citations"
+mkidfix "$FIX/i"
+out="$(item_citations "$FIX/i" | cut -f2 | sort -u | tr '\n' ' ')"
+case "$out" in
+  '0007 ') ok "only the anchored id is extracted — the bare arguments, 0.0007 and the uuid are left alone" ;;
+  *) bad "0105 FR3 — expected only 0007, got: ${out:-<nothing>}" ;;
+esac
+
+echo "0105 FR3 — the em-dash form is recognised on its own"
+mkidfix "$FIX/i"
+mutate "$FIX/i/tests/fixture.test.sh" "s/^echo \"0007 — /echo \"$UNISSUED — /" \
+  "re-point only the em-dash citation at an unissued id"
+out="$(item_audit "$FIX/i")"
+case "$out" in
+  *"cites item $UNISSUED, which is in no table"*)
+    ok "each anchored form carries the check on its own, so no one branch keeps the alternation green" ;;
+  *) bad "0105 FR3 — the em-dash form was not read as a citation: ${out:-<nothing>}" ;;
+esac
+
+echo "0105 FR3 — the parenthesised form is recognised too"
+mkidfix "$FIX/i"
+mutate "$FIX/i/tests/fixture.test.sh" \
+  "s/^echo \"0007 AC1.*/# attributed to the fixture ticket ($UNISSUED)./" \
+  "replace an AC citation with a parenthesised one at an unissued id"
+out="$(item_audit "$FIX/i")"
+case "$out" in
+  *"cites item $UNISSUED, which is in no table"*)
+    ok "a parenthesised attribution is checked, not only the two dash forms" ;;
+  *) bad "0105 FR3 — the parenthesised form was not read as a citation: ${out:-<nothing>}" ;;
+esac
+
+echo "0105 FR3 — an id recorded only in a table, with no item file, still resolves"
+mkidfix "$FIX/i"
+rm -f "$FIX/i/.claude/backlog/items/0007-a-fixture-ticket.md"
+out="$(item_audit "$FIX/i")"
+case "$out" in
+  *'FAIL '*) bad "0105 FR3 — a table row alone did not resolve the id: $out" ;;
+  *) ok "the resolvable set is the union of the tables and items/, not either alone" ;;
+esac
+
+echo "0105 FR3 — zero citations is a defect, not a clean tree"
+mkidfix "$FIX/i"
+mutate "$FIX/i/tests/fixture.test.sh" 's/0007/9997/g' "move every citation off the four-digit id form"
+out="$(item_audit "$FIX/i")"
+case "$out" in
+  *'FAIL  no item-ID citations extracted'*)
+    ok "an empty citation set is reported as a defect" ;;
+  *) bad "0105 FR3 — expected the empty-citation-set FAIL, got: ${out:-<nothing>}" ;;
+esac
+
+echo "0105 FR3 — zero known ids is a defect, not a clean tree"
+mkidfix "$FIX/i"
+rm -f "$FIX/i/.claude/backlog/items/0007-a-fixture-ticket.md" "$FIX/i/.claude/backlog/QUEUE.md"
+out="$(item_audit "$FIX/i")"
+case "$out" in
+  *'FAIL  no ticket ids extracted'*)
+    ok "an empty id set is reported as a defect" ;;
+  *) bad "0105 FR3 — expected the empty-id-set FAIL, got: ${out:-<nothing>}" ;;
+esac
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]
