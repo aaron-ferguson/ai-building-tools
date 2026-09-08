@@ -2,8 +2,8 @@
 id: "0076"
 title: Make a tool edit run the target repo's suite before it commits
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: s
 created: 2026-09-01
@@ -14,11 +14,10 @@ relates: ["0075", "0077"]
 expects:
   - skills/retro/SKILL.md
   - tests/skill-prose.test.sh
-claimed_by: "add1"
-claimed_at: 2026-09-08T01:24:02Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/retro/SKILL.md
-  - tests/retro-tool-edit.test.sh
+closed: 2026-09-08
 ---
 
 ## Problem
@@ -73,12 +72,12 @@ two things it would otherwise have released:
 
 ## Acceptance criteria
 
-- [ ] AC1 — `skills/retro/SKILL.md` requires the target repo's suite to run before the commit that
+- [x] AC1 — `skills/retro/SKILL.md` requires the target repo's suite to run before the commit that
   carries a tool edit.
-- [ ] AC2 — It names the live-repo-commit pollution and the worktree-at-`HEAD` comparison as the
+- [x] AC2 — It names the live-repo-commit pollution and the worktree-at-`HEAD` comparison as the
   discriminator.
-- [ ] AC3 — It says a rejecting guard is answered by relocating first, exempting second.
-- [ ] AC4 — Deleting the suite-run sentence turns the new guard red.
+- [x] AC3 — It says a rejecting guard is answered by relocating first, exempting second.
+- [x] AC4 — Deleting the suite-run sentence turns the new guard red.
 
 ## QA plan
 
