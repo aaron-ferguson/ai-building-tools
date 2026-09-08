@@ -86,3 +86,26 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   and showed none. Cheap to get wrong in the direction that *stops* work: a session reading those
   five as live scope collisions concludes there is nothing safe to develop (pointer: `develop`
   SKILL.md Step 1, `items/0010`, `0023`, `0044`, `0048`, `0049`).
+
+- 2026-09-08 — **The AC25 guard forbidding a lock removal matches only the literal `.lock`, and the
+  skill's own idiom evades it.** `tests/orchestrate.test.sh` extracts the fenced blocks and greps
+  `(rm|rmdir|unlink)[^|]*\.lock`, which is anchored to state exactly as its comment claims — but the
+  block it guards opens `LOCK=.claude/backlog/.lock` and then says `"$LOCK"` everywhere after. A
+  fenced block containing `rm -rf "$LOCK"`, or a path built through a variable, leaves the suite at
+  130 passed while doing precisely the thing FR15 exists to forbid; only the literal spelling reds.
+  Verified both ways during 0040's verification. The delivered prose is clean in either form, so
+  this is coverage and not a live defect — but it is coverage of the one clause whose whole point is
+  that a future edit must not slip it in (pointer: `tests/orchestrate.test.sh` *AC25*, the
+  `removers` loop; `skills/orchestrate/SKILL.md` Step 7).
+
+- 2026-09-08 — **The spend cap's figure is unguarded; only its citation is.** AC26's derivation
+  check reads MEASUREMENT.md's per-stage means and asserts they appear in the comment above
+  `stage_budget_usd:`. Nothing relates the comment to the number beneath it, so setting
+  `retro: 99.00` with its `2.51` citation intact leaves the suite at 130 passed, 0 failed. Left
+  uncovered rather than papered over, per `verify` Step 3. Two things for whoever takes it: the
+  arithmetic could be asserted directly from the cited mean, and the **rounding granularity is
+  unstated** — all three shipped caps are mean x 1.5 rounded to the nearest five cents (6.05, 5.45,
+  3.75), which is self-consistent, but the comment says only "times 1.5", so an honest RECOMPUTE
+  yields 6.04 and 3.76 and reads as drift (pointer: `.claude/backlog/config.yml`
+  `stage_budget_usd`, `tests/orchestrate.test.sh` *AC26*).
+
