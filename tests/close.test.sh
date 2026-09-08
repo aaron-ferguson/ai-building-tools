@@ -139,6 +139,35 @@ touches:
 ITEM
 }
 
+# An item whose acceptance criteria are a NUMBERED list. Six real items were captured in this
+# form against a template stating one form only, and the `- ` counter read them as an empty
+# section — so `close` reported success having ticked none of them, in the same words as a real
+# close. The refusal counts any list marker, so every non-checkbox form reaches it.
+# mkitem_numbered_acs <id> <next> <status> <token>
+mkitem_numbered_acs() {
+  cat > "$FIX/$BL/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+type: chore
+next: $2
+status: $3
+qa_level: verify
+created: 2026-08-01
+blocked_by: []
+claimed_by: $4
+claimed_at: 2026-08-01T00:00:00Z
+touches:
+---
+
+## Acceptance criteria
+
+1. AC1 — Given criteria written as a numbered list, when close runs, then none can be ticked
+2. AC2 — And neither can this one
+3. AC3 — Nor this one
+ITEM
+}
+
 commit_fixture() { git -C "$FIX" add -A && git -C "$FIX" commit -q -m "fixture"; }
 
 run_close() { (cd "$FIX" && "$BL/close" "$@" 2>&1); }
@@ -514,6 +543,37 @@ commit_fixture
 out="$(run_close 0044 ab12)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_contains "the item is done" "$(cat "$FIX/$BL/items/0044-fixture.md")" 'status: done'
+
+# --- 0044 AC5 — a NUMBERED criteria list is the same defect through a door the counter missed ---
+# The counter was `in_ac && /^- /`, so a `1.`/`2.`/`3.` list yielded zero bullets and fell through
+# to the "an empty criteria section still closes" allowance below — a silent close recording that
+# nothing was checked. Six of 102 items were captured in this form, three of them at next: verify.
+echo "0044 AC5 — a numbered criteria list is refused, not silently closed"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0045 | Criteria as a numbered list | verify | in-progress | 0000 |'
+mkitem_numbered_acs 0045 verify in-progress '"ab12"'
+commit_fixture
+out="$(run_close 0045 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "says how many it could not tick" "$out" '3'
+assert_contains "names the form it needs" "$out" '- [ ]'
+assert_line "the row is untouched" '| 0045 | Criteria as a numbered list | verify | in-progress | 0000 |' QUEUE.md
+assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0045-fixture.md")" 'status: in-progress'
+assert_clean "no file was changed"
+assert_no_lock "the lock is released on the refusal"
+
+# --- 0044 AC5 — an asterisk bullet reaches the refusal too -------------------------------------
+# `*` is the other list marker CommonMark allows. Counting only `-` and `1.` would leave one more
+# door open, and the point of the widened matcher is that NO non-checkbox form closes silently.
+echo "0044 AC5 — an asterisk criteria list is refused too"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0046 | Criteria as asterisks | verify | in-progress | 0000 |'
+mkitem_numbered_acs 0046 verify in-progress '"ab12"'
+sed -i.bak 's/^1\. AC1/* AC1/; s/^2\. AC2/* AC2/; s/^3\. AC3/* AC3/' "$FIX/$BL/items/0046-fixture.md"
+rm -f "$FIX/$BL/items/0046-fixture.md.bak"
+commit_fixture
+out="$(run_close 0046 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "says how many it could not tick" "$out" '3'
+assert_clean "no file was changed"
 
 # --- result -----------------------------------------------------------------------------------
 echo

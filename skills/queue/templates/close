@@ -212,18 +212,42 @@ item_qa="$(fm_value "$item" qa_level)"
 # Counted BEFORE anything is written, so the refusal leaves the tree exactly as it found it. An
 # EMPTY criteria section is not this defect and still closes: nothing to tick is not the same as
 # criteria that cannot be ticked, and refusing there would block every chore written without ACs.
+#
+# The marker class is EVERY list form, not `- ` alone. Counting only `- ` let a `1.`/`2.`/`3.`
+# list score zero bullets and fall through to the empty-section allowance below, so `close`
+# reported success having ticked none of them — the exact defect this refusal exists to stop,
+# through a door it did not cover. Six items were captured in that form, three at `next: verify`.
+#
+# `content` is what separates ABSENT from UNREADABLE. A section with no marker of any kind but
+# real lines in it is criteria written in a shape this script cannot parse, which is the defect;
+# a section with nothing in it is a chore with no ACs, which is not. The old counter conflated
+# them because zero bullets was the only signal it had.
 ac_counts="$(awk '
   /^## / { in_ac = ($0 ~ /^## Acceptance criteria/); next }
-  in_ac && /^- / { bullets++; if ($0 ~ /^- \[[ xX]\]/) boxes++ }
-  END { print bullets + 0, boxes + 0 }
+  in_ac {
+    if ($0 ~ /^[ \t]*$/) next
+    content++
+    if ($0 ~ /^([-*+]|[0-9]+[.)])[ \t]/) { bullets++; if ($0 ~ /^- \[[ xX]\]/) boxes++ }
+  }
+  END { print bullets + 0, boxes + 0, content + 0 }
 ' "$item")"
-ac_bullets="${ac_counts% *}"
-ac_boxes="${ac_counts#* }"
+read -r ac_bullets ac_boxes ac_content <<AC_EOF
+$ac_counts
+AC_EOF
 
 if [ "$ac_bullets" -gt 0 ] && [ "$ac_boxes" -eq 0 ]; then
   echo "$ID lists $ac_bullets acceptance criteria and not one of them is a checkbox" >&2
   echo "this script ticks '- [ ] AC1 — …' and nothing else, so closing here would record that none" >&2
   echo "of the $ac_bullets was checked — and DONE.md could not tell this ticket from one waved through" >&2
+  echo "rewrite the criteria in the '- [ ]' form (skills/queue/templates/item.md) and close again" >&2
+  exit 1
+fi
+
+if [ "$ac_bullets" -eq 0 ] && [ "$ac_content" -gt 0 ]; then
+  echo "$ID has $ac_content lines under 'Acceptance criteria' and not one list marker among them" >&2
+  echo "this script ticks '- [ ] AC1 — …' and nothing else, so it cannot tell whether these lines" >&2
+  echo "are criteria it failed to parse or prose that belongs elsewhere — and an empty section is" >&2
+  echo "the one case that closes, so guessing here would record an unchecked ticket as a clean one" >&2
   echo "rewrite the criteria in the '- [ ]' form (skills/queue/templates/item.md) and close again" >&2
   exit 1
 fi
