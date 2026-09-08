@@ -3,7 +3,7 @@ id: "0039"
 title: Build the orchestrate skill and the stage outcome schema
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -22,9 +22,16 @@ expects:
 # `skills/develop/SKILL.md` is deliberately absent: the schema is supplied by the invoker, so no
 # stage skill has to describe the FR13 shape, and develop is already over the skill-size goal
 # with a recorded reason. See 0036's review amendment, the scope cut.
-claimed_by:
-claimed_at:
+claimed_by: "0834"
+claimed_at: 2026-09-08T01:18:17Z
 touches:
+  - skills/orchestrate/SKILL.md
+  - skills/orchestrate/outcome.schema.json  # the single copy of the FR13 shape
+  - skills/verify/SKILL.md                  # AC20 only: relocate the evidence table
+  - README.md
+  - .claude-plugin/plugin.json
+  - tests/skill-size.test.sh
+  - tests/orchestrate.test.sh                # new
   # Second re-entry of 2026-09-07 (token 68c9). Scope is the ONE gap the 1b58 QA pass
   # failed on: the Dependencies NFR's naming half. The artifact and its guards are correct.
   - README.md                                # names the claude CLI as /orchestrate's runtime requirement
