@@ -2,8 +2,8 @@
 id: "0105"
 title: Burn a withdrawn ticket's ID, and make an item-ID citation resolvable
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 qa_manual:
 size: s
@@ -16,15 +16,9 @@ expects:
   - .claude/backlog/config.yml       # the counter, and the comment that documents it as monotonic
   - skills/queue/SKILL.md            # the withdrawal path that currently recycles
   - tests/citations.test.sh          # where an item-ID citation check belongs
-claimed_by: "61a6"
-claimed_at: 2026-09-08T14:25:41Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/config.yml
-  - skills/queue/SKILL.md
-  - skills/queue/templates/item.md
-  - tests/citations.test.sh
-  - tests/retro-tool-edit.test.sh
-  - tests/skill-size.test.sh
 ---
 ## Problem
 
