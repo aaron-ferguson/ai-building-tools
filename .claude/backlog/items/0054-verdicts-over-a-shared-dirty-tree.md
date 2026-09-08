@@ -172,3 +172,19 @@ because the verifier happened to re-run the suite at the end.
   session runs to find out whether a red is its own. Siting the worktree beside a symlinked
   conventions directory fixes it, and nothing says to. Step 5 names `node_modules` as the thing a
   worktree needs symlinked; in this repo it is the conventions directory, and FR2 should say so.
+- 2026-09-07 — `retro` absorbed a `FINDINGS.md` entry into this row. **`verify` Step 7's
+  fresh-capture rule names two cases and there is a third.** Step 7 says a `git status --porcelain`
+  printing nothing after a dirty Step 2 is "ambiguous between *they committed* and *I destroyed
+  their uncommitted work*, and nothing but a fresh read separates those". Verifying `0076`,
+  `skills/orchestrate/SKILL.md` was ` M` at Step 2 and clean at verdict time with **neither** case
+  evidenced: no commit reachable from `HEAD` touched that path after `e3bc5c8` (already an ancestor
+  at Step 2), `git stash list` was empty, and no branch or ref carried it. The likely cause is the
+  unnamed third case — **the owning session reverted its own edit, or moved it into its own
+  worktree** (`git worktree list` showed a second session pinned at the same SHA). None of the three
+  leaves a distinguishable trace, so the fresh read the rule prescribes as the separator does not
+  separate: it returns the same empty output for a benign revert and for collateral damage, which is
+  the one outcome a QA session most needs to rule out about itself. What actually settled it was
+  **the session's own command history** — two `git commit` calls by pathspec, and a mutation battery
+  whose `cd` and `git checkout -- <path>` were confined to its own worktree. So Step 7 either names
+  the revert/worktree-migration case and says the discriminator is your own log rather than
+  `git status`, or it stops promising a fresh read distinguishes them.

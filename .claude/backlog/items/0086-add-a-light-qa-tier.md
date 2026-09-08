@@ -354,3 +354,13 @@ merge exists to prevent.
   it — the additive reading is the one every existing FR and AC was written against — so **`size`
   stays `l`**, the QA plan is unchanged, and the only additions are AC11 and the *Out of scope* line
   above. Found from outside while settling AetherWorks 0119 (whether `qa_level: none` is a level).
+- 2026-09-07 — `retro` absorbed a `FINDINGS.md` entry parked in the `ai-building-conventions`
+  buffer on 2026-08-26, which is a live instance of this row's second half. **`config.yml`'s
+  `commands:` block had no correct answer for a documentation repo.** The template offers
+  unit/integration/e2e/lint/typecheck and assumes a package runner; that repo has no build and no
+  framework, only a sibling `<name>.test.sh` beside each script, so `unit` became a shell loop over
+  `scripts/*.test.sh`. Two consequences the template does not warn about, both bearing on the
+  "level a repo with no runner can run" this row is settling: **the glob is a path decision baked
+  into config**, so a ticket adding a new directory silently falls outside the runner unless that
+  ticket widens it; and **a project with no runner at all has no honest value to put here**, which
+  pushes every ticket to `qa_level: verify` whether or not that is the right level for it.

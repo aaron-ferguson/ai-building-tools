@@ -126,3 +126,33 @@ Found while verifying `0085` (pointer: `tests/cost-by-category.test.sh`, item `0
   `testing-conventions.md` and demonstrated in this repo, so no decision blocks the criteria.
 - `size: l` because it is 21 files and FR3 requires a mutation per re-anchored assertion. It is a
   sweep, and the batching rule applies inside it: one session, one loop.
+- 2026-09-07 — `retro` absorbed five `FINDINGS.md` entries into this row rather than filing a
+  second ticket; the sweep this row already scopes is where they belong. Established, so a claiming
+  session need not re-derive it:
+  - **The `grep -c` pre-filter has three known blind spots and cannot be the only net.** (1) It is
+    line-based, so a phrase wrapping across a line break counts as 1 and reads as safely unique —
+    which is exactly the phrase most likely to be duplicated in flowing prose. Count on flattened
+    text (`tr '\n' ' ' | tr -s ' '`), as `tests/orchestrate.test.sh`'s `section()` helper does.
+    (2) A guard over a *filtered stream* (`fenced "$SKILL" | grep -qF`) is semantically whole-file
+    and matches no pattern looking for `grep … "$FILE"`; a filter selecting **every** block of a
+    kind is not a scope, only a different whole. (3) A file-level count answers the wrong question
+    for a **section-scoped** guard: `0039`'s Dependencies guard greps the flattened `## Requirements`
+    section for `orchestrate`, which occurs twice *within that section*, so generalising the one
+    sentence carrying the attribution left the suite at 105 passed, 0 failed. **Count within the
+    guard's own subject, whatever narrowing it applies.**
+  - **`case "$out" in "TAKE      0001"*)` is a prefix match on a multi-line capture, not a line
+    match.** Any `COLLIDES`, `SKIP`, `DRIFT` or warning line printed ahead of the regression hides
+    it. `printf '%s' "$out" | grep -q '^TAKE      0001'` costs the same and says what was meant.
+    Worth a sweep for `case "$out" in` across `tests/`.
+  - **Where a behaviour is defended by two independent mechanisms, a mutation removing one proves
+    nothing.** `0039`'s AC16 fixture needed *both* the status filter and the `touches:` collision
+    check broken before the guard would red; single-mutation verified it against the stronger of
+    the two only.
+  - **An `assert_contains` on a flag name is matched by the prose explaining the flag.** `next`'s
+    `usage()` could drop `--drive` from its synopsis *and* delete its five-line description block
+    and stay green, because a later paragraph mentions the flag. Pin the mode's own line.
+  - **The enumerated-subjects defect is live in this repo's own guards.** `tests/last-line.test.sh`
+    and `tests/reporting.test.sh` carried hardcoded `SKILLS=` lists (now derived);
+    `grep -n '^[A-Z_]*=\"[a-z ]*\"' tests/*.test.sh` finds the rest and nobody has run it.
+  The generalisable half of all of this landed in `testing-conventions.md` on 2026-09-07; what stays
+  here is the repo-specific sweep.

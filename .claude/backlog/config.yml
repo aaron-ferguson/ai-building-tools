@@ -7,7 +7,13 @@ conventions:
   path: ../ai-building-conventions
 
 # Monotonic. queue claims this number for a new ticket, then increments it.
-next_id: 104
+# 0104 IS BURNED, NOT AVAILABLE. It was issued twice — once on 2026-09-05 (commit b9a5ee0,
+# still cited by five guards) and once to a ticket withdrawn at 3b72d38, whose withdrawal reset
+# this counter from 105 back to 104 and so queued up a third issue. Monotonic means monotonic:
+# a withdrawal burns the ID. Set to 111 by the 2026-09-07 retro, which issued 0105-0110 and left
+# 0104 permanently unissued so those citations resolve to nothing durably rather than silently
+# re-pointing at unrelated work. The withdrawal path itself is still wrong — see item 0105.
+next_id: 111
 
 # How many FINDINGS.md entries before a driver runs a retro instead of the next ticket. Read by
 # `./next --findings` and gated on by `./next --drive` (exit 5). Left at retro's stated cadence

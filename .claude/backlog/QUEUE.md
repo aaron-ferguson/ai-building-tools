@@ -24,18 +24,23 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0040 | Harden the supervised loop against a held lock and a budget-killed stage | develop | ready | 0036 |
+| 0105 | Burn a withdrawn ticket's ID, and make an item-ID citation resolvable | develop | ready |  |
 | 0081 | Give the hand-off a script, as claim and close have | verify | ready |  |
 | 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | develop | ready |  |
 | 0078 | Route a finding by what it is about, not which repo you are standing in | develop | ready |  |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
 | 0082 | Make claim fail safe on the two paths where it currently fails open | verify | ready |  |
+| 0106 | Make touches mean one thing across claim, close and a transient mutation | develop | ready |  |
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | develop | blocked |  |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
 | 0083 | Decide what a second checkout may do with the backlog | design | ready |  |
+| 0110 | Decide the shape of a ticket whose first requirement can kill the rest | design | ready |  |
 | 0041 | Write release notes for what a work session delivered | design | ready |  |
 | 0052 | Require an acceptance criterion to name the input that would make it red | verify | ready |  |
+| 0107 | Require an NFR row to name how it would red | develop | ready |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
+| 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
 | 0046 | Make the README guard list provably complete | develop | ready |  |
 | 0091 | Make a by-hand backlog write take the lock and prove its commit landed | develop | ready |  |
 | 0092 | Prove claim and close hold the lock through their commit | develop | ready |  |
@@ -79,6 +84,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0099 | Return RANKING.md to current state only | develop | ready |  |
 | 0102 | Decide what happens when the size-gate regime's two deferred triggers fire | design | ready |  |
 | 0098 | Disambiguate the FR citations the 0036 split left behind | develop | ready |  |
+| 0109 | Give a human-reported source a resolvable form | develop | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in

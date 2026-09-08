@@ -176,3 +176,17 @@ each is a test the chosen shape has to pass.
   every copy at once. A scope smaller than a file does not help here; the unit needed is *larger*
   than a file and spans three of them, which is an argument for the rank-against-the-held-set shape
   over the sub-file one.
+- 2026-09-07 — `retro` absorbed the design half of two `FINDINGS.md` entries into this row; the
+  mechanical half is filed as `0106`. Two facts this row's decision has to accommodate:
+  **(1) a file mutated transiently and restored is inside a session's file scope and no step says to
+  declare it.** `develop` Step 1 defines `touches:` as "what you will actually open" and adds a rule
+  for a file you will *create*; a file you break on purpose and put back fits neither, since the
+  committed diff never shows it. But it is the sharpest kind of hold — proving a guard red means the
+  suite is deliberately red while the mutation is live, and a concurrent whole-suite run collects
+  reds that belong to nobody, cannot be reproduced a moment later, and point at a file its own
+  ticket never touched. Step 5 tells the *arriving* session to check `pgrep`; nothing addresses the
+  session holding the mutation. **(2) A version bump is a release act, not a build act, and so
+  cannot be in a `develop` ticket's scope at all.** `tools/release` derives the next version from the
+  **remote's** `plugin.json` (`0075`, after a hand-picked version collided), so a hand-bump both
+  re-introduces that defect and still needs the push approval the chain opens with. `touches:` naming
+  `.claude-plugin/plugin.json` invited three sessions in a row to record not having done it.
