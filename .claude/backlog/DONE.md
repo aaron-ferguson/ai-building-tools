@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0081 | Give the hand-off a script, as claim and close have | feature | unit | 2026-09-08 | [items/0081-give-the-hand-off-a-script.md](items/0081-give-the-hand-off-a-script.md) |
 | 0082 | Make claim fail safe on the two paths where it currently fails open | bug | unit | 2026-09-08 | [items/0082-make-claim-fail-safe-where-it-fails-open.md](items/0082-make-claim-fail-safe-where-it-fails-open.md) |
 | 0105 | Burn a withdrawn ticket's ID, and make an item-ID citation resolvable | bug | unit | 2026-09-08 | [items/0105-burn-a-withdrawn-ticket-id.md](items/0105-burn-a-withdrawn-ticket-id.md) |
 | 0040 | Harden the supervised loop against a held lock and a budget-killed stage | feature | unit | 2026-09-08 | [items/0040-lock-policy-and-budget-kill-recovery.md](items/0040-lock-policy-and-budget-kill-recovery.md) |

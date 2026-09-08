@@ -2,8 +2,8 @@
 id: "0081"
 title: Give the hand-off a script, as claim and close have
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -19,16 +19,10 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-claimed_by: "6954"
-claimed_at: 2026-09-08T23:24:04Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/handoff
-  - .claude/backlog/handoff
-  - tests/handoff.test.sh
-  - tests/backlog-scripts-installed.test.sh
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - references/CONCURRENCY.md
+closed: 2026-09-08
 ---
 
 ## Problem
@@ -87,13 +81,13 @@ indistinguishable in the git record from a clean sequential hand-off.
 
 ## Acceptance criteria
 
-- [ ] AC1 — `./handoff <id> <token>` moves a row and its item between stages, committed inside the
+- [x] AC1 — `./handoff <id> <token>` moves a row and its item between stages, committed inside the
   lock, in one invocation.
-- [ ] AC2 — Given an item whose `status:` does not match what the edit expects, it **refuses and
+- [x] AC2 — Given an item whose `status:` does not match what the edit expects, it **refuses and
   changes nothing**, with a message naming the mismatch — the 0087 case.
-- [ ] AC3 — It refuses a token that does not hold the claim, and a row not at the expected stage,
+- [x] AC3 — It refuses a token that does not hold the claim, and a row not at the expected stage,
   each with its own message and no file changed.
-- [ ] AC4 — Given a successful hand-off, when `./next --drift` runs, then it exits zero for that
+- [x] AC4 — Given a successful hand-off, when `./next --drift` runs, then it exits zero for that
   row — **recorded as evidence of nothing**, and tickable on that basis alone. `--drift` compares the
   `Status` column against `blocked_by` only and reads no item field, so its zero is returned equally
   by a correct `handoff` and by one with `mv "$queue_tmp" "$QUEUE"` removed (driven, mutation diffed
@@ -101,11 +95,11 @@ indistinguishable in the git record from a clean sequential hand-off.
   item fields and both row cells move in one commit) and **AC2** (a row and item that disagree going
   in are refused, from both sides). The blind report is **`0115`**, which also makes
   `tests/handoff.test.sh:461-472` a guard that can fail. Do not tick this as *verified by `--drift`*.
-- [ ] AC5 — `sh -n` passes and the installed copy is byte-identical to the template
+- [x] AC5 — `sh -n` passes and the installed copy is byte-identical to the template
   (`tests/backlog-scripts-installed.test.sh`).
-- [ ] AC6 — `develop` and `verify` name `./handoff` as the supported path and keep the by-hand
+- [x] AC6 — `develop` and `verify` name `./handoff` as the supported path and keep the by-hand
   fallback.
-- [ ] AC7 — `CONCURRENCY.md` states that the release is a stage's final act, with the 29-second
+- [x] AC7 — `CONCURRENCY.md` states that the release is a stage's final act, with the 29-second
   window as its reason.
 
 ## QA plan
