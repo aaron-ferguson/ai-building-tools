@@ -194,3 +194,11 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   withdrawn in place and keeping the numbers, but that was invented, not read. Still needs a row:
   either `queue` Step 2's re-specify case states the rule for FR/AC numbering, or it says why a
   criterion differs from an id.
+- 2026-09-08 — **A QA verdict's headline suite tally was overstated by 100 assertions, and the next
+  pass had to rule out a dropped guard before it could trust its own baseline.** `0081`'s
+  `[9840]` evidence table records "23 files, 1,134 assertions, 0 failed"; the same 23 files, byte-
+  identical (`git log 174b885..HEAD -- tests/` is empty), total **1,034**. A hand-added tally is the
+  one number in an evidence table that looks like measurement and is arithmetic, and it fails
+  silently in the direction that matters — a shrinking count is exactly how a deleted guard would
+  present. Still needs a row: either `verify` Step 7 requires the tally to be pasted from a command
+  rather than summed by the session, or the suite gains a runner that prints one total.

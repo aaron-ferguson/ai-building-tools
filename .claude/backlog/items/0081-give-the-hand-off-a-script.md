@@ -337,3 +337,54 @@ verifies nothing, and `./close` closes on ticked ACs.
 carry no `Co-Authored-By` trailer, confirmed `trailer=` empty on both live claim commits from this
 session (**0090** item 4); `claim.test.sh`/`close.test.sh` cannot see a lock released before the
 commit (**0092**).
+
+### Verify 2026-09-08 [6954] — PASS, all seven ACs and all three NFR rows green
+
+Level `unit` per frontmatter; the QA plan's `**Level:** unit` agrees — no drift. Whole suite green at
+baseline and at verdict: **23 files, 1,034 assertions, 0 failed**, run file-by-file per `config.yml`'s
+note rather than fail-fast. Tree clean at Step 2 **and** at verdict, so the advisory intersection is
+empty. Executed copy: the installed plugin at `0.9.19`, `diff -rq` byte-identical to this checkout.
+Code and guards are unchanged since the build at `2344d29` — `git log 174b885..HEAD -- tests/` is
+empty — so this pass re-drove the ACs and re-ran only the mutations it cites, per the re-specification
+above.
+
+| AC / NFR | How verified — and where | Result |
+|---|---|---|
+| AC1 — moves row + item, committed inside the lock, one invocation | Drove `./handoff 0007 8a04 verify` in a throwaway git repo. All five item fields moved (`next`→verify, `status`→ready, `claimed_by:`/`claimed_at:`/`touches:` cleared **with its two column-0 entries**), `expects:` untouched, both row cells moved, both neighbour rows untouched. A `pre-commit` hook witnessed `LOCK: present at commit time` and the staged set as exactly `QUEUE.md` + the item. Lock released after, fixture tree clean. | PASS |
+| AC2 — status mismatch refuses and changes nothing (the 0087 case) | Both directions driven: item `ready` / row `in-progress`, and item `in-progress` / row `ready`. Each names the mismatch — `"the item reads 'ready' and the row reads 'in-progress'"` — rc=1, and a `cksum` over every file in the backlog directory was unchanged. | PASS |
+| AC3 — refuses a wrong token and a row not at the expected stage, each own message, no file changed | Eleven distinguishable refusals driven, every one leaving the backlog byte-identical by `cksum`: wrong token, no `claimed_by:` at all, row/item stage disagreement, header with no `ID` cell, header missing `Next`, unknown row id, unrecognised stage, each of the three forbidden statuses (`blocked`/`done`/`in-progress`), and the usage error (rc=2). | PASS |
+| AC4 — `./next --drift` exits zero for that row, **recorded as evidence of nothing** | Zero before the hand-off and zero after. Then the instrument's blindness reproduced independently: removing `mv "$queue_tmp" "$QUEUE"` (break diffed first — one line, confirmed landed) produced the exact 0087 drift, an item at `next: verify, status: ready, claimed_by:` empty over a row still reading `develop \| in-progress` — and `--drift` printed `no drift`, rc=0, identically. Source confirms why: `.claude/backlog/next:473-494` compares the `Status` column against `derived_of`/`blocked_by` and reads no item field. Ticked as the recorded observation the re-specification defines, **not** as *verified by `--drift`*; the atomicity is carried by AC1 and AC2. Blind report is `0115`. | PASS |
+| AC5 — `sh -n` passes, installed copy byte-identical to template | `sh -n` clean on all four templates; `cmp -s` identical for `claim`, `close`, `handoff`, `next`. | PASS |
+| AC6 — `develop` and `verify` name `./handoff`, keep the by-hand fallback | `develop` Step 5 line 445 names the command, fallback at 465–470. `verify` Step 5 line 325 with all three branches (331–333), fallbacks at 286 and 336. | PASS |
+| AC7 — `CONCURRENCY.md` states the release is the final act, with the 29-second window | `references/CONCURRENCY.md:181`, *The release is the final act*, carrying the 29-second window and "No lock can see this". | PASS |
+| NFR Git — pathspec inside the lock, `Co-Authored-By` trailer | Hook witness proves both halves. Trailer read through git's own parser: `%(trailers:key=Co-Authored-By,valueonly)` → `Claude <noreply@anthropic.com>`. Subject is imperative sentence case. | PASS |
+| NFR Testing — throwaway repo per case, asserts on message and files, not exit status alone | `mktemp -d` per case (`tests/handoff.test.sh:130`), 17 file-state assertions across the file, and reproduced independently here with `cksum` fingerprints on all eleven refusals. | PASS |
+| NFR Dependencies — `/bin/sh`, `git`, `awk` and nothing beyond what the other two use | Command set extracted from all three templates: `handoff` uses `awk cat date git grep head ls mktemp printf` — **identical to `close`**, and `claim`'s set plus `grep`. | PASS |
+
+**Four mutations re-run — the ones this verdict cites** (control 104/0 before **and** after all four,
+each break diffed to confirm it landed, each restored by its own pathspec):
+
+- **drop `-m "$COAUTHOR"`** → 103/1, `FAIL — git parses a Co-Authored-By trailer on the hand-off commit`.
+- **fold the trailer into the subject `-m`** → 103/1, same assertion. This is the mutation a `grep` of
+  the commit body could not see, and it is why the guard reads through git's trailer parser.
+- **release the lock before the commit** → 103/1, and the red is *exactly* the `pre-commit` hook
+  witness (`FAIL — the lock was held when the commit ran`), confirming that nothing else in the file
+  can observe the 29-second window.
+- **`touches:` skiplist narrowed to `^[ \t]+- `** → the read-back fires with `did not apply to:
+  touches.entries`. Note the shape: this collides with the guard's own internal mutation cases and the
+  file exits **with no tally**, printing `FAIL — the mutation did not apply — the case below proves
+  nothing`. That is the collision `verify` Step 3 warns about, observed here as documented.
+
+**Newly-reachable states walked** (Step 4): every stage/status pair the script accepts — `queue ready`,
+`design ready`, `develop ready`, `verify ready`, `develop waiting` — lands consistently in **both** the
+row and the item, which covers `verify`'s three outgoing branches. The `queue` branch is not only
+driven but live: `0081` itself travelled it at `174b885`. No destructive or privileged path is newly
+reachable — `rm -rf "$LOCK"` resolves from `$DIR`, an absolute `cd`-resolved path, and the three
+statuses a hand-off must never write are refused before the lock is taken.
+
+**Not this ticket's, each already carrying a row:** `handoff:102` warns-and-carries a foreign
+`QUEUE.md` edit rather than refusing as `claim` now does (`0090` item 3); `claim` and `close` carry no
+`Co-Authored-By` trailer (`0090` item 4); `claim.test.sh`/`close.test.sh` cannot see a lock released
+before the commit (`0092`). The bare `30` commit-retry limit sits outside each script's own named-
+constant block in all three of `claim:198`, `close:416` and `handoff:345` — a shared house pattern
+rather than this ticket's defect, and out of scope here.
