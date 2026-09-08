@@ -2,8 +2,8 @@
 id: "0082"
 title: Make claim fail safe on the two paths where it currently fails open
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -16,13 +16,10 @@ expects:
   - .claude/backlog/claim
   - tests/claim.test.sh
   - references/CONCURRENCY.md
-claimed_by: "f1ff"
-claimed_at: 2026-09-08T22:48:34Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/claim
-  - .claude/backlog/claim
-  - tests/claim.test.sh
-  - references/CONCURRENCY.md
+closed: 2026-09-08
 ---
 
 ## Problem
@@ -70,15 +67,15 @@ refuses rather than guesses on three other grounds.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Claiming an item with a non-empty `expects:` writes those paths as `touches:` in the
+- [x] AC1 — Claiming an item with a non-empty `expects:` writes those paths as `touches:` in the
   claim commit.
-- [ ] AC2 — The report says to narrow the provisional scope, and does not imply the field is unset.
-- [ ] AC3 — An item with no `expects:` claims as it does today, and the report says the scope is
+- [x] AC2 — The report says to narrow the provisional scope, and does not imply the field is unset.
+- [x] AC3 — An item with no `expects:` claims as it does today, and the report says the scope is
   unset.
-- [ ] AC4 — With a foreign uncommitted edit to `QUEUE.md` present, `claim` **refuses**, names the
+- [x] AC4 — With a foreign uncommitted edit to `QUEUE.md` present, `claim` **refuses**, names the
   affected rows, and leaves `QUEUE.md`, the item and the index byte-identical.
-- [ ] AC5 — That refusal's message is distinct from the token, stage and table-shape refusals.
-- [ ] AC6 — Each refusal branch, mutated away, turns `tests/claim.test.sh` red.
+- [x] AC5 — That refusal's message is distinct from the token, stage and table-shape refusals.
+- [x] AC6 — Each refusal branch, mutated away, turns `tests/claim.test.sh` red.
 
 ## QA plan
 

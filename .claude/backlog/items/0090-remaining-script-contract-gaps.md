@@ -3,7 +3,7 @@ id: "0090"
 title: Close the four contract gaps 0081 and 0082 left in claim, close and handoff
 type: bug
 next: develop
-status: blocked
+status: ready
 qa_level: unit
 size: m
 created: 2026-09-05
