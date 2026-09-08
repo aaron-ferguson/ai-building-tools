@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0039 | Build the orchestrate skill and the stage outcome schema | feature | unit | 2026-09-08 | [items/0039-the-orchestrate-skill-and-outcome-schema.md](items/0039-the-orchestrate-skill-and-outcome-schema.md) |
 | 0076 | Make a tool edit run the target repo's suite before it commits | bug | unit | 2026-09-08 | [items/0076-run-the-target-repos-suite-before-committing.md](items/0076-run-the-target-repos-suite-before-committing.md) |
 | 0038 | Add the drive and findings routing modes to next | feature | unit | 2026-09-06 | [items/0038-next-drive-and-findings-modes.md](items/0038-next-drive-and-findings-modes.md) |
 | 0085 | Collapse the backlog protocol from a third of every session's turns to one command per stage boundary | debt | verify | 2026-09-03 | [items/0085-collapse-the-backlog-protocol-turns.md](items/0085-collapse-the-backlog-protocol-turns.md) |

@@ -2,8 +2,8 @@
 id: "0039"
 title: Build the orchestrate skill and the stage outcome schema
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -22,16 +22,9 @@ expects:
 # `skills/develop/SKILL.md` is deliberately absent: the schema is supplied by the invoker, so no
 # stage skill has to describe the FR13 shape, and develop is already over the skill-size goal
 # with a recorded reason. See 0036's review amendment, the scope cut.
-claimed_by: "0834"
-claimed_at: 2026-09-08T01:18:17Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/orchestrate/SKILL.md
-  - skills/orchestrate/outcome.schema.json  # the single copy of the FR13 shape
-  - skills/verify/SKILL.md                  # AC20 only: relocate the evidence table
-  - README.md
-  - .claude-plugin/plugin.json
-  - tests/skill-size.test.sh
-  - tests/orchestrate.test.sh                # new
   # Second re-entry of 2026-09-07 (token 68c9). Scope is the ONE gap the 1b58 QA pass
   # failed on: the Dependencies NFR's naming half. The artifact and its guards are correct.
   - README.md                                # names the claude CLI as /orchestrate's runtime requirement
@@ -42,6 +35,7 @@ touches:
 # correct as delivered (1b58 verified all 24 ACs); `skills/verify/SKILL.md`'s AC20 write is done;
 # `tests/skill-size.test.sh` derives its subjects from skills/*/SKILL.md so it never needed an edit;
 # `tools/validate-json-schema.py` was typed by the 6c77 re-entry.
+closed: 2026-09-08
 ---
 
 ## Problem
@@ -213,13 +207,13 @@ AC19's narrow scoping blocks the very files `config.yml` points the stage at), `
 than something a dead supervisor has to hunt for, and `--setting-sources` stated rather than
 inherited.
 
-- [ ] **AC1 — a stage runs as a separate process, and the skill and the conventions both resolve
+- [x] **AC1 — a stage runs as a separate process, and the skill and the conventions both resolve
   inside it.** Given a backlog with a takeable `next: develop` gate, when the supervisor dispatches
   it, then a `claude -p` process is launched with the `develop` skill invoked by name, it runs to
   completion in its own session, and the ticket is left at `next: verify, status: ready` with its
   claim released. **And the stage's own outcome confirms it resolved the project's conventions.**
   `--bare` appears nowhere in the invocation.
-- [ ] **AC2 — the outcome is schema-validated, it is an envelope over an array, and it is all the
+- [x] **AC2 — the outcome is schema-validated, it is an envelope over an array, and it is all the
   supervisor gets.** Given a finished stage process, when the supervisor reads its result, then
   stdout parses as a single JSON object satisfying `skills/orchestrate/outcome.schema.json` — an
   envelope (stage, session id, commits, cost, findings-parked count, conventions-resolved,
@@ -227,43 +221,43 @@ inherited.
   reads no transcript, no skill file and no other output of that process. **Given a gate of three
   tickets whose verdicts differ**, then all three appear with their own verdicts and none is
   dropped.
-- [ ] **AC3 — a stage that will not produce the shape fails loudly.** Given a stage process whose
+- [x] **AC3 — a stage that will not produce the shape fails loudly.** Given a stage process whose
   final message does not satisfy the schema, when it exits, then the supervisor records an
   escalation and starts nothing further — it does not parse prose, infer the verdict, or proceed
   on a partial object.
-- [ ] **AC4 — the dispatch unit is a gate.** Given three takeable `next: develop` rows of which two
+- [x] **AC4 — the dispatch unit is a gate.** Given three takeable `next: develop` rows of which two
   share an `expects:` path, when the supervisor dispatches develop, then both sharing rows go to
   **one** stage session and the unrelated row does not, and the session claims and closes each of
   the two individually.
-- [ ] **AC5 — verify follows develop without the supervisor verifying anything.** Given a ticket
+- [x] **AC5 — verify follows develop without the supervisor verifying anything.** Given a ticket
   left at `next: verify, status: ready`, when the supervisor acts, then it dispatches a **new**
   `claude -p` process running `verify` on that ticket, and the supervisor itself runs no test and
   writes no verdict.
-- [ ] **AC6 (gating half) — the gate lets the running stage finish, and fires once.** Given
+- [x] **AC6 (gating half) — the gate lets the running stage finish, and fires once.** Given
   `./next --findings` at one entry below the threshold and a stage session running, when that
   stage returns and its parked findings cross the threshold, then the supervisor starts no further
   stage session, dispatches a `retro` process, and the crossing is one line in the run log.
   **Given a completed retro whose own Step 6 parked entries that leave the count still above the
   threshold**, then it does **not** dispatch a second retro: the gate is evaluated once per run
   and the run is over.
-- [ ] **AC7 — the run ends at the retro, as a checklist.** Given a `retro` process returned with
+- [x] **AC7 — the run ends at the retro, as a checklist.** Given a `retro` process returned with
   its edits committed, when the supervisor reports, then it stops, and its report enumerates every
   remaining step of `retro` Step 5's release chain each marked done or outstanding. No push, no
   version bump, no install, no restart, and no further stage.
-- [ ] **AC8 — no push and no install without an explicit approval in that session.** Given a
+- [x] **AC8 — no push and no install without an explicit approval in that session.** Given a
   supervised run of any length, when the run ends, then `git push` has not run, the plugin version
   has not changed and no install has happened — unless the user approved that specific action in
   that session. "Ship it" earlier in the session is not that approval.
-- [ ] **AC12 — the supervisor stays answerable while a stage runs.** Given a stage process running,
+- [x] **AC12 — the supervisor stays answerable while a stage runs.** Given a stage process running,
   when the user asks what is happening, redirects the run to a specific ticket, holds it, or stops
   it, then the supervisor answers from the run log and the backlog without waiting for that stage
   to finish and **without polling** — no turn is spent on a check that reports no change.
-- [ ] **AC13 — the bound is measured as growth and turns, not as a ratio that cannot go red.**
+- [x] **AC13 — the bound is measured as growth and turns, not as a ratio that cannot go red.**
   Given a completed multi-cycle run, when `tools/harvest-usage.sh` is run over the supervising
   session's transcript, then it reports **three** figures against FR7's stated numbers: the
   per-turn **floor**, the per-cycle **growth** as an absolute figure, and **turns per cycle**
   against the budget. All three land in the run log and the ticket's `cost_tracking:`.
-- [ ] **AC14 — cost per closed ticket includes the supervisor's own spend.** Given a completed run,
+- [x] **AC14 — cost per closed ticket includes the supervisor's own spend.** Given a completed run,
   when the supervisor reports, then it states cost per closed ticket against this repo's observed
   figures — **$5.71 across all stages, $4.23 counting only develop and verify** (`MEASUREMENT.md`)
   — and not total spend. **Corrected 2026-09-06, in build:** this AC quoted **$6.01 / $4.45**,
@@ -272,25 +266,25 @@ inherited.
   and `0041` as holding the stale pair; this ticket held it too and was not on the list. **The supervisor's own spend is in the numerator**: it attributes to no
   ticket's `cost_tracking:`, so a figure summed from the stages alone omits the one cost this
   project adds and reports a win that is partly unmeasured overhead.
-- [ ] **AC15 — the supervisor holds no claim and no row.** Given a run at any point, when the item
+- [x] **AC15 — the supervisor holds no claim and no row.** Given a run at any point, when the item
   files are inspected, then no `claimed_by:` token was minted by the supervisor, and every
   `in-progress` row corresponds to a stage process that is actually running.
-- [ ] **AC16 — a supervisor killed mid-cycle leaves a backlog a hand-driven session can pick up.**
+- [x] **AC16 — a supervisor killed mid-cycle leaves a backlog a hand-driven session can pick up.**
   Given a supervisor killed while a stage runs, when a hand-driven session then runs `./next`, then
   it is offered a takeable row, no claim is orphaned, no row reads `in-progress` with nothing
   running, and `./next --drift` exits zero.
-- [ ] **AC17 — a resuming supervisor derives its position, and does not restore it.** Given a run
+- [x] **AC17 — a resuming supervisor derives its position, and does not restore it.** Given a run
   log from a killed run, when a new supervisor starts, then it determines the next action from
   `./next --drive` and `./next --findings` alone, and reads the log only for what already
   escalated, what the run has spent, and 0038's completed-outcome input. A log deleted between the
   two sessions changes the next action not at all.
-- [ ] **AC18 — a second supervisor refuses.** Given one supervisor active on a backlog, when a
+- [x] **AC18 — a second supervisor refuses.** Given one supervisor active on a backlog, when a
   second is started on the same backlog, then it says so and starts no stage session.
-- [ ] **AC19 — each stage gets the narrowest authority that works, for that stage only.** Given a
+- [x] **AC19 — each stage gets the narrowest authority that works, for that stage only.** Given a
   dispatched stage, when its process is launched, then it is scoped to the tools that stage needs
   and given a spend cap, and `--dangerously-skip-permissions` appears nowhere. Authority does not
   outlive the process.
-- [ ] **AC20 — the trim moved the detail, it did not delete it — and the evidence table survives.**
+- [x] **AC20 — the trim moved the detail, it did not delete it — and the evidence table survives.**
   Given each kind of content a stage's report carries today that the supervisor will no longer read
   — the diagnosis behind a bounce, the red that proved to be another session's, the mechanism that
   surprised it, **and `verify` Step 7's per-AC evidence table** — when the stage finishes, then that
@@ -298,11 +292,11 @@ inherited.
   pointer points at where. **Specifically for the evidence table:** given a closed ticket, when its
   item file is read, then every AC and NFR appears with how it was checked and the actual output. A
   verify stage that returns a verdict without having written that table fails this criterion.
-- [ ] **AC21 — the loop surfaces what the run learned.** Given a completed cycle, when the
+- [x] **AC21 — the loop surfaces what the run learned.** Given a completed cycle, when the
   supervisor reports it, then the report carries the findings-parked count for that cycle. This is
   the only signal left that the run is learning anything, because FR13 removed the narrative it
   would otherwise have come from.
-- [ ] **AC22 — where the CLI cannot be invoked, it degrades visibly, and the probe is a real
+- [x] **AC22 — where the CLI cannot be invoked, it degrades visibly, and the probe is a real
   dispatch.** Given a host where the supervisor cannot launch a `claude` subprocess, when it starts,
   then it says so and falls back to naming the commands for a human to run — today's behaviour —
   rather than appearing to drive a loop it is not driving. **The detection is a startup probe that
@@ -310,16 +304,16 @@ inherited.
   before the first real stage. `command -v claude` is not the check — an unauthenticated CLI and a
   nested session's permissions both look like a present binary, and the nested-dispatch question is
   the untested premise under AC1.
-- [ ] **AC23 — a hand-driven session is entirely unaffected.** Given the whole change installed,
+- [x] **AC23 — a hand-driven session is entirely unaffected.** Given the whole change installed,
   when a session runs `develop` or `verify` by hand with no supervisor, then **its behaviour is
   what it was at 0.9.3** and every existing test still passes. The one intended change to a stage
   skill is `verify` writing its evidence table to the item file (AC20), which is a hand-driven
   improvement rather than a supervised-only one.
-- [ ] **AC27 — the pre-flight depth report happens before the first dispatch.** Given a supervised
+- [x] **AC27 — the pre-flight depth report happens before the first dispatch.** Given a supervised
   run starting, when it reports, then it states how many takeable gates deep the backlog is and
   what stops it — in one line, from the `--drive` read it makes anyway, and **before** any stage
   process is launched.
-- [ ] **AC24 — the documentation says how the suite is actually run.** Given the change, when
+- [x] **AC24 — the documentation says how the suite is actually run.** Given the change, when
   `README.md`'s *One skill per session* is read, then it describes the supervised loop alongside
   the hand-driven one, and no longer implies a person typing the next command is the only path.
 
@@ -380,6 +374,138 @@ inherited.
 - **A dashboard or reporting UI.** FR10's log is on disk and read by a session.
 
 ## QA evidence
+
+**Pass of 2026-09-07, token `0834`. Verdict PASS** — the one NFR conjunct the `1b58` pass failed
+on is met and guarded, and **every acceptance criterion was re-verified by my own mutation** rather
+than read off an earlier tick. `verify` Step 3's *never trust a tick you did not write* is not a
+formality on a ticket that has been round the loop four times: the re-entry changed a **guard file**,
+which is what most of these criteria rest on.
+
+**The ticket has 22 acceptance criteria, not 24.** Both prior passes reported "all 24" — the
+numbering runs AC1–AC8, AC12–AC24, AC27 with gaps, and `grep -c '^- \[ \] \*\*AC'` answers 22.
+Nothing rests on the count; it is corrected here because the same stale-cardinality class is what
+the re-entry fixed in README's *"Five skills"*, and an evidence table is the wrong place to carry a
+number nobody re-derives.
+
+`qa_level: unit` — frontmatter and QA plan agree, no drift. Suite is `for t in tests/*.test.sh`
+(`config.yml`), run **per file** rather than fail-fast so a red can be attributed. Baseline and
+control both **22/22 files green**, `tests/orchestrate.test.sh` **105 passed / 0 failed / 0
+skipped** — the 0 skipped is load-bearing: AC22's probe dispatched a real nested `claude -p` on this
+host, so AC1's premise is tested rather than assumed.
+
+**Which copy executed.** The repo copy is the authority and is what was checked. The `verify` skill
+running this session resolved from
+`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.16/`, which still **predates this
+whole change** — `diff -rq` against the checkout reports `Only in skills: orchestrate`, plus
+differing bytes in `skills/verify/SKILL.md` and `skills/queue/templates/item.md`. So the instruction
+to write this table into the item file is one the *running* copy does not carry; it is followed from
+the repo copy deliberately. The version was **not** bumped, correctly — see the notes.
+
+**Method.** Break the behaviour each criterion names, **at that criterion's own altitude**, confirm
+the guard reddens, restore by the mutated path only. Every mutation was applied to committed files
+through a driver that **refuses a substitution whose diff is empty**, so a `sed` matching nothing
+cannot read as a guard that held. Whole-project concerns were kept out of the shared checkout: the
+AC16 fixture needs `.claude/backlog/next` itself broken, and that script is live for every other
+session, so **that mutation ran in a detached worktree at `82d9878`** and the checkout was never
+dirty for it. Control run afterwards 22/22 green, which is what licenses every red below. Two of my
+own mutations landed above the guard's altitude and are reported as such rather than as defects.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 | **real nested dispatch, by hand** — `claude -p --json-schema '{…probe…}' --max-budget-usd 0.25 < /dev/null` | ✅ `{"probe":"ok"}`, exit 0, 2.9s. AC1's untested premise holds on this host |
+| AC1 | `--bare` inserted into the Step 3 dispatch | ✅ `FAIL AC1/AC19 — the skill's own invocation carries --bare` |
+| AC1 | `< /dev/null` deleted from the **dispatch block only** | ✅ `FAIL AC1 — 1 of 2 claude -p invocations do not redirect stdin` — per-invocation, not per-file |
+| AC1 | *"CLAUDE.md auto-discovery … no conventions"* reworded | ✅ `FAIL AC1 — the skill bans --bare without saying it means no conventions` |
+| AC1 | **the skill's two load-bearing claims re-run rather than trusted** — stdin left open on a fifo; cap at USD 0.05 | ✅ both reproduce exactly: the warning line prints *ahead of* the JSON (`Warning: no stdin data received in 3s…` then `{"probe":"ok"}`), and 0.05 returns `Error: Exceeded USD budget (0.05)` at exit 1 with no object |
+| AC2 | `tickets` flipped array → object (targeted at **tickets**, not `commits`) | ✅ `FAIL AC2 — a legitimate three-ticket gate was REFUSED: $.tickets: expected type object, got list`, and `FAIL AC2 — retro cannot report` |
+| AC3 | `additionalProperties` → `true`, on the envelope and on a ticket entry **separately** | ✅ both redden by name (`stray 'verdict'` / `stray 'cost_usd'`) |
+| AC3 | `verdict` enum keyword disabled | ✅ `FAIL AC3 — an out-of-vocabulary 'verdict' validated` |
+| AC3 | `detail` dropped from `required` | ✅ `FAIL AC3 — a ticket entry missing 'detail' validated` |
+| AC3 | `cost_usd`'s `minimum: 0` disabled; `detail`'s `minLength` 1 → 0 | ✅ redden separately (`negative-cost`, `empty-detail`) |
+| AC4 | *"The dispatch unit is a gate, not a row"* reworded | ✅ `FAIL AC4 — the skill does not state that a gate is the dispatch unit` |
+| AC5 | *"A stage must not self-certify"* reworded | ✅ `FAIL AC5 — the skill does not say why verify is dispatched rather than judged here` |
+| AC6 | `once per run` reworded throughout | ✅ `FAIL AC6 — the skill does not state that the findings gate fires once per run` |
+| AC7 | *"each marked / done or outstanding"* deleted — the phrase **wraps a line**, so the deletion had to span the break | ✅ `FAIL AC7 — the skill does not hand the release chain over as a marked checklist` |
+| AC8 | `"Ship it"` reworded | ✅ `FAIL AC8 — the skill does not state the no-push rule with its "ship it" exclusion` |
+| AC12 | *"and do not poll"* reworded | ✅ `FAIL AC12 — the skill does not forbid polling` |
+| AC13 | `floor = contexts[0]` → `contexts[-1]` | ✅ `FAIL AC13 — no FLOOR of 20000` (and GROWTH) |
+| AC13 | cycles counted from `outcome` events instead of `dispatch` | ✅ `FAIL AC13 — no GROWTH of 1500 per cycle` / `no TURNS per cycle of 2.0` — the fixture's 3 dispatches against 2 outcomes is what makes the two distinguishable |
+| AC13 | `DEFAULT_TURN_BUDGET` 3 → 4 | ✅ `FAIL AC13/FR7 — the skill states 'three' and the tool defaults to '4'` |
+| AC14 | quoted figures staled back to `6.01 / 4.45` | ✅ `FAIL AC14 — the skill quotes [6.01 4.45] where MEASUREMENT.md records [5.71 4.23]` |
+| AC14 | the `attributes to no cost_tracking:` clause and the recompute-from-`MEASUREMENT.md` clause, separately | ✅ both redden |
+| AC15 | *"It never claims a row and never mints a claim token"* reworded | ✅ `FAIL AC15 — the skill does not state that it holds no row` |
+| AC16 | **prose half:** Step 5's *"never a row to take over"* deleted, Step 7's `Claim tokens` citation left in place | ✅ `FAIL AC16 — Step 5 does not say what to do with a claim a killed stage left behind` |
+| AC16 | **fixture half, in a worktree:** the real `./next` made to offer the orphaned row. **Both** defences had to break — the `ready\|blocked` status filter *and* `collision_report` independently refuse it | ✅ `FAIL AC16 — the orphaned claim on 0001 was offered as takeable`. **Control:** breaking only the status filter stayed green, correctly — the reader still refused |
+| AC17 | `It is not state`, `Delete the log between two sessions`, `exactly three things` each reworded | ✅ all three redden separately |
+| AC18 | `mkdir -p .claude/backlog/runs` deleted; separately the marker path reworded | ✅ `FAIL AC18 — the skill takes the marker without creating runs/ first` / `does not name the single-instance marker` |
+| AC19 | `--max-budget-usd` deleted from the **Step 3 dispatch only**, Step 1's probe keeping its own cap | ✅ `FAIL AC19/AC1 — 1 of 1 dispatch block(s) do not carry --max-budget-usd` |
+| AC19 | `--allowed-tools`, `--add-dir`, `--session-id`, `--setting-sources` each deleted from the dispatch | ✅ each reddens **by name**, `1 of 1 dispatch block(s)` |
+| AC19 | the dispatch **prompt** renamed so the block is neither probe nor dispatch | ✅ `FAIL AC19 — 2 claude -p invocations but only 1 classified; one is under no flag rule` — the partition is exhaustive, so the set cannot silently empty |
+| AC19 | `--dangerously-skip-permissions` inserted into the dispatch | ✅ `FAIL AC1/AC19 — the skill's own invocation carries --dangerously-skip-permissions` |
+| AC20 | verify's write-to-item-file instruction reworded | ✅ three reds, including the ordering conjunct (`before Step 5 closes`) and the named destination section |
+| AC20 | `## QA evidence` renamed in `templates/item.md` | ✅ `FAIL AC20 — templates/item.md has no QA evidence section` |
+| AC21 | the count deleted from **Step 8**, the report step the criterion names | ✅ `FAIL AC21 — Step 8's report carries no findings-parked count` |
+| AC22 | shim `claude` on PATH returning `{"probe":"WRONG"}` | ✅ `FAIL AC22 — the probe did not return the fixed object… Got: {"probe":"WRONG"}` |
+| AC22 | PATH emptied of `claude` | ✅ `SKIP AC22 — no claude on PATH; the nested-dispatch premise under AC1 is UNVERIFIED in this run` — loud and named, and the file still exits zero |
+| AC22 | the degraded-fallback sentence reworded | ✅ `FAIL AC22 — the skill does not state the degraded fallback` |
+| AC23 | whole suite per file, **22/22 green**, zero failures anywhere; `plugin.json` made unparseable | ✅ `FAIL AC23 — plugin.json no longer parses; the plugin would not load at all` |
+| AC23 | **that `orchestrate` is genuinely inside the three derived guards, not merely adjacent to them** — its hand-off line, its `REPORTING.md` citation, and 9,000 bytes of padding | ✅ three separate reds from `last-line`, `reporting` and `skill-size` respectively. The QA plan's *"widened by exactly one file"* remains stale and correctly so: all three derive their subjects |
+| AC24 | `/orchestrate` removed from README's skill table; renamed in `plugin.json` | ✅ two separate reds |
+| AC27 | the depth **phrase** relocated (renaming its lead line alone stayed green — my mutation, above the guard's altitude, re-aimed) | ✅ `FAIL AC27 — the depth report is not stated before the dispatch step (depth absent, dispatch 137)` |
+
+### NFRs
+
+| Dimension | How it was checked | Result |
+|---|---|---|
+| Security | `security-conventions.md` read. `--dangerously-skip-permissions` and `--bare` absent from every fenced block; AC8 and AC19's seven mutations all redden. Secrets scan over `56b2566..HEAD` returns nothing. Newly-reachable states walked: the marker directory (taken over only on a dead pid), the stage subprocess's granted tools, the spend cap, and `--add-dir`'s reach into the conventions repo. `--bare`'s rejection is itself the secrets rule honoured — it would force an API key into an unattended loop's environment | ✅ |
+| Observability | `observability-conventions.md` read — structured JSON, a correlation id, no secrets. Step 5 states one JSON line per event under `.claude/backlog/runs/<run-id>.jsonl`, each with a UTC timestamp and the run id, appended as it happens; AC13's fixture exercises that shape end-to-end through `harvest-usage.sh`. **Requirement holds.** ⚠️ **and it has no guard in either direction** — deleting Step 5's whole rule, or just the UTC-timestamp conjunct, leaves the suite at 105/0/0. Measured, parked, not failed: the row asks what the skill must state, and it states it |
+| Performance | `measurement-conventions.md` read. FR7's three numbers are stated and instrumented in `tools/harvest-usage.sh` in the same change; all three AC13 mutations redden; tool default and skill prose asserted to agree | ✅ |
+| Dependencies | `dependency-conventions.md` read. **The gap that failed the `1b58` pass is closed.** README's new `## Requirements` names the `claude` CLI, on PATH, authenticated and dispatchable from inside the supervising session, and states the degraded fallback — both conjuncts, immediately above `## Install`, where an installer looks. Guarded section-anchored, five conjuncts: renaming the heading reds **all five**; the CLI-unnamed, PATH-gone and fallback-unnamed conjuncts each red alone. `validate-json-schema.py` documents why it is stdlib rather than `pip install jsonschema`, which is the convention's *"could we write it ourselves in under ~100 lines"* rule applied | ✅ |
+| Compatibility | `api-conventions.md` read. All 22 test files green; the outcome shape is supplied by the invoker, and the FR13 guard derives the "who declares the envelope" check from the tree rather than a list, so no stage skill describes it and a hand-driven session is unchanged | ✅ |
+| Documentation | `documentation-conventions.md` read. README's *One skill per session* describes both paths and its skill table lists `/orchestrate`; both mutations redden. The convention's *"verify a setup doc's commands, don't just read them"* is satisfied twice over — by hand here, and by AC22's probe on every suite run | ✅ |
+
+**Privacy pass** (always-on, `data-privacy-conventions.md`): re-confirmed and unchanged. Run logs
+under `.claude/backlog/runs/` are committed — `.gitignore` excludes only `.active/`, deliberately
+and with the reason written down — which is correct for `company: none` in a public repo. The
+schema's free-prose `escalation` field remains the one to watch **if this plugin is ever installed
+on a backlog carrying company material**, since nothing in the skill tells an installing project to
+ignore its run logs. Flagged for a third pass, not failed: out of scope for `company: none`.
+
+**Always-on `CONVENTIONS_CORE.md` pass:** `tools/validate-json-schema.py` carries full type hints on
+all three `def`s and the module constant, with `from __future__ import annotations` correct for the
+python3 actually present (**3.9.6**, confirmed). Behaviour verified by hand rather than from the
+build note: exit **0** valid, **1** on missing required properties, **2** on unparseable JSON and on
+wrong argument count. Git: every commit in the re-entry carries the `Co-Authored-By` trailer except
+`Claim 0039 [68c9]`, which is `claim`'s own commit and **already has a row** — 0090 FR4.
+
+### Observations, none of them a red
+
+- **A recorded mutation table's per-conjunct claim did not reproduce, for the third time on this
+  ticket.** The `68c9` build note says of the five new Dependencies conjuncts: *"Each of the other
+  four reds alone: the CLI unnamed, PATH gone, **the attribution generalised**, the fallback
+  unnamed."* Generalising the sentence that carries the attribution leaves the suite at 105/0/0 —
+  `orchestrate` occurs **twice** inside the flattened section, so only mutating both sites reds it.
+  Green there is arguably *correct*, since the second occurrence does attribute the requirement to
+  the same skill, so this is not scored against the NFR; what it is, is one more instance of
+  `verify` Step 3's *never trust a mutation you did not run*, and of the `grep -c` pre-filter
+  measuring the file where the guard measures a section. Parked.
+- **`skills/orchestrate/SKILL.md` is 18,993 bytes against a 20,190-byte goal — 1,197 bytes of
+  margin, about 6%.** It is genuinely a subject of `skill-size.test.sh` (proven above), and the next
+  paragraph added to it puts the suite's newest skill into the over-goal-with-a-reason list beside
+  `develop`, `queue` and `verify`. Worth knowing before the next edit, not now.
+- **`--allowed-tools '<the tools that stage needs>'` is a placeholder, and it is the one flag whose
+  *value* decides the authority.** AC19 asks for the narrowest authority that works and the skill
+  states the principle, names the flag and forbids the escape hatch — all of which the guard pins.
+  What no rule and no default names is the actual per-stage tool list, so the narrowness is delegated
+  to whichever session dispatches. Correct for a skill, and the first real supervised run is where
+  it becomes a concrete decision.
+- **`HEAD` advanced three times mid-pass, and `MEASUREMENT.md` — inside this pass's evidence set —
+  moved with it** (`88b88e5`, `3b72d38`, then `add1`'s `0076` close). AC14's guard reads that file to
+  compare the quoted pair, so the affected guards were re-run after the change: `money-in-skill-prose`
+  12/0, `measurement` 106/0, `orchestrate` 105/0/0. The edit recorded 0104's withdrawal and did not
+  touch the `5.71 / 4.23` figures. Working tree was clean at Step 2 and clean at verdict.
+
+### Previous passes
 
 **Pass of 2026-09-07, token `1b58`. Verdict FAIL** — every one of the 24 acceptance criteria is
 now verified and falsifiable at its own altitude, including the three the previous pass sent back.
@@ -874,4 +1000,45 @@ delivered and are untouched.
   direction**, and none was added: a count nobody states cannot go stale.
 
 - **`cost_tracking:` and `tracker:` remain absent from `config.yml`** — the third session on this
+  ticket to record it. Off unless configured, so neither recorded nor mirrored.
+
+### From the QA pass, 2026-09-07 (token `0834`) — PASS
+
+**The one NFR conjunct that failed the `1b58` pass is closed, and all 22 ACs were re-verified from
+my own mutations rather than from the ticks already in the file.** Full per-AC evidence is in
+`## QA evidence` above. Suite 22/22 files green, `orchestrate` 105/0/0 with **0 skipped**, control
+run green.
+
+- **Re-checking every AC was not ceremony on this ticket, and the reason is worth carrying.** The
+  re-entry's diff is `README.md` plus **`tests/orchestrate.test.sh`** — the guard file that nearly
+  every criterion here rests on. A pass that trusted the prior ticks would have accepted 21
+  criteria's evidence on the strength of a file that had just changed underneath them. `verify`
+  Step 3's *never trust a tick you did not write* names "the contract or the code under it"; a
+  guard file is the code under it.
+
+- **The AC16 fixture mutation was run in a detached worktree, and that should be the default here
+  rather than a nicety.** Proving it falsifiable requires breaking `.claude/backlog/next` itself —
+  the script every other session in this repo runs to find work. Two other sessions committed
+  during this pass. `git worktree add --detach <path> 82d9878` cost about ten seconds and meant the
+  shared checkout was never dirty and never carried a broken `next`, which the FINDINGS entry of
+  2026-09-06 (*"a file you mutate transiently and restore is inside your file scope"*) is circling
+  without naming the worktree as the answer for a **shared executable** specifically.
+
+- **The version bump is still not done, and this pass agrees it should not have been.** The `68c9`
+  session's reasoning is correct and is now confirmed from the other side: the install at
+  `0.9.16` still has six skills and no `orchestrate`, `diff -rq` also reporting differing bytes in
+  `skills/verify/SKILL.md` and `skills/queue/templates/item.md`. So **nobody can run this skill
+  yet**, and that is a release act, not a build act (`tools/release` derives the next version from
+  the *remote*, and the chain opens with a push to `main` now ~58 commits ahead). It does not block
+  the close: the repo copy is the authority and is what was checked. **What it does mean is that
+  0039 is done and unrunnable until Aaron approves one release**, which now covers the skill, the
+  schema, the README requirements section and `verify`'s evidence-table write in a single approval.
+
+- **`./claim` mangled this ticket's `touches:` on the way in**, appending all seven `expects:` paths
+  above the two-path narrowing the previous session was instructed to write, so `README.md` and
+  `tests/orchestrate.test.sh` were each listed twice under a comment saying the scope was one gap.
+  `close` clears the field, so it is gone now — parked as its own finding, because a `verify` claim
+  reserving seven files it never opens is the concurrency cost the two fields exist to avoid.
+
+- **`cost_tracking:` and `tracker:` remain absent from `config.yml`** — the fourth session on this
   ticket to record it. Off unless configured, so neither recorded nor mirrored.

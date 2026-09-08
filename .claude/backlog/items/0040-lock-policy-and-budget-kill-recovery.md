@@ -3,7 +3,7 @@ id: "0040"
 title: Harden the supervised loop against a held lock and a budget-killed stage
 type: feature
 next: develop
-status: blocked
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
