@@ -18,11 +18,26 @@
 # **Columns are resolved by header name, never by position** — the table's shape is not a contract,
 # and a fixed-index parser is exactly the defect 0022 found in `claim`.
 #
-# **It refuses rather than guesses, on four grounds**: a row that is not at `verify`; a table shape
+# **It refuses rather than guesses, on five grounds**: a row that is not at `verify`; a table shape
 # it cannot read; a token that is not the one the item records; and an acceptance-criteria list it
-# cannot tick. The fourth is the newest and the quietest — `verify` closes on ticked ACs, so a
-# ticket whose criteria are written `- **AC1** —` rather than `- [ ] AC1 —` had zero of eight
-# ticked, was closed, and reported success in the same words as a real close (0044).
+# cannot tick. The fourth is the quietest — `verify` closes on ticked ACs, so a ticket whose
+# criteria are written `- **AC1** —` rather than `- [ ] AC1 —` had zero of eight ticked, was
+# closed, and reported success in the same words as a real close (0044).
+#
+# **The fifth ground is the light tier's whole gate (0086).** `verify` owns closing, and the one
+# exception is an item recording `close_by: develop` — a ticket the session that BUILT it may close,
+# paying no second session's startup floor. That is safe only where there is no belief to be wrong
+# about, so the field is honoured only when every acceptance criterion NAMES A COMMITTED ASSERTION
+# on its own line. Absent means `verify`, so every item written before this and every project not
+# using the tier keeps its present behaviour with no edit.
+#
+# WHAT THIS SCRIPT CANNOT SEE, and it is the trade-off the tier accepted rather than an oversight:
+# it checks that each light criterion CITES a guard git tracks. It cannot check that the guard CAN
+# FAIL — `testing-conventions.md`, *a guard only ever seen passing is indistinguishable from one
+# wired to nothing*. The residual risk is the builder's own recorded red, weaker than an
+# independent read on purpose, and kept narrow by the eligibility rule alone. So the citation check
+# FAILS CLOSED at every edge: an untracked path is not a citation, a repo git cannot read admits no
+# light close, and a light ticket with NO criteria at all is refused rather than closed vacuously.
 #
 # **The reconcile is part of the close, not a follow-up.** `blocked` is derived from the graph, so
 # closing this ticket is the only event that can clear a row naming it in `blocked_by`. Leaving them
@@ -110,12 +125,9 @@ row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v
 [ -n "$row" ] || { echo "no row for $ID in QUEUE.md" >&2; exit 1; }
 
 next_field="$(read_cell "$row" "$Q_NEXT")"
-[ "$next_field" = "verify" ] || {
-  echo "$ID is at stage '$next_field', not 'verify' — only a verified ticket is closable" >&2
-  echo "verify owns closing, and it holds the verdict when it acts; nothing else may close a row" >&2
-  exit 1
-}
 title="$(read_cell "$row" "$Q_TITLE")"
+# The stage check is DELIBERATELY not here any more: which stages may close depends on the item's
+# `close_by:`, and the item is resolved below. It runs at 'the stage check' further down.
 
 # --- the ownership test -----------------------------------------------------------------------
 item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
@@ -208,6 +220,56 @@ held_by="$(fm_value "$item" claimed_by)"
 item_type="$(fm_value "$item" type)"
 item_qa="$(fm_value "$item" qa_level)"
 
+# --- who may close this row (0086) ------------------------------------------------------------
+# ABSENT MEANS `verify`. That default is the whole migration story: no existing item and no other
+# project needs an edit, and it must never be inverted to "absent means develop" — a fail-open
+# here closes every unopted ticket from the stage that built it.
+close_by="$(fm_value "$item" close_by)"
+[ -n "$close_by" ] || close_by=verify
+case "$close_by" in
+  verify|develop) : ;;
+  *)
+    echo "$ID records close_by: '$close_by', which is neither 'verify' nor 'develop'" >&2
+    echo "an unreadable value is an error, never a fail-open: guessing here would either close a" >&2
+    echo "ticket nobody meant to be light, or refuse one that is. Fix the item's frontmatter" >&2
+    exit 1
+    ;;
+esac
+
+# FR12 — the ONE interaction between the two fields, made mechanical rather than left to be
+# inferred from FR3. `qa_level: review` means the checks are a reader's judgement; `close_by:
+# develop` admits only executed assertions. Checked TOGETHER, because each field is individually
+# legitimate and it is the pair that cannot hold.
+if [ "$close_by" = develop ] && [ "$item_qa" = review ]; then
+  echo "$ID carries qa_level: review with close_by: develop, and those cannot hold together" >&2
+  echo "a review's checks are a reader's judgement; the light tier admits only a committed" >&2
+  echo "assertion that returns the same answer in either session. Hand it to verify, or drop the" >&2
+  echo "review level if every criterion really is scripted" >&2
+  exit 1
+fi
+
+# --- the stage check --------------------------------------------------------------------------
+# FR6 reads "a row whose `next` is not `verify` is refused unless its item records `close_by:
+# develop`". Taken literally that admits a `next: design` row, which no FR wants — FR2 names the
+# session that BUILT it. So `close_by: develop` admits `develop` and nothing else, and the case
+# below is asserted (tests/close.test.sh, 0086 FR6) because the literal reading is the one a later
+# edit would restore.
+if [ "$close_by" = develop ]; then
+  closable_stage=develop
+else
+  closable_stage=verify
+fi
+[ "$next_field" = "$closable_stage" ] || {
+  echo "$ID is at stage '$next_field', not '$closable_stage' — only a verified ticket is closable" >&2
+  if [ "$close_by" = develop ]; then
+    echo "this item records close_by: develop, so the stage that may close it is 'develop' — the" >&2
+    echo "session that built it. No other stage closes a row, opted in or not" >&2
+  else
+    echo "verify owns closing, and it holds the verdict when it acts; nothing else may close a row" >&2
+  fi
+  exit 1
+}
+
 # --- the fourth refusal: criteria this script cannot tick --------------------------------------
 # Counted BEFORE anything is written, so the refusal leaves the tree exactly as it found it. An
 # EMPTY criteria section is not this defect and still closes: nothing to tick is not the same as
@@ -249,6 +311,131 @@ if [ "$ac_bullets" -eq 0 ] && [ "$ac_content" -gt 0 ]; then
   echo "are criteria it failed to parse or prose that belongs elsewhere — and an empty section is" >&2
   echo "the one case that closes, so guessing here would record an unchecked ticket as a clean one" >&2
   echo "rewrite the criteria in the '- [ ]' form (skills/queue/templates/item.md) and close again" >&2
+  exit 1
+fi
+
+# --- the fifth refusal: a light ticket whose criteria are not assertions (0086) ----------------
+# Counted BEFORE anything is written, like the fourth, so the refusal leaves the tree exactly as it
+# found it.
+#
+# WHY EACH BULLET AND NOT THE SECTION. FR3 admits a light close only where EVERY criterion is
+# discharged by a committed assertion, so a check answering "does this section mention a guard
+# anywhere?" is green on a ticket where one criterion is an eyeball and the rest are scripted —
+# which is precisely the ticket the tier must refuse. The message names the criterion, so the
+# refusal is actionable rather than a status (`testing-conventions.md`, assert the message).
+if [ "$close_by" = develop ]; then
+  # A cited path is a backtick-quoted token containing `/`. Continuation lines are folded into
+  # their bullet first: this repo's criteria wrap over three or four lines and a line-based reader
+  # would judge each fragment separately, refusing the wrapped half of a perfectly cited criterion.
+  ac_lines="$(awk '
+    function emit(  txt, n, i, parts, toks) {
+      txt = cur
+      sub(/^- \[[ xX]\][ \t]*/, "", txt)
+      gsub(/[ \t]+/, " ", txt)
+      n = split(cur, parts, "`")
+      toks = ""
+      # Odd indices are OUTSIDE the backticks, even ones inside. A bare path in prose is
+      # deliberately not a citation: the code span is what distinguishes a named file from a
+      # sentence mentioning a directory.
+      for (i = 2; i <= n; i += 2) if (index(parts[i], "/") > 0) toks = toks " " parts[i]
+      printf "%s\t%s\t%s\n", ln, substr(txt, 1, 64), toks
+      cur = ""
+    }
+    /^## / { if (cur != "") emit(); in_ac = ($0 ~ /^## Acceptance criteria/); next }
+    !in_ac { next }
+    /^- \[[ xX]\]/ { if (cur != "") emit(); cur = $0; ln = NR; next }
+    cur != "" && $0 ~ /^[ \t]*$/ { emit(); next }
+    cur != "" { cur = cur " " $0; next }
+    END { if (cur != "") emit() }
+  ' "$item")"
+
+  # A light ticket with NO criteria at all is refused, where a `verify` one still closes. The
+  # empty-section allowance above exists for a chore nobody wrote ACs for; on a light ticket it
+  # would close a self-certified row having checked nothing, which is exactly the "self-attested"
+  # option 0086 rejected. "Every criterion is an assertion" is vacuously true of none, and that is
+  # the reading to refuse, not to honour.
+  if [ -z "$ac_lines" ]; then
+    echo "$ID records close_by: develop and lists no acceptance criteria this script can read" >&2
+    echo "the light tier is earned by criteria that are executed assertions, so a ticket with none" >&2
+    echo "would close self-certified having checked nothing — which is the tier that was rejected" >&2
+    echo "either write criteria in the '- [ ] AC1 — …' form citing their guards, or hand it to verify" >&2
+    exit 1
+  fi
+
+  # `git` is required here, not optional. A repo git cannot read proves no path is committed, and
+  # "committed" is the half of FR3 a plain file test cannot see — so this fails closed rather than
+  # degrading to an existence check nobody asked for.
+  git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
+    echo "$ID records close_by: develop, and $DIR is not in a git repository" >&2
+    echo "the light tier's gate is that every criterion cites a COMMITTED assertion, which cannot" >&2
+    echo "be established here. Hand it to verify" >&2
+    exit 1
+  }
+
+  uncited=""
+  TAB="$(printf '\t')"
+  while IFS="$TAB" read -r ac_ln ac_txt ac_toks; do
+    [ -n "$ac_ln" ] || continue
+    cited=no
+    for tok in $ac_toks; do
+      # `:/` makes the pathspec repo-root-relative whatever the cwd is, so this needs no
+      # `--show-toplevel` — see the case-spelling warning at the top of this file.
+      if git -C "$DIR" ls-files --error-unmatch -- ":/$tok" >/dev/null 2>&1; then cited=yes; break; fi
+    done
+    [ "$cited" = yes ] || uncited="$uncited
+  line $ac_ln: $ac_txt"
+  done <<AC_CITE_EOF
+$ac_lines
+AC_CITE_EOF
+
+  if [ -n "$uncited" ]; then
+    echo "$ID records close_by: develop, and these criteria name no committed assertion:$uncited" >&2
+    echo "" >&2
+    echo "the light tier is closed by the session that built it, which is safe only where every" >&2
+    echo "criterion's verdict is an executed assertion returning the same answer in either session" >&2
+    echo "cite the guard in backticks on the criterion's own line — \`tests/thing.test.sh\` — and" >&2
+    echo "commit it; a path git does not track is not evidence anything ran" >&2
+    echo "or raise the item to close_by: verify and hand it to an independent pass" >&2
+    exit 1
+  fi
+fi
+
+# --- the review checklist: performed, or not closable (0086 FR11) ------------------------------
+# The same argument as the fourth refusal, applied to the section a `qa_level: review` pass fills
+# in. Asserted on the count of TICKED boxes and never on the section's presence: a review declared
+# and never performed closes with a full checklist of bullets, and DONE.md cannot tell it from a
+# performed one. That is the guard-that-cannot-fail shape, and it is the ONE mechanical assertion
+# standing behind the whole prose half of the review level — so it is unconditional, not gated on
+# `qa_level`, because an unperformed checklist is the same defect at either tier.
+#
+# A PARTLY ticked checklist closes, exactly as a partly ticked AC list does: a visible verdict is
+# a reader's business, and refusing it would be stricter than FR11's "on the same grounds".
+rc_counts="$(awk '
+  /^## / { in_rc = ($0 ~ /^## Review checklist/); next }
+  in_rc {
+    if ($0 ~ /^[ \t]*$/) next
+    content++
+    if ($0 ~ /^([-*+]|[0-9]+[.)])[ \t]/) { bullets++; if ($0 ~ /^- \[[ xX]\]/) boxes++ }
+  }
+  END { print bullets + 0, boxes + 0, content + 0 }
+' "$item")"
+read -r rc_bullets rc_boxes rc_content <<RC_EOF
+$rc_counts
+RC_EOF
+
+if [ "$rc_bullets" -gt 0 ] && [ "$rc_boxes" -eq 0 ]; then
+  echo "$ID lists $rc_bullets lines under 'Review checklist' and not one of them is a checkbox" >&2
+  echo "a review is performed by reading each line and ticking it, so closing here would record" >&2
+  echo "that none of the $rc_bullets was checked — and DONE.md could not tell this ticket from a" >&2
+  echo "review that never happened. Tick them in the '- [ ] …' form, one per checklist line" >&2
+  exit 1
+fi
+
+if [ "$rc_bullets" -eq 0 ] && [ "$rc_content" -gt 0 ]; then
+  echo "$ID has $rc_content lines under 'Review checklist' and not one list marker among them" >&2
+  echo "this script reads '- [ ] …' and nothing else, so it cannot tell whether these lines are a" >&2
+  echo "checklist it failed to parse or prose that belongs elsewhere — and an empty section is the" >&2
+  echo "one case that closes, so guessing here would record an unperformed review as a clean one" >&2
   exit 1
 fi
 

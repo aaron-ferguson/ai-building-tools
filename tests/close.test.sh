@@ -168,6 +168,49 @@ touches:
 ITEM
 }
 
+# --- 0086 fixtures: the light tier ------------------------------------------------------------
+# A `close_by: develop` item is closed by the session that BUILT it, so its fixture row sits at
+# `next: develop` rather than `next: verify`. Eligibility is that every AC cites a committed
+# assertion, so the fixture repo has to contain the file each AC names — `commit_fixture` does
+# `git add -A`, which is what makes the cited path genuinely tracked rather than merely present.
+mkguard() {
+  mkdir -p "$FIX/tests"
+  printf '#!/bin/sh\necho "1 passed, 0 failed"\n' > "$FIX/tests/guard.test.sh"
+  chmod +x "$FIX/tests/guard.test.sh"
+}
+
+# mkitem_light <id> <next> <status> <token> <close_by-line> <qa_level> [extra-section]
+# `close_by-line` is passed WHOLE so a case can hand in the empty string and get an item with no
+# such line at all — which is 0086 AC9's subject, and the migration NFR's.
+mkitem_light() {
+  mkguard
+  cat > "$FIX/$BL/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+type: chore
+next: $2
+status: $3
+qa_level: ${6:-unit}
+$5
+created: 2026-08-01
+blocked_by: []
+claimed_by: $4
+claimed_at: 2026-08-01T00:00:00Z
+touches:
+---
+
+## Acceptance criteria
+
+- [ ] AC1 — first criterion. Guard: \`tests/guard.test.sh\`, proved red before green.
+- [ ] AC2 — second criterion, same guard: \`tests/guard.test.sh\`.
+${7:-}
+## Notes & decisions
+
+- [ ] this box is not an AC and must stay unticked
+ITEM
+}
+
 commit_fixture() { git -C "$FIX" add -A && git -C "$FIX" commit -q -m "fixture"; }
 
 run_close() { (cd "$FIX" && "$BL/close" "$@" 2>&1); }
@@ -573,6 +616,273 @@ commit_fixture
 out="$(run_close 0046 ab12)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "says how many it could not tick" "$out" '3'
+assert_clean "no file was changed"
+
+# ===============================================================================================
+# 0086 — close_by: the light tier. `close` gains a fifth refusal ground, and the ONE stage other
+# than `verify` that may close a row.
+#
+# WHAT THESE CASES CANNOT SEE, stated here because it is the trade-off the ticket accepted rather
+# than an omission: `close` checks that each light AC *cites* a committed guard. It cannot check
+# that the guard CAN FAIL. That is this repo's known failure mode (`testing-conventions.md`, a
+# guard only ever seen passing is indistinguishable from one wired to nothing), and the residual
+# risk moves from "nobody checked" to "the builder's own recorded red" — deliberately weaker than
+# an independent read, and kept narrow by the eligibility rule alone.
+# ===============================================================================================
+
+# --- 0086 AC1 — a light ticket closes from develop ---------------------------------------------
+echo "0086 AC1 — close_by: develop closes a next:develop row whose every AC cites a guard"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0050 | A light ticket | develop | in-progress | 0000 |'
+mkitem_light 0050 develop in-progress '"ab12"' 'close_by: develop'
+commit_fixture
+out="$(run_close 0050 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+refute_line "the row is gone from QUEUE.md" '| 0050 | A light ticket | develop | in-progress | 0000 |' QUEUE.md
+assert_line "the row is in DONE.md" '| 0050 | A light ticket | chore | unit | '"$(date -u +%Y-%m-%d)"' | [items/0050-fixture.md](items/0050-fixture.md) |' DONE.md
+item="$(cat "$FIX/$BL/items/0050-fixture.md")"
+assert_contains "the item is done"      "$item" 'status: done'
+assert_contains "AC1 is ticked"         "$item" '- [x] AC1'
+assert_contains "AC2 is ticked"         "$item" '- [x] AC2'
+assert_contains "the claim is released" "$item" 'claimed_by:
+claimed_at:
+touches:'
+assert_contains "the close is committed" "$(git -C "$FIX" log -1 --format=%s)" 'Close 0050 [ab12]'
+assert_clean   "nothing is left uncommitted"
+assert_no_lock "the lock is released"
+
+# --- 0086 AC2 — and only where the item says so ------------------------------------------------
+# The mirror case, and the one that makes AC1 evidence rather than a widened door: the SAME row at
+# the SAME stage, refused because the item does not opt in. A branch written to accept
+# `next: develop` unconditionally passes AC1 and reds here.
+echo "0086 AC2 — close_by: verify at next:develop is refused on the existing grounds"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0051 | Not a light ticket | develop | in-progress | 0000 |'
+mkitem_light 0051 develop in-progress '"ab12"' 'close_by: verify'
+commit_fixture
+out="$(run_close 0051 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the stage it found"   "$out" 'develop'
+assert_contains "names the stage required"   "$out" 'verify'
+assert_line  "the row is untouched" '| 0051 | Not a light ticket | develop | in-progress | 0000 |' QUEUE.md
+assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0051-fixture.md")" 'status: in-progress'
+assert_clean   "no file was changed"
+assert_no_lock "the lock is released on the refusal"
+
+echo "0086 AC2/AC9 — and an item with NO close_by: line behaves exactly as today"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0052 | Field absent entirely | develop | in-progress | 0000 |'
+mkitem_light 0052 develop in-progress '"ab12"' ''
+refute_contains "the fixture really has no close_by: line" "$(cat "$FIX/$BL/items/0052-fixture.md")" 'close_by'
+commit_fixture
+out="$(run_close 0052 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "absent is read as verify, so the stage refusal fires" "$out" 'verify'
+assert_clean   "no file was changed"
+
+echo "0086 AC9 — and an item with no close_by: line still closes normally from next:verify"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0053 | Field absent, at verify | verify | in-progress | 0000 |'
+mkitem_light 0053 verify in-progress '"ab12"' ''
+commit_fixture
+out="$(run_close 0053 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0053-fixture.md")" 'status: done'
+
+# --- 0086 AC3 — an AC with no citation is refused, BY NAME -------------------------------------
+# Asserted on the criterion's own text, never on the count: "one of two criteria" is satisfied by a
+# check that counts the SECTION, which is the implementation this case exists to exclude (FR3).
+echo "0086 AC3 — a light AC citing no assertion is refused and named"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0054 | One uncited criterion | develop | in-progress | 0000 |'
+mkitem_light 0054 develop in-progress '"ab12"' 'close_by: develop'
+# Strip the citation from AC2 ALONE, so AC1 still carries one: a check that gives up at the first
+# bullet, or that requires every bullet to fail, cannot tell this fixture from a wholly uncited one.
+sed -i.bak 's|^- \[ \] AC2 — second criterion.*|- [ ] AC2 — second criterion, verified by eye.|' "$FIX/$BL/items/0054-fixture.md"
+rm -f "$FIX/$BL/items/0054-fixture.md.bak"
+commit_fixture
+out="$(run_close 0054 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the criterion that failed"    "$out" 'AC2 — second criterion, verified by eye.'
+refute_contains "and does not accuse the cited one"  "$out" 'AC1 — first criterion'
+assert_line "the row is untouched" '| 0054 | One uncited criterion | develop | in-progress | 0000 |' QUEUE.md
+assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0054-fixture.md")" 'status: in-progress'
+refute_contains "and no criterion was ticked"  "$(cat "$FIX/$BL/items/0054-fixture.md")" '- [x]'
+assert_clean   "the tree is exactly as it was found"
+assert_no_lock "the lock is released on the refusal"
+
+# --- 0086 AC3 — a cited path that git does not track is not a citation -------------------------
+# "Committed" is the half of FR3 a path check alone cannot see: a guard written this session and
+# never added is not evidence anything ran, and the file exists on disk either way.
+echo "0086 AC3 — a cited guard that is untracked is refused"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0055 | Cites an uncommitted guard | develop | in-progress | 0000 |'
+mkitem_light 0055 develop in-progress '"ab12"' 'close_by: develop'
+commit_fixture
+# Written AFTER the fixture commit and never added — on disk, unknown to git.
+printf '#!/bin/sh\nexit 0\n' > "$FIX/tests/untracked.test.sh"
+sed -i.bak 's|tests/guard.test.sh|tests/untracked.test.sh|g' "$FIX/$BL/items/0055-fixture.md"
+rm -f "$FIX/$BL/items/0055-fixture.md.bak"
+out="$(run_close 0055 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the criterion"  "$out" 'AC1 — first criterion'
+assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0055-fixture.md")" 'status: in-progress'
+
+# --- 0086 AC4 — review and develop cannot be carried together ----------------------------------
+# The two fields are orthogonal and their ONE interaction is this refusal. Checked together, or a
+# review's judgement calls close on the builder's own reading, which FR3 admits no case of.
+echo "0086 AC4 — qa_level: review with close_by: develop is refused"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0056 | A reviewed light ticket | develop | in-progress | 0000 |'
+mkitem_light 0056 develop in-progress '"ab12"' 'close_by: develop' review
+commit_fixture
+out="$(run_close 0056 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names both fields"  "$out" 'review'
+assert_contains "and the other one"  "$out" 'close_by: develop'
+assert_line "the row is untouched" '| 0056 | A reviewed light ticket | develop | in-progress | 0000 |' QUEUE.md
+assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0056-fixture.md")" 'status: in-progress'
+assert_clean   "no file was changed"
+assert_no_lock "the lock is released on the refusal"
+
+echo "0086 AC4 — and qa_level: review with close_by absent is NOT this refusal"
+# The mirror that keeps AC4 from being satisfied by refusing every `review` ticket outright.
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0057 | A reviewed normal ticket | verify | in-progress | 0000 |'
+mkitem_light 0057 verify in-progress '"ab12"' '' review
+commit_fixture
+out="$(run_close 0057 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0057-fixture.md")" 'status: done'
+
+# --- 0086 AC5 — an unperformed review checklist is refused -------------------------------------
+# The guard for the PROSE half of this ticket, and the reason it is asserted on the count of TICKED
+# boxes rather than on the section's presence: a `review` level declared and never performed closes
+# with a checklist full of bullets, and DONE.md cannot tell it from a performed one. Applies to
+# every close, not only a light one — an unperformed checklist is the same defect at either tier.
+echo "0086 AC5 — a Review checklist of bullets with no checkbox is refused"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0058 | Checklist never performed | verify | in-progress | 0000 |'
+mkitem_light 0058 verify in-progress '"ab12"' '' review '
+## Review checklist
+
+- Does the rule earn its context rent?
+- Is it a principle or a preference, and in the right file for that?
+- Does it contradict a rule stated elsewhere?
+'
+commit_fixture
+out="$(run_close 0058 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "quotes the count it could not tick" "$out" '3'
+assert_contains "names the section"                  "$out" 'Review checklist'
+assert_contains "names the form it needs"            "$out" '- [ ]'
+assert_line "the row is untouched" '| 0058 | Checklist never performed | verify | in-progress | 0000 |' QUEUE.md
+assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0058-fixture.md")" 'status: in-progress'
+assert_clean   "no file was changed"
+assert_no_lock "the lock is released on the refusal"
+
+echo "0086 AC5 — a checklist whose boxes are ticked closes"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0059 | Checklist performed | verify | in-progress | 0000 |'
+mkitem_light 0059 verify in-progress '"ab12"' '' review '
+## Review checklist
+
+- [x] Does the rule earn its context rent? Yes — it replaces two paragraphs.
+- [x] Principle, and it is in the right file.
+'
+commit_fixture
+out="$(run_close 0059 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0059-fixture.md")" 'status: done'
+
+echo "0086 AC5 — and a partly-ticked checklist closes too, the same as the ACs"
+# `close` ticks the ACs it is given and refuses only a list it cannot tick AT ALL. A half-performed
+# checklist is a verdict a reader can see; refusing it would be a stricter rule than FR11 states,
+# and FR11 says "on the same grounds as its fourth refusal for ACs".
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0060 | Checklist half performed | verify | in-progress | 0000 |'
+mkitem_light 0060 verify in-progress '"ab12"' '' review '
+## Review checklist
+
+- [x] Does the rule earn its context rent?
+- [ ] Principle or preference?
+'
+commit_fixture
+out="$(run_close 0060 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0060-fixture.md")" 'status: done'
+
+echo "0086 AC5 — an EMPTY Review checklist section is not this defect"
+# Same allowance the AC refusal makes: nothing to tick is not a list that cannot be ticked.
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0061 | Checklist section empty | verify | in-progress | 0000 |'
+mkitem_light 0061 verify in-progress '"ab12"' '' unit '
+## Review checklist
+'
+commit_fixture
+out="$(run_close 0061 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0061-fixture.md")" 'status: done'
+
+# --- 0086 FR3 — a light ticket with NO criteria is refused, where a verify one closes ----------
+# "Every criterion is an assertion" is vacuously true of none, and honouring that reading closes a
+# self-certified row having checked nothing — the "self-attested" tier 0086 rejected. The pair of
+# cases is the point: the SAME empty section still closes at `close_by: verify`, so this is a rule
+# about the tier and not a new restriction on every chore written without ACs.
+echo "0086 FR3 — a light ticket with an empty criteria section is refused"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0064 | Light, no criteria | develop | in-progress | 0000 |'
+mkitem_light 0064 develop in-progress '"ab12"' 'close_by: develop'
+# Empty the criteria section, leaving the heading — the shape a chore ticket has.
+sed -i.bak '/^- \[ \] AC[12] —/d' "$FIX/$BL/items/0064-fixture.md"
+rm -f "$FIX/$BL/items/0064-fixture.md.bak"
+commit_fixture
+out="$(run_close 0064 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "says the criteria are missing, not that a citation is" "$out" 'no acceptance criteria'
+assert_line "the row is untouched" '| 0064 | Light, no criteria | develop | in-progress | 0000 |' QUEUE.md
+assert_clean "no file was changed"
+
+echo "0086 FR3 — and the same empty section still closes at close_by: verify"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0065 | Not light, no criteria | verify | in-progress | 0000 |'
+mkitem_light 0065 verify in-progress '"ab12"' 'close_by: verify'
+sed -i.bak '/^- \[ \] AC[12] —/d' "$FIX/$BL/items/0065-fixture.md"
+rm -f "$FIX/$BL/items/0065-fixture.md.bak"
+commit_fixture
+out="$(run_close 0065 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0065-fixture.md")" 'status: done'
+
+# --- 0086 FR3 — a criterion whose citation is wrapped onto its continuation line ---------------
+# This repo's criteria run three and four lines, and a line-based reader judges each fragment
+# separately — refusing the wrapped half of a perfectly cited criterion. The guard folds
+# continuations into their bullet, and this is the case that proves it does.
+echo "0086 FR3 — a citation on a continuation line counts"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0066 | Wrapped citation | develop | in-progress | 0000 |'
+mkitem_light 0066 develop in-progress '"ab12"' 'close_by: develop'
+python3 - "$FIX/$BL/items/0066-fixture.md" <<'PYEOF'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+s = s.replace(
+  "- [ ] AC1 — first criterion. Guard: `tests/guard.test.sh`, proved red before green.",
+  "- [ ] AC1 — first criterion, whose sentence runs long enough that the guard it names\n      lands on the next source line entirely. Guard: `tests/guard.test.sh`.")
+open(p, "w").write(s)
+PYEOF
+commit_fixture
+out="$(run_close 0066 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0066-fixture.md")" 'status: done'
+
+# --- 0086 FR6 — close_by: develop admits develop, and no other stage --------------------------
+# FR6 reads "a row whose next is not verify is refused unless its item records close_by: develop",
+# which taken literally would let a `next: design` row close on an opted-in item. NARROWED to the
+# one stage FR2 names — the session that BUILT it — and asserted, because the literal reading is
+# the one a later edit would restore.
+echo "0086 FR6 — close_by: develop does not admit next: design"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0062 | Opted in, still at design | design | in-progress | 0000 |'
+mkitem_light 0062 design in-progress '"ab12"' 'close_by: develop'
+commit_fixture
+out="$(run_close 0062 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the stage it found" "$out" 'design'
+assert_clean "no file was changed"
+
+# --- 0086 FR1 — an unrecognised close_by: value is an error, never a fail-open ------------------
+echo "0086 FR1 — a close_by value that is neither verify nor develop is an error"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0063 | Nonsense close_by | develop | in-progress | 0000 |'
+mkitem_light 0063 develop in-progress '"ab12"' 'close_by: light'
+commit_fixture
+out="$(run_close 0063 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the value it could not read" "$out" 'light'
 assert_clean "no file was changed"
 
 # --- result -----------------------------------------------------------------------------------
