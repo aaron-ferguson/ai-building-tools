@@ -29,7 +29,8 @@ touches:
   # failed on: the Dependencies NFR's naming half. The artifact and its guards are correct.
   - README.md                                # names the claude CLI as /orchestrate's runtime requirement
   - tests/orchestrate.test.sh                # a guard for that naming, absent today
-  - .claude-plugin/plugin.json               # version bump — the install still predates this change
+# `.claude-plugin/plugin.json` was declared here at claim time and is deliberately NOT touched:
+# the bump is a step of `tools/release`, not a standalone edit — see the notes below.
 # NOT touched, and each deliberately: `skills/orchestrate/SKILL.md` and `outcome.schema.json` were
 # correct as delivered (1b58 verified all 24 ACs); `skills/verify/SKILL.md`'s AC20 write is done;
 # `tests/skill-size.test.sh` derives its subjects from skills/*/SKILL.md so it never needed an edit;
@@ -819,3 +820,51 @@ guards, not to the artifact.
 
 - **`qa_level: unit` is correct and unchanged.** The change is test-side plus one non-behavioural
   file; the suite is the whole of what can judge it.
+
+### From the second re-entry build session, 2026-09-07 (token 68c9)
+
+**Scope: the one NFR conjunct the `1b58` pass failed on, and nothing else.** The diff is
+`README.md` and `tests/orchestrate.test.sh`. The skill, the schema and all 24 ACs were correct as
+delivered and are untouched.
+
+- **What was built.** README gains a `## Requirements` section: the suite is markdown and POSIX
+  `sh` everywhere but `/orchestrate`, which requires the `claude` CLI on PATH, authenticated and
+  dispatchable from inside the supervising session — and where it cannot be dispatched it fails
+  closed to the hand-driven loop. Both conjuncts of the Dependencies row now land in the place an
+  installer looks.
+
+- **The guard is written against the NFR row, because no acceptance criterion covers it — and that
+  is the class defect behind two lost passes.** 0052 shipped `tests/falsifiable-acs.test.sh`, which
+  makes the lifecycle ask whether an *acceptance criterion* can be made to fail. **Nothing asks it
+  of an NFR row.** This ticket is the live instance: the Dependencies row was read and scored by two
+  separate QA passes — ⚠️ on 2026-09-06, ❌ on 2026-09-07 — while the fix was one line of prose the
+  entire time, because a row with no criterion has no guard and nothing in the suite can notice.
+  Parked as its own finding; it still needs a row.
+
+- **Five conjuncts, each mutation-proven with its blast radius declared first.** Section-anchored
+  via the existing `section()` helper, because `claude` is not a rare word in this README (the
+  `/plugin` commands, `~/.claude/` paths, the plugin's own lineage) and a whole-file grep for it is
+  green by construction. Renaming the heading reds **all five** — `section()` returns empty, and
+  conjunct 1 names that case explicitly rather than letting the other four pass on an empty
+  string, which is the shape that would have made this guard unfalsifiable in turn. Each of the
+  other four reds alone: the CLI unnamed, PATH gone, the attribution generalised, the fallback
+  unnamed. Control run afterwards 105/0/0, which is what licenses the reds.
+
+- **The version bump has now been declared in `touches:` by three sessions and done by none, and it
+  should stop being declared.** It is not a standalone edit in this project: `tools/release` derives
+  the next version from the **remote's** `plugin.json` (0075 — a hand-picked version collided once
+  already), and the chain opens with a push to `main` that is now 52 commits behind. Hand-bumping
+  the file would need the same approval *and* re-introduce the defect 0075 exists to prevent. So the
+  bump is not a develop-stage act at all — it is one step of the release, and the release is a
+  single approval that now covers this README line too, exactly as the `1b58` verdict framed it.
+  `touches:` corrected to say so rather than reserving the file again.
+
+- **A stale cardinality claim in the file being edited, fixed non-cardinally.** README's opening
+  line read *"Five skills"* directly above a table listing seven, and had been wrong since the
+  suite grew. Rewritten as *"A suite of skills"* rather than corrected to "seven", so the next
+  skill to land cannot restale it — `testing-conventions.md`'s *assert membership, never
+  cardinality*, met in prose rather than in an assertion. **No guard asserted it in either
+  direction**, and none was added: a count nobody states cannot go stale.
+
+- **`cost_tracking:` and `tracker:` remain absent from `config.yml`** — the third session on this
+  ticket to record it. Off unless configured, so neither recorded nor mirrored.
