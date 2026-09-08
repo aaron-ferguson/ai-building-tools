@@ -28,6 +28,8 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0081 | Give the hand-off a script, as claim and close have | verify | ready |  |
 | 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | develop | ready |  |
 | 0078 | Route a finding by what it is about, not which repo you are standing in | develop | ready |  |
+| 0111 | Give retro a resolution order for a workspace holding more than one backlog | design | ready |  |
+| 0114 | Let an agent-run retro complete its release chain instead of stopping half-released | design | ready |  |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
 | 0082 | Make claim fail safe on the two paths where it currently fails open | verify | ready |  |
@@ -64,6 +66,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0061 | Decide how a session learns the installed plugin differs from this repo | design | ready |  |
 | 0066 | Fix the three places the backlog scripts answer the wrong question | develop | ready |  |
 | 0063 | Give the prose guards a matcher that survives a rewrap | develop | ready |  |
+| 0112 | Hoist the line-wrap hazard to the session editing prose, not only the one writing a guard | develop | ready |  |
 | 0096 | Make the frontmatter path lists checkable to read and safe to edit | develop | ready |  |
 | 0095 | Hoist the shell short-circuit hazard where a guard author will read it | develop | ready |  |
 | 0067 | Decide what shape a cross-cutting rename takes in the backlog | design | ready |  |
@@ -79,6 +82,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
 | 0071 | Add a decision-map mode for work too large or too foggy for one project ticket | design | ready |  |
 | 0072 | Archive an escalated prototype on its own branch instead of leaving it only in the working tree | develop | ready |  |
+| 0113 | Give retro's release chain and its one-line report a form for a pass that edited several repos | develop | ready |  |
 | 0097 | Record what a transcript cannot say about thinking tokens | develop | ready |  |
 | 0103 | Decide whether the backlog scripts may share a sourced file | design | ready |  |
 | 0099 | Return RANKING.md to current state only | develop | ready |  |

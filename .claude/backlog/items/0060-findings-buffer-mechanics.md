@@ -10,7 +10,7 @@ created: 2026-08-25
 source: agent
 parent:
 blocked_by: []
-relates: ["0012", "0014", "0016", "0036", "0038"]
+relates: ["0012", "0014", "0016", "0036", "0038", "0111"]
 expects:
   - .claude/backlog/config.yml
   - skills/queue/templates/next
@@ -76,6 +76,16 @@ anything older than about two weeks.
   time, because classifying at the moment of noticing is the friction the design deliberately
   avoids — so a marker must be written on the way *out*, not on the way in, and saying that is part
   of the decision.
+- **A second axis the gate has, added by the `queue` sweep of 2026-09-07.** `findings_threshold` is
+  **per-project**, and a workspace holds several. Measured that day from
+  `/Users/aaronferguson/Documents/AI`: four backlogs beneath it holding 22, 3, 4 and 0 entries —
+  and had they been distributed 6/6/6/6, **no gate anywhere would have tripped while 24 findings sat
+  unswept**. So "what does the gate count" has a scope half as well as a kind half: entries a retro
+  can act on, *in which buffers*. It is recorded here rather than given its own row because it is
+  the same decision — a gate re-based on something a retro can move has to say what a retro reaches,
+  and answering the kind half without the scope half leaves the gate correct per project and blind
+  per workspace. **Which buffers a retro reaches at all is 0111**, and this depends on that answer
+  without being blocked by it: whatever 0111 settles, this decides what the gate counts across them.
 - **Settle it with:** `/design` — the inputs are the file's header, both sweepers' steps, and
   `./next`'s counting code. Nothing needs to be seen.
 

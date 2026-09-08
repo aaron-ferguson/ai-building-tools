@@ -769,3 +769,46 @@ any row not at `next: verify` and the backlog has no withdraw-or-supersede path.
 carries `not built` and `merged` in its QA column for the three rows, which is honest but is a
 convention invented at the point of use. Parked in `FINDINGS.md` for `0057`.
 
+
+## 2026-09-07 — The findings sweep of 2026-09-07
+
+Four entries, all parked earlier the same day by the retro that produced them, all about `retro`
+itself. Every one was re-checked against the current tree before it was specified; all four still
+held, and one was found narrower than the entry claimed (see 0113).
+
+**0111 and 0114 above 0075, below 0078.** The four rows split two-and-two by subject rather than by
+capture order. 0078 already holds the position for *how a finding reaches the toolkit at all*, and
+0111 is the reading half of the same question — which buffers a retro resolves when it is invoked
+somewhere holding several. Placing it directly under 0078 keeps the pair legible to whoever takes
+either.
+
+0111 above 0114 on the **regret operator**, the tie-breakers having failed to separate two Tier 2
+rows. Both compound. What decided it is the privacy edge: 0111's undecided resolution order is what
+let one pass reach a company-tracked backlog (`Probation`, routed to Jira under company policy) and
+this public repo in the same sweep. Nothing bad happened, and nothing in the skill prevents it
+either. 0114's damage is bounded — a bump committed and unpushed, recoverable, with `--yes` a known
+workaround — where 0111's is a rule that does not exist.
+
+0114 above 0075 on **tie-breaker 1, blast radius**. They are the same bullet of the same step and
+pull against each other: 0075 FR3 derives the next version from the remote precisely to stop a
+local/remote disagreement, and 0114 is the tool's own stop path producing one. 0075 fires when a
+checkout is behind; 0114 fires on every agent-run retro that edits a skill, which Step 5 says is
+most of them.
+
+**0112 under 0063.** Both rewrite `CLAUDE.md`'s line-break paragraph — 0063 to point at the matcher
+it builds for the `grep` half, 0112 to add the anchored-edit half a matcher cannot cover. Not
+`blocked_by`: either order works and forcing one would sink a row for no gain. Ranked as a
+recurring cost rather than a defect, because the failure is loud — an anchored edit fails visibly
+where a guard's version of the same break passes silently. That is what keeps it below the Tier 2
+group and beside 0095, the same shape of hoist for a different reader.
+
+**0113 above 0097.** The lowest of the four. Step 5's commit bullet already handles several repos;
+only the release bullet and the prescribed one-liner do not, so the damage is a report that cannot
+say which of three repos was left unpushed — real, and inert until a three-repo pass happens. It
+beats the documentation rows below it and loses to 0072, where work exists only in a working tree.
+
+**One half went to an existing row rather than a new one.** The `findings_threshold` observation in
+the first entry — per-project, so four buffers at six entries never trip a gate while a workspace
+holds 24 unswept findings — is the scope half of the question 0060 already owns. Recorded in 0060's
+open design question with 0111 named as its dependency, rather than filed as a fifth row that would
+have decided the same thing twice.
