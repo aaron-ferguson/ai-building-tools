@@ -128,3 +128,31 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   in a covered file. Fixed locally with a variable, but the shape generalises to any guard that
   scans the directory it lives in.
 
+- 2026-09-08 — **The privacy guard cannot tell a redacted home path from a real one, so the finding
+  that describes the leak counts as one.** `measurement.test.sh:820` matches `[-/](Users|home)[-/]`,
+  which fires on `/Users/<name>/Documents/AI` exactly as it does on the real username. Two of the
+  four flagged lines — `FINDINGS.md:74` and `:117` — are already redacted prose *about* the leak;
+  only `items/0060:81` and `items/0111:29` publish a real path. Verifying 0105 grew the hit list
+  from three to four, because `cb224ab` parked the finding in the form the guard rejects. Whoever
+  fixes the real two cannot green the guard without rewording the entries that record the problem,
+  which is the wrong pressure. The matcher wants a redaction-placeholder exemption. Still needs a row.
+- 2026-09-08 — **0105's item-ID matcher reads any zero-padded four-digit number in an anchored form
+  as a citation, so a file mode or a clock time reds the guard.** Appending `# chmod 0644 — the mode
+  the lock file gets.` and `# The nightly driver starts at (0900).` to a covered file produces two
+  `cites item …, which is in no table` failures. The leading-`0` requirement is what correctly keeps
+  years like `(2026)` out; it is also what lets modes and times in. No live instance — the shipped
+  tree is green at 59 citations — so this is latent, and the bad shape is that the cheapest fix looks
+  like rewording innocent prose rather than fixing a citation. `references/CONCURRENCY.md` is about
+  lock files, where `0644 —` is a plausible edit. Still needs a row.
+- 2026-09-08 — **The same matcher covers `QUEUE.md` but not `DONE.md`, `FINDINGS.md` or `items/`.**
+  Verified by appending an unresolvable anchored citation to `items/0105-*.md` and to `FINDINGS.md`:
+  both pass. FR3 asked for `tests/` and got that plus `cited_files()`, so this is within spec — but
+  item files are where ids are cited most, and the `QUEUE.md`-in / `DONE.md`-out seam means a
+  citation checked today stops being checked the moment its row is closed. Still needs a row.
+- 2026-09-08 — **An AC written as the outcome of an agent-performed operation has no runner here, and
+  nothing in the ticket says so.** 0105 AC1 reads "given a withdrawal, `next_id` is unchanged or
+  higher"; no script withdraws a ticket and none mints an id — both are `queue` prose — so the
+  outcome is unobservable at every level and the guard necessarily asserts the *sentence* instead.
+  That is the altitude gap `verify` Step 3 warns about, arriving structurally rather than by
+  oversight. `qa_manual:` was empty, so the split was never declared at queue time. The general
+  question — how a prose-executed repo verifies a behavioural AC — is bigger than one row.
