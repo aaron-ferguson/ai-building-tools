@@ -30,7 +30,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0114 | Let an agent-run retro complete its release chain instead of stopping half-released | design | ready |  |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
-| 0082 | Make claim fail safe on the two paths where it currently fails open | verify | ready |  |
+| 0082 | Make claim fail safe on the two paths where it currently fails open | verify | in-progress |  |
 | 0106 | Make touches mean one thing across claim, close and a transient mutation | develop | ready |  |
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | develop | blocked |  |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
