@@ -25,21 +25,15 @@ expects:
 claimed_by: "68c9"
 claimed_at: 2026-09-08T01:07:49Z
 touches:
-  - skills/orchestrate/SKILL.md
-  - skills/orchestrate/outcome.schema.json  # the single copy of the FR13 shape
-  - skills/verify/SKILL.md                  # AC20 only: relocate the evidence table
-  - README.md
-  - .claude-plugin/plugin.json
-  - tests/skill-size.test.sh
-  - tests/orchestrate.test.sh                # new
-  # Re-entry of 2026-09-06 (token 6c77). The artifact was correct as delivered; what is
-  # being fixed is three guards that cannot fail, plus the untyped new .py file.
-  - tests/orchestrate.test.sh                # AC16, AC19, AC21 guards rescoped
-  - tools/validate-json-schema.py            # type hints; new in this ticket's own diff
-  - .claude-plugin/plugin.json               # version bump — the install predates this change
-# `tests/skill-size.test.sh` was in expects: and is deliberately NOT touched: it already derives
-# its subjects from skills/*/SKILL.md, so the new skill came under it with no edit. The QA plan's
-# "widened by exactly one file" was written against a list that no longer exists.
+  # Second re-entry of 2026-09-07 (token 68c9). Scope is the ONE gap the 1b58 QA pass
+  # failed on: the Dependencies NFR's naming half. The artifact and its guards are correct.
+  - README.md                                # names the claude CLI as /orchestrate's runtime requirement
+  - tests/orchestrate.test.sh                # a guard for that naming, absent today
+  - .claude-plugin/plugin.json               # version bump — the install still predates this change
+# NOT touched, and each deliberately: `skills/orchestrate/SKILL.md` and `outcome.schema.json` were
+# correct as delivered (1b58 verified all 24 ACs); `skills/verify/SKILL.md`'s AC20 write is done;
+# `tests/skill-size.test.sh` derives its subjects from skills/*/SKILL.md so it never needed an edit;
+# `tools/validate-json-schema.py` was typed by the 6c77 re-entry.
 ---
 
 ## Problem
