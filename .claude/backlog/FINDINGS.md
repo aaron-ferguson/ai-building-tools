@@ -148,3 +148,40 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   still reds the live check. Suite green, 23 files. **The remaining half needs a row:** nothing in
   `queue`'s or `capture`'s own steps runs this guard, so a sweep session can commit a tracked file
   that reds it and not find out — which is exactly how `b9d11af` introduced these two.
+- 2026-09-08 — **`references/CONCURRENCY.md:81` states a behaviour `./next --drift` does not have.**
+  *A stage writes only the ticket it holds* says "A row reading `in-progress` over a tokenless item
+  is drift, not ownership — `./next --drift` reports it, and no reader treats it as a claim." It
+  does not report it: driven directly on that exact shape, `--drift` prints `no drift` and exits 0.
+  `--drift` is a Status-column-vs-`blocked_by` cache check (`next:88`, `next:467–493`) and reads
+  neither `claimed_by:` nor the item's `next:`. So the protocol tells a reader to rely on a check
+  that cannot see the thing, and the 0084 incident this repo already recorded — row `develop |
+  in-progress` over item `next: verify, status: ready`, `claimed_by:` empty — reproduces with
+  `--drift` silent while `./next verify` declines to offer the row and `./next develop` reports its
+  files held under `[no token]`. Pre-existing: written 2026-08-24 at `953ce51` (0029), long before
+  `0081` touched the file. This is also why `0081` AC4 is unverifiable and went to `queue`. Still
+  needs a row — and the two halves may be one fix or two: correct the sentence, or give `--drift`
+  the row/item agreement check the sentence promises.
+- 2026-09-08 — **`tests/handoff.test.sh` returns rc=0 and *no tally* when the template is mutated
+  externally on a line the harness also mutates.** The harness rewrites its own copy of `handoff`
+  for the read-back cases; an external mutation to the `touches:` skiplist collides, and the case
+  prints `FAIL — the mutation did not apply — the case below proves nothing`, then the script exits
+  **0** with no `N passed, M failed` line at all. `verify` Step 3 names the missing tally as the
+  tell, and it is right — but rc=0 is the dangerous half, because a QA session running the suite in
+  a `|| true` loop and reading tallies sees a file that simply produced no output and reads it as
+  noise rather than as a red. The mutation did in fact redden (the read-back fired with
+  `did not apply to: touches.entries`), which is only discoverable by reading the full output.
+  Still needs a row: a collided self-mutating guard should exit non-zero, or print a tally of 0/1.
+- 2026-09-08 — **Company and product names sit in item prose in this public repo, and the
+  2026-09-08 privacy sweep did not cover them.** `2a69aa9` redacted published *home paths* and
+  fixed the guard; the tracked tree still carries `Neumo`/`neumo-ds` in `items/0003:69`,
+  `items/0004:29`, `items/0056:30,131`, `items/0070:71`, `items/0111:31` and `items/0113:43`.
+  Several are references to the constraint itself ("a company tool this public repo must not depend
+  on"), which is arguably fine; `items/0003` and `items/0004` are not — they describe a
+  court-tenanted rollout and "Neumo's Jira" story rubric. `CLAUDE.md` says "no internal names".
+  Outside both tickets under test, so not their red. Still needs a row, and the decision it needs
+  is whether a *mention of the rule* is exempt, since a guard that cannot tell those apart is the
+  same trap the home-path guard just fell into.
+- 2026-09-08 — **The findings buffer is at 14 against `findings_threshold: 8`** and this pass added
+  to it. `verify` has no gate on that count — only `./next --drive` does — so a hand-driven session
+  can keep filling it indefinitely. Noted rather than acted on; `0060` owns how the buffer is
+  emptied and gated.

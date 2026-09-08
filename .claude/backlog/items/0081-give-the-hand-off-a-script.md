@@ -244,3 +244,50 @@ window mid-TDD, which `develop` Step 5 says is settled by `git status` alone.
   not repair it — not its ticket. Useful to the QA pass as the shape to check `handoff`'s read-back
   against: **all five fields land or none does** has to hold in both directions, and only one of them
   is what 0087 demonstrated.
+
+## QA evidence
+
+### Verify 2026-09-08 [9840] — FAIL on AC4, six ACs and all three NFR rows green
+
+Level `unit` per frontmatter (the QA plan's `**Level:** unit` agrees — no drift). Whole suite green
+at baseline and at verdict: **23 files, 1,134 assertions, 0 failed**, run file-by-file per
+`config.yml`'s note rather than fail-fast. Tree clean at Step 2 and at verdict. Executed copy:
+the installed plugin at `0.9.19`, `diff -rq` byte-identical to this checkout.
+
+| AC / NFR | How verified — and where | Result |
+|---|---|---|
+| AC1 — moves row + item, committed inside the lock, one invocation | Drove `./handoff 0007 8a04 verify` in a throwaway git repo. All five item fields moved (`next`→verify, `status`→ready, `claimed_by:`/`claimed_at:`/`touches:` cleared **with its two column-0 entries**), both row cells moved, `expects:` untouched. A `pre-commit` hook witnessed `.lock` **present at commit time** and the staged set as exactly `QUEUE.md` + the item. Lock released, tree clean. | PASS |
+| AC2 — status mismatch refuses and changes nothing (the 0087 case) | Both directions: item `ready` / row `in-progress`, and item `in-progress` / row `ready`. Each names the mismatch (`"the item reads 'ready' and the row reads 'in-progress'"`); `cksum` over the whole fixture unchanged. | PASS |
+| AC3 — refuses a wrong token and a row not at the expected stage, each own message, no file changed | Six distinguishable refusals driven: wrong token, no `claimed_by:` at all, row/item stage disagreement, unreadable table header, unrecognised stage, and each of the three forbidden statuses (`blocked`/`done`/`in-progress`). Every one left the fixture byte-identical. | PASS |
+| AC4 — `./next --drift` exits zero for that row after a hand-off | Zero before, zero after — **but the check cannot fail.** Mutating `mv "$queue_tmp" "$QUEUE"` away (break confirmed landed) produced the exact 0087 drift: item at `next: verify, status: ready, claimed_by:` empty over a row still reading `develop \| in-progress` — and `--drift` still printed `no drift`, rc=0. `--drift` is a Status-vs-`blocked_by` cache check (`next:88`) and is blind to row/item disagreement, so AC4's named outcome holds against deliberately broken code. | **FAIL — unverified** |
+| AC5 — `sh -n` passes, installed copy byte-identical to template | `sh -n` clean on all four templates; `cmp` identical for `claim`, `close`, `handoff`, `next`. | PASS |
+| AC6 — `develop` and `verify` name `./handoff`, keep the by-hand fallback | `develop` Step 5 line 445 + fallback at 463; `verify` Step 5 line 325 with all three branches (331–333) + fallbacks at 286 and 336. | PASS |
+| AC7 — `CONCURRENCY.md` states the release is the final act, with the 29-second window | `references/CONCURRENCY.md:181`, *The release is the final act*, carrying the 29-second window and "no lock can see this". | PASS |
+| NFR Git — pathspec inside the lock, `Co-Authored-By` trailer | Hook witness proves both. Trailer read through git's own parser: `%(trailers:key=Co-Authored-By,valueonly)` → `Claude <noreply@anthropic.com>`. **The 2026-09-05 red is fixed.** | PASS |
+| NFR Testing — throwaway repo per case, asserts on message and files, not exit status alone | Confirmed in source and reproduced independently with `cksum`/`git diff --cached` fingerprints. | PASS |
+| NFR Dependencies — `/bin/sh`, `git`, `awk` only | Plus `mktemp`, as `claim` and `close` already use. | PASS |
+
+**Ten mutations re-run rather than taken from the build notes** (control 104/0 before and after
+every one): token guard neutered → 101/3; in-progress guard → 99/5; stage-agreement guard → 102/2;
+no-claim guard → 103/1; five-fields presence check → 102/2; stage vocabulary → 101/3; `touches:`
+skiplist narrowed to `^[ \t]+- ` → the read-back fires with `did not apply to: touches.entries`
+(2 red); **drop `-m "$COAUTHOR"` → 103/1**; **fold the trailer into the subject `-m` → 103/1**,
+the mutation a `grep`-based guard could not see; and **releasing the lock before the commit →
+103/1, exactly the `pre-commit` hook witness**, confirming the build note that nothing else can
+observe that defect.
+
+**Why AC4 routes to `queue` and not to `develop`.** `handoff` is correct — the mechanism AC4
+gestures at is verified decisively by AC1 (all five fields and both cells move in one commit) and
+AC3 (the script refuses when row and item disagree going in, and reads both back before moving
+either into place). What is broken is the criterion's **instrument**. Fixing it is a
+re-specification decision — either AC4 becomes an assertion about the read-back, which AC1/AC2
+already cover, making it redundant; or `./next --drift` gains a row/item agreement check, which is
+code in `next`, a file outside this ticket's `touches:`. Neither pass nor fail is honest, and
+`verify` may not re-specify. Ticking AC4 would record "verified by `--drift`" when `--drift`
+verifies nothing, and `./close` closes on ticked ACs.
+
+**Not this ticket's, and each already has a row:** `handoff:102` still warns-and-carries a foreign
+`QUEUE.md` edit rather than refusing as `claim` now does (**0090** item 3); `claim` and `close`
+carry no `Co-Authored-By` trailer, confirmed `trailer=` empty on both live claim commits from this
+session (**0090** item 4); `claim.test.sh`/`close.test.sh` cannot see a lock released before the
+commit (**0092**).

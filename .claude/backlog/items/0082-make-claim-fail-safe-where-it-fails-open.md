@@ -144,3 +144,33 @@ refuses rather than guesses on three other grounds.
   name); `close` and `handoff` still warn-and-carry verbatim; and the `count` temp file leaks on an
   awk failure exactly as the pre-existing `tmp` does — fixing only the new one would leave the file
   inconsistent with itself.
+
+## QA evidence
+
+### Verify 2026-09-08 [f1ff] — PASS, all six ACs and both NFR rows green
+
+Level `unit` per frontmatter (the QA plan agrees — no drift). Whole suite green at baseline and at
+verdict: **23 files, 1,134 assertions, 0 failed**. Tree clean at Step 2 and at verdict. Executed
+copy: the installed plugin at `0.9.19`, byte-identical to this checkout.
+
+| AC / NFR | How verified — and where | Result |
+|---|---|---|
+| AC1 — non-empty `expects:` written as `touches:` in the claim commit | Observed on **this session's own two live claims**: `e3fadeb Claim 0081 [9840]` and `f0cc4df Claim 0082 [f1ff]` each carry the `touches:` block in the claim commit itself (7 and 4 paths). Reproduced in a throwaway repo with a `pre-commit` hook: `.lock` **held at commit time**, staged set exactly `QUEUE.md` + the item. | PASS |
+| AC2 — the report says to narrow, and does not imply the field is unset | `"touches: is set provisionally from expects: (2 paths) — NARROW it in <item> to what you will actually open, and widen it the moment the work reaches further"`. | PASS |
+| AC3 — an item with no `expects:` claims as today, report says the scope is unset | Claimed a fixture item with an empty `expects:`; `touches:` left empty and the report reads `"touches: is unset: 0009 declares no expects:, and a scope invented from nothing would be worse than none"`. | PASS |
+| AC4 — with a foreign uncommitted `QUEUE.md` edit, refuses, names the rows, leaves `QUEUE.md` / item / index byte-identical | Dirtied a **different** row as another author, then claimed. Refused, printed the `-`/`+` row pair it would have carried, and `cksum` of `QUEUE.md` + the item and `git diff --cached --name-only` were all unchanged. `"nothing was changed and no lock was taken"` — and no `.lock` was left behind, because the check sits **above** the lock. | PASS |
+| AC5 — that refusal's message is distinct from the token, stage and table-shape refusals | Four driven on clean trees: foreign edit (`"QUEUE.md holds uncommitted changes this claim's commit would carry"`), table shape (`"no table header … expected a row with an 'ID' cell"`), no row (`"no row for 9999 in QUEUE.md"`), not-ready (`"0007 is 'in-progress', not ready — pick another row"`). All distinct. | PASS |
+| AC6 — each refusal branch, mutated away, turns `tests/claim.test.sh` red | Control 42/0 before and after each. Foreign-edit refusal deleted (warn-and-carry restored) → 38/4; the same refusal made `exit 0` → 41/1; `touches:` entry loop dropped → 40/2; `expects:` entries never collected → 39/3; the report's unset branch made unconditional → 41/1; not-ready refusal disabled → 39/3. | PASS |
+| NFR Git — the refusal path leaves index and tree exactly as found | AC4's fingerprints, above: `QUEUE.md`, the item and the index all byte-identical, no lock taken. `LOCK` is absolute (`$DIR` via `cd -- … && pwd`). | PASS |
+| NFR Testing — refusals asserted on message **and** files unchanged, never exit status alone | `tests/claim.test.sh:250–252` assert `QUEUE.md` byte-identical, the item byte-identical and the index untouched; reproduced independently. | PASS |
+
+**Two pre-existing refusals do not redden, and both are the benign shape, not a gap.** Disabling
+the table-shape refusal drops through to `"no Status column in the QUEUE.md table"`, and disabling
+the no-row refusal drops through to `"9999 is '', not ready"` — in both cases rc=1, nothing
+written, no lock taken. That is `verify` Step 3's "vaguer escalation with the same exit code": a
+**message assertion worth adding**, not a failure, and outside this ticket's new branches (the QA
+plan scopes the sweep to "each new branch"). Recorded for **0089**.
+
+**Not this ticket's:** `claim` commits without the `Co-Authored-By` trailer — verified `trailer=`
+empty on both of this session's live claim commits (**0090** item 4) — and releasing the lock
+before `claim`'s commit reds nothing in `claim.test.sh` (**0092**).
