@@ -3,7 +3,7 @@ id: "0082"
 title: Make claim fail safe on the two paths where it currently fails open
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -16,9 +16,13 @@ expects:
   - .claude/backlog/claim
   - tests/claim.test.sh
   - references/CONCURRENCY.md
-claimed_by:
-claimed_at:
+claimed_by: "c525"
+claimed_at: 2026-09-08T01:43:10Z
 touches:
+  - skills/queue/templates/claim
+  - .claude/backlog/claim
+  - tests/claim.test.sh
+  - references/CONCURRENCY.md
 ---
 
 ## Problem
