@@ -69,3 +69,10 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   same gap from the other end — no sweeper has a procedure for a buffer far past its threshold —
   which suggests the missing rule is about batch operations generally rather than about ranking
   (pointer: `skills/queue/SKILL.md` Step 3, `.claude/backlog/RANKING.md`, items `0128`, `0060`).
+- 2026-09-09 (queue) — **Step 1's re-specify row says a `next: queue` ticket "already has a rank
+  and keeps it," which is true only for one bounced back from a later stage.** A ticket parked at
+  capture time by Step 5 — Problem section only, no FRs, deliberately left out of `QUEUE.md` — has
+  never been ranked at all, so re-specifying it needs Step 3's ranking walk to run for the first
+  time, not be skipped. Surfaced while specifying `0138`, a design ticket about giving idea capture
+  its own lightweight front door — any such front door produces exactly this never-ranked case on
+  promotion (pointer: `skills/queue/SKILL.md` Step 1, item `0138`).
