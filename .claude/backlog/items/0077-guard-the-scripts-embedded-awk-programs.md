@@ -2,8 +2,8 @@
 id: "0077"
 title: Guard the backlog scripts against a broken embedded awk program
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: s
 created: 2026-09-01
@@ -16,14 +16,9 @@ expects:
   - skills/queue/templates/close
   - skills/queue/templates/claim
   - skills/queue/templates/next
-claimed_by: "566c"
-claimed_at: 2026-09-09T16:08:27Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/backlog-scripts-installed.test.sh
-  - skills/queue/templates/next
-  - skills/queue/templates/claim
-  - skills/queue/templates/close
-  - skills/queue/templates/handoff
 ---
 
 ## Problem
