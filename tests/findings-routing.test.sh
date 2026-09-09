@@ -207,9 +207,16 @@ for s in $SKILLS; do
 done
 
 echo "AC5 — the fallback and the privacy clause red independently of each other"
+# The probes below delete one phrase from a copy of whatever is ON DISK, so a phrase already
+# missing from the real file sends the `else` down the wrong branch and the case reports a claim
+# about guard design that is simply untrue. Assert the survivor is present first, exactly as the
+# AC5 deletion loop above does for the skills: a wrong REASON is what a session acts on.
+W_CONV_REAL="$(window "$CONV" "$RULE")"
 grep -v 'falls back to a marked local park' "$CONV" > "$FIX/no-fallback.md"
 WF="$(window "$FIX/no-fallback.md" "$RULE")"
-if window_has "$WF" 'falls back to a marked local park'; then
+if ! window_has "$W_CONV_REAL" 'carries no company material'; then
+  bad "AC5 — the real $CONV is already missing the privacy clause, so this probe proves nothing"
+elif window_has "$WF" 'falls back to a marked local park'; then
   bad "AC5 — the fallback sentence was deleted and the matcher still saw it"
 elif window_has "$WF" 'carries no company material'; then
   ok "AC5 — deleting the fallback reds AC3 while leaving AC4 green, so neither covers the other"
@@ -219,7 +226,9 @@ fi
 
 grep -v 'carries no company material' "$CONV" > "$FIX/no-privacy.md"
 WP="$(window "$FIX/no-privacy.md" "$RULE")"
-if window_has "$WP" 'carries no company material'; then
+if ! window_has "$W_CONV_REAL" 'falls back to a marked local park'; then
+  bad "AC5 — the real $CONV is already missing the fallback clause, so this probe proves nothing"
+elif window_has "$WP" 'carries no company material'; then
   bad "AC5 — the privacy sentence was deleted and the matcher still saw it"
 elif window_has "$WP" 'falls back to a marked local park'; then
   ok "AC5 — deleting the privacy clause reds AC4 while leaving AC3 green"
