@@ -222,3 +222,13 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `sh -n`) that a named mutation cannot produce. Where an AC is a *quantifier* — "an apostrophe
   anywhere inside" — named mutations sample it and a sweep decides it, and the sweep is cheaper
   than the second bounce it replaces.
+
+- 2026-09-09 — **four "change one, change all" duplications now live in these scripts and exactly
+  one of them has a drift guard.** The `saw`/`saw_on_pass` pair is copied across four test suites,
+  the `DECOMMENT` awk block across three scripts, the `fm_value` reader across three, and 0106 added
+  a fourth: the ~70-line scope-comparison block in `close` and `handoff`. Each carries a comment
+  saying to change them together, which is a rule with nothing enforcing it; 0106 wrote a byte-for-
+  byte comparison for its own copy, and the other three have none. The install contract makes a copy
+  the only option (a backlog script sources nothing), so the question is not how to stop duplicating
+  but when a copy earns a guard — a rule worth stating once rather than deciding per ticket
+  (pointer: tests/close.test.sh's "close and handoff carry the same scope block").
