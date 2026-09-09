@@ -20,9 +20,10 @@ claimed_by: "6b93"
 claimed_at: 2026-09-09T16:26:58Z
 touches:
   - tests/backlog-scripts-installed.test.sh
-  - skills/queue/templates/close
-  - skills/queue/templates/claim
-  - skills/queue/templates/next
+  - skills/queue/templates/close        # transient mutation target only, restored
+  - skills/queue/templates/next         # transient mutation target only, restored
+  - .claude/backlog/close               # transient mutation target only, restored
+  - .claude/backlog/next                # transient mutation target only, restored
 ---
 
 ## Problem
