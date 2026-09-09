@@ -21,6 +21,7 @@ touches:
   - skills/retro/SKILL.md
   - tools/release
   - tests/release.test.sh
+  - tests/retro-tool-edit.test.sh
 ---
 
 ## Problem
