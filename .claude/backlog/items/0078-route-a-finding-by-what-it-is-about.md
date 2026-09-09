@@ -20,11 +20,15 @@ expects:
 claimed_by: "c594"
 claimed_at: 2026-09-09T03:30:06Z
 touches:
+  - references/CONVENTIONS.md
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - skills/retro/SKILL.md
   - skills/queue/SKILL.md
-  - references/CONVENTIONS.md
+  - skills/design/SKILL.md
+  - skills/prototype/SKILL.md
+  - skills/queue/templates/config.yml
+  - tests/findings-routing.test.sh
 ---
 
 ## Problem
