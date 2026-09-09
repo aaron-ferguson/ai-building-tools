@@ -2,8 +2,8 @@
 id: "0106"
 title: Make touches mean one thing across claim, close and a transient mutation
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 qa_manual:
 size: m
@@ -19,8 +19,8 @@ expects:
   - skills/queue/templates/close
   - skills/develop/SKILL.md            # Step 1's definition of what belongs in touches
   - tests/claim.test.sh
-claimed_by: "8f81"
-claimed_at: 2026-09-09T20:51:27Z
+claimed_by:
+claimed_at:
 touches:
   # TRANSIENT — mutated to prove the guards red, restored inside the same turn (0106 AC7)
   - skills/queue/templates/claim
@@ -31,6 +31,7 @@ touches:
   - .claude/backlog/QUEUE.md
   - .claude/backlog/DONE.md
   - .claude/backlog/FINDINGS.md
+closed: 2026-09-09
 ---
 ## Problem
 
@@ -89,19 +90,19 @@ reproduced a moment later, and point at a file its own ticket never touched. Ste
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given an item with a non-empty `touches:`, when it is re-claimed, then the field is not
+- [x] AC1 — Given an item with a non-empty `touches:`, when it is re-claimed, then the field is not
   prepended to and no path appears twice.
-- [ ] AC2 — Given a re-claim of an item with a non-empty `touches:`, when it completes, then its
+- [x] AC2 — Given a re-claim of an item with a non-empty `touches:`, when it completes, then its
   output says the field was left as the previous session set it, and prints the paths it kept.
-- [ ] AC3 — Given a row at `next: verify`, when it is claimed, then `touches:` is not seeded from
+- [x] AC3 — Given a row at `next: verify`, when it is claimed, then `touches:` is not seeded from
   `expects:`.
-- [ ] AC4 — Given a ticket whose commits changed a path its `touches:` never named, when it closes,
+- [x] AC4 — Given a ticket whose commits changed a path its `touches:` never named, when it closes,
   then the output names that path as touched-but-undeclared.
-- [ ] AC5 — Given a ticket whose `touches:` names a path its commits never changed, when it closes,
+- [x] AC5 — Given a ticket whose `touches:` names a path its commits never changed, when it closes,
   then the output names that path as declared-but-untouched, and the close still succeeds.
-- [ ] AC6 — Given `develop` Step 1, when read, then it states whether a transiently-mutated file is
+- [x] AC6 — Given `develop` Step 1, when read, then it states whether a transiently-mutated file is
   declared and what the mutating session owes a concurrent suite run.
-- [ ] AC7 — Deleting the seed-only-when-empty condition from `claim` turns a test red.
+- [x] AC7 — Deleting the seed-only-when-empty condition from `claim` turns a test red.
 
 ## QA plan
 

@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0106 | Make touches mean one thing across claim, close and a transient mutation | bug | unit | 2026-09-09 | [items/0106-make-touches-mean-one-thing.md](items/0106-make-touches-mean-one-thing.md) |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | bug | unit | 2026-09-09 | [items/0077-guard-the-scripts-embedded-awk-programs.md](items/0077-guard-the-scripts-embedded-awk-programs.md) |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | bug | unit | 2026-09-09 | [items/0075-anchor-a-tool-edit-to-the-remote.md](items/0075-anchor-a-tool-edit-to-the-remote.md) |
 | 0114 | Let an agent-run retro complete its release chain instead of stopping half-released | bug | unit | 2026-09-09 | [items/0114-let-an-agent-run-retro-complete-its-release-chain.md](items/0114-let-an-agent-run-retro-complete-its-release-chain.md) |
