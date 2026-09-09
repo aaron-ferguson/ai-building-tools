@@ -168,6 +168,17 @@ read-modify-write two sessions can both win:
 Widen `touches:` the moment the work reaches further: the other window reads it to decide what it may
 safely take.
 
+**A file you break on purpose and put back is declared too, and it is the sharpest hold on the list.**
+Proving a guard red means mutating a file and restoring it, so the committed diff never shows it and
+neither reading of the field — what you will open, what you will create — reaches it. Declare it, and
+say inline that the mutation is transient, so the entry is not later read as an edit that never
+happened. While the mutation is live the suite is deliberately red, and a concurrent whole-suite run
+collects failures that belong to nobody, cannot be reproduced a moment later, and point at a file its
+own ticket never touched. Step 5 tells the *arriving* session to check `pgrep` before starting a run;
+the session holding the mutation owes the mirror of it — check for a live run before you break
+anything, keep the break and its restore inside one turn, and never leave a mutation live across a
+hand-off, a wait, or the end of a turn.
+
 **Then mirror the claim if a tracker is configured** (`references/TRACKER.md`), outside the lock — a
 network call must never be made while holding it. No `tracker_key` yet → create the ticket and write
 the key in; otherwise transition it. Note the key in your report. Failure is logged in the item's
