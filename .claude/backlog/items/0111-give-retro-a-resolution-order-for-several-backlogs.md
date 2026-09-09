@@ -190,3 +190,33 @@ numbered order that is still a discovery.
   applying `queue`'s *an FR describing a rule needs an FR naming what executes it* does not read the
   absence as an oversight.
 - Captured from `FINDINGS.md` 2026-09-07, parked by the retro pass that hit it.
+
+### Build — 2026-09-09 [cd92]
+
+- **AC5's phrase was one markdown emphasis away from being a guard that cannot fail.** Step 1
+  already carried *"That repo is \*resolved\*, never discovered"* from `0078`, so a file-wide or
+  even window-scoped grep for `resolved, never discovered` reads as a fresh assertion while being
+  satisfied by a sentence about a different rule. It reds only because the asterisks break the
+  literal. Confirming red before writing the prose is what caught it, and the phrase now matches
+  the new sentence alone — but a later reflow that drops those asterisks would silently rewire
+  AC5 to `0078`'s paragraph, and neither guard would notice.
+
+- **The retirement check landed as a positive rule with its own stated blind spot**, per the
+  design decision: it inspects the resolved backlog's `QUEUE.md` and no other, and Step 1 says
+  why that is acceptable rather than leaving the gap to be rediscovered. `jury-config` carrying
+  neither a `tracker:` nor a `routing:` block is the evidence that a cross-backlog detector would
+  fail open.
+
+- **`skills/retro/SKILL.md` is now 24,698 bytes** against `skill-size.test.sh`'s 20,190 goal — it
+  was 22,343 before and already over, so the guard stayed green on the justification keyed to
+  `b9a5ee0`. That justification names Step 4's dispositions and Step 1's two modes; it does not
+  name the resolution order, which is now the largest single block over the goal. The guard
+  checks that a justification is *present*, not that it still describes the file, so it cannot
+  see this. Parked in `FINDINGS.md` rather than fixed here — `tests/skill-size.test.sh` is
+  outside this ticket's scope.
+
+- **Privacy, and not this ticket's to fix.** This item's own Problem and Decision sections name an
+  internal repository path in a repo whose `CLAUDE.md` forbids internal names. It was committed by
+  the capture and design passes before this build claimed the row, the history is pushed, and
+  redacting it is neither in scope nor a decision a build session makes. Surfaced in the hand-off
+  and parked.

@@ -76,3 +76,22 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   time, not be skipped. Surfaced while specifying `0138`, a design ticket about giving idea capture
   its own lightweight front door — any such front door produces exactly this never-ranked case on
   promotion (pointer: `skills/queue/SKILL.md` Step 1, item `0138`).
+
+- 2026-09-09 — **A guarded phrase can be satisfied by an unrelated sentence that differs only in
+  markdown emphasis.** `0111`'s AC5 asserts `resolved, never discovered` in `retro` Step 1, where
+  `0078` had already written *`*resolved*, never discovered`* about a different rule; the literal
+  reds only because the asterisks break it. Confirming red first caught it, and a later reflow
+  that drops the emphasis would rewire the assertion with no guard noticing. Worth a rule in
+  `testing-conventions.md`'s grep-guard section, or a check that no two rules in one window share
+  an asserted phrase modulo emphasis.
+- 2026-09-09 — **`skill-size.test.sh` checks that a justification exists, never that it still
+  describes the file.** `retro` grew from 22,343 to 24,698 bytes under `0111` while its
+  justification — keyed to `b9a5ee0`, naming Step 4's dispositions and Step 1's two modes — went
+  stale without reddening: the block now furthest over the goal is not mentioned in it. A
+  justification is a cached claim about the file it justifies and ages like any other.
+- 2026-09-09 — **A backlog item in this public repo names an internal repository path.** Item
+  `0111`'s Problem and Decision sections carry `neumo_repos/Probation`, against `CLAUDE.md`'s "no
+  internal names". Written by the capture and design passes; a build session holding the row can
+  neither redact pushed history nor decide that it should. Needs a row of its own, and a check on
+  the intake side — nothing between `queue` and `develop` reads an item against the repo's own
+  privacy rule.
