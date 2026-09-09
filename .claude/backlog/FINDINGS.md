@@ -103,3 +103,11 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   above: there the collision needed a reflow, here it is live today. A guarded phrase needs to be
   unique *within its window*, not merely present, and nothing checks that
   (pointer: `tests/retro-tool-edit.test.sh`, the 0111 block).
+- 2026-09-09 — **[for ai-building-conventions] A negative assertion anchored to a step NUMBER is
+  re-aimed by renumbering, not broken — it keeps passing and stops testing anything.**
+  `tests/release.test.sh` asserted the version-gate refusal never prints `step 7`, meaning the push
+  step. `0114` inserted a step ahead of it, so the push became step 8 and the guard silently began
+  asserting about a step that no longer exists — green either way. Same family as the
+  cannot-fail-guard rules in `testing-conventions.md`, and the fix is the same shape as the phrase
+  rules: anchor to something the edit must also change. Parked locally because the conventions
+  repo declares no root `FINDINGS.md` to route it to (pointer: `tests/release.test.sh`, 0084 AC3).
