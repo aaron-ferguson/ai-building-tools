@@ -2,8 +2,8 @@
 id: "0090"
 title: Close the four contract gaps 0081 and 0082 left in claim, close and handoff
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-05
@@ -21,9 +21,10 @@ expects:
   - .claude/backlog/claim
   - .claude/backlog/close
   - .claude/backlog/handoff
-claimed_by: "31db"
-claimed_at: 2026-09-09T22:18:26Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-09
 ---
 
 ## Problem
@@ -84,21 +85,21 @@ correctly forbidden from widening someone else's contract.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given an item whose `touches:` is written as a same-indentation block sequence
+- [x] AC1 — Given an item whose `touches:` is written as a same-indentation block sequence
   (`touches:\n- src/a.ts`), when `./close <id> <token>` runs, then the closed item's `touches:` is
   empty. Red-making input: today's `close`, which leaves `- src/a.ts` in the file.
-- [ ] AC2 — Given a row in `QUEUE.md` whose `items/<id>-*.md` does not exist, when `./claim <id>`
+- [x] AC2 — Given a row in `QUEUE.md` whose `items/<id>-*.md` does not exist, when `./claim <id>`
   runs, then it exits non-zero **and** `git diff -- QUEUE.md` is empty. Red-making change: moving
   the item resolution back below the `mv`, which leaves the row edited.
-- [ ] AC3 — Given `QUEUE.md` carries an uncommitted row change made by another session, when
+- [x] AC3 — Given `QUEUE.md` carries an uncommitted row change made by another session, when
   `./close <id> <token>` runs, then it exits non-zero, commits nothing, and the lock directory does
   not exist afterwards. Red-making change: reverting FR3 to the `echo WARNING` form, which commits.
-- [ ] AC4 — Given the same precondition, when `./handoff <id> <token> develop` runs, then it exits
+- [x] AC4 — Given the same precondition, when `./handoff <id> <token> develop` runs, then it exits
   non-zero, commits nothing, and the lock directory does not exist afterwards.
-- [ ] AC5 — Given a successful `./claim` and a successful `./close`, when `git log -1 --format=%B`
+- [x] AC5 — Given a successful `./claim` and a successful `./close`, when `git log -1 --format=%B`
   is read for each resulting commit, then each message body contains a `Co-Authored-By:` line. Red
   if either trailer is absent.
-- [ ] AC6 — Given the six files of FR6, when `tests/backlog-scripts-installed.test.sh` runs, then it
+- [x] AC6 — Given the six files of FR6, when `tests/backlog-scripts-installed.test.sh` runs, then it
   reports `0 failed`. Red-making change: editing only `skills/queue/templates/close` and not
   `.claude/backlog/close`.
 
@@ -163,3 +164,49 @@ correctly forbidden from widening someone else's contract.
   legitimate close instead of printing noise. The comment was updated to say so — do not "tidy" those
   two pathspecs to `$QUEUE`/`$DONE`.
 - Whole suite run file-by-file: 27 files, all green, no red anywhere in or out of scope.
+
+## QA evidence
+
+QA pass 2026-09-09, token `31db`, `qa_level: unit`. Level commands from `config.yml`: `lint` and
+`typecheck` are unconfigured (empty), so the level is the shell suite, run **file-by-file** rather
+than through the configured fail-fast `unit` line, per that key's own comment and the QA plan.
+Tree at Step 2 and at verdict: only this item file (my own `touches:` edit) — no foreign path, so
+the whole-project-gate worktree rule did not apply and the intersection with the evidence set is
+empty. The copy under test is `skills/queue/templates/{claim,close,handoff}` — `tests/*.test.sh`
+copy the **template** into a fixture repo, so every mutation below was applied there, not to
+`.claude/backlog/`; the two are held byte-identical by AC6's guard.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 | `tests/close.test.sh` case *0090 FR1 — a flush-left `touches:` block sequence is cleared on close*. Mutation at the AC's altitude: `skills/queue/templates/close:667` skiplist `^[ \t]*- ` → `^[ \t]+- ` (the pre-fix form) | PASS. Mutation reddens 3 assertions — *the first entry is gone* saw `- src/a.ts` still in the closed item |
+| AC2 | `tests/claim.test.sh` case *0090 AC2*. Mutation: item resolution (`claim:162-163`) relocated back **below** `mv "$tmp" "$QUEUE"` | PASS. Mutation reddens 2 — *QUEUE.md is byte-identical* saw the edited table |
+| AC3 | `tests/close.test.sh` case *0090 AC3*. Mutation: the refusal's `exit 1` (`close:103`) → `echo "WARNING: carrying on anyway"` | PASS. Mutation reddens 7 — *exits non-zero* saw `exit 0` then `closed 0092 — Verified row` |
+| AC4 | `tests/handoff.test.sh` case *0090 AC4*. Same mutation at `handoff:120` | PASS. Mutation reddens 6 — *exits non-zero* saw `exit 0` then `handed off 0090: develop -> verify` |
+| AC5 | `tests/claim.test.sh` / `tests/close.test.sh` cases *0090 AC5*, plus the live surface: this session's own `Claim 0090 [31db]` commit body reads `Co-Authored-By: Claude <noreply@anthropic.com>`. Mutation: ` -m "$COAUTHOR"` deleted from each commit invocation | PASS. Mutation reddens 1 in each — *git parses a Co-Authored-By trailer* saw empty |
+| AC6 | `tests/backlog-scripts-installed.test.sh`, 37 passed, 0 failed. Mutation: AC1's edit to the template alone | PASS. Mutation reddens 1 — `close has diverged from skills/queue/templates/close` |
+| NFR Documentation | `skills/queue/templates/{claim,close,handoff}:55-66` — the trailer comment names both settling files (`skills/develop/SKILL.md` Step 1 and `references/CONCURRENCY.md` *The git index is shared*), says in as many words that they SETTLE the question, and records why it read as open. Present in all three scripts, one more than the NFR asks | PASS |
+
+Control run after every mutation was restored (`git checkout -- <the mutated path>` only, never a bare
+`.`): `claim.test.sh` 69 passed 0 failed, `close.test.sh` 233 passed 0 failed, `handoff.test.sh` 123
+passed 0 failed, `backlog-scripts-installed.test.sh` 37 passed 0 failed. It is that green that
+licenses the reds above. Whole suite, file-by-file, all 27 files green, tallies pasted from each
+run — no red in or out of scope.
+
+**One mutation silently did not land**, and the run it produced was fully green and indistinguishable
+from a holding guard: the first attempt at AC3/AC4 selected the *comment* line matching
+`no lock was taken` rather than the `echo` inside the `if`, so the guard-assertion failed and nothing
+was written. `verify` Step 3's *Confirm the break landed* is what caught it. The relanded mutation is
+the one recorded above.
+
+### Probes
+
+- 🔍 `handoff` checks `git diff --quiet -- "$QUEUE"` (absolute) where `close` deliberately uses the
+  relative `QUEUE.md DONE.md` form and carries a comment against "tidying" it back. Probed on a
+  fixture repo with a dirty `QUEUE.md` and a case-mismatched absolute prefix: absolute and relative
+  both exit 1 correctly. The hazard the comment describes needs the **two-path** `git diff -- <a> <b>`
+  form, which `handoff` does not use — so the asymmetry is not a defect. Worth knowing before someone
+  "harmonises" the two.
+- 🔍 Real `.claude/backlog/claim 9999` at the live surface: refuses with `no row for 9999 in QUEUE.md`,
+  exit 1, `QUEUE.md` untouched, no lock left behind. AC2's *specific* path (a row that exists with no
+  item file) sits **behind** that row check, so it is unreachable at the live surface without first
+  editing `QUEUE.md` — which is why it is a fixture test and correctly so.
