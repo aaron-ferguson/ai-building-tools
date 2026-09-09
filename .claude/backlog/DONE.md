@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0114 | Let an agent-run retro complete its release chain instead of stopping half-released | bug | unit | 2026-09-09 | [items/0114-let-an-agent-run-retro-complete-its-release-chain.md](items/0114-let-an-agent-run-retro-complete-its-release-chain.md) |
 | 0111 | Give retro a resolution order for a workspace holding more than one backlog | bug | unit | 2026-09-09 | [items/0111-give-retro-a-resolution-order-for-several-backlogs.md](items/0111-give-retro-a-resolution-order-for-several-backlogs.md) |
 | 0078 | Route a finding by what it is about, not which repo you are standing in | feature | unit | 2026-09-09 | [items/0078-route-a-finding-by-what-it-is-about.md](items/0078-route-a-finding-by-what-it-is-about.md) |
 | 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | feature | unit | 2026-09-09 | [items/0086-add-a-light-qa-tier.md](items/0086-add-a-light-qa-tier.md) |

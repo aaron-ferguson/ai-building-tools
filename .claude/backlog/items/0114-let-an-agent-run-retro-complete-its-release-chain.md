@@ -2,8 +2,8 @@
 id: "0114"
 title: Let an agent-run retro complete its release chain instead of stopping half-released
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-07
@@ -15,12 +15,10 @@ expects:
   - skills/retro/SKILL.md
   - tools/release
   - tests/release.test.sh
-claimed_by: "a6c5"
-claimed_at: 2026-09-09T15:20:58Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/retro/SKILL.md
-  - tools/release
-  - tests/release.test.sh
+closed: 2026-09-09
 ---
 
 ## Problem
@@ -115,33 +113,33 @@ invoking the chain at all.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the fixture checkout with a bump due and no `--yes`, when `tools/release` runs
+- [x] AC1 — Given the fixture checkout with a bump due and no `--yes`, when `tools/release` runs
   with the confirm device pointed at a path that cannot be read, then it exits non-zero with a
   message naming `--yes`, **`HEAD` is unmoved and `.claude-plugin/plugin.json` is unedited**.
   *Red today:* the current chain reaches step 7 having already committed the bump, so the HEAD
   assertion fails against the tree as it stands. This is AC1 of the original ticket, narrowed to
   what the fixture can drive.
-- [ ] AC2 — Given the same fixture, when the confirm device is readable but answers `n`, then the
+- [x] AC2 — Given the same fixture, when the confirm device is readable but answers `n`, then the
   refusal says the release was declined and, likewise, `HEAD` is unmoved and `plugin.json`
   unedited. *Red today:* the decline at `tools/release:292` fires after step 6 has committed.
-- [ ] AC3 — Given `tools/release`, when it is read for how it decides whether a terminal can
+- [x] AC3 — Given `tools/release`, when it is read for how it decides whether a terminal can
   answer, then **`[ -r /dev/tty ]` does not appear**. *Red when reintroduced.* Anchored to the
   construct rather than to a message, because the defect is that the construct returns true in the
   environment it was written to exclude — a message-level guard passes while it is still there.
-- [ ] AC4 — Given a run with `--yes`, when it reaches the push, then nothing was prompted for and
+- [x] AC4 — Given a run with `--yes`, when it reaches the push, then nothing was prompted for and
   no refusal for want of a terminal was raised. See the QA plan for how far this is drivable.
-- [ ] AC5 — Given a repository whose HEAD carries a committed version bump that was never pushed,
+- [x] AC5 — Given a repository whose HEAD carries a committed version bump that was never pushed,
   when a session reads the step that owns recovery, then it is told what to do and what to look
   for. *Red when that sentence is deleted.*
-- [ ] AC6 — Given the landed change, when read against `git-conventions.md`'s push rule, then
+- [x] AC6 — Given the landed change, when read against `git-conventions.md`'s push rule, then
   `retro` Step 5 names where the release approval is evidenced — the session's ask, before the
   invocation — and states that `--yes` never stands in for it. *Red when the naming is removed.* A
   change that merely adds `--yes` and says nothing satisfies AC1 and fails this one, which is the
   pairing that stops the cheap answer being taken silently.
-- [ ] AC7 — Given `tools/release`'s usage line and `retro` Step 5, when read together, then they
+- [x] AC7 — Given `tools/release`'s usage line and `retro` Step 5, when read together, then they
   describe the same invocation, **`--bump` and `--yes` both**. *Red when either is changed without
   the other.*
-- [ ] AC8 — Given an `orchestrate`-dispatched retro, when Step 5 is reached with nobody to ask,
+- [x] AC8 — Given an `orchestrate`-dispatched retro, when Step 5 is reached with nobody to ask,
   then the chain is **not invoked** and the release is reported outstanding on that run's
   checklist. *Red when the no-one-to-ask branch is removed* — it is the case FR1 exists for, and
   `orchestrate:251-256, :308` already forbids the push, so the two must not contradict.
@@ -283,3 +281,49 @@ invoking the chain at all.
 - **`tools/release --help` prints a line range, and the range is a cache of the header's length.**
   It was `sed -n '2,45p'`; the header is now 67 lines, so it is `2,68p`. Nothing asserts the two
   agree — a future header edit will silently truncate the help output.
+
+## QA evidence
+
+**Verified 2026-09-09 (`/verify`, token `a6c5`), `qa_level: unit`.** Tree clean at the start of the
+pass (`git status --porcelain` empty) and clean at the verdict. Whole suite run per-file rather than
+with `config.yml`'s fail-fast `unit` line, per that file's own note: **25 files, every one green,
+0 failed.** Every mutation below was applied to committed files and restored with
+`git checkout -- <path>`; the closing control run was green with no collateral.
+
+**The copy under test is this repo's.** The installed plugin is at 0.9.22 and so is
+`.claude-plugin/plugin.json`, but `31ace2e` and `b247558` are unpushed, so the installed copy does
+**not** carry this change. The repo copy is the authority and is what was executed.
+
+| # | How it was checked | Mutation proving it can fail | Result |
+|---|---|---|---|
+| AC1 | `tests/release.test.sh`, fixture `mk_case` with a bump due, no `--yes`, `--confirm-device` at a nonexistent path. Four assertions: non-zero exit, message names `--yes`, message is the tool's own (not a silent `set -e` death), `HEAD` unmoved and `plugin.json` unedited | (a) applied the bump at step 4 as the old code did → `AC1 — the refusal stopped between the bump and the push`; (b) reworded the refusal to drop `--yes` → `AC1 — the refusal never names --yes` | **PASS** |
+| AC2 | Same fixture, `--confirm-device` at a file containing `n`; refusal message and the untouched-tree assertion | (a) bump applied at step 4 → `AC2 — the decline fired after the bump was committed`; (b) `declined` → `refused` → `AC2 — the refusal does not say the release was declined` | **PASS** |
+| AC3 | `grep -qF '[ -r /dev/tty ]' tools/release` — anchored to the construct, not a message | Appended `# elif [ -r /dev/tty ]; then` to `tools/release` → `AC3 — tools/release still tests the device node` | **PASS** |
+| AC4 | Full chain driven through the push with `--bump --yes`, `PATH` filtered of `claude` (filter asserted first), fixture bare remote. Asserts no `[y/N]` prompt, no want-of-terminal refusal, the push reached, step 9 took its skipped branch, remote advanced to HEAD | Changed `[ "$YES" -eq 1 ]` to `-eq 9` so `--yes` no longer short-circuits → five AC4 assertions red at once | **PASS** |
+| AC5 | `tests/retro-tool-edit.test.sh`, three phrases inside Step 5's window: the state named, the signal, the recovery | Rewrote `` `git log origin/<branch>..HEAD` `` to "the log" → `AC5 — and the signal to look for is named` red. The file also carries its own probe deleting `re-bumps nothing` | **PASS** |
+| AC6 | Two phrases in Step 5's window — `asks the user before the invocation`, `never stands in for one` — plus a `--yes`-only fixture that must stay red | `never stands in for one` → `is not a substitute` → `AC6 — and --yes carries an approval, never substitutes for one` red | **PASS** |
+| AC7 | Both sides: `tools/release --bump --yes` in Step 5's window **and** in `tools/release`'s header | (a) dropped `--yes` from Step 5 → the prose half red; (b) dropped `--yes` from the script's standing-invocation line → the script half red. Each side reddens alone | **PASS** |
+| AC8 | Two phrases in Step 5's window; cross-checked against `orchestrate` `:251-252` and `:308`, which forbid push, bump, install and restart — no contradiction | `does not invoke the chain` → `skips the release chain` → first half red; `outstanding on that run's checklist` → `noted on the run's list` → second half red. **A first attempt at this mutation matched nothing** (the `**` bracketing spans the whole clause); caught on the empty diffstat and re-run | **PASS** |
+
+| NFR | How it was checked | Result |
+|---|---|---|
+| Git (`git-conventions.md`) | The per-push confirmation is not removed: a hand run with a real tty still prompts (`confirm_release`'s `printf` + `read`), and `--yes` is documented in both the script header and Step 5 as carrying an approval already granted, never a default. AC6 and AC7 are the mechanical half | **PASS** — see the finding on `--confirm-device` below |
+| Progressive delivery | The bump is applied at step 7, after authorisation at step 5. Proved by mutation, not by reading: moving the bump back to step 4 reddens AC1 and AC2's untouched-tree assertions | **PASS** |
+| Documentation | `tools/release --help` renders complete and correctly bounded — the widened `sed -n '2,68p'` ends exactly on the exit-codes block, with no truncation and no leakage into `set -eu`. Usage line and Step 5 agree on both flags (AC7) | **PASS** |
+| Testing | Every new case asserts on the message. AC1 additionally asserts the message exists at all (`*"$ME_RELEASE:"*`), which is the one assertion the original defect — non-zero exit, no output — would have failed. Each new guard was mutated and reverted above | **PASS**, with one gap recorded below |
+| Always-on (`CONVENTIONS_CORE.md`) | No log field, analytics event or egress destination added, so no privacy pass triggered; no auth, credential or data-visibility surface; no UI. Public-repo sweep of the diff for company material and home-directory paths: clean, and `tests/measurement.test.sh` guards the latter across the tree | **PASS** |
+| Newly reachable | The change adds one new route, `--confirm-device`. Walked: it is required by FR8, it defaults to `/dev/tty`, and it cannot reach outside a path the caller already names. See the finding below | **PASS** |
+
+### Gaps recorded rather than papered over
+
+- **The FR5 provenance guard cannot fail.** `tests/release.test.sh`'s AC4 block asserts
+  `case "$A4OUT" in *authoris*`. Removing `-- authorised at step 5 ($AUTH_VIA)` from step 8's push
+  line leaves the suite **45 passed, 0 failed**: the matcher is satisfied by step 5's own banner,
+  `step 5/9 authorise the release`, which prints on every run. FR5's script half is therefore
+  unguarded. Left uncovered deliberately — no AC rests on it, and narrowing the matcher here would
+  be inventing a guard during QA. Parked in `FINDINGS.md`.
+- **`--confirm-device` is a second flag that means "already asked".** A file containing `y` at that
+  path authorises a real push with no terminal — driven by the FR2 case, which reaches step 6 and
+  pushes to the fixture remote. FR8 requires the seam, so this is intended, but *Notes & decisions*
+  claims `--yes` "remains the single flag that means 'already asked'" and that is no longer true.
+  Prose, not behaviour. Parked in `FINDINGS.md`.
