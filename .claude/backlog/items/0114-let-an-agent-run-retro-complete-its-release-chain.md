@@ -240,3 +240,47 @@ invoking the chain at all.
   0.9.19 bump (`7ecd056`) is pushed. FR7 is for a state that will recur, not one on the tree now.
 
 - Captured from `FINDINGS.md` 2026-09-07.
+
+- **BUILT 2026-09-09 (`/develop`, token `2c30`).** Two commits: `31ace2e` (the script and its
+  behavioural guards), `b247558` (`retro` Step 5 and its prose guards). Whole suite green,
+  25 files, nothing red.
+
+- **The chain is 9 steps now, not 8.** Authorisation is a step of its own between the version gate
+  and the tests: step 4 *decides* (`BUMP_DUE`) and writes nothing, step 5 asks, step 7 applies the
+  bump and commits it. That ordering is what makes every refusal leave HEAD and `plugin.json`
+  alone, and step 8 prints `authorised at step 5 ($AUTH_VIA)` so the log does not lose where the
+  approval came from now that it is no longer granted at the push (FR5).
+
+- **The mechanism the fix rests on, measured 2026-09-09 on macOS 25.5.0.** `if read -r R <
+  <unreadable>; then` under `set -eu` is a **false branch, not an exit** — `read` is not a POSIX
+  *special* built-in, so a redirection failure on it is an ordinary non-zero status, and an `if`
+  condition is exempt from `set -e` regardless. That is the whole difference from the old code,
+  where the same `read` sat bare and killed the script. Confirmed for all three devices: a
+  nonexistent path, `/dev/tty` in an agent shell, and a directory (which the QA plan predicted:
+  `open(2)` succeeds and only the read fails).
+
+- **AC4 was driven the strong way — the full chain through the push.** Of the QA plan's two
+  options, the run excludes `claude` by filtering every `PATH` entry that holds an executable of
+  that name, and **asserts the filter worked** before running: a filter that failed refuses the
+  case rather than quietly running the real install chain. The fixture's `tests/noop.test.sh` is
+  executable in the new `mk_case` fixture (the 0084 fixture's stays as it was, being only a byte
+  to compare). The run's final status is non-zero and that is correct — the fixture install was
+  never re-extracted, so the byte comparison legitimately fails against the bump commit; every
+  assertion is on the message, per the file's own rule.
+
+- **Each 0114 case builds its own checkout/remote/install triple.** The 0084 cases mutate one
+  shared fixture in sequence and assert on its HEAD, so a case here that commits and pushes would
+  have broken them from a distance — silently, and from several cases away.
+
+- **FR2 asks for three distinguishable outcomes and the ACs drive two.** A `y`-answering device
+  case was added, because asserting only the refusals leaves a `confirm_release` that treats every
+  readable answer as a decline green.
+
+- **A guard phrase straddling a line break cost one red.** `never stands in for one` wrapped across
+  two source lines in the first draft of Step 5 and the guard could not match it on correct prose.
+  `CLAUDE.md` already carries the rule; recorded here because it fires on the *writing* side too,
+  not only when rewrapping someone else's paragraph.
+
+- **`tools/release --help` prints a line range, and the range is a cache of the header's length.**
+  It was `sed -n '2,45p'`; the header is now 67 lines, so it is `2,68p`. Nothing asserts the two
+  agree — a future header edit will silently truncate the help output.
