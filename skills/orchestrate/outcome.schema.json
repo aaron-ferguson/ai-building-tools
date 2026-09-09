@@ -61,12 +61,12 @@
             "pattern": "^[0-9]{4}$"
           },
           "verdict": {
-            "description": "The word this stage's own hand-off line prints, lowercased. Each stage reaches only its own subset; the schema carries the union because one schema serves every stage.",
+            "description": "The word this stage's own hand-off line prints, lowercased. Each stage reaches only its own subset; the schema carries the union because one schema serves every stage. `closed` is develop's fourth, reached only on a `close_by: develop` ticket, where the build stage is also the closing one (0086) — without it a driven light close is a perfectly good stage that reads as a schema failure.",
             "enum": [
               "queued", "re-specified", "parked",
               "decided", "handed-to-queue",
               "prototyped",
-              "built", "red", "blocked",
+              "built", "red", "blocked", "closed",
               "pass", "fail", "advisory"
             ]
           },

@@ -441,6 +441,10 @@ throwaway worktree — needs its own `node_modules` and is not actually cheap. N
 red-then-green, and call `./close <id> <token>` in place of `./handoff`. Report the close, not
 `/verify <id>`. `close` re-checks the eligibility itself and refuses a criterion citing no committed
 guard, so a close that goes through is the gate agreeing with you rather than trusting you.
+**The gate is the same one every ticket gets, never a lower one**: the project's whole suite green
+and the review checklist below, both of them, before the close. A cheap tier is cheap because it
+uses fewer sessions, not because it tests less (`docs/decisions/002-matching-rigour-to-stakes.md`,
+*What never scales down*).
 
 **`develop` may RAISE `close_by` from `develop` to `verify`, and may never set or lower it to
 `develop`.** The raise is the useful half: a session finding an AC that is not a real assertion —

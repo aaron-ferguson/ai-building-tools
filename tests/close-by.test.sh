@@ -150,6 +150,34 @@ in_window "AC7 — CLOSED is the light tier's last line" "$LW" 'CLOSED'
 in_window "AC7 — and it is a claim about ./close returning zero, not about a suite you read" \
   "$LW" 'returned zero, never about a suite you ran'
 
+echo "FR4 — the light close runs the same gate as every other ticket, never a lower one"
+in_window "FR4 — the whole suite and the checklist, both, before the close" \
+  "$DW" 'the same one every ticket gets, never a lower one'
+in_window "FR4 — and says why, citing the record rather than restating it" \
+  "$DW" 'uses fewer sessions, not because it tests less'
+
+echo "FR7 — a DRIVEN light close has a verdict word in the outcome schema"
+# Not an FR of 0086, and found only by asking what a driven run does with the new ending: the
+# schema's `verdict` enum had no member for it, so a perfectly good stage would have read as a
+# schema failure and `orchestrate` Step 4 escalates on those. One word, additive.
+SCHEMA="$ROOT/skills/orchestrate/outcome.schema.json"
+if [ ! -f "$SCHEMA" ]; then
+  bad "FR7 — no outcome schema at $SCHEMA"
+else
+  ENUM="$(python3 -c 'import json,sys; print(" ".join(json.load(open(sys.argv[1]))["properties"]["tickets"]["items"]["properties"]["verdict"]["enum"]))' "$SCHEMA")"
+  case " $ENUM " in
+    *" closed "*) ok "FR7 — 'closed' is in the verdict enum" ;;
+    *) bad "FR7 — the verdict enum has no 'closed' member, so a driven light close cannot be reported: $ENUM" ;;
+  esac
+  # The three develop already reached must survive: added BESIDE, never in place of.
+  for v in built red blocked; do
+    case " $ENUM " in
+      *" $v "*) ok "FR7 — develop's existing '$v' verdict survives" ;;
+      *) bad "FR7 — '$v' was dropped from the verdict enum: $ENUM" ;;
+    esac
+  done
+fi
+
 # ---------------------------------------------------------------------------
 # AC6 — verify refuses `review` where nothing is configured. Anchored to the
 # REFUSAL, not to the word "review": the level appears in the table two lines

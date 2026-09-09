@@ -212,3 +212,29 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   fourth per-project file to need it will cite a conventions file for a reason unrelated to
   conventions. Possible row: split the refusal into a resolution reference the ladder itself cites
   (pointer: `references/CONVENTIONS.md`, items 0111, 0078).
+
+- 2026-09-08 (0086, develop) — **A ticket's cited figure can be stale in its TENSE rather than in its
+  value, and `develop` Step 2's staleness rules do not name that shape.** FR13 said "~−18% once
+  `0085`'s protocol reduction lands". `0085` had landed, so the FR read as satisfied — but the
+  measurement it refers to is pinned to a window ending 2026-10-31 and had never been run, so no
+  such figure existed. The rules cover a figure that *moved*, one that was *misread*, and one *not
+  in the cited file*; this is a fourth — a figure conditioned on an event that happened while the
+  measurement it implies did not. The tell is that the condition and the measurement are different
+  facts. Worth a clause in Step 2's *a figure a ticket quotes about a file it does not own* list.
+- 2026-09-08 (0086, develop) — **A change to a stage's hand-off line silently breaks
+  `orchestrate/outcome.schema.json`, and nothing in `develop` sends you there.** Adding a fourth
+  verdict word to develop's last line left a driven light close with no legal `verdict` value, so a
+  correct stage would read as a schema failure and Step 4 would escalate on it. No FR could name the
+  file, `expects:` did not, and the suite was green throughout: `tests/last-line.test.sh` derives its
+  subjects from `skills/*/SKILL.md` but asserts the *shape* of the line, not its vocabulary, and
+  `tests/orchestrate.test.sh` only exercises verdicts it hardcodes. The general rule is that the
+  schema is the machine-readable half of every stage's report section — **editing a hand-off line's
+  vocabulary is editing the schema** — and neither file says so.
+- 2026-09-08 (0086, develop) — **A guard's assertion can be falsified by the very ticket that was
+  ranked to change the thing it asserts, and `develop` Step 5's own rule for it is the right one but
+  arrives too late.** `tests/cost-by-category.test.sh` pinned `002`'s `buys 32%` as a literal; FR13
+  required repricing it, so a green suite went red on a correct document at the *end* of the work.
+  Step 5 tells you to tell falsified from exposed once the suite runs. Cheaper: **Step 2's sibling
+  grep already sends you to grep the symbol an FR names — a repriced figure is a symbol too.**
+  `grep -rn '32%' tests/` before editing `002` would have found it in one call and framed the edit as
+  "rewrite the guard's anchor" rather than as a surprise red.

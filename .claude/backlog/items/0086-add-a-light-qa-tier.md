@@ -59,6 +59,10 @@ touches:
   - tests/next.test.sh
   - docs/decisions/002-matching-rigour-to-stakes.md
   - docs/decisions/003-who-may-close-a-ticket.md   # new
+  # WIDENED 2026-09-08 by b708 — the work reached two files expects: never named:
+  - tests/cost-by-category.test.sh                  # its 'buys 32%' assertion is FALSIFIED by FR13
+  - skills/orchestrate/outcome.schema.json          # develop's new CLOSED verdict has no enum member
+  - tests/orchestrate.test.sh
 ---
 
 ## Problem
@@ -393,3 +397,70 @@ merge exists to prevent.
   into config**, so a ticket adding a new directory silently falls outside the runner unless that
   ticket widens it; and **a project with no runner at all has no honest value to put here**, which
   pushes every ticket to `qa_level: verify` whether or not that is the right level for it.
+
+- **Built 2026-09-08 by b708. Six things worth the next reader's time, five of them corrections to
+  this ticket's own text.**
+
+  **1 — FR13's −18% was stale in its TENSE, and the fix is the ticket's own subject.** The FR reads
+  "~−18% once `0085`'s protocol reduction lands". `0085` closed 2026-09-03, so a literal build would
+  have published −18% as a live price. But `MEASUREMENT.md`'s re-measurement is pinned to
+  `--since 2026-08-25 --until 2026-10-31` and **has not been run** — there is no post-`0085` figure
+  anywhere. Publishing the projection as a measurement is precisely the defect `002` already shipped
+  once with $3.89. So `002` states **−26% measured** and labels −18% a forecast due 2026-10-31, and
+  `tests/close-by.test.sh` asserts the label rather than the number.
+
+  **2 — FR6 taken literally admits `next: design`.** It says "a row whose `next` is not `verify` is
+  refused *unless* its item records `close_by: develop`", which would let an opted-in ticket close
+  from any stage. NARROWED to `develop` alone — the session FR2 names — and asserted, because the
+  literal reading is what a later edit would restore.
+
+  **3 — a light ticket with NO acceptance criteria is refused, which no AC asked for.** "Every
+  criterion is an assertion" is vacuously true of none, and `close`'s pre-existing empty-section
+  allowance would have closed such a row self-certified having checked nothing. That is option 3,
+  the *self-attested* tier this ticket rejected, reachable through a door nothing guarded. Both
+  halves are cases now: the light one refuses, the `close_by: verify` one still closes.
+
+  **4 — `expects:` named the INSTALLED copy, not the edit target.** The script is
+  `skills/queue/templates/close`; `.claude/backlog/close` is a byte-identical copy that
+  `tests/backlog-scripts-installed.test.sh` AC2 enforces, and the fix direction is one-way. Four
+  more corrections are recorded inline in `touches:` — `MEASUREMENT.md` and `references/TRACKER.md`
+  are untouched, and `.claude/backlog/config.yml` **must not** gain a `review:` block, because AC6
+  and AC11 both rest on this repo having none.
+
+  **5 — the work reached two files `expects:` never named, and one of them is a FALSIFIED guard.**
+  `tests/cost-by-category.test.sh` asserted `002` contains `buys 32%` — a rule FR13 deliberately
+  reverses, so it went red on a correct document. Rewritten to assert the **relationship**: the
+  finding sentence's figure must equal the Light row's, whatever that figure becomes. Strictly
+  stronger than the literal it replaced — it still catches every original defect and now also
+  catches the two places disagreeing, which is the real drift. It also had to be **flattened before
+  matching**: the sentence wraps between `buys 26%.` and `at all buys 87%.`, so the obvious
+  one-line matcher reds a correct file.
+
+  **6 — the second file is `skills/orchestrate/outcome.schema.json`, and this is the gap no FR
+  could see.** `develop`'s new `CLOSED` last line has no member in the outcome `verdict` enum, so a
+  **driven** light close would have been a perfectly good stage reading as a schema failure — and
+  `orchestrate` Step 4 escalates on those. One word, additive; the three existing develop verdicts
+  are asserted to survive beside it.
+
+- **Where the guards live, and which one is load-bearing.** `tests/close.test.sh` gained 15 cases
+  over real fixture repos (AC1-AC5, AC9, plus FR1/FR3/FR6 edges); `tests/close-by.test.sh` is new and
+  windowed per section for the prose (AC6, AC7, AC10, AC11, FR4, FR5, FR9, FR10);
+  `tests/graph-fields.test.sh` and `tests/next.test.sh` cover AC8.
+
+  **The one mechanical assertion standing behind the whole prose half is AC5** — `close` refusing a
+  `## Review checklist` of bullets with not one box ticked, asserted on the **count of ticked
+  boxes** and never on the section's presence. Everything in `tests/close-by.test.sh` is a grep over
+  instructions: it tells you the instruction is still written, not that the level works.
+
+- **Mutation-proved, three sweeps, 47 mutations, every one landed and red, each sweep with a no-op
+  control that landed and stayed green.** 14 over `close`'s new refusals; 27 over the prose guard,
+  almost all with blast radius 1, which is what AC7's "each asserted on its own line" means; 6 over
+  the reanchored cost check. Restores were from a **copy**, never `git checkout --`, which restores
+  to `HEAD` and would have deleted an uncommitted fix silently.
+
+- **Two matcher bugs found by writing the guard, both from this repo's own written traps.** A phrase
+  asserted across a line break cannot be matched at all (two assertions), and `grep -F` with an
+  embedded newline is two patterns whose second is empty and matches everything. A third:
+  `not yet measured` failed against `002`'s emphasis capitals — a presence grep pins one casing — so
+  `close-by.test.sh` carries a case-insensitive matcher for claims whose emphasis is a prose
+  decision.

@@ -237,13 +237,32 @@ fi
 
 # The load-bearing planning finding, and the one most likely to be softened into vagueness on a
 # later edit. Reds by removing either percentage or by rewriting them as 'a lot' and 'a little'.
-# Anchored to the two verb phrases, NOT to the bare percentages: `32%` and `87%` also appear in
-# the tier table, so grepping the figures alone passed while the sentence carrying the contrast
-# was rewritten to "buys a little"/"buys a lot". Caught by mutating this file's own subject.
-if grep -qF 'buys 32%' "$ADR2" && grep -qF 'buys 87%' "$ADR2"; then
-  ok "002 states both tier savings as numbers: the QA pass against not creating the ticket"
+# Anchored to the two verb phrases, NOT to the bare percentages: the figures also appear in the
+# tier table, so grepping them alone passed while the sentence carrying the contrast was rewritten
+# to "buys a little"/"buys a lot". Caught by mutating this file's own subject.
+#
+# THE QA FIGURE IS NO LONGER A LITERAL HERE (0086, 2026-09-08). It was `buys 32%`, and 0086 repriced
+# the Light tier to −26% — so this guard asserted a rule that ticket deliberately reversed, and went
+# red on a correct document. A literal would have to be edited again on the next repricing, which is
+# the copied-value failure `testing-conventions.md` names: a copied figure guards the day it was
+# written and nothing after. So the assertion is now the RELATIONSHIP the sentence exists to state —
+# the figure in it is the one the tier table prices, and 87% is the one it is contrasted against.
+# That catches the real defect, which is one of the two places being updated and not the other, and
+# it is not the same-constant trap: the row and the sentence are independently authored.
+qa_saving="$(awk -F'|' '/^\| \*\*Light\*\* \|/ { v = $5; gsub(/[^0-9]/, "", v); print v; exit }' "$ADR2")"
+# FLATTENED, not line-based. The sentence wraps between its two clauses — `buys 26%.` ends one
+# source line and `at all buys 87%.` opens the next — so a matcher demanding one line hold both
+# reds on a correct document. That is the line-break trap this repo's own CLAUDE.md names, and it
+# bit this very check the day the figure was repriced.
+flat="$(tr '\n' ' ' < "$ADR2")"
+if [ -z "$qa_saving" ]; then
+  bad "002's Light row carries no percentage in its 'vs standard' cell — nothing to cross-check"
+elif ! printf '%s' "$flat" | grep -qF 'buys 87%'; then
+  bad "002 no longer contrasts the QA-pass saving with 'buys 87%' (never ticket it) — that contrast IS the decision"
+elif printf '%s' "$flat" | grep -qF "buys ${qa_saving}%"; then
+  ok "002 states both tier savings as numbers, and the QA one agrees with the tier table (${qa_saving}% against 87%)"
 else
-  bad "002 no longer contrasts 'buys 32%' (skip QA) with 'buys 87%' (never ticket it) — that contrast IS the decision"
+  bad "002's finding sentence and its Light row disagree about the QA saving: the row prices ${qa_saving}%, and no 'buys ${qa_saving}%' appears in the document"
 fi
 
 # The closed questions. A cost theory that is re-opened costs a whole session to re-kill, which is

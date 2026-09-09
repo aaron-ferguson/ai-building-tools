@@ -372,17 +372,22 @@ if [ "$close_by" = develop ]; then
     exit 1
   }
 
+  # One question, one function, and it keeps the loop below two levels deep rather than four
+  # (`coding-conventions.md`, Review Checklist — nesting, and one thing per function).
+  # `:/` makes the pathspec repo-root-relative whatever the cwd is, so this needs no
+  # `--show-toplevel` — see the case-spelling warning at the top of this file.
+  any_token_committed() {
+    for tok in $1; do
+      git -C "$DIR" ls-files --error-unmatch -- ":/$tok" >/dev/null 2>&1 && return 0
+    done
+    return 1
+  }
+
   uncited=""
   TAB="$(printf '\t')"
   while IFS="$TAB" read -r ac_ln ac_txt ac_toks; do
     [ -n "$ac_ln" ] || continue
-    cited=no
-    for tok in $ac_toks; do
-      # `:/` makes the pathspec repo-root-relative whatever the cwd is, so this needs no
-      # `--show-toplevel` — see the case-spelling warning at the top of this file.
-      if git -C "$DIR" ls-files --error-unmatch -- ":/$tok" >/dev/null 2>&1; then cited=yes; break; fi
-    done
-    [ "$cited" = yes ] || uncited="$uncited
+    any_token_committed "$ac_toks" || uncited="$uncited
   line $ac_ln: $ac_txt"
   done <<AC_CITE_EOF
 $ac_lines
