@@ -41,6 +41,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0052 | Require an acceptance criterion to name the input that would make it red | verify | ready |  |
 | 0107 | Require an NFR row to name how it would red | develop | ready |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
+| 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | design | ready |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
 | 0046 | Make the README guard list provably complete | develop | ready |  |
 | 0126 | Stop retro restating the by-hand lock rule it drifted from | develop | ready |  |
