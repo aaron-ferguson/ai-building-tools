@@ -21,7 +21,18 @@
 #
 # Usage:
 #   tools/release [--bump] [--yes] [--record <f>] [--plugin <key>] [--checkout <dir>]
+#                 [--confirm-device <path>]
 #   tools/release verify [--record <f>] [--plugin <key>] [--checkout <dir>] [--commit <sha>]
+#
+# THE STANDING INVOCATION IS `tools/release --bump --yes`, and it is the one `retro` Step 5 names.
+# `--yes` says the release was ALREADY AUTHORISED by the caller -- for an agent session, by the ask
+# it made of the user immediately before invoking this. It is never a default, never supplied on
+# the user's behalf, and never a standing permission (`git-conventions.md`). The same invocation
+# also recovers a stranded bump: the version is already ahead, so nothing is re-bumped and step 8
+# pushes what is there.
+#
+# `--confirm-device` is the path the y/N is read from, `/dev/tty` by default. It exists so the
+# suite can drive the three answers -- yes, no, and cannot-be-asked -- without a terminal (0114).
 #
 # `verify` is invocable on its own (FR6) so the suite can drive it against fixture trees without
 # pushing anything or shelling out to `claude` -- a test that had to run the real chain would not
@@ -36,6 +47,19 @@
 # the run refuses and tells you the version to set. A version string is a released identity, and
 # choosing one for you is the same class of act as resolving divergence, which this script does
 # not do either.
+#
+# WHY AUTHORISATION COMES BEFORE THE WRITES (0114). It used to be asked at the push, after the
+# bump was committed -- and the branch that decided whether it COULD be asked tested `[ -r
+# /dev/tty ]`, which is TRUE in an agent shell: the device node exists on every macOS process and
+# `access(2)` succeeds. So an agent took the prompt branch, printed a question nobody could
+# answer, and died on the failing redirect under `set -e`: exit 1, no message, over a committed
+# bump. The half-released tree is the only state here that needs a human to reason about recovery,
+# so the fix removes the state rather than automating a recovery from it: the answer is settled at
+# step 5, while `plugin.json` is unedited and HEAD is where it started, and every refusal path
+# leaves the tree as it found it. Whether a terminal can answer is now decided by ATTEMPTING THE
+# READ, which is the only thing that distinguishes the three cases. The price, accepted: a human
+# is asked before the suite runs, so a red suite can refuse a release they already approved --
+# cheap, because nothing has been written and the run is re-runnable.
 #
 # Requires: sh, git, python3. Every step says whether it acted or was already satisfied, and the
 # whole thing is safe to re-run.
@@ -138,6 +162,39 @@ tracked_count() { # <checkout> <commit>
   git -C "$1" ls-tree -r --name-only "$2" | grep -c . || true
 }
 
+# --- the release authorisation ------------------------------------------------------------------
+#
+# Three outcomes, each with its own message, because they need different acts of the operator:
+# already authorised, declined, and cannot be asked. `[ -r <device> ]` would answer none of them --
+# see the header. The read is attempted inside an `if` condition, where a failing redirect is a
+# false branch rather than a silent `set -e` exit.
+#
+# Sets AUTH_VIA, which step 8 prints, so the log does not lose where a release granted at step 5
+# was authorised.
+confirm_release() { # <n-commits> <upstream>
+  if [ "$YES" -eq 1 ]; then
+    AUTH_VIA="--yes: authorised by the caller before this run"
+    say "  acted     $AUTH_VIA"
+    return 0
+  fi
+  printf '  push %s commit(s) to %s? other machines install from it [y/N] ' "$1" "$2"
+  REPLY=""
+  if read -r REPLY < "$CONFIRM_DEVICE" 2>/dev/null; then
+    case "$REPLY" in
+      y|Y|yes|YES)
+        AUTH_VIA="answered on $CONFIRM_DEVICE"
+        say ""
+        say "  acted     $AUTH_VIA"
+        return 0 ;;
+      *)
+        say ""
+        die "the release was declined; nothing has been bumped, committed or pushed" 3 ;;
+    esac
+  fi
+  say ""
+  die "no terminal to ask on ($CONFIRM_DEVICE could not be read), so the release cannot be authorised here; re-run with --yes if it is already authorised -- nothing has been bumped, committed or pushed" 3
+}
+
 # --- verify ------------------------------------------------------------------------------------
 
 cmd_verify() { # uses RECORD KEY CHECKOUT COMMIT
@@ -208,13 +265,13 @@ cmd_release() {
   BRANCH="$(git -C "$CHECKOUT" rev-parse --abbrev-ref HEAD)"
 
   # 1 — fetch. Needed before anything else because the next version is derived from the remote.
-  say "$ME: step 1/8 fetch"
+  say "$ME: step 1/9 fetch"
   git -C "$CHECKOUT" fetch --quiet origin
   say "  acted     fetched origin"
 
   # 2 — behind the remote is reported, never resolved. Resolving can mean choosing between two of
   #     the author's own commits, which is not this script's decision to make.
-  say "$ME: step 2/8 remote position"
+  say "$ME: step 2/9 remote position"
   UPSTREAM="origin/$BRANCH"
   git -C "$CHECKOUT" rev-parse --verify --quiet "$UPSTREAM" >/dev/null \
     || die "no $UPSTREAM to compare against; push the branch first" 3
@@ -226,7 +283,7 @@ cmd_release() {
   say "  satisfied HEAD is not behind $UPSTREAM"
 
   # 3 — derive the next version from the remote's plugin.json, so no version is hand-picked.
-  say "$ME: step 3/8 derive the next version"
+  say "$ME: step 3/9 derive the next version"
   REMOTE_VERSION="$(git -C "$CHECKOUT" show "$UPSTREAM:.claude-plugin/plugin.json" | plugin_json_field - version)"
   NEXT_VERSION="$(next_patch "$REMOTE_VERSION")"
   LOCAL_VERSION="$(plugin_json_field "$PLUGIN_FILE" version)"
@@ -235,17 +292,15 @@ cmd_release() {
 
   # 4 — the gate. A version that is not greater than the installed one cannot take effect: the
   #     cache directory is keyed by version, so it already exists and nothing re-extracts into it.
-  say "$ME: step 4/8 can this release take effect?"
+  #     This step DECIDES and writes nothing: the bump is applied at step 7, after the release has
+  #     been authorised, so a refusal at step 5 leaves plugin.json alone (0114).
+  say "$ME: step 4/9 can this release take effect?"
+  BUMP_DUE=0
   if version_gt "$LOCAL_VERSION" "$INSTALLED_VERSION"; then
     say "  satisfied local plugin.json $LOCAL_VERSION is newer than the installed $INSTALLED_VERSION"
   elif [ "$BUMP" -eq 1 ]; then
-    python3 -c 'import json,sys
-p, v = sys.argv[1], sys.argv[2]
-d = json.load(open(p))
-d["version"] = v
-open(p, "w").write(json.dumps(d, indent=2) + "\n")' "$PLUGIN_FILE" "$NEXT_VERSION"
-    LOCAL_VERSION="$NEXT_VERSION"
-    say "  acted     bumped .claude-plugin/plugin.json to $NEXT_VERSION"
+    BUMP_DUE=1
+    say "  acted     will bump .claude-plugin/plugin.json to $NEXT_VERSION (applied at step 7)"
   else
     say "  STOPPED   local plugin.json is at $LOCAL_VERSION, not newer than the installed $INSTALLED_VERSION"
     say "            the cache directory for that version already exists:"
@@ -255,16 +310,41 @@ open(p, "w").write(json.dumps(d, indent=2) + "\n")' "$PLUGIN_FILE" "$NEXT_VERSIO
     die "set the version to $NEXT_VERSION (or re-run with --bump) -- nothing has been committed or pushed" 3
   fi
 
-  # 5 — the suite. Every guard in this repo greps prose, so this is the whole of its QA.
-  say "$ME: step 5/8 tests"
+  # 5 — the authorisation, and it comes BEFORE anything is written. A run that will push -- the
+  #     branch is already ahead, or a bump is about to be applied -- settles its y/N here, so
+  #     every refusal path below leaves HEAD where it started and plugin.json unedited. See the
+  #     header for the state this removes and the trade-off accepted to remove it (0114).
+  say "$ME: step 5/9 authorise the release"
+  AHEAD="$(git -C "$CHECKOUT" rev-list --count "$UPSTREAM..HEAD")"
+  AUTH_VIA="not needed"
+  if [ "$AHEAD" -gt 0 ] || [ "$BUMP_DUE" -eq 1 ]; then
+    WILL_PUSH="$AHEAD"
+    [ "$BUMP_DUE" -eq 1 ] && WILL_PUSH=$((AHEAD + 1))
+    confirm_release "$WILL_PUSH" "$UPSTREAM"
+  else
+    say "  satisfied nothing will be pushed, so there is no release to authorise"
+  fi
+
+  # 6 — the suite. Every guard in this repo greps prose, so this is the whole of its QA.
+  say "$ME: step 6/9 tests"
   # `config.yml`'s `unit` command verbatim, and unsilenced: a red release needs to say which
   # guard went red, or the operator re-runs the whole suite to find out.
   ( cd "$CHECKOUT" && for t in tests/*.test.sh; do "$t" || exit 1; done ) \
     || die "the suite is red; releasing a red tree is how a broken guard reaches every machine" 1
   say "  acted     tests/*.test.sh green"
 
-  # 6 — commit the bump, by pathspec: another session may have staged something in this repo.
-  say "$ME: step 6/8 commit"
+  # 7 — apply the bump the gate decided on, then commit it by pathspec: another session may have
+  #     staged something in this repo.
+  say "$ME: step 7/9 bump and commit"
+  if [ "$BUMP_DUE" -eq 1 ]; then
+    python3 -c 'import json,sys
+p, v = sys.argv[1], sys.argv[2]
+d = json.load(open(p))
+d["version"] = v
+open(p, "w").write(json.dumps(d, indent=2) + "\n")' "$PLUGIN_FILE" "$NEXT_VERSION"
+    LOCAL_VERSION="$NEXT_VERSION"
+    say "  acted     bumped .claude-plugin/plugin.json to $NEXT_VERSION"
+  fi
   if git -C "$CHECKOUT" diff --quiet -- .claude-plugin/plugin.json; then
     say "  satisfied .claude-plugin/plugin.json has no uncommitted change"
   else
@@ -274,32 +354,21 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>" -- .claude-plugin/plugin.
     say "  acted     committed the bump to $LOCAL_VERSION"
   fi
 
-  # 7 — the push IS the release: other machines install from this branch. It is confirmed here,
-  #     at the point it happens, and never implied by having run the script.
-  say "$ME: step 7/8 push -- this is the release"
+  # 8 — the push IS the release: other machines install from this branch. The y/N was settled at
+  #     step 5 and is NAMED here, so the log does not lose where the authorisation came from --
+  #     it is no longer granted at the moment it happens (0114, FR5).
+  say "$ME: step 8/9 push -- this is the release"
   AHEAD="$(git -C "$CHECKOUT" rev-list --count "$UPSTREAM..HEAD")"
   if [ "$AHEAD" -eq 0 ]; then
     say "  satisfied nothing to push"
   else
-    if [ "$YES" -eq 1 ]; then
-      say "  acted     --yes given, pushing $AHEAD commit(s) to $UPSTREAM"
-    elif [ -r /dev/tty ]; then
-      printf '  push %s commit(s) to %s? other machines install from it [y/N] ' "$AHEAD" "$UPSTREAM"
-      read -r REPLY < /dev/tty
-      case "$REPLY" in
-        y|Y|yes|YES) : ;;
-        *) die "push declined; the bump is committed locally and nothing was released" 3 ;;
-      esac
-    else
-      die "no tty to confirm the push on; re-run with --yes if you mean to release" 3
-    fi
     git -C "$CHECKOUT" push -q origin "$BRANCH"
-    say "  acted     pushed to $UPSTREAM"
+    say "  acted     pushed to $UPSTREAM -- authorised at step 5 ($AUTH_VIA)"
   fi
   PUSHED_SHA="$(git -C "$CHECKOUT" rev-parse HEAD)"
 
   # 8 — update the install, then prove it. Neither `claude` command's success line is evidence.
-  say "$ME: step 8/8 update the install and verify the bytes"
+  say "$ME: step 9/9 update the install and verify the bytes"
   if command -v claude >/dev/null 2>&1; then
     MARKETPLACE="${KEY#*@}"
     claude plugin marketplace update "$MARKETPLACE" || die "marketplace update failed" 1
@@ -323,11 +392,12 @@ KEY=""
 COMMIT=""
 BUMP=0
 YES=0
+CONFIRM_DEVICE="/dev/tty"
 SUB="release"
 
 case "${1:-}" in
   verify) SUB="verify"; shift ;;
-  -h|--help) sed -n '2,45p' "$0" | sed 's/^#\{1,2\} \{0,1\}//'; exit 0 ;;
+  -h|--help) sed -n '2,68p' "$0" | sed 's/^#\{1,2\} \{0,1\}//'; exit 0 ;;
 esac
 
 while [ $# -gt 0 ]; do
@@ -338,6 +408,7 @@ while [ $# -gt 0 ]; do
     --commit)   COMMIT="$2"; shift 2 ;;
     --bump)     BUMP=1; shift ;;
     --yes)      YES=1; shift ;;
+    --confirm-device) CONFIRM_DEVICE="$2"; shift 2 ;;
     *) die "unknown argument: $1" 2 ;;
   esac
 done
