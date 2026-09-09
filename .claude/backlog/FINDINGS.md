@@ -263,3 +263,16 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   has for `expects:` versus `touches:`: **a populated `touches:` is a verified scope and a prediction
   never overwrites one** — re-claim should leave it alone and say it did, or merge and report the
   delta.
+
+- 2026-09-09 — **A bounced ticket's QA verdict can contain a CHOICE, and `develop` Step 2 treats a
+  verdict as a specification.** 0086's `verify` pass diagnosed the FR3 gate gap correctly and then
+  offered two remedies — *"either narrow it … or widen that paragraph to say so and assert the
+  accepted case"* — which are opposite products: one changes behaviour, the other documents a hole.
+  Step 2 says the verdict "is the specification" on a re-entry, and separately says a missing
+  *decision* goes to `/design` rather than being answered by the session about to build against it;
+  neither reaches this shape, because the decision arrives inside the artifact the step tells you to
+  trust. Settleable here from FR3's own wording (a prose document is not a "committed automated
+  assertion"), so it was, but only because the ticket happened to carry a sentence that decided it.
+  Possibly two rules: `verify` states the verdict and names the constraint, never a menu; `develop`
+  treats a two-remedy verdict as an open question unless the item's own FRs already pick one
+  (pointer: `.claude/backlog/items/0086-add-a-light-qa-tier.md`, *Notes & decisions* 2026-09-08).
