@@ -188,3 +188,14 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   not vacuous — but every prose guard in this repo has this property and none of them say so, and
   a mutation that only appends is the cheap way to make one look load-bearing when it is not
   (pointer: `tests/backlog-scripts-installed.test.sh`, the AC4 block).
+- 2026-09-09 (verify, `2ea3`) — **A guard that is a scanner has positions, not one behaviour, and a
+  mutation proves only the position it lands on.** `0077`'s AC2 has now bounced twice on the *same*
+  script and the same prose shape, differing only in where the apostrophe sat: first inside an
+  `awk` program's body (which `sh -n` accepts), now on the program's **opening line**, which the
+  new scanner exempts by construction — its `NR != sq_line` rule has to exempt single-line
+  programs, and exempts the first line of multi-line ones with it. Both mutations are the same
+  sentence to a reader of the AC. The lesson is that where the artifact under test is a state
+  machine, "prove the guard can fail" means enumerating the states *it* distinguishes — opening
+  line vs body, inside `$( )` vs bare, before vs after a heredoc, one copy vs both — and mutating
+  once per state. Five mutations in the build notes all landed in one state and read as thorough
+  (pointer: `tests/backlog-scripts-installed.test.sh`, the AC8 `early_close` scanner; `0077`).
