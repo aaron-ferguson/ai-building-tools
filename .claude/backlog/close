@@ -217,6 +217,118 @@ held_by="$(fm_value "$item" claimed_by)"
   exit 1
 }
 
+
+# --- the declared scope against what the commits actually changed (0106 FR3) -------------------
+# `touches:` can name a file for an edit that never happens, and nothing notices: 0039's re-entry
+# declared `.claude-plugin/plugin.json` for a version bump that never occurred. An unused
+# reservation is invisible by construction — `./next --drift` compares Status against `blocked_by`,
+# and until this nothing compared the declared scope against the diff.
+#
+# **A NOTE, never a gate.** Over-declaring is legitimate — you widen `touches:` before you know how
+# far the work reaches — so a mismatch is not an error. The asymmetry is the point: a touch reaching
+# FURTHER than declared is the dangerous one, and one reaching LESS far carries an intention that
+# reads, to the next session, as a completed step. Both are printed; neither refuses.
+#
+# The range is anchored to the CLAIM COMMIT for this token. It is the only marker in the history
+# that says "this session's work starts here", and `claim` writes it. No such commit — a by-hand
+# claim, a fixture, a backlog that predates the script — means no range, and no range means no
+# report rather than a report over an invented one.
+#
+# The backlog's own bookkeeping is excluded: QUEUE.md, DONE.md, FINDINGS.md and the item file are
+# written by these scripts on every ticket and are declared by none, so reporting them would put a
+# guaranteed false positive on every close and teach the reader to skip the whole note.
+#
+# **This block is duplicated verbatim in `close` and `handoff`** — the two stages that release a
+# claim, and so the two that can compare the field before it is cleared. A backlog script is a
+# separate file by install contract (`tests/backlog-scripts-installed.test.sh`) and sources
+# nothing, so a shared implementation is a copy. Change one, change both.
+SCOPE_NOTE=""
+
+# The `touches:` entries, decommented. `#` opens a comment only at the start of a value or after
+# whitespace, which is YAML's own rule and the reason `sub(/#.*/, "")` is wrong: `- docs/a#b.md` is
+# one token. A standalone comment LINE inside the block is skipped rather than ending it —
+# `develop` Step 1 invites exactly that annotation, and truncating at it reads a narrowed-and-
+# annotated scope as empty.
+declared_touches() {
+  awk '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && /^touches:/  { intou = 1; next }
+    intou && /^[ \t]*$/ { next }
+    intou && /^[ \t]*#/ { next }
+    intou && /^[ \t]*- / {
+      sub(/^[ \t]*- */, "")
+      sub(/[ \t]+#.*$/, "")
+      sub(/[ \t]+$/, "")
+      if ($0 != "") print
+      next
+    }
+    intou { exit }
+  ' "$1"
+}
+
+scope_note() {
+  git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || return 0
+  git -C "$DIR" rev-parse -q --verify HEAD >/dev/null 2>&1 || return 0
+
+  declared="$(declared_touches "$item")"
+  [ -n "$declared" ] || return 0
+
+  # Oldest first: a token can appear on several commits, and the claim is the first of them.
+  claim_sha="$(git -C "$DIR" log --format='%H %s' | grep -F "[$TOKEN]" | tail -1 | cut -d' ' -f1)"
+  [ -n "$claim_sha" ] || return 0
+
+  # `A^..HEAD` includes A itself. On a root commit there is no `A^`, and `--root` is what makes
+  # `--name-only` report a root commit's paths at all rather than silently listing none.
+  if git -C "$DIR" rev-parse -q --verify "$claim_sha^" >/dev/null 2>&1; then
+    range="$claim_sha^..HEAD"
+  else
+    range="HEAD"
+  fi
+  actual="$(git -C "$DIR" log --root --format= --name-only "$range" | grep . | sort -u || true)"
+
+  prefix="$(git -C "$DIR" rev-parse --show-prefix)"
+  bookkeeping="${prefix}QUEUE.md ${prefix}DONE.md ${prefix}FINDINGS.md ${prefix}items/$(basename "$item")"
+
+  # A declared entry covers a path that IS it, or that sits under it — so declaring a directory
+  # reads as declaring what is in it, which is how sessions actually write the field.
+  covers() {
+    for d in $2; do
+      [ "$1" = "$d" ] && return 0
+      case "$1" in "$d"/*) return 0 ;; esac
+    done
+    return 1
+  }
+
+  undeclared=""
+  for p in $actual; do
+    case " $bookkeeping " in *" $p "*) continue ;; esac
+    covers "$p" "$declared" || undeclared="$undeclared $p"
+  done
+
+  untouched=""
+  for d in $declared; do
+    hit=0
+    for p in $actual; do
+      [ "$p" = "$d" ] && { hit=1; break; }
+      case "$p" in "$d"/*) hit=1; break ;; esac
+    done
+    [ "$hit" -eq 1 ] || untouched="$untouched $d"
+  done
+
+  if [ -z "$undeclared" ] && [ -z "$untouched" ]; then
+    SCOPE_NOTE="scope: touches: and the commits since the claim agree"
+    return 0
+  fi
+  [ -z "$untouched" ]  || SCOPE_NOTE="scope: declared but untouched:$untouched"
+  [ -z "$undeclared" ] || SCOPE_NOTE="${SCOPE_NOTE:+$SCOPE_NOTE
+}scope: touched but undeclared:$undeclared"
+  SCOPE_NOTE="$SCOPE_NOTE
+scope: a note, not a gate — widen or narrow the field on the next ticket, never this one"
+  return 0
+}
+scope_note
+
 item_type="$(fm_value "$item" type)"
 item_qa="$(fm_value "$item" qa_level)"
 
@@ -675,5 +787,6 @@ until git -C "$DIR" commit -q -m "Close $ID [$TOKEN]" -- "$QUEUE" "$DONE" "$item
 done
 
 echo "closed $ID — $title"
+[ -z "$SCOPE_NOTE" ] || echo "$SCOPE_NOTE"
 [ -z "$FREED" ]   || echo "reconciled (no longer blocked):$FREED"
 [ -z "$SKIPPED" ] || echo "left alone, held by another session:$SKIPPED"

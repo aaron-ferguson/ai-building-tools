@@ -507,6 +507,33 @@ echo "AC7 — the section that enumerates the scripts counts four"
 assert_contains "CONCURRENCY.md heads it 'The four scripts'" "$CON" '## The four scripts'
 assert_contains "and describes handoff there" "$CON" './handoff <id> <token> <stage>'
 
+# --- 0106 FR3 — the hand-off reports declared scope against what the commits changed -----------
+# `handoff` clears `touches:` exactly as `close` does, so it is the other stage that can compare
+# the field before it disappears — and for a `develop` ticket it is the ONLY one that sees the build
+# commits under the token that declared the scope. A note, never a gate.
+echo "0106 FR3 — the hand-off names both directions of declared-vs-actual"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0060 | Scope reported | develop | in-progress | 0000 |' 0060 develop in-progress tok0
+mkdir -p "$FIX/src"
+printf 'declared and edited\n' > "$FIX/src/one.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "baseline"
+git -C "$FIX" commit -q --allow-empty -m "Claim 0060 [tok0]"
+printf 'never declared\n' > "$FIX/src/three.ts"
+printf 'edited\n' >> "$FIX/src/one.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Build 0060 [tok0]"
+out="$(run_handoff 0060 tok0 verify)" && rc=0 || rc=$?
+assert_rc "the hand-off still succeeds — this is a note, not a gate" "$rc" 0 "$out"
+assert_item_line "touches: is still cleared" 'touches:'
+assert_contains "names the undeclared path" "$out" 'touched but undeclared: src/three.ts'
+assert_contains "names the declared path no commit changed" "$out" 'declared but untouched: src/two.ts'
+assert_not_contains "does not report the path that was edited" "$out" 'untouched: src/one.ts'
+
+echo "0106 FR3 — no claim commit for this token means no report rather than an invented one"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0061 | No claim commit | develop | in-progress | 0000 |' 0061 develop in-progress tok0
+out="$(run_handoff 0061 tok0 verify)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_not_contains "no declared-vs-actual line" "$out" 'declared but untouched'
+assert_not_contains "and no agreeing line either" "$out" 'commits since the claim agree'
+
 # --- result -------------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

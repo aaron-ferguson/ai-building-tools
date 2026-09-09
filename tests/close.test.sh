@@ -990,6 +990,92 @@ out="$(run_close 0070 ab12)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_contains "the item is done" "$(cat "$FIX/$BL/items/0070-fixture.md")" 'status: done'
 
+# --- 0106 AC4, AC5 — declared scope against what the commits actually changed -------------------
+# The defect: `touches:` can name a file for an edit that never happens and nothing notices. 0039's
+# re-entry declared `.claude-plugin/plugin.json` for a version bump that never occurred, and an
+# unused reservation is invisible by construction — `./next --drift` compares Status against
+# blocked_by, and nothing had ever compared the declared scope against the diff.
+#
+# A NOTE, never a gate: over-declaring is legitimate (you widen before you know), and it is the
+# under-delivering half — a declared file whose edit never happened, which reads to the next session
+# as a completed step — that wants saying out loud. So AC5 asserts the close still succeeds.
+#
+# The range is anchored to the CLAIM COMMIT for this token, not to a date or a fixed depth: it is
+# the only marker in the history that says "this session's work starts here", and it is written by
+# `claim` itself.
+echo "0106 AC4, AC5 — the close reports both directions of declared-vs-actual"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0080 | Scope reported | verify | in-progress | 0000 |'
+mkitem 0080 verify in-progress '"ab12"' '[]'
+mkdir -p "$FIX/some/reserved"
+printf 'declared and edited\n' > "$FIX/some/reserved/file.md"
+commit_fixture
+git -C "$FIX" commit -q --allow-empty -m "Claim 0080 [ab12]"
+mkdir -p "$FIX/src"
+printf 'never declared\n' > "$FIX/src/undeclared.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Build 0080 [ab12]"
+out="$(run_close 0080 ab12)" && rc=0 || rc=$?
+assert_rc "the close still succeeds — this is a note, not a gate" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0080-fixture.md")" 'status: done'
+assert_contains "names the undeclared path as touched but undeclared" "$out" 'touched but undeclared: src/undeclared.ts'
+assert_contains "names the unedited path as declared but untouched" "$out" 'declared but untouched: some/reserved/file.md'
+
+echo "0106 AC4 — the backlog's own bookkeeping is not reported as undeclared"
+refute_contains "QUEUE.md is not an undeclared touch"  "$out" 'undeclared: '"$BL"'/QUEUE.md'
+refute_contains "the item file is not an undeclared touch" "$out" 'undeclared: '"$BL"'/items/0080-fixture.md'
+
+echo "0106 FR3 — a scope that matches says so, rather than saying nothing"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0081 | Scope agrees | verify | in-progress | 0000 |'
+mkitem 0081 verify in-progress '"ab12"' '[]'
+mkdir -p "$FIX/some/reserved"
+printf 'declared\n' > "$FIX/some/reserved/file.md"
+commit_fixture
+git -C "$FIX" commit -q --allow-empty -m "Claim 0081 [ab12]"
+printf 'declared and edited\n' > "$FIX/some/reserved/file.md"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Build 0081 [ab12]"
+out="$(run_close 0081 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "says the two agree" "$out" 'scope: touches: and the commits since the claim agree'
+refute_contains "and reports neither direction" "$out" 'declared but untouched'
+
+echo "0106 FR3 — no claim commit for this token means no range, and no invented report"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0082 | No claim commit | verify | in-progress | 0000 |'
+mkitem 0082 verify in-progress '"ab12"' '[]'
+commit_fixture
+out="$(run_close 0082 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+refute_contains "no declared-vs-actual line is printed" "$out" 'declared but untouched'
+refute_contains "and none of the agreeing line either" "$out" 'commits since the claim agree'
+
+# --- 0106 FR3 — the duplicated block has not drifted ------------------------------------------
+# `close` and `handoff` carry the scope comparison verbatim: a backlog script is a separate file by
+# install contract and sources nothing, so a shared implementation is a copy. A copy is only safe
+# while something notices it diverging — the comment saying "change one, change both" is the rule,
+# and this is the check. Byte-for-byte, because a difference in the awk reader is exactly the kind
+# that reads correctly in both files and answers differently.
+echo "0106 FR3 — close and handoff carry the same scope block, byte for byte"
+extract_block() {
+  awk '/^# --- the declared scope against what the commits actually changed/ { f = 1 }
+       f { print }
+       f && /^scope_note$/ { exit }' "$1"
+}
+close_block="$(extract_block "$CLOSE_SRC")"
+handoff_block="$(extract_block "$ROOT/skills/queue/templates/handoff")"
+if [ -z "$close_block" ]; then
+  bad "close carries the scope block"
+elif [ "$close_block" = "$handoff_block" ]; then
+  ok "close and handoff carry an identical scope block"
+  saw_on_pass "$(printf '%s\n' "$close_block" | wc -l) lines, identical"
+else
+  bad "close and handoff carry an identical scope block"
+  # No process substitution: this suite is /bin/sh, and `<(...)` is a bash extension that would
+  # make the FAILURE branch itself fail — reporting a syntax error where the finding should be.
+  cb="$(mktemp)"; hb="$(mktemp)"
+  printf '%s\n' "$close_block"   > "$cb"
+  printf '%s\n' "$handoff_block" > "$hb"
+  saw "$(diff "$cb" "$hb" || true)"
+  rm -f "$cb" "$hb"
+fi
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
