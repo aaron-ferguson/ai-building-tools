@@ -20,9 +20,15 @@ claimed_by: "4e31"
 claimed_at: 2026-09-09T19:50:31Z
 touches:
   - tests/backlog-scripts-installed.test.sh
-  - skills/queue/templates/close
-  - skills/queue/templates/claim
   - skills/queue/templates/next
+  - skills/queue/templates/claim
+  - skills/queue/templates/close
+  - skills/queue/templates/handoff
+  - .claude/backlog/next
+  - .claude/backlog/claim
+  - .claude/backlog/close
+  - .claude/backlog/handoff
+  - references/CONCURRENCY.md
 ---
 
 ## Problem
