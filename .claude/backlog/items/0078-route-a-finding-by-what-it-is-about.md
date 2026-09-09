@@ -3,7 +3,7 @@ id: "0078"
 title: Route a finding by what it is about, not which repo you are standing in
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -17,9 +17,14 @@ expects:
   - skills/retro/SKILL.md
   - skills/queue/SKILL.md
   - references/CONVENTIONS.md
-claimed_by:
-claimed_at:
+claimed_by: "d89c"
+claimed_at: 2026-09-09T03:52:33Z
 touches:
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - skills/retro/SKILL.md
+  - skills/queue/SKILL.md
+  - references/CONVENTIONS.md
 ---
 
 ## Problem
