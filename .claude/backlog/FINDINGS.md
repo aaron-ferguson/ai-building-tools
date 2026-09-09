@@ -172,3 +172,19 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   hazard lives strictly between the opening `'` of an embedded `awk` program and its close; a
   falsifiability proof for any of `next`, `close` or `handoff` has to land there (pointer:
   `skills/queue/templates/close`, the `DECOMMENT` assignment).
+- 2026-09-09 (verify, `6387`) — **`sh -n` proves the file parses under the shell you invoked, which
+  on macOS is not the shell a stricter parser would reject.** `/bin/sh` here is bash 3.2.57 and
+  `bash` on PATH is 5.3.9. An apostrophe inside `close`'s `ac_counts` `awk` program is a syntax
+  error to `bash -n` and *valid* to `sh -n`; the script then runs and hands `awk` a mangled
+  program, so `close.test.sh` fails 83 cases while `backlog-scripts-installed.test.sh` reports 29
+  passed, 0 failed. A parse check is structurally blind to any breakage its own parser accepts, and
+  a guard built on one inherits that blindness silently — the same guard is expected to be stronger
+  on a Linux CI whose `/bin/sh` is a different parser, which is itself a reason not to trust a
+  green here (pointer: `tests/backlog-scripts-installed.test.sh`, the AC5 block; `0077`).
+- 2026-09-09 (verify, `6387`) — **A `grep -qF` prose guard passes on the phrase it is asserting
+  *plus a suffix*, so rewording through it is invisible.** `takes no apostrophe` still matches
+  after the rule is reworded to `takes no apostrophe-mark`, which inverts nothing but shows the
+  window is a substring test, not a claim test. Deleting the rule does redden it, so the guard is
+  not vacuous — but every prose guard in this repo has this property and none of them say so, and
+  a mutation that only appends is the cheap way to make one look load-bearing when it is not
+  (pointer: `tests/backlog-scripts-installed.test.sh`, the AC4 block).
