@@ -146,3 +146,21 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   fictional path is reserved as held scope until the session narrows it by hand. `./claim` already
   warns to narrow; what it cannot say is which of the paths do not exist, which it could
   (pointer: `.claude/backlog/claim`, the `touches: is set provisionally` warning).
+- 2026-09-09 (verify, `f5d0`) — **`0075`'s Git NFR — read-only, "no automatic pull, merge or
+  rebase" — is unguarded in both skills it was delivered in, and the whole suite stays green when
+  it is broken.** Measured: replacing `` `git fetch` then `git status -sb`, read-only `` with
+  `` `git fetch` then `git pull --rebase` `` in `skills/develop/SKILL.md`, and the equivalent line
+  in `skills/retro/SKILL.md`, left all 26 test files at 0 failed in both cases.
+  `tests/remote-anchor.test.sh` asserts `the pull is the user` on retro's *other* line, so the
+  sentence carrying the actual command is free to instruct a rebase while the paragraph beside it
+  still says the pull is the user's call. The four ACs are met and this is not one of them — an
+  NFR row is a requirement no AC restates, and nothing in `verify` Step 4 asks whether a checked
+  NFR is *guarded* as opposed to merely true today (pointer: `tests/remote-anchor.test.sh`, the
+  FR1 cases; `0107` is the queued ticket for NFR rows naming how they would red).
+- 2026-09-09 (verify, `f5d0`) — **A rule whose content is "do this before X" was placed after X in
+  the reading order, and no guard can see the difference.** `retro` Step 3's fetch paragraph sits
+  below the *"Grep the destination before writing anything"* bullet it must precede, and Step 5's
+  *"That chain begins with a fetch"* is the last bullet of the chain it opens. Both windows are
+  step-scoped, which is the right altitude for the rule's *home* and blind to its position inside
+  the step; a session reading top-to-bottom meets the instruction before the precondition
+  (pointer: `skills/retro/SKILL.md`, Steps 3 and 5).
