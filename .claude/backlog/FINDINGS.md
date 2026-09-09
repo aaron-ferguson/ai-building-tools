@@ -48,3 +48,24 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the work-and-lesson case and not this one (pointer: `skills/queue/SKILL.md` Step 5,
   `skills/retro/SKILL.md` Step 4, item `0057` — which lists four other missing `queue` operations
   and not this one).
+- 2026-09-09 (queue) — **No step in `queue` checks whether the work already exists before a ticket is
+  written, and this capture came within one step of shipping three duplicates.** Step 2 says how to
+  write a ticket well and Step 5 says to check a *parked finding* is still true, but nothing tells a
+  capture session to read the queue for overlap first. Writing nine rows for the sprint project, the
+  overlap was found only because the ranking walk in Step 3 required reading `QUEUE.md` end to end:
+  `0041` already specified the session review this was about to re-file, and `0060` and `0067` own
+  the design questions two of the new rows depend on — so two children would have shipped
+  unblocked against decisions that are explicitly still open. The check that saved it was
+  incidental to a different step, and on a backlog too long to skim, or a capture of one ticket
+  where no ranking walk is needed, it would not have happened (pointer: `skills/queue/SKILL.md`
+  Steps 2 and 3, items `0128`, `0041`, `0059`, `0060`, `0067`).
+- 2026-09-09 (queue) — **Step 3 ranks one row against a queue and says nothing about inserting a
+  related cluster.** Nine rows went in as a contiguous block below the operational fixes and above
+  the design tail, and every part of that shape was invented: that the cluster stays contiguous at
+  all, that prerequisites lead it, and that a blocked child keeps its place inside it rather than
+  sinking below its siblings. The pairwise regret operator is defined for two rows, and applying it
+  nine times pairwise would have interleaved the cluster through the queue, which is defensible by
+  the letter of the rule and would have made the project unreadable as a unit. `0060` records the
+  same gap from the other end — no sweeper has a procedure for a buffer far past its threshold —
+  which suggests the missing rule is about batch operations generally rather than about ranking
+  (pointer: `skills/queue/SKILL.md` Step 3, `.claude/backlog/RANKING.md`, items `0128`, `0060`).
