@@ -2,8 +2,8 @@
 id: "0115"
 title: Make --drift see a row and its item disagreeing, as three files say it does
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-08
@@ -18,9 +18,10 @@ expects:
   - tests/handoff.test.sh
   - references/CONCURRENCY.md
   - docs/decisions/001-one-command-per-stage-boundary.md
-claimed_by: "2390"
-claimed_at: 2026-09-09T21:43:23Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-09
 ---
 
 ## Problem
@@ -115,35 +116,35 @@ in the one suite whose subject is atomicity.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a backlog whose row for `0001` reads `develop` and whose item reads
+- [x] AC1 — Given a backlog whose row for `0001` reads `develop` and whose item reads
   `next: verify`, when `./next --drift` runs, then it prints a line naming `0001`, `develop` and
   `verify`, and exits non-zero. Red-making input: today's `next`, which prints `no drift` and exits 0.
-- [ ] AC2 — Given a backlog whose row for `0001` reads `in-progress` and whose item reads
+- [x] AC2 — Given a backlog whose row for `0001` reads `in-progress` and whose item reads
   `status: ready`, when `./next --drift` runs, then it prints a line naming `0001`, `in-progress` and
   `ready`, and exits non-zero. Red-making input: today's `next`, which prints `no drift`.
-- [ ] AC3 — Given a backlog whose row for `0001` reads `in-progress` and whose item reads
+- [x] AC3 — Given a backlog whose row for `0001` reads `in-progress` and whose item reads
   `status: in-progress` with an empty `claimed_by:`, when `./next --drift` runs, then it reports that
   row as tokenless and exits non-zero. Red-making mutation: dropping the `claimed_by:` read, which
   leaves the row silent because the two statuses agree.
-- [ ] AC4 — Given a backlog whose row for `0001` reads `blocked` while every `blocked_by` entry is
+- [x] AC4 — Given a backlog whose row for `0001` reads `blocked` while every `blocked_by` entry is
   `done` **and** whose item reads `status: ready`, when `./next --drift` runs, then `0001` is named
   on exactly one line. Red-making mutation: reporting FR2 independently of the existing branch,
   which prints two lines for one row.
-- [ ] AC5 — Given a row in `QUEUE.md` for which no `items/0001-*.md` exists, when `./next --drift`
+- [x] AC5 — Given a row in `QUEUE.md` for which no `items/0001-*.md` exists, when `./next --drift`
   runs, then it names that row as having no item file and does not report it as a `next:` or
   `status:` disagreement. Red-making mutation: comparing against `fm`'s empty return, which reports
   it as `develop` versus the empty string.
-- [ ] AC6 — Given a backlog with no disagreement of any class, when `./next --drift` runs, then it
+- [x] AC6 — Given a backlog with no disagreement of any class, when `./next --drift` runs, then it
   prints its no-drift line and exits 0. Red-making mutation: inverting any new comparison, which
   reports every clean row.
-- [ ] AC7 — Given `./handoff` with `mv "$queue_tmp" "$QUEUE"` removed and the mutation diffed to
+- [x] AC7 — Given `./handoff` with `mv "$queue_tmp" "$QUEUE"` removed and the mutation diffed to
   confirm it landed, when `tests/handoff.test.sh` runs, then it reports at least one failure. Red
   before this ticket: that suite reports `0 failed` under the same mutation.
-- [ ] AC8 — Given `references/CONCURRENCY.md:82` and
+- [x] AC8 — Given `references/CONCURRENCY.md:82` and
   `docs/decisions/001-one-command-per-stage-boundary.md:220`, when each is read against the shipped
   `next`, then each claim is true of the code and names the classes the report covers. Red-making
   input: today's text, whose claims the mutation in the Problem section falsifies.
-- [ ] AC9 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
+- [x] AC9 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
   reports `0 failed`, and `tests/backlog-scripts-installed.test.sh` is among them. Red-making change:
   editing `skills/queue/templates/next` and not `.claude/backlog/next`.
 
@@ -177,6 +178,39 @@ in the one suite whose subject is atomicity.
 - **Whether a tokenless `in-progress` row should be *honoured* by other readers.** `0029` settled
   that (*held* is `claimed_by:` alone) and `0049` holds the open half. This ticket only makes the
   report `0029` promised exist.
+
+## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+QA pass 2026-09-09, token `2390`, at `qa_level: unit`. Every row driven at the CLI surface —
+`./next --drift` against a scaffolded fixture backlog in a scratch git repo, `next` copied from
+`skills/queue/templates/`. Suite tallies are pasted from the run that produced them, never summed.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 | Fixture row `Next develop` over item `next: verify`; ran `./next --drift` | ✅ `DRIFT     0001 \| row Next develop, item next: verify — the row and its item disagree about the stage`, exit 1 |
+| AC2 | Fixture row `Status in-progress` over held item `status: ready`; ran `./next --drift` | ✅ `DRIFT     0001 \| row Status in-progress, item status: ready — …`, exit 1 |
+| AC3 | Row and item both `in-progress`, `claimed_by:` empty; ran `./next --drift` | ✅ `DRIFT     0001 \| row Status in-progress, item claimed_by: empty — nobody holds it`, exit 1 |
+| AC4 | Row `blocked`, blocker `0002` at `status: done`, item `status: ready`; counted lines naming the id with `grep -c` | ✅ exactly **1** line, the `blocked`-vs-`blocked_by` one. Precedence holds; the status class did not also fire |
+| AC5 | Deleted `items/0001-*.md`, left the row; ran `./next --drift` | ✅ `DRIFT     0001 \| row present, no item file — items/0001-*.md resolves to nothing`, exit 1; `grep -c 'item next:'` → `0`, so not misreported as a disagreement with `""` |
+| AC6 | Clean fixture, and separately this repo's own 89-row backlog | ✅ `no drift: every row agrees with its blocked_by and with its item`, exit 0 both times |
+| AC7 | Mutated `handoff:439` `mv "$queue_tmp" "$QUEUE"` → `: #`, diffed to confirm it landed, ran `tests/handoff.test.sh` against the 0115 `next` and against `71acba1`'s `next`, then restored | ✅ control `112 passed, 0 failed` · mutated + 0115 `next` **`106 passed, 6 failed`**, the two extra being AC4's `--drift exits zero` and `no DRIFT line names the row` · mutated + pre-0115 `next` `108 passed, 4 failed`, AC4's two green. The inert guard is live. Restored control `112 passed, 0 failed` |
+| AC8 | Read `references/CONCURRENCY.md:82` and `docs/decisions/001-one-command-per-stage-boundary.md:220` against the shipped `next` | ✅ CONCURRENCY's "`--drift` reports it" is true — driven at AC3. Decision 001 names `0115` and points at `next`'s header for the class list. Neither restates the list |
+| AC9 | `for t in tests/*.test.sh; do "$t" \|\| true; done`, run file-by-file per `config.yml` | ✅ **27 files, all `0 failed`** — `next.test.sh` `229 passed, 0 failed`, `handoff.test.sh` `112 passed, 0 failed`, `backlog-scripts-installed.test.sh` `37 passed, 0 failed` |
+| NFR Observability | Read every new drift line's output at the surface | ✅ each names the id, both disagreeing values and which side is which. No line prints the id alone |
+| NFR Testing | AC7's mutation sweep above; `develop`'s own per-branch sweep is recorded in *Notes & decisions* | ✅ mutation-proved end to end, control-first, mutation diffed before each read |
+| NFR Dependencies | Read the diff for added binaries | ✅ nothing new — `fm`, `field`, `row_for`, `item_for`, `awk`, `git` only |
+| NFR Documentation | Read `usage()`, the `--drift` header comment, and the two prose sites | ✅ the five classes are listed once, in the header comment; `usage()` names them in a line and the two prose sites cite the header rather than copying it |
+
+Probes beyond the criteria, all at the same surface:
+
+- 🔍 Three rows drifting in three different classes at once → one line each, correct class per row, no cross-contamination.
+- 🔍 Cells padded with extra whitespace (`\|  develop   \|   ready   \|`) → `no drift`, exit 0. Trimming is correct.
+- 🔍 The literal `0084` incident shape (row `develop | in-progress`, item `next: verify, status: ready`, `claimed_by:` empty) → `--drift` exit 1 naming the stage disagreement, while `./next verify` and `./next develop` both still decline it under `[no token]`. The class this ticket exists for is caught.
+- 🔍 Item present but with **no `next:` key at all** → `item next:` printed with an empty value. Truthful and correctly exits 1, but reads as a rendering glitch rather than "the key is absent" — filed as `0141`.
+- 🔍 The **inverse of FR3** — row `Status ready` over an item with a non-empty `claimed_by:` — is silent, and `./next develop` offers that row as `TAKE`. Pre-existing and outside this ticket's FRs; filed as `0140`.
+
+Tree clean at verdict (`git status --porcelain` empty after the last evidence command), fixture removed,
+nothing left running.
 
 ## Notes & decisions
 
@@ -238,3 +272,29 @@ in the one suite whose subject is atomicity.
   above), FR3 → 4, FR3's `claimed_by` read dropped → 3. Inverted: FR1 → 17, FR2 → 11. FR4's
   precedence proved by reporting the status class as an independent `if` after the chain: AC4's line
   count goes 1 → 2 and reds alone.
+
+- 2026-09-09 (verify, `[2390]`) — **PASS. Every AC driven at the CLI, none read off the code.**
+  AC1–AC6 against a scaffolded fixture backlog; AC7 by re-running `develop`'s own mutation from both
+  sides, which reproduced its recorded figures exactly (`112/0` control, `106/6` mutated with this
+  `next`, `108/4` mutated with `71acba1`'s) and confirms the narrower claim its note records rather
+  than AC7's text: the value delivered is that AC4's two assertions became live, not that the suite
+  went from blind to sighted. **AC7 as written in this file is still overstated and was not
+  rewritten** — a criterion is not edited by the stage grading it, and the note beneath it is the
+  accurate record.
+- 2026-09-09 (verify, `[2390]`) — **two probe findings referred out rather than folded in**, per
+  `CONCURRENCY.md`'s rule that a criterion belonging to another ticket is not filed by the stage that
+  finds it. `0140`: the mirror image of FR3 — a row at `ready` over an item with a non-empty
+  `claimed_by:` — is silent to `--drift` **and** offered as `TAKE` by `./next develop`, so a held
+  ticket reaches a second session. Pre-existing, outside this ticket's FRs, and outside `0049`'s
+  framing too, which is why it is a new row. `0141`: an item present but missing the compared key
+  prints `item next:` with an empty value, the same misdirection FR5 guards one level up.
+- 2026-09-09 (verify, `[2390]`) — **`orchestrate`'s drift routing does not actually see any of
+  this, and the ticket's own justification rests on it.** *Notes & decisions* argues that exiting
+  non-zero is safe because "`orchestrate` spends `1` on drift and stops
+  (`skills/orchestrate/SKILL.md:117`)". Driven on the `0084` shape, `./next --drive` returns **3**
+  (`COMPLETE nothing takeable`), not 1 — `--drive`'s body contains no drift check, and `orchestrate`
+  invokes `./next --drift` nowhere in its loop (only at `:233` as a precondition and `:271` in
+  passing). So the new classes stop a human reader and not the driver. Pre-existing and not caused by
+  this diff, but it means the safety story this ticket tells is not yet delivered, and it bears on
+  `0131`/`0128`, which are in flight. Not filed as a row: it belongs to the `0128` sprint slice
+  rather than to `next`, and that slice is another session's to specify.

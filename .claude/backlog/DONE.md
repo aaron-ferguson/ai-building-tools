@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0115 | Make --drift see a row and its item disagreeing, as three files say it does | bug | unit | 2026-09-09 | [items/0115-drift-sees-row-item-disagreement.md](items/0115-drift-sees-row-item-disagreement.md) |
 | 0106 | Make touches mean one thing across claim, close and a transient mutation | bug | unit | 2026-09-09 | [items/0106-make-touches-mean-one-thing.md](items/0106-make-touches-mean-one-thing.md) |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | bug | unit | 2026-09-09 | [items/0077-guard-the-scripts-embedded-awk-programs.md](items/0077-guard-the-scripts-embedded-awk-programs.md) |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | bug | unit | 2026-09-09 | [items/0075-anchor-a-tool-edit-to-the-remote.md](items/0075-anchor-a-tool-edit-to-the-remote.md) |
