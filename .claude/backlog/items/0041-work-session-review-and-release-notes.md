@@ -8,7 +8,7 @@ qa_level: unit
 size: m
 created: 2026-08-25
 source: user
-parent:
+parent: "0128"
 blocked_by: []
 relates: ["0016", "0026", "0036", "0039", "0037"]
 expects:
@@ -256,3 +256,21 @@ that name the invocation, the output path and the implementing file.**
   it that served that instruction — measuring what a run costs — is built and published; what
   remains is a reporting feature. `RANKING.md` records that, so the next re-rank argues with a
   current statement rather than a spent one.
+
+- **2026-09-09 — adopted as a child of `0128`.** The sprint project's capture session found this
+  ticket already specifying what it was about to write a duplicate of: the Problem here quotes the
+  original request for a *"Sprint Review"* with release notes and per-agent cost, which is the
+  sprint record and the notes half of that project. Two decisions taken in the 2026-09-08 design
+  conversation belong to this ticket's open design question and are recorded here rather than in a
+  new row:
+  - **The notes answer "what will a session running these skills do differently?"** This repo's users
+    are sessions and other machines, so the generic product-changelog voice produces nothing. A
+    ticket with no observable behaviour change is recorded as having none and never padded; a sprint
+    whose notes read *"no behaviour change — internal guards only"* is an informative result.
+  - **Notes are keyed to a released version, not to a sprint.** `deploy ≠ release ≠ launch`, and in
+    this repo the release is the version bump plus the install, so a sprint does not necessarily
+    release. The proposed shape is a `CHANGELOG.md` accumulating under an `Unreleased` heading which
+    `tools/release` promotes to the version it bumps — which also gives the release chain a natural
+    gate: refuse to release on an empty `Unreleased` section with no explicit no-change line.
+  This is input to the design question, which stays open: where the review lives, and whether it is
+  its own skill, is still undecided.

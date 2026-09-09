@@ -216,3 +216,33 @@ tier), tie-breaker 5 again decides it cleanly: that band was captured 2026-08-25
 last, below 0072.
 
 **The regret operator was not needed for either placement.**
+
+## The 0128 sprint cluster, at #8–#15
+
+`0136`, `0131`, `0130`, `0129`, `0132`, `0133`, `0135`, `0134` sit as a block below the seven
+operational fixes at the head of the queue and above `0080`, the first design row.
+
+**Below the top seven.** Those are live correctness defects in `claim`, `close`, `--drift` and the
+release chain — Tier 1 and 2 against a cluster that is mostly Tier 3 and 4. The sprint work makes
+runs better; the rows above it stop the tooling being wrong.
+
+**Above the design tail.** Tie-breaker 3, knowledge freshness: the whole cluster was specified on
+2026-09-09 with `next`, `config.yml` and `MEASUREMENT.md` open, and the gate-composition evidence in
+`0130` cost a session to derive. Re-deriving it in a month is a real cost the rows below do not carry.
+
+**Within the block**, prerequisites first per the override: `0136` outranks `0130` because `0130`'s
+proposal is built on the gate walk `0136` corrects, and a wrong partition makes a wrong depth line.
+`0131` follows because it is small, certain and protects every future run from stranding built work
+— tie-breaker 4. `0130` is the project's core outcome and leads the rest.
+
+**The three blocked rows keep their rank** rather than sinking: `0129` on `0067` (the shape of a
+cross-cutting rename), `0132` on `0059` (what the batching rule licenses), `0133` on `0060` (what
+the findings gate counts). All three blockers are design rows already in this queue, and none was
+promoted to clear the sprint work — sinking the dependents would mean rediscovering why they
+mattered when the blockers clear, which is the judgement being stored.
+
+**`0137` is at the bottom deliberately.** Parallel develop's only benefit is wall-clock, which is the
+axis `0128` explicitly lets vary; its costs are tokens and tree safety, which rank above it.
+
+**`0041` keeps its rank and gains a parent.** It was already specified and already ranked; adopting
+it into `0128` changes what it belongs to, not what it is worth.

@@ -30,10 +30,18 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0106 | Make touches mean one thing across claim, close and a transient mutation | develop | ready |  |
 | 0115 | Make --drift see a row and its item disagreeing, as three files say it does | develop | ready |  |
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | develop | ready |  |
+| 0136 | Stop two gates sharing a file through a row neither lead names | develop | ready |  |
+| 0131 | Dispatch no new develop gate while a started ticket is still awaiting verify | develop | ready | 0128 |
+| 0130 | Propose a sprint scope and dispatch nothing until a person confirms it | develop | ready | 0128 |
+| 0129 | Rename orchestrate to sprint and leave the old command resolving | develop | blocked | 0128 |
+| 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | develop | blocked | 0128 |
+| 0133 | Close a sprint with a retro and a queue sweep only when the findings earn it | develop | blocked | 0128 |
+| 0135 | Record what a sprint was estimated to cost against what it did, and estimate from that | develop | ready | 0128 |
+| 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | develop | ready | 0128 |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
 | 0083 | Decide what a second checkout may do with the backlog | design | ready |  |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | design | ready |  |
-| 0041 | Write release notes for what a work session delivered | design | ready |  |
+| 0041 | Write release notes for what a work session delivered | design | ready | 0128 |
 | 0052 | Require an acceptance criterion to name the input that would make it red | verify | ready |  |
 | 0107 | Require an NFR row to name how it would red | develop | ready |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
@@ -96,6 +104,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0123 | Give queue a rule for withdrawing a criterion, as it has for withdrawing an id | develop | ready |  |
 | 0124 | Split the stop-rather-than-guess refusal out of the conventions ladder that instances it | design | ready |  |
 | 0125 | Pin the citation enumeration to its decision record so widening one cannot leave the other stale | develop | ready |  |
+| 0137 | Decide whether two develop sessions may run at once, and in what isolation | design | ready | 0128 |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
