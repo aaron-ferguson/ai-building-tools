@@ -639,7 +639,7 @@ awk -v today="$TODAY" '
     if ($0 ~ /^claimed_by:/) { print "claimed_by:"; next }
     if ($0 ~ /^claimed_at:/) { print "claimed_at:"; next }
     if ($0 ~ /^touches:/)    { print "touches:"; skiplist = 1; next }
-    if (skiplist && $0 ~ /^[ \t]+-/) { next }
+    if (skiplist && $0 ~ /^[ \t]*- /) { next }
     skiplist = 0
     print; next
   }

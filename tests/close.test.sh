@@ -87,6 +87,37 @@ touches:
 ITEM
 }
 
+
+# The same item, but with `touches:` written as a block sequence at the SAME indentation as its key.
+# YAML permits it, `item.md` does not forbid it, and the skiplist that clears the block required
+# leading whitespace — so a closed ticket went on naming files every other window must read as held
+# (`CONCURRENCY.md`, *The working tree is shared too*). Flush-left is the whole point of the
+# fixture: indent these two entries and the case can no longer fail (0090 FR1).
+# mkitem_flush_touches <id> <next> <status> <token>
+mkitem_flush_touches() {
+  cat > "$FIX/$BL/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+type: chore
+next: $2
+status: $3
+qa_level: verify
+created: 2026-08-01
+blocked_by: []
+claimed_by: $4
+claimed_at: 2026-08-01T00:00:00Z
+touches:
+- src/a.ts
+- src/b.ts
+---
+
+## Acceptance criteria
+
+- [ ] AC1 — first criterion
+- [ ] AC2 — second criterion
+ITEM
+}
 # An item whose acceptance criteria carry NO checkbox — the `- **AC1** —` form real tickets have
 # been written in. `close` ticks nothing here, and 0044 FR5 makes that a refusal rather than a
 # success the reader cannot tell from a real one.
@@ -1075,6 +1106,26 @@ else
   saw "$(diff "$cb" "$hb" || true)"
   rm -f "$cb" "$hb"
 fi
+
+# --- 0090 FR1 — touches: is cleared in the flush-left form too ---------------------------------
+# The skiplist required leading whitespace, so a legal same-indentation block sequence survived the
+# close. Asserted on whole lines of the item rather than on "touches: is empty": the entries are
+# what must be gone, and a substring check for `touches:` is green either way.
+echo "0090 FR1 — a flush-left touches: block sequence is cleared on close"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0090 | Flush-left touches | verify | in-progress | 0000 |'
+mkitem_flush_touches 0090 verify in-progress '"ab12"'
+commit_fixture
+out="$(run_close 0090 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+item="$(cat "$FIX/$BL/items/0090-fixture.md")"
+refute_contains "the first entry is gone" "$item" '
+- src/a.ts'
+refute_contains "the second entry is gone" "$item" '
+- src/b.ts'
+assert_contains "the three ownership fields are cleared together" "$item" 'claimed_by:
+claimed_at:
+touches:
+closed: '
 
 # --- result -----------------------------------------------------------------------------------
 echo
