@@ -110,3 +110,55 @@ people's reports arriving *into* a project's queue. Nothing carries a project's 
 - The three candidate shapes floated in AetherWorks' buffer were a `type: tooling` switch on the item,
   a separate `/improve` stage, and a tooling backlog living in the tool repos. **This item is the
   third**, and it needs no new stage and no new field.
+
+- **Built 2026-09-09 [c594]. One home for the rule: `references/CONVENTIONS.md`, new section
+  *Routing a finding to the repo it is about*.** Every stage already resolves and reads that file
+  before it acts, so the pointer costs no extra fetch, and each of the six park steps carries one
+  sentence citing it rather than a copy (NFR *Documentation*). It puts that file 178 bytes over the
+  reference-size goal after the story was compressed out; the justification is recorded in
+  `tests/reference-size.test.sh` and names what was considered relocating and why it was rejected —
+  relocation fails **both** of the size guard's conditions here, since every stage has a park step
+  so p is ~0, and the rule is mandatory the moment a park is reached.
+
+- **FR1's destination was sharpened rather than built as written, and the sibling that moved it is
+  not in `DONE.md`.** FR1 says "that tool repo's `FINDINGS.md`", which was unambiguous at capture
+  (2026-09-01) and is not now: on **2026-09-07** the conventions repo grew a **root** `FINDINGS.md`
+  declaring itself the buffer for gaps found from **outside**, with `.claude/backlog/FINDINGS.md`
+  for gaps found from inside, its own entry format, and an explicit "neither sweeps the other". So a
+  convention finding routes to the **root** file; this repo has no root buffer, so a tools finding
+  routes to `.claude/backlog/FINDINGS.md`. The destinations are **asymmetric per repo** and the rule
+  names each one, because "that repo's `FINDINGS.md`" would have written from-outside entries into
+  the from-inside buffer. Nothing in `DONE.md` records this — the change landed in another repo — so
+  the only thing that surfaced it was opening the destination before writing to it.
+
+- **FR2 is a declared config key, not a derivation, and the reason is measured.** `tools.path` in
+  `config.yml`, resolved from the repo root exactly as `conventions.path` is. The derivation a
+  session would reach for first was probed rather than trusted and both halves mislead — the install
+  directory is not a git repository, while the marketplace clone beside it is one with the right
+  `origin`, an identical `HEAD` and a complete backlog. Full detail in `FINDINGS.md` 2026-09-09,
+  including the consequence for **0075**, which is still `ready`: that clone reports `ahead 213`
+  while being level, so 0075's divergence check would answer confidently wrong there. The key was
+  added to `skills/queue/templates/config.yml` only — **this repo is the tool repo**, so a finding
+  about it is already local and a self-referential key here would be noise.
+
+- **FR1 is applied to six skills, not the three the ACs name.** `design`, `develop`, `prototype`,
+  `queue`, `retro` and `verify` all carry a park step, and FR1 says *every* stage skill. The guard
+  asserts one case per skill, so a rule applied to only some of them reds rather than passing.
+
+- **FR5's read side is deliberately narrow, and 0111 depends on the exact wording.** `retro` Step 1
+  now reads the tools repo's buffer as well, resolved by this rule and not discovered, and says
+  *sweep only what a rule names; a buffer that is merely nearby is not an input*. **0111** owns
+  Step 1's resolution ladder and its FR6 cites this item as the one rule naming a second buffer — so
+  that sentence is the compatibility surface between the two tickets, and rewording it is 0111's
+  problem as well as this one's.
+
+- **`qa_level: unit` was the right level** — the deliverable is prose across seven files plus one new
+  guard, and the whole suite is what proves it. All 25 test files green, 0 failed.
+
+- **A guarded phrase broke from a rewrap, not from an edit — and the order the work was done in is
+  what hid it.** `CLAUDE.md`'s rule about rewrapping a guarded paragraph was read before anything was
+  written, and the phrases were still chosen first and the prose *then* compressed for the size
+  guard, which re-flowed three of them across line breaks and cost four reds. A size-driven rewrap of
+  a paragraph you are still drafting does not feel like editing a guarded one. Parked with the cheap
+  mitigation neither guard states: after any reflow, `grep -n` each asserted phrase and require one
+  hit per file.
