@@ -19,7 +19,6 @@ claimed_by: "cd92"
 claimed_at: 2026-09-09T14:47:48Z
 touches:
   - skills/retro/SKILL.md
-  - references/CONVENTIONS.md
   - tests/retro-tool-edit.test.sh
 ---
 
