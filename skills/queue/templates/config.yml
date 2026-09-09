@@ -1,4 +1,4 @@
-# Per-project backlog config. Read by the capture, develop, and qa skills.
+# Per-project backlog config. Read by the queue, develop, and verify skills.
 project: <Project Name>
 
 # Where this project's conventions live. Required — these tools carry no standards of their

@@ -69,7 +69,11 @@ In this order, because each can make the next unnecessary.
    settled, recorded and handed on before the gap was visible, and it took the user to send it back.
    `develop` Step 2 carries the discipline in its narrower form — a figure a ticket quotes about a file
    it does not own is a cache, not a fact — so re-read the source rather than the requirement, and
-   date-stamp what you re-verified.
+   date-stamp what you re-verified. **A citation of a *line* is not a citation of what the line
+   does:** a ticket cited `tools/release:294` correctly and asserted the guard there is false in an
+   agent shell; it is true, the `read` beneath it then fails, and `set -e` exits with no message —
+   which changed which fix was correct. Where the answer turns on a conditional's *result*, record
+   the result you observed, never the conditional you read.
 
 **If the question touches user-facing UI, accessibility is not optional** and does not wait to be asked
 about. Check contrast on any colored-text pairing you propose, and confirm the interaction works from the

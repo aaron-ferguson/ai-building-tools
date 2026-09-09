@@ -356,6 +356,11 @@ failed, the actual output, which AC. Flipping the field without the reason makes
 session re-derive the failure from nothing, and it is the half most easily skipped because the red is
 still fresh in a conversation about to end.
 
+**Name the constraint, never a menu.** A note reading *"either narrow it … or widen that paragraph to
+say so"* offers `develop` two opposite products, and Step 2 there is told this section *is* the
+specification on a re-entry. Where the ACs settle which remedy is meant, say which and cite it; where
+they genuinely do not, the ticket owes a decision rather than a choice — hand it to `design`.
+
 - **Red** → `develop`, `ready`.
 - **A stale contract** — the ACs no longer describe reality, so neither pass nor fail is honest →
   `queue`, `ready`. Do not re-specify it yourself.
@@ -433,6 +438,12 @@ check wearing the same word.
 
 State **PASS** or **FAIL** plainly, then that table: each AC and NFR row, how it was checked, the
 result, with the actual failure output for anything red.
+
+**A suite tally in that table is pasted from the command that produced it, never summed by hand.**
+One verdict recorded "23 files, 1,134 assertions" for a byte-identical suite totalling 1,034, and
+the next pass had to rule out a deleted guard before it could trust its own baseline. A hand-added
+tally is the one number in an evidence table that looks like measurement and is arithmetic, and it
+fails silently in the direction a lost guard would.
 
 **Write that same table into the item file, under `## QA evidence`, before Step 5 closes or hands
 off the ticket.** It is the QA record of the ticket, and the item is where a reader looks for it a

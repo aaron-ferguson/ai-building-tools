@@ -86,6 +86,12 @@ The verdict word and the values a stage may legitimately print are **that skill'
 closing step: only the stage knows which outcomes it can reach, and a shared list of them would be
 wrong for every skill at once. What is shared is the shape and the position.
 
+**Adding or renaming a verdict word is editing `skills/orchestrate/outcome.schema.json`.** Its
+`verdict` enum carries the union of every stage's vocabulary, and a driven session validates against
+it — so a stage printing a word the enum lacks is a correct stage that reads as a schema failure and
+escalates. Nothing catches it: `tests/last-line.test.sh` asserts the line's *shape*, and
+`tests/orchestrate.test.sh` exercises only the verdicts it hardcodes.
+
 **A session that holds no row** — `retro`, an ad-hoc `prototype`, a standing `design` question — writes
 a dash in the ID slot and names the command that runs next in place of a stage: `next: /queue`.
 Holding no ticket is not an exemption; "nothing to hand off" is itself the answer a reader needs.

@@ -110,6 +110,12 @@ real below; a candidate with no `expects:` still costs a look. On overlap, take 
 row and name what you stepped over. If every row collides, say there is nothing safe to develop
 (`CONCURRENCY.md`, *The working tree is shared too*).
 
+**The held-file list `./next develop` prints *is* the in-progress set — do not derive it by grepping
+`claimed_by:` over `items/*.md`.** `close` and `handoff` clear the row, and at least five closed
+items still carry the token they were never stripped of, so that grep answers with five `status:
+done` tickets and a session reading them as live scope concludes there is nothing safe to develop.
+The failure is cheap to reach and it stops work, which is the direction that never gets questioned.
+
 **Re-run `./next` immediately before `./claim`.** A claim landing between the two is invisible to the
 comparison you just made: `./next develop` offered a row seventeen seconds after another session's claim
 commit, and the collision surfaced only on a re-run — then the *second* candidate collided too, on files
@@ -175,6 +181,12 @@ the FRs and ACs are what was thought through before anyone tried it, the verdict
 be wrong. A bounced ticket looks identical to a fresh one at Step 1, so nothing but this will tell you
 to look, and the cost of missing it is rediscovering a failure someone already diagnosed.
 
+**A verdict offering two remedies is not a specification.** One read *"either narrow it … or widen
+that paragraph to say so and assert the accepted case"* — one changes behaviour, the other documents
+a hole, and they are opposite products. Unless the item's own FRs already pick between them, that is
+a missing *decision* arriving inside the artifact this step told you to trust: take the branch below
+and set `next: design` rather than choosing on the ticket's behalf.
+
 **If the ticket's real acceptance is a look, get something in front of the author before building it
 properly** — including when its *written* acceptance is entirely numeric. A correctness fix that
 changes an appearance as a side effect has an unwritten AC only the author can settle, and nothing in
@@ -231,6 +243,15 @@ only in `DONE.md` requires already knowing to look. Four FRs across two tickets 
 each naming files that still existed, with prose that stayed internally consistent while becoming
 false — one would have deleted a sibling's acceptance criterion outright.
 
+**That grep covers a figure an FR *reprices*, not only a symbol it names.** A guard can pin the old
+figure as a literal, so the ticket ranked to change it takes a green suite red on a correct document
+at the very end of the work; `grep -rn '32%' tests/` before the edit costs one call and reframes the
+surprise as "re-anchor the guard".
+
+**And a claim about the *past* is not answerable by any grep of the tree.** "This id was issued to
+work that never claimed it" is a history question — `git log --all --diff-filter=A -- 'items/<id>-*'`
+answers it; a grep answers only "does this still exist".
+
 **A superseded FR does not always condemn the whole ticket.** Where some FRs are stale and the rest are
 perfectly buildable, `next: design` for the ticket entire is the wrong instrument — say which FRs are
 stale and why, build the rest, and ask before splitting them out. Only the author may narrow a
@@ -241,11 +262,14 @@ existed to fix.
 **And a figure a ticket quotes about a file it does not own is a cache, not a fact — re-read the
 source, never the FR.** A cited number is an assertion about another file, and it is the one kind of
 assertion a ticket cannot test itself: the arithmetic stays internally consistent, the citation
-resolves, and nothing in the diff looks wrong. Three ways it has bitten. The figure **moved** since
+resolves, and nothing in the diff looks wrong. Four ways it has bitten. The figure **moved** since
 capture, and the ticket's whole question rested on the old shape. The figure was **misread** at
 capture — a session count taken for a turn count — and propagated into the published constant and two
 ACs written against it. The figure is **not in the cited file at all**, so the next session told to
-recompute from it finds one input missing and either invents it or trusts the stale value. Same
+recompute from it finds one input missing and either invents it or trusts the stale value. And the
+figure is stale in its **tense** rather than its value: an FR reading "~-18% once `0085` lands" is
+satisfied by `0085` landing, while the measurement it quotes is pinned to a window that has not
+closed and was never run — the condition and the measurement are different facts. Same
 discipline the backlog already applies to `blocked`: the cache reads correctly on its own, and the
 source is the authority whenever the two disagree.
 
