@@ -39,6 +39,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
 | 0046 | Make the README guard list provably complete | develop | ready |  |
+| 0126 | Stop retro restating the by-hand lock rule it drifted from | develop | ready |  |
 | 0091 | Make a by-hand backlog write take the lock and prove its commit landed | develop | ready |  |
 | 0092 | Prove claim and close hold the lock through their commit | develop | ready |  |
 | 0047 | Give the busy-lock procedure a close-time path | develop | ready |  |
@@ -51,6 +52,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0094 | Record why a claimed row was put back | develop | ready |  |
 | 0055 | Fill the develop steps that have no case for what now happens routinely | develop | ready |  |
 | 0058 | Give verify the outcomes its steps assume can never happen | develop | ready |  |
+| 0127 | Say that a deferral is licensed by understanding and never by writing | develop | ready |  |
 | 0056 | Give design a non-UI reading list and complete its write step | develop | ready |  |
 | 0059 | Decide what the batching rule actually licenses | design | ready |  |
 | 0064 | Make a stage skill say which copy of it is running | develop | ready |  |

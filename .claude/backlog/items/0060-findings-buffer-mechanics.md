@@ -203,3 +203,18 @@ Cannot be written until the design question is settled. These hold regardless:
   `develop`; only `./next --drive` reads it, so a hand-driven or supervised-by-a-person run fills
   the buffer indefinitely and nothing says so. Whatever this row decides about emptying, the gating
   half has to reach the stages a person drives, not only the ones a driver dispatches.
+
+- 2026-09-09 (queue, from `FINDINGS.md` parked the same day) — **the retro-side scope gap recorded
+  above has now been hit, and it names which half of Step 1 is wrong.** That pass ran the buffer at
+  32 entries against a threshold of 8 with **nothing stale** — every entry dated within three days —
+  so the time-based expiry dropped none, and Step 1's *"work in ranked slices — read fewer entries
+  and finish each"* had no reading: there was no cheap basis for choosing a slice **before** reading,
+  because the cross-entry view Step 1 exists to produce is precisely what tells you which entries are
+  one lesson. The pass read all 32 and then dispositioned every one, which is the opposite of the
+  instruction and was the only honest option. So the choice this row has to make on `retro`'s behalf
+  is narrower than *Notes* above suggests: either the slice is chosen **after** reading rather than
+  before, or the step says that **reading is cheap and only writing is sliced**. Both leave the
+  cross-entry read intact; the current wording does not. Filed here rather than as its own row
+  because the note above already reserves this half for whoever claims this ticket ("Either FR2
+  widens to both sweepers or that half needs its own row"), and a second row would split one
+  decision across two.

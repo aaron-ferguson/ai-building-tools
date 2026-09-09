@@ -141,3 +141,13 @@ Three separate failures of the same by-hand write, all of them silent.
   for minutes, which `CONCURRENCY-INCIDENTS.md` sanctions while also advising against it (*"keep
   every edit that is not to `QUEUE.md` outside it"*). Three documents pull three ways; a by-hand
   write cannot be told to take the lock until one of them wins.
+
+- 2026-09-09 (queue) — **this item's *Out of scope* says `retro` Step 4 "already states the rule
+  correctly", and that is now known to be false.** Step 4 restates `CONCURRENCY.md`'s two permitted
+  by-hand forms and carries only the first, so a pass whose absorptions cannot fit one reviewable
+  call is told to do something the authority it cites permits it not to do. That paragraph is
+  **`0126`**, which sits directly above this row: it replaces the restatement with a citation. Read
+  it before writing FR1's six park steps — the sentence FR1 asks for in five other skills is
+  precisely the shape `0126` is settling, and drafting FR1 against today's Step 4 propagates the
+  drifted copy into six files at once. This item's scope is unchanged: the omission in five park
+  steps, not the drifted copy in the sixth.
