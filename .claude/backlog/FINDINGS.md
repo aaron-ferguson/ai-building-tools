@@ -199,3 +199,15 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   line vs body, inside `$( )` vs bare, before vs after a heredoc, one copy vs both — and mutating
   once per state. Five mutations in the build notes all landed in one state and read as thorough
   (pointer: `tests/backlog-scripts-installed.test.sh`, the AC8 `early_close` scanner; `0077`).
+- 2026-09-09 (develop, `6b93`) — **A guard can reach a point where two shapes are genuinely
+  indistinguishable, and the skills have no vocabulary for recording that.** `0077`'s scanner
+  cannot tell `awk '/^x/ {  # it's the row` (broken) from `awk '{ print }  # a note'` (legal) at
+  the moment the quote closes; the distinguishing fact — whether program text follows on later
+  lines — needs lookahead the check does not have. Both `develop` Step 4 and `verify` are written
+  as though every check either holds or has a hole to close, so the honest third answer, *this one
+  over-reports a shape nobody writes and here is why that trade is right*, has no home but prose a
+  future session may read as an unfixed defect. It went into the test's own comment block and the
+  item notes. A named form for it — an acknowledged over-strictness, with the rejected alternative
+  and the corpus evidence that nothing trips it — would stop the next session "fixing" it back
+  into a hole (pointer: `tests/backlog-scripts-installed.test.sh`, the AC8 `early_close` scanner;
+  `0077`).

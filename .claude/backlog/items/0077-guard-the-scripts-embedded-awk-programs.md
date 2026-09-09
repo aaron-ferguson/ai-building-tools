@@ -230,6 +230,45 @@ suite ran at all.
   comment outside every program — AC8 green, `close` 201/0) are all confirmed working.
 
 
+### From `develop`, 2026-09-09 (`6b93`), on the opening-line bounce
+
+- **The one-line change, and why it is not another exemption.** `verify`s diagnosis was exact: the
+  `NR != sq_line` exemption is written per region, so it covers the opening line of a multi-line
+  program as well as a genuine one-liner. The remedy is not to narrow that exemption by asking
+  whether the program continues onto later lines — that fact is not available at the close without
+  lookahead — but to add a second, independent reason to report: **the closing quote was preceded,
+  inside the region on that line, by an awk comment start.** An apostrophe in prose always closes
+  the quote from inside a `#` comment; a real terminator never does. The multi-line rule is
+  untouched and both clauses now fire on the body case.
+- **The `/` and `"` parity test is load-bearing, and `close:288` proves it in passing.** A bare
+  "is there a `#` before the close" would fire on `awk '/^#/ { print }'` and on `close`s own
+  `/^## Acceptance criteria/`. Counting `/` and `"` before the candidate `#` and requiring both
+  even keeps a `#` inside an awk regex or string from counting. Probed directly on a scratch file:
+  `/^#/` and `/^## /` single-liners are reported CLEAN.
+- **One shape is deliberately over-reported, and the choice is recorded in the test.** A region
+  closing on its opening line after a comment start is flagged whether the program continues
+  (`awk '/^x/ {  # it's the row`, broken) or not (`awk '{ print }  # a note'`, a legal awk trailing
+  comment). Nothing at the close distinguishes them. Reporting both was chosen over missing the
+  first: AC2 is the whole ticket, and `references/CONCURRENCY.md` already asks these programs carry
+  no prose comments. Neither shape exists in the four scripts — the clean control is 37/0.
+- **Mutation evidence, six mutations plus a clean control, enumerated by scanner *state* rather
+  than by script** — the lesson `2ea3` parked. Each restored with `git checkout -- <path>` after
+  the guard was committed. (1) **The bounce case verbatim**: `close:287`, both copies — `sh -n`
+  accepts, AC2 silent, AC8 reds on both naming `close:287` as opener *and* closer; 35/2, where
+  before this change it was 37/0 over a `close.test.sh` failing 86. (2) **Opening line at depth 0**
+  (`next:326`, template only) — now caught by AC8 on its own terms, not incidentally via cascade,
+  which is the gap `2ea3` named as "catching it for the wrong reason". (3) **Opening line at depth
+  0, both copies** (`handoff:307`) — AC5 and AC8 both red on both sides. (4) **Opening line that
+  already carries program text** (`next:46`, template only) — red. (5) **Installed copy only**
+  (`close:480`) — AC8 names the installed path, template green. (6) **Body case, both copies**
+  (`close:288`) — still red, the `6387` bounce stays closed. (7) **No-op control**: apostrophe in a
+  shell comment outside every program — AC8 green, only AC2 reds on the divergence.
+- **Whole suite green, all 26 files, matching the `2ea3` baseline tally for tally.**
+- **`references/CONCURRENCY.md`, *The four scripts*, now describes both clauses.** Its sentence said
+  the scan asserts a multi-line region closes at the start of a line; that is half the check now.
+  The two phrases AC4 greps are on their own lines and were not touched — AC4 still passes.
+
+
 ## QA evidence
 
 Verified 2026-09-09 at `qa_level: unit` (this repo's whole suite, run file-by-file per
