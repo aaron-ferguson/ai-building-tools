@@ -128,3 +128,52 @@ suite ran at all.
   quoted program, and the guard correctly stayed green while AC2 reported the divergence. Only a
   comment inside the assignment closes the quote. A mutation aimed at the block's explanatory
   header therefore proves nothing — aim it between the opening `'` and its close.
+
+### From `verify`, 2026-09-09 (`6387`)
+
+- **FAIL on AC2. The guard catches the historical hazard exactly, and is blind to a second
+  apostrophe of the same shape.** Inserting `# other projects' spellings` into `close`'s DONE-row
+  builder — the incident verbatim — is caught on both copies with the right message. Inserting
+  `# it's the criteria block` into the *same script's* `ac_counts` awk program at line 288 is not:
+  `sh -n` exits 0, and with both copies mutated identically
+  `backlog-scripts-installed.test.sh` reports **29 passed, 0 failed** while `close.test.sh` reports
+  **83 failed**. A live broken `close` with a fully green guard is the state this ticket exists to
+  make impossible.
+- **Why, measured.** `/bin/sh` here is bash 3.2.57; `bash` on PATH is 5.3.9. `bash -n` rejects the
+  line-288 mutation (`syntax error near unexpected token '('`); `sh -n` accepts it. Under the
+  interpreter that actually runs the script the file *is* valid — the breakage is semantic, `awk`
+  receiving a mangled program — so no parse check of that same shell can ever see it.
+- **The constraint, not a menu.** AC2 must hold for an apostrophe anywhere inside a single-quoted
+  `awk` program, including one `/bin/sh` still parses. `Out of scope` rules out `shellcheck` and
+  rewriting the scripts; it does not rule out a positive check over the scripts' own text.
+- **What is proved and must not be rebuilt.** AC1 (eight parses, four templates and four installed
+  copies) is real: breaking `.claude/backlog/close` alone reddens naming the installed path, which
+  the pre-0077 code — parsing `$TEMPLATES/$s` twice — could not do. AC3's wording is verbatim
+  correct. The AC5-before-AC2 ordering is load-bearing and was confirmed by the both-copies
+  mutation, where the byte comparison is silent by construction. AC4 reddens on deleting the rule
+  and on rewording its reason, and its section anchor holds: the same paragraph moved to
+  `## Claim tokens` still fails.
+
+
+## QA evidence
+
+Verified 2026-09-09 at `qa_level: unit` (this repo's whole suite, run file-by-file per
+`config.yml`), token `6387`, clean tree at both captures.
+
+| Row | How checked | Result |
+|---|---|---|
+| AC1 — `sh -n` on four templates and four installed copies | ran `tests/backlog-scripts-installed.test.sh`; AC5 block prints 8 `ok` lines naming both paths per script. Mutated `.claude/backlog/close` alone → `FAIL close has a syntax error — .claude/backlog/close is not valid /bin/sh`, template still `ok` | PASS |
+| AC2 — an apostrophe in a template's `awk` comment reds, naming the script | canonical block (DONE-row builder, line 557): reds naming `close`. **Second mutation, `ac_counts` awk at line 288, both copies: 29 passed, 0 failed** while `close.test.sh` gave 118 passed, 83 failed | **FAIL** |
+| AC3 — the message says syntax, not divergence | `close has a syntax error — … is not valid /bin/sh (this is not a divergence): … unexpected EOF while looking for a matching quote` | PASS |
+| AC4 — the convention is stated where the scripts are documented, with the quoting as its reason | two `ok` lines. Deleting the paragraph → both red; rewording `quoting around the whole program` → the reason assertion red; moving the paragraph to `## Claim tokens` → both red, so the section anchor is load-bearing | PASS |
+| NFR Testing — the guard proved able to fail, restored by the path mutated | five mutations, each restored with `git checkout -- <that path>`; control run after each: `29 passed, 0 failed`, `close.test.sh` `201 passed, 0 failed` | PASS |
+| NFR Dependencies — adds nothing beyond `/bin/sh` | test shebang is `#!/bin/sh`; new code uses `sh -n`, `grep -F`, `awk` only | PASS |
+| Always-on (`CONVENTIONS_CORE.md`) | test-and-docs change in a public repo; no company material, secrets or PII. Full suite 26 files green before mutation | PASS |
+
+Whole-suite baseline, all 26 files green, tallies pasted from each run: `backlog-scripts-installed`
+29/0, `close` 201/0, `next` 205/0, `handoff` 104/0, `orchestrate` 130/0/0 skipped,
+`measurement` 112/0, `close-by` 67/0, `retro-tool-edit` 50/0, `citations` 46/0, `release` 45/0,
+`claim` 42/0, `findings-routing` 41/0, `graph-fields` 36/0, `cost-by-category` 29/0,
+`skill-size` 27/0, `reporting` 23/0, `remote-anchor` 20/0, `falsifiable-acs` 17/0, `last-line` 17/0,
+`reference-size` 15/0, `batching` 13/0, `floor-probe` 12/0, `money-in-skill-prose` 12/0,
+`qa-level-once` 11/0, `external-feedback` 9/0, `item-ac-form` 4/0.
