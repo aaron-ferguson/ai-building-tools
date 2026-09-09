@@ -232,3 +232,28 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the only option (a backlog script sources nothing), so the question is not how to stop duplicating
   but when a copy earns a guard — a rule worth stating once rather than deciding per ticket
   (pointer: tests/close.test.sh's "close and handoff carry the same scope block").
+
+- 2026-09-09 [0106] **The scope report's commit range is anchored by a bare token grep, unscoped to
+  the ticket, so a token collision silently attributes another ticket's files to this one.** `close`
+  and `handoff` find the claim commit with `git log --format='%H %s' | grep -F "[$TOKEN]" | tail -1`
+  — the whole history, any subject, oldest match wins. Tokens are four hex characters and are not
+  checked for reuse, so once one repeats, the older ticket's claim commit anchors the range.
+  Reproduced in a throwaway repo: an ancient `Claim 0001 [abcd]` commit ahead of `Claim 0700 [abcd]`
+  made the close report `ancient/unrelated-a.ts ancient/unrelated-b.ts` as `0700`'s
+  touched-but-undeclared paths. No collision exists in this repo's history yet (no token has claimed
+  two tickets), which is why nothing is red. The scripts already know the id, so the exact anchor is
+  available: `grep -E "^Claim $ID \[$TOKEN\]"`. NEEDS A ROW — the failure it produces, a report
+  naming files the ticket never touched, is the same one 0106's own Problem section is about.
+
+- 2026-09-09 [0106] **An empty `touches:` suppresses the whole scope report, and which of the two
+  readings that encodes was never written down.** `scope_note()` returns early on
+  `[ -n "$declared" ] || return 0`, with no comment and no test in either direction. Under
+  `CONCURRENCY.md`'s *The working tree is shared too* — "read an empty `touches:` on an
+  `in-progress` row as *its files are held*" — empty means EVERYTHING, so nothing is undeclared and
+  suppressing is correct. Read as FR3 words it, empty declared nothing and every touched path is
+  undeclared. Observed: a ticket with empty `touches:` whose commits changed `src/undeclared.ts`
+  closed with no scope line at all. This matters more than it looks, because 0106's own FR2 is what
+  makes an empty `touches:` the NORMAL shape for a `verify` claim — so the report FR3 added is
+  structurally silent on the stage that does most of the closing, unless the session hand-populates
+  the field. Worth deciding and recording, in a ticket whose whole subject is the field meaning one
+  thing.
