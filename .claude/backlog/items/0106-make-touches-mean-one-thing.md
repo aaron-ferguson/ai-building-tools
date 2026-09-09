@@ -171,3 +171,51 @@ reproduced a moment later, and point at a file its own ticket never touched. Ste
   the script is missing is the one `develop` already has for `expects:` versus `touches:` —
   **a populated `touches:` is a verified scope and a prediction never overwrites one**: re-claim
   should leave it alone and say it did, or merge and report the delta.
+
+## QA evidence
+
+Verified 2026-09-09 by `verify` (`8f81`) at `qa_level: unit`, against the repo copies of the
+scripts — `.claude/backlog/claim`, `close` and `handoff` — driven in throwaway git repos, and the
+suite run file-by-file (`config.yml`'s `unit` line is fail-fast; per its own comment a QA pass runs
+`|| true` instead so no red is masked). Tree clean at Step 2 and at verdict.
+
+| Row | How it was checked | Result |
+|---|---|---|
+| AC1 | Drove `.claude/backlog/claim` on a fixture whose `touches:` was narrowed to one path and carried a `# NARROWED` comment — the 0039/0086 shape. Block came back byte-identical: comment intact, `src/alpha.ts` once, none of `expects:`' other two paths re-added | PASS |
+| AC2 | Same run's stdout: `touches: was already set and is left as the previous session set it — a narrowed scope is verified and a prediction from expects: never overwrites one. It keeps: src/alpha.ts` | PASS |
+| AC3 | Claimed this very ticket (a `next: verify` row): `touches:` stayed empty and the output named the stage — `not seeded from expects:, because 'verify' does not build`. Re-run on an isolated `verify` fixture. Control: a `next: develop` fixture with empty `touches:` still seeded 2 paths, so the fix is a condition and not a disabled feature | PASS |
+| AC4 | Fixture claimed, `src/edited.ts` declared, commits changed `src/edited.ts` and `src/undeclared.ts`. Close printed `scope: touched but undeclared: src/undeclared.ts`. The declared-and-touched path appeared in neither direction | PASS |
+| AC5 | Same run declared `some/never-touched.md` and never committed it: `scope: declared but untouched: some/never-touched.md`, close exited 0, item `status: done`, AC ticked `- [x]` | PASS |
+| AC6 | Read `skills/develop/SKILL.md` Step 1. It states the file IS declared ("Declare it, and say inline that the mutation is transient") and what is owed ("check for a live run before you break anything, keep the break and its restore inside one turn, and never leave a mutation live across a hand-off, a wait, or the end of a turn") | PASS |
+| AC7 | Deleted `[ -z "$existing_touches" ] || SEED=0` from `skills/queue/templates/claim`; `tests/claim.test.sh` went `57 passed, 3 failed`, the three naming AC1's subject. Restored, green | PASS |
+| NFR Documentation | `claim`'s header no longer describes an unconditional seed: it states both conditions as one rule ("a prediction never overwrites a verified scope, and a stage that does not build declares no build scope") and names the incidents (0039, 0086) | PASS |
+
+**Falsification.** Every AC resting on an automated check was mutated and seen red, then restored;
+a control full-suite run after all restores was green with the tree clean, which is what licenses
+the reds above.
+
+| Mutation | Guard | Result |
+|---|---|---|
+| Delete the seed-only-when-empty condition (`claim`) | `tests/claim.test.sh` | 57 passed, **3 failed** |
+| Neuter the non-`develop` stage gate to `*) : ;;` (`claim`) | `tests/claim.test.sh` | 56 passed, **4 failed** |
+| Suppress the touched-but-undeclared half (`close`) | `tests/close.test.sh` | 212 passed, **2 failed** |
+| Suppress the declared-but-untouched half (`close`) | `tests/close.test.sh` | 212 passed, **2 failed** |
+| Remove only the "what the mutating session owes" sentences (`develop` Step 1) | `tests/transient-mutation.test.sh` | 3 passed, **3 failed** — and the three "is it declared" assertions stayed green, so the guard discriminates between the AC's two halves rather than asserting the paragraph exists |
+| *(control, all restored)* | 27 files | all rc=0, 0 failed |
+
+**Probes beyond the ACs.**
+
+- 🔍 Drove `handoff` for real (not only the byte-for-byte comparison test): it prints the same two
+  scope directions. A declared directory `src` correctly covered `src/deep/nested.ts`, while the
+  sibling `other.ts` was reported undeclared.
+- 🔍 `handoff` with a wrong token → `is held by token 'c747', not '0600' — refusing to hand off
+  another session's ticket`, exit non-zero. Names both tokens.
+- 🔍 Suppressing `close`'s scope block left `tests/handoff.test.sh` fully green — the divergence was
+  caught only by `close.test.sh`'s byte-for-byte comparison. That guard is load-bearing for the
+  duplicated block, which is the finding already parked on 2026-09-09.
+- ⚠️ 🔍 Token collision mis-anchors the commit range — parked in `FINDINGS.md`, needs a row.
+- ⚠️ 🔍 An empty `touches:` suppresses the whole report, and FR2 makes empty the normal shape for a
+  `verify` claim — parked in `FINDINGS.md`.
+
+Neither ⚠️ fails an acceptance criterion: no token collision exists in this repo's history, and the
+report is a note rather than a gate.
