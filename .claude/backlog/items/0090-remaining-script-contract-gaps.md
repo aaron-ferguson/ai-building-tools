@@ -3,7 +3,7 @@ id: "0090"
 title: Close the four contract gaps 0081 and 0082 left in claim, close and handoff
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-05
@@ -21,8 +21,8 @@ expects:
   - .claude/backlog/claim
   - .claude/backlog/close
   - .claude/backlog/handoff
-claimed_by:
-claimed_at:
+claimed_by: "31db"
+claimed_at: 2026-09-09T22:18:26Z
 touches:
 ---
 
