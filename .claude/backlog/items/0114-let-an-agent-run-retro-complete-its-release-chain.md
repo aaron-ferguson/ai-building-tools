@@ -2,8 +2,8 @@
 id: "0114"
 title: Let an agent-run retro complete its release chain instead of stopping half-released
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-09-07
@@ -15,13 +15,9 @@ expects:
   - skills/retro/SKILL.md
   - tools/release
   - tests/release.test.sh
-claimed_by: "2c30"
-claimed_at: 2026-09-09T15:05:34Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/retro/SKILL.md
-  - tools/release
-  - tests/release.test.sh
-  - tests/retro-tool-edit.test.sh
 ---
 
 ## Problem
