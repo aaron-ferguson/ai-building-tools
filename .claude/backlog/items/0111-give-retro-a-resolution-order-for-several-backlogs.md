@@ -2,8 +2,8 @@
 id: "0111"
 title: Give retro a resolution order for a workspace holding more than one backlog
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-07
@@ -15,11 +15,10 @@ expects:
   - skills/retro/SKILL.md
   - references/CONVENTIONS.md
   - tests/retro-tool-edit.test.sh
-claimed_by: "2037"
-claimed_at: 2026-09-09T14:56:09Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/retro/SKILL.md
-  - tests/retro-tool-edit.test.sh
+closed: 2026-09-09
 ---
 
 ## Problem
@@ -83,26 +82,26 @@ is where this user starts sessions, and it is where `queue` landed too on the sa
 
 Every assertion is anchored to Step 1's window per AC3, never to the file.
 
-- [ ] AC1 — Given `skills/retro/SKILL.md` Step 1, when read, then it states a numbered resolution
+- [x] AC1 — Given `skills/retro/SKILL.md` Step 1, when read, then it states a numbered resolution
   order for locating the buffer. Red when the order is deleted or reduced back to the bare relative
   path.
-- [ ] AC2 — Given Step 1, when read, then it states that a session which resolves nothing stops and
+- [x] AC2 — Given Step 1, when read, then it states that a session which resolves nothing stops and
   reports what it searched. Red when the refusal sentence is removed — and note the discriminating
   case: a rule saying only *"read the buffer"* satisfies no assertion here while reading as correct.
-- [ ] AC3 — Given a guard anchored to Step 1 rather than to the file, when the resolution order is
+- [x] AC3 — Given a guard anchored to Step 1 rather than to the file, when the resolution order is
   moved out of Step 1 into any other step, then the guard reds. This is the house rule in
   `tests/retro-tool-edit.test.sh` — a file-wide grep stays green on a rule moved out of the step
   that has to obey it.
-- [ ] AC4 — Given the privacy clause under NFR *Privacy & data*, when it is deleted, then a guard
+- [x] AC4 — Given the privacy clause under NFR *Privacy & data*, when it is deleted, then a guard
   reds on its own, separately from AC1's. The clause carries FR7's absent-`routing:` rule, so one
   guard covers both rather than two guards covering one sentence.
-- [ ] AC5 — Given Step 1, when read, then it states that the order resolves **upward only** and that
+- [x] AC5 — Given Step 1, when read, then it states that the order resolves **upward only** and that
   buffers are not discovered by searching the filesystem. Red when either half is removed. This is
   the assertion that would have failed the 2026-09-07 pass, and the one AC1 does not make: a
   numbered order can be present and still be a discovery.
-- [ ] AC6 — Given Step 1, when read, then it states the retirement check on the resolved backlog's
+- [x] AC6 — Given Step 1, when read, then it states the retirement check on the resolved backlog's
   own `QUEUE.md`. Red when the check is deleted.
-- [ ] AC7 — Given Step 1, when read, then it states that a second buffer is read only when a rule
+- [x] AC7 — Given Step 1, when read, then it states that a second buffer is read only when a rule
   names it. Red when deleted — without it, FR5 reads as forbidding `0078` FR5 and the two land in
   conflict.
 
@@ -220,3 +219,43 @@ numbered order that is still a discovery.
   the capture and design passes before this build claimed the row, the history is pushed, and
   redacting it is neither in scope nor a decision a build session makes. Surfaced in the hand-off
   and parked.
+
+## QA evidence
+
+**2026-09-09, `/verify` [2037].** `qa_level: unit` → `for t in tests/*.test.sh; do "$t"; done`, run
+per-file rather than fail-fast, per `config.yml`'s note. **25 files, all green**;
+`tests/retro-tool-edit.test.sh` alone: **38 passed, 0 failed** (was 24 before this ticket).
+
+**Which copy was verified.** The repo copy. `skills/retro/SKILL.md` differs from the installed
+`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.22/skills/retro/SKILL.md` — the
+version has not moved since this change, so the live plugin does not yet carry it. Repo is the
+authority (`verify` Step 2); the release is not this ticket's.
+
+Every mutation below was run, the diff confirmed non-empty, and the file restored by its own path;
+a final unmutated control run returned **38 passed, 0 failed**.
+
+| Criterion | How checked | Result |
+|---|---|---|
+| AC1 — numbered resolution order in Step 1 | Deleted each of the three asserted lines in turn: `Where that path resolves, in order` / `The git repository root` / `` nearest `.claude/backlog/` `` | ✅ each reds its own case alone (37/1) |
+| AC2 — nothing resolving stops and names what it searched | Deleted rung 3's line | ✅ reds both halves (36/2) — but see the finding below on its third case |
+| AC3 — anchored to Step 1, not to the file | **Relocated the whole order block out of Step 1 into Step 2 in the real file**, not only against the synthetic fixture | ✅ 25 passed, **13 failed** |
+| AC4 — privacy clause, absent `routing:` is company-tracked | Deleted `treated as company-tracked`; separately `the stricter handling` | ✅ each reds alone (37/1), independent of AC1's cases |
+| AC5 — upward only, and never discovered | Deleted the `walks upward only` line | ✅ reds both halves (36/2) |
+| AC6 — retirement checked on the resolved backlog's own `QUEUE.md` | Deleted `retirement banner` | ✅ reds both halves (36/2) |
+| AC7 — a second buffer only when a rule names it | Deleted `only when a rule names it` | ✅ reds alone (37/1) |
+| NFR Privacy & data | `git grep -in 'neumo\|probation'` over the change: **no hit** in `skills/retro/SKILL.md` or `tests/retro-tool-edit.test.sh`. Step 1's clause states the absent-`routing:` rule at the order itself and cites `data-privacy-conventions.md` | ✅ — the pre-existing hit is in **this item's own prose**, not the change; already parked |
+| NFR Documentation — ladder cited, never copied | Read `references/CONVENTIONS.md` rungs 1–3 against the new block. The buffer ladder is a *different* ladder; only rung 3's refusal is shared and it is cited twice | ✅ with one note below |
+
+### Two probes that did not redden, published rather than papered over
+
+- ⚠️ **`AC2 — the refusal is cited, never restated` cannot fail.** Replacing rung 3's citation with
+  a full restatement — precisely what the NFR forbids — left the suite at **38 passed, 0 failed**.
+  The phrase `rung 3` occurs a second time in the same window, in the upward-only paragraph, and
+  that occurrence holds the case green. AC2's own two halves do redden, so **AC2 passes**; this
+  third case is a guard that asserts nothing. Parked in `FINDINGS.md`.
+- ⚠️ **AC5's `resolved, never discovered` half is defended only by its line-mate.** Confirming the
+  build note: dropping the emphasis from `0078`'s pre-existing *"That repo is \*resolved\*, never
+  discovered"* and deleting the new sentence leaves that case **green** — only `walks upward only`
+  reds, and it does so because both phrases share one source line. Already in `FINDINGS.md`.
+
+- Both AC2 phrases sit on one wrapped source line, so they are one assertion, not two.
