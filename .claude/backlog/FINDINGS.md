@@ -247,3 +247,19 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   that rule earned its keep here. The sharper form: **a citation of a line is not a citation of what
   the line does**, so a ticket that turns on a conditional's *result* has to record the result it
   observed, not the conditional it read.
+- 2026-09-08 (0086, verify) — **`claim` writes its provisional `touches:` on top of a `touches:`
+  the previous session already narrowed, and says nothing about having done so.** The script's own
+  header calls the field "provisional… from the item's `expects:`" and tells the session to narrow
+  it; it does not consider that the field may already hold a narrowed list. On 0086 it prepended all
+  15 `expects:` paths above b708's 18 narrowed ones — re-adding the four paths that item's inline
+  comments say explicitly are NOT touched (`MEASUREMENT.md`, `references/TRACKER.md`,
+  `.claude/backlog/config.yml`, and a `status: done` item) — and committed the result under
+  `Claim 0086 [afac]` with the printed message unchanged: *"touches: is set provisionally from
+  expects: (15 paths) — NARROW it"*. Nothing is lost, but the field the other window reads to decide
+  what is safe to take now reserves a strictly wider set than the work needs, and the narrowing a
+  previous session did and commented is silently demoted to a duplicate list below the widened one.
+  A ticket returning to `verify` after a `develop` pass is the normal case for this, so the widening
+  is systematic rather than a one-off. The rule the script is missing is the one `develop` already
+  has for `expects:` versus `touches:`: **a populated `touches:` is a verified scope and a prediction
+  never overwrites one** — re-claim should leave it alone and say it did, or merge and report the
+  delta.
