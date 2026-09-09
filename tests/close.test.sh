@@ -752,6 +752,11 @@ assert_contains "the item is done" "$(cat "$FIX/$BL/items/0057-fixture.md")" 'st
 # boxes rather than on the section's presence: a `review` level declared and never performed closes
 # with a checklist full of bullets, and DONE.md cannot tell it from a performed one. Applies to
 # every close, not only a light one — an unperformed checklist is the same defect at either tier.
+#
+# TWO REFUSAL CASES, AND THE SECOND IS THE LOAD-BEARING ONE. Plain bullets are refused, and so are
+# `- [ ]` boxes with none ticked — which is the input the instructions actually produce, and which
+# the first implementation closed on because its counter accepted a space inside the brackets. A
+# suite carrying only the plain-bullet case reads as covering this rule and cannot see the defect.
 echo "0086 AC5 — a Review checklist of bullets with no checkbox is refused"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0058 | Checklist never performed | verify | in-progress | 0000 |'
 mkitem_light 0058 verify in-progress '"ab12"' '' review '
@@ -811,6 +816,36 @@ commit_fixture
 out="$(run_close 0061 ab12)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_contains "the item is done" "$(cat "$FIX/$BL/items/0061-fixture.md")" 'status: done'
+
+echo "0086 AC5 — a checklist of UNTICKED CHECKBOXES is refused too"
+# The input every instruction actually produces, and the one the first implementation closed on.
+# FR11, `verify` Step 2 ("record one checkbox per checklist line") and `close`'s own refusal
+# message all tell a session to write `- [ ] …` lines, so a session that writes them and then stops
+# is the commonest unperformed review there is. The counter that scored them read
+# `/^- \[[ xX]\]/` — a class containing a SPACE — so three unticked boxes counted as three boxes
+# and the row closed with the checklist unperformed, which is the presence-not-ticked-ness shape
+# AC5 exists to exclude. The plain-bullet case above cannot reach this: it is the one input no
+# instruction produces.
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0067 | Boxes drawn, none ticked | verify | in-progress | 0000 |'
+mkitem_light 0067 verify in-progress '"ab12"' '' review '
+## Review checklist
+
+- [ ] Does the rule earn its context rent?
+- [ ] Is it a principle or a preference, and in the right file for that?
+- [ ] Does it contradict a rule stated elsewhere?
+'
+commit_fixture
+out="$(run_close 0067 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "quotes the count it could not tick" "$out" '3'
+assert_contains "names the section"                  "$out" 'Review checklist'
+assert_contains "says nothing was TICKED, not that nothing is a checkbox" "$out" 'not one of them is ticked'
+assert_contains "names the ticked form it wants"     "$out" '- [x]'
+assert_line "the row is untouched" '| 0067 | Boxes drawn, none ticked | verify | in-progress | 0000 |' QUEUE.md
+assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0067-fixture.md")" 'status: in-progress'
+refute_contains "and DONE.md did not gain it" "$(cat "$FIX/$BL/DONE.md")" '0067'
+assert_clean   "no file was changed"
+assert_no_lock "the lock is released on the refusal"
 
 # --- 0086 FR3 — a light ticket with NO criteria is refused, where a verify one closes ----------
 # "Every criterion is an assertion" is vacuously true of none, and honouring that reading closes a
@@ -884,6 +919,70 @@ out="$(run_close 0063 ab12)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names the value it could not read" "$out" 'light'
 assert_clean "no file was changed"
+
+# --- 0086 FR3 — a citation has to name a GUARD, not merely a tracked file ----------------------
+# FR3 admits a light close only where every criterion is "discharged by a committed automated
+# assertion". The first implementation checked two of those three words: backticked, contains `/`,
+# tracked by git. Nothing asked whether the path was an assertion, so two criteria citing a prose
+# document closed a light ticket having executed nothing — option 3, the self-attested tier this
+# ticket rejected, reachable in one wrong citation.
+#
+# `close` cannot know what an arbitrary file does, so the narrowed gate takes the two signals it
+# CAN read: a conventional test path, or an executable committed in the index. Both routes are
+# asserted, in both directions, because a gate accepting only the first would refuse a perfectly
+# good shell guard and a gate accepting only the second would refuse every `.test.ts` in a JS repo.
+echo "0086 FR3 — a criterion citing a tracked file that is not an assertion is refused"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0068 | Cites a prose document | develop | in-progress | 0000 |'
+mkitem_light 0068 develop in-progress '"ab12"' 'close_by: develop'
+mkdir -p "$FIX/docs"
+printf 'Notes on the thing. No assertion anywhere in this file.\n' > "$FIX/docs/notes.md"
+sed -i.bak 's|tests/guard.test.sh|docs/notes.md|g' "$FIX/$BL/items/0068-fixture.md"
+rm -f "$FIX/$BL/items/0068-fixture.md.bak"
+commit_fixture
+out="$(run_close 0068 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the criterion"            "$out" 'AC1 — first criterion'
+assert_contains "names the path it rejected"     "$out" 'docs/notes.md'
+assert_contains "and says WHY, not just that it is uncited" "$out" 'not an assertion'
+assert_line "the row is untouched" '| 0068 | Cites a prose document | develop | in-progress | 0000 |' QUEUE.md
+assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0068-fixture.md")" 'status: in-progress'
+refute_contains "and no criterion was ticked"  "$(cat "$FIX/$BL/items/0068-fixture.md")" '- [x]'
+assert_clean   "the tree is exactly as it was found"
+assert_no_lock "the lock is released on the refusal"
+
+echo "0086 FR3 — an EXECUTABLE committed script is a guard whatever it is called"
+# The route that keeps the narrowing from refusing this repo's own shape of guard the day one lives
+# outside `tests/`. `git ls-files -s` is the authority, not the working tree's mode bit: the gate's
+# subject is what was COMMITTED.
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0069 | Cites an executable check | develop | in-progress | 0000 |'
+mkitem_light 0069 develop in-progress '"ab12"' 'close_by: develop'
+mkdir -p "$FIX/bin"
+printf '#!/bin/sh\nexit 0\n' > "$FIX/bin/check-the-thing"
+chmod +x "$FIX/bin/check-the-thing"
+sed -i.bak 's|tests/guard.test.sh|bin/check-the-thing|g' "$FIX/$BL/items/0069-fixture.md"
+rm -f "$FIX/$BL/items/0069-fixture.md.bak"
+commit_fixture
+out="$(run_close 0069 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0069-fixture.md")" 'status: done'
+
+echo "0086 FR3 — and a conventionally named test file is a guard without being executable"
+# The mirror: a JS or Python repo commits its guards at mode 100644, and a gate reading only the
+# executable bit would refuse every one of them. Proved on a file that is deliberately NOT
+# executable, so the two routes cannot be satisfied by the same signal.
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0070 | Cites a .test.ts guard | develop | in-progress | 0000 |'
+mkitem_light 0070 develop in-progress '"ab12"' 'close_by: develop'
+mkdir -p "$FIX/src"
+printf 'it("holds", () => expect(1).toBe(1));\n' > "$FIX/src/thing.test.ts"
+chmod 644 "$FIX/src/thing.test.ts"
+sed -i.bak 's|tests/guard.test.sh|src/thing.test.ts|g' "$FIX/$BL/items/0070-fixture.md"
+rm -f "$FIX/$BL/items/0070-fixture.md.bak"
+commit_fixture
+assert_contains "the fixture guard really is not executable" \
+  "$(git -C "$FIX" ls-files -s -- src/thing.test.ts)" '100644'
+out="$(run_close 0070 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0070-fixture.md")" 'status: done'
 
 # --- result -----------------------------------------------------------------------------------
 echo

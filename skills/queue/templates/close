@@ -376,19 +376,66 @@ if [ "$close_by" = develop ]; then
   # (`coding-conventions.md`, Review Checklist — nesting, and one thing per function).
   # `:/` makes the pathspec repo-root-relative whatever the cwd is, so this needs no
   # `--show-toplevel` — see the case-spelling warning at the top of this file.
-  any_token_committed() {
-    for tok in $1; do
-      git -C "$DIR" ls-files --error-unmatch -- ":/$tok" >/dev/null 2>&1 && return 0
-    done
+  token_committed() {
+    git -C "$DIR" ls-files --error-unmatch -- ":/$1" >/dev/null 2>&1
+  }
+
+  # A CITATION HAS TO NAME AN ASSERTION, NOT MERELY A TRACKED FILE. FR3 admits a light close only
+  # where every criterion is discharged by a "committed automated assertion", and the first
+  # implementation checked two of those three words — backticked, tracked. A fixture whose two
+  # criteria cited a tracked `docs/notes.md` closed on exit 0 with nothing executed anywhere
+  # (verified 2026-09-08), which is option 3, the self-attested tier 0086 rejected, reachable in
+  # one wrong citation.
+  #
+  # This script cannot know what an arbitrary file DOES, so it reads the two signals it can, and
+  # either one is enough. Both routes exist because either alone refuses a legitimate guard: a
+  # shell suite lives at `tests/x.test.sh` and is executable, a JS or Python suite is committed at
+  # mode 100644 and named by convention, and a repo-specific check can be an executable at a path
+  # no convention predicts. What neither route admits is a document.
+  #
+  # A guard at a path this cannot recognise is not a defect to route around: name it
+  # conventionally, or hand the ticket to `verify`, which is what the refusal below says.
+  path_is_conventional_guard() {
+    case "$1" in
+      tests/*|test/*|spec/*|specs/*|__tests__/*)             return 0 ;;
+      */tests/*|*/test/*|*/spec/*|*/specs/*|*/__tests__/*)   return 0 ;;
+      *.test.*|*_test.*|*.spec.*|*_spec.*)                   return 0 ;;
+      */test_*|*/spec_*)                                     return 0 ;;
+    esac
     return 1
+  }
+
+  # The INDEX's mode, never the working tree's: the gate's subject is what was committed, and a
+  # `chmod +x` after the commit is not it.
+  path_is_committed_executable() {
+    git -C "$DIR" ls-files -s -- ":/$1" 2>/dev/null | grep -q '^100755 '
+  }
+
+  # Prints nothing when the criterion cites a guard; otherwise prints the reason it does not,
+  # which goes verbatim into the refusal. The two reasons are worth telling apart: "no committed
+  # path" is a guard that was never added, and "committed but not an assertion" is a citation
+  # pointing at the wrong kind of file — different fixes, and the second is the one that used to
+  # close.
+  citation_problem() {
+    tracked=""
+    for tok in $1; do
+      token_committed "$tok" || continue
+      tracked="$tracked $tok"
+      path_is_conventional_guard "$tok"  && return 0
+      path_is_committed_executable "$tok" && return 0
+    done
+    [ -z "$tracked" ] && { printf 'names no committed path'; return 0; }
+    printf 'cites%s, which is committed but is not an assertion' "$tracked"
   }
 
   uncited=""
   TAB="$(printf '\t')"
   while IFS="$TAB" read -r ac_ln ac_txt ac_toks; do
     [ -n "$ac_ln" ] || continue
-    any_token_committed "$ac_toks" || uncited="$uncited
-  line $ac_ln: $ac_txt"
+    problem="$(citation_problem "$ac_toks")"
+    [ -z "$problem" ] || uncited="$uncited
+  line $ac_ln: $ac_txt
+    ↳ $problem"
   done <<AC_CITE_EOF
 $ac_lines
 AC_CITE_EOF
@@ -400,6 +447,8 @@ AC_CITE_EOF
     echo "criterion's verdict is an executed assertion returning the same answer in either session" >&2
     echo "cite the guard in backticks on the criterion's own line — \`tests/thing.test.sh\` — and" >&2
     echo "commit it; a path git does not track is not evidence anything ran" >&2
+    echo "a committed path counts as an assertion where it sits under a test/spec directory, is" >&2
+    echo "named *.test.* / *_test.* / *.spec.*, or was committed executable. A document is not one" >&2
     echo "or raise the item to close_by: verify and hand it to an independent pass" >&2
     exit 1
   fi
@@ -407,11 +456,23 @@ fi
 
 # --- the review checklist: performed, or not closable (0086 FR11) ------------------------------
 # The same argument as the fourth refusal, applied to the section a `qa_level: review` pass fills
-# in. Asserted on the count of TICKED boxes and never on the section's presence: a review declared
-# and never performed closes with a full checklist of bullets, and DONE.md cannot tell it from a
-# performed one. That is the guard-that-cannot-fail shape, and it is the ONE mechanical assertion
-# standing behind the whole prose half of the review level — so it is unconditional, not gated on
-# `qa_level`, because an unperformed checklist is the same defect at either tier.
+# in: a review declared and never performed closes with a full checklist, and DONE.md cannot tell
+# it from a performed one. That is the guard-that-cannot-fail shape, and this is the ONE mechanical
+# assertion standing behind the whole prose half of the review level — so it is unconditional, not
+# gated on `qa_level`, because an unperformed checklist is the same defect at either tier.
+#
+# `rc_ticked` COUNTS `- [x]` AND NOTHING ELSE, and that is the whole point of the refusal. The
+# first implementation counted `/^- \[[ xX]\]/` — a class containing a SPACE — so it measured
+# whether checkbox SYNTAX was present rather than whether anything had been ticked, and three
+# `- [ ]` lines closed the row with the review unperformed. Worse, the form that defeated it is the
+# form every instruction produces: FR11, `verify` Step 2 and this script's own message below all
+# tell a session to write `- [ ] …` boxes, so the only input the guard caught was the one nothing
+# asks for (verified 2026-09-08, 0086 AC5 fixture; tests/close.test.sh, 0086 AC5).
+#
+# WHY THE AC COUNTER ABOVE IS DIFFERENT and must NOT be changed to match. `close` ticks the ACs
+# itself, so an AC list arrives here legitimately unticked and `ac_boxes` asks only whether the
+# bullets are in a form this script CAN tick. A checklist arrives already performed or not at all:
+# nothing downstream ticks it, so presence of the box says nothing.
 #
 # A PARTLY ticked checklist closes, exactly as a partly ticked AC list does: a visible verdict is
 # a reader's business, and refusing it would be stricter than FR11's "on the same grounds".
@@ -420,19 +481,20 @@ rc_counts="$(awk '
   in_rc {
     if ($0 ~ /^[ \t]*$/) next
     content++
-    if ($0 ~ /^([-*+]|[0-9]+[.)])[ \t]/) { bullets++; if ($0 ~ /^- \[[ xX]\]/) boxes++ }
+    if ($0 ~ /^([-*+]|[0-9]+[.)])[ \t]/) { bullets++; if ($0 ~ /^- \[[xX]\][ \t]/) ticked++ }
   }
-  END { print bullets + 0, boxes + 0, content + 0 }
+  END { print bullets + 0, ticked + 0, content + 0 }
 ' "$item")"
-read -r rc_bullets rc_boxes rc_content <<RC_EOF
+read -r rc_bullets rc_ticked rc_content <<RC_EOF
 $rc_counts
 RC_EOF
 
-if [ "$rc_bullets" -gt 0 ] && [ "$rc_boxes" -eq 0 ]; then
-  echo "$ID lists $rc_bullets lines under 'Review checklist' and not one of them is a checkbox" >&2
+if [ "$rc_bullets" -gt 0 ] && [ "$rc_ticked" -eq 0 ]; then
+  echo "$ID lists $rc_bullets lines under 'Review checklist' and not one of them is ticked" >&2
   echo "a review is performed by reading each line and ticking it, so closing here would record" >&2
   echo "that none of the $rc_bullets was checked — and DONE.md could not tell this ticket from a" >&2
-  echo "review that never happened. Tick them in the '- [ ] …' form, one per checklist line" >&2
+  echo "review that never happened. An empty box is the shape of an unperformed check, not of a" >&2
+  echo "performed one: write each line as '- [ ] …' and tick what you read as '- [x] …'" >&2
   exit 1
 fi
 
