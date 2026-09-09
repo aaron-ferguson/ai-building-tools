@@ -289,3 +289,29 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `tests/cost-by-category.test.sh` was reanchored to assert a *relationship* between two figures
   rather than either literal (pointer: `skills/queue/templates/close`,
   `path_is_conventional_guard`; `docs/decisions/003-who-may-close-a-ticket.md:45-52`).
+
+- 2026-09-09 — **The plugin machinery offers a route to the tools repo that reads as correct and is
+  not.** Building 0078's "resolve the tools repo, never guess it", the obvious derivation was probed
+  rather than trusted, and both halves mislead. The install directory
+  (`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/<version>/`) is **not a git
+  repository at all**, so it fails a checkout test loudly and safely. The marketplace clone beside
+  it (`~/.claude/plugins/marketplaces/ai-building-tools/`) **is** one — correct `origin`, `HEAD`
+  identical to the real checkout's, and a complete `.claude/backlog/` with `FINDINGS.md`, the items
+  and the scripts — so every cheap test for "is this the repo?" passes on a managed copy the plugin
+  system refreshes. Worse for 0075, which is still `ready`: that clone reports
+  `## main...origin/main [ahead 213]` while being exactly level, because its `origin/main` ref is
+  stale, so a session standing there and running 0075's fetch-and-report-divergence check gets a
+  confidently wrong answer in the direction that reads as safe. 0075 should say which checkout it
+  means (pointer: `references/CONVENTIONS.md`, *Routing a finding to the repo it is about*;
+  `.claude/backlog/items/0075-anchor-a-tool-edit-to-the-remote.md` FR1).
+
+- 2026-09-09 — **A guard's phrases and its prose were written in the right order and still broke,
+  because the wrap moved afterwards.** `CLAUDE.md` says rewrapping a guarded paragraph is a breaking
+  change, and this session read that before writing anything. It still shipped four reds: the
+  asserted phrases were chosen first, then the prose was **compressed for the size guard**, and the
+  compression re-flowed lines so `reads as a working checkout`, `falls back to a marked local park`
+  and `Routing a finding to the repo it is about` each straddled a break. The rule as written warns
+  about *editing* a guarded paragraph; the trap is that a size-driven **rewrap of a paragraph you
+  are still writing** is not felt as an edit to a guarded one. Cheap mitigation, and the one thing
+  neither guard says: after any reflow, `grep -n` each asserted phrase and require one hit per file
+  (pointer: `CLAUDE.md` *Tests*; `tests/findings-routing.test.sh` header).
