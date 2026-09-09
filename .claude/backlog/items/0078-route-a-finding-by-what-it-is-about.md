@@ -2,8 +2,8 @@
 id: "0078"
 title: Route a finding by what it is about, not which repo you are standing in
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -17,18 +17,9 @@ expects:
   - skills/retro/SKILL.md
   - skills/queue/SKILL.md
   - references/CONVENTIONS.md
-claimed_by: "c594"
-claimed_at: 2026-09-09T03:30:06Z
+claimed_by:
+claimed_at:
 touches:
-  - references/CONVENTIONS.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/retro/SKILL.md
-  - skills/queue/SKILL.md
-  - skills/design/SKILL.md
-  - skills/prototype/SKILL.md
-  - skills/queue/templates/config.yml
-  - tests/findings-routing.test.sh
 ---
 
 ## Problem
