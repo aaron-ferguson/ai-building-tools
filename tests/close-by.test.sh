@@ -251,6 +251,11 @@ in_window "FR5 — every AC is a committed assertion" "$QW" 'committed'
 in_window "FR5 — named on the AC line"              "$QW" 'named on the AC line'
 in_window "FR5 — and no eyeballed criterion"        "$QW" 'a reading, a judgement or an eyeball'
 in_window "FR5 — FR12's pair is named here too"     "$QW" 'can never carry'
+# The precondition and the gate that enforces it drifted apart once already: `close` admitted any
+# tracked path, so a queue session following this section could write a perfectly eligible-looking
+# ticket whose criteria cited documents (0086, 2026-09-08). This is the half that keeps the
+# instruction honest; `close`'s own refusal carries the enumeration, which is not restated here.
+in_window "FR3 — a citation names an assertion, not just a file" "$QW" 'not merely a tracked file'
 
 # ---------------------------------------------------------------------------
 # AC10 — the record. `002`'s Light row states the shipped mechanism and the

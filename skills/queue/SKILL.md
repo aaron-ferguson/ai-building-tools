@@ -288,10 +288,15 @@ worth about **−26%** against the measured cost per ticket (`docs/decisions/003
 automated assertion, named on the AC line, which the build session will prove red before green.** No
 criterion whose verdict is a reading, a judgement or an eyeball — this is the *"name what would make
 each AC red"* rule promoted from advice to a precondition, and `close` enforces it mechanically:
-a criterion citing no committed guard refuses the close by name. Two consequences worth knowing here
-rather than discovering at the far end. A light ticket with **no** criteria is refused too, since
-"every criterion is an assertion" is vacuously true of none. And **`qa_level: review` can never carry
-`close_by: develop`** — a review's checks are judgement, so the pair is refused.
+a criterion citing no committed guard refuses the close by name. **The path has to name an
+assertion, not merely a tracked file** — a criterion citing a prose document is the self-attested
+tier this field exists to avoid, and `close` refuses it, naming the shapes it accepts rather than
+making you guess.
+
+Two consequences worth knowing here rather than discovering at the far end. A light ticket with
+**no** criteria is refused too, since "every criterion is an assertion" is vacuously true of none.
+And **`qa_level: review` can never carry `close_by: develop`** — a review's checks are judgement, so
+the pair is refused.
 
 **Estimate `size`** — `s` one sitting, `m` a focused session, `l` multiple sessions or needs a design
 decision first. Input to tie-breaker 4 only, never moving a ticket between tiers.
