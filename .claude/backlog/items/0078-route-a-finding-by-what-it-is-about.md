@@ -2,8 +2,8 @@
 id: "0078"
 title: Route a finding by what it is about, not which repo you are standing in
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -17,14 +17,10 @@ expects:
   - skills/retro/SKILL.md
   - skills/queue/SKILL.md
   - references/CONVENTIONS.md
-claimed_by: "d89c"
-claimed_at: 2026-09-09T03:52:33Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/retro/SKILL.md
-  - skills/queue/SKILL.md
-  - references/CONVENTIONS.md
+closed: 2026-09-09
 ---
 
 ## Problem
@@ -78,12 +74,12 @@ people's reports arriving *into* a project's queue. Nothing carries a project's 
 
 ## Acceptance criteria
 
-- [ ] AC1 — `develop`, `verify` and `retro`'s park steps route a tool finding to the tool repo's buffer and
+- [x] AC1 — `develop`, `verify` and `retro`'s park steps route a tool finding to the tool repo's buffer and
   everything else to the local one.
-- [ ] AC2 — The rule names how the destination repo is resolved, and says to stop rather than guess.
-- [ ] AC3 — The install-only fallback is stated: park locally with a marker naming the destination.
-- [ ] AC4 — The privacy constraint on writing into a public tool repo is stated at the routing rule.
-- [ ] AC5 — Deleting the routing sentence from any one of the three skills turns a guard red.
+- [x] AC2 — The rule names how the destination repo is resolved, and says to stop rather than guess.
+- [x] AC3 — The install-only fallback is stated: park locally with a marker naming the destination.
+- [x] AC4 — The privacy constraint on writing into a public tool repo is stated at the routing rule.
+- [x] AC5 — Deleting the routing sentence from any one of the three skills turns a guard red.
 
 ## QA plan
 
@@ -158,3 +154,41 @@ people's reports arriving *into* a project's queue. Nothing carries a project's 
   a paragraph you are still drafting does not feel like editing a guarded one. Parked with the cheap
   mitigation neither guard states: after any reflow, `grep -n` each asserted phrase and require one
   hit per file.
+
+## QA evidence
+
+Verified 2026-09-09 [d89c] at `qa_level: unit` — this repo's whole suite, 25 files, run
+individually rather than through the fail-fast one-liner so a red could be attributed
+(`config.yml` says why). **25/25 green, 0 failed.** Frontmatter level and the QA plan's stated
+level agree, so no drift to report. Tree clean at Step 2 and again at the verdict, so the
+intersection with the evidence set is empty and this is a plain PASS, not advisory.
+
+Every red below was produced by mutating a **committed** file, confirming the diff was non-empty
+and the phrase count went 1 → 0, then restoring by that pathspec alone. The sequence ends on a
+green control run of all 25 files, which is what licenses the reds.
+
+| # | Claim | How it was checked | Result |
+|---|---|---|---|
+| AC1 | Park steps route a tool finding to the tool repo's buffer, everything else local | `findings-routing.test.sh` asserts the routing sentence and the `references/CONVENTIONS.md` citation inside each park step's window, keyed by heading text; all six skills carry both. Deleted the sentence from each of the six real files in turn — each reddened its own case | PASS |
+| AC1 | The rule names all three destinations | The `Routing a finding to the repo it is about` window names the conventions repo's root buffer, the tools repo's `.claude/backlog/FINDINGS.md`, and local. Deleting `stays in the local` reddened that case alone (40 passed, 1 failed) | PASS |
+| AC2 | The rule says how the repo is resolved, and to stop rather than guess | `tools.path`, resolved as `conventions.path` is, plus `Nothing resolving is a stop` and the prohibition on deriving from the plugin install. Deleting `tools.path` reddened one case (40/1) | PASS |
+| AC3 | The install-only fallback is a marked local park naming its destination | `falls back to a marked local park`, `[for <repo>]`, `forwards it`. Deleting the fallback reddened AC3 and left AC4 green | PASS |
+| AC4 | The privacy constraint sits at the routing rule | `carries no company material` … `stays local`. Deleting it reddened AC4 and left AC3 green — so neither clause covers the other | PASS |
+| AC5 | Deleting the routing sentence from any one of the three named skills turns a guard red | Done on the real files for `verify`, `develop` and `retro` (and the other three FR1 names): each gave `39 passed, 2 failed` — the AC1 case plus the guard's own probe correctly reporting the sentence was never there to delete | PASS |
+| AC5 | (extra) A rewrap reds too, not only a deletion | Broke the phrase across a line break with every word intact → `39 passed, 2 failed`. Correct direction; the known cost is that a harmless reflow also reds (0063, 0112) | PASS |
+| FR2 | The config key is real, and the derivation it replaces is genuinely misleading | `tools.path` present in `skills/queue/templates/config.yml`. Reproduced both halves of the measured justification: the install dir is not a git repo, while `~/.claude/plugins/marketplaces/ai-building-tools/` has the right `origin`, a full backlog, and reports `## main...origin/main [ahead 213]` while level | PASS |
+| FR5 | `retro` reads the tools repo's buffer as well | Asserted in `retro` Step 1's own window, resolved by the rule rather than discovered, with the "sweep only what a rule names" sentence 0111's FR6 depends on | PASS |
+| NFR Privacy | Nothing crossing into this public repo carries company material | Scanned the whole ticket diff for client/company markers: two hits, one the rule's own text, one `AetherWorks` in the guard header — pre-existing across 19 files since `00871cd`, not introduced here | PASS |
+| NFR Git | One commit per repo, by pathspec, never spanning two | All seven commits inspected: each touches one coherent path set, none spans repos, and the conventions repo is untouched and clean | PASS |
+| NFR Docs | The rule is stated once and cited elsewhere | The four substantive clauses appear in `references/CONVENTIONS.md` and nowhere else; each skill carries exactly one citation (`retro` two — park step and Step 1 for FR5). No copies to drift | PASS |
+
+**Checked beyond the table.** The destination the rule points at was opened rather than assumed:
+the conventions repo's root `FINDINGS.md` does declare the outside/inside split the rule asserts,
+so the asymmetry recorded in the build notes is real. The newly reachable path this change creates
+— a stage session writing and committing into *another* repo's backlog — is constrained at the
+rule itself (resolved never guessed, one commit per repo by pathspec, that backlog's lock, the
+privacy bar), so it is reviewed rather than merely new.
+
+**Two observations parked, neither blocking** (`FINDINGS.md`, 2026-09-09): the independence probes
+report a wrong *reason* when run against an already-mutated file, and two pairs of asserted phrases
+share a source line so they cannot red independently. Both are guard-quality notes; the ACs hold.

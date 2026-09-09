@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0078 | Route a finding by what it is about, not which repo you are standing in | feature | unit | 2026-09-09 | [items/0078-route-a-finding-by-what-it-is-about.md](items/0078-route-a-finding-by-what-it-is-about.md) |
 | 0086 | Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run | feature | unit | 2026-09-09 | [items/0086-add-a-light-qa-tier.md](items/0086-add-a-light-qa-tier.md) |
 | 0081 | Give the hand-off a script, as claim and close have | feature | unit | 2026-09-08 | [items/0081-give-the-hand-off-a-script.md](items/0081-give-the-hand-off-a-script.md) |
 | 0082 | Make claim fail safe on the two paths where it currently fails open | bug | unit | 2026-09-08 | [items/0082-make-claim-fail-safe-where-it-fails-open.md](items/0082-make-claim-fail-safe-where-it-fails-open.md) |
