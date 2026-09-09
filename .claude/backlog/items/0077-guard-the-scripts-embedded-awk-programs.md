@@ -20,9 +20,10 @@ claimed_by: "566c"
 claimed_at: 2026-09-09T16:08:27Z
 touches:
   - tests/backlog-scripts-installed.test.sh
-  - skills/queue/templates/close
-  - skills/queue/templates/claim
   - skills/queue/templates/next
+  - skills/queue/templates/claim
+  - skills/queue/templates/close
+  - skills/queue/templates/handoff
 ---
 
 ## Problem
