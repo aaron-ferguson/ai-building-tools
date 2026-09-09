@@ -349,6 +349,25 @@ assert_contains "touches: carries the expects list" "$(cat "$FIX/.claude/backlog
 ---'
 assert_contains "the report says to narrow it" "$out" 'NARROW it'
 
+# --- 0090 AC2 — a missing item file is refused before the row is edited ------------------------
+# `claim` resolved `items/<id>-*.md` BELOW the `mv` that writes the Status cell, so a row whose item
+# is missing or misnamed left QUEUE.md edited, uncommitted and — the trap released — unlocked: the
+# same fail-open shape 0082 closed on two other paths. Asserted on QUEUE.md being byte-identical,
+# not on the exit status, because a refusal that has already edited the row still exits non-zero.
+echo "0090 AC2 — a row whose item file is missing leaves QUEUE.md untouched"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0011 | Item was never written | develop | ready | 0000 |' 0011
+rm "$FIX/.claude/backlog/items/0011-fixture.md"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "remove the item file"
+before_queue="$(cat "$FIX/.claude/backlog/QUEUE.md")"
+before_head="$(git -C "$FIX" rev-parse HEAD)"
+out="$(run_claim 0011)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the missing item as the cause" "$out" 'no item file for 0011'
+assert_eq "QUEUE.md is byte-identical" "$(cat "$FIX/.claude/backlog/QUEUE.md")" "$before_queue"
+assert_eq "git sees no change to QUEUE.md" "$(git -C "$FIX" diff --name-only -- .claude/backlog/QUEUE.md)" ""
+assert_eq "nothing was committed" "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
+assert_contains "the lock is released on that refusal" "none$(ls "$FIX/.claude/backlog/.lock" 2>/dev/null)" 'none'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

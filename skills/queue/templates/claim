@@ -142,6 +142,15 @@ stage=""
   exit 1
 }
 
+# --- resolve the item file, BEFORE the row is edited -------------------------------------------
+# Deliberately above the `mv` below. This refusal used to sit after it, so a row whose item is
+# missing or misnamed left QUEUE.md edited, uncommitted and — the trap having fired — unlocked: the
+# fail-open shape 0082 closed on two other paths, on a third it did not name (0090 FR2). A refusal
+# that has not yet written the row has nothing to undo, which is the only way "changes nothing" is
+# true by construction rather than by cleanup.
+item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
+[ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
+
 # --- edit the row -----------------------------------------------------------------------------
 # The Status cell and nothing else. The token goes in the item's frontmatter, so a legacy table
 # that still carries an Owner column keeps whatever is already in it.
@@ -156,8 +165,6 @@ awk -F'|' -v OFS='|' -v id="$ID" -v idc="$ID_COL" -v c="$STATUS_COL" '
 mv "$tmp" "$QUEUE"
 
 # --- item frontmatter -------------------------------------------------------------------------
-item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
-[ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
 
 now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
