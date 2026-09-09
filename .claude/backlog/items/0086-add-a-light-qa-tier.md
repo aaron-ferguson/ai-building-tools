@@ -2,8 +2,8 @@
 id: "0086"
 title: Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: l
 created: 2026-09-02
@@ -27,24 +27,9 @@ expects:
   - tests/close-by.test.sh
   - docs/decisions/003-who-may-close-a-ticket.md
   - .claude/backlog/items/0079-a-qa-level-for-a-repo-with-no-runner.md
-claimed_by: "3e7c"
-claimed_at: 2026-09-09T03:04:12Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/queue/SKILL.md
-  - skills/queue/templates/item.md
-  - .claude/backlog/close
-  - .claude/backlog/config.yml
-  - references/TRACKER.md
-  - MEASUREMENT.md
-  - docs/decisions/002-matching-rigour-to-stakes.md
-  - tests/close.test.sh
-  - tests/next.test.sh
-  - tests/graph-fields.test.sh
-  - tests/close-by.test.sh
-  - docs/decisions/003-who-may-close-a-ticket.md
-  - .claude/backlog/items/0079-a-qa-level-for-a-repo-with-no-runner.md
   # NARROWED 2026-09-09 by 55bd for the RE-ENTRY pass, checked against the code. `./claim`
   # re-seeds this field from `expects:` on every claim, so a narrowing does not survive a second
   # claim — the previous pass's list is preserved in the comments below rather than in entries.
@@ -75,6 +60,7 @@ touches:
   #   - the first pass also reached `tests/cost-by-category.test.sh`,
   #     `skills/orchestrate/outcome.schema.json` and `tests/orchestrate.test.sh`, which expects:
   #     never named.
+closed: 2026-09-09
 ---
 
 ## Problem
@@ -186,43 +172,43 @@ merge exists to prevent.
 
 ## Acceptance criteria
 
-- [ ] **AC1** — Given an item with `close_by: develop` whose every AC bullet cites a `tests/` assertion,
+- [x] **AC1** — Given an item with `close_by: develop` whose every AC bullet cites a `tests/` assertion,
       and a `QUEUE.md` row at `next: develop` holding a matching token, when `./close <id> <token>` runs,
       then it closes normally: ACs ticked, row moved to `DONE.md`, dependents reconciled, committed.
       *Red when:* the fifth refusal ground is removed from `close`, or `close_by` is misread — the row is
       refused as "not at verify".
-- [ ] **AC2** — Given the same row but with `close_by: verify` (or the field absent entirely), when
+- [x] **AC2** — Given the same row but with `close_by: verify` (or the field absent entirely), when
       `./close` runs against `next: develop`, then it refuses with the existing grounds and changes
       nothing. *Red when:* the new branch is written to accept `next: develop` unconditionally.
-- [ ] **AC3** — Given an item with `close_by: develop` one of whose AC bullets carries no assertion
+- [x] **AC3** — Given an item with `close_by: develop` one of whose AC bullets carries no assertion
       citation, when `./close` runs, then it refuses, **names that criterion**, and leaves the tree
       exactly as it found it. *Red when:* the citation check counts the section rather than each bullet,
       or the message reports only a status.
-- [ ] **AC4** — Given an item with `qa_level: review` and `close_by: develop`, when `./close` runs, then
+- [x] **AC4** — Given an item with `qa_level: review` and `close_by: develop`, when `./close` runs, then
       it refuses on FR12's ground. *Red when:* the two fields are checked independently and never
       together.
-- [ ] **AC5** — Given an item with a `## Review checklist` section holding bullets and not one checkbox,
+- [x] **AC5** — Given an item with a `## Review checklist` section holding bullets and not one checkbox,
       when `./close` runs, then it refuses on the same terms as its fourth refusal for ACs, quoting the
       count. *Red when:* the checklist section is checked by presence rather than by ticked-ness — which
       is the *guard that cannot fail* shape this AC exists to exclude.
-- [ ] **AC6** — Given `config.yml` with no `review:` block, when a `qa_level: review` item reaches
+- [x] **AC6** — Given `config.yml` with no `review:` block, when a `qa_level: review` item reaches
       `verify`, then `verify` stops and says the level has nothing configured, and does not substitute a
       lower level. *Red when:* `review` is allowed to mean "no command needed".
-- [ ] **AC7** — Given a `develop` session finishing a `close_by: develop` ticket, when it reaches Step 5,
+- [x] **AC7** — Given a `develop` session finishing a `close_by: develop` ticket, when it reaches Step 5,
       then it runs the whole suite, closes, and reports the close; and given it finds an AC that is not a
       committed assertion, it raises `close_by` to `verify` and hands off. *Red when:* Step 5's
       `next: verify` line is left unconditional, or the raise-only direction is not stated.
       Guard: a new `tests/close-by.test.sh`, greping both branches, each asserted on its own line.
-- [ ] **AC8** — Given `tests/graph-fields.test.sh`, when it runs, then `close_by` is in its enumerated
+- [x] **AC8** — Given `tests/graph-fields.test.sh`, when it runs, then `close_by` is in its enumerated
       key list and `./next`'s take line prints it alongside `size` and `qa_level`. *Red when:* the field
       is added to the template and nothing reads it.
-- [ ] **AC9** — Given an item file with no `close_by:` line, when `./close`, `./next` and `./claim` read
+- [x] **AC9** — Given an item file with no `close_by:` line, when `./close`, `./next` and `./claim` read
       it, then all three behave exactly as today. *Red when:* the readers treat a missing field as an
       error or as `develop`.
-- [ ] **AC10** — Given `docs/decisions/002`, when read, then its Light row states the mechanism and
+- [x] **AC10** — Given `docs/decisions/002`, when read, then its Light row states the mechanism and
       −26%/−18%, and `docs/decisions/003` exists and cites the shipped mechanism. *Red when:* the −32%
       figure survives anywhere as a live price.
-- [ ] **AC11** — Given an item at `qa_level: verify` in a repo with no `review:` block in
+- [x] **AC11** — Given an item at `qa_level: verify` in a repo with no `review:` block in
       `config.yml`, when `verify` reads it after this change, then it resolves exactly as it does
       today — the scripted assertion the item's QA plan names — and `review`'s missing configuration
       is never consulted. *Red when:* `review` is implemented by repurposing the `verify` level
