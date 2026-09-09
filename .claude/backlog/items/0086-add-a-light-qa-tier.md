@@ -2,8 +2,8 @@
 id: "0086"
 title: Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 size: l
 created: 2026-09-02
@@ -27,24 +27,9 @@ expects:
   - tests/close-by.test.sh
   - docs/decisions/003-who-may-close-a-ticket.md
   - .claude/backlog/items/0079-a-qa-level-for-a-repo-with-no-runner.md
-claimed_by: "afac"
-claimed_at: 2026-09-09T00:19:17Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/queue/SKILL.md
-  - skills/queue/templates/item.md
-  - .claude/backlog/close
-  - .claude/backlog/config.yml
-  - references/TRACKER.md
-  - MEASUREMENT.md
-  - docs/decisions/002-matching-rigour-to-stakes.md
-  - tests/close.test.sh
-  - tests/next.test.sh
-  - tests/graph-fields.test.sh
-  - tests/close-by.test.sh
-  - docs/decisions/003-who-may-close-a-ticket.md
-  - .claude/backlog/items/0079-a-qa-level-for-a-repo-with-no-runner.md
   # NARROWED from expects: 2026-09-08 by b708, checked against the code.
   # Corrections to expects:, for the next capture to calibrate on:
   #   - `.claude/backlog/close` is the INSTALLED COPY. The edit target is
