@@ -406,7 +406,8 @@ if [ "$close_by" = develop ]; then
   }
 
   # The INDEX's mode, never the working tree's: the gate's subject is what was committed, and a
-  # `chmod +x` after the commit is not it.
+  # `chmod +x` after the commit is not it. A directory citation lists every file under it, and one
+  # executable among them is enough — a directory naming a suite is a citation of the suite.
   path_is_committed_executable() {
     git -C "$DIR" ls-files -s -- ":/$1" 2>/dev/null | grep -q '^100755 '
   }
@@ -416,7 +417,7 @@ if [ "$close_by" = develop ]; then
   # path" is a guard that was never added, and "committed but not an assertion" is a citation
   # pointing at the wrong kind of file — different fixes, and the second is the one that used to
   # close.
-  citation_problem() {
+  describe_citation_problem() {
     tracked=""
     for tok in $1; do
       token_committed "$tok" || continue
@@ -432,7 +433,7 @@ if [ "$close_by" = develop ]; then
   TAB="$(printf '\t')"
   while IFS="$TAB" read -r ac_ln ac_txt ac_toks; do
     [ -n "$ac_ln" ] || continue
-    problem="$(citation_problem "$ac_toks")"
+    problem="$(describe_citation_problem "$ac_toks")"
     [ -z "$problem" ] || uncited="$uncited
   line $ac_ln: $ac_txt
     ↳ $problem"
