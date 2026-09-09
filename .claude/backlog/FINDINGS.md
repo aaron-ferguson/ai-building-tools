@@ -238,3 +238,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   grep already sends you to grep the symbol an FR names — a repriced figure is a symbol too.**
   `grep -rn '32%' tests/` before editing `002` would have found it in one call and framed the edit as
   "rewrite the guard's anchor" rather than as a surprise red.
+- 2026-09-08 (0114, design) — **A ticket's "Verified <date> against the current tree" can be a
+  verification of *line numbers* while reading as a verification of *behaviour*, and nothing
+  distinguishes the two.** 0114 cited `tools/release:294` as the stop and asserted `[ -r /dev/tty ]`
+  is false in an agent shell. The line numbers were right; the behaviour was the opposite — the test
+  is **true**, the `read` then fails, and `set -e` exits 1 with no message — which changed which fix
+  was correct. `design` Step 2 already says to re-read the source rather than the requirement, and
+  that rule earned its keep here. The sharper form: **a citation of a line is not a citation of what
+  the line does**, so a ticket that turns on a conditional's *result* has to record the result it
+  observed, not the conditional it read.
