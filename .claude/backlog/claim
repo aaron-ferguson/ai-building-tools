@@ -12,17 +12,31 @@
 #
 # Usage:  .claude/backlog/claim <id> [token]
 #
-# **`touches:` is written here, provisionally, from the item's `expects:`.** It used to be printed
-# as an instruction, which made the one field the other window reads to decide what is safe to take
-# the only part of a claim that was neither written nor committed atomically — and it was skipped
-# exactly as often as that invites. `expects:` is a prediction and not a verified scope, so the
-# session still has to narrow it to what it will actually open and widen it the moment the work
-# reaches further; a provisional scope is wrong in the direction that costs a suboptimal pick,
-# where an absent one is read as "every file this item names is held".
+# **`touches:` is written here, provisionally, from the item's `expects:` — but only on a FRESH
+# `develop` claim.** It used to be printed as an instruction, which made the one field the other
+# window reads to decide what is safe to take the only part of a claim that was neither written nor
+# committed atomically — and it was skipped exactly as often as that invites. `expects:` is a
+# prediction and not a verified scope, so the session still has to narrow it to what it will
+# actually open and widen it the moment the work reaches further; a provisional scope is wrong in
+# the direction that costs a suboptimal pick, where an absent one is read as "every file this item
+# names is held".
 # See `CONCURRENCY.md`, *The working tree is shared too* — and keep that citation on ONE line: the
 # guard in tests/citations.test.sh is line-based, so a rule name wrapped across a comment break
 # reads as "The # working tree is shared too" and is reported as stale.
 # An item with no `expects:` gets no invented scope and is told so.
+#
+# **The seed has two conditions, and both are the same rule read from different ends: a prediction
+# never overwrites a verified scope, and a stage that does not build declares no build scope** (0106).
+#   - A POPULATED `touches:` is left exactly as it is. The seed used to prepend itself above the
+#     existing block and stop skipping the old entries at the first line that was not a `- ` bullet
+#     — a standalone comment — so the previous session's narrowing came back below the widened seed,
+#     its explanatory comment now annotating the wrong list and every shared path listed twice
+#     (0039, then 0086). Nothing was lost, but the field the other window reads reserved a strictly
+#     wider set than the work needed, which is the suboptimal pick this field exists to prevent.
+#   - A row at any stage but `develop` gets no seed. `verify` opens none of the files a build scope
+#     names — it writes the item and the queue — so a QA claim that seeded `expects:` reserved seven
+#     paths for a pass that touched none of them. A table with no `Next` column cannot answer the
+#     question and keeps the seed, so a legacy shape claims exactly as it did before.
 #
 # **Columns are resolved by header name, never by position.** The table's shape is not a contract:
 # it was pared from eight columns to five, and a parser keyed on a fixed index then read every
@@ -102,6 +116,10 @@ column_named() {
 
 ID_COL="$(column_named ID)"
 STATUS_COL="$(column_named Status)"
+# `Next` is OPTIONAL, unlike the other two: the pre-0010 eight-column table has no such column, and
+# refusing it would turn a shape this script has always claimed into an error. Absent means "cannot
+# tell", and cannot-tell keeps the seed rather than dropping it silently (0106 FR2).
+NEXT_COL="$(column_named Next)"
 [ -n "$STATUS_COL" ] || {
   echo "no Status column in the QUEUE.md table — cannot tell a ready row from a blocked one" >&2
   echo "header found: $header" >&2
@@ -114,6 +132,8 @@ row="$(awk -F'|' -v id="$ID" -v c="$ID_COL" '/^\|/ { v = $c; gsub(/^ +| +$/, "",
 [ -n "$row" ] || { echo "no row for $ID in QUEUE.md" >&2; exit 1; }
 
 status="$(printf '%s' "$row" | awk -F'|' -v c="$STATUS_COL" '{ v = $c; gsub(/^ +| +$/, "", v); print v }')"
+stage=""
+[ -z "$NEXT_COL" ] || stage="$(printf '%s' "$row" | awk -F'|' -v c="$NEXT_COL" '{ v = $c; gsub(/^ +| +$/, "", v); print v }')"
 [ "$status" = "ready" ] || {
   echo "$ID is '$status', not ready — pick another row" >&2
   if [ "$status" = "in-progress" ]; then
@@ -140,6 +160,39 @@ item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
 [ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
 
 now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# --- what is already in touches:, and whether this stage may seed at all (0106) ----------------
+# Read BEFORE the editing pass, because awk meets the `touches:` key one line before it can know
+# whether entries follow it — and the branch has to be chosen at the key.
+#
+# A standalone comment line inside the block is SKIPPED rather than ending it. Falling through
+# would read a narrowed-and-annotated block as empty, which is the precise reading that produced
+# the duplicate list this rule exists to prevent.
+existing_touches="$(awk '
+  NR == 1 && /^---$/ { fm = 1; next }
+  fm && /^---$/      { exit }
+  fm && /^touches:/  { intou = 1; next }
+  intou && /^[ \t]*$/ { next }
+  intou && /^[ \t]*#/ { next }
+  intou && /^[ \t]*- / {
+    sub(/^[ \t]*- */, "")
+    sub(/[ \t]+#.*$/, "")
+    sub(/[ \t]+$/, "")
+    if ($0 != "") print
+    next
+  }
+  intou { exit }
+' "$item")"
+
+# `develop` is the only stage that builds, so it is the only stage a build scope belongs to. An
+# unreadable stage (no `Next` column) is not a reason to withhold the seed — see the header.
+SEED=1
+[ -z "$existing_touches" ] || SEED=0
+case "$stage" in
+  ""|develop) : ;;
+  *)          SEED=0 ;;
+esac
+
 tmp="$(mktemp)"
 count="$(mktemp)"
 # The ownership keys are *replaced* where they exist and *added* where they do not. An item
@@ -159,12 +212,12 @@ count="$(mktemp)"
 # Every rule is guarded on `fm`. Without it the `intou`/`inexp` list rules would swallow an
 # indented bullet in the item's PROSE, which is a data-loss bug that no assertion about
 # frontmatter can see.
-awk -v tok="$TOKEN" -v now="$now" -v cf="$count" '
+awk -v tok="$TOKEN" -v now="$now" -v cf="$count" -v seed="$SEED" '
   NR == 1 && /^---$/ { fm = 1; print; next }
   fm && /^---$/      {
     if (!by)  { print "claimed_by: \"" tok "\""; added = 1 }
     if (!at)  { print "claimed_at: " now;         added = 1 }
-    if (!tou && n) { print "touches:"; for (i = 1; i <= n; i++) print want[i]; added = 1 }
+    if (!tou && n && seed) { print "touches:"; for (i = 1; i <= n; i++) print want[i]; added = 1 }
     fm = 0
     if (added) print "note: item predated some of the claim keys; added them" > "/dev/stderr"
     print; next
@@ -173,9 +226,13 @@ awk -v tok="$TOKEN" -v now="$now" -v cf="$count" '
   fm && inexp && /^[ \t]+-/ { want[++n] = $0; print; next }
   fm && inexp          { inexp = 0 }
   fm && /^touches:/    {
+    tou = 1
+    # No seed: print the key and let the block that follows fall through untouched, entries,
+    # comments and all. This is the branch a re-claim and a non-develop claim both take.
+    if (!seed) { print; next }
     print "touches:"
     for (i = 1; i <= n; i++) print want[i]
-    tou = 1; intou = 1; next
+    intou = 1; next
   }
   fm && intou && /^[ \t]+-/ { next }
   fm && intou          { intou = 0 }
@@ -200,7 +257,17 @@ if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
 fi
 
 echo "claimed $ID with token $TOKEN"
-if [ "${N_EXPECTS:-0}" -gt 0 ]; then
+# Four outcomes, and each says which one it is. Silence about a scope that was NOT written reads as
+# "a scope was written" to the next reader, which is the failure the unset branch was added for.
+if [ -n "$existing_touches" ]; then
+  echo "touches: was already set and is left as the previous session set it — a narrowed scope is"
+  echo "verified and a prediction from expects: never overwrites one. It keeps:"
+  printf '  %s\n' $existing_touches
+  echo "widen it in $item the moment your work reaches further"
+elif [ "$SEED" -eq 0 ]; then
+  echo "touches: is not seeded from expects:, because '$stage' does not build — a build scope here"
+  echo "would reserve files this stage never opens. Set it in $item to what $stage will write"
+elif [ "${N_EXPECTS:-0}" -gt 0 ]; then
   echo "touches: is set provisionally from expects: ($N_EXPECTS paths) — NARROW it in $item to"
   echo "what you will actually open, and widen it the moment the work reaches further"
 else

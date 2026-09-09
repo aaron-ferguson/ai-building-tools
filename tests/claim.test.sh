@@ -30,9 +30,10 @@ cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
 trap cleanup EXIT INT TERM
 
 # --- fixture ----------------------------------------------------------------------------------
-# $1 header row, $2 separator row, $3 the single data row, $4 the id that row carries, and $5 the
+# $1 header row, $2 separator row, $3 the single data row, $4 the id that row carries, $5 the
 # item's `expects:` block — the whole key, so a case can supply `expects:` bare or with entries
-# under it. It defaults to bare, which is what every case written before 0082 assumed.
+# under it — and $6 the item's `touches:` block, same rule. Both default to bare, which is what
+# every case written before 0082 assumed.
 scaffold() {
   cleanup
   FIX="$(mktemp -d)"
@@ -54,7 +55,7 @@ status: ready
 ${5:-expects:}
 claimed_by:
 claimed_at:
-touches:
+${6:-touches:}
 ---
 
 ## Problem
@@ -125,6 +126,30 @@ $seen"; fi
 assert_eq() {
   if [ "$2" = "$3" ]; then ok "$1"; saw_on_pass "$2"; else
     bad "$1"; echo "         expected exactly:"; saw "$3"; echo "         got:"; saw "$2"; fi
+}
+
+# `assert_contains` cannot say "once". AC1's whole claim is that a re-claim does not DUPLICATE a
+# path, and a substring match is satisfied by two copies as happily as by one — the exact shape of
+# guard `testing-conventions.md` calls one that runs and cannot fail.
+# The `touches:` block ALONE, never the whole item. AC1's claim is about duplication inside that
+# block, and `expects:` legitimately carries the same paths one key above it — a count over the
+# file therefore reads 2 for a correct result, which is a guard anchored to the document rather
+# than to the claim (`testing-conventions.md`).
+touches_block() {
+  awk '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && /^touches:/  { intou = 1; print; next }
+    intou && /^[ \t]/ { print; next }
+    intou             { exit }
+  ' "$FIX/.claude/backlog/items/$1-fixture.md"
+}
+
+assert_count() {
+  n="$(printf '%s\n' "$2" | grep -cF "$3" || true)"
+  if [ "$n" = "$4" ]; then ok "$1"; saw_on_pass "$n occurrence(s) of $3"; else
+    bad "$1"; echo "         expected $4 occurrence(s) of: $3"; saw "found $n in:
+$2"; fi
 }
 
 # Match the whole line rather than looking a cell up by index: a harness that reimplements the
@@ -259,6 +284,70 @@ assert_contains "names the actual cause" "$out" 'uncommitted'
 assert_not_contains "is not the stage refusal" "$out" 'not ready'
 assert_not_contains "is not the table-shape refusal" "$out" 'Status column'
 assert_not_contains "is not the missing-row refusal" "$out" 'no row for'
+
+# --- 0106 AC1, AC2 — a populated touches: is a verified scope and is never overwritten ---------
+# The defect: on a RE-claim, `claim` printed `touches:` with the whole `expects:` seed and then
+# stopped skipping the old entries at the first line that was not a `- ` bullet — a standalone
+# comment. So the previous session's deliberately narrowed list came back BELOW the widened seed,
+# with its explanatory comment now annotating the wrong list and every shared path listed twice
+# (0039, then 0086, which is what made it systematic rather than a one-off).
+#
+# The fix is the rule `develop` already states for `expects:` versus `touches:` — a prediction never
+# overwrites a verified scope — so the seed applies only where the field is EMPTY.
+echo "0106 AC1 — a re-claim leaves a populated touches: exactly as the previous session narrowed it"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0010 | Re-claimed | develop | ready | 0000 |' 0010 'expects:
+  - src/alpha.ts
+  - src/beta.ts
+  - tests/alpha.test.ts' 'touches:
+  # narrowed: src/beta.ts is read, never written
+  - src/alpha.ts'
+out="$(run_claim 0010)" && rc=0 || rc=$?
+item="$(cat "$FIX/.claude/backlog/items/0010-fixture.md")"
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the narrowed block survives intact, comment and all" "$item" 'touches:
+  # narrowed: src/beta.ts is read, never written
+  - src/alpha.ts
+---'
+assert_count "the kept path appears once, not twice" "$(touches_block 0010)" '  - src/alpha.ts' 1
+# The ENTRY form, not the bare path: the narrowing comment names src/beta.ts too, so a substring
+# match on the path alone fails against a correct result.
+assert_not_contains "the seed did not re-add the path the narrowing excluded" "$(touches_block 0010)" '- src/beta.ts'
+assert_contains "the item is still claimed" "$item" 'claimed_by: "tok0"'
+
+echo "0106 AC2 — and the report says the field was left alone, and what it kept"
+assert_contains "says it was left as the previous session set it" "$out" 'left as the previous session set it'
+assert_contains "prints the paths it kept" "$out" 'src/alpha.ts'
+assert_not_contains "does not tell the session a fresh seed was written" "$out" 'set provisionally from expects:'
+
+# --- 0106 AC3 — a non-building stage gets no build scope --------------------------------------
+# `verify` opens none of the files a build scope names — it writes the item and the queue — so a QA
+# claim that seeded `expects:` reserved seven paths against the other window for a pass that touched
+# none of them, which is exactly the suboptimal pick `touches:` exists to avoid.
+echo "0106 AC3 — a row at next: verify is not seeded from expects:"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0011 | Up for QA | verify | ready | 0000 |' 0011 'expects:
+  - src/alpha.ts
+  - tests/alpha.test.ts'
+out="$(run_claim 0011)" && rc=0 || rc=$?
+item="$(cat "$FIX/.claude/backlog/items/0011-fixture.md")"
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "touches: is left empty" "$item" 'touches:
+---'
+assert_contains "expects: is left as queue wrote it" "$item" 'expects:
+  - src/alpha.ts'
+assert_contains "the item is still claimed" "$item" 'claimed_by: "tok0"'
+assert_contains "the report names the stage it declined to seed for" "$out" 'verify'
+assert_contains "the report says why, not just that" "$out" 'does not build'
+assert_not_contains "does not claim a provisional scope was written" "$out" 'set provisionally from expects:'
+
+echo "0106 AC3 — develop is still seeded, so the stage test is a test and not a switch-off"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0012 | To build | develop | ready | 0000 |' 0012 'expects:
+  - src/alpha.ts'
+out="$(run_claim 0012)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "touches: carries the expects list" "$(cat "$FIX/.claude/backlog/items/0012-fixture.md")" 'touches:
+  - src/alpha.ts
+---'
+assert_contains "the report says to narrow it" "$out" 'NARROW it'
 
 # --- result -----------------------------------------------------------------------------------
 echo
