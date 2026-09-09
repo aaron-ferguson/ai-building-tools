@@ -2,8 +2,8 @@
 id: "0077"
 title: Guard the backlog scripts against a broken embedded awk program
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: s
 created: 2026-09-01
@@ -16,19 +16,10 @@ expects:
   - skills/queue/templates/close
   - skills/queue/templates/claim
   - skills/queue/templates/next
-claimed_by: "4e31"
-claimed_at: 2026-09-09T19:50:31Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/backlog-scripts-installed.test.sh
-  - skills/queue/templates/next
-  - skills/queue/templates/claim
-  - skills/queue/templates/close
-  - skills/queue/templates/handoff
-  - .claude/backlog/next
-  - .claude/backlog/claim
-  - .claude/backlog/close
-  - .claude/backlog/handoff
-  - references/CONCURRENCY.md
+closed: 2026-09-09
 ---
 
 ## Problem
@@ -67,12 +58,12 @@ suite ran at all.
 
 ## Acceptance criteria
 
-- [ ] AC1 — `tests/backlog-scripts-installed.test.sh` runs `sh -n` on each of the four templates and each
+- [x] AC1 — `tests/backlog-scripts-installed.test.sh` runs `sh -n` on each of the four templates and each
   installed copy. (Written as three; `0081` added `handoff`, and FR1 says *every script it already
   checks*, so the built scope is four.)
-- [ ] AC2 — Introducing an apostrophe inside a template's `awk` comment turns that test red, naming the script.
-- [ ] AC3 — The failure message says the script's syntax is broken, not that it diverged from its template.
-- [ ] AC4 — The convention against apostrophes in embedded `awk` comments is stated where the scripts are
+- [x] AC2 — Introducing an apostrophe inside a template's `awk` comment turns that test red, naming the script.
+- [x] AC3 — The failure message says the script's syntax is broken, not that it diverged from its template.
+- [x] AC4 — The convention against apostrophes in embedded `awk` comments is stated where the scripts are
   documented, with the quoting as its reason.
 
 ## QA plan
