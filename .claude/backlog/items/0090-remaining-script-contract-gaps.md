@@ -146,3 +146,29 @@ correctly forbidden from widening someone else's contract.
   sequence, which a session running `./claim` never executes, so the requirement reads as a property
   of the by-hand commit rather than of the scripts'. FR4 is what closes that, and no new rule was
   written — a second copy of a rule that did not fire weakens both.
+
+### Build pass, 2026-09-09 (develop, token 06a6)
+
+- **All four line-number citations in *Problem* had drifted; all four substantive claims held.**
+  `close:251`→`642`, `claim:136/140`→`156/159`, `close:61`→`77`, `handoff:102`→`103`. A line number
+  is a quoted figure about a file the ticket does not own in the sense `develop` Step 2 means, and it
+  ages faster than any other kind — but the symbol grep the same step prescribes (`grep -n skiplist`,
+  `grep -n WARNING`) recovered every one in a single call. Cite the symbol as well as the line.
+- **All three refusals sit BEFORE the lock, so AC3's and AC4's "the lock does not exist afterwards"
+  is satisfied by construction, not by the trap.** `claim` already had this shape from 0082 and its
+  comment says why: a refusal that has taken the lock has something to undo. Worth knowing that the
+  ACs as written would also pass on a refusal that took the lock and released it correctly — they do
+  not distinguish the two, and the stronger property is the one the code actually has.
+- **`close` writes `closed: <date>` immediately after `touches:` in the frontmatter.** A first
+  FR1 assertion of `touches:\n---` failed on a correct implementation for that reason. The existing
+  AC1 case already knew this and asserted `claimed_by:/claimed_at:/touches:` with nothing after it;
+  reading the sibling assertion before writing the new one would have skipped the round trip.
+- **`handoff`'s trailer comment cited only `develop` Step 1, i.e. the weaker half of the settled
+  question.** FR4's NFR is satisfied in all three scripts rather than the two it names: leaving
+  `handoff` citing one file would have left a third session the same partial reading that made the
+  question look open, in the one script that already had the trailer.
+- **`close`'s case-insensitive-pathspec comment gained weight rather than losing it.** It was written
+  to stop a warning crying wolf; FR3 turns that warning into a refusal, so the same bug now blocks a
+  legitimate close instead of printing noise. The comment was updated to say so — do not "tidy" those
+  two pathspecs to `$QUEUE`/`$DONE`.
+- Whole suite run file-by-file: 27 files, all green, no red anywhere in or out of scope.

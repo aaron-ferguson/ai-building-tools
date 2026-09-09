@@ -276,3 +276,16 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   justify their non-zero exit by that routing. Bears on the 0128 sprint slice (0131 especially), which
   is why it is parked rather than filed as a row by a session holding neither (pointer:
   `skills/orchestrate/SKILL.md:117`, item 0115).
+
+- 2026-09-09 (develop, 0090) — **A ticket that hardens the lifecycle scripts hardens them under
+  itself, and no step warns you.** 0090 FR3 makes `close` and `handoff` REFUSE where they used to warn
+  and carry on, and `.claude/backlog/handoff` is the script this very session then calls to hand the
+  ticket over — so from the moment FR3 landed, an uncommitted `QUEUE.md` in the tree would have
+  refused my own hand-off, correctly, on a rule I had just written. It happened to be clean. The
+  general shape is CLAUDE.md's *This project is the tool its sessions are running*, but that section
+  is about the **installed copy being stale**, which is the opposite direction: here `.claude/backlog/`
+  is edited in place, so the new behaviour is live for the editing session immediately, mid-ticket, on
+  a half-finished implementation. A ticket whose FRs make a lifecycle script refuse more should say so
+  in *Notes* and keep the shared files committed as it goes; a bug introduced in `close` or `handoff`
+  between Step 4 and Step 5 strands the ticket in the one script that could release it. Nothing in
+  `develop` Step 4 or Step 5, and nothing in `CONCURRENCY.md`, names this class.
