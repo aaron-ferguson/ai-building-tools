@@ -2,8 +2,8 @@
 id: "0075"
 title: Anchor a tool edit to the remote, at its start and at its bump
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: s
 created: 2026-09-01
@@ -15,12 +15,10 @@ expects:
   - skills/retro/SKILL.md
   - skills/develop/SKILL.md
   - tests/remote-anchor.test.sh
-claimed_by: "f5d0"
-claimed_at: 2026-09-09T15:39:06Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/retro/SKILL.md
-  - skills/develop/SKILL.md
-  - tests/remote-anchor.test.sh
+closed: 2026-09-09
 ---
 
 ## Problem
@@ -67,12 +65,12 @@ install against the checkout; nothing compares the checkout against the remote.
 
 ## Acceptance criteria
 
-- [ ] AC1 — `skills/retro/SKILL.md` instructs a fetch of every repo it will edit before Step 3's destination
+- [x] AC1 — `skills/retro/SKILL.md` instructs a fetch of every repo it will edit before Step 3's destination
   checks, and says a stale destination check is not evidence.
-- [ ] AC2 — The release chain in `retro` Step 5 names the fetch as its first step.
-- [ ] AC3 — The version-bump instruction says the next version is derived from the remote's current version,
+- [x] AC2 — The release chain in `retro` Step 5 names the fetch as its first step.
+- [x] AC3 — The version-bump instruction says the next version is derived from the remote's current version,
   and names the collision that occurred.
-- [ ] AC4 — Mutating the fetch sentence out of `skills/retro/SKILL.md` turns the new guard red.
+- [x] AC4 — Mutating the fetch sentence out of `skills/retro/SKILL.md` turns the new guard red.
 
 ## QA plan
 

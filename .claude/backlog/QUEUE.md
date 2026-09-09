@@ -23,7 +23,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0075 | Anchor a tool edit to the remote, at its start and at its bump | verify | in-progress |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
 | 0106 | Make touches mean one thing across claim, close and a transient mutation | develop | ready |  |
 | 0115 | Make --drift see a row and its item disagreeing, as three files say it does | develop | ready |  |

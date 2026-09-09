@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0075 | Anchor a tool edit to the remote, at its start and at its bump | bug | unit | 2026-09-09 | [items/0075-anchor-a-tool-edit-to-the-remote.md](items/0075-anchor-a-tool-edit-to-the-remote.md) |
 | 0114 | Let an agent-run retro complete its release chain instead of stopping half-released | bug | unit | 2026-09-09 | [items/0114-let-an-agent-run-retro-complete-its-release-chain.md](items/0114-let-an-agent-run-retro-complete-its-release-chain.md) |
 | 0111 | Give retro a resolution order for a workspace holding more than one backlog | bug | unit | 2026-09-09 | [items/0111-give-retro-a-resolution-order-for-several-backlogs.md](items/0111-give-retro-a-resolution-order-for-several-backlogs.md) |
 | 0078 | Route a finding by what it is about, not which repo you are standing in | feature | unit | 2026-09-09 | [items/0078-route-a-finding-by-what-it-is-about.md](items/0078-route-a-finding-by-what-it-is-about.md) |
