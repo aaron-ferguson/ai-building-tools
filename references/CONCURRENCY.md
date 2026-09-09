@@ -201,5 +201,9 @@ five land or nothing does**, a no-op being the failure it exists to stop. **`./n
 **Prose inside these scripts' single-quoted `awk` programs takes no apostrophe.** One closes the
 quoting around the whole program, and nothing errors at the edit: a comment reading `projects'
 spellings` took `close.test.sh` to 20 failures of 63, reporting an empty reconcile list and naming
-nothing about quotes. Write `"\047"` where the character is needed. The guard is `sh -n` over both
-copies of all four, before they are compared (`tests/backlog-scripts-installed.test.sh`).
+nothing about quotes. Write `"\047"` where the character is needed. The guard is two checks over
+both copies of all four, before they are compared (`tests/backlog-scripts-installed.test.sh`):
+`sh -n`, and a scan asserting that a single-quoted region spanning more than one line closes at the
+start of a line. `sh -n` alone is not enough — where the shell happens to re-pair the quotes the
+file stays valid `/bin/sh` and only `awk` sees a truncated program, which is how a mutation of
+`close`'s `ac_counts` block left the guard green while `close.test.sh` failed 83 cases.

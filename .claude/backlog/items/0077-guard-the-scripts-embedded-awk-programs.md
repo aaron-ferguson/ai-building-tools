@@ -156,6 +156,48 @@ suite ran at all.
   `## Claim tokens` still fails.
 
 
+### From `develop`, 2026-09-09 (`566c`), on the AC2 bounce
+
+- **What was added, and what was left alone.** AC1, AC3, AC4 and the AC5-before-AC2 ordering were
+  proved by `verify` and are untouched. The only change to the guard is a new `AC8` block, placed
+  between AC5 and AC2 for AC5's own reason — an identically-broken pair diverges from nothing, so
+  AC2 is silent by construction and the check has to run before it.
+- **What AC8 asserts, and why it is a text scan rather than a parse.** A single-quoted region
+  spanning more than one line is an embedded program, and the quote closing it must be the first
+  thing on its line bar whitespace and the awk block enders `)`, `}`, `]`. A stray apostrophe in
+  prose closes the region mid-comment, which fails that test wherever the shell happens to recover
+  — including the case `verify` found, where `/bin/sh` re-pairs the quotes and the file stays
+  valid. No parse check of the same shell can ever see that one, which is why the remedy had to be
+  positive rather than another parser.
+- **A scanner that does not model `$( )` sees none of these programs, and passes.** This cost two
+  iterations. Every awk program in the four scripts is written `x="$(awk '...')"`, so a state
+  machine that treats `"` as opening a double-quoted run to the next `"` never enters the
+  single-quoted state at all — it returns a clean report on a file broken exactly the way this
+  ticket exists to catch. Inside `$(...)` the shell re-enters unquoted parsing; the scan pushes
+  and pops a state stack on `$(` and `)` for that reason.
+- **Heredoc bodies had to be skipped, and the false positive was in `next`, not in an awk program.**
+  `next`s `cat <<'USAGE'` block is prose with apostrophes in it (`row's`, `graph's`), which a
+  quote-tracking scan reads as a two-line single-quoted region closing mid-sentence. Shell comments
+  and backslash escapes are handled for the same reason. Nothing else in the eight files trips it.
+- **A blanket "no apostrophe on a comment line" was tried first and rejected.** It catches both
+  incidents and is trivial to write, but the four scripts carry roughly ninety comment lines with
+  apostrophes in them, almost all outside any quoted program and entirely harmless. Making that
+  rule true would mean rewording ninety comments whose whole job is to carry an incident — and per
+  this repo's `CLAUDE.md`, rewrapping guarded prose is itself a breaking change.
+- **Mutation evidence, six mutations plus a clean control, each restored with
+  `git checkout -- <path>` after the guard was committed.** (1) `# it's the criteria block` at
+  `close:288`, **both copies** — `sh -n` accepts both, AC2 silent, AC8 reds on both naming
+  `close:287` as the opener and 288 as the early close: the exact state `verify` reported as
+  29 passed / 0 failed. (2) The historical incident verbatim at `close:557`, template only — AC5,
+  AC8 and AC2 all red. (3) `next:66`, template only. (4) `claim:130`, installed copy only. (5)
+  `handoff:183`, both copies. (6) **No-op control**: the same apostrophe in a *shell* comment
+  outside every program — AC8 stays green and only AC2 reds on the divergence, so the check is not
+  simply counting quotes. Clean tree: 37 passed, 0 failed.
+- **`references/CONCURRENCY.md`, *The four scripts*, now names both checks.** Its closing sentence
+  said the guard is `sh -n`, which was true when AC4 was written and is now half the answer. The
+  two phrases AC4 greps are on their own lines and were not touched.
+
+
 ## QA evidence
 
 Verified 2026-09-09 at `qa_level: unit` (this repo's whole suite, run file-by-file per
