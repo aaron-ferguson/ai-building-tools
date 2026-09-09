@@ -37,3 +37,14 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   **Filed as item `0126` on 2026-09-09; the lesson half is open** — the general rule, that a
   skill restating a reference's rule drifts invisibly because an *incomplete* restatement still
   reads as correct, is broader than that one paragraph and has no home yet.
+- 2026-09-09 (queue) — **`queue` Step 5 has no disposition for a swept entry whose work half an
+  existing row already carries, so this sweep invented one from `retro`'s vocabulary.** Step 5
+  offers exactly two outcomes: specify and rank it, or write an unranked `next: queue` stub. One of
+  three entries belonged wholly to `0060`, which already reserves that half for whoever claims it —
+  so a new row would have split one decision across two, and a stub would have been a row `develop`
+  must refuse. What the entry needed is `retro` Step 4's *absorbed*: name the row, append one dated
+  line to its *Notes & decisions*, remove the entry. Both sweepers empty the same file and only one
+  of them can say "this already has a home", which is also why the marker rule beside it covers only
+  the work-and-lesson case and not this one (pointer: `skills/queue/SKILL.md` Step 5,
+  `skills/retro/SKILL.md` Step 4, item `0057` — which lists four other missing `queue` operations
+  and not this one).
