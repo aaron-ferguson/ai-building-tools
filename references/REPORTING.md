@@ -87,10 +87,9 @@ closing step: only the stage knows which outcomes it can reach, and a shared lis
 wrong for every skill at once. What is shared is the shape and the position.
 
 **Adding or renaming a verdict word is editing `skills/orchestrate/outcome.schema.json`.** Its
-`verdict` enum carries the union of every stage's vocabulary, and a driven session validates against
-it — so a stage printing a word the enum lacks is a correct stage that reads as a schema failure and
-escalates. Nothing catches it: `tests/last-line.test.sh` asserts the line's *shape*, and
-`tests/orchestrate.test.sh` exercises only the verdicts it hardcodes.
+`verdict` enum carries the union of every stage's vocabulary and a driven session validates against
+it, so a stage printing a word the enum lacks is a correct stage that reads as a schema failure and
+escalates. No guard catches it: the line's *shape* is asserted, its vocabulary is not.
 
 **A session that holds no row** — `retro`, an ad-hoc `prototype`, a standing `design` question — writes
 a dash in the ID slot and names the command that runs next in place of a stage: `next: /queue`.
