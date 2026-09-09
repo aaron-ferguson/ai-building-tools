@@ -276,3 +276,16 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   Possibly two rules: `verify` states the verdict and names the constraint, never a menu; `develop`
   treats a two-remedy verdict as an open question unless the item's own FRs already pick one
   (pointer: `.claude/backlog/items/0086-add-a-light-qa-tier.md`, *Notes & decisions* 2026-09-08).
+
+- 2026-09-09 — **The citation enumeration is now authored in two places and nothing pins them
+  together.** `close`'s `path_is_conventional_guard` and `docs/decisions/003`'s *A citation has to
+  name an assertion* both spell out the same list — `tests`/`spec`/`__tests__` directories,
+  `*.test.*` / `*_test.*` / `*.spec.*` / `*_spec.*` / `test_*`, or mode `100755`. `003` is right to
+  record what shipped (FR14 asks for exactly that), so this is not a restatement to delete; the gap
+  is that `tests/close-by.test.sh` asserts `003` mentions `close_by` and the eligibility *rule*, and
+  never that its enumeration still matches the script's. Widening the `case` in `close` leaves `003`
+  stale and green. This is the same shape as the `queue`/`close` near-verbatim pair flagged on
+  2026-09-08 and still open, and the fix shape already exists in this repo:
+  `tests/cost-by-category.test.sh` was reanchored to assert a *relationship* between two figures
+  rather than either literal (pointer: `skills/queue/templates/close`,
+  `path_is_conventional_guard`; `docs/decisions/003-who-may-close-a-ticket.md:45-52`).
