@@ -197,25 +197,59 @@ suite ran at all.
   two phrases AC4 greps are on their own lines and were not touched.
 
 
+### From `verify`, 2026-09-09 (`2ea3`), on the AC8 remedy
+
+- **FAIL on AC2 again. The new scanner closes the hole `6387` found and leaves one of the same
+  shape.** The bounce case is genuinely fixed: `# it's the criteria block` inside `close`s
+  `ac_counts` awk program, both copies, now reds on both with the right message while `sh -n` still
+  accepts — 35 passed / 2 failed against `close.test.sh`s 87 failures. AC1, AC3, AC4 and the
+  AC5/AC8-before-AC2 ordering are all re-proved from this session's own mutations.
+- **The remaining hole is the program's opening line.** Appending a comment to the line that opens
+  a multi-line program — `ac_counts="$(awk '  # it's the criteria block` at `close:287`, both
+  copies — leaves `sh -n` accepting, AC8 green, AC2 silent, and
+  `backlog-scripts-installed.test.sh` reporting **37 passed, 0 failed** while `close.test.sh`
+  reports **115 passed, 86 failed**. That is the same end state the `6387` bounce named: a live
+  broken `close` under a fully green guard.
+- **Why, mechanically.** `early_close` only reports a close where `NR != sq_line`. That exemption
+  is load-bearing — a single-line program such as `awk '/^COUNT/ { print $2; exit }'` legitimately
+  closes on its opening line after non-whitespace — but it is written per *region*, so it exempts
+  the opening line of a multi-line program too. The distinguishing fact is available: a region that
+  opens and closes on one line is fine, whereas one that closes on its opening line and whose
+  program text then continues onto following lines is the defect.
+- **The constraint, not a menu.** AC2 must hold for an apostrophe anywhere inside a single-quoted
+  `awk` program, the opening line included. `Out of scope` still rules out `shellcheck` and
+  rewriting the scripts; narrowing the `NR != sq_line` exemption is neither.
+- **Not general — it depends on the file re-pairing.** The same mutation on `next:326` *is* caught,
+  but only incidentally: the odd quote cascades, `sh -n` reds, and AC8 reports a displaced quote
+  four lines further down. Catching it for the wrong reason in one script is not coverage.
+- **What is proved and must not be rebuilt.** The `$( )` state stack, the heredoc skip (probed with
+  a mutation at `next:326`, well past the `USAGE` block at 81 — the skip resumes correctly), the
+  two-apostrophe re-pairing case (`handoff:307`, caught), per-side naming (`claim` installed copy
+  only — AC5, AC8 and AC2 all red, template green), and the no-op control (apostrophe in a shell
+  comment outside every program — AC8 green, `close` 201/0) are all confirmed working.
+
+
 ## QA evidence
 
 Verified 2026-09-09 at `qa_level: unit` (this repo's whole suite, run file-by-file per
-`config.yml`), token `6387`, clean tree at both captures.
+`config.yml`), token `2ea3`. Tree clean at both the Step 2 baseline and the verdict capture, so the
+evidence set and the dirty set do not intersect.
 
 | Row | How checked | Result |
 |---|---|---|
-| AC1 — `sh -n` on four templates and four installed copies | ran `tests/backlog-scripts-installed.test.sh`; AC5 block prints 8 `ok` lines naming both paths per script. Mutated `.claude/backlog/close` alone → `FAIL close has a syntax error — .claude/backlog/close is not valid /bin/sh`, template still `ok` | PASS |
-| AC2 — an apostrophe in a template's `awk` comment reds, naming the script | canonical block (DONE-row builder, line 557): reds naming `close`. **Second mutation, `ac_counts` awk at line 288, both copies: 29 passed, 0 failed** while `close.test.sh` gave 118 passed, 83 failed | **FAIL** |
-| AC3 — the message says syntax, not divergence | `close has a syntax error — … is not valid /bin/sh (this is not a divergence): … unexpected EOF while looking for a matching quote` | PASS |
-| AC4 — the convention is stated where the scripts are documented, with the quoting as its reason | two `ok` lines. Deleting the paragraph → both red; rewording `quoting around the whole program` → the reason assertion red; moving the paragraph to `## Claim tokens` → both red, so the section anchor is load-bearing | PASS |
-| NFR Testing — the guard proved able to fail, restored by the path mutated | five mutations, each restored with `git checkout -- <that path>`; control run after each: `29 passed, 0 failed`, `close.test.sh` `201 passed, 0 failed` | PASS |
-| NFR Dependencies — adds nothing beyond `/bin/sh` | test shebang is `#!/bin/sh`; new code uses `sh -n`, `grep -F`, `awk` only | PASS |
-| Always-on (`CONVENTIONS_CORE.md`) | test-and-docs change in a public repo; no company material, secrets or PII. Full suite 26 files green before mutation | PASS |
+| AC1 — `sh -n` on four templates and four installed copies | mutated `.claude/backlog/claim:130` alone: `FAIL claim has a syntax error — .claude/backlog/claim is not valid /bin/sh`, template green. Per-side naming is real | PASS |
+| AC2 — an apostrophe inside a template's `awk` comment reds, naming the script | body case (`close:288`, both copies) reds on both, naming `close:287` as opener — the `6387` bounce is fixed. **Opening-line case (`close:287`, both copies): guard 37 passed / 0 failed while `close.test.sh` gives 115 passed / 86 failed** | **FAIL** |
+| AC3 — the message says syntax/quote defect, not divergence | `close has a quote defect, not a divergence — the awk program opened at …:287 is closed early by a quote on line 290`; and `… has a syntax error — … (this is not a divergence)` | PASS |
+| AC4 — the convention is stated where the scripts are documented, with the quoting as its reason | three mutations of `references/CONCURRENCY.md`: replacing `takes no apostrophe` → rule assertion red; replacing `quoting around the whole program` → reason assertion red; renaming the `## The four scripts` heading → section assertion red. Anchor is load-bearing | PASS |
+| AC5/AC8 before AC2 (ordering) | both-copies mutations diverge from nothing, so AC2 is silent by construction; AC5 and AC8 both reported above it in every run | PASS |
+| NFR Testing — the guard proved able to fail, restored by the path mutated | seven mutations, each restored with `git checkout -- <that path>`; control after each. Final control: `backlog-scripts-installed` 37/0, `close` 201/0, `next` 205/0, `claim` 42/0, `handoff` 104/0 | PASS |
+| NFR Dependencies — adds nothing beyond `/bin/sh` | new `early_close` uses `awk` only; test shebang unchanged at `#!/bin/sh` | PASS |
+| Always-on (`CONVENTIONS_CORE.md`) | test-and-docs change in a public repo; no company material, secrets or PII. `measurement.test.sh` (112/0) guards home-directory paths | PASS |
 
-Whole-suite baseline, all 26 files green, tallies pasted from each run: `backlog-scripts-installed`
-29/0, `close` 201/0, `next` 205/0, `handoff` 104/0, `orchestrate` 130/0/0 skipped,
-`measurement` 112/0, `close-by` 67/0, `retro-tool-edit` 50/0, `citations` 46/0, `release` 45/0,
-`claim` 42/0, `findings-routing` 41/0, `graph-fields` 36/0, `cost-by-category` 29/0,
-`skill-size` 27/0, `reporting` 23/0, `remote-anchor` 20/0, `falsifiable-acs` 17/0, `last-line` 17/0,
+Whole-suite baseline, all 26 files green, tallies pasted from each run: `next` 205/0, `close` 201/0,
+`orchestrate` 130/0/0 skipped, `measurement` 112/0, `handoff` 104/0, `close-by` 67/0,
+`retro-tool-edit` 50/0, `citations` 46/0, `release` 45/0, `claim` 42/0, `findings-routing` 41/0,
+`backlog-scripts-installed` 37/0, `graph-fields` 36/0, `cost-by-category` 29/0, `skill-size` 27/0,
+`reporting` 23/0, `remote-anchor` 20/0, `falsifiable-acs` 17/0, `last-line` 17/0,
 `reference-size` 15/0, `batching` 13/0, `floor-probe` 12/0, `money-in-skill-prose` 12/0,
 `qa-level-once` 11/0, `external-feedback` 9/0, `item-ac-form` 4/0.
