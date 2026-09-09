@@ -14,7 +14,7 @@ relates: ["0076", "0078"]
 expects:
   - skills/retro/SKILL.md
   - skills/develop/SKILL.md
-  - tests/skill-prose.test.sh
+  - tests/remote-anchor.test.sh
 claimed_by: "0968"
 claimed_at: 2026-09-09T15:32:03Z
 touches:
@@ -103,3 +103,39 @@ install against the checkout; nothing compares the checkout against the remote.
   while being exactly level, because its `origin/main` ref is stale. A session standing there and
   running this ticket's fetch-and-report-divergence check gets a confidently wrong answer **in the
   direction that reads as safe**.
+
+- 2026-09-09 (develop, `0968`) — **`expects:` named `tests/skill-prose.test.sh`, which does not
+  exist and never has.** The guards went into a new self-contained `tests/remote-anchor.test.sh`,
+  which is this repo's idiom — every test file defines its own `window()` helper rather than
+  sourcing a shared one. `expects:` is corrected above.
+
+- 2026-09-09 (develop, `0968`) — **FR3 and FR4 were already satisfied in the machinery and unsaid
+  in the prose, which is the whole of what was left to build.** `tools/release` was written by
+  `0084` and cites this ticket by number: its step 1/9 is `git fetch`, and step 3 derives the next
+  version from the *remote's* `plugin.json` precisely because "a hand-picked version collided
+  (0075)". `tests/release.test.sh` already guards both. So FR4's literal chain —
+  *fetch → edit → test → commit → push → bump → install → restart* — is **stale in shape**: since
+  `0114`, retro Step 5 names one invocation, `tools/release --bump --yes`, and there are no
+  separate steps to reorder. What the deliverable actually is: Step 5 now *states* that the chain
+  begins with the fetch and where the version comes from, because a session reads the prose and
+  not the script. ACs 2 and 3 are met as written; the FR's arrow-list is not reproduced.
+
+- 2026-09-09 (develop, `0968`) — **FR1 reaches `develop`, not only `retro`, and the ACs do not say
+  so.** `expects:` named `skills/develop/SKILL.md`, and a `develop` session on *this* backlog edits
+  the skills in it every ticket; Step 2's staleness greps and Step 3's guard greps are damaged by a
+  stale tree in exactly the way retro Step 3's destination greps are. The rule went into Step 1,
+  before `./claim`, since the claim itself commits. That case is asserted in the guard as FR1
+  rather than as an AC.
+
+- 2026-09-09 (develop, `0968`) — **the 2026-09-09 note above was verified, not taken on trust.**
+  `~/.claude/plugins/marketplaces/ai-building-tools` is a real repository with the right `origin`,
+  and `git status -sb` there reported `## main...origin/main [ahead 278]` against the real
+  checkout's `ahead 19`. The answer to "which checkout" is cited rather than restated: the repos
+  are the ones `references/CONVENTIONS.md` already resolves — the conventions ladder and
+  `tools.path` — and never the plugin install.
+
+- 2026-09-09 (develop, `0968`) — **the capitalisation of a guarded phrase is part of the guard.**
+  Two cases went red after the prose was written because `**Behind the remote stops the pass**`
+  opens a sentence while the assertion was lowercase, and a third because a bold span wrapped
+  across a source line. Both are the line-based-`grep` hazard `CLAUDE.md` names, in a form that
+  survives a careful read of the paragraph.

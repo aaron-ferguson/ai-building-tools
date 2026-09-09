@@ -130,3 +130,19 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   that does. Nothing in `develop` or `verify` asks whether a seam added for the suite widens the
   surface the ticket exists to narrow, and the stale sentence was written by the same pass that
   falsified it (pointer: `tools/release`, `--confirm-device`).
+- 2026-09-09 — **A sibling had already implemented two of the ticket's FRs and cited the ticket by
+  number while doing it, and nothing in selection or Step 2 says to grep for your own id.**
+  `0075` FR3 asks that the version bump derive from the remote; `tools/release` has done exactly
+  that since `0084`, in a comment reading "the next version it names has to be derived from the
+  REMOTE's plugin.json (0075: a hand-picked version collided)", with `tests/release.test.sh`
+  guarding it. `develop` Step 2 prescribes grepping the *symbol* an FR names for a sibling item
+  number — the reverse grep, `grep -rn '0075' --exclude-dir=.claude`, is one call, resolves at the
+  site rather than through `DONE.md`, and would have re-scoped the ticket before a line was read
+  (pointer: `skills/develop/SKILL.md` Step 2, *the cheap form of that check is a grep*).
+- 2026-09-09 — **A ticket's `expects:` named a test file that has never existed, and `./next`
+  prints it as if it were a path.** `0075` expected `tests/skill-prose.test.sh`; there is no such
+  file in the tree or in the history. `./next develop`'s `EXPECTS` line is the first thing a
+  claiming session reads about scope, and `./claim` seeds `touches:` from it verbatim — so a
+  fictional path is reserved as held scope until the session narrows it by hand. `./claim` already
+  warns to narrow; what it cannot say is which of the paths do not exist, which it could
+  (pointer: `.claude/backlog/claim`, the `touches: is set provisionally` warning).
