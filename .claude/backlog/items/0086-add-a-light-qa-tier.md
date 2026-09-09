@@ -479,3 +479,81 @@ merge exists to prevent.
   `not yet measured` failed against `002`'s emphasis capitals — a presence grep pins one casing — so
   `close-by.test.sh` carries a case-insensitive matcher for claims whose emphasis is a prose
   decision.
+
+- **Failed back 2026-09-08 by afac (verify). One AC is red, and the NFR row behind it with it.**
+  Everything in the `close_by` half holds when `close` is driven directly; the red is in the review
+  half's single mechanical guard.
+
+  **AC5 fails on its own *Red when* clause, and NFR Testing fails on its second sentence.** The
+  guard refuses a checklist of **plain bullets**, which is what its Given describes and what it was
+  proved red on. It does **not** refuse a checklist of **checkboxes with none ticked**. The counter
+  is `close`'s `rc_boxes`, incremented on `$0 ~ /^- \[[ xX]\]/` — a class containing a **space**, so
+  `- [ ] line` counts as a box. `rc_bullets > 0 && rc_boxes == 0` is therefore *checkbox syntax
+  present*, exactly the "checked by presence rather than by ticked-ness" the AC exists to exclude.
+
+  Driven, not inferred: a fixture at `qa_level: review` with three unticked checkbox lines under
+  `## Review checklist` closed on exit 0, `status: done`, row moved to `DONE.md`, nothing about the
+  checklist ticked. That is verbatim the failure the QA plan says AC5 exists to catch — *"a prose
+  change closing with nothing checked"* — and `DONE.md` cannot tell it from a performed review.
+
+  **The form that defeats the guard is the form the instructions tell a session to write.** FR11,
+  `verify` Step 2 (*"record one checkbox per checklist line"*) and `close`'s own message (*"Tick them
+  in the `- [ ] …` form"*) all direct the session to `- [ ]` boxes. A session that writes them and
+  then stops has passed the gate. The only input the guard catches is the one no instruction
+  produces.
+
+  **Two comments assert the opposite of the code beneath them** and should move with the fix, since
+  both read as discharged evidence: `close`'s *"Asserted on the count of TICKED boxes and never on
+  the section's presence"*, and `tests/close.test.sh:751`'s *"the reason it is asserted on the count
+  of TICKED boxes rather than on the section's presence"*. Neither is true of `rc_boxes`.
+
+  **`tests/close.test.sh` has no case for the input at all** — its four AC5 cases are plain bullets
+  (refused), all-ticked (closes), partly-ticked (closes), empty section (closes). The gap between
+  "partly ticked closes" and "none ticked closes" is where the defect lives, and the partly-ticked
+  allowance is correct and must survive: the fix is `rc_boxes` counting `/^- \[[xX]\]/` only, plus
+  the missing case, not a stricter rule.
+
+  **Second thing to settle in the same pass, and it is FR3's gate rather than FR11's.** The citation
+  check admits **any backticked, git-tracked path containing `/`** — it never asks whether the path
+  is an assertion. Driven: a `close_by: develop` fixture whose two ACs cite only a tracked
+  `docs/notes.md` (prose, no assertion anywhere in the repo) closed on exit 0. So the door
+  build-note 3 shut for a light ticket with *no* criteria is still open for one whose criteria cite
+  documents, which is option 3 — the self-attested tier this ticket rejected — reachable in one
+  wrong citation. The residual-risk paragraph accepts that `close` *"cannot check that the guard can
+  fail"*; it does not say the gate cannot check that the cited path is a guard at all. Either narrow
+  it (a tracked path that is executable, or under a configured test root) or widen that paragraph to
+  say so and assert the accepted case.
+
+  Everything else was checked and holds — see `## QA evidence`. The suite is green: 24 files, 1175
+  assertions, run file-by-file per `config.yml`'s attribution note.
+
+## QA evidence
+
+Verified 2026-09-08 by `afac` at `qa_level: unit` (frontmatter; the QA plan's `**Level:** unit`
+agrees — no drift). Suite run file-by-file: **24 files, 1175 assertions, 0 failed.** `lint` and
+`typecheck` are unset in `config.yml`, so neither ran. Working tree clean at the level run and at
+verdict; intersection with the evidence set empty, so not advisory.
+
+Close-path rows were checked by **driving `.claude/backlog/close` against independently scaffolded
+fixture repos**, not by reading `tests/close.test.sh`. Guard mutations were re-run rather than taken
+from the build notes' table; 15 mutations, each confirmed landed by hash and restored from a copy,
+with two no-op controls that landed and stayed green.
+
+| Row | How it was checked | Result |
+|---|---|---|
+| AC1 | Drove `close 0201 tok1` on a fixture at `next: develop`, `close_by: develop`, both ACs citing a backticked git-tracked `tests/…`. Exit 0, `closed 0201`, 2 ACs ticked, row moved to `DONE.md`, `status: done`, tree clean after (committed). Guard falsifiable: M1 gated off the `close_by = develop` branch → `close.test.sh` 13 failed | **PASS** |
+| AC2 | Same row with `close_by: verify` (fixture 0202) and with the field absent (0203). Both exit 1, *"is at stage 'develop', not 'verify' — only a verified ticket is closable"* + *"verify owns closing"*; QUEUE row intact, 0 ACs ticked, tree unchanged | **PASS** |
+| AC3 | Fixture 0204, AC2 reading *"verified by reading it carefully"*. Exit 1, names the criterion by line **and** text: *"line 20: AC2 — second thing, verified by reading it carefully."*; tree unchanged. M2 disabled the per-bullet token test → 11 failed | **PASS** |
+| AC4 | Fixture 0205 at `qa_level: review` + `close_by: develop`. Exit 1, *"carries qa_level: review with close_by: develop, and those cannot hold together"*. M3 removed the combined condition → 4 failed | **PASS** |
+| AC5 | Given/when/then holds: fixture 0206 (3 plain bullets) exits 1, quotes the count `3`, names the section, names the `- [ ]` form, tree unchanged; M4 gated the refusal off → 6 failed. **But its *Red when* is satisfied by the shipped code**: fixture 0211, three `- [ ]` checkbox lines with none ticked, exits **0** and closes `status: done` with the checklist unperformed. `rc_boxes` counts `/^- \[[ xX]\]/` — presence, not ticked-ness. No case in `tests/close.test.sh` covers this input | **FAIL** |
+| AC6 | Repo `config.yml` has no `review:` block (required by AC6/AC11's own fixtures). `skills/verify/SKILL.md:155` carries *"`review` is not exempt: with no `review:` block configured, stop"* with the reason. M6 rewrote it to *"review may be skipped"* → `close-by.test.sh` 1 failed | **PASS** |
+| AC7 | `skills/develop/SKILL.md:438` reads `close_by` before choosing its ending; `:449` states raise-only; `:568` the closing branch. `orchestrate/outcome.schema.json` carries `CLOSED` beside the three existing verdicts. M8 made Step 5 unconditional → 1 failed; M9 removed the raise-only direction → 2 failed | **PASS** |
+| AC8 | `tests/graph-fields.test.sh:128` enumerates `close_by` in its key list. `./next verify` printed the live take line: `TAKE 0086 \| … \| size l \| qa unit \| close verify` — printed unconditionally, absent or not. M14 dropped the key from the template → 1 failed; M15 removed it from `next`'s printf → `next.test.sh` 2 failed | **PASS** |
+| AC9 | Fixture 0208 has no `close_by:` line at all: `close` at `next: verify` exits 0 and closes normally; `claim` and `next` read this repo's own items unchanged (0086's own claim and take line both worked with the field present, 0052's without) | **PASS** |
+| AC10 | `002`'s Light row states the mechanism and `$4.20 / **−26%**`; `−32%` survives only as a dated correction (*"was priced at $3.89/−32% … and that figure was wrong"*); −18% is labelled *"PROJECTED AND NOT YET MEASURED"* with the 2026-10-31 date. `003` exists (8.5K), accepted, and cites the shipped `close_by`. M11 restored `$3.89/−32%` as the live row → 3 failed; M12 removed the forecast label → 1 failed; M13 desynced the finding sentence from the row → `cost-by-category.test.sh` 1 failed, which is the reanchored relational assertion working | **PASS** |
+| AC11 | Level table holds `verify` **and** `review` as separate rows plus the three pyramid levels; prose tells them apart (*"but a mechanical check does"* / *"no mechanical check either"*); template enum reads `qa_level: verify \| review \| unit \| integration \| e2e`. This session ran at `unit` against a config with no `review:` block and never consulted one. M7 deleted the `verify` row → 1 failed | **PASS** |
+| NFR Documentation | The eligibility rule's enforcement lives in one place — `skills/queue/templates/close` is the only file in `skills/` matching *"committed assertion"*. `queue:281-294` states the *setting* precondition (its own job under FR5) and points at `003` and at `close` as the enforcer; `verify` and `develop` cite rather than restate. Note: `queue`'s sentence and `close`'s header comment are near-verbatim, which is the pair to watch | **PASS** |
+| NFR Testing | First sentence holds — every close-path row above was proved against a real fixture row, driven, not read. **Second sentence fails:** *"an unperformed checklist must be distinguishable from a performed one"* — fixture 0211 is an unperformed checklist that closes identically to a performed one, and `DONE.md` records both as done. This is the *guard that cannot fail* shape the row names | **FAIL** |
+| NFR Migration | Proved against an item with no `close_by:` line at all (fixture 0208, closes as today) and against the two refusal paths for an absent field (0203). This repo's 60-odd existing items carry no `close_by:` and `next --drift` reports nothing new; an invalid value is a loud refusal, not a fail-open (*"records close_by: 'sometimes', which is neither"*) | **PASS** |
+| Newly reachable (Step 4) | The change creates one new route to `status: done` — a build session closing its own row. Gated on `next: develop` **and** `close_by: develop` **and** every AC citing a tracked path, all three driven above, and `next: design` + `close_by: develop` is refused (FR6's narrowing). The gate's weak edge is what a "citation" may be: a tracked prose path passes it — recorded in *Notes & decisions* above | **PASS with a noted gap** |
+| Always-on (`CONVENTIONS_CORE.md`) | Shell: inputs validated at the top, five refusals before any write, each descriptive and naming the offending value; fails closed where `git` is unreadable rather than degrading to an existence check; `any_token_committed` keeps the loop two deep; `ls-files … -- ":/$tok"` is `--`-terminated so a token from the item cannot become an option. No secrets, no new log field, no analytics event, no egress destination — the privacy pass does not fire. No auth, credential or visibility change; no UI | **PASS** |
