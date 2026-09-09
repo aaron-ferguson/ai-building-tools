@@ -720,6 +720,11 @@ rm -f "$FIX/$BL/items/0055-fixture.md.bak"
 out="$(run_close 0055 ab12)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names the criterion"  "$out" 'AC1 — first criterion'
+# The two ways a citation fails have different fixes — add the guard, or cite a different file —
+# and a message collapsing them sends the reader to the wrong one. Asserted in both directions,
+# because a single reason string satisfies either assertion on its own.
+assert_contains "says the path is not committed"     "$out" 'names no committed path'
+refute_contains "and not that it is the wrong KIND"  "$out" 'is not an assertion'
 assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0055-fixture.md")" 'status: in-progress'
 
 # --- 0086 AC4 — review and develop cannot be carried together ----------------------------------
@@ -944,6 +949,7 @@ assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names the criterion"            "$out" 'AC1 — first criterion'
 assert_contains "names the path it rejected"     "$out" 'docs/notes.md'
 assert_contains "and says WHY, not just that it is uncited" "$out" 'not an assertion'
+refute_contains "and does not call a committed file untracked" "$out" 'names no committed path'
 assert_line "the row is untouched" '| 0068 | Cites a prose document | develop | in-progress | 0000 |' QUEUE.md
 assert_contains "the item is not marked done" "$(cat "$FIX/$BL/items/0068-fixture.md")" 'status: in-progress'
 refute_contains "and no criterion was ticked"  "$(cat "$FIX/$BL/items/0068-fixture.md")" '- [x]'

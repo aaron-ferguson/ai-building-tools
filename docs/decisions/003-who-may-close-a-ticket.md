@@ -42,6 +42,14 @@ A new `close_by` answers *who closes*.
   not a citation, a repo git cannot read admits no light close, and a light ticket with **no**
   criteria is refused rather than closed vacuously, since *every criterion is an assertion* is
   vacuously true of none.
+- **A citation has to name an assertion, not merely a tracked file.** `close` cannot know what an
+  arbitrary file does, so it reads the two signals it can, and either suffices: the path sits under
+  a `test`/`tests`/`spec`/`specs`/`__tests__` directory or is named `*.test.*` / `*_test.*` /
+  `*.spec.*` / `*_spec.*` / `test_*`, **or** it was committed executable (the index's mode, not the
+  working tree's). Both routes exist because either alone refuses a real guard — a JS suite is
+  committed at mode 100644, and a repo-specific check can be an executable at a path no convention
+  predicts. A guard the pair cannot recognise is named conventionally or the ticket goes to
+  `verify`; the refusal says which.
 
 **Why the eligibility rule is that one and not a judgement of blast radius.** The two recorded times
 the independent gate bit in this repo, it bit on **AC quality, not code defects**: `0021` came back
@@ -103,11 +111,19 @@ rename takes; it is not a side effect of this one.
 
 ## Residual risk
 
-**`close` can check that each light criterion *cites* a guard. It cannot check that the guard *can
-fail*.** That is this repo's known failure mode — `testing-conventions.md`: *a guard only ever seen
-passing is indistinguishable from one wired to nothing*. The residual risk moves from *nobody
-checked* to *the builder's own recorded red*, which is weaker than an independent read and
-deliberately so. The eligibility rule is what keeps the class narrow.
+**`close` can check that each light criterion cites something shaped like a guard. It cannot check
+that the guard *can fail*.** That is this repo's known failure mode — `testing-conventions.md`: *a
+guard only ever seen passing is indistinguishable from one wired to nothing*. The residual risk moves
+from *nobody checked* to *the builder's own recorded red*, which is weaker than an independent read
+and deliberately so. The eligibility rule is what keeps the class narrow.
+
+**The shape check is a heuristic, and it is the second thing to watch.** As first shipped the gate
+asked only whether the cited path was tracked, and a fixture whose criteria cited a prose
+`docs/notes.md` closed a light ticket having executed nothing — the *self-attested* tier rejected
+above, reachable in one wrong citation (found 2026-09-08 in QA, fixed the same day). The narrowing
+closes that door for the citation shapes anyone writes by accident; it does **not** establish that
+the file named is a guard for *this* criterion, and a light ticket can still cite a real test that
+tests something else.
 
 **What to re-examine first, and what would trigger it:** the first time a light ticket closes on a
 guard that proved nothing. If that happens, the question is not whether to widen the check — a
@@ -121,6 +137,8 @@ recorded red-then-green transcript rather than a citation.
 - The mechanical assertion standing behind the whole prose half is `close` refusing an unticked
   `## Review checklist`, asserted on the count of ticked boxes and never on the section's presence
   (`tests/close.test.sh`, 0086 AC5). A prose rule with no such assertion is the class of guard this
-  repo has been bitten by twice.
+  repo has been bitten by twice. **Ticked-ness, not checkbox syntax**: the first implementation
+  counted `- [ ]` as a box, so the form every instruction tells a session to write was the one form
+  the guard let through, and the only input it caught was one nothing produces.
 - `develop`'s last line gains a fourth verdict, `CLOSED`, for the one case where the build stage is
   also the closing one.

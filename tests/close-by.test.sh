@@ -301,6 +301,12 @@ else
   has "AC10 — and the eligibility rule"                "$D003" 'named on the AC line'
   has "AC10 — records the rejected alternatives"       "$D003" 'Rejected'
   has "AC10 — and the residual risk it accepted"       "$D003" 'Residual risk'
+  # The gate the record describes has to be the gate that shipped. 003 said only that a citation is
+  # checked for being tracked until QA drove a light ticket closed on a prose document
+  # (2026-09-08); the narrowing and its remaining hole are both in the record now, and this is what
+  # keeps them there.
+  has "FR3 — 003 records that a citation must name an assertion" "$D003" 'not merely a tracked file'
+  has "FR3 — and that the shape check is a heuristic, not a proof" "$D003" 'shape check is a heuristic'
   hasnt "AC10 — and does not republish the 32% as live" "$D003" 'Light at $3.89'
 fi
 
