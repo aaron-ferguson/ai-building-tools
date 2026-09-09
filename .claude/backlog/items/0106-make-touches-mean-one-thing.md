@@ -3,7 +3,7 @@ id: "0106"
 title: Make touches mean one thing across claim, close and a transient mutation
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 qa_manual:
 size: m
@@ -19,9 +19,15 @@ expects:
   - skills/queue/templates/close
   - skills/develop/SKILL.md            # Step 1's definition of what belongs in touches
   - tests/claim.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "1a3e"
+claimed_at: 2026-09-09T20:17:31Z
 touches:
+  - .claude/backlog/claim              # the seeding defect
+  - skills/queue/templates/claim       # its source of truth
+  - .claude/backlog/close              # declared-vs-actual reporting
+  - skills/queue/templates/close
+  - skills/develop/SKILL.md            # Step 1's definition of what belongs in touches
+  - tests/claim.test.sh
 ---
 ## Problem
 
