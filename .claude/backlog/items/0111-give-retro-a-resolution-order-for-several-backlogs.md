@@ -3,7 +3,7 @@ id: "0111"
 title: Give retro a resolution order for a workspace holding more than one backlog
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-07
@@ -15,9 +15,12 @@ expects:
   - skills/retro/SKILL.md
   - references/CONVENTIONS.md
   - tests/retro-tool-edit.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "cd92"
+claimed_at: 2026-09-09T14:47:48Z
 touches:
+  - skills/retro/SKILL.md
+  - references/CONVENTIONS.md
+  - tests/retro-tool-edit.test.sh
 ---
 
 ## Problem

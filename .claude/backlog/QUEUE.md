@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0111 | Give retro a resolution order for a workspace holding more than one backlog | develop | ready |  |
+| 0111 | Give retro a resolution order for a workspace holding more than one backlog | develop | in-progress |  |
 | 0114 | Let an agent-run retro complete its release chain instead of stopping half-released | develop | ready |  |
 | 0075 | Anchor a tool edit to the remote, at its start and at its bump | develop | ready |  |
 | 0077 | Guard the backlog scripts against a broken embedded awk program | develop | ready |  |
