@@ -20,9 +20,8 @@ claimed_by: "24af"
 claimed_at: 2026-09-09T15:50:01Z
 touches:
   - tests/backlog-scripts-installed.test.sh
-  - skills/queue/templates/close
-  - skills/queue/templates/claim
-  - skills/queue/templates/next
+  - references/CONCURRENCY.md
+  - skills/queue/templates/close  # mutated transiently for the falsifiability proof, then restored
 ---
 
 ## Problem
