@@ -277,24 +277,57 @@ suite ran at all.
 ## QA evidence
 
 Verified 2026-09-09 at `qa_level: unit` (this repo's whole suite, run file-by-file per
-`config.yml`), token `2ea3`. Tree clean at both the Step 2 baseline and the verdict capture, so the
-evidence set and the dirty set do not intersect.
+`config.yml`'s note on the fail-fast masking), token `4e31`. Tree clean at the Step 2 baseline and
+at the verdict capture, so the evidence set and the dirty set do not intersect.
+
+**AC2 was checked by exhaustive sweep rather than by named mutations, because two passes had already
+cleared it on named ones.** Three sweeps, each restoring with `git checkout -- <path>`:
+
+| Sweep | What was inserted, and where | Result |
+|---|---|---|
+| A | `  # it's here` appended to **every one of the 340 lines inside all 37 multi-line awk regions**, in both copies, real guard run each time | 37 green results, **all 37 the region's own closing line**, where the apostrophe lands outside the program. No miss |
+| C | a whole new comment line `    # it's a note` inserted after every in-region line, both copies, real guard run each time | 0 misses |
+| B | an apostrophe at **every column of every awk comment inside every embedded program** — 1,298 insertions over the 16 comment-bearing lines | 0 misses. **1,288 caught by the AC8 scanner itself**, 10 by `sh -n`, so the new mechanism is doing the work rather than an adjacent check |
 
 | Row | How checked | Result |
 |---|---|---|
 | AC1 — `sh -n` on four templates and four installed copies | mutated `.claude/backlog/claim:130` alone: `FAIL claim has a syntax error — .claude/backlog/claim is not valid /bin/sh`, template green. Per-side naming is real | PASS |
-| AC2 — an apostrophe inside a template's `awk` comment reds, naming the script | body case (`close:288`, both copies) reds on both, naming `close:287` as opener — the `6387` bounce is fixed. **Opening-line case (`close:287`, both copies): guard 37 passed / 0 failed while `close.test.sh` gives 115 passed / 86 failed** | **FAIL** |
-| AC3 — the message says syntax/quote defect, not divergence | `close has a quote defect, not a divergence — the awk program opened at …:287 is closed early by a quote on line 290`; and `… has a syntax error — … (this is not a divergence)` | PASS |
-| AC4 — the convention is stated where the scripts are documented, with the quoting as its reason | three mutations of `references/CONCURRENCY.md`: replacing `takes no apostrophe` → rule assertion red; replacing `quoting around the whole program` → reason assertion red; renaming the `## The four scripts` heading → section assertion red. Anchor is load-bearing | PASS |
-| AC5/AC8 before AC2 (ordering) | both-copies mutations diverge from nothing, so AC2 is silent by construction; AC5 and AC8 both reported above it in every run | PASS |
-| NFR Testing — the guard proved able to fail, restored by the path mutated | seven mutations, each restored with `git checkout -- <that path>`; control after each. Final control: `backlog-scripts-installed` 37/0, `close` 201/0, `next` 205/0, `claim` 42/0, `handoff` 104/0 | PASS |
-| NFR Dependencies — adds nothing beyond `/bin/sh` | new `early_close` uses `awk` only; test shebang unchanged at `#!/bin/sh` | PASS |
-| Always-on (`CONVENTIONS_CORE.md`) | test-and-docs change in a public repo; no company material, secrets or PII. `measurement.test.sh` (112/0) guards home-directory paths | PASS |
+| AC2 — an apostrophe inside a template's `awk` comment reds, naming the script | sweeps A/C/B above, 1,978 insertions, zero misses. Named cases re-run: the historical incident verbatim (`# other projects' spellings`, `close:560`, both copies) reds on both naming `close:555`; the `6387` bounce (`close:288`) and the `2ea3` bounce (`close:287`) both red on both copies while `sh -n` accepts and AC2 is silent | PASS |
+| AC3 — the message says syntax/quote defect, not divergence | `close has a quote defect, not a divergence — the awk program opened at …:287 is closed early by a quote on line 288`; and `claim has a syntax error — … (this is not a divergence)` | PASS |
+| AC4 — the convention is stated where the scripts are documented, with the quoting as its reason | three mutations of `references/CONCURRENCY.md`: `takes no apostrophe` → rule assertion red; `quoting around the whole program` → reason assertion red; renaming `## The four scripts` → section assertion red. Anchor is load-bearing | PASS |
+| AC5/AC8 before AC2 (ordering) | both-copies mutations diverge from nothing, so AC2 is silent by construction; AC5 and AC8 reported above it in every run | PASS |
+| NFR Testing — the guard proved able to fail, restored by the path mutated | 1,978 sweep insertions plus seven named mutations, each restored by the path mutated; no-op control (apostrophe in a shell comment outside every program) leaves AC8 green with only AC2 reporting the divergence, so the scan is not simply counting quotes | PASS |
+| NFR Dependencies — adds nothing beyond `/bin/sh` | the new clause is `awk` only; test shebang unchanged at `#!/bin/sh` | PASS |
+| Newly reachable paths (Step 4) | a test guard and a reference paragraph; no routing, permission or visibility surface | PASS |
+| Always-on (`CONVENTIONS_CORE.md`) | tests-and-docs change in a public repo; scanned the diff for company material, secrets and home-directory paths — none | PASS |
 
-Whole-suite baseline, all 26 files green, tallies pasted from each run: `next` 205/0, `close` 201/0,
-`orchestrate` 130/0/0 skipped, `measurement` 112/0, `handoff` 104/0, `close-by` 67/0,
-`retro-tool-edit` 50/0, `citations` 46/0, `release` 45/0, `claim` 42/0, `findings-routing` 41/0,
-`backlog-scripts-installed` 37/0, `graph-fields` 36/0, `cost-by-category` 29/0, `skill-size` 27/0,
-`reporting` 23/0, `remote-anchor` 20/0, `falsifiable-acs` 17/0, `last-line` 17/0,
-`reference-size` 15/0, `batching` 13/0, `floor-probe` 12/0, `money-in-skill-prose` 12/0,
-`qa-level-once` 11/0, `external-feedback` 9/0, `item-ac-form` 4/0.
+Whole-suite control, all 26 files green, tallies pasted from each run and matching the `2ea3`
+baseline tally for tally: `next` 205/0, `close` 201/0, `orchestrate` 130/0/0 skipped,
+`measurement` 112/0, `handoff` 104/0, `close-by` 67/0, `retro-tool-edit` 50/0, `citations` 46/0,
+`release` 45/0, `claim` 42/0, `findings-routing` 41/0, `backlog-scripts-installed` 37/0,
+`graph-fields` 36/0, `cost-by-category` 29/0, `skill-size` 27/0, `reporting` 23/0,
+`remote-anchor` 20/0, `falsifiable-acs` 17/0, `last-line` 17/0, `reference-size` 15/0,
+`batching` 13/0, `floor-probe` 12/0, `money-in-skill-prose` 12/0, `qa-level-once` 11/0,
+`external-feedback` 9/0, `item-ac-form` 4/0.
+
+### The residual shape this pass found, and why it did not bounce the ticket
+
+**An apostrophe as the first non-whitespace character of a body line inside an embedded program is
+not caught, and is a live break.** Measured: inserting `'` at column 0 of `close:288` leaves
+`sh -n` accepting, the guard at **37 passed / 0 failed**, and `close.test.sh` at **115 passed, 86
+failed** — the same end state the `6387` and `2ea3` bounces named.
+
+It did not bounce this ticket, on three grounds, and **it is queued as its own row instead**:
+
+- **It is not what AC2 says.** AC2's subject is an apostrophe *inside an `awk` comment*, and every
+  such position — all 1,298 of them — is caught. Nor is it the hazard the Problem states: prose
+  comments carrying the reasoning. A bare leading apostrophe with no `#` is neither prose nor a
+  comment.
+- **It is indistinguishable from a legitimate terminator at the close.** The guard's rule is that a
+  multi-line region's closing quote is the first thing on its line bar whitespace and the block
+  enders — which is exactly where this apostrophe sits. No close-position rule can separate them.
+- **The two global signals are both silent, measured rather than assumed.** `sh -n` accepts, and the
+  file re-pairs: an independent tokeniser run to EOF over the mutated `close` reports
+  `state=0 depth=0`, identical to the clean file. So neither a parse check nor a quote-balance check
+  can see it either, and the remedy needs lookahead or program-body detection — a design decision,
+  not another patch to this clause.

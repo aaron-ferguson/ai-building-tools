@@ -211,3 +211,14 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   and the corpus evidence that nothing trips it — would stop the next session "fixing" it back
   into a hole (pointer: `tests/backlog-scripts-installed.test.sh`, the AC8 `early_close` scanner;
   `0077`).
+
+- 2026-09-09 [0077] **A guard that has already been bounced twice on named mutations should be
+  re-checked by sweep, not by more named mutations.** Two `verify` passes each found one more
+  uncaught apostrophe shape by hand, and each hand-back cost a whole `develop` session for a
+  one-clause change. This pass enumerated the scripts' 37 embedded `awk` regions mechanically and
+  inserted an apostrophe at every column of every comment inside them — 1,978 insertions across
+  three sweeps, about four minutes of wall clock — which settled AC2 in one pass and, as a
+  by-product, gave the coverage number (1,288 of 1,298 caught by the new clause rather than by
+  `sh -n`) that a named mutation cannot produce. Where an AC is a *quantifier* — "an apostrophe
+  anywhere inside" — named mutations sample it and a sweep decides it, and the sweep is cheaper
+  than the second bounce it replaces.
