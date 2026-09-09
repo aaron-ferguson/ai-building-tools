@@ -22,6 +22,15 @@ expects:
 claimed_by: "8f81"
 claimed_at: 2026-09-09T20:51:27Z
 touches:
+  # TRANSIENT — mutated to prove the guards red, restored inside the same turn (0106 AC7)
+  - skills/queue/templates/claim
+  - skills/queue/templates/close
+  - skills/develop/SKILL.md
+  # written by this verify pass
+  - .claude/backlog/items/0106-make-touches-mean-one-thing.md
+  - .claude/backlog/QUEUE.md
+  - .claude/backlog/DONE.md
+  - .claude/backlog/FINDINGS.md
 ---
 ## Problem
 
