@@ -3,7 +3,7 @@ id: "0115"
 title: Make --drift see a row and its item disagreeing, as three files say it does
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-08
@@ -18,9 +18,15 @@ expects:
   - tests/handoff.test.sh
   - references/CONCURRENCY.md
   - docs/decisions/001-one-command-per-stage-boundary.md
-claimed_by:
-claimed_at:
+claimed_by: "5287"
+claimed_at: 2026-09-09T21:08:46Z
 touches:
+  - .claude/backlog/next
+  - skills/queue/templates/next
+  - tests/next.test.sh
+  - tests/handoff.test.sh
+  - references/CONCURRENCY.md
+  - docs/decisions/001-one-command-per-stage-boundary.md
 ---
 
 ## Problem

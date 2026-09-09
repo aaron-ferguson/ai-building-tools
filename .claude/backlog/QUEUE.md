@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0115 | Make --drift see a row and its item disagreeing, as three files say it does | develop | ready |  |
+| 0115 | Make --drift see a row and its item disagreeing, as three files say it does | develop | in-progress |  |
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | develop | ready |  |
 | 0136 | Stop two gates sharing a file through a row neither lead names | develop | ready |  |
 | 0131 | Dispatch no new develop gate while a started ticket is still awaiting verify | develop | ready | 0128 |
