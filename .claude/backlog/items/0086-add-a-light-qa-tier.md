@@ -2,8 +2,8 @@
 id: "0086"
 title: Settle the qa_level vocabulary once — a light tier, and a level a repo with no runner can run
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: l
 created: 2026-09-02
@@ -27,8 +27,8 @@ expects:
   - tests/close-by.test.sh
   - docs/decisions/003-who-may-close-a-ticket.md
   - .claude/backlog/items/0079-a-qa-level-for-a-repo-with-no-runner.md
-claimed_by: "55bd"
-claimed_at: 2026-09-09T02:44:13Z
+claimed_by:
+claimed_at:
 touches:
   # NARROWED 2026-09-09 by 55bd for the RE-ENTRY pass, checked against the code. `./claim`
   # re-seeds this field from `expects:` on every claim, so a narrowing does not survive a second
