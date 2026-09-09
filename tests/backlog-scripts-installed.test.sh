@@ -89,6 +89,24 @@ echo "AC8 — no apostrophe closes an embedded awk program early, template and i
 early_close() {
   awk '
     BEGIN { Q = "\047"; state = 0; depth = 0; hd = "" }
+    # True when SEG -- the region text preceding a closing quote, on that quote\047s own line --
+    # already opened an awk comment. That is what an apostrophe in prose does: the quote it closes
+    # sits inside a `#` comment rather than at the program\047s end. Reported on the opening line
+    # too, where the prefix test above cannot fire because a one-line program legitimately closes
+    # after non-whitespace. The `/` and `"` parity keeps a `#` inside an awk regex or string --
+    # `/^#/`, `/^## /` -- from counting as a comment start.
+    function awk_comment(seg,   p, before) {
+      for (p = 1; p <= length(seg); p++) {
+        if (substr(seg, p, 1) != "#") continue
+        if (p > 1 && substr(seg, p-1, 1) != " " && substr(seg, p-1, 1) != "\t") continue
+        before = substr(seg, 1, p-1)
+        if (gsub(/\//, "", before) % 2) continue
+        before = substr(seg, 1, p-1)
+        if (gsub(/"/, "", before) % 2) continue
+        return 1
+      }
+      return 0
+    }
     {
       if (hd != "") { t = $0; sub(/^[ \t]+/, "", t); if (t == hd) hd = ""; next }
       i = 1; n = length($0)
@@ -97,7 +115,8 @@ early_close() {
         if (state == 1) {
           if (c == Q) {
             state = 0
-            if (NR != sq_line && substr($0, 1, i-1) !~ /^[ \t)}\]]*$/) {
+            seg = substr($0, (NR == sq_line ? sq_start : 1), i - (NR == sq_line ? sq_start : 1))
+            if ((NR != sq_line && substr($0, 1, i-1) !~ /^[ \t)}\]]*$/) || awk_comment(seg)) {
               printf "%d\t%d\t%s\n", sq_line, NR, $0
               exit
             }
@@ -110,7 +129,7 @@ early_close() {
         }
         if (state == 0) {
           if (c == ")" && depth > 0) { state = stack[depth]; depth--; i++; continue }
-          if (c == Q) { state = 1; sq_line = NR; i++; continue }
+          if (c == Q) { state = 1; sq_line = NR; sq_start = i + 1; i++; continue }
           if (c == "\"") { state = 2; i++; continue }
           if (c == "#" && (i == 1 || substr($0, i-1, 1) == " " || substr($0, i-1, 1) == "\t")) break
           i++; continue
