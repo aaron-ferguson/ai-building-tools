@@ -111,3 +111,22 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   cannot-fail-guard rules in `testing-conventions.md`, and the fix is the same shape as the phrase
   rules: anchor to something the edit must also change. Parked locally because the conventions
   repo declares no root `FINDINGS.md` to route it to (pointer: `tests/release.test.sh`, 0084 AC3).
+- 2026-09-09 — **A guard matched a word the run prints unconditionally, so the clause it was
+  written for could be deleted with the suite still green.** `tests/release.test.sh`'s AC4 block
+  asserts `*authoris*` to prove FR5 — that the push line names where the release was authorised.
+  Removing `-- authorised at step 5 ($AUTH_VIA)` from `tools/release` step 8 left the file at
+  **45 passed, 0 failed**, because step 5's own banner reads `step 5/9 authorise the release` and
+  prints on every run. Third variant of the same family in two days: the 0111 finding above is a
+  phrase colliding with a *second occurrence of itself*, this one is a **substring collision with
+  a step banner the tool emits regardless**. A matcher short enough to be robust against a rewrap
+  is also short enough to be satisfied by prose the tool prints anyway, and nothing weighs those
+  two pressures against each other (pointer: `tests/release.test.sh`, the 0114 AC4 block).
+- 2026-09-09 — **A test seam added to satisfy an FR became a second production route past the
+  gate the ticket was protecting, and the item's own trade-off note went stale in the same
+  commit.** `0114` FR8 required the confirm device to be injectable, so `tools/release` grew
+  `--confirm-device`. A file containing `y` at that path now authorises a real push with no
+  terminal — verified, the FR2 case reaches step 6 and pushes — which makes it a second flag
+  meaning "already asked" while *Notes & decisions* still says `--yes` "remains the single flag"
+  that does. Nothing in `develop` or `verify` asks whether a seam added for the suite widens the
+  surface the ticket exists to narrow, and the stale sentence was written by the same pass that
+  falsified it (pointer: `tools/release`, `--confirm-device`).
