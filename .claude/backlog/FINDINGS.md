@@ -289,3 +289,13 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   in *Notes* and keep the shared files committed as it goes; a bug introduced in `close` or `handoff`
   between Step 4 and Step 5 strands the ticket in the one script that could release it. Nothing in
   `develop` Step 4 or Step 5, and nothing in `CONCURRENCY.md`, names this class.
+
+- 2026-09-09 (verify, 0090) — **Nothing surprised me that the skills do not already name.** Recorded
+  as an explicit nothing rather than left blank. The one thing worth a line is that `verify` Step 3's
+  *Confirm the break landed* earned its place this pass: a mutation targeting the first line matching
+  a phrase hit that phrase's own **explanatory comment** instead of the code, wrote nothing, and the
+  suite then ran fully green — a result identical in every visible respect to a guard that holds. The
+  rule caught it because the mutation script asserted the line it was about to overwrite. Selecting a
+  mutation site by a phrase that the script also *documents itself with* is the specific trap, and it
+  is likelier here than elsewhere because these scripts carry long rationale comments quoting their
+  own output strings.
