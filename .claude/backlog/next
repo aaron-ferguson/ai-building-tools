@@ -85,7 +85,9 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--completed
   ./next <stage>     the first takeable row for that stage, and its size
                      stages: queue | design | develop | verify
   ./next --waiting   every waiting row with the question it is waiting on
-  ./next --drift     every row whose Status column disagrees with its blocked_by; exits 1 if any
+  ./next --drift     every row that disagrees with its blocked_by or with its own item —
+                     stage, status, an in-progress row nobody holds, a missing item file;
+                     one line per row, exits 1 if any
   ./next --findings  how many entries FINDINGS.md holds, and the threshold a driver gates on
   ./next --drive     what should happen next, for a driver rather than a human: one decision line,
                      how deep the backlog is, and a distinct exit code per outcome.
@@ -465,31 +467,62 @@ if [ "${1:-}" = "--waiting" ]; then
 fi
 
 # --- --drift ----------------------------------------------------------------------------------
-# The Status column and `blocked_by` are two answers to one question, and only one of them is
-# authoritative. This names every row where they disagree, in both directions, so the staleness is
-# visible without opening a ticket. It exits non-zero on any drift: a report that prints and exits
-# zero is invisible to anything scripted around it, which is the same silent failure it exists to
-# remove. Nothing here writes — reconciling the column belongs to whatever closed the blocker.
+# A row and the item behind it are two records of one ticket, and only one of them is authoritative
+# on each field. This names every row where the two disagree, so the staleness is visible without
+# opening a ticket. Five classes, and this comment is the one place they are listed — `usage()`
+# names them in a line, and the prose that cites this mode cites the contract rather than copying
+# it (0115 FR6):
+#
+#   1. no item file resolves for the row                        — checked first, because every read
+#      below returns empty against a missing file and would present as a disagreement with ""
+#   2. the Status column against `blocked_by`, in both directions — the cache 0024 built this for
+#   3. the Next column against the item's `next:`                — a half-applied hand-off
+#   4. the Status column against the item's `status:`            — the other half of the same
+#   5. a row at `in-progress` over an empty `claimed_by:`        — drift, not ownership, per
+#      CONCURRENCY.md's *A stage writes only the ticket it holds*; distinct from 4 because 0029
+#      settled *held* as a non-empty `claimed_by:` and nothing else, so both records can read
+#      `in-progress` with nobody holding the ticket
+#
+# One line per row, the classes in that order: a second line about the same row is noise, and the
+# stale `blocked` cache is the more actionable reading whenever it and 4 both fire. It exits
+# non-zero on any drift: a report that prints and exits zero is invisible to anything scripted
+# around it, which is the same silent failure it exists to remove. Nothing here writes —
+# reconciling belongs to whatever closed the blocker or left the hand-off half-applied.
 if [ "${1:-}" = "--drift" ]; then
   drifted=0
   for id in $(all_ids); do
     row="$(row_for "$id")"
     written="$(field "$row" "$STATUS")"
     derived="$(derived_of "$id")"
+    item="$(item_for "$id")"
 
     # Only `blocked` is derived. `waiting` is cleared by a person and `in-progress` by a claim, so
     # neither can drift against the graph — but a row sitting at either WITH an open blocker is
     # still a lie about takeability, and that direction is reported.
-    if [ "$written" = "blocked" ] && [ "$derived" = "ready" ]; then
+    if [ -z "$item" ]; then
+      printf 'DRIFT     %s | row present, no item file — items/%s-*.md resolves to nothing\n' "$id" "$id"
+      drifted=1
+    elif [ "$written" = "blocked" ] && [ "$derived" = "ready" ]; then
       printf 'DRIFT     %s | written blocked, derived ready — no blocked_by entry is still open\n' "$id"
       drifted=1
     elif [ "$written" != "blocked" ] && [ "$derived" = "blocked" ]; then
       printf 'DRIFT     %s | written %s, derived blocked — blocked_by still open: %s\n' \
         "$id" "$written" "$(open_blockers_of "$id")"
       drifted=1
+    elif [ "$(field "$row" "$NEXT")" != "$(fm "$item" next)" ]; then
+      printf 'DRIFT     %s | row Next %s, item next: %s — the row and its item disagree about the stage\n' \
+        "$id" "$(field "$row" "$NEXT")" "$(fm "$item" next)"
+      drifted=1
+    elif [ "$written" != "$(fm "$item" status)" ]; then
+      printf 'DRIFT     %s | row Status %s, item status: %s — the row and its item disagree about the status\n' \
+        "$id" "$written" "$(fm "$item" status)"
+      drifted=1
+    elif [ "$written" = "in-progress" ] && [ -z "$(fm "$item" claimed_by)" ]; then
+      printf 'DRIFT     %s | row Status in-progress, item claimed_by: empty — nobody holds it\n' "$id"
+      drifted=1
     fi
   done
-  [ "$drifted" -eq 1 ] || printf 'no drift: every Status column agrees with its blocked_by\n'
+  [ "$drifted" -eq 1 ] || printf 'no drift: every row agrees with its blocked_by and with its item\n'
   exit "$drifted"
 fi
 

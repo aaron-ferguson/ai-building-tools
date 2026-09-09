@@ -1286,6 +1286,96 @@ out="$(run_next develop)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0
 assert_contains "absent prints the default, never an empty field" "$out" 'TAKE      0001 | An ordinary ticket | size s | qa unit | close verify'
 
+# ==============================================================================================
+# 0115 — --drift sees a row and its item disagreeing
+#
+# The defect: `--drift` compared the Status column against `blocked_by` and nothing else, while
+# three prose sites told sessions it also caught a row and its item disagreeing. Driven on exactly
+# that shape it printed `no drift` and exited 0 — including over a `handoff` with its queue write
+# mutated away, which is why tests/handoff.test.sh AC4 was a guard that could not fail.
+
+# `assert_contains` cannot say "once", and AC4's whole claim is a line COUNT for one id: two lines
+# for one row both contain it. This is the shape `testing-conventions.md` calls a guard that runs
+# and cannot fail.
+assert_eq() {
+  if [ "$2" = "$3" ]; then ok "$1"; saw_on_pass "$2"; else
+    bad "$1"; echo "         expected exactly:"; saw "$3"; echo "         got:"; saw "$2"; fi
+}
+
+# How many lines of $1 name $2.
+lines_naming() { printf '%s\n' "$1" | grep -c "$2" || true; }
+
+echo "0115 AC1 — a row whose Next cell disagrees with its item's next: is named, with both values"
+scaffold
+add_row 0001 'A handed-off row' develop ready 0000
+add_ticket 0001 verify ready '[]' 0000 a/one.md
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc"
+assert_contains "names the row"             "$out" '0001'
+assert_contains "says what the row holds"   "$out" 'row Next develop'
+assert_contains "says what the item holds"  "$out" 'item next: verify'
+
+echo "0115 AC2 — a row whose Status cell disagrees with its item's status: is named, with both values"
+scaffold
+add_row 0001 'A half-applied hand-off' develop in-progress 0000
+add_ticket 0001 develop ready '[]' 0000 a/one.md
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc"
+assert_contains "names the row"             "$out" '0001'
+assert_contains "says what the row holds"   "$out" 'row Status in-progress'
+assert_contains "says what the item holds"  "$out" 'item status: ready'
+
+echo "0115 AC3 — a row at in-progress over an item nobody holds is named as tokenless"
+# Distinct from AC2: 0029 settled *held* as a non-empty `claimed_by:` and nothing else, so a row
+# and its item can agree on in-progress with the ticket held by nobody at all.
+scaffold
+add_row 0001 'A tokenless row' develop in-progress 0000
+add_ticket 0001 develop in-progress '[]' 0000 a/one.md
+assert_not_contains "the fixture really leaves claimed_by: empty" \
+  "$(cat "$FIX/.claude/backlog/items/0001-fixture.md")" 'claimed_by: '
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc"
+assert_contains "names the row"                  "$out" '0001'
+assert_contains "says the row reads in-progress" "$out" 'row Status in-progress'
+assert_contains "says nobody holds it"           "$out" 'item claimed_by: empty'
+
+echo "0115 AC4 — a stale blocked cache over a disagreeing status is one line, not two"
+scaffold
+add_row 0001 'A stale-blocked row' develop blocked 0000
+add_ticket 0001 develop ready '["0002"]' 0000 a/one.md
+add_ticket 0002 develop done '[]' 0000 a/two.md
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc"
+assert_contains "the blocked check keeps precedence" "$out" 'written blocked'
+assert_eq "the row is reported once" "$(lines_naming "$out" '0001')" 1
+
+echo "0115 AC5 — a row with no item file is named as that, not as a disagreement with the empty string"
+scaffold
+add_row 0001 'A row whose item vanished' develop ready 0000
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc"
+assert_contains     "names the row"                   "$out" '0001'
+assert_contains     "says the item does not resolve"  "$out" 'no item file'
+assert_not_contains "does not read empty as a stage"  "$out" 'item next:'
+assert_not_contains "does not read empty as a status" "$out" 'item status:'
+
+echo "0115 AC6 — a backlog whose rows and items agree, with a real holder, still reads no drift"
+scaffold
+add_row 0001 'A held row' develop in-progress 0000
+add_item_lists 0001 in-progress '[]' ''
+add_row 0003 'A ready row' verify ready 0000
+add_ticket 0003 verify ready '[]' 0000 a/three.md
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+assert_contains     "says there is no drift" "$out" 'no drift'
+assert_not_contains "names no row"           "$out" 'DRIFT'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
