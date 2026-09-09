@@ -3,7 +3,7 @@ id: "0075"
 title: Anchor a tool edit to the remote, at its start and at its bump
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: s
 created: 2026-09-01
@@ -15,9 +15,12 @@ expects:
   - skills/retro/SKILL.md
   - skills/develop/SKILL.md
   - tests/remote-anchor.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "f5d0"
+claimed_at: 2026-09-09T15:39:06Z
 touches:
+  - skills/retro/SKILL.md
+  - skills/develop/SKILL.md
+  - tests/remote-anchor.test.sh
 ---
 
 ## Problem
