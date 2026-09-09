@@ -2,8 +2,8 @@
 id: "0106"
 title: Make touches mean one thing across claim, close and a transient mutation
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 qa_manual:
 size: m
@@ -19,19 +19,9 @@ expects:
   - skills/queue/templates/close
   - skills/develop/SKILL.md            # Step 1's definition of what belongs in touches
   - tests/claim.test.sh
-claimed_by: "1a3e"
-claimed_at: 2026-09-09T20:17:31Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/claim              # the seeding defect
-  - skills/queue/templates/claim       # its source of truth
-  - .claude/backlog/close              # declared-vs-actual reporting
-  - skills/queue/templates/close
-  - .claude/backlog/handoff            # FR3 says "close or hand-off"; handoff also clears touches
-  - skills/queue/templates/handoff
-  - skills/develop/SKILL.md            # Step 1's definition of what belongs in touches
-  - tests/claim.test.sh
-  - tests/close.test.sh
-  - tests/handoff.test.sh
 ---
 ## Problem
 
