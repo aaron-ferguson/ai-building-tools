@@ -84,3 +84,37 @@ configuration has repaired the session and not the project.
 Cite convention files by bare filename (`security-conventions.md`) in items and reports. The
 directory is resolved per project and per machine, so an absolute path written into a backlog
 item is wrong the moment anyone else reads it.
+
+---
+
+## Routing a finding to the repo it is about
+
+A *park what surprised you* step writes to the buffer of the repo the finding is **about**, not the
+one the session stands in. The subject test above decides which:
+
+- **a convention file** → the conventions repo's **root** `FINDINGS.md`, the buffer it declares for
+  gaps found from outside, in the format stated there — never its `.claude/backlog/` buffer, which
+  holds gaps found from inside.
+- **a skill, a reference file, or a backlog script** → the tools repo's `.claude/backlog/FINDINGS.md`.
+- **anything else, this project's own code included** → stays in the local buffer.
+
+**Both destinations are resolved, never guessed.** The conventions repo is the directory the ladder
+above already resolved. The tools repo is `tools.path` in `.claude/backlog/config.yml`, resolved
+from the project root exactly as `conventions.path` is. **Nothing resolving is a stop**, on rung 3's
+ground: never infer the directory.
+
+**Never derive either from the plugin install.** The marketplace clone beside it reads as a working checkout
+— right `origin`, identical `HEAD`, whole backlog — and the plugin system refreshes it over anything
+parked there (measured 2026-09-09).
+
+**A destination that does not resolve, or is not a writable checkout, falls back to a marked local park:**
+write the entry locally prefixed `[for <repo>]` so a later `retro` forwards it rather than
+re-deriving where it belonged.
+
+**One commit per repo, by pathspec, in the same turn as the write** — never one spanning two repos
+(`git-conventions.md`) — and a park into another backlog takes that backlog's lock
+(`CONCURRENCY.md`, *Lock every write to the backlog directory*).
+
+**A finding crossing into a public tool repo carries no company material** — no client name, no
+private path, no internal identifier. The receiving repo's classification binds the entry, not the
+sending project's, and one that cannot meet it stays local (`data-privacy-conventions.md`).

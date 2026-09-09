@@ -62,6 +62,8 @@ justification() {
       echo "0028 — read before every backlog write, so each rule here is rent on every session; the incidents, the reasoning and the live-conflict procedure already relocated to CONCURRENCY-INCIDENTS.md, and what remains is the rule statements themselves" ;;
     references/CONCURRENCY-INCIDENTS.md)
       echo "0028 — this file IS the relocation target, read only when a rule is argued with or a conflict is live; growth here is the pointer mechanism working, and relocating out of it would only need a third file" ;;
+    references/CONVENTIONS.md)
+      echo "0078 — considered relocating the finding-routing rule to its own pointer file, the ~1,900 bytes that put this file over; rejected on BOTH conditions: every stage resolves this file before it acts and every stage has a park step, so p is ~0 and the pointer would be fetched on almost every run, and the rule is mandatory the moment a park is reached — a mandatory step behind a pointer is a step that gets skipped" ;;
     *) return 0 ;;
   esac
 }

@@ -66,9 +66,15 @@ sessions recorded, not the decisions taken in them** — a choice the user alrea
 
 ## Step 1 — Read the buffer
 
-`.claude/backlog/FINDINGS.md` is the input, and the only one. Sessions parked these as they hit them,
+`.claude/backlog/FINDINGS.md` is the input. Sessions parked these as they hit them,
 which is cheaper and more reliable than reconstructing them afterwards — the context was hot at the time,
 and a parked entry survives compaction, an interrupted session, and the gap between sessions.
+
+**Running in a project that consumes these tools, read the tools repo's buffer as well** — parks
+routed there by subject are invisible in the local one, so a retro reading only locally would never
+see them again. That repo is *resolved*, never discovered — see `references/CONVENTIONS.md`,
+*Routing a finding to the repo it is about*. Sweep only what a rule names; a buffer that is merely
+nearby is not an input.
 
 **Two modes, and which you are in decides what you reach for before reading a single entry.** An
 **end-of-run retro** closes a supervised session: small buffer, one session, context still hot, so
@@ -292,6 +298,11 @@ behaved unexpectedly, a scaffolding step you had to invent.
 **An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
 entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
 uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
+
+**Route it by subject, not by where you are standing** — a finding about a skill, a reference file, a
+backlog script or a convention belongs in that repo's buffer, not this project's. The destinations, how
+each is resolved, the marked-local fallback and the privacy bar on crossing into a public repo are in
+`references/CONVENTIONS.md`, *Routing a finding to the repo it is about*.
 
 **This step applies to `retro` too, and it is not a contradiction.** This skill empties the buffer;
 it is also a session that can be surprised by its own tooling. Park below what you just cleared,

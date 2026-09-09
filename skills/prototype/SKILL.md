@@ -309,6 +309,11 @@ behaved unexpectedly, a scaffolding step you had to invent.
 entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
 uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
 
+**Route it by subject, not by where you are standing** — a finding about a skill, a reference file, a
+backlog script or a convention belongs in that repo's buffer, not this project's. The destinations, how
+each is resolved, the marked-local fallback and the privacy bar on crossing into a public repo are in
+`references/CONVENTIONS.md`, *Routing a finding to the repo it is about*.
+
 ---
 
 ## Step 9: Report
