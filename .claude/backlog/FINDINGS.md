@@ -95,3 +95,11 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   neither redact pushed history nor decide that it should. Needs a row of its own, and a check on
   the intake side — nothing between `queue` and `develop` reads an item against the repo's own
   privacy rule.
+- 2026-09-09 — **A guard case named for a rule can be held green by a second, unrelated occurrence
+  of its phrase in the same window.** `0111`'s case *"AC2 — the refusal is cited, never restated"*
+  asserts `rung 3` in `retro` Step 1. Verifying it: replacing rung 3's citation with a full
+  restatement — the exact thing the NFR forbids — left the suite at **38 passed, 0 failed**, because
+  the upward-only paragraph two lines below also says `rung 3`. Distinct from the emphasis finding
+  above: there the collision needed a reflow, here it is live today. A guarded phrase needs to be
+  unique *within its window*, not merely present, and nothing checks that
+  (pointer: `tests/retro-tool-edit.test.sh`, the 0111 block).
