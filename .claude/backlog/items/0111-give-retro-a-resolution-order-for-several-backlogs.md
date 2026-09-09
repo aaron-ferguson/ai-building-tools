@@ -19,7 +19,6 @@ claimed_by: "2037"
 claimed_at: 2026-09-09T14:56:09Z
 touches:
   - skills/retro/SKILL.md
-  - references/CONVENTIONS.md
   - tests/retro-tool-edit.test.sh
 ---
 
