@@ -197,3 +197,9 @@ forget it. `handoff` and `close` are *given* their token, not minting one — ow
 hands off three different ways, and it reads every field back before writing either file: **all
 five land or nothing does**, a no-op being the failure it exists to stop. **`./next`** only reads;
 `--help` lists its modes. All four refuse rather than guess.
+
+**Prose inside these scripts' single-quoted `awk` programs takes no apostrophe.** One closes the
+quoting around the whole program, and nothing errors at the edit: a comment reading `projects'
+spellings` took `close.test.sh` to 20 failures of 63, reporting an empty reconcile list and naming
+nothing about quotes. Write `"\047"` where the character is needed. The guard is `sh -n` over both
+copies of all four, before they are compared (`tests/backlog-scripts-installed.test.sh`).

@@ -42,6 +42,31 @@ for s in $SCRIPTS; do
   if [ -x "$BACKLOG/$s" ]; then ok "$s is executable"; else bad "$s is not executable (chmod +x)"; fi
 done
 
+echo "AC5 — every script parses under /bin/sh, template and installed copy"
+# A copy that has diverged is caught below; a copy that is byte-identical to a template with a
+# syntax error is not, and the first thing either would do is fail at the moment a session is
+# mid-hand-off. `sh -n` is the cheapest check that the shipped bytes are runnable at all (0081).
+#
+# Both sides are parsed, and this runs BEFORE the byte-identical comparison (0077). The hazard it
+# exists for is an apostrophe inside one of the single-quoted `awk` programs these scripts embed:
+# it closes the quoting around the whole program, errors nowhere at the edit, and surfaces as
+# behaviour — `close.test.sh` once failed 20 of 63 cases reporting an empty reconcile list, naming
+# nothing about quotes. A template broken that way and copied faithfully diverges from nothing, so
+# AC2 is silent; reported after AC2 the same defect on one side alone reads as drift, sending the
+# reader to diff two files rather than to the quote. So: parse first, and say `syntax`.
+for s in $SCRIPTS; do
+  for side in "$TEMPLATES/$s" "$BACKLOG/$s"; do
+    label="${side#"$ROOT/"}"
+    if [ ! -f "$side" ]; then
+      bad "$s — cannot parse, $label is missing"
+    elif sh -n "$side" 2>/dev/null; then
+      ok "$label parses"
+    else
+      bad "$s has a syntax error — $label is not valid /bin/sh (this is not a divergence): $(sh -n "$side" 2>&1 | head -3)"
+    fi
+  done
+done
+
 echo "AC2 — each copy is byte-identical to its template"
 for s in $SCRIPTS; do
   if [ ! -f "$BACKLOG/$s" ] || [ ! -f "$TEMPLATES/$s" ]; then
@@ -50,20 +75,6 @@ for s in $SCRIPTS; do
     ok "$s matches its template"
   else
     bad "$s has diverged from skills/queue/templates/$s — fix the template and re-copy, never the copy"
-  fi
-done
-
-echo "AC5 — each copy parses under /bin/sh"
-# A copy that has diverged is caught above; a copy that is byte-identical to a template with a
-# syntax error is not, and the first thing either would do is fail at the moment a session is
-# mid-hand-off. `sh -n` is the cheapest check that the shipped bytes are runnable at all (0081).
-for s in $SCRIPTS; do
-  if [ ! -f "$TEMPLATES/$s" ]; then
-    bad "$s — cannot parse, the template is missing"
-  elif sh -n "$TEMPLATES/$s" 2>/dev/null; then
-    ok "$s parses"
-  else
-    bad "$s does not parse under /bin/sh: $(sh -n "$TEMPLATES/$s" 2>&1 | head -3)"
   fi
 done
 
@@ -98,6 +109,25 @@ if printf '%s' "$STEP0" | grep -qF 'a fix flows'; then
   ok "Step 0 states which direction a fix flows"
 else
   bad "Step 0 does not say that a fix flows template -> copy, never the reverse"
+fi
+
+echo "AC4 — the apostrophe convention is stated where the scripts are documented"
+# Anchored to the section body, not the whole file: the hazard is explained in comments inside the
+# scripts themselves, so a file-wide grep would pass on prose that is not the stated rule (0077).
+SECTION="$(awk '/^## The four scripts/{f=1;next} f&&/^## /{exit} f' "$ROOT/references/CONCURRENCY.md")"
+if [ -z "$SECTION" ]; then
+  bad "references/CONCURRENCY.md has no 'The four scripts' section to state the rule in"
+else
+  if printf '%s' "$SECTION" | grep -qF 'takes no apostrophe'; then
+    ok "the four-scripts section states the rule"
+  else
+    bad "references/CONCURRENCY.md, 'The four scripts', does not forbid apostrophes in embedded awk prose"
+  fi
+  if printf '%s' "$SECTION" | grep -qF 'quoting around the whole program'; then
+    ok "and gives the quoting as its reason"
+  else
+    bad "the rule is stated without its reason — it is the shell quoting, not style"
+  fi
 fi
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
