@@ -26,8 +26,12 @@ touches:
   - skills/queue/templates/claim       # its source of truth
   - .claude/backlog/close              # declared-vs-actual reporting
   - skills/queue/templates/close
+  - .claude/backlog/handoff            # FR3 says "close or hand-off"; handoff also clears touches
+  - skills/queue/templates/handoff
   - skills/develop/SKILL.md            # Step 1's definition of what belongs in touches
   - tests/claim.test.sh
+  - tests/close.test.sh
+  - tests/handoff.test.sh
 ---
 ## Problem
 
