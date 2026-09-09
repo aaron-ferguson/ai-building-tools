@@ -18,7 +18,7 @@ conventions:
 # to 104 and so queued up a reissue those five citations would have silently followed. The
 # 2026-09-07 retro set this to 111 and left 0104 unissued. Item 0105 then repointed the five at
 # b9a5ee0, which resolves permanently, and gave the withdrawal path the rules it never had.
-next_id: 140
+next_id: 142
 
 # How many FINDINGS.md entries before a driver runs a retro instead of the next ticket. Read by
 # `./next --findings` and gated on by `./next --drive` (exit 5). Left at retro's stated cadence

@@ -26,6 +26,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0115 | Make --drift see a row and its item disagreeing, as three files say it does | verify | in-progress |  |
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | develop | ready |  |
 | 0136 | Stop two gates sharing a file through a row neither lead names | develop | ready |  |
+| 0140 | Decide whether a held item under a ready row is drift, and stop offering it twice | design | ready |  |
 | 0131 | Dispatch no new develop gate while a started ticket is still awaiting verify | develop | ready | 0128 |
 | 0130 | Propose a sprint scope and dispatch nothing until a person confirms it | develop | ready | 0128 |
 | 0129 | Rename orchestrate to sprint and leave the old command resolving | develop | blocked | 0128 |
@@ -66,6 +67,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0049 | Decide what a claim token guarantees and what enforces it | design | ready |  |
 | 0061 | Decide how a session learns the installed plugin differs from this repo | design | ready |  |
 | 0066 | Fix the three places the backlog scripts answer the wrong question | develop | ready |  |
+| 0141 | Make a drift line say a frontmatter key is absent instead of printing an empty value | develop | ready |  |
 | 0063 | Give the prose guards a matcher that survives a rewrap | develop | ready |  |
 | 0112 | Hoist the line-wrap hazard to the session editing prose, not only the one writing a guard | develop | ready |  |
 | 0096 | Make the frontmatter path lists checkable to read and safe to edit | develop | ready |  |
