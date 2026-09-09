@@ -16,7 +16,10 @@
 # the message names the path or the sha.
 #
 # The fixture is a real git repo with a real bare remote, built at a fixed, stated size. It never
-# touches this repo, never pushes anywhere real, and never shells out to `claude`.
+# touches this repo, never pushes anywhere real, and never shells out to `claude`. The 0114 cases
+# below run the WHOLE chain, push included; the push goes to the fixture's own bare remote, and
+# `claude` is kept out of reach by filtering every PATH entry that holds it -- asserted, so a
+# filter that failed refuses the case rather than running the real install chain.
 #
 # Usage:  tests/release.test.sh
 #

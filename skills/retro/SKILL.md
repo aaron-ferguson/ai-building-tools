@@ -307,15 +307,28 @@ sessions it was written for.
   a dirty tree. Commit promptly rather than accumulating, and name the paths you touched when reporting.
 - **Push per each repo's own rules.** A project may treat a push as a release; the conventions and tools
   repos are the source of truth for other machines, so an unpushed edit there is lost at the next install.
-- **A skill edit has a release chain — run `tools/release` from the repo root.** It bumps the
-  version, pushes, updates the install, and verifies the bytes match before reporting done. Run it
-  rather than performing the steps by hand: `claude plugin update` reports success even when it
-  extracts nothing, and `tools/release` is the only step that catches that (0084). Skills resolve
-  at session start, so the session that wrote the change is the last to receive it. **Report it in
-  one line, not a paragraph** — this fires on most retros, so it is a standing cost rather than
-  news: `Skills changed — ran tools/release, restart required.` is the whole message. It is a
-  consequence of an edit, never a *finding*: it does not belong in `FINDINGS.md`, where it would
-  sit un-triageable and make a healthy buffer look neglected.
+- **A skill edit has a release chain — ask for the push, then run `tools/release --bump --yes`
+  from the repo root.** It bumps the version, pushes, updates the install, and verifies the bytes
+  match before reporting done. Run it rather than performing the steps by hand: `claude plugin
+  update` reports success even when it extracts nothing, and `tools/release` is the only step that
+  catches that (0084). Skills resolve at session start, so the session that wrote the change is the
+  last to receive it. **Report it in one line, not a paragraph** — this fires on most retros, so it
+  is a standing cost rather than news: `Skills changed — ran tools/release, restart required.` is
+  the whole message. It is a consequence of an edit, never a *finding*: it does not belong in
+  `FINDINGS.md`, where it would sit un-triageable and make a healthy buffer look neglected.
+- **The push is the release, so the session asks the user before the invocation**, naming the
+  branch and that other machines install from it (`git-conventions.md`). That ask is where the
+  approval is evidenced; `--yes` carries an approval already granted and
+  **never stands in for one** — never a default, and never supplied on the user's behalf.
+- **Nobody to ask — an `orchestrate`-dispatched run — does not invoke the chain**, and reports
+  every remaining step of it **outstanding on that run's checklist**; `orchestrate` Step 8 forbids
+  the push outright, and the two must not contradict. Invoking it with nobody to answer is the one
+  outcome to avoid: the run stops before writing anything, so nothing is released and nothing is
+  half-released either.
+- **A previous run may have left a bump committed and unpushed** — the signal is a `Bump the
+  plugin version` commit in `git log origin/<branch>..HEAD`. Re-run the same invocation: the local
+  version is already ahead of the installed one, so it **re-bumps nothing**, finds nothing to
+  commit, and pushes what is there.
 
 ---
 

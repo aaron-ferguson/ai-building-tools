@@ -39,6 +39,7 @@ set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 RETRO="$ROOT/skills/retro/SKILL.md"
+RELEASE="$ROOT/tools/release"
 [ -f "$RETRO" ] || { echo "no file at $RETRO" >&2; exit 2; }
 
 SAW_LINES=12
@@ -113,6 +114,47 @@ in_window "FR4 — the worktree is removed in the same turn" "$W" 'worktree in t
 echo "AC3 — a rejecting guard is answered by relocating first, exempting second"
 in_window "AC3 — relocate first, exempt second"        "$W" 'Relocate first, exempt second'
 in_window "AC3 — and the relocation is what gets recorded" "$W" 'never an exemption'
+
+# ---------------------------------------------------------------------------
+# 0114 — the step that names the release chain is the step that has to make it
+# finishable by the session it is written for.
+#
+# `tools/release` asked for the push at the push, having already committed the version bump, and
+# decided whether it could ask with `[ -r /dev/tty ]` — true in an agent shell. An agent-run retro
+# therefore printed a prompt nobody could answer and died on the failing redirect: exit 1, no
+# message, over a committed bump. The script side is fixed in `tests/release.test.sh`; what is
+# asserted HERE is the half only prose can carry — who is asked, before what, and what the session
+# does when there is nobody to ask.
+#
+# AC6 AND AC7 ARE ASSERTED AS A PAIR ON PURPOSE. A change that merely adds `--yes` to the
+# instruction satisfies "the chain finishes" and quietly removes `git-conventions.md`'s per-push
+# confirmation; requiring the step to also NAME where the approval is evidenced is what stops that
+# being the silent answer.
+#
+# SCOPED TO STEP 5's WINDOW, like every case above: "release", "push" and "ask" are ordinary words
+# throughout this skill, and the falsifiability probes at the foot of this file prove the scoping.
+# ---------------------------------------------------------------------------
+
+echo "0114 AC6 — the release approval is evidenced by the session's own ask, and --yes never stands in"
+in_window "AC6 — the session asks the user before invoking the chain" "$W" 'asks the user before the invocation'
+in_window "AC6 — and --yes carries an approval, never substitutes for one" "$W" 'never stands in for one'
+
+echo "0114 AC7 — the step and the script's usage line name the same invocation"
+in_window "AC7 — Step 5 names --bump and --yes together" "$W" 'tools/release --bump --yes'
+if [ -f "$RELEASE" ] && grep -qF 'tools/release --bump --yes' "$RELEASE"; then
+  ok "AC7 — the script's own usage line documents that same invocation"
+else
+  bad "AC7 — tools/release does not document \`tools/release --bump --yes\`, so the instruction and the script disagree about what to run"
+fi
+
+echo "0114 AC5 — the step that owns the chain says how to recover a bump that never reached the remote"
+in_window "AC5 — the half-released state is named"      "$W" 'bump committed and unpushed'
+in_window "AC5 — and the signal to look for is named"   "$W" 'origin/<branch>..HEAD'
+in_window "AC5 — re-running the same invocation is the recovery" "$W" 're-bumps nothing'
+
+echo "0114 AC8 — with nobody to ask, the chain is not invoked and the release is reported outstanding"
+in_window "AC8 — the chain is not invoked when there is nobody to ask" "$W" 'does not invoke the chain'
+in_window "AC8 — and the remaining steps go on that run's checklist" "$W" "outstanding on that run's checklist"
 
 # ---------------------------------------------------------------------------
 # b9a5ee0 — the buffer has no residents. Step 4 gives every entry it read a terminal
@@ -297,6 +339,65 @@ if [ "$LEAKED" = 1 ]; then
   saw "$W7"
 else
   ok "the resolution order is asserted in the step that reads the buffer, not across the file"
+fi
+
+echo "0114 AC5 — deleting the recovery sentence turns the case red"
+grep -v 're-bumps nothing' "$RETRO" > "$FIX/norecovery.md"
+W8="$(window "$FIX/norecovery.md" "$STEP5" "$END5")"
+if window_has "$W8" 're-bumps nothing'; then
+  bad "0114 — the recovery sentence was deleted and the matcher still saw it; AC5 proves nothing"
+  saw "$W8"
+else
+  ok "deleting the recovery sentence turns AC5 red"
+fi
+
+# The cheap answer to this ticket is `--yes` in the instruction and silence about the approval.
+# That fixture must fail AC6, or the pairing that rules it out is decorative.
+echo "0114 AC6 — the instruction with --yes but no named approval does not satisfy the guard"
+cat > "$FIX/yes-only.md" <<'FIXTURE'
+## Step 5 — Make it durable
+
+- **A skill edit has a release chain — run `tools/release --bump --yes` from the repo root.**
+  It bumps the version, pushes, updates the install, and verifies the bytes.
+
+## Step 6 — Park what surprised you
+FIXTURE
+W9="$(window "$FIX/yes-only.md" "$STEP5" "$END5")"
+if window_has "$W9" 'asks the user before the invocation' || window_has "$W9" 'never stands in for one'; then
+  bad "0114 AC6 — the --yes-only instruction satisfied the guard; the confirmation could be dropped silently"
+  saw "$W9"
+else
+  ok "adding --yes without naming where the approval is evidenced stays red"
+fi
+
+echo "0114 AC8 — the phrases outside Step 5 do not satisfy the guard"
+cat > "$FIX/0114-outside.md" <<'FIXTURE'
+## Step 4 — Write it
+
+Run `tools/release --bump --yes`; the session asks the user before the invocation, and `--yes`
+never stands in for one. A bump committed and unpushed shows in `git log origin/<branch>..HEAD`;
+re-running re-bumps nothing. With nobody to ask, this step does not invoke the chain and reports
+every remaining step outstanding on that run's checklist.
+
+## Step 5 — Make it durable
+
+Commit by pathspec.
+
+## Step 6 — Park what surprised you
+FIXTURE
+W10="$(window "$FIX/0114-outside.md" "$STEP5" "$END5")"
+LEAKED114=0
+for phrase in 'tools/release --bump --yes' 'asks the user before the invocation' \
+              'never stands in for one' 'bump committed and unpushed' \
+              'origin/<branch>..HEAD' 're-bumps nothing' 'does not invoke the chain' \
+              "outstanding on that run's checklist"; do
+  window_has "$W10" "$phrase" && LEAKED114=1
+done
+if [ "$LEAKED114" = 1 ]; then
+  bad "0114 — the window leaked past its own heading; the release rules could sit in any step and pass"
+  saw "$W10"
+else
+  ok "the release rules are asserted in the step that owns the chain, not across the file"
 fi
 
 echo "FR — Step 4's cases do not read Step 1's window, or either could carry both rules"
