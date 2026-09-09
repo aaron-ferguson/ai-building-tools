@@ -266,3 +266,13 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   mode is now partial: since 0115 it also compares a row against its own item. Left alone because
   0115's *Out of scope* names those two files. It is the cache-beside-the-code shape `develop` Step 2
   ends on — the sentence reads correctly on its own, and only the mode it describes moved.
+
+- 2026-09-09 (verify, 0115) — **`orchestrate` routes on a `--drive` exit code that `--drive` cannot
+  produce.** `skills/orchestrate/SKILL.md:117` says "`1` and `2` are drift and usage errors, and both
+  stop the run", but `--drive`'s body contains no drift check and the skill invokes `./next --drift`
+  nowhere in its loop (only `:233`, a precondition, and `:271`, in passing). Driven on the `0084`
+  drift shape: `./next --drift` exits 1 while `./next --drive` prints `COMPLETE nothing takeable` and
+  exits 3. So 0115's new drift classes stop a human reader and not a driver — and 0115's own *Notes*
+  justify their non-zero exit by that routing. Bears on the 0128 sprint slice (0131 especially), which
+  is why it is parked rather than filed as a row by a session holding neither (pointer:
+  `skills/orchestrate/SKILL.md:117`, item 0115).
