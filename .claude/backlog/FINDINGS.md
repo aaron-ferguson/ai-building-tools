@@ -34,20 +34,6 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   reading the rule literally either writes an unreviewable blob or believes it must skip the
   absorptions (pointer: `skills/retro/SKILL.md` Step 4, `references/CONCURRENCY.md` *Lock every
   write to the backlog directory*).
-- 2026-09-09 (retro) — **Step 1's "work in ranked slices — read fewer entries and finish each" has no
-  reading for a buffer where nothing is stale.** At 32 entries against a threshold of 8, every entry
-  was dated within three days, so the expiry rule dropped none and there was no cheap basis for
-  choosing a slice *before* reading — the cross-entry view Step 1 exists to produce is precisely what
-  tells you which entries are one lesson. This pass read all 32 and then dispositioned every one,
-  which is the opposite of the instruction and was the only honest option. Either the slice is chosen
-  after reading rather than before, or the step should say that reading is cheap and only *writing*
-  is sliced (pointer: `skills/retro/SKILL.md` Step 1).
-- 2026-09-09 (retro) — **Step 4's "defer" disposition reads as a peer of the other three and is not
-  one, and this pass used it wrongly until the user pushed back.** Seven entries were deferred with
-  verified destinations, each of them a unit of work this pass had fully understood — which is
-  exactly what Step 4's *"a pure unit of work is filed, not handed back"* forbids, since the next
-  pass then pays again for judgement already bought. The deferral was economy on *writing*, and Step
-  1's licence ("beyond what this pass can specify, defer it") does not cover that: the limit it
-  names is understanding, not typing. The step could say so — a deferral is for a lesson you could
-  not finish *understanding*, never one you could not finish *writing up* (pointer:
-  `skills/retro/SKILL.md` Step 1 and Step 4).
+  **Filed as item `0126` on 2026-09-09; the lesson half is open** — the general rule, that a
+  skill restating a reference's rule drifts invisibly because an *incomplete* restatement still
+  reads as correct, is broader than that one paragraph and has no home yet.
