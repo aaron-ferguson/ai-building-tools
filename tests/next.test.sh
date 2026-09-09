@@ -1317,9 +1317,12 @@ assert_contains "says what the row holds"   "$out" 'row Next develop'
 assert_contains "says what the item holds"  "$out" 'item next: verify'
 
 echo "0115 AC2 — a row whose Status cell disagrees with its item's status: is named, with both values"
+# The item is HELD, so the tokenless check below cannot absorb this case: a fixture with an empty
+# `claimed_by:` reds under the same mutation on the adjacent branch's wording instead of this one,
+# which is the ladder absorption `testing-conventions.md` says to pin each branch against.
 scaffold
 add_row 0001 'A half-applied hand-off' develop in-progress 0000
-add_ticket 0001 develop ready '[]' 0000 a/one.md
+add_item_lists 0001 ready '[]' ''
 seal
 out="$(run_next --drift)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc"

@@ -459,6 +459,10 @@ assert_contains "prints the usage line" "$out" 'usage: handoff <id> <token> <sta
 assert_unchanged "the backlog is untouched" "$before"
 
 # --- AC4 — ./next --drift reads zero for the row that moved -------------------------------------
+# Live only since 0115. Until `--drift` compared a row against its own item, both assertions below
+# held against a `handoff` with its `mv "$queue_tmp" "$QUEUE"` mutated away — the mode read the
+# Status column against `blocked_by` and nothing else, so the half-applied hand-off this suite is
+# about was the one state it could not see. Under that same mutation the pair now reds.
 echo "AC4 — ./next --drift exits zero for the row after a hand-off"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0017 | Drift free | develop | in-progress | 0000 |' 0017 develop in-progress tok0
 if [ -f "$FIX/.claude/backlog/next" ]; then

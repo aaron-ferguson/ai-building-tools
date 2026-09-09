@@ -79,8 +79,8 @@ claim stays invisible until something is written inside it.
   the close is the only event that can clear them. Reconcile only a dependent whose `status:` is
   `blocked`, never one that is **held** — and this is the one place *held* is defined: **a non-empty
   `claimed_by:` in the item, and nothing else.** A row reading `in-progress` over a tokenless item is
-  drift, not ownership — `./next --drift` reports it, and no reader treats it as a claim. Report every
-  dependent you skip.
+  drift, not ownership — `./next --drift` reports it, as one of the row-against-item classes its own
+  header lists, and no reader treats it as a claim. Report every dependent you skip.
 - **A criterion belonging to another ticket cannot be filed by the stage that finds it, and saying
   "fold this into item NNNN" in your own notes is not filing it.** The rule above forbids the writing
   session from editing that item, and no step hands the instruction to anyone else — so it survives

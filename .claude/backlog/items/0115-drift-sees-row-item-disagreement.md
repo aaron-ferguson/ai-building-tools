@@ -213,3 +213,34 @@ in the one suite whose subject is atomicity.
   `0081` AC4 was unverifiable and went to `queue`. **The two halves may be one fix or two** — correct
   the sentence, or give `--drift` the row/item agreement check the sentence promises — and this row
   should say which before it is built.
+
+- 2026-09-09 (develop, `[5287]`) — **AC7's "red before: that suite reports `0 failed`" is wrong, and
+  the true claim is narrower.** Driven both ways under the same `mv "$queue_tmp" "$QUEUE"` mutation,
+  diffed against a copy taken before mutating: with the pre-0115 `next`, `tests/handoff.test.sh`
+  reported **4 failed**, not 0 — AC1, FR2, AC3 and FR1 each assert the row's cells directly and
+  already saw it. What was inert was **AC4's two assertions specifically**, which stayed green. With
+  0115's `next` the same mutation gives **6 failed**, the two extra being exactly AC4's. So the
+  ticket's Problem section was right (`handoff.test.sh:461-472` could not fail) and its AC7 overstated
+  it into a whole-suite figure. The distinction matters: the value delivered is that the *drift*
+  assertion became live, not that the suite went from blind to sighted.
+
+- 2026-09-09 (develop, `[5287]`) — **the tokenless branch absorbs the status branch, so AC2's first
+  fixture pinned the wrong wording.** With `elif [ "$written" != "$(fm "$item" status)" ]` mutated
+  away, a fixture whose item had an empty `claimed_by:` fell through to FR3's branch and still
+  printed a line naming the row and its Status — 1 assertion red out of 4, and the three that held
+  were matching the *adjacent* branch's output. AC2 now uses a held item (`add_item_lists`), and the
+  same mutation reds 4. This is `testing-conventions.md`'s ladder-absorption case arriving in a
+  branch chain where every arm prints a superficially similar line.
+
+- 2026-09-09 (develop, `[5287]`) — **the missing-item check has to come first, not last.** Every
+  `fm` read against a missing file returns the empty string, so a row with no item presents as a
+  `next:` disagreement with `""` — which is a true-sounding line pointing at the wrong defect. Proved
+  by mutating that branch away: AC5 then reds on `no item file` and on `item next:` appearing,
+  exactly as its stated red-making mutation predicts.
+
+- 2026-09-09 (develop, `[5287]`) — **mutation sweep, control-first, each mutation diffed against a
+  copy taken before it landed.** Control (no-op rewrite) correctly reported the mutation as not
+  landing; restored control 229/0. Branch away: FR5 → 2 red, FR1 → 4, FR2 → 4 (after the AC2 fix
+  above), FR3 → 4, FR3's `claimed_by` read dropped → 3. Inverted: FR1 → 17, FR2 → 11. FR4's
+  precedence proved by reporting the status class as an independent `if` after the chain: AC4's line
+  count goes 1 → 2 and reds alone.

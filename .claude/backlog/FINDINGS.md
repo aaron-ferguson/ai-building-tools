@@ -257,3 +257,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   structurally silent on the stage that does most of the closing, unless the session hand-populates
   the field. Worth deciding and recording, in a ticket whose whole subject is the field meaning one
   thing.
+
+- 2026-09-09 [0115] **Two scripts describe `--drift` by its old contract, in a comment beside code
+  that reasons from it.** `skills/queue/templates/close:224` and `.../handoff:250` both read "an
+  unused reservation is invisible by construction — `./next --drift` compares Status against
+  `blocked_by`, and until this nothing compared the declared scope against the diff." The claim they
+  are actually making is still true (`--drift` reads no `touches:`), but the characterisation of the
+  mode is now partial: since 0115 it also compares a row against its own item. Left alone because
+  0115's *Out of scope* names those two files. It is the cache-beside-the-code shape `develop` Step 2
+  ends on — the sentence reads correctly on its own, and only the mode it describes moved.

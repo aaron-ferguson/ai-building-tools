@@ -219,7 +219,9 @@ was nearly accepted on turns alone.
 **Easier.** Every stage boundary becomes one auditable command, so the protocol's rules live in code
 that cannot forget them rather than in prose a session under load skips. `./next --drift` should read
 zero more often, because the two sites that have half-applied in the field (`0081`, `0048`) stop being
-hand edits.
+hand edits. That it reads a half-applied hand-off *at all* is `0115`: until then the mode compared
+only the Status column against `blocked_by`, so the state these scripts exist to prevent was the one
+state it could not see. The classes it now covers are listed in `next`'s own `--drift` header.
 
 **Harder.** Four scripts to keep in step with the templates (`tests/backlog-scripts-installed.test.sh`
 AC2), and `./claim` grows a flag whose misuse — defaulting `--touches` to `expects:` — would silently
