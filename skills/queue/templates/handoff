@@ -97,11 +97,23 @@ case "$STATUS" in
     exit 1 ;;
 esac
 
-# Anything already dirty in QUEUE.md rides along on our commit. Say which rows rather than letting
-# it happen silently.
+# Anything already dirty in QUEUE.md would ride along on our commit, so REFUSE rather than warn and
+# carry on (0090 FR3). A pathspec limits a commit to the paths it names and never to authorship
+# (`CONCURRENCY.md`, *A pathspec is necessary but not sufficient*), so there is no form of the commit
+# below that can leave a foreign row behind — the only fix is upstream, and a script holding the lock
+# can refuse where a person under load cannot. Same argument and same shape as `claim` (0082 FR3) and
+# `close`: the rule was never specific to claiming.
+#
+# **Before the lock, deliberately** — "nothing was changed and no lock was taken" is then true by
+# construction rather than by cleanup.
 if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- "$QUEUE"; then
-  echo "WARNING: QUEUE.md already has uncommitted changes; this commit will carry them:" >&2
+  echo "refusing to hand off $ID: QUEUE.md holds uncommitted changes this hand-off's commit would carry" >&2
+  echo "the rows that would land under 'Hand off $ID to $STAGE [$TOKEN]':" >&2
   git -C "$DIR" diff -U0 -- "$QUEUE" | awk '/^[+-]\| / { print "  " $0 }' >&2
+  echo "commit them by pathspec if they are yours; if they are another session's, leave them alone" >&2
+  echo "and wait, or 'git restore -- .claude/backlog/QUEUE.md' if you know they are stray" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
 fi
 
 # --- lock --------------------------------------------------------------------------------------

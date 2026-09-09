@@ -295,6 +295,13 @@ $rows"
 $rows"; fi
 }
 
+# Whole-string equality, for "this file is byte-identical to what it was". assert_contains would
+# pass on a file that had merely GROWN, which is the direction a wrongly-carried row moves it.
+assert_eq() {
+  if [ "$2" = "$3" ]; then ok "$1"; saw_on_pass "$2"; else
+    bad "$1"; echo "         expected exactly: $3"; saw "$2"; fi
+}
+
 assert_clean() {
   dirty="$(git -C "$FIX" status --porcelain)"
   if [ -z "$dirty" ]; then ok "$1"; saw_on_pass "the tree is clean"; else
@@ -1126,6 +1133,35 @@ assert_contains "the three ownership fields are cleared together" "$item" 'claim
 claimed_at:
 touches:
 closed: '
+
+# --- 0090 AC3 — close refuses a foreign uncommitted row rather than carrying it ------------------
+# Same defect and same fix as AC4 in tests/handoff.test.sh: `close` warned and committed anyway, and
+# a pathspec limits a commit to paths and never to authorship (`CONCURRENCY.md`, *A pathspec is
+# necessary but not sufficient*). `close` writes two shared files, so both are in the check.
+#
+# Asserted on the message and on the files, never on the exit status alone (`testing-conventions.md`).
+echo "0090 AC3 — a foreign uncommitted QUEUE.md row is refused, not warned about"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0092 | Verified row | verify | in-progress | 0000 |'
+mkitem 0092 verify in-progress '"ab12"' '[]'
+commit_fixture
+printf '| 0093 | Another session mid-edit | develop | in-progress | 0000 |\n' >> "$FIX/$BL/QUEUE.md"
+before_head="$(git -C "$FIX" rev-parse HEAD)"
+before_queue="$(cat "$FIX/$BL/QUEUE.md")"
+before_done="$(cat "$FIX/$BL/DONE.md")"
+before_item="$(cat "$FIX/$BL/items/0092-fixture.md")"
+out="$(run_close 0092 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "says it is refusing, not warning"    "$out" 'refusing to close'
+assert_contains "names the cause"                     "$out" 'uncommitted'
+assert_contains "names the row it would have carried" "$out" '0093 | Another session mid-edit'
+assert_contains "says nothing was changed"            "$out" 'nothing was changed'
+refute_contains "does not warn and carry on"          "$out" 'WARNING'
+assert_eq "QUEUE.md is byte-identical" "$(cat "$FIX/$BL/QUEUE.md")" "$before_queue"
+assert_eq "DONE.md is byte-identical"  "$(cat "$FIX/$BL/DONE.md")"  "$before_done"
+assert_eq "the item is byte-identical" "$(cat "$FIX/$BL/items/0092-fixture.md")" "$before_item"
+assert_eq "nothing was committed"      "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
+assert_line "the row is still in QUEUE.md" '| 0092 | Verified row | verify | in-progress | 0000 |' QUEUE.md
+assert_no_lock "the lock does not exist afterwards"
 
 # --- result -----------------------------------------------------------------------------------
 echo

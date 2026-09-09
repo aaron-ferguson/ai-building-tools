@@ -85,6 +85,13 @@ $seen"; fi
 
 # Match the whole row rather than looking a cell up by index: a harness that reimplements the
 # parser under test passes and fails with it (the defect tests/claim.test.sh records).
+# Whole-string equality, for "this file is byte-identical to what it was". assert_contains would
+# pass on a file that had merely GROWN, which is the direction a wrongly-carried row moves it.
+assert_eq() {
+  if [ "$2" = "$3" ]; then ok "$1"; saw_on_pass "$2"; else
+    bad "$1"; echo "         expected exactly: $3"; saw "$2"; fi
+}
+
 assert_row() {
   table="$(sed -n '/^|/p' "$FIX/.claude/backlog/QUEUE.md")"
   if grep -Fxq "$2" "$FIX/.claude/backlog/QUEUE.md"; then
@@ -537,6 +544,34 @@ out="$(run_handoff 0061 tok0 verify)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_not_contains "no declared-vs-actual line" "$out" 'declared but untouched'
 assert_not_contains "and no agreeing line either" "$out" 'commits since the claim agree'
+
+# --- 0090 AC4 — handoff refuses a foreign uncommitted row rather than carrying it ---------------
+# `handoff` detected that its commit would carry another session's uncommitted rows, printed a
+# WARNING, and committed anyway. A pathspec limits a commit to paths and never to authorship
+# (`CONCURRENCY.md`, *A pathspec is necessary but not sufficient*), so the warning was the only
+# thing between a foreign row and someone else's message — and a script holding the lock can refuse
+# where a person under load cannot (0082 FR3, now the same in all three scripts).
+#
+# Asserted on the message and on the backlog being byte-identical, never on the exit status alone:
+# `exits non-zero` is satisfied by the silent refusal the rule exists to forbid
+# (`testing-conventions.md`).
+echo "0090 AC4 — a foreign uncommitted QUEUE.md row is refused, not warned about"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0090 | Built it | develop | in-progress | 0000 |' 0090 develop in-progress ab12
+printf '| 0091 | Another session mid-edit | develop | in-progress | 0000 |\n' >> "$FIX/.claude/backlog/QUEUE.md"
+before_head="$(git -C "$FIX" rev-parse HEAD)"
+before_queue="$(cat "$FIX/.claude/backlog/QUEUE.md")"
+out="$(run_handoff 0090 ab12 verify)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "says it is refusing, not warning"  "$out" 'refusing to hand off'
+assert_contains "names the cause"                   "$out" 'uncommitted'
+assert_contains "names the row it would have carried" "$out" '0091 | Another session mid-edit'
+assert_contains "says nothing was changed"          "$out" 'nothing was changed'
+assert_not_contains "does not warn and carry on"    "$out" 'WARNING'
+assert_eq "QUEUE.md is byte-identical"     "$(cat "$FIX/.claude/backlog/QUEUE.md")" "$before_queue"
+assert_eq "nothing was committed"          "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
+assert_item_line "the item still holds its claim" 'claimed_by: "ab12"'
+assert_item_line "and is still at develop"        'next: develop'
+if [ -d "$FIX/.claude/backlog/.lock" ]; then bad "the lock does not exist afterwards"; else ok "the lock does not exist afterwards"; fi
 
 # --- result -------------------------------------------------------------------------------------
 echo
