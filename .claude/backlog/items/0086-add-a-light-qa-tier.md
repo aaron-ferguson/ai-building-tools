@@ -30,23 +30,19 @@ expects:
 claimed_by: "55bd"
 claimed_at: 2026-09-09T02:44:13Z
 touches:
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/queue/SKILL.md
-  - skills/queue/templates/item.md
-  - .claude/backlog/close
-  - .claude/backlog/config.yml
-  - references/TRACKER.md
-  - MEASUREMENT.md
-  - docs/decisions/002-matching-rigour-to-stakes.md
+  # NARROWED 2026-09-09 by 55bd for the RE-ENTRY pass, checked against the code. `./claim`
+  # re-seeds this field from `expects:` on every claim, so a narrowing does not survive a second
+  # claim — the previous pass's list is preserved in the comments below rather than in entries.
+  - skills/queue/templates/close                    # the edit target
+  - .claude/backlog/close                           # installed copy, re-copied one-way after it
   - tests/close.test.sh
-  - tests/next.test.sh
-  - tests/graph-fields.test.sh
   - tests/close-by.test.sh
   - docs/decisions/003-who-may-close-a-ticket.md
-  - .claude/backlog/items/0079-a-qa-level-for-a-repo-with-no-runner.md
-  # NARROWED from expects: 2026-09-08 by b708, checked against the code.
-  # Corrections to expects:, for the next capture to calibrate on:
+  # NOT touched this pass, and each was checked rather than assumed: the `002` price, the template
+  # enum, `next`, `graph-fields`, `orchestrate` and the three skill files all passed verify on
+  # 2026-09-08 and nothing in the two open defects reaches them.
+  #
+  # Corrections to expects:, carried from 2026-09-08 by b708 for the next capture to calibrate on:
   #   - `.claude/backlog/close` is the INSTALLED COPY. The edit target is
   #     `skills/queue/templates/close`, re-copied afterwards — the fix direction is one-way
   #     (tests/backlog-scripts-installed.test.sh AC2). Same for `next`, which expects: omitted
@@ -59,25 +55,9 @@ touches:
   #     `skills/queue/templates/config.yml`, which expects: omitted.
   #   - `items/0079-…` is not touched; it closed as `merged` on 2026-09-02 and CONCURRENCY.md
   #     forbids writing a `status: done` item.
-  - skills/queue/templates/close
-  - .claude/backlog/close
-  - skills/queue/templates/next
-  - .claude/backlog/next
-  - skills/queue/templates/item.md
-  - skills/queue/templates/config.yml
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/queue/SKILL.md
-  - tests/close.test.sh
-  - tests/close-by.test.sh          # new
-  - tests/graph-fields.test.sh
-  - tests/next.test.sh
-  - docs/decisions/002-matching-rigour-to-stakes.md
-  - docs/decisions/003-who-may-close-a-ticket.md   # new
-  # WIDENED 2026-09-08 by b708 — the work reached two files expects: never named:
-  - tests/cost-by-category.test.sh                  # its 'buys 32%' assertion is FALSIFIED by FR13
-  - skills/orchestrate/outcome.schema.json          # develop's new CLOSED verdict has no enum member
-  - tests/orchestrate.test.sh
+  #   - the first pass also reached `tests/cost-by-category.test.sh`,
+  #     `skills/orchestrate/outcome.schema.json` and `tests/orchestrate.test.sh`, which expects:
+  #     never named.
 ---
 
 ## Problem
