@@ -60,8 +60,9 @@ suite ran at all.
 
 ## Acceptance criteria
 
-- [ ] AC1 — `tests/backlog-scripts-installed.test.sh` runs `sh -n` on each of the three templates and each
-  installed copy.
+- [ ] AC1 — `tests/backlog-scripts-installed.test.sh` runs `sh -n` on each of the four templates and each
+  installed copy. (Written as three; `0081` added `handoff`, and FR1 says *every script it already
+  checks*, so the built scope is four.)
 - [ ] AC2 — Introducing an apostrophe inside a template's `awk` comment turns that test red, naming the script.
 - [ ] AC3 — The failure message says the script's syntax is broken, not that it diverged from its template.
 - [ ] AC4 — The convention against apostrophes in embedded `awk` comments is stated where the scripts are
@@ -108,3 +109,21 @@ suite ran at all.
   `tests/citations.test.sh`, but nowhere as one rule where the scripts are documented. So this
   ticket is smaller than it was written and is not empty; whoever takes it should re-scope rather
   than assume either.
+
+### From `develop`, 2026-09-09 (`24af`)
+
+- **Scope as built, after the re-check the 2026-09-05 note asked for.** `SCRIPTS` is
+  `next claim close handoff`, so FR1 is four scripts, not three. The pre-existing AC5 case parsed
+  `$TEMPLATES/$s` in both branches; it now parses the template *and* the installed copy, and the
+  block moved above AC2. FR3's rule landed in `references/CONCURRENCY.md`, *The four scripts* — the
+  one place the scripts are documented as a set — and is guarded against that section's body, not
+  the whole file, because the hazard is already explained in comments inside `next`, `close` and
+  `handoff` and a file-wide grep would pass on those.
+- **The AC2/AC5 ordering is not cosmetic, and mutation 3 is the proof.** Breaking both copies
+  *identically* leaves AC2 silent — they are still byte-identical — so the parse check is the only
+  thing that sees it. That is the case an ordering argument alone does not make.
+- **Where the apostrophe has to go to be a hazard, which the first mutation attempt got wrong.**
+  An apostrophe in the shell comment *above* `DECOMMENT='...'` is harmless: it is outside the
+  quoted program, and the guard correctly stayed green while AC2 reported the divergence. Only a
+  comment inside the assignment closes the quote. A mutation aimed at the block's explanatory
+  header therefore proves nothing — aim it between the opening `'` and its close.

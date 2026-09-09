@@ -164,3 +164,11 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   step-scoped, which is the right altitude for the rule's *home* and blind to its position inside
   the step; a session reading top-to-bottom meets the instruction before the precondition
   (pointer: `skills/retro/SKILL.md`, Steps 3 and 5).
+- 2026-09-09 (develop, `24af`) — **A mutation aimed at the comment *explaining* a quoting hazard
+  proves nothing, because that comment is outside the quotes.** Proving the `sh -n` guard on the
+  backlog scripts, the obvious target was the `` `"\047"` is an apostrophe `` comment — which sits
+  above `DECOMMENT='...'`, not inside it, so the mutated template parsed fine and only the
+  byte-identical check reddened. Read as "the guard does not work", that is exactly backwards. The
+  hazard lives strictly between the opening `'` of an embedded `awk` program and its close; a
+  falsifiability proof for any of `next`, `close` or `handoff` has to land there (pointer:
+  `skills/queue/templates/close`, the `DECOMMENT` assignment).
