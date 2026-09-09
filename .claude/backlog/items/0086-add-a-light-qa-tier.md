@@ -38,6 +38,8 @@ touches:
   - tests/close.test.sh
   - tests/close-by.test.sh
   - docs/decisions/003-who-may-close-a-ticket.md
+  # WIDENED 2026-09-09 by 55bd — the FR3 fix reached one file the narrowing had excluded:
+  - skills/queue/SKILL.md                           # its close_by precondition described the old gate
   # NOT touched this pass, and each was checked rather than assumed: the `002` price, the template
   # enum, `next`, `graph-fields`, `orchestrate` and the three skill files all passed verify on
   # 2026-09-08 and nothing in the two open defects reaches them.
@@ -506,6 +508,54 @@ merge exists to prevent.
 
   Everything else was checked and holds — see `## QA evidence`. The suite is green: 24 files, 1175
   assertions, run file-by-file per `config.yml`'s attribution note.
+
+- **Re-entry built 2026-09-09 by 55bd. Both of `afac`'s open items are fixed; nothing else on the
+  ticket was reopened.**
+
+  **AC5 — the counter now measures ticked-ness.** `rc_boxes` became `rc_ticked`, counting
+  `/^- \[[xX]\][ \t]/` alone, and the refusal reads *"not one of them is ticked"* rather than
+  *"not one of them is a checkbox"*, which was the false half of the old message.
+  `tests/close.test.sh` gains the input that defeated it — three `- [ ]` lines, none ticked — beside
+  the four cases that already existed, and the partly-ticked allowance is unchanged and still
+  asserted.
+
+  **Why the AC counter above it must NOT be changed to match, which is the trap for the next
+  reader.** `close` ticks the ACs itself, so an AC list legitimately arrives unticked and `ac_boxes`
+  is asking only whether the bullets are in a form this script *can* tick. A checklist arrives
+  performed or not at all — nothing downstream ticks it — so the presence of a box says nothing. Two
+  counters, four lines apart, that look like a copy-paste inconsistency and are not; the asymmetry
+  is written into the code beside both.
+
+  **FR3 — a citation now has to name an assertion, not merely a tracked file.** The gate reads the
+  two signals `close` can read, either sufficing: a conventional test path (`tests/`, `spec/`,
+  `__tests__/`, `*.test.*`, `*_test.*`, `*.spec.*`, `test_*`) **or** a mode `100755` entry in the
+  git index. **Both routes are needed and each is asserted in both directions**: a JS or Python
+  suite is committed non-executable and named by convention, a repo-specific check can be an
+  executable at a path no convention predicts, and the fixtures prove the discrimination — removing
+  the conventional route reds only the `src/thing.test.ts` case, removing the executable route reds
+  only the `bin/check-the-thing` case.
+
+  **What the narrowing does not do, and the record says so now.** It cannot tell that a real test
+  tests *this* criterion. `003`'s *Residual risk* carries that alongside the falsifiability limit it
+  already carried, so the accepted hole is written down rather than discovered again.
+
+  **The two refusal reasons are told apart, because collapsing them was a 0-red mutation.** "Names
+  no committed path" (add the guard) and "committed but is not an assertion" (cite a different file)
+  have different fixes. The sweep predicted zero for merging them, which was correct and was the
+  finding: both are now pinned, each with a `refute_contains` for the other, so no single reason
+  string satisfies either case.
+
+  **Mutation-proved: 10 mutations over the two guards plus three over the prose, every one confirmed
+  landed by diff, each red at or above its predicted blast radius, with a no-op control that landed
+  and stayed green.** Restores were from a copy — the fix was committed first, so `git checkout --`
+  was available and still not used (it restores to `HEAD`, which is the trap this repo has
+  recorded).
+
+  **One file beyond the narrowed `touches:`, and it was a drift rather than a defect.**
+  `skills/queue/SKILL.md`'s `close_by` precondition described the gate as first shipped, so a queue
+  session following it could write an eligible-looking ticket whose criteria cited documents. It now
+  states the requirement and points at `close` for the enumeration, per the Documentation NFR's
+  *stated once, cited elsewhere* — the enumeration lives in `close` alone.
 
 ## QA evidence
 
