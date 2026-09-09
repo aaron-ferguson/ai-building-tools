@@ -1163,6 +1163,26 @@ assert_eq "nothing was committed"      "$(git -C "$FIX" rev-parse HEAD)" "$befor
 assert_line "the row is still in QUEUE.md" '| 0092 | Verified row | verify | in-progress | 0000 |' QUEUE.md
 assert_no_lock "the lock does not exist afterwards"
 
+# --- 0090 AC5 — the close commit carries the Co-Authored-By trailer ----------------------------
+# `git-conventions.md` *Co-authorship* asks for the trailer on **all** AI-assisted commits, and a
+# lifecycle commit this script makes on a session's behalf is one — `develop` Step 1 says so in as
+# many words: "A lifecycle commit is not exempt from it." That question was never open; two sessions
+# read it as open because the sentence sits in Step 1's BY-HAND sequence, which a session running
+# ./close never executes (0090 FR4).
+#
+# Read through git's own trailer parser rather than grepping the body, so a line that merely looks
+# like a trailer cannot satisfy it: the rule is that the commit CARRIES a trailer.
+echo "0090 AC5 — the close commit carries the Co-Authored-By trailer"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0094 | Trailer check | verify | in-progress | 0000 |'
+mkitem 0094 verify in-progress '"ab12"' '[]'
+commit_fixture
+out="$(run_close 0094 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "git parses a Co-Authored-By trailer on the close commit" \
+  "$(git -C "$FIX" log -1 --format='%(trailers:key=Co-Authored-By,valueonly)')" \
+  'Claude <noreply@anthropic.com>'
+assert_contains "the subject still names the close" "$(git -C "$FIX" log -1 --format=%s)" 'Close 0094 [ab12]'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

@@ -52,6 +52,17 @@ QUEUE="$DIR/QUEUE.md"
 DONE="$DIR/DONE.md"
 LOCK="$DIR/.lock"
 
+# `git-conventions.md` *Co-authorship* asks for this trailer on ALL AI-assisted commits, and a
+# lifecycle commit a script makes on a session's behalf is one — skills/develop/SKILL.md Step 1
+# says so in as many words: "A lifecycle commit is not exempt from it", and
+# references/CONCURRENCY.md *The git index is shared* requires it of every AI-assisted commit. Those
+# two files SETTLE the scope question; it is not open, and a third session need not re-ask it. It
+# read as open only because Step 1's sentence sits inside its BY-HAND claim sequence, which a
+# session running this script never executes (0090 FR4). The generic name is deliberate: the script
+# cannot know which model is driving it, and guessing wrong is worse than the convention's own
+# literal.
+COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+
 ID="${1:-}"
 TOKEN="${2:-}"
 [ -n "$ID" ] && [ -n "$TOKEN" ] || {
@@ -792,7 +803,7 @@ git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
 # Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
 n=0
 # shellcheck disable=SC2086
-until git -C "$DIR" commit -q -m "Close $ID [$TOKEN]" -- "$QUEUE" "$DONE" "$item" $RECONCILED_PATHS 2>/dev/null; do
+until git -C "$DIR" commit -q -m "Close $ID [$TOKEN]" -m "$COAUTHOR" -- "$QUEUE" "$DONE" "$item" $RECONCILED_PATHS 2>/dev/null; do
   n=$((n + 1))
   [ "$n" -lt 30 ] || {
     echo "could not commit the close (git busy) — the files are edited but uncommitted" >&2

@@ -368,6 +368,20 @@ assert_eq "git sees no change to QUEUE.md" "$(git -C "$FIX" diff --name-only -- 
 assert_eq "nothing was committed" "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
 assert_contains "the lock is released on that refusal" "none$(ls "$FIX/.claude/backlog/.lock" 2>/dev/null)" 'none'
 
+# --- 0090 AC5 — the claim commit carries the Co-Authored-By trailer ----------------------------
+# Same rule and same reading as in tests/close.test.sh and tests/handoff.test.sh: the trailer is
+# owed by every AI-assisted commit, and a lifecycle commit a script makes on a session's behalf is
+# one (`develop` Step 1, "A lifecycle commit is not exempt from it"). Through git's trailer parser,
+# so a line that merely looks like one cannot satisfy it.
+echo "0090 AC5 — the claim commit carries the Co-Authored-By trailer"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0012 | Trailer check | develop | ready | 0000 |' 0012
+out="$(run_claim 0012)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "git parses a Co-Authored-By trailer on the claim commit" \
+  "$(git -C "$FIX" log -1 --format='%(trailers:key=Co-Authored-By,valueonly)')" \
+  'Claude <noreply@anthropic.com>'
+assert_contains "the subject still names the claim" "$(git -C "$FIX" log -1 --format=%s)" 'Claim 0012 [tok0]'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
