@@ -70,11 +70,43 @@ sessions recorded, not the decisions taken in them** — a choice the user alrea
 which is cheaper and more reliable than reconstructing them afterwards — the context was hot at the time,
 and a parked entry survives compaction, an interrupted session, and the gap between sessions.
 
+**Where that path resolves, in order.** A bare relative path reads nothing at all when the session
+stands in a workspace root rather than a project root — which is where these sessions start, and is
+what made the 2026-09-07 pass sweep four sibling backlogs it was never told to touch.
+
+1. **The git repository root** containing the working directory — its `.claude/backlog/FINDINGS.md`.
+2. **The nearest `.claude/backlog/` at or above the working directory**, for a backlog that does not
+   sit at its own repo root.
+3. **Nothing resolved → stop**, and report every directory searched. That is
+   `references/CONVENTIONS.md` rung 3's refusal, cited rather than restated so the two cannot drift.
+
+**The order walks upward only, and it never descends.** A buffer is resolved, never discovered — do
+not search the filesystem for a backlog that looks right (`CONVENTIONS.md` rung 3, the same
+prohibition). Exactly one buffer comes out of the order, so a sibling project's buffer under the same
+workspace is unreachable by construction rather than by a rule anyone has to remember.
+
+**The privacy boundary sits here, at the order, and not in a distant section.** Buffers under one
+workspace do not share a classification, and holding a company-tracked project's findings and a
+public repo's in one context is one step from writing either into the other. **A backlog carrying no
+`routing:` block is treated as company-tracked**, never as `company: none` — absence is the common
+case, so reading it as "no company" fails open on exactly the buffers this clause exists to catch.
+Unknown classification takes the stricter handling, never the looser (`data-privacy-conventions.md`).
+
+**Check the resolved backlog's own `QUEUE.md` for a retirement banner before reading its buffer**, and
+stop if there is one — a retired backlog's entries describe work nobody will do. This detects
+retirement in the resolved backlog and in no other, which is acceptable only because the order above
+never reaches another: retirement carries no signal a backlog is obliged to publish, so detecting it
+across arbitrary backlogs would fail open.
+
 **Running in a project that consumes these tools, read the tools repo's buffer as well** — parks
 routed there by subject are invisible in the local one, so a retro reading only locally would never
 see them again. That repo is *resolved*, never discovered — see `references/CONVENTIONS.md`,
 *Routing a finding to the repo it is about*. Sweep only what a rule names; a buffer that is merely
 nearby is not an input.
+
+**A second buffer is read only when a rule names it**, never because it was nearby — the paragraph
+above is the one such rule, and it *resolves* that repo rather than finding it. The single-buffer
+order is not a ban on it.
 
 **Two modes, and which you are in decides what you reach for before reading a single entry.** An
 **end-of-run retro** closes a supervised session: small buffer, one session, context still hot, so

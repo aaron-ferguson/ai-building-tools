@@ -151,6 +151,48 @@ in_window "AC4 — a deferral records what was established" "$W1C" 'records what
 in_window "AC4 — the buffer converges rather than emptying in one pass" "$W1C" 'transit, not residence'
 
 # ---------------------------------------------------------------------------
+# 0111 — Step 1 said "`.claude/backlog/FINDINGS.md` is the input" and nothing about what that
+# path resolves against. Invoked from a workspace root holding four backlogs and being none of
+# them, the 2026-09-07 pass swept all four on freshness and threshold. That was defensible and it
+# was invention: no step licensed it, and it puts a company-tracked buffer and this public repo's
+# in one context.
+#
+# AC5 IS THE CASE THE OTHERS DO NOT MAKE. A numbered order can be present and still be a
+# discovery — the sweep that produced this ticket would satisfy AC1 unchanged. The upward-only
+# half and the do-not-search half are asserted separately for that reason.
+#
+# ALL SEVEN ARE ANCHORED TO STEP 1's WINDOW (AC3), like the cases above: "resolve", "order" and
+# "buffer" are ordinary words throughout this skill, so a file-wide grep would stay green on the
+# ladder moved into a step that never reads it. The scoping is proved falsifiable below.
+# ---------------------------------------------------------------------------
+
+echo "0111 AC1 — Step 1 states a numbered resolution order, not a bare relative path"
+in_window "AC1 — the order is stated as an order"     "$W1C" 'Where that path resolves, in order'
+in_window "AC1 — rung 1 is the repo root, walked up to" "$W1C" 'The git repository root'
+in_window "AC1 — rung 2 covers a backlog below its repo root" "$W1C" 'nearest `.claude/backlog/`'
+
+echo "0111 AC2 — nothing resolving stops the session and names what was searched"
+in_window "AC2 — the last rung is a stop, not a guess" "$W1C" 'Nothing resolved'
+in_window "AC2 — and the report names every directory searched" "$W1C" 'report every directory searched'
+in_window "AC2 — the refusal is cited, never restated"  "$W1C" 'rung 3'
+
+echo "0111 AC5 — the order resolves upward only, and buffers are never discovered"
+in_window "AC5 — the order walks upward only"          "$W1C" 'walks upward only'
+in_window "AC5 — a buffer is resolved, never discovered" "$W1C" 'resolved, never discovered'
+in_window "AC5 — so a sibling buffer is unreachable by construction" "$W1C" 'unreachable by construction'
+
+echo "0111 AC6 — a retired backlog is not swept as though it were live"
+in_window "AC6 — the retirement banner is checked before the buffer is read" "$W1C" 'retirement banner'
+in_window "AC6 — checked on the resolved backlog, and no other" "$W1C" "resolved backlog's own"
+
+echo "0111 AC7 — a second buffer is read only when a rule names it"
+in_window "AC7 — a naming rule is what admits a second buffer" "$W1C" 'only when a rule names it'
+
+echo "0111 AC4 — the privacy clause sits at the order, and absence is company-tracked"
+in_window "AC4 — an absent routing block is treated as company-tracked" "$W1C" 'treated as company-tracked'
+in_window "AC4 — because unknown classification takes the stricter handling" "$W1C" 'the stricter handling'
+
+# ---------------------------------------------------------------------------
 # The falsifiability probes. The fixtures drive the same matcher as the cases
 # above, so a scoping bug reds here rather than passing silently up there.
 # ---------------------------------------------------------------------------
@@ -211,6 +253,50 @@ if window_has "$W5" 'landed, absorbed, filed or dropped'; then
   saw "$W5"
 else
   ok "removing a disposition from the list turns AC1 red"
+fi
+
+echo "0111 AC5 — deleting the upward-only sentence turns the case red"
+grep -v 'walks upward only' "$RETRO" > "$FIX/nodirection.md"
+W6="$(window "$FIX/nodirection.md" "$STEP1" "$END1")"
+if window_has "$W6" 'walks upward only'; then
+  bad "0111 — the sentence was deleted and the matcher still saw it; AC5 proves nothing"
+  saw "$W6"
+else
+  ok "deleting the upward-only sentence turns AC5 red"
+fi
+
+# AC3 for 0111. A ladder is exactly the kind of rule that reads sensibly under any heading, so the
+# fixture puts every asserted phrase in a NEIGHBOURING step: the guard must stay unsatisfied, or
+# the order could live in a step no pass reads before it sweeps.
+echo "0111 AC3 — the phrases outside Step 1 do not satisfy the guard"
+cat > "$FIX/ladder-outside.md" <<'FIXTURE'
+## Step 1 — Read the buffer
+
+Read the buffer.
+
+## Step 2 — Propose, then wait
+
+Where that path resolves, in order. The git repository root, then the
+nearest `.claude/backlog/` above it. Nothing resolved → stop, and
+report every directory searched, as `CONVENTIONS.md` rung 3 does. The order
+walks upward only; a buffer is resolved, never discovered, so a sibling is
+unreachable by construction. A backlog with no routing block is
+treated as company-tracked, and unknown classification takes
+the stricter handling. Check the resolved backlog's own `QUEUE.md` for a
+retirement banner. A second buffer is read only when a rule names it.
+FIXTURE
+W7="$(window "$FIX/ladder-outside.md" "$STEP1" "$END1")"
+LEAKED=0
+for phrase in 'Where that path resolves, in order' 'report every directory searched' \
+              'walks upward only' 'resolved, never discovered' 'treated as company-tracked' \
+              'retirement banner' 'only when a rule names it'; do
+  window_has "$W7" "$phrase" && LEAKED=1
+done
+if [ "$LEAKED" = 1 ]; then
+  bad "0111 AC3 — the window leaked past its own heading; the order could sit in any step and pass"
+  saw "$W7"
+else
+  ok "the resolution order is asserted in the step that reads the buffer, not across the file"
 fi
 
 echo "FR — Step 4's cases do not read Step 1's window, or either could carry both rules"
