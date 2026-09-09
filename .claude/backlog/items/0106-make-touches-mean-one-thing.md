@@ -92,8 +92,8 @@ reproduced a moment later, and point at a file its own ticket never touched. Ste
 
 - [ ] AC1 — Given an item with a non-empty `touches:`, when it is re-claimed, then the field is not
   prepended to and no path appears twice.
-- [ ] AC2 — Given a re-claim that replaces `touches:`, when it completes, then its output says the
-  field was replaced and what it was.
+- [ ] AC2 — Given a re-claim of an item with a non-empty `touches:`, when it completes, then its
+  output says the field was left as the previous session set it, and prints the paths it kept.
 - [ ] AC3 — Given a row at `next: verify`, when it is claimed, then `touches:` is not seeded from
   `expects:`.
 - [ ] AC4 — Given a ticket whose commits changed a path its `touches:` never named, when it closes,
@@ -128,6 +128,36 @@ reproduced a moment later, and point at a file its own ticket never touched. Ste
 - 2026-09-07 — Filed by `retro` from four `FINDINGS.md` entries dated 6-7 Sep, all pointing at this
   one field. The design half — what scope means where the product *is* the prose — was left with
   `0050` rather than duplicated here.
+
+- 2026-09-09 (develop, `1a3e`) — **AC2 was reworded to the branch the item's own notes had already
+  chosen.** FR1 offered two remedies — replace and say so, or leave alone — and AC2 was written
+  against only the first, which would have made it vacuous under the second. The 2026-09-09 note
+  below picks the second in as many words ("a populated `touches:` is a verified scope and a
+  prediction never overwrites one: re-claim should leave it alone and say it did"), so this is the
+  FR's own selection made testable rather than a narrowing of the contract. The replace branch is
+  not implemented and there is no flag for it: nothing has asked to overwrite a narrowed scope.
+
+- 2026-09-09 (develop, `1a3e`) — **the prepend was not a missing replace; it was a terminated skip.**
+  The seed did replace the old entries — `fm && intou && /^[ \t]+-/ { next }` dropped them — but the
+  very next rule, `fm && intou { intou = 0 }`, ended the skip at the FIRST line that was not a `- `
+  bullet. A standalone comment inside the block is such a line, so a narrowed-and-annotated
+  `touches:` (the only kind a session is told to write) had its comment and every entry after it
+  printed below the seed. An unannotated block was replaced cleanly, which is why the defect looked
+  intermittent. The same trap sits in any reader of this field, so the new `declared_touches()` and
+  `existing_touches` readers both SKIP a comment line rather than ending on it.
+
+- 2026-09-09 (develop, `1a3e`) — **`claim.test.sh`'s fixture carries `expects:` and `touches:` in
+  one item, and the two legitimately hold the same paths.** An assertion counting a path over the
+  whole item file therefore reads 2 for a *correct* result — a guard anchored to the document
+  rather than to the claim. `touches_block()` was added for exactly that; use it for any assertion
+  about what the field holds.
+
+- 2026-09-09 (develop, `1a3e`) — **the commit range is anchored to the claim commit for the token,
+  not to a date or a depth.** `Claim <id> [<token>]` is the only marker in the history that says
+  "this session's work starts here", and `claim` writes it. Where there is none — a by-hand claim,
+  a fixture, a backlog older than the script — there is no range, and the scripts print nothing
+  rather than a report over an invented one. That is also why every pre-existing `close` and
+  `handoff` fixture stayed green: none of them commits a claim.
 
 - 2026-09-09 (retro, from `FINDINGS.md` 2026-09-08) — **defect 1 recurred on `0086`, which
   establishes it as systematic rather than a one-off.** `claim` prepended all 15 `expects:` paths
