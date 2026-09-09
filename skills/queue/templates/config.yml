@@ -9,6 +9,23 @@ project: <Project Name>
 conventions:
   path: ../ai-building-conventions
 
+# Optional. Where the WRITABLE CHECKOUT of these tools lives, so a finding about a skill, a
+# reference file or a backlog script can be parked in the repo that owns it rather than in this
+# project's buffer, where nothing can act on it. Resolved from the repo root, exactly like
+# `conventions.path`. See references/CONVENTIONS.md, "Routing a finding to the repo it is about".
+#
+# NEVER DERIVED FROM THE PLUGIN INSTALL, which is why this key exists rather than being inferred.
+# The install directory is not a git repository, and the marketplace clone beside it IS one — right
+# `origin`, identical `HEAD`, a whole backlog — so it reads as a working checkout while being a
+# managed copy the plugin system refreshes over anything parked there.
+#
+# Omit it when there is no checkout on this machine: a tool finding is then parked locally prefixed
+# `[for <repo>]` for a later retro to forward, which is the stated fallback and not a failure. Omit
+# it too when THIS project IS the tool repo — a finding about it is already local.
+tools:
+  path: <e.g. ../ai-building-tools — a writable checkout, not the plugin install>
+
+
 # Monotonic: this counter only ever rises. `queue` claims this number for a new item, then
 # increments it. A withdrawal BURNS the id — it never decrements this, and it keeps the item file
 # marked `status: withdrawn` so a citation resolves to that rather than to nothing. Note ids are
