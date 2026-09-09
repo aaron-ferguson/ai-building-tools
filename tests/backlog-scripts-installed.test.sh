@@ -86,6 +86,15 @@ echo "AC8 — no apostrophe closes an embedded awk program early, template and i
 #
 # Only the first violation per file is reported: once a region closes early every later quote is
 # displaced, so the rest of the list is cascade rather than evidence.
+#
+# Deliberately strict on one shape, measured 2026-09-09. A region closing on its own opening line
+# after a comment start is reported whether or not the program continues onto later lines -- the
+# two cases are `awk '/^x/ {  # it's the row` (broken; the program body follows) and
+# `awk '{ print }  # a note'` (fine; a real awk comment), and nothing available at the close
+# tells them apart without lookahead. Reporting both was chosen over missing the first, because
+# AC2 is the whole ticket and the convention in references/CONCURRENCY.md already asks that these
+# programs carry no prose comments. Neither shape exists in the four scripts today. A future
+# legitimate trailing awk comment trips this: move it above the assignment, where it belongs.
 early_close() {
   awk '
     BEGIN { Q = "\047"; state = 0; depth = 0; hd = "" }
