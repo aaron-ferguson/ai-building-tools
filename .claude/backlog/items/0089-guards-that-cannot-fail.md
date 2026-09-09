@@ -156,3 +156,24 @@ Found while verifying `0085` (pointer: `tests/cost-by-category.test.sh`, item `0
     `grep -n '^[A-Z_]*=\"[a-z ]*\"' tests/*.test.sh` finds the rest and nobody has run it.
   The generalisable half of all of this landed in `testing-conventions.md` on 2026-09-07; what stays
   here is the repo-specific sweep.
+
+- 2026-09-09 (retro, from `FINDINGS.md` 2026-09-08) — **three more instances for the sweep, each
+  verified by mutation at the time it was parked.**
+  1. **A guard anchored to a literal that the guarded prose does not use.**
+     `tests/orchestrate.test.sh`'s AC25 greps `(rm|rmdir|unlink)[^|]*\.lock` over the fenced blocks,
+     but the block it guards opens `LOCK=.claude/backlog/.lock` and says `"$LOCK"` everywhere after.
+     A fenced `rm -rf "$LOCK"` leaves the suite at 130 passed while doing exactly what FR15 forbids.
+     The delivered prose is clean either way, so this is coverage of the one clause whose whole point
+     is that a future edit must not slip it in.
+  2. **A guard that checks a citation and not the number beneath it.** AC26 asserts
+     `MEASUREMENT.md`'s per-stage means appear in the comment above `stage_budget_usd:`; nothing
+     relates that comment to the value. Setting `retro: 99.00` with its `2.51` citation intact
+     leaves the suite green. Two things for whoever takes it: the arithmetic could be asserted from
+     the cited mean, and the **rounding granularity is unstated** — all three shipped caps are mean
+     x 1.5 rounded to the nearest five cents (6.05, 5.45, 3.75), which is self-consistent, but the
+     comment says only "times 1.5", so an honest recompute yields 6.04 and 3.76 and reads as drift.
+  3. **A guard whose file scope includes `tests/` also covers its own source, and its fixture
+     literals become real citations.** `0105`'s item-ID check reported `tests/citations.test.sh` on
+     its first run, correctly: the unresolvable id its fixtures need was spelled in an anchored form
+     inside a covered file. Fixed there with a variable; the shape generalises to any guard that
+     scans the directory it lives in.

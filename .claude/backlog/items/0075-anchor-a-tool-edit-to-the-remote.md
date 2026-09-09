@@ -88,3 +88,15 @@ install against the checkout; nothing compares the checkout against the remote.
 ## Notes & decisions
 
 - Captured by the AetherWorks retro of 2026-09-01, which hit all of this in one pass.
+
+- 2026-09-09 (retro, from `FINDINGS.md` 2026-09-09) — **this row must say which checkout it means,
+  because the plugin machinery offers one that reads as correct and is not.** The install directory
+  (`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/<version>/`) is **not a git
+  repository at all**, so it fails a checkout test loudly and safely. The marketplace clone beside
+  it (`~/.claude/plugins/marketplaces/ai-building-tools/`) **is** one — correct `origin`, `HEAD`
+  identical to the real checkout's, and a complete `.claude/backlog/` with `FINDINGS.md`, the items
+  and the scripts — so every cheap test for "is this the repo?" passes on a managed copy the plugin
+  system refreshes. Directly against FR1: that clone reports `## main...origin/main [ahead 213]`
+  while being exactly level, because its `origin/main` ref is stale. A session standing there and
+  running this ticket's fetch-and-report-divergence check gets a confidently wrong answer **in the
+  direction that reads as safe**.

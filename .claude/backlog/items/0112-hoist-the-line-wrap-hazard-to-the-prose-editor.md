@@ -121,3 +121,21 @@ other.
   second edits a paragraph the first has moved. `relates:` rather than `blocked_by:` because either
   order works and forcing one would sink a row for no gain.
 - Captured from `FINDINGS.md` 2026-09-07.
+
+- 2026-09-09 (retro, from two `FINDINGS.md` entries of 2026-09-09) — **two additions, one of them a
+  trigger this ticket does not currently name and one a detector it could carry.**
+  **The trigger: a size-driven rewrap of a paragraph you are still writing.** A session read
+  `CLAUDE.md`'s rule before writing anything and still shipped four reds. The asserted phrases were
+  chosen first, then the prose was **compressed for the size guard**, and the compression re-flowed
+  lines so `reads as a working checkout`, `falls back to a marked local park` and `Routing a finding
+  to the repo it is about` each straddled a break. The rule as written warns about *editing* a
+  guarded paragraph; reflowing one you are drafting is not felt as an edit to a guarded one. The
+  mitigation neither guard states: **after any reflow, `grep -n` each asserted phrase and require
+  one hit per file.**
+  **The detector: an over-long line is evidence a guarded phrase lives there.** In
+  `references/CONVENTIONS.md`, `conventions.path` and `Nothing resolving is a stop` share line 103,
+  and `Never derive either from the plugin install` and `reads as a working checkout` share line
+  106, so deleting either phrase reds both cases and neither pair can fail alone. Those lines run
+  104-108 chars where the file otherwise wraps at ~100, *because* holding a phrase on one line is
+  what stretched them. A line longer than its own file's wrap width is a cheaper detector than
+  re-grepping every phrase.

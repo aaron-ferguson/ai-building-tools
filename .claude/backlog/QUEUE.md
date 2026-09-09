@@ -84,6 +84,10 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0102 | Decide what happens when the size-gate regime's two deferred triggers fire | design | ready |  |
 | 0098 | Disambiguate the FR citations the 0036 split left behind | develop | ready |  |
 | 0109 | Give a human-reported source a resolvable form | develop | ready |  |
+| 0116 | Give queue Step 0 a resolution order instead of a scaffold instruction | design | ready |  |
+| 0117 | Stop the item-ID citation matcher reading file modes and clock times as citations | develop | ready |  |
+| 0118 | Run the privacy guard where a sweep commits, not only where a suite runs | develop | ready |  |
+| 0119 | Make a collided self-mutating guard exit non-zero instead of silently printing no tally | develop | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in

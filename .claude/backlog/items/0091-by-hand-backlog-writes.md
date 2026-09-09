@@ -129,3 +129,15 @@ Three separate failures of the same by-hand write, all of them silent.
   session re-reads all eight files.
 - The grep phrases in AC2 and AC3 are deliberately short enough to survive a reflow onto one line;
   `0063` is the general fix and this item does not depend on it.
+
+- 2026-09-09 (retro, from `FINDINGS.md` 2026-09-07) — **`queue` Step 2 and `CONCURRENCY.md`
+  disagree about what the lock covers, in one sentence each, and this ticket has to settle it to be
+  specifiable.** Step 2: *"Release in the same turn; the item file, ranking and the row are all
+  unlocked."* `CONCURRENCY.md`, *Lock every write to the backlog directory*: *"Every write, no
+  exemptions … `config.yml`, `FINDINGS.md`, `RANKING.md` and the item files are all inside the
+  boundary."* A capture session followed `CONCURRENCY.md` as the named authority — the queue skill's
+  own preamble sends you there before writing anything — and held the lock across the `QUEUE.md`
+  edits, an item amendment and `RANKING.md`. That is the stricter reading and it cost a lock held
+  for minutes, which `CONCURRENCY-INCIDENTS.md` sanctions while also advising against it (*"keep
+  every edit that is not to `QUEUE.md` outside it"*). Three documents pull three ways; a by-hand
+  write cannot be told to take the lock until one of them wins.

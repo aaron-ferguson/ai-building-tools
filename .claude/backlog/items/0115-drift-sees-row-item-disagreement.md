@@ -195,3 +195,15 @@ in the one suite whose subject is atomicity.
 - **Filed from `0081`'s verify verdict of 2026-09-08 `[9840]`**, which found the gap by mutation,
   declined to pass or fail AC4 on it, and correctly did not widen its own scope into `next`.
   `0081` AC4 and FR5 are now the recorded observation that this ticket is the fix.
+
+- 2026-09-09 (retro, from `FINDINGS.md` 2026-09-08) — **reproduced directly, and the provenance is
+  older than it looks.** Driven on the exact shape the sentence describes, `./next --drift` prints
+  `no drift` and exits 0. `--drift` is a Status-column-vs-`blocked_by` cache check (`next:88`,
+  `next:467-493`) and reads neither `claimed_by:` nor the item's `next:`. The `0084` incident this
+  repo already recorded — row `develop | in-progress` over item `next: verify, status: ready`,
+  `claimed_by:` empty — reproduces with `--drift` silent while `./next verify` declines to offer the
+  row and `./next develop` reports its files held under `[no token]`. The sentence is pre-existing:
+  written 2026-08-24 at `953ce51` (`0029`), long before `0081` touched the file, which is also why
+  `0081` AC4 was unverifiable and went to `queue`. **The two halves may be one fix or two** — correct
+  the sentence, or give `--drift` the row/item agreement check the sentence promises — and this row
+  should say which before it is built.

@@ -195,3 +195,11 @@ Cannot be written until the design question is settled. These hold regardless:
     days old. *Out of scope* excludes `retro`'s **cadence**, which this is not. Either FR2 widens to
     both sweepers or that half needs its own row; the claiming session should decide which and say
     so.
+
+- 2026-09-09 (retro, from `FINDINGS.md` 2026-09-08) — **the gate is missing from the hand-driven
+  path, and the buffer proves it.** The entry that parked this recorded the buffer at 14 against
+  `findings_threshold: 8`; the retro of 2026-09-09 found **32**, four times the threshold, none of
+  it stale — every entry dated within three days. `verify` has no gate on the count and neither does
+  `develop`; only `./next --drive` reads it, so a hand-driven or supervised-by-a-person run fills
+  the buffer indefinitely and nothing says so. Whatever this row decides about emptying, the gating
+  half has to reach the stages a person drives, not only the ones a driver dispatches.

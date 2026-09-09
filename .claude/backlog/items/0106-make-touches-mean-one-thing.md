@@ -118,3 +118,17 @@ reproduced a moment later, and point at a file its own ticket never touched. Ste
 - 2026-09-07 — Filed by `retro` from four `FINDINGS.md` entries dated 6-7 Sep, all pointing at this
   one field. The design half — what scope means where the product *is* the prose — was left with
   `0050` rather than duplicated here.
+
+- 2026-09-09 (retro, from `FINDINGS.md` 2026-09-08) — **defect 1 recurred on `0086`, which
+  establishes it as systematic rather than a one-off.** `claim` prepended all 15 `expects:` paths
+  above `b708`'s 18 narrowed ones — re-adding the four paths that item's inline comments say
+  explicitly are NOT touched (`MEASUREMENT.md`, `references/TRACKER.md`,
+  `.claude/backlog/config.yml`, and a `status: done` item) — and committed the result under
+  `Claim 0086 [afac]` with the printed message unchanged: *"touches: is set provisionally from
+  expects: (15 paths) — NARROW it"*. Nothing is lost, but the field the other window reads to decide
+  what is safe to take now reserves a strictly wider set than the work needs, and the narrowing a
+  previous session did *and commented* is silently demoted to a duplicate list below the widened
+  one. A ticket returning to `verify` after a `develop` pass is the normal case for this. The rule
+  the script is missing is the one `develop` already has for `expects:` versus `touches:` —
+  **a populated `touches:` is a verified scope and a prediction never overwrites one**: re-claim
+  should leave it alone and say it did, or merge and report the delta.

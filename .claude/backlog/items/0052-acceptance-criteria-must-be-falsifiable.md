@@ -239,3 +239,14 @@ Four entries, and each names a shape FR2's list does not yet carry.
   conventions; neither says what to do when they collide, and the cheap answer — follow the AC so
   `verify` passes — is not obviously the right one. FR5 is the nearest hook: an AC that knowingly
   overrides a convention should have to say so where the next reader will see it.
+
+- 2026-09-09 (retro, from `FINDINGS.md` 2026-09-08) — **a fourth shape, arriving structurally rather
+  than by oversight: an AC written as the outcome of an *agent-performed* operation has no runner in
+  this repo, and nothing in the ticket says so.** `0105` AC1 read "given a withdrawal, `next_id` is
+  unchanged or higher". No script withdraws a ticket and none mints an id — both are `queue` prose —
+  so the outcome is unobservable at every level and the guard necessarily asserts the *sentence*
+  instead. `qa_manual:` was empty, so the split was never declared at queue time, and the ticket
+  gives a reader no way to tell this AC from one a runner discharges. The general question — how a
+  prose-executed repo verifies a behavioural AC — is larger than this row, but the *declaration*
+  half belongs here: a criterion whose subject is an operation only an agent performs should have to
+  say so.
