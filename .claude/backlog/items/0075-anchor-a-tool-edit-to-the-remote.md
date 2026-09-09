@@ -139,3 +139,34 @@ install against the checkout; nothing compares the checkout against the remote.
   opens a sentence while the assertion was lowercase, and a third because a bold span wrapped
   across a source line. Both are the line-based-`grep` hazard `CLAUDE.md` names, in a form that
   survives a careful read of the paragraph.
+
+## QA evidence
+
+Verified 2026-09-09, token `f5d0`, at `qa_level: unit` — frontmatter and the QA plan's
+`**Level:** unit` agree, so no level drift to report. Commit under test `dfd93a8`.
+**The subject is the repo copy, not the install**: no cached version carries this prose
+(`grep -c 'every repo it will edit'` is 0 in all nine, including the `0.9.22` this session's own
+skills resolved from), so the change is committed and unreleased and the checkout is the authority.
+Suite: 26 files, 0 failed, run individually per `config.yml`'s note that `unit` is fail-fast;
+`tests/remote-anchor.test.sh` reports `20 passed, 0 failed`.
+
+| Row | How it was checked | Result |
+|---|---|---|
+| AC1 — retro instructs a fetch of every repo before Step 3's destination checks, and says a stale check is not evidence | Read `skills/retro/SKILL.md` Step 3 (window `## Step 3` → `## Step 4`); `tests/remote-anchor.test.sh` five AC1 cases. **Mutated**: deleting `every repo it will edit` → `19 passed, 1 failed`; deleting `Behind the remote stops the pass` → `18 passed, 2 failed`. **Altitude mutation**: relocating the whole paragraph into Step 2, unchanged, → `15 passed, 5 failed`, so the rule's *step* is what is asserted, not its presence in the file | PASS |
+| AC2 — the Step 5 release chain names the fetch as its first step | `skills/retro/SKILL.md` Step 5, *"That chain begins with a fetch, and the version comes from it."* **Mutated**: deleting `chain begins with a fetch` → `19 passed, 1 failed`. The guard's own `AC4 — Step 5's chain rule is not readable from Step 3's window` case proves the two windows are distinguishing | PASS |
+| AC3 — the bump derives from the remote's current version, and names the collision | `skills/retro/SKILL.md` Step 5 names the **remote's `plugin.json`**, **never the local file**, and *"collided with a version already released"* (2026-09-01). **The prose's claim about the script was checked against the script**: `tools/release` step 1/9 is `git fetch`, step 2/9 dies on behind, step 3/9 derives from `$UPSTREAM:.claude-plugin/plugin.json` and reports both the observed and derived versions. **Mutated**: deleting the remote-`plugin.json` phrase → `19 passed, 1 failed` | PASS |
+| AC4 — mutating the fetch sentence out of `skills/retro/SKILL.md` turns the new guard red | The five mutations above were run against the real files, not the guard's own fixtures, each confirmed to have removed exactly one line (`git diff --numstat` = `0 1`) and each restored by pathspec with a green control run after | PASS |
+| FR1 (asserted as FR1, not an AC) — develop anchors to the remote before it claims | `skills/develop/SKILL.md` Step 1, immediately above **Claim it with `./claim`**. **Mutated**: deleting `Fetch before you claim` → `19 passed, 1 failed` | PASS |
+| NFR Documentation — the rule states the failure it prevents, not the reasoning | Both paragraphs name the 2026-09-01 pass: 47 commits behind, a commit rewritten four days after someone else pushed it, a rebase conflict, and a released version collided with. `tests/skill-size.test.sh` and `tests/reference-size.test.sh` green | PASS |
+| NFR Git — the fetch is read-only; no automatic pull, merge or rebase is added | Every added line mentioning pull/merge/rebase is narrative about the incident or hands the choice to the user (*"the pull is the user's call"*); the only commands added are `git fetch` and `git status -sb`, both read-only. **True as delivered, but unguarded** — see the finding below | PASS (unguarded) |
+
+**Published gap, not papered over** (`verify` Step 3, *a mutation that does not redden is a result
+to publish*): replacing the read-only command with `git pull --rebase` in **either** skill leaves
+all 26 test files at 0 failed. No assertion was invented to close it; it is parked in
+`FINDINGS.md` (2026-09-09) and belongs with `0107`.
+
+**Advisory label:** not advisory. The dirty set captured before the first suite run was empty, and
+a fresh capture after the last evidence command was empty, so the intersection with the evidence
+set — `skills/retro/SKILL.md`, `skills/develop/SKILL.md`, `tests/remote-anchor.test.sh`,
+`tools/release`, `references/CONVENTIONS.md`, `.claude/backlog/config.yml`, `tests/*.test.sh` — is
+empty.
