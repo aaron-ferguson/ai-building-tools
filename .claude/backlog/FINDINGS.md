@@ -315,3 +315,27 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   are still writing** is not felt as an edit to a guarded one. Cheap mitigation, and the one thing
   neither guard says: after any reflow, `grep -n` each asserted phrase and require one hit per file
   (pointer: `CLAUDE.md` *Tests*; `tests/findings-routing.test.sh` header).
+
+- 2026-09-09 — **A falsifiability probe reported the wrong reason when the file was already
+  mutated, and the wrong reason is the one a session would act on.** Verifying 0078, deleting
+  `falls back to a marked local park` from the real `references/CONVENTIONS.md` reddened AC3 as it
+  should, and `findings-routing.test.sh`'s independence probe alongside it announced *"deleting the
+  privacy clause also removed the fallback; one guard is covering two claims"* — a claim about
+  guard design that was simply untrue. The probe deletes its phrase from a copy of whatever is on
+  disk, so with the fallback already gone its `elif` fell to the wrong branch. The outcome was right
+  (red) and only the message was wrong, which is the case `verify` Step 3 says to fix by asserting
+  the message rather than the status. Cheap fix: have the independence probes assert the phrase is
+  present in the real file first, exactly as the AC5 deletion loop already does for the skills
+  (pointer: `tests/findings-routing.test.sh`, the two `no-fallback`/`no-privacy` blocks).
+
+- 2026-09-09 — **Two asserted phrases sharing one source line lose their independence silently, and
+  an over-long line is the tell.** In `references/CONVENTIONS.md`, `conventions.path` and `Nothing
+  resolving is a stop` sit on line 103, and `Never derive either from the plugin install` and `reads
+  as a working checkout` on line 106, so deleting either phrase reds both cases and neither pair can
+  fail alone. Nothing is wrong with the ACs — AC5 only demands the fallback and privacy clauses be
+  independent, and they are — but the guard reads as one case per claim and is not. The tell is
+  mechanical and worth having: those lines run 104–108 chars where the file otherwise wraps at ~100,
+  because holding a phrase on one line is what stretched them. So in this repo **a line longer than
+  its file's own wrap width is evidence that a guarded phrase lives there** — a cheaper detector than
+  re-grepping every phrase, and one 0112 could carry (pointer: `tests/findings-routing.test.sh`;
+  items 0112, 0063).
