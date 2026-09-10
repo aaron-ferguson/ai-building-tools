@@ -33,6 +33,7 @@ touches:
   - skills/queue/templates/item.md
   - references/REPORTING.md
   - tests/next.test.sh
+  - tests/findings-buffer.test.sh   # new file, created by this ticket
 ---
 
 ## Problem
