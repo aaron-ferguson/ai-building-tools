@@ -102,3 +102,24 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   foreground case only — a sweep that is asynchronous needs the stronger form, which is that it must
   run in a throwaway worktree or hold paths the session has finished with (pointer:
   `skills/develop/SKILL.md` Step 5).
+- 2026-09-10 (verify) — **a build note's mutation claim was wrong for the second time in two days,
+  and both times the wrong half read exactly like the right ones.** `0130`'s note says *"a guard
+  drives the cap and the tail count, and mutating the ranking to first-seen reds it"*. Cap and tail
+  redden; the ranking does not — the cap fixture's insertion order happens to put the hub first, so
+  ranked and first-seen produce the same block and nothing tests rank. The 2026-09-09 entry above
+  records the same shape for `0143`'s unreachability claim. `verify` Step 3 already says to re-run
+  any mutation you would cite, and it worked both times — what is missing is anything on the
+  *writing* side: `develop` invites a mutation table and nothing asks the author to distinguish a
+  mutation they ran from a property they reasoned about, which is the one thing the reader cannot
+  tell from the table (pointer: `skills/develop/SKILL.md` build notes, `skills/verify/SKILL.md`
+  Step 3, item 0130).
+- 2026-09-10 (verify) — **mutating a duplicated script silently tests nothing, and the tree gives no
+  signal.** `.claude/backlog/next` and `skills/queue/templates/next` are byte-identical by
+  requirement, and `tests/next.test.sh` copies the *template* into its fixture. A first sweep
+  mutated the backlog copy: seven mutations, `303 passed, 0 failed` every time, `git diff` non-empty
+  every time, and nothing distinguishing that from seven real gaps. Nothing guards the two copies
+  for equality either, so mutating one reddens no drift check. `verify` Step 3 names this trap
+  ("it reached the copy the harness runs") and points at `testing-conventions.md`; what it does not
+  say is how to *find* which copy that is before starting, which for a fixture-copying harness is a
+  grep of the test file (pointer: `skills/verify/SKILL.md` Step 3, `tests/next.test.sh:23`, item
+  0146 — *when a required duplication earns a drift guard*).
