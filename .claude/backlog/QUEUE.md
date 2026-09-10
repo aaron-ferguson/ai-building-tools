@@ -23,7 +23,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0143 | Redact the internal organisation name from this public repo and guard the rule forbidding it | verify | in-progress |  |
 | 0142 | Let the driver see the drift classes that stop a human reader | develop | ready |  |
 | 0148 | Make the internal-name guard red rather than green when its own pattern will not compile | develop | ready |  |
 | 0131 | Dispatch no new develop gate while a started ticket is still awaiting verify | develop | ready | 0128 |

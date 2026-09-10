@@ -2,8 +2,8 @@
 id: "0143"
 title: Redact the internal organisation name from this public repo and guard the rule forbidding it
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-09
@@ -15,9 +15,10 @@ expects:
   - tests/measurement.test.sh
   - .claude/backlog/items
   - .claude/backlog/RANKING-HISTORY.md
-claimed_by: "94ea"
-claimed_at: 2026-09-10T04:15:49Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-10
 ---
 
 ## Problem
@@ -65,21 +66,21 @@ suite — and is deliberately left whole: this row adds the pattern, `0118` adds
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a configured name list and a tracked file containing one of those names, when
+- [x] AC1 — Given a configured name list and a tracked file containing one of those names, when
   `tests/measurement.test.sh` runs, then it fails and names the file and line. Red-making input: the
   tree as it stands today, which contains five such files and passes.
-- [ ] AC2 — Given no configured name list present, when the test runs, then the name check is reported
+- [x] AC2 — Given no configured name list present, when the test runs, then the name check is reported
   as not applicable and the file still reports `0 failed`. Red-making mutation: failing closed on a
   missing list, which makes the suite unrunnable on a fresh clone.
-- [ ] AC3 — Given a tracked file containing the placeholder form FR2 uses, when the test runs, then it
+- [x] AC3 — Given a tracked file containing the placeholder form FR2 uses, when the test runs, then it
   is not flagged. Red-making mutation: dropping the exemption, which flags this item file itself.
-- [ ] AC4 — Given the assembled real-shaped sample, when the pattern is applied, then it matches.
+- [x] AC4 — Given the assembled real-shaped sample, when the pattern is applied, then it matches.
   Red-making mutation: widening the exemption until the sample passes.
-- [ ] AC5 — Given `git grep` over the tracked set for the redacted token, when it runs, then it
+- [x] AC5 — Given `git grep` over the tracked set for the redacted token, when it runs, then it
   reports nothing. Red-making input: today's tree.
-- [ ] AC6 — Given a failing run, when its output is read, then the matched token does not appear in
+- [x] AC6 — Given a failing run, when its output is read, then the matched token does not appear in
   it. Red-making mutation: interpolating the match into the message, the obvious implementation.
-- [ ] AC7 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
+- [x] AC7 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
   reports `0 failed`.
 
 ## QA plan

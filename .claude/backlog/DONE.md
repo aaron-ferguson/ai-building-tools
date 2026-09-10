@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0143 | Redact the internal organisation name from this public repo and guard the rule forbidding it | bug | unit | 2026-09-10 | [items/0143-redact-the-internal-name-and-guard-it.md](items/0143-redact-the-internal-name-and-guard-it.md) |
 | 0140 | Decide whether a held item under a ready row is drift, and stop offering it twice | bug | unit | 2026-09-10 | [items/0140-a-held-item-under-a-ready-row.md](items/0140-a-held-item-under-a-ready-row.md) |
 | 0136 | Stop two gates sharing a file through a row neither lead names | bug | verify | 2026-09-10 | [items/0136-two-gates-can-share-a-file-through-a-non-lead-row.md](items/0136-two-gates-can-share-a-file-through-a-non-lead-row.md) |
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | bug | unit | 2026-09-09 | [items/0090-remaining-script-contract-gaps.md](items/0090-remaining-script-contract-gaps.md) |
