@@ -203,3 +203,20 @@ protects a built ticket from the findings gate, and not from the next develop ga
   several tickets in one session: singular, it reports one verdict and silently drops the rest."
   The driver therefore needs no new bookkeeping for FR6 — `--started` is the union of `tickets[].id`
   over the run log it already keeps. That is what makes (b) cheap for the caller.
+- **2026-09-10 — built [bea1]. FR6's union of `--completed`'s id is implemented and is not
+  observable through behaviour, so no AC guards it.** Every path on which `--completed` names a
+  ticket still sitting at `verify | ready` is already taken by the direct
+  `develop → verify/ready → DISPATCH verify` branch, which decides and exits before the rank walk
+  the preference lives in. The routes that *do* fall through to the walk all leave that ticket
+  un-dispatchable for another reason — closed, a project, or blocked. The union is therefore a
+  consistency property rather than a behaviour: it is what makes FR6's "a run whose gates are all
+  single tickets needs no `--started`" true by construction rather than by coincidence of the two
+  branches agreeing. A guard written for it would assert on a state no fixture can reach.
+- **2026-09-10 — AC10's two mutations were run and both red, at
+  `1cb42a2`.** Reverting the gate hook (`if false` in place of `if sv="$(started_verify)"`) reds
+  AC1 and AC3, 3 of 326; dropping FR5's scoping (deleting the `contains_word` line, so every verify
+  row counts as started) reds AC2, 2 of 326. The control run is green at 326.
+- **2026-09-10 — the AC11 guard is keyed on `Step 2`, not on `The cycle`.** The harness's
+  `section()` matches the heading as a PREFIX, and the subject-only form extracts an empty string —
+  which reds a correct file for a presence assertion and, for an absence one, could never fail. See
+  the dated entry in `FINDINGS.md`.
