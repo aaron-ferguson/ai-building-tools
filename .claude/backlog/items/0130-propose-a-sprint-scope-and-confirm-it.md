@@ -17,6 +17,7 @@ expects:
   - tests/orchestrate.test.sh
   - .claude/backlog/next
   - skills/queue/templates/next
+  - tests/next.test.sh
 claimed_by: "9c38"
 claimed_at: 2026-09-10T14:08:23Z
 touches:
@@ -24,6 +25,7 @@ touches:
   - tests/orchestrate.test.sh
   - .claude/backlog/next
   - skills/queue/templates/next
+  - tests/next.test.sh
 ---
 
 ## Problem
