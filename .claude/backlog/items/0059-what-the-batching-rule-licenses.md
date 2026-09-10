@@ -2,8 +2,8 @@
 id: "0059"
 title: Decide what the batching rule actually licenses
 type: chore
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -15,12 +15,9 @@ expects:
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
   - tests/batching.test.sh
-claimed_by: "5ff9"
-claimed_at: 2026-09-10T19:46:10Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/verify/SKILL.md
-  - skills/develop/SKILL.md
-  - tests/batching.test.sh
 ---
 
 ## Problem
