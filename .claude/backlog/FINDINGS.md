@@ -317,3 +317,11 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   staleness grep confirmed `gate_from` still read as the ticket described it, and the ticket's own
   AC4 turned out to be already guarded by `tests/backlog-scripts-installed.test.sh`. Recorded as an
   explicit nil rather than left blank.
+- 2026-09-09 (verify, 0136) — **Nothing surprised me.** Every step had a correct answer: `qa_level:
+  verify` resolved to the one script the QA plan names, the mutation sequence ran against a
+  committed tree so no restore was ambiguous, and `./claim` again printed the `touches:` note.
+  One structural fact noted in the verdict rather than parked as a defect:
+  `tests/next.test.sh` sets `NEXT_SRC="$ROOT/skills/queue/templates/next"`, so every behavioural
+  guard exercises the template and `.claude/backlog/next` — the copy this repo actually runs — is
+  covered only transitively, by `tests/backlog-scripts-installed.test.sh`. That is the intended
+  "fix the template, never the copy" direction, and this ticket's AC4 is what closes the loop.
