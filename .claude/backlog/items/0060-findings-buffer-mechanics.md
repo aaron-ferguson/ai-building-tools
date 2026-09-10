@@ -2,8 +2,8 @@
 id: "0060"
 title: Decide how the findings buffer is emptied and gated
 type: chore
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -21,20 +21,9 @@ expects:
   - skills/queue/templates/item.md
   - references/REPORTING.md
   - tests/next.test.sh
-claimed_by: "3929"
-claimed_at: 2026-09-10T20:14:22Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next
-  - .claude/backlog/next
-  - skills/retro/SKILL.md
-  - skills/queue/SKILL.md
-  - skills/queue/templates/FINDINGS.md
-  - .claude/backlog/FINDINGS.md
-  - skills/queue/templates/item.md
-  - references/REPORTING.md
-  - tests/next.test.sh
-  - tests/findings-buffer.test.sh   # new file, created by this ticket
-  - tests/reference-size.test.sh    # REPORTING.md goes over the goal; the reason is recorded there
 ---
 
 ## Problem
