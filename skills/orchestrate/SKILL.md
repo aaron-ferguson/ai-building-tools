@@ -149,11 +149,23 @@ loses it is the first stage killing the supervisor that had not written it down 
 One call decides everything:
 
 ```sh
-.claude/backlog/next --drive --completed <stage>[:<id>]
+.claude/backlog/next --drive --completed <stage>[:<id>] --started <id> --started <id>
 ```
 
 `--completed` says which stage just finished on which ticket, and it is what tells a `verify` bounce
 from a fresh `develop` row. Give it at most once per call, and omit it on the first call of a run.
+
+**`--started` is how the run keeps its promise that work it opens gets finished.** The property the
+supervisor relies on is that a ticket this run has already built does not sit unverified while the
+run opens more work; `--drive` is what enforces it, and which row wins is its answer alone — do not
+reason about the rank here. What only the supervisor can supply is the set, because the script
+cannot see a run log it is not handed: **`--started` is the union of `tickets[].id` over every
+outcome the run has read so far, plus every id it has dispatched, and it is cumulative over the
+whole run rather than over the last call.** Send the whole set on every call. A gate's non-lead
+ticket is two calls old by the time its verify row would be stepped over, so a supervisor sending
+only what it just dispatched loses exactly the ticket the rule exists for. Omitting it entirely is
+not an error and not an escalation — the run simply gets the old rank-only behaviour, which is why
+the set is composed once and resent rather than rebuilt per call.
 
 **Route on the exit code, never on your own reading of the queue.** `0` dispatch what it named ·
 `3` the run is complete, nothing takeable · `4` escalate, a person decides · `5` the findings gate

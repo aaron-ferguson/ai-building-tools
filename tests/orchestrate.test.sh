@@ -1531,5 +1531,24 @@ else
   bad "Performance NFR — nothing bounds the proposal to one call; a block re-sent every cycle is the cost this skill exists to hold down"
 fi
 
+echo "0131 — the cycle names the input that keeps started work from going unverified"
+# The property the supervisor RELIES ON, never the routing rule itself: which row wins is
+# --drive's answer and the skill states no routing rules of its own (references/CONVENTIONS.md).
+# What has to be written here is the input, because only the supervisor can compose it — the
+# script cannot see a run log it is not handed.
+if says "$SKILL" "Step 2" '--started'; then
+  ok "Step 2 names --started"
+else
+  bad "0131 AC11 — Step 2 does not name --started, so the supervisor never sends it and the rule fails open in silence"
+fi
+# Cumulative over the RUN, not over the last call: a gate whose non-lead ticket goes unverified is
+# two calls old by the time the rank walk would step over it, so a supervisor sending only what it
+# just dispatched loses exactly the ticket the rule exists for.
+if says_ci "$SKILL" "Step 2" 'cumulative'; then
+  ok "and says the set is cumulative over the run"
+else
+  bad "0131 AC11 — nothing says --started is cumulative over the whole run; sent per-call it drops the ticket the rule exists to protect"
+fi
+
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]
