@@ -2,7 +2,7 @@
 id: "0059"
 title: Decide what the batching rule actually licenses
 type: chore
-next: design
+next: develop
 status: ready
 qa_level: unit
 size: m
@@ -52,33 +52,30 @@ ticket B while ticket A's mutation is live reads as B's red. 0026's notes alread
 verdict about a tree that never existed as a commit") and settle on a throwaway worktree; a batch
 reproduces it *intra*-session, where there is no other window and that note does not reach.
 
-## Open design question
-
-- **Question:** What is the batching rule's condition? Three shapes: **the gate itself** — any rows
-  at `next: verify` are one session, with scope-sharing merely the common case; **the stated
-  condition, made checkable** — a definition of what "shares a file scope" means for a set rather
-  than a pair, implemented by `./next` so the tool and the rule agree; or **the condition is
-  advisory** and the real limit is something else, such as how many verdicts one session can hold
-  without the evidence going stale. And separately: what isolates one ticket's Step 3 mutation from
-  another ticket's suite run inside the same session?
-- **Why it blocks specification:** the acceptance criteria are incompatible between them. "Any rows
-  at the stage" is prose plus a change to `./next`'s selection. "Checkable set-wide" is an algorithm
-  — and a chaining one, so it needs a definition before it can be asserted. "Advisory" is a rewrite
-  of the rationale. The mutation-isolation half may be a worktree per ticket, an ordering rule, or a
-  statement that batched tickets are verified one at a time with the tree clean between — and which
-  one determines whether this is a prose change or a tooling change.
-- **Settle it with:** `/design` — the inputs are the rule, its rationale, the observed batch and how
-  `./next` selects. Nothing needs to be seen.
-
 ## Functional requirements
 
-Written after the design question is settled. What is fixed regardless:
-
-- FR1 — The batching statement's condition and its rationale agree, in both `skills/verify/SKILL.md`
-  and `skills/develop/SKILL.md`, whichever way the answer goes.
-- FR2 — The rule names the intra-session Step 3 mutation hazard and states what isolates it.
-- FR3 — `tests/batching.test.sh` asserts the settled condition rather than the current wording, and
+- FR1 — The batching statement in `skills/develop/SKILL.md` and `skills/verify/SKILL.md` states its
+  condition as **takeability at the stage**: any row `./next <stage>` hands you may be worked in the
+  same session. Condition and rationale then license the same batch size.
+- FR2 — Both statements keep shared file scope (`expects:` overlap) and a shared parent slice as
+  **why a batch pays more** — orientation in the code, on top of the startup any batch amortises —
+  never as the test of batchability. The one surviving precondition is the one `develop` already
+  carries: tickets from unrelated projects do not batch.
+- FR3 — Both statements say the batch is assembled by **repeating `./next <stage>` after each
+  close**, never by claiming a set up front, and cite `CONCURRENCY.md` for why holding rows you are
+  not yet working on is the scope reservation it forbids.
+- FR4 — `skills/verify/SKILL.md` names the intra-session Step 3 hazard — a suite run taken for one
+  ticket while another ticket's mutation is live in the shared tree — and states what isolates it:
+  one ticket at a time, with the tree at a clean committed state before the next ticket's first
+  run, so Step 3's commit → mutate → confirm red → restore-by-path → control-green cycle completes
+  inside the ticket that opened it (`testing-conventions.md`, restore before you assert).
+- FR5 — `tests/batching.test.sh` asserts the settled condition rather than the current wording, and
   its assertions are anchored to the claim rather than to the paragraph containing it.
+
+**Against the criteria this ticket already carried:** FR1 and FR2 *confirm* the old FR1 and make it
+specific; FR4 *confirms* the old FR2 and narrows it to `verify`, where Step 3 lives; FR5 *confirms*
+the old FR3 unchanged. FR3 is *added* — the assembly mechanism is what makes the condition
+checkable without touching `./next`.
 
 ## Non-functional requirements
 
@@ -89,29 +86,52 @@ Written after the design question is settled. What is fixed regardless:
 
 ## Acceptance criteria
 
-Cannot be written until the design question is settled. These hold regardless:
-
-- [ ] AC1 — Given the batching statement in both skills, when read, then the condition it states and
-  the reason it gives do not license different batch sizes.
-- [ ] AC2 — Given the batching statement, when read, then it names what isolates one ticket's Step 3
-  mutation from another ticket's run in the same session.
-- [ ] AC3 — Given `tests/batching.test.sh`, when it runs, then it passes against the settled
-  wording.
+- [ ] AC1 — Given the batching paragraph in each of `skills/develop/SKILL.md` and
+  `skills/verify/SKILL.md`, when read, then each states that any row `./next <stage>` hands you is
+  batchable. **Red input:** either paragraph still offering "tickets that share a file scope or a
+  parent slice are checked in one session" as the test of batchability.
+- [ ] AC2 — Given either paragraph, when read, then shared file scope and a shared parent slice
+  appear as the reason a batch pays more, not as a condition on entry. **Red input:** a paragraph
+  that names them only in a conditional clause governing whether the rows may be batched.
+- [ ] AC3 — Given either paragraph, when read, then it states the batch is assembled by repeating
+  `./next <stage>` after each close and that rows are not claimed ahead of being worked. **Red
+  input:** a paragraph naming no assembly mechanism.
+- [ ] AC4 — Given `skills/develop/SKILL.md`, when read, then "Tickets from unrelated projects do not
+  batch", "Claim and close each ticket individually" and "Stop at the first ticket whose contract
+  turns out wrong" are all still present. **Red input:** deleting any one of the three.
+- [ ] AC5 — Given `skills/verify/SKILL.md`'s batching paragraph, when read, then it names the
+  intra-session mutation hazard *and* the isolation that answers it. **Red input:** a paragraph
+  carrying one without the other — "verify one ticket at a time" with no statement of what goes
+  wrong otherwise is the likely half-done outcome.
+- [ ] AC6 — Given `tests/batching.test.sh`, when run against the edited skills, then it passes; and
+  given either skill's pre-decision batching sentence restored, when run, then it fails naming the
+  condition rather than the paragraph window.
 
 ## QA plan
 
-- **Level:** unit — provisional, argued across the candidate shapes: a prose answer is `verify` with
-  a named scripted assertion and a `./next` answer is `unit`, and this project's `unit` command runs
-  every `tests/*.test.sh`, so `unit` subsumes both.
-- **Why this level:** the level is the same across every candidate.
-- **Specific checks:** settled by the design pass. `tests/batching.test.sh` runs in every case, and
-  0042 is repairing its AC4 assertion — coordinate rather than duplicate.
+- **Level:** unit — this project's `unit` command runs every `tests/*.test.sh`, and the decision is
+  prose-only, so `tests/batching.test.sh` carries the whole verdict.
+- **Why this level:** no script changes, so there is nothing above unit to exercise.
+- **Specific checks:**
+  - `for t in tests/*.test.sh; do "$t" || exit 1; done` — the batching guard is not the only file
+    that greps these two paragraphs.
+  - The guard extracts `develop`'s paragraph on `/one gate per session/` and exits 2 if it cannot
+    match, so **that phrase stays lowercase, intact, on one line, and occurring exactly once**; and
+    AC4's date binding needs `dated` within four characters of `**2026-08-22**` on the unwrapped
+    window. Rewrapping the paragraph breaks both — see `CLAUDE.md`, *Tests*.
+  - Mutation for AC6's second half: restore the old sentence into one skill, confirm the failure
+    names the condition and not the window.
 
 ## Out of scope
 
-- **Whether the stage stalls when rows collide.** That is 0050. This ticket is about a rule that
-  deliberately takes several rows at once; that one is about rows that cannot be taken at all.
-- `./next`'s take-loop selection against held files, which is 0045.
+- **Any change to `./next`.** The decision is that no set-selection algorithm is needed: `./next
+  <stage>` already returns the first *takeable* row, a claimed row is not takeable, and repeating
+  the call after each close walks the stage. Adding batch selection would build the thing this
+  decision found unnecessary.
+- **Whether the stage stalls when rows collide** — 0050.
+- `./next`'s take-loop selection against held files — 0045.
+- **`verify` Step 1's missing every-row-held outcome** — 0058 FR1. This decision makes that case
+  more common, and says so, but does not write it.
 - Changing the "one skill per session" rule the batching rule sits inside.
 
 ## Notes & decisions
@@ -122,3 +142,57 @@ Cannot be written until the design question is settled. These hold regardless:
 - Note the asymmetry worth carrying into the design pass: `develop` Step 1 *does* write down the
   every-row-collides outcome, and `verify` Step 1 does not. Whatever is decided here, the two
   skills' statements are asserted by one test file and must move together.
+
+### 2026-09-10 — Design decision: a batch is a session that keeps going, not a set chosen up front
+
+**Decided — shape one, "the gate itself", with the real limit named.** The condition is
+takeability at the stage, and it is already set-wide and checkable, because `./next <stage>`
+applies it per row: stage match, no open `blocked_by`, no claim, and no `expects:` file held by
+another session's `touches:`. Shared file scope and a shared parent slice are demoted from
+condition to **the reason a batch pays more** — they add orientation in the code on top of the
+startup any batch amortises. One precondition survives, the one `develop` already states:
+**tickets from unrelated projects do not batch**, because a different project's conventions and
+`CLAUDE.md` are a different startup rather than a shared one.
+
+**And the mechanism is the answer to how a session checks it.** The batch is assembled by
+**repeating `./next <stage>`** — claim, work, close, ask again — never by selecting a set. A
+claimed row is not takeable, so the next call hands the next row. This is why no change to `./next`
+is needed and why the tool and the rule now agree: the tool never selected a set, and the rule has
+stopped asking it to. It also satisfies `CONCURRENCY.md` by construction, since nothing is ever
+held before it is worked.
+
+**Mutation isolation is ordering, not a worktree.** A batch's tickets are verified one at a time,
+and the tree is at a clean committed state before the next ticket's first run — Step 3's
+commit → mutate → confirm red → restore-by-path → control-green cycle completes inside the ticket
+that opened it. `testing-conventions.md` already carries the general form ("a sweep that asserts
+before it restores leaves a mutation in the tree… every reading after that is measured against the
+wrong file"); what was missing is that a batch is precisely where the next reading belongs to a
+different ticket.
+
+**Rejected — "make the stated condition checkable set-wide."** Overlap chains, so its transitive
+closure is the whole stage: the observed five-row batch is connected 0032–0026–0029–0033 with 0031
+attached at directory level only — satisfied pairwise, never set-wide. A condition reaching every
+row is "any row at the stage" written obscurely. The only non-vacuous reading, one file common to
+*all* members, would have forbidden the 0034/0035 pairing that demonstrably paid, and would need a
+set-selection algorithm in `./next`, which returns exactly one row by design (verified
+2026-09-10: `./next verify` prints one `TAKE` line plus its `EXPECTS`).
+
+**Rejected — "the condition is advisory."** True of the scope clause, and this decision says as
+much, but as the whole answer it leaves a session with "batch when it seems worth it" and leaves
+`tests/batching.test.sh` no claim to anchor to.
+
+**Rejected — a worktree per batched ticket.** 0026's worktree rule answers *inter*-session
+interference, where you cannot control the other window; intra-session the session owns the
+ordering, so ordering is cheaper and stronger. A checkout per ticket also spends the startup saving
+batching exists to produce.
+
+**Trade-off accepted.** Dropping scope as a condition licenses batches whose per-ticket saving is
+smaller — startup only, no shared orientation — and removes the only ground on which a batch could
+be called wrong other than a violated guardrail. Serialising the tickets forfeits a shared suite
+run, but that saving never existed: `verify` already forbids one verdict covering several tickets,
+so each ticket pays for its own runs regardless.
+
+**Re-verified 2026-09-10, not taken from the ticket:** the two batching paragraphs as they stand
+(`skills/verify/SKILL.md:23-32`, `skills/develop/SKILL.md:26-42`); `./next`'s four takeability
+tests and its one-row output; and `tests/batching.test.sh`'s paragraph-window extraction, which
+exits 2 rather than failing if `one gate per session` stops matching on one line.
