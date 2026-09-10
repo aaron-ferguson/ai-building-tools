@@ -176,7 +176,7 @@ findings_sources() {
   if [ -n "$TOOLS_FINDINGS" ]; then
     printf 'local %s (%s) + tools %s (%s)\n' "$FLOCAL" "$FINDINGS" "$FTOOLS" "$TOOLS_FINDINGS"
   else
-    printf 'local %s (%s) — %s\n' "$FLOCAL" "$FINDINGS" "$TOOLS_NOTE"
+    printf '%s (%s)\n' "$TOOLS_NOTE" "$FINDINGS"
   fi
 }
 
@@ -1002,7 +1002,11 @@ if [ "${1:-}" = "--drive" ]; then
     fi
     if [ "$FCOUNT" -ge "$THRESHOLD" ]; then
       PROPOSE_STAGE="retro"; PROPOSE_IDS=""
-      decide "$FINDINGS_GATE" "DISPATCH  retro — $(findings_sources | sed 's/^/holds /') against a threshold of $THRESHOLD"
+      # The provenance clause rides along only where a SECOND buffer was counted: where the total is
+      # the local buffer alone, the original sentence already says everything a driver acts on.
+      gsrc=""
+      [ -z "$TOOLS_FINDINGS" ] || gsrc="; $(findings_sources)"
+      decide "$FINDINGS_GATE" "DISPATCH  retro — FINDINGS.md holds $FCOUNT entries against a threshold of $THRESHOLD$gsrc"
     fi
   }
 
