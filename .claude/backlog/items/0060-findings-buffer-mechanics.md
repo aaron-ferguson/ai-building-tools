@@ -34,6 +34,7 @@ touches:
   - references/REPORTING.md
   - tests/next.test.sh
   - tests/findings-buffer.test.sh   # new file, created by this ticket
+  - tests/reference-size.test.sh    # REPORTING.md goes over the goal; the reason is recorded there
 ---
 
 ## Problem
