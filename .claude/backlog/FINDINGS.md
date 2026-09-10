@@ -151,3 +151,21 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the corrected `QUEUE.md` scrolled past on an unrelated write and a newer row's title mentioned
   batching. A one-line reverse-edge check belongs in `design` Step 1 or 2, where the contract is
   read (pointer: `skills/design/SKILL.md` Step 2, items 0059, 0132, 0137).
+- 2026-09-10 (design) — **`design` Step 4's write path names no lock and no script, and the one
+  script that fits refuses the case.** The step says to set `next:`/`status:` and "commit by
+  pathspec in the same turn" for an *unclaimed* ticket, but every write is inside
+  `.claude/backlog/` and `CONCURRENCY.md` exempts nothing; `./handoff` cannot be the vehicle
+  because it demands a claim token and `in-progress` on both row and item, which an unclaimed
+  design row is not. So the correct procedure is: take the lock by hand, single-row `Edit` on
+  `QUEUE.md`, commit, release — and the step states none of it, where `retro` Step 4 states all of
+  it for the same directory. This pass wrote both item files before taking the lock and only then
+  noticed (pointer: `skills/design/SKILL.md` Step 4, `references/CONCURRENCY.md` *Lock every write
+  to the backlog directory*, `.claude/backlog/handoff`).
+- 2026-09-10 (design) — **two rows carried the same open design question and nothing connected
+  them, and the stage reader offers the wrong one first.** 0060 and 0080 both ask whether a findings
+  entry gets a marker and whether `./next --findings` should count a marked one; neither named the
+  other in `relates:`, and `./next design` offers 0080 — so `/design` invoked with no id settles the
+  narrower row, leaves the broader one, and a later pass re-litigates. `queue` Step 2 has no
+  duplicate-question check for a row routed to `design`, and a design question is exactly the kind of
+  duplicate that cannot be spotted from a title (pointer: `skills/queue/SKILL.md` Step 2, items 0060
+  and 0080).
