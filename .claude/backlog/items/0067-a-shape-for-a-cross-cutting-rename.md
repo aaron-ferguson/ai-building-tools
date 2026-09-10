@@ -2,8 +2,8 @@
 id: "0067"
 title: Decide what shape a cross-cutting rename takes in the backlog
 type: chore
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -21,9 +21,10 @@ expects:
   - tests/next.test.sh
   - tests/claim.test.sh
   - tests/cross-cutting-change.test.sh  # new file, created by this ticket
-claimed_by: "6338"
-claimed_at: 2026-09-10T19:33:29Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-10
 ---
 
 ## Problem
@@ -89,30 +90,30 @@ token — are all per-row, and a rename has no row.
 Every prose assertion is scoped to its section and matches a phrase short enough to sit on one
 source line — `grep` is line-based here, and an asserted phrase straddling a line break cannot match.
 
-- [ ] AC1 — Given `references/CONCURRENCY.md`, when `tests/cross-cutting-change.test.sh` reads the
+- [x] AC1 — Given `references/CONCURRENCY.md`, when `tests/cross-cutting-change.test.sh` reads the
   section defining the exclusive claim, then it finds a line stating that a change touching every
   file is not expressible in `expects:`, `touches:` or the per-row lock.
-- [ ] AC2 — Given the same section, when read by that test, then it states both halves of FR2: that
+- [x] AC2 — Given the same section, when read by that test, then it states both halves of FR2: that
   a session claims nothing while an exclusive claim stands, and that an unexplained red is not
   evidence about the session's own ticket.
-- [ ] AC3 — Given the same section, when read by that test, then it states that closed tickets'
+- [x] AC3 — Given the same section, when read by that test, then it states that closed tickets'
   files are not rewritten, and that the substitution is recorded once with a date.
-- [ ] AC4 — Given the same section, when read by that test, then all three preconditions of FR4 are
+- [x] AC4 — Given the same section, when read by that test, then all three preconditions of FR4 are
   present: nothing else held, one commit, green before and after.
-- [ ] AC5 — Given a fixture backlog where ticket A is held with `touches: ["*"]` and ticket B is a
+- [x] AC5 — Given a fixture backlog where ticket A is held with `touches: ["*"]` and ticket B is a
   `ready` `develop` row whose `expects:` shares no path with A, when `./next develop` runs, then B
   is reported COLLIDES naming A and its token, and no row is offered. Asserted in
   `tests/next.test.sh`.
-- [ ] AC6 — Given the same fixture with A *not* held, when `./next develop` runs, then B is
+- [x] AC6 — Given the same fixture with A *not* held, when `./next develop` runs, then B is
   offered — the `"*"` entry collides only from a held row, so a stale `touches:` cannot freeze the
   stage. Asserted in `tests/next.test.sh`.
-- [ ] AC7 — Given a fixture where ticket X `expects: ["*"]` and any other ticket is held, when
+- [x] AC7 — Given a fixture where ticket X `expects: ["*"]` and any other ticket is held, when
   `./claim X` runs, then it refuses, names the holders, and writes neither `QUEUE.md` nor the item.
   Given nothing else held, then it claims normally. Asserted in `tests/claim.test.sh`.
-- [ ] AC8 — Given `references/CONCURRENCY-INCIDENTS.md`, when `tests/cross-cutting-change.test.sh`
+- [x] AC8 — Given `references/CONCURRENCY-INCIDENTS.md`, when `tests/cross-cutting-change.test.sh`
   reads it, then an entry names the exclusive-claim rule in its heading and carries the 2026-08-23
   rename's figures.
-- [ ] AC9 — Given `tests/backlog-scripts-installed.test.sh`, when the suite runs, then both copies
+- [x] AC9 — Given `tests/backlog-scripts-installed.test.sh`, when the suite runs, then both copies
   of `next` and both copies of `claim` are byte-identical — FR5 and FR6 land in the template and the
   installed copy together.
 
@@ -269,3 +270,49 @@ source line — `grep` is line-based here, and an asserted phrase straddling a l
   rather than left to the QA pass.** `tests/cross-cutting-change.test.sh` carries the out-of-section
   fixture and the empty-section case as ordinary cases, so the scoping claim reds in the suite rather
   than depending on a session remembering to check it.
+
+## QA evidence
+
+**2026-09-10, `/verify` [6338]. Level `unit` per frontmatter, which the QA plan's prose agrees with —
+no drift.** Suite: `for t in tests/*.test.sh` run per-file with `|| true` so a red would be
+attributable, per `config.yml`. **28 suite files, 1609 passed, 0 failed** (tally summed by `awk` over
+the run's own output, not by hand). Tree clean at Step 2 and clean again at the verdict, so the dirty
+set is empty and the intersection with the evidence set is empty — a plain PASS.
+
+**Which copy executed.** The guards run `skills/queue/templates/{next,claim}` (`NEXT_SRC`/`CLAIM_SRC`);
+the live CLI drive below ran `.claude/backlog/{next,claim}`. `cmp` shows both pairs byte-identical, so
+the two halves of this pass exercised opposite copies. The repo checkout is the authority throughout;
+nothing here was read from the plugin install.
+
+| AC | How it was checked | Mutation → red | Result |
+|---|---|---|---|
+| AC1 | `tests/cross-cutting-change.test.sh` reads the *exclusive claim* section of `references/CONCURRENCY.md` | deleted the line matching `not expressible in` → 18 passed, **3 failed** | ✅ |
+| AC2 | same section, both halves of FR2 | deleted `claims nothing while an exclusive claim stands` → **2 failed**; deleted `not evidence about its own ticket` → **2 failed** | ✅ |
+| AC3 | same section, closed tickets + dated substitution | deleted `does not rewrite closed tickets` → **2 failed**; deleted `recorded once, dated` → **2 failed** | ✅ |
+| AC4 | same section, three preconditions | deleted `nothing else is held` → **1 failed**; `one commit` → **7 failed**; `green before it` → **2 failed** | ✅ |
+| AC5 | drove `./next develop` live against a scratch fixture backlog: A held `touches: ["*"]` [aaaa], B `ready` sharing no path → `COLLIDES 0002 \| every file — exclusive claim held by 0001 [aaaa]`, no row offered. Plus `tests/next.test.sh` | `contains_word '*'` → `contains_word 'ZZNOSUCH'` in `templates/next` → 331 passed, **9 failed** | ✅ |
+| AC6 | same fixture with A's `claimed_by:` cleared and the stale `touches: ["*"]` left → `TAKE 0002` offered | hoisted the `*` test above `held_by` in `templates/next` → 337 passed, **3 failed** | ✅ |
+| AC7 | drove `./claim` live: block-form `expects: - "*"` refused while another row held, naming `0001 [aaaa]`, exit 1, `git status` clean and no `.lock` left; then claimed normally with nothing held, seeding `touches:\n  - "*"`, which `./next` then read back as exclusive | `if [ -n "$exclusive" ]` → `&& false` in `templates/claim` → 74 passed, **5 failed** | ✅ |
+| AC8 | `tests/cross-cutting-change.test.sh` reads `references/CONCURRENCY-INCIDENTS.md` | deleted the lines carrying `30 files` → **2 failed** | ✅ |
+| AC9 | `cmp` on both copies of `next` and of `claim` — identical; `tests/backlog-scripts-installed.test.sh` 37 passed | appended one newline to `.claude/backlog/claim` → 36 passed, **1 failed** | ✅ |
+
+Every mutation was restored by the path it touched and followed by a control run
+(cross-cutting-change 21/0, next 340/0, claim 79/0, backlog-scripts-installed 37/0); the tree was
+verified clean after each. The build notes' own mutation table was **re-run rather than accepted** —
+AC6's hoist mutation in particular, which is the one the notes flag as green both before and after
+the implementation.
+
+**NFRs.**
+
+| Dimension | How it was checked | Result |
+|---|---|---|
+| Migration / schema | FR3's forward-only rule is stated in the section (`A rename does not rewrite closed tickets' files` … `recorded once, dated`) and mutation-proved above. `migration-conventions.md` loaded: its expand/contract rule governs schema under running code, and the ticket's exemption is argued and recorded in `CONCURRENCY-INCIDENTS.md` | ✅ — with a finding: that convention states its rename rule unqualified, parked in the conventions repo's root `FINDINGS.md` |
+| Documentation | The rule is in `CONCURRENCY.md`, the narrative and all three rejected shapes in `CONCURRENCY-INCIDENTS.md`, per the split 0020 made. `documentation-conventions.md` loaded — rejected alternatives are recorded, which is what it asks of a genuinely debated decision | ✅ |
+| Context rent | `CONCURRENCY.md` is 249 lines carrying the rule statement and its preconditions; the figures, the incident and the rejected shapes are the 45 lines added to `CONCURRENCY-INCIDENTS.md`. `tests/reference-size.test.sh` green (15 passed) | ✅ |
+
+**Newly reachable states (Step 4).** The change creates one new refusal path in `claim` and one new
+report line in `next`. Neither is destructive or privileged. Probing that path found the two defects
+parked as findings: `claim` refuses on any `*` character where `next` requires the whole word, and
+`next` will offer an exclusive row that `claim` then refuses. Both are outside this ticket's ACs —
+FR5 and FR6 each key on a *held* row — so neither is a red here, and narrowing or widening the
+contract is not this stage's call.

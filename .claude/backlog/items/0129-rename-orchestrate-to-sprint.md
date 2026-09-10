@@ -3,7 +3,7 @@ id: "0129"
 title: Rename orchestrate to sprint and leave the old command resolving
 type: chore
 next: develop
-status: blocked
+status: ready
 qa_level: verify
 close_by: verify
 size: m

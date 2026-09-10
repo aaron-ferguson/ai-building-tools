@@ -25,7 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0142 | Let the driver see the drift classes that stop a human reader | develop | ready |  |
 | 0148 | Make the internal-name guard red rather than green when its own pattern will not compile | develop | ready |  |
-| 0129 | Rename orchestrate to sprint and leave the old command resolving | develop | blocked | 0128 |
+| 0129 | Rename orchestrate to sprint and leave the old command resolving | develop | ready | 0128 |
 | 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | develop | blocked | 0128 |
 | 0133 | Close a sprint with a retro and a queue sweep only when the findings earn it | develop | blocked | 0128 |
 | 0135 | Record what a sprint was estimated to cost against what it did, and estimate from that | develop | ready | 0128 |
@@ -72,7 +72,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0112 | Hoist the line-wrap hazard to the session editing prose, not only the one writing a guard | develop | ready |  |
 | 0096 | Make the frontmatter path lists checkable to read and safe to edit | develop | ready |  |
 | 0095 | Hoist the shell short-circuit hazard where a guard author will read it | develop | ready |  |
-| 0067 | Decide what shape a cross-cutting rename takes in the backlog | verify | in-progress |  |
 | 0043 | Make the two size gates fail on a registry entry that no longer resolves | develop | ready |  |
 | 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |
 | 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |
