@@ -190,3 +190,27 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   relocated copy resolves `ROOT` to the scratch directory and dies with "no next script at …" — which
   reads like a broken mutation rather than a broken harness. The working form is to mutate the template
   in place and restore it in the same turn (pointer: `tests/next.test.sh` `ROOT=`, `develop` Step 5).
+- 2026-09-10 (verify) — **`claim` reads any `*` character in an `expects:` entry as an exclusive
+  claim, where `next` reads the same entry as an ordinary path.** `claim`'s detector is
+  `rest ~ /\*/`, so a ticket declaring `expects: - "skills/*/SKILL.md"` is refused with "its expects:
+  declares \"*\", an exclusive claim over the whole tree" whenever anything else is held; `next` uses
+  `contains_word '*'` and correctly treats that same glob as one path. Verified live against a
+  fixture backlog. Latent, not live — no item's `expects:` carries a `*` today — and it fails closed,
+  but the refusal misdiagnoses the row and the two scripts disagree about what the field means. The
+  fix is one word-match, in both copies (pointer: `.claude/backlog/claim` exclusive detector,
+  `.claude/backlog/next` `contains_word`, 0067 FR5/FR6).
+- 2026-09-10 (verify) — **`next` offers an exclusive-claim row for the taking that `claim` will then
+  refuse.** With another row held, `./next develop` printed `TAKE 0001 … EXPECTS *` and named the
+  holder two lines below it; `./claim 0001` then refused on 0067 FR6's precondition. Both FR5 and FR6
+  key on a *held* `"*"` row, so nothing covers a *takeable* one while others are held — `next` has
+  the information and does not gate on it. A `--drive` loop picks that row and takes its exit code
+  from a refused claim (pointer: `.claude/backlog/next` `collision_report` / take loop, 0067 FR5).
+- 2026-09-10 (verify) — **`/verify` resolved to the CLI's built-in `verify` skill again, not
+  `ai-building-tools:verify`** — the second recorded occurrence of 0064's class, after the one 0064's
+  Problem section records from 0026. The built-in ran a full runtime-observation pass and produced a
+  PASS report, then stopped: no claim, no AC ticks, no `## QA evidence`, no close, and the row sat at
+  `next: verify, status: ready` looking untouched. It was caught only because the human asked why the
+  ticket had not closed. The two skills are unrelated jobs sharing one short name — the built-in ships
+  with the CLI (`bundled-skills/<cli-version>/…/verify`, carrying `examples/cli.md`) — so no version
+  bump or install check can ever make this visible; 0064's FR1 self-naming line is the only thing that
+  would have (pointer: `skills/verify/SKILL.md` opening, items/0064 FR1).
