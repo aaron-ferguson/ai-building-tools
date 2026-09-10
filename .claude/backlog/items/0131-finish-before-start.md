@@ -2,8 +2,8 @@
 id: "0131"
 title: Dispatch no new develop gate while a started ticket is still awaiting verify
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 close_by: verify
 size: m
@@ -18,14 +18,9 @@ expects:
   - tests/next.test.sh
   - skills/orchestrate/SKILL.md
   - tests/orchestrate.test.sh   # AC11's guard, added by design 2026-09-10
-claimed_by: "bea1"
-claimed_at: 2026-09-10T15:15:12Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/next
-  - skills/queue/templates/next
-  - tests/next.test.sh
-  - skills/orchestrate/SKILL.md
-  - tests/orchestrate.test.sh   # AC11's guard, added by design 2026-09-10
 ---
 
 ## Problem
