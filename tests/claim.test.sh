@@ -382,6 +382,70 @@ assert_contains "git parses a Co-Authored-By trailer on the claim commit" \
   'Claude <noreply@anthropic.com>'
 assert_contains "the subject still names the claim" "$(git -C "$FIX" log -1 --format=%s)" 'Claim 0012 [tok0]'
 
+# --- 0067 AC7 — an exclusive claim is refused while anything else is held ----------------------
+# `expects: "*"` declares a change touching every file (references/CONCURRENCY.md, *A change that
+# touches every file takes an exclusive claim*). Its first precondition is that NOTHING ELSE IS
+# HELD, and a precondition only written down is a precondition remembered — this is it enforced.
+#
+# The pair of cases is the point. The refusal alone would be satisfied by a script that refuses
+# EVERY `"*"` ticket, which would make the rule unusable rather than enforced; the second case is
+# what pins that the refusal is about the holders and not about the asterisk.
+
+# A second ticket, appended to the fixture as a held row with a token in its item. Written here
+# rather than in `scaffold`, which builds exactly one row and one item.
+add_held() {
+  printf '| %s | Another ticket | develop | in-progress | 0000 |\n' "$1" >> "$FIX/.claude/backlog/QUEUE.md"
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Held fixture
+status: in-progress
+expects:
+  - some/other/file.md
+claimed_by: "$2"
+claimed_at: 2026-08-24T00:00:00Z
+touches:
+  - some/other/file.md
+---
+
+## Problem
+ITEM
+  git -C "$FIX" add -A
+  git -C "$FIX" commit -q -m "held fixture"
+}
+
+echo "0067 AC7 — a \"*\" claim is refused while another ticket is held, naming the holders"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0020 | A cross-cutting rename | develop | ready | 0000 |' 0020 \
+  "$(printf 'expects:\n  - "*"')"
+add_held 0021 zz99
+before_queue="$(cat "$FIX/.claude/backlog/QUEUE.md")"
+before_item="$(cat "$FIX/.claude/backlog/items/0020-fixture.md")"
+out="$(run_claim 0020)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the ticket that holds" "$out" '0021'
+assert_contains "and its token"               "$out" 'zz99'
+# `assert_contains` is satisfied by a string that has grown, so "wrote neither file" needs equality.
+assert_eq "QUEUE.md is byte-for-byte unchanged" "$(cat "$FIX/.claude/backlog/QUEUE.md")" "$before_queue"
+assert_eq "the item is byte-for-byte unchanged" "$(cat "$FIX/.claude/backlog/items/0020-fixture.md")" "$before_item"
+
+echo "0067 AC7 — and the same ticket claims normally once nothing is held"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0020 | A cross-cutting rename | develop | ready | 0000 |' 0020 \
+  "$(printf 'expects:\n  - "*"')"
+out="$(run_claim 0020)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_row "the row is set in-progress" '| 0020 | A cross-cutting rename | develop | in-progress | 0000 |'
+assert_contains "the item records the token" "$(cat "$FIX/.claude/backlog/items/0020-fixture.md")" 'claimed_by: "tok0"'
+
+# An ORDINARY ticket must still claim while another is held — the refusal is scoped to `"*"`, and
+# without this case a script refusing every claim whenever anything is held would pass above.
+echo "0067 AC7 — an ordinary ticket still claims while another is held"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0022 | An ordinary ticket | develop | ready | 0000 |' 0022 \
+  "$(printf 'expects:\n  - just/one/file.md')"
+add_held 0023 yy88
+out="$(run_claim 0022)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_row "the ordinary row is claimed" '| 0022 | An ordinary ticket | develop | in-progress | 0000 |'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

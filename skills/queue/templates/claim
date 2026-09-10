@@ -162,6 +162,58 @@ stage=""
 item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
 [ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
 
+# --- an exclusive claim refuses while anything else is held (0067 FR6) -------------------------
+# `expects: "*"` declares a change that touches every file — a cross-cutting rename
+# (`references/CONCURRENCY.md`, *A change that touches every file takes an exclusive claim*). Its
+# first precondition is that NOTHING ELSE IS HELD, and a precondition that is only written down is
+# a precondition remembered. This is it enforced.
+#
+# `expects:` and not `touches:`, because the seed is written further down this script: at this
+# point `touches:` is still whatever the ticket was authored with, and `expects:` is what the
+# ticket DECLARED. Placed with the other refusals, ABOVE the row edit, so a refused claim has
+# nothing to undo — the fail-open shape 0082 and 0090 both closed.
+exclusive="$(awk '
+  NR == 1 && /^---$/ { fm = 1; next }
+  fm && /^---$/      { exit }
+  fm && /^expects:/ {
+    rest = $0; sub(/^expects:[ \t]*/, "", rest)
+    if (rest ~ /\*/) { print "yes"; exit }
+    inx = 1; next
+  }
+  inx && /^[ \t]*$/ { next }
+  inx && /^[ \t]*#/ { next }
+  inx && /^[ \t]*- / { if ($0 ~ /\*/) { print "yes"; exit } ; next }
+  inx { exit }
+' "$item")"
+
+if [ -n "$exclusive" ]; then
+  holders=""
+  for other in "$DIR/items/"*.md; do
+    [ -f "$other" ] || continue
+    case "$other" in *"/$ID-"*) continue ;; esac
+    otok="$(awk '
+      NR == 1 && /^---$/ { fm = 1; next }
+      fm && /^---$/        { exit }
+      fm && /^claimed_by:/ {
+        sub(/^claimed_by:[ \t]*/, "")
+        gsub(/["\047]/, "")
+        sub(/[ \t]+#.*$/, "")
+        sub(/[ \t]+$/, "")
+        print; exit
+      }
+    ' "$other")"
+    [ -n "$otok" ] || continue
+    holders="$holders $(basename "$other" | sed 's/-.*//') [$otok]"
+  done
+  if [ -n "$holders" ]; then
+    echo "refusing to claim $ID: its expects: declares \"*\", an exclusive claim over the whole tree" >&2
+    echo "held right now:$holders" >&2
+    echo "an exclusive claim is taken only when nothing else is held, lands in one commit, and has" >&2
+    echo "the suite green before and after (references/CONCURRENCY.md)" >&2
+    exit 1
+  fi
+fi
+
 # --- edit the row -----------------------------------------------------------------------------
 # The Status cell and nothing else. The token goes in the item's frontmatter, so a legacy table
 # that still carries an Owner column keeps whatever is already in it.
