@@ -2,8 +2,8 @@
 id: "0143"
 title: Redact the internal organisation name from this public repo and guard the rule forbidding it
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-09-09
@@ -15,19 +15,9 @@ expects:
   - tests/measurement.test.sh
   - .claude/backlog/items
   - .claude/backlog/RANKING-HISTORY.md
-claimed_by: "8ca0"
-claimed_at: 2026-09-10T04:01:58Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/measurement.test.sh          # transiently MUTATED and restored to prove the guard reds
-  - .gitignore                         # new: the name list must be unmissable to commit
-  - CLAUDE.md
-  - .claude/backlog/RANKING-HISTORY.md
-  - .claude/backlog/items/0003-phase-2-readiness-and-outcomes.md
-  - .claude/backlog/items/0004-phase-3-jira-bridge.md
-  - .claude/backlog/items/0056-design-non-ui-and-write-step.md
-  - .claude/backlog/items/0070-structured-debugging-discipline.md
-  - .claude/backlog/items/0111-give-retro-a-resolution-order-for-several-backlogs.md
-  - .claude/backlog/items/0113-give-retros-release-chain-a-multi-repo-form.md
 ---
 
 ## Problem
