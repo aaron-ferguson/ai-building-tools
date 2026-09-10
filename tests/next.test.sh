@@ -214,6 +214,33 @@ touches:
 ITEM
 }
 
+# The same, with `expects:` written as a block so a fixture can name more than one path. A gate is
+# formed by comparing those lists, so a case about how the comparison chains needs a row that
+# names two files — `add_ticket`'s single path cannot express the middle of a chain (0136).
+#
+# $1 id, $2 next, $3 status, $4 blocked_by inline, $5 parent, $6 the expects block body — a
+# leading newline then `  - ` entries.
+add_ticket_expects() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: $2
+status: $3
+qa_level: unit
+size: s
+parent: "$5"
+blocked_by: $4
+expects:$6
+claimed_by:
+claimed_at:
+touches:
+---
+
+## Problem
+ITEM
+}
+
 # $1 id, $2 the section body including its `## ` heading line
 append_section() {
   printf '\n%s\n' "$2" >> "$FIX/.claude/backlog/items/$1-fixture.md"
@@ -1038,6 +1065,44 @@ seal
 out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc       "exits 0 — dispatch"          "$rc" 0
 assert_contains "dispatches both as one gate" "$out" 'DISPATCH  develop 0101 0102'
+
+# --- 0136 — a gate is disjoint from every other gate, not just from its own lead --------------
+# The discriminating fixture: 0102 shares `shared/one.md` with the lead and `shared/two.md` with
+# 0103, while 0103 shares nothing with the lead. Testing each candidate against the LEAD's
+# `expects:` puts 0102 in and leaves 0103 to form a second gate that collides with the first;
+# testing against the gate's ACCUMULATED scope pulls 0103 in too. A fixture where the third row
+# overlaps the lead cannot tell the two rules apart.
+echo "0136 AC1 — a row overlapping a non-lead member joins that member's gate"
+scaffold
+add_row 0101 'The lead'       develop ready 0091
+add_row 0102 'Shares both'    develop ready 0092
+add_row 0103 'Shares the second only' develop ready 0093
+add_ticket         0101 develop ready '[]' 0091 shared/one.md
+add_ticket_expects 0102 develop ready '[]' 0092 '
+  - shared/one.md
+  - shared/two.md'
+add_ticket         0103 develop ready '[]' 0093 shared/two.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"                        "$rc" 0
+assert_contains "dispatches all three as one gate"          "$out" 'DISPATCH  develop 0101 0102 0103'
+assert_contains "and counts one takeable gate"              "$out" 'DEPTH     1'
+
+# AC3's negative: accumulation with no termination condition merges everything reachable, and the
+# rows below are not reachable from each other at all. Without this case the fix could be written
+# as a transitive closure over the whole pool and stay green.
+echo "0136 AC3 — rows sharing no file are still two gates"
+scaffold
+add_row 0101 'First gate'  develop ready 0091
+add_row 0102 'Second gate' develop ready 0092
+add_ticket 0101 develop ready '[]' 0091 a/one.md
+add_ticket 0102 develop ready '[]' 0092 b/two.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 0 — dispatch"                "$rc" 0
+assert_contains     "dispatches the first row"          "$out" 'DISPATCH  develop 0101'
+assert_not_contains "and does not batch the second with it" "$out" '0101 0102'
+assert_contains     "and counts two takeable gates"     "$out" 'DEPTH     2'
 
 # The *other* in-progress branch. This one and the case below are two different code paths, the
 # same way AC9's two waiting cases are: with a completed outcome supplied, `--drive` reads the row

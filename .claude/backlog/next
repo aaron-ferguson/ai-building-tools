@@ -596,19 +596,42 @@ if [ "${1:-}" = "--drive" ]; then
   # — the unit is a gate, not a row, because what batching saves is the startup a session pays
   # before it writes a line, and that is only shared where the parent or the files are.
   #
-  # One hop from the lead, deliberately not a transitive closure: chaining through shared files
-  # would sweep half a backlog into one gate via a file two unrelated efforts both happen to touch.
+  # Membership is tested against the gate's ACCUMULATED scope — the union of the `expects:` of every
+  # row already in it — not against the lead's alone (0136). Against the lead alone the gates this
+  # walk produces are not guaranteed disjoint from each other: a row can be excluded from gate 1 for
+  # not overlapping its lead while naming a file some other member of gate 1 does name, and then
+  # lead a gate 2 that collides with it. That miscounts DEPTH today and is a live hazard the moment
+  # anything dispatches two gates at once.
+  #
+  # Two bounds hold that chaining down, and they have to be read together with the hazard above:
+  #
+  #  - **One pass over the pool, in rank order, each row tested exactly once and never reconsidered.**
+  #    So the scope only ever grows forward: a row stepped over is not pulled back in by a later
+  #    member that happens to name one of its files. This is not the transitive closure of the
+  #    shared-file graph, which is what would sweep half a backlog into one gate via a file two
+  #    unrelated efforts both happen to touch.
+  #  - **The pool is the takeable `develop` rows only**, so nothing blocked, held or at another
+  #    stage can extend the scope.
+  #
+  # A gate can still grow long where a chain of rows really does share files pairwise; that group is
+  # genuinely one file scope and cannot be split into sessions that run together. Making the
+  # composition legible to a person is 0130's.
   gate_from() {
     lead="$1"; pool="$2"
     lparent="$(fm "$(item_for "$lead")" parent)"
-    lexpects="$(fm_list "$(item_for "$lead")" expects)"
+    gscope="$(fm_list "$(item_for "$lead")" expects)"
     printf '%s' "$lead"
     for gid in $pool; do
       if [ "$gid" = "$lead" ]; then continue; fi
+      gexpects="$(fm_list "$(item_for "$gid")" expects)"
       if [ -n "$lparent" ] && [ "$(fm "$(item_for "$gid")" parent)" = "$lparent" ]; then
+        gscope="$gscope $gexpects"
         printf ' %s' "$gid"; continue
       fi
-      if paths_overlap "$lexpects" "$(fm_list "$(item_for "$gid")" expects)"; then printf ' %s' "$gid"; fi
+      if paths_overlap "$gscope" "$gexpects"; then
+        gscope="$gscope $gexpects"
+        printf ' %s' "$gid"
+      fi
     done
   }
 
