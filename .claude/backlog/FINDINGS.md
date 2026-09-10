@@ -312,3 +312,8 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   write. Neither `touches:` nor the claim appears anywhere in `design`'s SKILL.md. Bears on 0091
   (by-hand writes take the lock) and 0048 (which write sites become scripts); parked rather than
   filed as a row by a session holding neither.
+- 2026-09-09 (develop, 0136) — **Nothing surprised me.** `develop`'s steps had a correct answer at
+  every point: `./next develop` offered the row, `./claim` seeded and explained `touches:`, the
+  staleness grep confirmed `gate_from` still read as the ticket described it, and the ticket's own
+  AC4 turned out to be already guarded by `tests/backlog-scripts-installed.test.sh`. Recorded as an
+  explicit nil rather than left blank.

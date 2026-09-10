@@ -103,3 +103,22 @@ Found 2026-09-09 while reading `gate_from` for `0130`; no incident has been trac
 - **2026-09-09 — filed as a bug rather than folded into `0137`.** It is a defect in the partition
   `--drive` publishes today, independent of whether anything ever dispatches two gates at once, and
   leaving it inside a deferred ticket would have hidden it behind work that may not happen.
+
+- **2026-09-09 — the bound FR3 asked for is a single forward pass, not a hop count.** Accumulating
+  the gate's scope *is* chaining, so the old comment's "one hop, deliberately not a transitive
+  closure" could not survive the fix as written. What replaces it is two bounds stated together
+  beside the hazard: the pool is walked once in rank order with each row tested exactly once and
+  never reconsidered — so scope grows forward only and a row stepped over is never pulled back in —
+  and the pool is the takeable `develop` rows alone. A chain of rows that really do share files
+  pairwise still forms one long gate, and that is correct: it is one file scope and cannot be split
+  into sessions that could run together. Making that group legible to a person stays `0130`'s.
+- **2026-09-09 — AC4 needed no new test.** `tests/backlog-scripts-installed.test.sh` already
+  compares both copies of all four scripts, so the parity criterion is discharged by a guard that
+  was green before this ticket and stayed green after. Verified directly as well:
+  `diff .claude/backlog/next skills/queue/templates/next` is silent.
+- **2026-09-09 — `add_ticket` could not express the discriminating fixture.** It hardwires one
+  `expects:` path, and the case that separates the old rule from the new one needs a middle row
+  naming two files. Added `add_ticket_expects`, which takes the `expects:` block whole, in the same
+  shape as the existing `add_item_lists`. Confirmed red before the fix: AC1 saw
+  `DISPATCH  develop 0101 0102` and `DEPTH     2`, exactly the two-gate partition the ticket
+  describes.
