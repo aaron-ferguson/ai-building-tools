@@ -3,7 +3,7 @@ id: "0060"
 title: Decide how the findings buffer is emptied and gated
 type: chore
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -21,9 +21,18 @@ expects:
   - skills/queue/templates/item.md
   - references/REPORTING.md
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "3929"
+claimed_at: 2026-09-10T20:14:22Z
 touches:
+  - skills/queue/templates/next
+  - .claude/backlog/next
+  - skills/retro/SKILL.md
+  - skills/queue/SKILL.md
+  - skills/queue/templates/FINDINGS.md
+  - .claude/backlog/FINDINGS.md
+  - skills/queue/templates/item.md
+  - references/REPORTING.md
+  - tests/next.test.sh
 ---
 
 ## Problem
