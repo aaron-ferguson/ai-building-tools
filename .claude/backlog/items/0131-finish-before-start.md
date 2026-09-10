@@ -213,7 +213,7 @@ protects a built ticket from the findings gate, and not from the next develop ga
   single tickets needs no `--started`" true by construction rather than by coincidence of the two
   branches agreeing. A guard written for it would assert on a state no fixture can reach.
 - **2026-09-10 — AC10's two mutations were run and both red, at
-  `1cb42a2`.** Reverting the gate hook (`if false` in place of `if sv="$(started_verify)"`) reds
+  `8fd3141`, the commit that carries them.** Reverting the gate hook (`if false` in place of `if sv="$(started_verify)"`) reds
   AC1 and AC3, 3 of 326; dropping FR5's scoping (deleting the `contains_word` line, so every verify
   row counts as started) reds AC2, 2 of 326. The control run is green at 326.
 - **2026-09-10 — the AC11 guard is keyed on `Step 2`, not on `The cycle`.** The harness's
