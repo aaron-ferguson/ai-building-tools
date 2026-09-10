@@ -72,7 +72,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0112 | Hoist the line-wrap hazard to the session editing prose, not only the one writing a guard | develop | ready |  |
 | 0096 | Make the frontmatter path lists checkable to read and safe to edit | develop | ready |  |
 | 0095 | Hoist the shell short-circuit hazard where a guard author will read it | develop | ready |  |
-| 0067 | Decide what shape a cross-cutting rename takes in the backlog | develop | in-progress |  |
+| 0067 | Decide what shape a cross-cutting rename takes in the backlog | verify | ready |  |
 | 0043 | Make the two size gates fail on a registry entry that no longer resolves | develop | ready |  |
 | 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |
 | 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |
