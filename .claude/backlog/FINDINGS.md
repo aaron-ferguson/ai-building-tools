@@ -141,3 +141,13 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the mutation at the AC's altitude looks conclusive. The grip a token-presence guard has on prose
   is the section minus its code blocks, and no harness here draws that line (pointer:
   `tests/orchestrate.test.sh:1534`, `skills/orchestrate/SKILL.md` Step 2, item 0131).
+- 2026-09-10 (design) — **a ticket's `relates:` is written once and the tickets that later block on
+  it are invisible from inside it.** 0059 was written 2026-08-25 and lists `relates: ["0025",
+  "0026", "0050", "0058"]`. 0132 and 0137, created 2026-09-09, both carry `source: user` and both
+  govern the answer — 0132 `blocked_by: ["0059"]` with an AC that reds explicitly on the shape this
+  session had already decided, written and committed. The edge exists, and it points the wrong way
+  for the reader: `design` Step 2 sends you to prior art, the design system, the conventions and the
+  ticket's own evidence, and nothing sends you to `grep -l '"0059"' items/*.md`. Caught only because
+  the corrected `QUEUE.md` scrolled past on an unrelated write and a newer row's title mentioned
+  batching. A one-line reverse-edge check belongs in `design` Step 1 or 2, where the contract is
+  read (pointer: `skills/design/SKILL.md` Step 2, items 0059, 0132, 0137).
