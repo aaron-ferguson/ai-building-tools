@@ -110,9 +110,54 @@ protects a built ticket from the findings gate, and not from the next develop ga
 - Any change to how develop gates are formed.
 - Reordering `QUEUE.md`. This changes dispatch preference, never the rank.
 
+## Open design question
+
+**FR5 asks `--drive` to know which verify rows *this run* started, and the CLI carries no input
+that says so. Two answers exist, they are opposite products, and one of them contradicts a
+committed guard — so `develop` will not pick between them.**
+
+What was established by probing the script on a throwaway fixture (2026-09-09):
+
+- **AC1 as written is already green.** With a rank-1 `next: develop` row and a lower `next: verify,
+  status: ready` row, `./next --drive --completed develop:<the verify row>` dispatches
+  `verify <id>` today, not the develop gate — the completed-outcome branch
+  (`.claude/backlog/next`, `lstage = develop && lnext = verify && lstatus = ready`) fires long
+  before the rank walk is reached. AC1's *Red if* clause states the opposite about today's
+  behaviour and is mistaken.
+- **The real defect is a gate of more than one ticket.** `--drive` dispatches a *gate* — a lead plus
+  every takeable develop row sharing its parent or `expects:` scope — to one `develop` session, and
+  `--completed` accepts **at most one** `<stage>:<id>`. So after a two-ticket gate, only the lead's
+  id comes back; the other built ticket sits at `next: verify, status: ready` and loses the rank
+  walk to any higher-ranked develop row. That is the state Aaron's rule is about, and no invocation
+  of the current CLI can express it.
+
+The decision, therefore:
+
+- **(a) Widen `--completed` to accept a run log** — several outcomes per call. This is what
+  `.claude/backlog/next` itself defers to `0039` in as many words (*"0039 widens it if its run log
+  ever needs to pass more"*), and `tests/next.test.sh` currently **guards the opposite**: a second
+  `--completed` is asserted to be a usage error. Choosing (a) means retiring that guard.
+- **(b) Add a distinct input naming the rows the run has started** — e.g. `--started <id> ...` —
+  leaving `--completed` singular and its guard intact.
+
+A third option, **deriving** the set (treat a verify row sharing the completed ticket's parent or
+`expects:` scope as run-started), needs no CLI change but re-admits exactly what FR5 forbids: a
+stale verify row that happens to share a file scope would reorder the run.
+
+Each answer also decides who else changes — (a) and (b) both put a new obligation on
+`skills/orchestrate/SKILL.md`, which today tells the driver to *"give it at most once per call"*.
+
+Nothing else in the ticket is unsettled: FR1-FR4 are buildable as written once the input exists,
+and AC1/AC2's fixtures need rewriting against whichever input is chosen.
+
 ## Notes & decisions
 
 - **2026-09-09 — routed to `develop`, not `design`.** The rule was decided with Aaron on
   2026-09-08 and its implementation site is a `case` in a script that already encodes the same
   principle one branch away. Nothing is undecided; FR5's scoping was the only open question and it
   is settled here.
+- **2026-09-09 — bounced to `design` by `develop` [9776] before writing code.** See *Open design
+  question*: FR5 needs an input the CLI does not have, and the two candidate inputs are opposite
+  contracts, one of which retires a committed guard. Also recorded there: AC1 is green today, so
+  the ticket's stated "today's behaviour" is wrong and the fixture that would be red is a
+  multi-ticket gate, which the current `--completed` cannot express. No code was written.
