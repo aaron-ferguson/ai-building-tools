@@ -79,7 +79,7 @@ count_findings() {
 
 usage() {
   cat <<'USAGE'
-usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] [--completed <stage>[:<id>]] | --help]
+usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] [--completed <stage>[:<id>]] [--started <id>]… | --help]
 
   ./next             counts by stage and by status, plus anything another session holds
   ./next <stage>     the first takeable row for that stage, and its size
@@ -94,6 +94,11 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] 
                      --completed <stage>[:<id>] says which stage just finished on which ticket.
                      That input is what tells a verify bounce from a fresh develop row, and a
                      crash-recovery re-dispatch from a loop. Give it at most once.
+                     --started <id> names a ticket this RUN has already opened work on —
+                     repeatable, and cumulative over the whole run rather than over the last call.
+                     While one of them is still awaiting verify, no NEW develop gate is dispatched:
+                     work that was started gets finished. --completed's id is unioned in, so a run
+                     whose gates are all single tickets needs no --started at all.
                      --propose describes the dispatch a person is being asked to approve — how many
                      tickets, which, a line of work each, and what holds the gate together — and is
                      for the ONE call a run makes before its first stage. Opt-in because every later
@@ -620,6 +625,7 @@ if [ "${1:-}" = "--drive" ]; then
   read_threshold || exit 1
   shift
   COMPLETED=""
+  STARTED=""
   PROPOSE=0
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -627,14 +633,37 @@ if [ "${1:-}" = "--drive" ]; then
       --completed)
         shift
         [ $# -gt 0 ] || { echo "--completed needs <stage>[:<id>]" >&2; usage >&2; exit 2; }
-        # One only. The guard needs *an* intervening outcome, not a history, and accepting a list
-        # while reading a single element is a trap for the caller. 0039 widens it if its run log
-        # ever needs to pass more.
+        # One only, and it stays that way (0131 FR8). The guard below needs *an* intervening
+        # outcome, not a history, so accepting a list while reading a single element is a trap for
+        # the caller. What a run's history is for is the finish-before-start preference, and that
+        # is `--started`: a different fact with a different lifetime — "what just finished" is
+        # per-call and transient, "what this run has opened" is cumulative and monotonic.
         [ -z "$COMPLETED" ] || { echo "--completed takes one <stage>[:<id>]; got a second: $1" >&2; exit 2; }
         COMPLETED="$1"
         shift ;;
+      --started)
+        shift
+        [ $# -gt 0 ] || { echo "--started needs <id>" >&2; usage >&2; exit 2; }
+        # Four digits or a usage error. A malformed id matches no row and would disable the
+        # preference in silence, which is the one failure mode a fail-open rule may not have.
+        case "$1" in
+          [0-9][0-9][0-9][0-9]) : ;;
+          *) echo "--started takes a four-digit id; got: $1" >&2; usage >&2; exit 2 ;;
+        esac
+        contains_word "$1" "$STARTED" || STARTED="$STARTED $1"
+        shift ;;
       *) echo "unknown argument to --drive: $1" >&2; usage >&2; exit 2 ;;
     esac
+  done
+
+  # A started id with no row is ordinary: the ticket closed, or gained a child and became a
+  # project. An id with no row AND no item file is a driver bug, and it is reported rather than
+  # swallowed — the preference silently stopping applying is worse than the run stopping, and both
+  # are worse than one line naming the id (references/CONVENTIONS.md, the fail-open ladder).
+  for sid in $STARTED; do
+    if [ -z "$(row_for "$sid")" ] && [ -z "$(item_for "$sid")" ]; then
+      printf 'NOTE      --started %s matches no row and no item file — nothing recognises that id\n' "$sid"
+    fi
   done
 
   # Every takeable `next: develop` row, in rank order — the same predicate `./next develop` applies.
@@ -858,6 +887,30 @@ if [ "${1:-}" = "--drive" ]; then
     fi
   }
 
+  # The highest-ranked row this RUN started that is still sitting at `verify | ready`, or nothing.
+  #
+  # Why it is scoped to the run's own tickets (0131 FR5): a ticket left at `next: verify` by a
+  # hand-driven session before this run began is not this run's to hold, and jumping the rank for
+  # it would let unrelated stale work reorder every run. The set is an INPUT and never derived from
+  # `parent:` or `expects:` — deriving it re-admits exactly what the scoping forbids, a stale
+  # verify row reordering the run because it happens to name one of the same files.
+  #
+  # Rank still decides among the candidates: the walk is `all_ids`, so the ids' arrival order on
+  # the command line means nothing. `sv_` prefixes because sh has no locals.
+  started_verify() {
+    for sv_id in $(all_ids); do
+      contains_word "$sv_id" "$STARTED" || continue
+      sv_row="$(row_for "$sv_id")"
+      [ "$(field "$sv_row" "$NEXT")" = "verify" ] || continue
+      [ "$(field "$sv_row" "$STATUS")" = "ready" ] || continue
+      if held_by "$sv_id" >/dev/null; then continue; fi
+      if [ -n "$(open_blockers_of "$sv_id")" ]; then continue; fi
+      printf '%s' "$sv_id"
+      return 0
+    done
+    return 1
+  }
+
   # --- what the caller says just finished -----------------------------------------------------
   # Order matters here and is not alphabetical. `waiting`, `design` and `queue` are checked before
   # the same-stage guard, because develop writing any of those leaves the row where it was and the
@@ -915,6 +968,16 @@ if [ "${1:-}" = "--drive" ]; then
     fi
   fi
 
+  # `--completed`'s id is a ticket this run opened work on too, so it joins the started set
+  # (0131 FR6). That is what lets a run whose gates are all single tickets pass no `--started` at
+  # all: the flag it already sends carries the same fact for the one ticket it names.
+  if [ -n "$COMPLETED" ]; then
+    cid="${COMPLETED#*:}"
+    if [ "$cid" != "$COMPLETED" ] && [ -n "$cid" ]; then
+      contains_word "$cid" "$STARTED" || STARTED="$STARTED $cid"
+    fi
+  fi
+
   # --- otherwise, walk the rank ---------------------------------------------------------------
   # Line order is the rank and the rank is absolute, so the first row anything can act on decides.
   # `blocked` and `in-progress` are the two the rank legitimately steps over — nobody can act on
@@ -953,6 +1016,15 @@ if [ "${1:-}" = "--drive" ]; then
         PROPOSE_STAGE="verify"; PROPOSE_IDS="$id"
         decide "$DISPATCH" "DISPATCH  verify $id" ;;
       develop)
+        # Finish before start (0131). Checked here, where a NEW gate would be formed, for the same
+        # reason `findings_gate` is and just ahead of it: a ticket this run already built is
+        # finished rather than left half-done while the run opens more work. Checked at the gate
+        # rather than before the walk, so it preempts nothing a person is being asked to decide —
+        # a `waiting`, `design` or `queue` row above this one still stops the run.
+        if sv="$(started_verify)"; then
+          PROPOSE_STAGE="verify"; PROPOSE_IDS="$sv"
+          decide "$DISPATCH" "DISPATCH  verify $sv"
+        fi
         gate="$(gate_from "$id" "$(takeable_develop)")"
         PROPOSE_STAGE="develop"; PROPOSE_IDS="$gate"
         findings_gate

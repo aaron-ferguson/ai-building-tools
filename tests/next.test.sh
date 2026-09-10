@@ -1787,6 +1787,112 @@ out="$(run_next --help)" && rc=0 || rc=$?
 # explanatory paragraphs below it also name the flag.
 assert_contains "the usage line carries it" "$out" '--drive [--propose]'
 
+# --- 0131 — a started ticket is verified before a new develop gate is opened ------------------
+# The rule is a STAGE PREFERENCE at the gate, not a re-ranking: rank still decides among verify
+# rows and among gates. Each case here pins one half of that, because a rule written as "verify
+# always wins" passes the positive case and breaks every run whose backlog carries a stale verify
+# row somebody else left behind.
+
+echo "0131 AC1 — a started verify row is dispatched ahead of a new develop gate below it in rank"
+scaffold
+add_row 0103 'A new develop row' develop ready ''
+add_row 0102 'A built ticket'    verify  ready ''
+add_ticket 0103 develop ready '[]' '' b/two.md
+add_ticket 0102 verify  ready '[]' '' a/one.md
+seal
+out="$(run_next --drive --started 0102)" && rc=0 || rc=$?
+assert_rc           "exits 0 — dispatch"                  "$rc" 0 "$out"
+assert_contains     "dispatches the started verify row"   "$out" 'DISPATCH  verify 0102'
+assert_not_contains "and not the develop gate above it"   "$out" 'DISPATCH  develop'
+
+echo "0131 AC2 — with no --started, rank decides and the develop gate goes first"
+scaffold
+add_row 0103 'A new develop row' develop ready ''
+add_row 0102 'A built ticket'    verify  ready ''
+add_ticket 0103 develop ready '[]' '' b/two.md
+add_ticket 0102 verify  ready '[]' '' a/one.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 0 — dispatch"                    "$rc" 0 "$out"
+assert_contains     "dispatches the develop gate"           "$out" 'DISPATCH  develop 0103'
+assert_not_contains "the stale verify row does not jump it" "$out" 'DISPATCH  verify'
+
+echo "0131 AC3 — rank still decides among the started verify rows"
+scaffold
+add_row 0103 'A new develop row'   develop ready ''
+add_row 0102 'The first built one' verify  ready ''
+add_row 0104 'The second built one' verify ready ''
+add_ticket 0103 develop ready '[]' '' b/two.md
+add_ticket 0102 verify  ready '[]' '' a/one.md
+add_ticket 0104 verify  ready '[]' '' c/three.md
+seal
+# Given in the order they would NOT be chosen in, so a reader of the ids rather than of the rank
+# dispatches 0104.
+out="$(run_next --drive --started 0104 --started 0102)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"                "$rc" 0 "$out"
+assert_contains "dispatches the higher-ranked one"  "$out" 'DISPATCH  verify 0102'
+
+echo "0131 AC5 — a started ticket that has left QUEUE.md does not stop the run"
+scaffold
+add_row 0103 'A new develop row' develop ready ''
+add_ticket 0103 develop ready '[]' '' b/two.md
+add_ticket 0102 verify done '[]' '' a/one.md
+seal
+out="$(run_next --drive --started 0102)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"        "$rc" 0 "$out"
+assert_contains "dispatches the gate"       "$out" 'DISPATCH  develop 0103'
+
+echo "0131 AC6 — a started id nothing recognises is reported, and the run continues"
+scaffold
+add_row 0103 'A new develop row' develop ready ''
+add_ticket 0103 develop ready '[]' '' b/two.md
+seal
+out="$(run_next --drive --started 0102)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"          "$rc" 0 "$out"
+assert_contains "names the id it could not place" "$out" '0102'
+assert_contains "as a NOTE rather than a stop"    "$out" 'NOTE'
+assert_contains "and still dispatches the gate"   "$out" 'DISPATCH  develop 0103'
+
+echo "0131 AC7 — a --started value that is not a four-digit id is a usage error"
+scaffold
+add_row 0103 'A new develop row' develop ready ''
+add_ticket 0103 develop ready '[]' '' b/two.md
+seal
+out="$(run_next --drive --started 12)" && rc=0 || rc=$?
+assert_rc       "exits 2 — usage"                 "$rc" 2 "$out"
+assert_contains "and says which value it refused" "$out" '12'
+out="$(run_next --drive --started)" && rc=0 || rc=$?
+assert_rc       "a --started with no value is a usage error too" "$rc" 2 "$out"
+
+echo "0131 AC8 — the preference applies at the gate, so an escalation above it still stops the run"
+scaffold
+add_row 0105 'A design row'      design  ready ''
+add_row 0103 'A new develop row' develop ready ''
+add_row 0102 'A built ticket'    verify  ready ''
+add_ticket 0105 design  ready '[]' '' d/four.md
+add_ticket 0103 develop ready '[]' '' b/two.md
+add_ticket 0102 verify  ready '[]' '' a/one.md
+seal
+out="$(run_next --drive --started 0102)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"                  "$rc" 4 "$out"
+assert_contains     "escalates on the design row"         "$out" 'ESCALATE  0105'
+assert_not_contains "the started verify row does not jump it" "$out" 'DISPATCH'
+
+echo "0131 AC9 — --completed stays singular"
+scaffold
+add_row 0101 'A verify row' verify ready ''
+add_ticket 0101 verify ready '[]' '' a/one.md
+seal
+out="$(run_next --drive --completed develop:0101 --completed verify:0101)" && rc=0 || rc=$?
+assert_rc "a second --completed is still a usage error" "$rc" 2 "$out"
+
+echo "0131 — --help lists --started as a mode of --drive"
+scaffold
+seal
+out="$(run_next --help)" && rc=0 || rc=$?
+assert_contains "the usage line carries it"      "$out" '--started <id>'
+assert_contains "and says it is cumulative"      "$out" 'cumulative'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
