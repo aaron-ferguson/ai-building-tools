@@ -52,6 +52,8 @@ qa_manual:
 # Rough cost, so a session can see what it's taking on WITHOUT reordering the queue.
 # s = one sitting · m = a focused session · l = multiple sessions or needs a design decision first.
 size: s | m | l
+# The date is UTC, like `claimed_at:` below and every entry in FINDINGS.md. Two sessions an hour
+# apart either side of midnight otherwise write different dates and both are defensible.
 created: YYYY-MM-DD
 source: user | agent | external:<report-id>
 # The graph. `parent:` points UP at the ticket this one belongs to — 0 or 1 id, never a list, and

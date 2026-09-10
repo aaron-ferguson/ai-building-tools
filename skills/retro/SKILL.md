@@ -119,8 +119,14 @@ retros are not running, or not emptying.
 
 **And far past the threshold changes how this skill runs, not only what it reports.** A buffer at nine
 times the threshold cannot be drained in one pass, and forcing it is the wrong trade: effectiveness
-first, across as many passes as it takes. Work in ranked slices — **read fewer entries and finish
-each**, rather than reading all and marking most. `FINDINGS.md` is **transit, not residence**: an entry
+first, across as many passes as it takes.
+The rule is that **reading is cheap and only writing is sliced**: read the buffer, then choose how
+much of it you can finish writing. That slice is chosen
+after the cross-entry read below and never before it, because that read is exactly what tells you
+which entries are one lesson — so nothing cheap enough to slice on exists until it is done. Measured
+at 32 entries against a threshold of 8 with none of them stale: the pass read all 32 and
+dispositioned every one, which the earlier wording forbade and which was its only honest option.
+`FINDINGS.md` is **transit, not residence**: an entry
 you never reached waits untouched; one you *read* leaves in that pass, per Step 4. What must never
 happen is a later pass re-deriving triage an earlier one already did.
 
@@ -173,6 +179,12 @@ This order is deliberate: checking a destination properly means greps, reading t
 change, and comparing against the installed copy of a skill. All of that is wasted on a finding the
 user was never going to accept, and a rejected finding should cost nothing to have proposed. A menu
 of options hands the judgement back to the user, which is the opposite of the point — recommend.
+
+**Past the threshold, what the gate asks about is the WRITE list, not the read.** Step 1 has already
+read the whole buffer, so the proposal covers every entry and its disposition; what you are asking
+the user to approve is how much of it this pass writes. Propose that slice explicitly — these land
+now, these are deferred with what was established about each — rather than shrinking the proposal
+until it fits, which hides the triage you already paid for and hands the next pass nothing.
 
 **A retro is allowed to find nothing, and saying so is a complete result.** If the buffer held only
 stale or dropped entries, the honest report is one line saying you read it and there was nothing

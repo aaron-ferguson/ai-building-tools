@@ -521,6 +521,18 @@ For each entry that is a unit of work:
 3. **Rank per Step 3** once specified. A parked finding gets no rank bonus for having been noticed
    recently; that is the recency trap.
 
+**A buffer holding more than one sweep can finish is worked in clusters, and the clustering comes
+after the reading.** Read the entries first, then cluster them after reading by the defect they
+share: the cross-entry view is what tells you that six entries are one ticket, and it does not exist
+until the reading is done. **An entry and a ticket are not one-to-one** in either direction — one
+entry can be two rows, and eight entries routinely become one. A sweep of 86 entries clustered by
+root cause, took two tiers and left the rest, and every one of those decisions had to be invented
+because this step was silent on all of it.
+
+**Then name what you left behind in the report** — how many entries, and what they were about. A
+sweep that reports only what it took reads as a sweep that emptied the buffer, and the next one
+re-derives the triage this one already did.
+
 **Check the entry is still true before specifying it.** The buffer is where staleness is most likely —
 an entry sits for weeks while the code moves under it — and a fully-specified row describing behaviour
 that no longer exists is worse than no row. Two entries in one sweep had been discharged by later work:
@@ -531,10 +543,28 @@ names, not just `DONE.md`**, because a fix that landed outside the lifecycle lea
 **Remove only the entries you processed, and commit in the same turn**, by pathspec. Leaving a processed
 entry is re-read by the next sweep; removing an unprocessed one loses `retro`'s half.
 
+**Where a ticket was bundled from several entries, the removal list comes from the ticket's FRs, and
+never the cluster that produced it.** A cluster is how you got there; the FRs are what the row
+actually promises, and the two are not the same set. Sweeping one buffer's second batch, three of
+forty-six entries read as covered because a neighbouring concern in the same bundle was — caught
+only by a check nothing asked for. Skipped, they would have left the buffer with no ticket, no
+trace, and a sweep reporting success. Walk the FRs and tick the entry each one discharges; an entry
+no FR covers is not swept, whatever the bundle was called.
+
+**Absorbed — a swept entry whose work half an existing row already carries.** This is the third
+disposition, and without it a sweep has only two bad options: a new row that splits one decision
+across two, or a `next: queue` stub that `develop` must refuse. Instead — **name the row**, append
+**one dated line to its *Notes & decisions*** saying what this entry establishes, and mark the entry
+`[->NNNN]` with that row's id. **It is not a new row** and not a stub. Remove the entry only if it
+holds no lesson half; if it holds one, the marker hands it to `retro` exactly as above.
+
 **For an entry that is *both* work and lesson, annotate it in place rather than choosing.** Deleting it
 loses `retro`'s half; leaving it untouched makes the next sweep pay to read it again, which on a large
-buffer is the dominant cost. Neither is acceptable, so append the row its work half became — *"filed as
-item 0108 <date>; lesson half open"* — and hand the entry to `retro`.
+buffer is the dominant cost. Neither is acceptable, so **mark it with the head token the buffer's own
+header specifies** — `- 2026-09-05 [->0108] — **what happened.**` — and hand the entry to `retro`.
+The token goes immediately after the date, so a large buffer partitions with one `grep` on `\[->`
+and both entry shapes still count. Trailing prose was tried in practice and bought the next sweeper
+nothing: partitioning the file still meant reading every entry to its end.
 
 **The marker hands the entry over; it does not make it a resident.** `FINDINGS.md` is transit for every
 entry in it, and `retro` is the terminal sweeper: the next pass to read this one gives it a disposition

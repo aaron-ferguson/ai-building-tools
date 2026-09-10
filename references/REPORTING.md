@@ -69,6 +69,17 @@ The failure this forbids is specific and has happened in this project: a step wi
 is the kind that gets quietly dropped — parking a finding, running the full suite, releasing a claim.
 Routing a step's output to disk is fine. Routing it nowhere removes the step.
 
+## The findings buffer
+
+**Every stage session's report carries the buffer's count against the threshold** — the line that
+`./next --findings` prints — and says **a retro is due** when it is at or over it.
+
+Only `./next --drive` read that count, so a run a person drives filled the buffer indefinitely with
+nothing to say so: one retro found 32 entries against a threshold of 8, none of them stale. The rule
+sits here, in the file every stage's closing step already cites, rather than in six skills.
+
+Reporting it is the whole obligation — a stage neither runs the retro nor stops for one.
+
 ## The hand-off line
 
 **Every stage ends on one line, and it is the very last thing printed:**

@@ -64,6 +64,8 @@ justification() {
       echo "0028 — this file IS the relocation target, read only when a rule is argued with or a conflict is live; growth here is the pointer mechanism working, and relocating out of it would only need a third file" ;;
     references/CONVENTIONS.md)
       echo "0078 — considered relocating the finding-routing rule to its own pointer file, the ~1,900 bytes that put this file over; rejected on BOTH conditions: every stage resolves this file before it acts and every stage has a park step, so p is ~0 and the pointer would be fetched on almost every run, and the rule is mandatory the moment a park is reached — a mandatory step behind a pointer is a step that gets skipped" ;;
+    references/REPORTING.md)
+      echo "0060 — considered relocating the findings-buffer rule, the ~590 bytes that put this file over; rejected on BOTH conditions: every stage's closing step cites this file on every run, so p is ~0 and the pointer would be fetched almost always, and the rule is mandatory the moment a stage reports — a mandatory step behind a pointer is a step that gets skipped" ;;
     *) return 0 ;;
   esac
 }
