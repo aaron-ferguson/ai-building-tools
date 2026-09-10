@@ -2,8 +2,8 @@
 id: "0136"
 title: Stop two gates sharing a file through a row neither lead names
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: verify
 size: s
@@ -16,9 +16,10 @@ expects:
   - .claude/backlog/next
   - skills/queue/templates/next
   - tests/next.test.sh
-claimed_by: "1217"
-claimed_at: 2026-09-10T01:38:14Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-10
 ---
 
 ## Problem
@@ -70,16 +71,16 @@ Found 2026-09-09 while reading `gate_from` for `0130`; no incident has been trac
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture of three rows where A and B share `f1`, and C shares `f2` with B but
+- [x] AC1 — Given a fixture of three rows where A and B share `f1`, and C shares `f2` with B but
       shares nothing with A, when `--drive` forms gates, then C is in the same gate as A and B.
       **Red if** C forms a second gate — today's behaviour, and the discriminating case: a fixture
       where C overlaps the lead cannot tell the old rule from the new one.
-- [ ] AC2 — Given that fixture, when `DEPTH` is printed, then it reports one takeable gate. **Red
+- [x] AC2 — Given that fixture, when `DEPTH` is printed, then it reports one takeable gate. **Red
       if** it reports two, which is what the current partition counts.
-- [ ] AC3 — Given a fixture of two rows sharing no file, when gates are formed, then they are two
+- [x] AC3 — Given a fixture of two rows sharing no file, when gates are formed, then they are two
       gates. **Red if** accumulation is written without a termination condition and merges
       everything reachable, which is the failure FR3 guards.
-- [ ] AC4 — Given the repo after this ticket, when `diff .claude/backlog/next
+- [x] AC4 — Given the repo after this ticket, when `diff .claude/backlog/next
       skills/queue/templates/next` runs, then they are identical. **Red if** only this project's
       copy is fixed.
 
@@ -119,3 +120,25 @@ Found 2026-09-09 while reading `gate_from` for `0130`; no incident has been trac
   shape as the existing `add_item_lists`. Confirmed red before the fix: AC1 saw
   `DISPATCH  develop 0101 0102` and `DEPTH     2`, exactly the two-gate partition the ticket
   describes.
+
+## QA evidence
+
+Verified 2026-09-09 at `qa_level: verify` (token `1217`) against `a800e20`. Tree clean at Step 2
+and at verdict; dirty set empty, so the intersection with the evidence set is empty and this is a
+plain PASS. Evidence set: `skills/queue/templates/next`, `.claude/backlog/next`,
+`tests/next.test.sh`, `tests/backlog-scripts-installed.test.sh`.
+
+| Row | How it was checked | Result |
+|---|---|---|
+| AC1 — C joins A and B's gate | `tests/next.test.sh` case *0136 AC1*, three-row fixture (0102 shares `shared/one.md` with the lead and `shared/two.md` with 0103; 0103 shares nothing with the lead). Suite tally pasted: `236 passed, 0 failed` | PASS |
+| AC1 mutation | Deleted both `gscope="$gscope $gexpects"` accumulation lines from `skills/queue/templates/next` (diff 2 lines, non-empty). Went red: `expected to contain: DISPATCH  develop 0101 0102 0103` / `saw: DISPATCH  develop 0101 0102`. `234 passed, 2 failed`. Restored, control `236 passed, 0 failed` | reddens |
+| AC2 — DEPTH reports one gate | Same case asserts `DEPTH     1`. Under the AC1 mutation it read `DEPTH     2 develop gate(s) takeable`, the two-gate partition the ticket describes | PASS |
+| AC3 — two disjoint rows stay two gates | `tests/next.test.sh` case *0136 AC3* | PASS |
+| AC3 mutation | Replaced `if paths_overlap "$gscope" "$gexpects"` with `if true` — unbounded merge. Went red: `expected NOT to contain: 0101 0102` / `saw: DEPTH     1`. `233 passed, 3 failed`. Restored, control green | reddens |
+| AC4 — both copies identical | `diff .claude/backlog/next skills/queue/templates/next` silent; `tests/backlog-scripts-installed.test.sh` → `37 passed, 0 failed` | PASS |
+| AC4 mutation | Appended a comment line to the template. Went red: `FAIL next has diverged from skills/queue/templates/next`, `36 passed, 1 failed`. Restored via `git checkout -- skills/queue/templates/next`, guard green | reddens |
+| FR4 — DEPTH from the corrected partition | `depth_line()` walks `gate_from` directly (`.claude/backlog/next:659-666`); AC2's assertion is its runtime proof | PASS |
+| NFR Documentation | The two bounds — one forward pass in rank order, each row tested once; pool is takeable `develop` rows only — sit in one comment block immediately above `gate_from`, alongside the original transitive-closure hazard the fix had to replace | PASS |
+
+Probe on real data: `.claude/backlog/next --drive` against this repo's live queue reported
+`DEPTH     5 develop gate(s) takeable` — no runaway merge under the accumulated rule.

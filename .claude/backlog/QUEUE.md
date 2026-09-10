@@ -23,7 +23,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0136 | Stop two gates sharing a file through a row neither lead names | verify | in-progress |  |
 | 0140 | Decide whether a held item under a ready row is drift, and stop offering it twice | develop | ready |  |
 | 0131 | Dispatch no new develop gate while a started ticket is still awaiting verify | develop | ready | 0128 |
 | 0130 | Propose a sprint scope and dispatch nothing until a person confirms it | develop | ready | 0128 |
