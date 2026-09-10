@@ -25,7 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0142 | Let the driver see the drift classes that stop a human reader | develop | ready |  |
 | 0148 | Make the internal-name guard red rather than green when its own pattern will not compile | develop | ready |  |
-| 0131 | Dispatch no new develop gate while a started ticket is still awaiting verify | verify | ready | 0128 |
+| 0131 | Dispatch no new develop gate while a started ticket is still awaiting verify | verify | in-progress | 0128 |
 | 0129 | Rename orchestrate to sprint and leave the old command resolving | develop | blocked | 0128 |
 | 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | develop | blocked | 0128 |
 | 0133 | Close a sprint with a retro and a queue sweep only when the findings earn it | develop | blocked | 0128 |
