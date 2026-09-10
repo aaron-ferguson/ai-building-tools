@@ -139,3 +139,55 @@ tickets nobody chose, and it is a decision a person can only make if they are sh
   and rejected was tightening `gate_from` to exclude hub files. Rejected because the gate's job is
   conflict avoidance and it is doing that correctly: those thirteen rows genuinely collide. The
   defect is presenting a conflict group as a plan, which is a reporting problem, not a grouping one.
+
+- **2026-09-10 — built as `orchestrate`, not `sprint`, and the QA plan's file name is a
+  substitution.** Every FR here says "`sprint`"; no such skill exists — the rename is `0129`, still
+  `blocked`. The work landed in `skills/orchestrate/SKILL.md` and `tests/orchestrate.test.sh`, and
+  **the QA plan's `tests/sprint.test.sh` does not exist and will not until `0129` lands**. The next
+  QA pass reads the plan, not this note, which is why it is recorded here as well: the named checks
+  are in `tests/orchestrate.test.sh` (the prose contract) and `tests/next.test.sh` (the mechanical
+  half). Nothing was renamed in passing.
+- **2026-09-10 — AC2's numbers are the ticket's, and the live gate is now 41 rows, not 13.** With
+  `0142` leading, `./next --drive` returns 41 ids, of which **16 join through
+  `tests/citations.test.sh`** — a worse instance of exactly the defect this ticket describes, and
+  confirmation rather than staleness. AC2's guard is pinned to a purpose-built fixture for that
+  reason: a case written against either number would have been wrong within a day.
+- **2026-09-10 — the first working implementation reproduced the defect one level down, and that
+  changed the design.** Printing every file two or more rows share gave **34 `JOIN` lines over the
+  41-row gate**, of which the top one was the whole story. A person made to read 34 lines to find
+  the hub is exactly where the bare count left them. So the block is capped at the five files
+  explaining the largest shares (`PROPOSE_JOIN_CAP`) and **the remainder is counted, never dropped**
+  — a block that silently stops listing is a proposal whose numbers cannot be reconciled against the
+  gate it describes. A guard drives the cap and the tail count, and mutating the ranking to
+  first-seen reds it.
+- **2026-09-10 — the gate has two join mechanisms and a proposal explaining one mislabels the
+  other.** `gate_from` batches on a shared `parent:` as well as on a shared file. A row that joined
+  by slice and names no shared file would have appeared in the list with nothing to explain it —
+  which is the row a person is most likely to think was included by mistake. Hence the
+  `JOIN      parent NNNN` line.
+- **2026-09-10 — `WORK` is the first *paragraph*, never the first source line.** Taking the line
+  produced cuts mid-clause, because these sections are wrapped prose and a line break is a
+  typographic accident: the live backlog gave *"…is invisible to the only reader that is"*. Flattened
+  then truncated on a width `problem_line` chooses.
+- **2026-09-10 — FR6's estimate has no wall-clock prior today, and that is the case FR6 describes
+  rather than a gap in this build.** `0135` is `ready`, not done, so nothing sources an elapsed-time
+  figure; `MEASUREMENT.md` records none at all. The section therefore requires the time figure to be
+  **labelled as having no prior**, sources tokens and dollars from `MEASUREMENT.md` and
+  `config.yml`'s gate model, and quotes no figure of its own — a quoted figure is a cache of another
+  file, and `tests/money-in-skill-prose.test.sh` independently enforces that here.
+- **2026-09-10 — the section is unnumbered on purpose; do not "tidy" it into Step 2.** Renumbering
+  Steps 2-9 would re-aim every ordinal anchor (`testing-conventions.md`: an assertion anchored to an
+  ordinal is re-aimed rather than broken) and would require editing `skills/retro/SKILL.md`, which
+  cites `orchestrate` Step 8 and which this ticket does not own. The file already carries an
+  unnumbered section before Step 1, so this is the existing shape, not a new one. AC1's ordering
+  guard anchors to the dispatch's own `--session-id` line for the same reason.
+- **2026-09-10 — a correct skill reddened AC3, and the bug was in the matcher.** `how many tickets`
+  and `why these` both open bolded bullets, so they are capitalised, and `grep -F` is
+  case-sensitive. `testing-conventions.md` names this as the mirror of the absence-grep casing trap.
+  Fixed with a `says_ci` helper — **normalise in the matcher, never choose the prose to suit the
+  guard**.
+- **2026-09-10 — `git checkout --` deleted an uncommitted refactor mid-sweep, exactly as `develop`
+  Step 5 warns.** The main work was committed and then mutated safely; the loss came from making a
+  *further* uncommitted change (the `pb_` rename) and reverting a mutation over it. The restore is
+  silent and the suite stays green, so nothing signals it — `grep -c pb_` returning 0 is what found
+  it. The rule as written already covers this; it was not applied.
