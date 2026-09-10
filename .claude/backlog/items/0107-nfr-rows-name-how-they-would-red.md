@@ -107,3 +107,17 @@ check at queue time rather than a test per row — the same shape `0052` chose f
 - 2026-09-07 — Filed by `retro` from two `FINDINGS.md` entries, the second of which measured the
   first across all six of `0039`'s rows and turned "one carelessly-written row" into a pattern.
   `relates: 0052` because that ticket is the AC analogue and its test file is the likely home.
+
+- **2026-09-09 (retro, from `FINDINGS.md`)** — Measured again on `0075`, and this time the gap is in
+  `verify` rather than only in the template. `0075`'s Git NFR — read-only, "no automatic pull, merge
+  or rebase" — is **unguarded in both skills it was delivered in**, and the whole suite stays green
+  when it is broken: replacing `` `git fetch` then `git status -sb`, read-only `` with
+  `` `git fetch` then `git pull --rebase` `` in `skills/develop/SKILL.md`, and the equivalent line in
+  `skills/retro/SKILL.md`, left all 26 test files at 0 failed in both cases.
+  `tests/remote-anchor.test.sh` asserts `the pull is the user` on retro's *other* line, so the
+  sentence carrying the actual command is free to instruct a rebase while the paragraph beside it
+  still says the pull is the user's call. The ticket's four ACs were all met and none of them is this
+  one — an NFR row is a requirement no AC restates. **The addition to this ticket's scope**: nothing
+  in `verify` Step 4 asks whether a checked NFR is *guarded* as opposed to merely true today, so a
+  template requirement that a row name how it would red is only half the fix if the checking stage
+  never asks for it.

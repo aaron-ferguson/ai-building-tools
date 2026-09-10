@@ -181,3 +181,31 @@ ones already specified.
   acceptance criteria are left deliberately **unticked** so a withdrawal cannot be read as a pass.
   Both belong in the skill and in the script. This one reaches `close` as well as `queue`, so it
   may not be wholly this ticket's.
+
+- **2026-09-09 (retro, from `FINDINGS.md`)** — Three more missing operations, all found by one
+  capture session writing nine rows, and all in Steps 1-3 rather than in the Step 1 routing table.
+  Appended here rather than filed because a fourth row about *queue's missing steps* would split one
+  decision, and the park that found the first of them cited this ticket by number for exactly that
+  reason.
+  - **No step checks whether the work already exists before a ticket is written.** Step 2 says how to
+    write a ticket well and Step 5 says to check a *parked finding* is still true; nothing tells a
+    capture session to read the queue for overlap first. Three duplicates came within one step of
+    shipping: `0041` already specified the session review one row was about to re-file, and `0060`
+    and `0067` own design questions two other rows depended on, so two children would have shipped
+    unblocked against decisions that are explicitly still open. The check that caught it was the
+    ranking walk in Step 3, which reads `QUEUE.md` end to end — incidental to a different step, and
+    absent entirely when capturing a single ticket.
+  - **Step 3 ranks one row against a queue and says nothing about inserting a related cluster.** Nine
+    rows went in as a contiguous block and every part of that shape was invented: that the cluster
+    stays contiguous, that prerequisites lead it, that a blocked child keeps its place inside it
+    rather than sinking below its siblings. Applying the pairwise regret operator nine times would
+    have interleaved the cluster through the queue — defensible by the letter of the rule, and it
+    would have made the project unreadable as a unit. `0060` records the same gap from the other end
+    (no sweeper has a procedure for a buffer far past its threshold), which suggests the missing rule
+    is about **batch operations generally** rather than about ranking.
+  - **Step 1's re-specify row is wrong for half the tickets it covers.** It says a `next: queue`
+    ticket "already has a rank and keeps it", which holds only for one bounced back from a later
+    stage. A ticket parked at capture time by Step 5 — Problem section only, no FRs, deliberately
+    left out of `QUEUE.md` — has never been ranked at all, so re-specifying it needs Step 3's ranking
+    walk to run for the first time, not be skipped. Surfaced while specifying `0138`; any lightweight
+    capture front door produces exactly this never-ranked case on promotion.

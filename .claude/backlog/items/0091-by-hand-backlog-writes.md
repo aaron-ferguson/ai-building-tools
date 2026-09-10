@@ -151,3 +151,17 @@ Three separate failures of the same by-hand write, all of them silent.
   precisely the shape `0126` is settling, and drafting FR1 against today's Step 4 propagates the
   drifted copy into six files at once. This item's scope is unchanged: the omission in five park
   steps, not the drifted copy in the sixth.
+
+- **2026-09-09 (retro, from `FINDINGS.md`)** — A sixth park step, and it fails worse than the five
+  FR1 covers: **`design` Step 4 prescribes a by-hand backlog write that `CONCURRENCY.md` forbids and
+  `handoff` exists to replace.** Its item-scoped path says to set `next: develop` / `status: ready`
+  "and commit by pathspec in the same turn" — an edit to `QUEUE.md` and the item, unlocked and
+  untokened, which `.claude/backlog/handoff` refuses to perform that way for six documented reasons
+  (`handoff:37-41`). It also has **no correct answer for an unclaimed ticket**, because `handoff`
+  requires the token the item records and `design` never tells the session to mint one. A session
+  working `0140` resolved it by claiming first (`./claim 0140` → `e1ec`), writing, then handing off —
+  the shape `develop` uses — and `./claim` itself supplied the missing half by printing that
+  `touches:` is not seeded for a `design` stage and must be set to what the design pass will write.
+  Neither `touches:` nor the claim appears anywhere in `design`'s SKILL.md. This is a *write site*
+  and not only an omitted lock, so it may belong to `0048` rather than here; recorded on this ticket
+  because the session that claims it is the first to be in a position to say which.

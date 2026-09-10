@@ -113,3 +113,15 @@ Two more citations in the same two files that nothing checks resolve:
 - FR2 asserts **membership** — that the cited ticket exists — not that it is the *right* ticket.
   Asserting the latter would need the gate to know which ticket touched which file, which is
   git history, not a test.
+
+- **2026-09-09 (retro, from `FINDINGS.md`)** — A fourth citation nothing checks, and the only one
+  observed going stale in the wild: **the justification's own text**. `skill-size.test.sh` asserts a
+  justification *exists*, never that it still describes the file. `retro/SKILL.md` grew from 22,343
+  to 24,698 bytes under `0111` while its entry — keyed to `b9a5ee0` and naming Step 4's dispositions
+  and Step 1's two modes as the reason for the size — went stale without reddening: the block now
+  furthest over the goal is not mentioned in it. Same registry, same file, same shape as the three
+  citations above, and it needs no new ticket. The general rule landed in
+  `documentation-conventions.md` in this pass (*a rationale is a cached claim that ages with no
+  contradicting change*); the mechanical check is this ticket's to specify, and the honest version is
+  probably that a justification names sections and the gate asserts those sections are still the
+  large ones.

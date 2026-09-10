@@ -218,3 +218,17 @@ Cannot be written until the design question is settled. These hold regardless:
   because the note above already reserves this half for whoever claims this ticket ("Either FR2
   widens to both sweepers or that half needs its own row"), and a second row would split one
   decision across two.
+
+- **2026-09-09 (retro, from `FINDINGS.md`)** — The half this ticket reserves has now been hit from
+  the other sweeper, and the shape is narrower than "one half is done". **`queue` Step 5 has no
+  disposition for a swept entry whose work half an existing row already carries.** Step 5 offers
+  exactly two outcomes: specify and rank it, or write an unranked `next: queue` stub. A sweep found
+  an entry belonging wholly to this ticket — so a new row would have split one decision across two,
+  and a stub would have been a row `develop` must refuse — and the session invented the missing
+  disposition by borrowing `retro` Step 4's **absorbed**: name the row, append one dated line to its
+  *Notes & decisions*, remove the entry. That is the right answer and it is not written down for
+  `queue`. Note the asymmetry it exposes: both sweepers empty this file and only one of them can say
+  *this already has a home*, which is also why the marker rule beside Step 5 covers only the
+  work-and-lesson case and not this one. Whatever FR2 decides about counting should decide this
+  alongside it — a disposition only one sweeper has is the same defect as a gate only one sweeper
+  can satisfy.

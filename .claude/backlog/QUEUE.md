@@ -23,6 +23,8 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
+| 0143 | Redact the internal organisation name from this public repo and guard the rule forbidding it | develop | ready |  |
+| 0142 | Let the driver see the drift classes that stop a human reader | develop | ready |  |
 | 0131 | Dispatch no new develop gate while a started ticket is still awaiting verify | develop | ready | 0128 |
 | 0130 | Propose a sprint scope and dispatch nothing until a person confirms it | develop | ready | 0128 |
 | 0129 | Rename orchestrate to sprint and leave the old command resolving | develop | blocked | 0128 |
@@ -36,7 +38,11 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0041 | Write release notes for what a work session delivered | design | ready | 0128 |
 | 0052 | Require an acceptance criterion to name the input that would make it red | verify | ready |  |
 | 0107 | Require an NFR row to name how it would red | develop | ready |  |
+| 0144 | Anchor the scope report's commit range to the claim commit for this ticket | develop | ready |  |
+| 0147 | Make claim name the declared paths that do not exist instead of reserving them | develop | ready |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
+| 0145 | Decide what an empty touches means to the scope report | design | ready |  |
+| 0146 | Decide when a required duplication earns a drift guard | design | ready |  |
 | 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | design | ready |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
 | 0046 | Make the README guard list provably complete | develop | ready |  |
