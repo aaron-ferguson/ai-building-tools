@@ -86,7 +86,7 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--completed
                      stages: queue | design | develop | verify
   ./next --waiting   every waiting row with the question it is waiting on
   ./next --drift     every row that disagrees with its blocked_by or with its own item —
-                     stage, status, an in-progress row nobody holds, a missing item file;
+                     stage, status, a claim the row does not match either way, a missing item file;
                      one line per row, exits 1 if any
   ./next --findings  how many entries FINDINGS.md holds, and the threshold a driver gates on
   ./next --drive     what should happen next, for a driver rather than a human: one decision line,
@@ -96,8 +96,11 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--completed
                      crash-recovery re-dispatch from a loop. Give it at most once.
   ./next --help      this
 
-Takeable means three things: `next` matches the stage, no `blocked_by` entry is still open, and
-no file the row `expects:` is already held by an in-progress row's `touches:`. `blocked` is
+Takeable means four things: `next` matches the stage, no `blocked_by` entry is still open, the
+item carries no claim, and no file the row `expects:` is already held by a held row's `touches:`.
+Ownership is the item's `claimed_by:` and the Status column is a cache of it, so a row reading
+`ready` over a held ticket is skipped and reported — references/CONCURRENCY.md, *A stage writes
+only the ticket it holds*, is where that is settled. `blocked` is
 DERIVED from `blocked_by`, so the column is a cache of that answer and never the authority — a
 row is offered on the graph's answer whatever the column says, and the disagreement is reported.
 
@@ -322,6 +325,24 @@ derived_of() {
   if [ -n "$(open_blockers_of "$1")" ]; then printf 'blocked'; else printf 'ready'; fi
 }
 
+# Who holds a ticket. `references/CONCURRENCY.md`, *A stage writes only the ticket it holds*, owns
+# the definition and it is not restated here; this is the one implementation of it, and every
+# ownership question in this script routes through it — the take loop, the `--drive` walk, the
+# CLAIMED FILES block, the collision report and `--drift`'s two ownership classes.
+#
+# Ownership is a property of the ITEM, so the Status column is a cache of it exactly as it is a
+# cache of `blocked`, and `--drift` reports the cache lines that have gone stale in both directions.
+#
+# Prints the token and returns 0 when held; prints nothing and returns 1 when not. The `hb_`
+# prefixes matter: sh has no locals, and two of the callers below loop over `it` and `tok`.
+held_by() {
+  hb_it="$(item_for "$1")"
+  [ -n "$hb_it" ] || return 1
+  hb_tok="$(fm "$hb_it" claimed_by)"
+  [ -n "$hb_tok" ] || return 1
+  printf '%s' "$hb_tok"
+}
+
 # The first line of an item's `## Waiting on` section — the question, without opening the ticket.
 waiting_on() {
   [ -n "$1" ] || return 0
@@ -402,21 +423,25 @@ declared_scope() {
 
 # Files another session holds. This is the check that stops two windows in one file, and it is why
 # the script reads item frontmatter rather than only the table: `touches:` is a claim on files.
+# The set is every HELD row, in rank order — not every row the column calls `in-progress` (0140).
+# A row reading `ready` over a held item was omitted from this block entirely, which is the one
+# place a reader could have seen the claim; a row reading `in-progress` over a tokenless item was
+# listed as `[no token]`, which reads as a claim where `--drift` calls it drift.
 show_claimed() {
-  busy="$(rows | awk -F'|' -v s="$STATUS" '{ v = $s; gsub(/^ +| +$/, "", v); if (v == "in-progress") print }')"
-  [ -n "$busy" ] || return 0
-  printf 'CLAIMED FILES — another session owns these; take a row that avoids them:\n'
-  printf '%s\n' "$busy" | while IFS= read -r row; do
-    id="$(field "$row" "$ID")"
-    it="$(item_for "$id")"
-    tok="$(fm "$it" claimed_by)"
+  busy=""
+  for cid in $(all_ids); do
+    ctok="$(held_by "$cid")" || continue
     # An empty `touches:` here is ambiguous — not yet declared, or released as the row closes — and
     # nothing can tell them apart, so `declared_scope` says so rather than implying the row is free.
-    printf '  %s [%s] %s\n' "$id" "${tok:-no token}" "$(declared_scope "$it")"
+    busy="$busy  $cid [$ctok] $(declared_scope "$(item_for "$cid")")
+"
   done
+  [ -n "$busy" ] || return 0
+  printf 'CLAIMED FILES — another session owns these; take a row that avoids them:\n'
+  printf '%s' "$busy"
 }
 
-# Which in-progress rows hold a file this candidate's `expects:` names, and which files those are.
+# Which held rows hold a file this candidate's `expects:` names, and which files those are.
 # One line per colliding row, already worded for the report: a collision stated without its path is
 # a verdict the reader cannot check, and without its holder there is nobody to ask (0045 FR3).
 #
@@ -432,14 +457,12 @@ show_claimed() {
 #
 # $1 the candidate's id, $2 its `expects:` list.
 collision_report() {
-  rows | awk -F'|' -v s="$STATUS" '{ v = $s; gsub(/^ +| +$/, "", v); if (v == "in-progress") print }' \
-  | while IFS= read -r hrow; do
-      hid="$(field "$hrow" "$ID")"
-      hit="$(item_for "$hid")"
-      shared="$(paths_shared "$2" "$(fm_list "$hit" touches)")"
-      [ -n "$shared" ] || continue
-      printf 'COLLIDES  %s | %s — held by %s [%s]\n' "$1" "${shared% }" "$hid" "$(fm "$hit" claimed_by)"
-    done
+  for hid in $(all_ids); do
+    htok="$(held_by "$hid")" || continue
+    shared="$(paths_shared "$2" "$(fm_list "$(item_for "$hid")" touches)")"
+    [ -n "$shared" ] || continue
+    printf 'COLLIDES  %s | %s — held by %s [%s]\n' "$1" "${shared% }" "$hid" "$htok"
+  done
 }
 
 # --- --waiting --------------------------------------------------------------------------------
@@ -478,10 +501,14 @@ fi
 #   2. the Status column against `blocked_by`, in both directions — the cache 0024 built this for
 #   3. the Next column against the item's `next:`                — a half-applied hand-off
 #   4. the Status column against the item's `status:`            — the other half of the same
-#   5. a row at `in-progress` over an empty `claimed_by:`        — drift, not ownership, per
-#      CONCURRENCY.md's *A stage writes only the ticket it holds*; distinct from 4 because 0029
-#      settled *held* as a non-empty `claimed_by:` and nothing else, so both records can read
-#      `in-progress` with nobody holding the ticket
+#   5. a row at `in-progress` over an unheld item                — drift, not ownership, per
+#      CONCURRENCY.md's *A stage writes only the ticket it holds*, which owns the definition of
+#      *held*; distinct from 4 because both records can read `in-progress` with nobody holding the
+#      ticket
+#   6. a row NOT at `in-progress` over a HELD item                — the mirror of 5, and the
+#      direction that loses work rather than time: the row reads takeable while somebody is
+#      building it (0140). Reported last of the six so a row disagreeing on `status:` as well is
+#      one line, class 4's, rather than two
 #
 # One line per row, the classes in that order: a second line about the same row is noise, and the
 # stale `blocked` cache is the more actionable reading whenever it and 4 both fire. It exits
@@ -517,8 +544,12 @@ if [ "${1:-}" = "--drift" ]; then
       printf 'DRIFT     %s | row Status %s, item status: %s — the row and its item disagree about the status\n' \
         "$id" "$written" "$(fm "$item" status)"
       drifted=1
-    elif [ "$written" = "in-progress" ] && [ -z "$(fm "$item" claimed_by)" ]; then
+    elif [ "$written" = "in-progress" ] && ! held_by "$id" >/dev/null; then
       printf 'DRIFT     %s | row Status in-progress, item claimed_by: empty — nobody holds it\n' "$id"
+      drifted=1
+    elif [ "$written" != "in-progress" ] && dtok="$(held_by "$id")"; then
+      printf 'DRIFT     %s | row Status %s, item claimed_by: %s — held, and the row does not say so\n' \
+        "$id" "$written" "$dtok"
       drifted=1
     fi
   done
@@ -579,6 +610,7 @@ if [ "${1:-}" = "--drive" ]; then
       trow="$(row_for "$tid")"
       if [ "$(field "$trow" "$NEXT")" != "develop" ]; then continue; fi
       case "$(field "$trow" "$STATUS")" in in-progress|waiting) continue ;; esac
+      if held_by "$tid" >/dev/null; then continue; fi
       if [ -n "$(open_blockers_of "$tid")" ]; then continue; fi
       printf '%s ' "$tid"
     done
@@ -644,6 +676,7 @@ if [ "${1:-}" = "--drive" ]; then
       sstatus="$(field "$srow" "$STATUS")"
       if [ "$sstatus" = "in-progress" ]; then continue; fi
       if [ -n "$(open_blockers_of "$sid")" ]; then continue; fi
+      if held_by "$sid" >/dev/null; then continue; fi
       if [ "$sstatus" = "waiting" ]; then printf '%s (waiting on a person)' "$sid"; return 0; fi
       case "$snext" in
         design|queue)   printf '%s (next: %s — a person decides)' "$sid" "$snext"; return 0 ;;
@@ -764,6 +797,13 @@ if [ "${1:-}" = "--drive" ]; then
       printf 'NOTE      %s is blocked by %s— stepping over it\n' "$id" "$rblockers"
       continue
     fi
+    # The column said `ready` and the item says otherwise. Unfixed, a driver dispatches an
+    # unattended second session onto a ticket somebody is building — the worse instance of 0140,
+    # because nobody reads the line it would have printed.
+    if rhold="$(held_by "$id")"; then
+      printf 'NOTE      %s is held by %s — another session holds it; stepping over it\n' "$id" "$rhold"
+      continue
+    fi
     if [ "$rstatus" = "waiting" ]; then
       decide "$ESCALATE" "ESCALATE  $id is waiting on a person and outranks everything below it
           $(waiting_on "$(item_for "$id")")"
@@ -803,8 +843,9 @@ if [ -n "${1:-}" ]; then
     # `ready` and `blocked` are both candidates, because `blocked` is derived and the column only
     # caches it. Trusting the cache is the asymmetric half of the defect: a stale `blocked` hides
     # takeable work and no reader ever notices, where a stale `ready` is caught one line below.
-    # `waiting` and `in-progress` are NOT derived — a person and a claim clear those — so they
-    # stay authoritative and a row at either is skipped here as before.
+    # `waiting` and `in-progress` are the two a person and a stage write directly, so a row at
+    # either is skipped here as before. Neither is the ownership test: that is the item's, checked
+    # below, and a row can read `ready` over a ticket somebody holds (0140).
     case "$written" in
       ready|blocked) : ;;
       *) continue ;;
@@ -812,6 +853,16 @@ if [ -n "${1:-}" ]; then
     ob="$(open_blockers_of "$id")"
     if [ -n "$ob" ]; then
       printf 'SKIP      %s | blocked_by still open: %s\n' "$id" "$ob"
+      continue
+    fi
+    # After the blocker check and before the stale-`blocked` line, so a held row is one line and
+    # the open blocker keeps precedence — a row that is both is not takeable for either reason, and
+    # the blocker is the one that outlives the claim. CONTINUE for the same reason the collision
+    # branch carries: a session correctly warned and still with nothing to do is the same outcome
+    # by a slower route.
+    if hold="$(held_by "$id")"; then
+      printf 'SKIP      %s | held by %s — the item carries a claim (references/CONCURRENCY.md,\n' "$id" "$hold"
+      printf '                   *A stage writes only the ticket it holds*); the Status column is a cache of it\n'
       continue
     fi
     if [ "$written" = "blocked" ]; then

@@ -1444,6 +1444,144 @@ assert_rc "exits 0" "$rc" 0
 assert_contains     "says there is no drift" "$out" 'no drift'
 assert_not_contains "names no row"           "$out" 'DRIFT'
 
+# ==============================================================================================
+# 0140 — a held item under a ready row
+#
+# The defect: takeability was read off the Status column, and ownership lives in the item's
+# `claimed_by:` (references/CONCURRENCY.md, *A stage writes only the ticket it holds*). So a row
+# written `ready` over a held item was offered to a second session, `--drift` called it no drift,
+# and `--drive` would dispatch an unattended session onto it. Driven on exactly that shape.
+
+# An item carrying a live claim alongside its own status and blocked_by. No existing helper writes
+# this pair: `add_item_scope` hardwires `blocked_by: []` and `add_item_lists` hardwires the token.
+#
+# $1 id, $2 status, $3 blocked_by inline, $4 claimed_by written verbatim, $5 one expects path
+add_item_held() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: develop
+status: $2
+qa_level: unit
+size: s
+parent:
+blocked_by: $3
+expects:
+  - $5
+claimed_by: $4
+claimed_at: 2026-09-09T00:00:00Z
+touches:
+---
+
+## Problem
+ITEM
+}
+
+echo "0140 AC1/AC2 — a ready row over a held item is skipped, naming the id and the token"
+scaffold
+add_row 0001 'Ready by the column, held by the item' develop ready 0000
+add_item_held 0001 ready '[]' '"tok9"' some/file.md
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc           "exits 0"                       "$rc" 0 "$out"
+assert_not_contains "does not offer the held row"   "$out" 'TAKE      0001'
+skip="$(printf '%s\n' "$out" | grep '^SKIP      0001 ' || true)"
+assert_contains     "names the id on a skip line"   "$skip" '0001'
+assert_contains     "and names the token holding it" "$skip" 'tok9'
+
+echo "0140 AC3 — a held row ranked above a clear one does not stop the walk"
+scaffold
+add_row 0001 'Held, and topmost' develop ready 0000
+add_row 0002 'Clear, and below it' develop ready 0000
+add_item_held 0001 ready '[]' '"tok9"' held/file.md
+add_item_scope 0002 develop ready free/file.md '' ''
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc       "exits 0"                      "$rc" 0 "$out"
+assert_contains "skips the held row"           "$out" 'SKIP      0001'
+assert_contains "and still offers the clear one" "$out" 'TAKE      0002'
+
+echo "0140 AC4 — a row both held and blocked reports once, the open blocker"
+scaffold
+add_row 0001 'Held and blocked' develop ready 0000
+add_item_held 0001 ready '["0002"]' '"tok9"' held/file.md
+add_item 0002 ready '[]'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc       "exits 0"                        "$rc" 0 "$out"
+assert_contains "reports the open blocker"       "$out" 'blocked_by still open'
+assert_eq       "and reports the row exactly once" "$(lines_naming "$out" '^SKIP      0001 ')" 1
+
+echo "0140 AC5/AC6 — --drift names a ready row over a held item, once, and exits 1"
+scaffold
+add_row 0001 'Ready by the column, held by the item' develop ready 0000
+add_item_held 0001 ready '[]' '"tok9"' some/file.md
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc       "exits 1"                         "$rc" 1 "$out"
+assert_contains "names the id"                    "$out" '0001'
+assert_contains "and the token holding it"        "$out" 'tok9'
+assert_eq       "one DRIFT line for the row"      "$(lines_naming "$out" '^DRIFT     0001 ')" 1
+
+echo "0140 AC6 — a held row that also disagrees on status: still reports once"
+scaffold
+add_row 0001 'Ready by the column, in-progress by the item' develop ready 0000
+add_item_held 0001 in-progress '[]' '"tok9"' some/file.md
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc "exits 1"                          "$rc" 1 "$out"
+assert_eq "one DRIFT line for the row"       "$(lines_naming "$out" '^DRIFT     0001 ')" 1
+
+echo "0140 AC7 — --drive neither dispatches nor counts a held row"
+scaffold
+add_row 0001 'Held, and the top develop row' develop ready 0000
+add_item_held 0001 ready '[]' '"tok9"' some/file.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 3, run complete"      "$rc" 3 "$out"
+assert_not_contains "dispatches nothing"         "$out" 'DISPATCH  develop'
+assert_contains     "counts no takeable gate"    "$out" 'DEPTH     0 develop gate(s)'
+
+echo "0140 AC8 — a held row appears in CLAIMED FILES whatever its Status column says"
+scaffold
+add_row 0001 'Held under a ready column' develop ready 0000
+add_item_held 0001 ready '[]' '"tok9"' some/file.md
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_contains "lists the row with its token" "$(claimed_line "$out" 0001)" '[tok9]'
+
+echo "0140 AC9 — a tokenless in-progress row is not read as a claim"
+scaffold
+add_row 0001 'A clear candidate' develop ready 0000
+add_row 0002 'in-progress with nobody holding it' develop in-progress 0000
+add_item_scope 0001 develop ready       shared/file.md '' ''
+add_item_scope 0002 develop in-progress other/file.md "$(printf '\n  - shared/file.md')" ''
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc           "exits 0"                          "$rc" 0 "$out"
+assert_contains     "the candidate is offered"         "$out" 'TAKE      0001'
+assert_not_contains "no collision against a non-claim" "$out" 'COLLIDES  0001'
+assert_eq           "and no CLAIMED FILES line for it" "$(claimed_line "$out" 0002)" ''
+
+# `grep -q` reduced to a word rather than asserted on a count: a count assertion reads as exact and
+# is satisfied by any number sharing a digit under `assert_contains`, and `assert_eq` against 1 goes
+# false the day a second legitimate mention lands. Membership, not cardinality
+# (`testing-conventions.md`).
+cited() { grep -q "$2" "$1" && echo cited || echo missing; }
+
+echo "0140 AC10 — the held definition lives in CONCURRENCY.md, and next cites it"
+conc="$ROOT/references/CONCURRENCY.md"
+assert_eq "CONCURRENCY.md owns the definition" \
+  "$(cited "$conc" 'the one place \*held\* is defined')" cited
+assert_eq "and says no reader offers a held row" \
+  "$(cited "$conc" 'No reader offers a held row')" cited
+for copy in "$ROOT/skills/queue/templates/next" "$ROOT/.claude/backlog/next"; do
+  assert_eq "$copy restates no definition"      "$(grep -c 'non-empty' "$copy" || true)" 0
+  assert_eq "$copy cites the section instead" \
+    "$(cited "$copy" 'A stage writes only the ticket it holds')" cited
+done
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
