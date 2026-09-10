@@ -65,3 +65,15 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   substitution", i.e. naming the two options and not the one that was available. The recurring
   shape: an environment constraint stated as a construction constraint (pointer:
   `skills/verify/SKILL.md` Step 3, `skills/develop/SKILL.md` Step 5, item 0143 AC3).
+
+- **2026-09-10 — `./claim <id>` makes no file-scope check, so an explicitly named ticket is claimed
+  straight through a full collision.** `develop` Step 1 says to compare a candidate's `expects:`
+  against every in-progress `touches:` before claiming, and the only thing that prints that
+  comparison is `./next <stage>` — which reports it for the row *it* offers, not for the id you
+  asked for. Invoked as `/develop 0130`, `./next develop` printed `CLAIMED FILES … 0131 [78c7]`
+  about its own candidate `0142`, and `./claim 0130` then granted a row whose four `expects:` paths
+  are the same four `0131` holds, with no warning of any kind. The claim was released a minute
+  later, unused. Either `claim` owes the check for the id it is given, or `./next <stage> <id>`
+  owes it for the id it is asked about — today neither does, and the session that follows the skill
+  literally is the one that collides (pointer: `.claude/backlog/claim`,
+  `skills/queue/templates/next`, `skills/develop/SKILL.md` Step 1).
