@@ -3,7 +3,7 @@ id: "0130"
 title: Propose a sprint scope and dispatch nothing until a person confirms it
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: l
@@ -17,9 +17,13 @@ expects:
   - tests/orchestrate.test.sh
   - .claude/backlog/next
   - skills/queue/templates/next
-claimed_by:
-claimed_at:
+claimed_by: "93c8"
+claimed_at: 2026-09-10T04:43:17Z
 touches:
+  - skills/orchestrate/SKILL.md
+  - tests/orchestrate.test.sh
+  - .claude/backlog/next
+  - skills/queue/templates/next
 ---
 
 ## Problem
