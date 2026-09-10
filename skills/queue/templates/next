@@ -79,7 +79,7 @@ count_findings() {
 
 usage() {
   cat <<'USAGE'
-usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--completed <stage>[:<id>]] | --help]
+usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] [--completed <stage>[:<id>]] | --help]
 
   ./next             counts by stage and by status, plus anything another session holds
   ./next <stage>     the first takeable row for that stage, and its size
@@ -94,6 +94,10 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--completed
                      --completed <stage>[:<id>] says which stage just finished on which ticket.
                      That input is what tells a verify bounce from a fresh develop row, and a
                      crash-recovery re-dispatch from a loop. Give it at most once.
+                     --propose describes the dispatch a person is being asked to approve — how many
+                     tickets, which, a line of work each, and what holds the gate together — and is
+                     for the ONE call a run makes before its first stage. Opt-in because every later
+                     cycle would re-send the same block into the driver's context for nothing.
   ./next --help      this
 
 Takeable means four things: `next` matches the stage, no `blocked_by` entry is still open, the
@@ -364,6 +368,33 @@ design_question() {
   ' "$1"
 }
 
+# The first line of an item's `## Problem` section, which is what a proposal shows a person as the
+# work (0130 FR4: drawn from the ticket rather than invented). Emphasis is stripped because these
+# lines are almost always written `**bolded like this**, and then continued`, and the asterisks are
+# markup for a file nobody is reading here. Truncated, because one ticket's opening sentence is not
+# allowed to set the width of a forty-row proposal.
+problem_line() {
+  [ -n "$1" ] || return 0
+  awk '
+    /^## Problem/ { inside = 1; next }
+    inside && /^## / { exit }
+    # The first PARAGRAPH, flattened — never the first source line. These sections are wrapped
+    # prose, so a line is a typographic accident: the live backlog produced "…is invisible to the
+    # only reader that is", cut mid-clause at the wrap. Flatten, then truncate on a width this
+    # function chooses.
+    inside && NF { para = (para == "" ? $0 : para " " $0); next }
+    inside && para != "" { exit }
+    END {
+      gsub(/\*\*/, "", para)
+      gsub(/[ \t]+/, " ", para)
+      sub(/^ /, "", para); sub(/ $/, "", para)
+      if (para == "") exit
+      if (length(para) > 140) para = substr(para, 1, 139) "…"
+      print para
+    }
+  ' "$1"
+}
+
 # --- shared tails -----------------------------------------------------------------------------
 # Is $1 one of the space-separated words in $2? The padding is what makes it exact — without it
 # `docs/a` matches `docs/ab`. Ids and the paths in `expects:` carry no whitespace, which is what
@@ -589,8 +620,10 @@ if [ "${1:-}" = "--drive" ]; then
   read_threshold || exit 1
   shift
   COMPLETED=""
+  PROPOSE=0
   while [ $# -gt 0 ]; do
     case "$1" in
+      --propose) PROPOSE=1; shift ;;
       --completed)
         shift
         [ $# -gt 0 ] || { echo "--completed needs <stage>[:<id>]" >&2; usage >&2; exit 2; }
@@ -700,10 +733,107 @@ if [ "${1:-}" = "--drive" ]; then
     printf 'DEPTH     %s develop gate(s) takeable; runs dry at %s\n' "$gates" "$(depth_stopper)"
   }
 
+  # What `--propose` describes, set at each dispatch site and read by `decide`. Two variables
+  # rather than an argument to `decide`, because every non-dispatch decision would otherwise have
+  # to pass two empty strings past a reader who never wants them.
+  PROPOSE_STAGE=""
+  PROPOSE_IDS=""
+
+  # The gate, made legible before a person approves it (0130). Printed between the depth line and
+  # the decision, so a reader meets the shape of the run and then the instruction.
+  #
+  # WHAT THIS IS FOR, in one sentence, because the block reads like a report and is not one: a gate
+  # is a CONFLICT unit, and presenting a conflict unit as a plan is how a person approves thirteen
+  # tickets meaning to approve four. The JOIN lines are the whole point — a count alone reads as a
+  # large sprint, where "ten of these are here because they all edit one file" reads as the grouping
+  # artefact it is, and only the second is something a person can act on.
+  #
+  # A file NAMED BY ONE ROW IS NOT PRINTED. It explains no grouping, and a one-row coincidence
+  # listed beside a real hub invites reading it as a theme.
+  #
+  # How many shared files are listed before the rest are counted in one line. Five because the
+  # question a person is answering is "is this one effort or several", and the files explaining the
+  # largest shares are what answer it; the long tail of pairs is what buried the answer on the live
+  # backlog. A figure, not a judgement call, so the block's length is bounded by the gate's shape
+  # and never by how verbose its tickets are.
+  PROPOSE_JOIN_CAP=5
+
+  propose_block() {
+    [ "$PROPOSE" = 1 ] || return 0
+    [ -n "$PROPOSE_STAGE" ] || return 0
+
+    pn=0
+    for p in $PROPOSE_IDS; do pn=$((pn + 1)); done
+
+    # `retro` is dispatched by the findings gate and holds no row. It is still a stage session, so
+    # it is still something a person is being asked to approve — a stage that silently skipped the
+    # proposal would be the one hole in "no stage runs unconfirmed".
+    if [ "$pn" = 0 ]; then
+      printf 'PROPOSE   %s | no ticket of its own — the findings buffer is the subject\n' "$PROPOSE_STAGE"
+      return 0
+    fi
+
+    printf 'PROPOSE   %s | %s ticket(s)\n' "$PROPOSE_STAGE" "$pn"
+    for p in $PROPOSE_IDS; do
+      pit="$(item_for "$p")"
+      printf 'TICKET    %s | size %s | %s\n' "$p" "$(fm "$pit" size)" "$(field "$(row_for "$p")" "$TITLE")"
+      pwork="$(problem_line "$pit")"
+      [ -z "$pwork" ] || printf 'WORK      %s\n' "$pwork"
+    done
+
+    # One `fm_list` per ticket rather than one per (ticket, path) pair: the counting is awk's, so a
+    # forty-row gate naming a hundred and sixty paths stays forty reads rather than six thousand.
+    # A row naming the same path twice counts once — `expects:` is a set, and a duplicated entry
+    # would otherwise inflate the very number a person is being asked to judge.
+    for p in $PROPOSE_IDS; do
+      for pa in $(fm_list "$(item_for "$p")" expects); do printf '%s %s\n' "$pa" "$p"; done
+    done | awk -v n="$pn" -v cap="$PROPOSE_JOIN_CAP" '
+      !($1 SUBSEP $2 in pair) {
+        pair[$1 SUBSEP $2] = 1
+        if (!($1 in count)) { path[++k] = $1 }
+        count[$1]++
+      }
+      END {
+        # Ranked by how much of the gate each file explains, so the hub a person needs to see is
+        # the first line rather than wherever the lead happened to name it. Selection sort: k is
+        # the number of distinct paths in one gate, and a sort utility is a process.
+        for (i = 1; i <= k; i++) {
+          top = i
+          for (j = i + 1; j <= k; j++) if (count[path[j]] > count[path[top]]) top = j
+          swap = path[i]; path[i] = path[top]; path[top] = swap
+        }
+        # Capped, and the tail COUNTED rather than dropped. 34 join lines over a 41-row gate is the
+        # unreadable thing FR5 removes, arriving one level down — and a block that silently stops
+        # listing is a proposal whose numbers cannot be reconciled against the gate it describes.
+        for (i = 1; i <= k; i++) {
+          if (count[path[i]] < 2) continue
+          shared++
+          if (shared <= cap)
+            printf "JOIN      %s | %d of %d rows join through this file\n", path[i], count[path[i]], n
+        }
+        if (shared > cap)
+          printf "JOIN      %d further file(s) shared by 2 or more rows, not listed\n", shared - cap
+      }
+    '
+
+    # The gate's OTHER join mechanism. `gate_from` batches on a shared `parent:` as well as on a
+    # shared file, so a proposal explaining only the files mislabels a row that joined by slice as
+    # unexplained — and that row is the one a person is most likely to think was included by mistake.
+    for p in $PROPOSE_IDS; do fm "$(item_for "$p")" parent; done | awk -v n="$pn" '
+      NF { if (!($0 in count)) { par[++k] = $0 } ; count[$0]++ }
+      END {
+        for (i = 1; i <= k; i++)
+          if (count[par[i]] >= 2)
+            printf "JOIN      parent %s | %d of %d rows share this parent slice\n", par[i], count[par[i]], n
+      }
+    '
+  }
+
   # $1 the exit code, $2 the decision. The depth line goes out with every decision, never on its own
   # invocation — that second read is the cost FR17 exists to avoid.
   decide() {
     depth_line
+    propose_block
     printf '%s\n' "$2"
     exit "$1"
   }
@@ -720,6 +850,7 @@ if [ "${1:-}" = "--drive" ]; then
       decide "$ESCALATE" "ESCALATE  FINDINGS.md carries an entry shape the count does not recognise, so the gate cannot be trusted — and a gate reading a low number fires late and silently"
     fi
     if [ "$gcount" -ge "$THRESHOLD" ]; then
+      PROPOSE_STAGE="retro"; PROPOSE_IDS=""
       decide "$FINDINGS_GATE" "DISPATCH  retro — FINDINGS.md holds $gcount entries against a threshold of $THRESHOLD"
     fi
   }
@@ -772,6 +903,7 @@ if [ "${1:-}" = "--drive" ]; then
         elif [ "$lnext" = "$lstage" ]; then
           decide "$ESCALATE" "ESCALATE  $lid is still at next: $lstage after a completed $lstage — same ticket, same stage, with an outcome in between"
         elif [ "$lstage" = "develop" ] && [ "$lnext" = "verify" ] && [ "$lstatus" = "ready" ]; then
+          PROPOSE_STAGE="verify"; PROPOSE_IDS="$lid"
           decide "$DISPATCH" "DISPATCH  verify $lid"
         else
           decide "$ESCALATE" "ESCALATE  $lid is at next: $lnext / $lstatus after $lstage, which no routing rule covers"
@@ -815,9 +947,11 @@ if [ "${1:-}" = "--drive" ]; then
       queue)
         decide "$ESCALATE" "ESCALATE  $id is at next: queue — it has no acceptance criteria to build against, and specifying it is a person's call" ;;
       verify)
+        PROPOSE_STAGE="verify"; PROPOSE_IDS="$id"
         decide "$DISPATCH" "DISPATCH  verify $id" ;;
       develop)
         gate="$(gate_from "$id" "$(takeable_develop)")"
+        PROPOSE_STAGE="develop"; PROPOSE_IDS="$gate"
         findings_gate
         decide "$DISPATCH" "DISPATCH  develop $gate" ;;
       *)

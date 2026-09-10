@@ -1582,6 +1582,193 @@ for copy in "$ROOT/skills/queue/templates/next" "$ROOT/.claude/backlog/next"; do
     "$(cited "$copy" 'A stage writes only the ticket it holds')" cited
 done
 
+# --- 0130 — --drive --propose, the gate made legible before a person approves it ----------------
+#
+# WHY THESE ARE NOT PROSE CASES. Every other requirement of 0130 is an instruction to a supervisor
+# and can only be greped for (tests/orchestrate.test.sh carries those). AC2 is the exception: it
+# says the proposal NAMES the file a gate is held together by and the COUNT of rows joining through
+# it, and that is an arithmetic answer about a real backlog. So it is asserted here, against the
+# real script.
+#
+# AGAINST A FIXTURE, NEVER THE LIVE QUEUE, and the ticket says why in as many words: a guard reading
+# the real QUEUE.md changes meaning every time a ticket closes. The live gate that motivated 0130
+# was thirteen rows on 2026-09-09 and is forty-one today, so a case pinned to either number would
+# have been wrong within a day of being written.
+#
+# The fixture is the SHAPE of that defect rather than a copy of it (testing-conventions.md, the
+# fixture rule): one hub file that most of the gate joins through, one pair joining through a
+# different file, and one row joining by `parent:` and naming no shared file at all — because the
+# gate has two join mechanisms and a proposal that explains only the file one mislabels the other.
+
+# $1 id, $2 the Problem body line. The fixture helpers above end every item at a bare `## Problem`
+# heading, and the WORK line is drawn from the first non-empty line UNDER it.
+add_problem() {
+  printf '\n%s\n' "$2" >> "$FIX/.claude/backlog/items/$1-fixture.md"
+}
+
+# A gate of five: 0101 leads, 0102 and 0103 join through hub/shared.md, 0104 joins 0103 through
+# edge/other.md (so it is in the gate without naming the hub), and 0105 joins by parent alone.
+# 0109 is outside the gate entirely and must not be counted in any denominator.
+propose_fixture() {
+  scaffold
+  add_row 0101 'Lead of the gate'      develop ready 0091
+  add_row 0102 'Joins through the hub' develop ready ''
+  add_row 0103 'Also the hub, plus an edge' develop ready ''
+  add_row 0104 'Joins the edge only'   develop ready ''
+  add_row 0105 'Joins by parent only'  develop ready 0091
+  add_row 0109 'Nothing to do with any of it' develop ready ''
+  add_ticket_expects 0101 develop ready '[]' 0091 '
+  - hub/shared.md'
+  add_ticket_expects 0102 develop ready '[]' ''     '
+  - hub/shared.md'
+  add_ticket_expects 0103 develop ready '[]' ''     '
+  - hub/shared.md
+  - edge/other.md'
+  add_ticket_expects 0104 develop ready '[]' ''     '
+  - edge/other.md'
+  add_ticket_expects 0105 develop ready '[]' 0091   '
+  - unrelated/own.md'
+  add_ticket_expects 0109 develop ready '[]' ''     '
+  - far/away.md'
+  # Written across two source lines, because these sections are wrapped prose and `grep` is
+  # line-based: a WORK line taken from the first SOURCE LINE cuts mid-sentence, which is what the
+  # live backlog produced ("...is invisible to the only reader that is").
+  add_problem 0101 '**The lead ticket problem statement**, whose first
+paragraph is what WORK carries.'
+  add_problem 0102 'A second ticket, with a plain first line.'
+}
+
+echo "0130 AC2 — the proposal names the file a gate is held together by, and how many rows join through it"
+propose_fixture
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_rc       "exits 0 — still a dispatch decision"   "$rc" 0
+assert_contains "still prints the decision line"        "$out" 'DISPATCH  develop 0101 0102 0103 0104 0105'
+# The count is the CLAIM, so it is asserted as one string with the path. `3 of 5` alone would be
+# satisfied by any line carrying those digits, and the path alone says nothing about how much of the
+# gate it explains — which is the whole difference between a theme and a grouping artefact.
+assert_contains "names the hub file and its share of the gate" "$out" 'JOIN      hub/shared.md | 3 of 5 rows'
+assert_contains "names the lesser shared file too"             "$out" 'JOIN      edge/other.md | 2 of 5 rows'
+assert_contains "names the parent join as a join"              "$out" 'JOIN      parent 0091 | 2 of 5 rows'
+# The denominator is the GATE, not the queue. 0109 is takeable and develop and shares nothing, so a
+# proposal counting it has counted the backlog instead of the gate.
+assert_not_contains "does not count the row outside the gate" "$out" '0109'
+# A file only the lead names explains no grouping, and listing it invites reading a one-row
+# coincidence as a theme.
+assert_not_contains "says nothing about a file only one row names" "$out" 'unrelated/own.md'
+
+echo "0130 AC3 — the proposal carries the count, the ids, and a line of work per ticket"
+propose_fixture
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_contains "states how many tickets the gate holds"  "$out" 'PROPOSE   develop | 5 ticket(s)'
+assert_contains "names each ticket by id and title"       "$out" 'TICKET    0101 | size s | Lead of the gate'
+assert_contains "and the last of them, not only the lead" "$out" 'TICKET    0105 | size s | Joins by parent only'
+# FR4 — drawn from the ticket rather than invented. Asserted on the lead's own Problem line, with
+# its markdown emphasis stripped, so the assertion cannot be satisfied by the title.
+assert_contains "carries a line of work drawn from the item" "$out" 'WORK      The lead ticket problem statement, whose first paragraph is what WORK carries.'
+
+echo "0130 AC2 — the JOIN lines are capped, and the tail is counted rather than dropped"
+# The live backlog on 2026-09-10 produced 34 JOIN lines over a 41-row gate, of which the top one
+# was the entire story and the other 33 were pairs. A block that long is the unreadable thing FR5
+# exists to remove, arriving one level down: a person who has to read 34 lines to find the hub is
+# back where the bare count left them. So the block is capped at the files that actually explain
+# the gate — and the remainder is COUNTED, never silently dropped, because a proposal that quietly
+# stops listing is a proposal whose numbers cannot be reconciled against the gate.
+scaffold
+i=1
+while [ "$i" -le 8 ]; do
+  add_row "010$i" "Row $i" develop ready ''
+  # Each row names the hub plus a file it shares with exactly one neighbour. That is seven shared
+  # pairs (pair/1 … pair/7; pair/0 and pair/8 are named once each and so explain nothing) plus the
+  # hub — eight shared files, of which a cap of five must leave three unlisted.
+  add_ticket_expects "010$i" develop ready '[]' '' "
+  - hub/shared.md
+  - pair/$i.md
+  - pair/$((i - 1)).md"
+  i=$((i + 1))
+done
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_rc       "exits 0"                          "$rc" 0
+assert_contains "the hub leads the block"          "$out" 'JOIN      hub/shared.md | 8 of 8 rows'
+assert_contains "counts the shared files it did not list" "$out" 'JOIN      3 further file(s) shared by 2 or more rows, not listed'
+# pair/0 and pair/8 are each named by exactly one row, so neither is listed NOR counted in the tail:
+# the cap hides shared files, and a file nothing shares was never part of the block.
+assert_not_contains "counts no file that only one row names" "$out" 'pair/0.md'
+# Ranked by how much of the gate each explains, so the cap keeps the hub and drops a pair — the
+# reverse of that ordering keeps five pairs and drops the one line worth reading.
+assert_not_contains "drops a pair rather than the hub" "$out" 'pair/7.md'
+
+echo "0130 AC2 — a single-ticket gate is proposed with no JOIN line to explain"
+scaffold
+add_row 0101 'The only takeable row' develop ready ''
+add_ticket 0101 develop ready '[]' '' a/one.md
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_rc       "exits 0"                               "$rc" 0
+assert_contains "states the count"                      "$out" 'PROPOSE   develop | 1 ticket(s)'
+# The negative half of AC2. A proposal that manufactures a grouping reason for a gate of one is
+# reporting a theme where there is not even a grouping, and it is the shape that would make every
+# JOIN line above unfalsifiable — print one always and the count is the only thing being read.
+assert_not_contains "invents no grouping reason for a gate of one" "$out" 'JOIN'
+
+echo "0130 — the proposal is opt-in, so a cycle after the confirmed one pays nothing for it"
+propose_fixture
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0"                            "$rc" 0
+assert_contains "still dispatches the same gate"     "$out" 'DISPATCH  develop 0101 0102 0103 0104 0105'
+assert_not_contains "prints no proposal unasked"     "$out" 'PROPOSE'
+assert_not_contains "and no per-ticket lines"        "$out" 'TICKET'
+
+echo "0130 — --propose describes a verify dispatch too, so the first cycle of any run can be confirmed"
+scaffold
+add_row 0101 'A built ticket awaiting QA' verify ready ''
+add_ticket 0101 verify ready '[]' '' a/one.md
+add_problem 0101 'What this ticket was built to do.'
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_rc       "exits 0"                          "$rc" 0
+assert_contains "states the stage and the count"   "$out" 'PROPOSE   verify | 1 ticket(s)'
+assert_contains "names the ticket"                 "$out" 'TICKET    0101 | size s | A built ticket awaiting QA'
+
+echo "0130 — --propose adds nothing to a decision that dispatches no stage"
+scaffold
+add_row 0105 'A design question' design ready ''
+add_ticket 0105 design ready '[]' '' a/one.md
+append_section 0105 '## Open design question
+
+Which of the two shapes does this take?'
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_rc       "exits 4 — escalate, unchanged"    "$rc" 4
+assert_contains "escalates on the design row"      "$out" 'ESCALATE  0105'
+# There is nothing to confirm: no stage would run. A proposal printed here is a scope a person
+# could approve that dispatches nothing, which is the one reading of a confirmation that misleads.
+assert_not_contains "proposes nothing"             "$out" 'PROPOSE'
+
+echo "0130 — --propose is rejected where it cannot mean anything"
+scaffold
+add_row 0101 'Anything' develop ready ''
+add_ticket 0101 develop ready '[]' '' a/one.md
+seal
+# Asserted on the MESSAGE, not on the status: a silent refusal exits non-zero too
+# (testing-conventions.md).
+out="$(run_next --propose)" && rc=0 || rc=$?
+assert_rc       "exits 2 — a usage error"          "$rc" 2
+assert_contains "names the flag it could not place" "$out" '--propose'
+out="$(run_next --drive --propose extra)" && rc=0 || rc=$?
+assert_rc       "exits 2 — --propose takes no value" "$rc" 2
+
+echo "0130 — --help lists --propose as a mode of --drive"
+scaffold
+seal
+out="$(run_next --help)" && rc=0 || rc=$?
+# Anchored to the usage line rather than the bare flag, the way 0038's own --help case is: the
+# explanatory paragraphs below it also name the flag.
+assert_contains "the usage line carries it" "$out" '--drive [--propose]'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
