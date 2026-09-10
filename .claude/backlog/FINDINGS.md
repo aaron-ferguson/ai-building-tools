@@ -169,3 +169,24 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   duplicate-question check for a row routed to `design`, and a design question is exactly the kind of
   duplicate that cannot be spotted from a title (pointer: `skills/queue/SKILL.md` Step 2, items 0060
   and 0080).
+- 2026-09-10 (develop) — **`develop` Step 5's live-run check matches its own command line, so it
+  always reports a live run.** The step says to check `pgrep -f <runner>` before starting a whole-suite
+  run. Here the runner is `tests/*.test.sh`, so `pgrep -f 'test.sh'` matched the very shell command
+  containing that string and printed "LIVE RUN" with nothing running. A session obeying the step waits
+  on a process that is itself, or — worse — learns to disregard the check. The step needs a pattern
+  that excludes the caller (`pgrep -f` plus `grep -v $$`, or matching the runner's own process name)
+  (pointer: `skills/develop/SKILL.md` Step 5, *a whole-suite run is a shared resource*).
+- 2026-09-10 (develop) — **a test fixture helper named for its scope silently sets ownership too.**
+  `add_item_blank_scope` in `tests/next.test.sh` hardcodes `claimed_by: "bb22"`, so a case using it to
+  build an *unheld* candidate that declares no paths gets a HELD one — and the take loop skips held rows
+  before any collision is computed, so the case goes green for a reason unrelated to what it asserts.
+  It cost one wrong red here and was only caught because the expected failure arrived with the wrong
+  message. A helper that sets a field outside its name should say so in its name or take it as an
+  argument (pointer: `tests/next.test.sh` `add_item_blank_scope`).
+- 2026-09-10 (develop) — **a mutation sweep cannot relocate the test script, because `ROOT` is derived
+  from its own path.** `testing-conventions.md` says to confirm a mutation reached *the copy the harness
+  runs*; the obvious way to point a suite at the other copy is to `sed` its `*_SRC` line into a scratch
+  file and run that. Here every suite computes `ROOT="$(cd "$(dirname "$0")/.." && pwd)"`, so the
+  relocated copy resolves `ROOT` to the scratch directory and dies with "no next script at …" — which
+  reads like a broken mutation rather than a broken harness. The working form is to mutate the template
+  in place and restore it in the same turn (pointer: `tests/next.test.sh` `ROOT=`, `develop` Step 5).
