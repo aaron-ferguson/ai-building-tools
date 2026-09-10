@@ -21,6 +21,8 @@ touches:
   - .claude/backlog/next
   - skills/queue/templates/next
   - tests/next.test.sh
+  - skills/orchestrate/SKILL.md
+  - tests/orchestrate.test.sh
 ---
 
 ## Problem
