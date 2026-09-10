@@ -3,7 +3,7 @@ id: "0133"
 title: Close a sprint with a retro and a queue sweep only when the findings earn it
 type: feature
 next: develop
-status: blocked
+status: ready
 qa_level: verify
 close_by: verify
 size: m

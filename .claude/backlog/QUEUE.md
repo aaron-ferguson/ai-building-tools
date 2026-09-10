@@ -27,7 +27,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0148 | Make the internal-name guard red rather than green when its own pattern will not compile | develop | ready |  |
 | 0129 | Rename orchestrate to sprint and leave the old command resolving | develop | ready | 0128 |
 | 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | develop | ready | 0128 |
-| 0133 | Close a sprint with a retro and a queue sweep only when the findings earn it | develop | blocked | 0128 |
+| 0133 | Close a sprint with a retro and a queue sweep only when the findings earn it | develop | ready | 0128 |
 | 0135 | Record what a sprint was estimated to cost against what it did, and estimate from that | develop | ready | 0128 |
 | 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | develop | ready | 0128 |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |
@@ -49,7 +49,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0092 | Prove claim and close hold the lock through their commit | develop | ready |  |
 | 0047 | Give the busy-lock procedure a close-time path | develop | ready |  |
 | 0045 | Cross the take loop against the held file set in next | verify | ready |  |
-| 0060 | Decide how the findings buffer is emptied and gated | verify | in-progress |  |
 | 0054 | Give develop and verify a rule for a result taken over a shared dirty tree | develop | ready |  |
 | 0065 | Name stream editors in the rule against rewriting QUEUE.md | develop | ready |  |
 | 0050 | Decide how file scope works when the prose files are the product | design | ready |  |

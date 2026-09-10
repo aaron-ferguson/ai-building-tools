@@ -2,8 +2,8 @@
 id: "0060"
 title: Decide how the findings buffer is emptied and gated
 type: chore
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -21,9 +21,10 @@ expects:
   - skills/queue/templates/item.md
   - references/REPORTING.md
   - tests/next.test.sh
-claimed_by: "328c"
-claimed_at: 2026-09-10T20:45:15Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-10
 ---
 
 ## Problem
@@ -120,37 +121,37 @@ anything older than about two weeks.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a buffer every entry of which a retro pass has dispositioned, when
+- [x] AC1 — Given a buffer every entry of which a retro pass has dispositioned, when
   `./next --findings` runs, then it reports `0 entries` and `under the threshold`.
-- [ ] AC2 — Given `skills/queue/SKILL.md` Step 5, when read, then it states what a sweep does when
+- [x] AC2 — Given `skills/queue/SKILL.md` Step 5, when read, then it states what a sweep does when
   it cannot finish: that entries are clustered after reading, that an entry and a ticket are not
   one-to-one, and that what is left behind is reported.
-- [ ] AC3 — Given the buffer's header in `skills/queue/templates/FINDINGS.md`, when read, then it
+- [x] AC3 — Given the buffer's header in `skills/queue/templates/FINDINGS.md`, when read, then it
   states that a cross-referencing entry names an item id or a file path rather than quoting a
   sibling entry.
-- [ ] AC4 — Given the buffer's header and `skills/queue/templates/item.md`, when read, then each
+- [x] AC4 — Given the buffer's header and `skills/queue/templates/item.md`, when read, then each
   states that a written date is UTC.
-- [ ] AC5 — Given `skills/queue/SKILL.md` Step 5, when read, then it states that a bundled ticket's
+- [x] AC5 — Given `skills/queue/SKILL.md` Step 5, when read, then it states that a bundled ticket's
   removal list comes from its FRs.
-- [ ] AC6 — Given `skills/retro/SKILL.md` Step 1, when read, then it states that reading is cheap
+- [x] AC6 — Given `skills/retro/SKILL.md` Step 1, when read, then it states that reading is cheap
   and only writing is sliced, and the sentence directing a pass to read fewer entries before the
   cross-entry read is gone.
-- [ ] AC7 — Given a buffer entry carrying a head token — `- 2026-09-05 [->0060] — **x.**` — when
+- [x] AC7 — Given a buffer entry carrying a head token — `- 2026-09-05 [->0060] — **x.**` — when
   `count_findings` runs over it, then it counts as one entry and prints no `MALFORMED` line; and
   given the same entry in the bolded shape, likewise.
-- [ ] AC8 — Given `skills/queue/SKILL.md` Step 5, when read, then it names the **absorbed**
+- [x] AC8 — Given `skills/queue/SKILL.md` Step 5, when read, then it names the **absorbed**
   disposition and what it writes: the row, one dated line in that row's *Notes & decisions*, and the
   marker.
-- [ ] AC9 — Given `references/REPORTING.md`, when read, then it states that a stage report carries
+- [x] AC9 — Given `references/REPORTING.md`, when read, then it states that a stage report carries
   the buffer count against the threshold and says a retro is due at or over it.
-- [ ] AC10 — Given a project whose `config.yml` resolves `tools.path` to a checkout holding its own
+- [x] AC10 — Given a project whose `config.yml` resolves `tools.path` to a checkout holding its own
   `FINDINGS.md`, when `./next --findings` runs, then the reported count is the sum over both buffers
   and the line names each; and given a `config.yml` with no `tools.path`, then the count is the local
   buffer alone.
-- [ ] AC11 — Given `skills/queue/templates/next`, when read, then the comment above `count_findings`
+- [x] AC11 — Given `skills/queue/templates/next`, when read, then the comment above `count_findings`
   states that the count is every entry **because** `retro` is the terminal sweeper; and a guard
   asserts that sentence still stands in `skills/retro/SKILL.md` Step 4, failing if it is removed.
-- [ ] AC12 — Given `skills/queue/templates/next` and `.claude/backlog/next`, when compared, then
+- [x] AC12 — Given `skills/queue/templates/next` and `.claude/backlog/next`, when compared, then
   they are identical, so the installed reader carries every change above.
 
 ## QA plan
@@ -376,3 +377,45 @@ anything older than about two weeks.
 - **Still outstanding, and not this stage's call: `0080` should be withdrawn or re-scoped by a
   `queue` pass.** The design note records that FR1 and FR7 settle it; it is still sitting at
   `next: design`, where a second design session would re-litigate what this ticket decided.
+
+## QA evidence
+
+**Verified 2026-09-10 (verify, token 328c) at `qa_level: unit`** — the frontmatter level and the QA
+plan's `**Level:** unit` agree, so no drift to report. The whole suite ran file-by-file (29 files,
+every one `0 failed`; the two the verdict rests on are `tests/findings-buffer.test.sh` **46 passed,
+0 failed** and `tests/next.test.sh` **364 passed, 0 failed**, both pasted from their own tallies).
+`git status --porcelain` was **empty** before the first command and empty again after the last, so
+no whole-project gate needed a worktree and the advisory intersection is empty.
+
+**Which copy was read.** The repo checkout is the authority, as `CLAUDE.md` requires for a skill
+change: this session's own `verify` skill resolved from the 0.9.23 install, which predates these
+commits, and `diff -rq skills/ ~/.claude/plugins/cache/.../0.9.23/skills/` shows nine files
+differing — expected, since the release has not been run since. No AC here is about the install.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 | Ran `./next --findings` over a fixture buffer with every entry dispositioned (body empty): `FINDINGS  0 entries; threshold 8 … — under the threshold`. Mutation: `under the threshold` → `below` in the template reds `— and says it is under` | PASS |
+| AC2 | `queue` Step 5 carries *cluster them after reading*, *not one-to-one*, *name what you left behind*. Mutation: dropping *after reading* and *name what you left behind* reds two AC2 cases | PASS |
+| AC3 | Both header copies carry *by item id or file path* / *never by quoting it* / *resolves to nothing*. Mutation on the template's phrase reds AC3 | PASS |
+| AC4 | Both header copies carry **The date is UTC** beside `claimed_at`, and `templates/item.md` states it above `created:`. Two mutations (local header, item template) each red their own case | PASS |
+| AC5 | Step 5: *removal list comes from the ticket's FRs … never the cluster*. Mutation to *drawn from the cluster* reds AC5 | PASS |
+| AC6 | `retro` Step 1 carries *reading is cheap and only writing is sliced* and *after the cross-entry read*; the old rule is gone. **Both directions proved:** removing the replacement reds the positive case, and re-inserting `read fewer entries and finish each` into the window reds the absence case — so the negative assertion the build note flagged as silently green is now falsifiable | PASS |
+| AC7 | Ran `./next --findings` over a fixture holding `- 2026-09-05 [->0060] — **…**`, `- **2026-09-05 [->none] — …**` and an untokened entry: `3 entries`, no `MALFORMED`. Mutation: narrowing `dated()` to require an em-dash after the date drops the count to `2` and prints `MALFORMED …:6`, and reds three `next.test.sh` cases | PASS |
+| AC8 | Step 5 names **Absorbed**, *not a new row*, *name the row*, *one dated line to its Notes & decisions*, `[->NNNN]`. Mutation removing the word `Absorbed` reds AC8 | PASS |
+| AC9 | `references/REPORTING.md` *The findings buffer*: the count against the threshold, the `./next --findings` line, *a retro is due*. Mutation on *a retro is due* reds AC9 | PASS |
+| AC10 | Fixture project with `tools.path: ../tools` (2 entries) over a 3-entry local buffer: `5 entries` with `local 3 (…) + tools 2 (…)`. With `tools.path: ../nowhere`: `3 entries`, `local buffer only — tools.path ../nowhere did not resolve to a backlog buffer`. With no `tools:` block: `local buffer only — config.yml names no tools.path`. Mutation `FCOUNT=$FLOCAL` reds four `next.test.sh` cases | PASS |
+| AC11 | The comment above `count_findings` names the TERMINAL SWEEPER premise and cites `no entry survives the pass that read it`; `findings-buffer.test.sh` asserts that sentence in `retro` Step 4. Two mutations — removing the comment phrase, and altering the sentence in `skills/retro/SKILL.md` — each red their own case | PASS |
+| AC12 | `diff -q skills/queue/templates/next .claude/backlog/next` → identical. Mutation of the installed copy alone leaves `next.test.sh` green (it reads the template) and reds `backlog-scripts-installed.test.sh` with *next has diverged from skills/queue/templates/next* — so AC12's guard is the one holding this, exactly as the QA plan said | PASS |
+| NFR Migration | `count_findings` matches both old shapes; the live 24-entry buffer, all old-form, counts with no `MALFORMED`. Both headers say the old form *stays readable* and that nothing rewrites an entry it is not processing | PASS |
+| NFR Progressive delivery | `--drive`'s contract is untouched: `FINDINGS_GATE=5` unchanged, and `./next --drive` here exits **5** with `DISPATCH  retro — FINDINGS.md holds 24 entries against a threshold of 8` — the provenance clause is suppressed where only the local buffer was counted, so the pre-0060 line shape is byte-preserved for a single-buffer project | PASS |
+| NFR Documentation | Both buffer headers changed in `ae6cf8f`, the same commit as `queue` Step 5, `retro` Step 1, `templates/item.md` and `references/REPORTING.md` | PASS |
+
+**Newly reachable, checked beyond the ACs.** The only new reach is a read of a file outside the
+repo. It is *resolved* from `config.yml`, never discovered; a `tools.path` pointing at the project
+itself is detected and refused rather than double-counted; and a `MALFORMED` line from the second
+buffer names its own path, so a foreign entry is never hunted for in the wrong repo. Nothing is
+written to the second repo and nothing from it is written locally — the only egress is one count and
+one path into this session's own report, which `retro` Step 1 already reads wholesale by rule.
+
+**Advisory:** not advisory. The dirty set was empty at Step 2 and at the verdict, so the
+intersection with the evidence set is empty.
