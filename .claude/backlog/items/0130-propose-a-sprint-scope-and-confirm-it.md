@@ -2,8 +2,8 @@
 id: "0130"
 title: Propose a sprint scope and dispatch nothing until a person confirms it
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: verify
 size: l
@@ -18,9 +18,10 @@ expects:
   - .claude/backlog/next
   - skills/queue/templates/next
   - tests/next.test.sh
-claimed_by: "a3f1"
-claimed_at: 2026-09-10T14:51:43Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-10
 ---
 
 ## Problem
@@ -92,22 +93,22 @@ tickets nobody chose, and it is a decision a person can only make if they are sh
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a backlog with takeable work, when `sprint` runs, then no `claude -p` stage
+- [x] AC1 — Given a backlog with takeable work, when `sprint` runs, then no `claude -p` stage
       process is started before a confirmation is received. **Red if** the skill dispatches on
       `--drive`'s exit 0 as it does today.
-- [ ] AC2 — Given the 2026-09-09 backlog state, when the proposal is produced, then it names
+- [x] AC2 — Given the 2026-09-09 backlog state, when the proposal is produced, then it names
       `skills/retro/SKILL.md` and the count of rows joining through it. **Red if** the proposal
       lists thirteen ids with no grouping reason, which is the current depth line plus a count.
-- [ ] AC3 — Given a proposal, when it is printed, then it carries all five of count, ids, per-ticket
+- [x] AC3 — Given a proposal, when it is printed, then it carries all five of count, ids, per-ticket
       work, reason, and a three-part estimate. **Red if** any one is absent — checked as five
       separate assertions, not one, so a proposal missing only the estimate still fails.
-- [ ] AC4 — Given a proposal taking part of a gate, when it is printed, then it names the rows left
+- [x] AC4 — Given a proposal taking part of a gate, when it is printed, then it names the rows left
       behind. **Red if** a partial gate is proposed with no mention of the remainder, which reads as
       though nothing was displaced.
-- [ ] AC5 — Given a person declining, when the run ends, then no stage ran and
+- [x] AC5 — Given a person declining, when the run ends, then no stage ran and
       `.claude/backlog/runs/.active` is removed. **Red if** the marker is left behind, which makes
       the next sprint report the backlog as held by another supervisor.
-- [ ] AC6 — Given a confirmed proposal, when the first stage is dispatched, then the run log already
+- [x] AC6 — Given a confirmed proposal, when the first stage is dispatched, then the run log already
       contains the confirmed scope. **Red if** the scope is written after the dispatch, which is the
       ordering that loses it when the first stage is what kills the supervisor.
 
@@ -186,3 +187,79 @@ tickets nobody chose, and it is a decision a person can only make if they are sh
   *further* uncommitted change (the `pb_` rename) and reverting a mutation over it. The restore is
   silent and the suite stays green, so nothing signals it — `grep -c pb_` returning 0 is what found
   it. The rule as written already covers this; it was not applied.
+
+## QA evidence
+
+**Session token `a3f1`, 2026-09-10.** `qa_level: verify` — the scripted assertions the QA plan
+names, executed, plus a mutation run behind every check cited below. No lint or typecheck is
+configured, so neither was run. Suite tallies are pasted from the commands that produced them:
+`tests/orchestrate.test.sh` **153 passed, 0 failed, 0 skipped**; `tests/next.test.sh` **303 passed,
+0 failed**.
+
+**Which copy executed.** The repo copy is the authority and is what was tested.
+`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.23/skills/orchestrate/SKILL.md`
+carries no proposal section — `grep -c` returns 0 — so this change is **not live in the installed
+plugin** and will not be until a version bump and `tools/release`. That is the normal state at
+close, not a defect of this ticket.
+
+**Drift, as `verify` Step 2 requires it be reported rather than quietly honoured.** The QA plan
+names `tests/sprint.test.sh`, which does not exist and will not until `0129` renames the skill. The
+checks were read from `tests/orchestrate.test.sh` and `tests/next.test.sh`, as the 2026-09-10 build
+note says. Frontmatter `qa_level: verify` and the QA plan's level agree; only the file name drifts.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 | `tests/orchestrate.test.sh`, three assertions: proposal section before the dispatch's own `--session-id` line (81 < 104), after the marker `mkdir`, and the section forbidding a stage session. **Mutation:** renaming the `## The proposal` heading → **19 failed**, so the AC's own "red if" (dispatch on exit 0 with no proposal) is caught. | PASS, with a gap below |
+| AC2 | `tests/next.test.sh` against the purpose-built five-row fixture: `JOIN hub/shared.md \| 3 of 5 rows`, `edge/other.md \| 2 of 5`, `parent 0091 \| 2 of 5`, and the out-of-gate row `0109` absent from every denominator. **Mutations** on `skills/queue/templates/next` (the copy the harness runs): suppress the JOIN line → 3 failed; count single-row files → 3 failed; drop the tail count → 1 failed. Live surface: `./next --drive --propose` on today's backlog printed `tests/citations.test.sh \| 16 of 41 rows join through this file` above four lesser files and `29 further file(s) … not listed`. | PASS, with a gap below |
+| AC3 | Five separate section-scoped assertions in `tests/orchestrate.test.sh` (count, ids, per-ticket work, why these, three-part estimate), plus the mechanical half in `tests/next.test.sh`. **Mutations:** blanking the estimate bullet → 1 failed; weakening "How many tickets" → 1 failed; `PROPOSE %s \| 99 ticket(s)` → 3 failed; suppressing the `TICKET` line → 3 failed; suppressing the `WORK` line → 1 failed. The matcher is `says_ci`, section-bounded and line-joined, so no assertion can be satisfied from elsewhere in the file. | PASS |
+| AC4 | Assertions on `rows left behind` and `session floor`. **Mutations:** removing each phrase → 1 failed apiece. | PASS |
+| AC5 | The decline path names `.claude/backlog/runs/.active` and is one of three stated answers. **Mutation:** replacing the literal path with "the marker" → 1 failed. | PASS |
+| AC6 | Skill-side: `Step 5` names `scope_confirmed`, and the section states the ordering. **Mutation:** "before the first dispatch" → "at some point" → 1 failed. | PASS |
+| NFR Performance | `--propose` is opt-in and adds no turn: guard *"the proposal is opt-in, so a cycle after the confirmed one pays nothing for it"* asserts a later cycle prints no proposal and dispatches the same gate. Confirmed at the surface — one `./next --drive --propose` call produced the whole block. `observability-conventions.md` read. | PASS |
+| NFR Documentation | The scope is one `scope_confirmed` run-log event; `Step 5`'s *"provenance, not state"* paragraph is unchanged, so the backlog stays the authority. `documentation-conventions.md` read. | PASS |
+
+**Always-on pass (`CONVENTIONS_CORE.md`).** No secrets, no home paths, no company material in the
+diff (`company: none` holds — the repo is public). `tests/citations.test.sh` 46/0,
+`tests/money-in-skill-prose.test.sh` 12/0 (FR6 quotes no figure), `tests/skill-size.test.sh` 27/0,
+`tests/last-line.test.sh` 17/0, `tests/falsifiable-acs.test.sh` 17/0, `tests/item-ac-form.test.sh`
+4/0, `tests/qa-level-once.test.sh` 11/0. Newly reachable paths: `--propose` is a read-only flag
+adding no destructive or privileged route.
+
+### Two gaps, published rather than papered over
+
+- **The JOIN ranking has no guard, and the 2026-09-10 build note saying it has one is wrong.**
+  That note reads *"a guard drives the cap and the tail count, and mutating the ranking to
+  first-seen reds it"*. The first half holds — both mutations redden. The third does not:
+  replacing the selection sort's comparison with `;` on `skills/queue/templates/next` left
+  **303 passed, 0 failed**, with a green control either side. The cap fixture is eight rows each
+  naming the hub plus two `pair/N.md` files, so first-seen insertion order is hub, `pair/1`,
+  `pair/0`, `pair/2`… — the hub is still first and `pair/7` is still dropped, so both
+  `assert_contains` and both `assert_not_contains` hold under either ordering. `assert_contains
+  "the hub leads the block"` asserts presence, not position, so nothing in the file tests rank at
+  all. The ranking **works** — today's live run printed 16, 9, 8, 8, 7 in descending order — it is
+  only unguarded. No assertion was invented to close this; per `verify` Step 3 it is recorded and
+  left uncovered.
+- **AC1's prose assertion is satisfied by a sentence belonging to AC5.** `says "$SKILL" "$PROPSEC"
+  'no stage session'` also matches the decline sentence, *"…which ends the run with no stage session
+  and releases the marker"*, inside the same section. Deleting FR1's actual prohibition —
+  *"Dispatch no stage session until a person has confirmed the scope."* — leaves **153 passed, 0
+  failed**. AC1 still passes on its two ordering assertions, which redden hard, but one of its three
+  legs measures something adjacent.
+
+Both belong to `0089`'s sweep (*guards for assertions that cannot fail*), which is already `ready`
+in the queue; neither is a new criterion for this ticket, and neither falsifies an AC.
+
+### Noted, not blocking
+
+- Three AC6 assertions (`run-good`/`run-late`/`run-none`) run an `awk` reader defined inside
+  `tests/orchestrate.test.sh` over fixtures defined in the same file. They prove the ordering is
+  *decidable* and can fail in both directions, which is what they claim — but they observe neither
+  the skill nor the script, so no change to either can redden them. AC6's real guard is the
+  skill-side pair, which does redden.
+- `skills/orchestrate/SKILL.md:267` is 149 characters, left by this change's rewrap of Step 5's
+  first paragraph. In a repo whose every guard greps prose line-by-line
+  (`CLAUDE.md`, *rewrapping a guarded paragraph is a breaking change*), an unwrapped line is a
+  latent hazard for whatever asserts over that paragraph next.
+- 🔍 Probed the flag's misuse paths at the CLI: `./next --propose` → exit 2, `unknown stage:
+  --propose`; `./next --drive --propose=1` → exit 2, `unknown argument to --drive: --propose=1`.
+  Both name the flag they could not place, and `--help` carries `--propose` on the usage line.
