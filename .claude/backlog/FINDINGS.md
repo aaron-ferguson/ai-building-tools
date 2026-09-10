@@ -52,3 +52,16 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   its tree-level evidence is always the thing it exists to prevent — so the claim has to be carried
   by assembled samples and the substitution recorded beside the check (pointer: `skills/queue/SKILL.md`
   AC form, `tests/falsifiable-acs.test.sh`, item 0143 AC3).
+- 2026-09-09 (verify) — **The entry above is wrong, and the general lesson is that an
+  *unreachability* claim in build notes needs re-running exactly like a mutation table does.**
+  `0143` AC3 was recorded as unsatisfiable at tree level, because reaching it "means COMMITTING a
+  name". It does not: a throwaway `git worktree` plus `PRIVATE_NAMES_FILE` pointed at a **synthetic**
+  list makes the fixture tracked without staging anything in the checkout and without any real name
+  existing, and this pass drove AC3 both ways in about a minute — green on a wrapped placeholder,
+  red on `EXEMPT_PREFIX=''`. `verify` Step 3 says "never trust a mutation you did not run" and
+  `develop` Step 5 has nothing for the mirror case, so a *substitution* offered in place of a check
+  reads as settled where a discharged mutation reads as re-runnable — and the build note went
+  further, telling the QA pass to "read AC3 as satisfied by that control or bounce the
+  substitution", i.e. naming the two options and not the one that was available. The recurring
+  shape: an environment constraint stated as a construction constraint (pointer:
+  `skills/verify/SKILL.md` Step 3, `skills/develop/SKILL.md` Step 5, item 0143 AC3).
