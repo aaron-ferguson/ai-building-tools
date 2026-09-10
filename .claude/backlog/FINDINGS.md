@@ -123,3 +123,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   say is how to *find* which copy that is before starting, which for a fixture-copying harness is a
   grep of the test file (pointer: `skills/verify/SKILL.md` Step 3, `tests/next.test.sh:23`, item
   0146 — *when a required duplication earns a drift guard*).
+- 2026-09-10 (develop) — **a prose guard keyed on a section name the file does not have is red when
+  it asserts presence and green forever when it asserts absence.** `tests/orchestrate.test.sh`'s
+  `section()` matches `## <want>` as a PREFIX, so the headings are `Step 2 — The cycle` and a guard
+  written against the subject (`"The cycle"`) extracts nothing. Asserting presence, that reds a
+  correct file and the session fixes it in a minute; asserting absence, it passes over an empty
+  string and can never fail — the unfalsifiable guard `testing-conventions.md` names, reached by a
+  typo rather than by a bad assertion. Nothing in the harness reports an empty extraction, and the
+  three suites carrying this pair copy it byte for byte (pointer: `tests/orchestrate.test.sh:104`,
+  item 0131).
