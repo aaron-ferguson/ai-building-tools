@@ -244,3 +244,38 @@ writes, not evidence for the rule it replaces.
 and its one-row output; `tests/batching.test.sh`'s paragraph-window extraction, which exits 2 rather
 than failing if `one gate per session` stops matching on one line; and `0132`'s FR1/AC2 and `0137`'s
 scope, both written after this ticket and both governing its answer.
+
+### 2026-09-10 — Built (token 5ff9)
+
+**The guard's `present`/`absent` helpers were the wrong instrument for most of this ticket, and it
+showed up as a red on correct prose.** They grep the file line by line, so `Tickets from unrelated
+projects do not batch` — AC4's phrase, untouched by this change — went red the moment the rewrapped
+paragraph split it across a line break. The fix is not to bend the prose back: assertions about a
+*claim* in flowing prose are made against the paragraph unwrapped to one logical line (`says`,
+`says_not`, `binds` in the guard), and only a whole-file absence (`One item per invocation`) stays
+line-based, because nothing about it depends on where the prose wraps. `CLAUDE.md`'s *Tests* rule
+says rewrapping a guarded paragraph is a breaking change; this is the other half of it — a guard
+built from line-based greps makes every rewrap a breaking change, whether or not the claim moved.
+
+**`binds` is what makes AC2 falsifiable at all.** "Shared scope appears as a reason, not as a
+condition" cannot be checked by presence: both wordings contain `expects:` and `parent slice`, which
+is why the pre-0059 paragraph satisfied every scope assertion the old guard made. The check that
+separates them is a bounded span — `expects:.{0,120}parent slice.{0,40}why a batch pays more` —
+which holds only while the two halves sit inside the pays-more sentence.
+
+**Both mutations red on the condition and not on the window, which is what AC8 asks.** Restoring
+develop's `a set of tickets that share a file scope … or share a parent slice` gives 36/3 with the
+three failures naming the condition; restoring verify's `The same batching case applies for the same
+reason` gives 34/5. Neither exits 2 — the extraction anchors (`one gate per session` in develop,
+`One gate per invocation` in verify) survive both, which was the risk the QA plan flagged. Control
+run after restore: 39/39, tree clean.
+
+**The QA plan expected `one gate per session` to be at risk in `verify`, and it went the other way.**
+That phrase is gone from verify's paragraph — not because FR4 forbade it, but because verify's
+condition is no longer *per session* at all: it is the membership a develop gate already fixed. The
+guard's verify window is anchored on `One gate per invocation` instead, which is the paragraph's
+first line and so gives the whole paragraph rather than starting mid-way as develop's anchor does.
+
+**Verified against the source rather than the ticket:** `tests/measurement.test.sh` also greps for
+`batch`, but against `MEASUREMENT.md`, not these two paragraphs — so nothing outside
+`tests/batching.test.sh` is coupled to this wording. Whole suite green, 28 files.

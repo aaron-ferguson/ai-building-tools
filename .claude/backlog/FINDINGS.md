@@ -214,3 +214,5 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   with the CLI (`bundled-skills/<cli-version>/…/verify`, carrying `examples/cli.md`) — so no version
   bump or install check can ever make this visible; 0064's FR1 self-naming line is the only thing that
   would have (pointer: `skills/verify/SKILL.md` opening, items/0064 FR1).
+
+- 2026-09-10 (develop) — **`develop` Step 2 tells you to `grep -rn "<your id>"`, and this  repo answers with test fixtures.** Grepping `0059` returned four hits, all of them fixture rows  inside `tests/close.test.sh` (`| 0059 | Checklist performed | verify | in-progress | 0000 |`) and  none of them about item 0059. The check is cheap and correct, but in a repo whose suite builds  synthetic backlogs its signal-to-noise is inverted: every low id collides, and a session that  skims the hits could equally read a fixture as a sibling citation or dismiss a real one as a  fixture. Fixture ids in a backlog-shaped fixture want a form no live row can take. This still  needs a row; no ticket in QUEUE.md covers it (pointer: `tests/close.test.sh`, `skills/develop`  Step 2 "Grep your own id as well as the symbols").
