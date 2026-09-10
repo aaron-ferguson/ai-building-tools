@@ -2,21 +2,25 @@
 id: "0060"
 title: Decide how the findings buffer is emptied and gated
 type: chore
-next: design
+next: develop
 status: ready
 qa_level: unit
-size: m
+size: l
 created: 2026-08-25
 source: agent
 parent:
 blocked_by: []
-relates: ["0012", "0014", "0016", "0036", "0038", "0111"]
+relates: ["0012", "0014", "0016", "0036", "0038", "0080", "0111"]
 expects:
-  - .claude/backlog/config.yml
   - skills/queue/templates/next
   - .claude/backlog/next
   - skills/retro/SKILL.md
   - skills/queue/SKILL.md
+  - skills/queue/templates/FINDINGS.md
+  - .claude/backlog/FINDINGS.md
+  - skills/queue/templates/item.md
+  - references/REPORTING.md
+  - tests/next.test.sh
 claimed_by:
 claimed_at:
 touches:
@@ -61,54 +65,50 @@ these entries are bare dates. At 2026-08-23 local / 2026-08-24 UTC, two sessions
 hour wrote different dates and both are defensible. This matters because `retro` Step 1 expires
 anything older than about two weeks.
 
-## Open design question
-
-- **Question:** What does the findings gate count, and how does an entry record that one sweeper is
-  finished with it? The two halves are coupled: if an entry can record "lesson landed, work
-  remains", the gate can count what is actually actionable and the marker answers both. The shapes:
-  **a per-entry marker** written by whichever sweeper finishes its half; **two counts** derived
-  some other way, with the gate on both sweepers; or **no marker**, with the gate re-based on
-  something a retro can move and `queue` given its own gate.
-- **Why it blocks specification:** the acceptance criteria differ entirely. A marker is a change to
-  the entry format, to both sweepers, and to `count_findings` in `./next`. Two gates is a change to
-  `config.yml`'s shape and to `--drive`'s exit codes, which are a stated contract 0038 has just
-  built against. And a marker interacts with the header's own rule that nothing is tagged at write
-  time, because classifying at the moment of noticing is the friction the design deliberately
-  avoids — so a marker must be written on the way *out*, not on the way in, and saying that is part
-  of the decision.
-- **A second axis the gate has, added by the `queue` sweep of 2026-09-07.** `findings_threshold` is
-  **per-project**, and a workspace holds several. Measured that day from
-  `/Users/<name>/Documents/AI`: four backlogs beneath it holding 22, 3, 4 and 0 entries —
-  and had they been distributed 6/6/6/6, **no gate anywhere would have tripped while 24 findings sat
-  unswept**. So "what does the gate count" has a scope half as well as a kind half: entries a retro
-  can act on, *in which buffers*. It is recorded here rather than given its own row because it is
-  the same decision — a gate re-based on something a retro can move has to say what a retro reaches,
-  and answering the kind half without the scope half leaves the gate correct per project and blind
-  per workspace. **Which buffers a retro reaches at all is 0111**, and this depends on that answer
-  without being blocked by it: whatever 0111 settles, this decides what the gate counts across them.
-- **Settle it with:** `/design` — the inputs are the file's header, both sweepers' steps, and
-  `./next`'s counting code. Nothing needs to be seen.
-
 ## Functional requirements
 
-Written after the design question is settled. What is fixed regardless:
-
-- FR1 — The findings gate's count and the work a retro can do are the same quantity, so a retro that
-  processes everything it can leaves the gate satisfied.
-- FR2 — `queue` Step 5 states what a sweep does when the buffer holds more work than one session can
-  specify: how to cluster, that entries and tickets are not one-to-one, and what is left behind and
-  how it is reported.
-- FR3 — The entry format states that a cross-referencing entry names the ticket or file it refers
-  to rather than quoting a sibling.
+- FR1 — The findings gate counts **every entry in the buffer**, unchanged, and the invariant that
+  makes that count reducible by a retro is written down where the counting happens: `retro` is the
+  **terminal sweeper**, so no entry survives the pass that read it, and every entry left is
+  therefore work a retro can still do. Stated as a comment beside `count_findings` and asserted by
+  a guard against `skills/retro/SKILL.md`, so the asymmetry this ticket opened on cannot return
+  unnoticed.
+- FR2 — Both sweepers state what a pass does when the buffer holds more than it can finish.
+  `queue` Step 5: cluster the entries after reading them, an entry and a ticket are not
+  one-to-one, and what is left behind is named in the report. `retro` Steps 1 and 2: **reading is
+  cheap and only writing is sliced** — the slice is chosen *after* the cross-entry read, never
+  before it, because that read is what tells you which entries are one lesson.
+- FR3 — The entry format states that a cross-referencing entry names the item id or file path it
+  refers to rather than quoting a sibling.
 - FR4 — Dates written into the backlog and this buffer state their timezone, matching
   `claimed_at:`'s existing ISO-8601 UTC.
+- FR5 — Whatever mechanism FR1 lands, the code that implements it is named: `count_findings` in
+  `skills/queue/templates/next` and its installed copy, not only the prose.
 - FR6 — `queue` Step 5 states that when a ticket is bundled from several entries, the removal list
   is derived from **the ticket's FRs**, not from the cluster that produced it. Sweeping this buffer's
   second batch, three of forty-six entries read as covered because a neighbouring concern in the same
   bundle was, and were caught only by a check nothing asked for; had it been skipped they would have
   left the buffer with no ticket, no trace, and a sweep reporting success.
-- FR5 — Whatever mechanism FR1 lands, the code that implements it is named: `count_findings` in
-  `skills/queue/templates/next` and its installed copy, not only the prose.
+- FR7 — The hand-over marker moves to a **greppable head token**, immediately after the date:
+  `- 2026-09-05 [->0060] — **what happened.** …`. `[->NNNN]` means a row now carries this entry's
+  work half; `[->none]` means a pass read the entry and established that no destination exists yet.
+  The header specifies the token, states that it is written on the way **out** by a sweeper and
+  never at write time by the noticer, and states that it does not change what the gate counts. The
+  old trailing-prose form stays readable: nothing rewrites an entry it is not processing.
+- FR8 — `queue` Step 5 carries the **absorbed** disposition it lacks: a swept entry whose work half
+  an existing row already carries is not a new row and not a `next: queue` stub — name the row,
+  append one dated line to its *Notes & decisions*, mark the entry `[->NNNN]`, and remove it only
+  if it holds no lesson half.
+- FR9 — The gate reaches a hand-driven run. `references/REPORTING.md` states that a stage session's
+  report carries the buffer's count against the threshold — the `./next --findings` line — and says
+  a retro is due when it is at or over. One rule, in the file every stage's report step already
+  cites, rather than a paragraph in each skill.
+- FR10 — The gate counts the buffers the retro it would dispatch will actually read: the resolved
+  local buffer, **plus the tools repo's buffer where `config.yml` resolves `tools.path`** (`retro`
+  Step 1, and *Routing a finding to the repo it is about*). Where `tools.path` is absent or does not
+  resolve, the count is the local buffer alone and the line says so. Sibling backlogs under a shared
+  workspace are **not** counted: `0111` FR5 makes them unreachable by construction, and a gate
+  counting a buffer its retro cannot reach is the defect this ticket opens with.
 
 ## Non-functional requirements
 
@@ -120,27 +120,57 @@ Written after the design question is settled. What is fixed regardless:
 
 ## Acceptance criteria
 
-Cannot be written until the design question is settled. These hold regardless:
-
-- [ ] AC1 — Given a buffer whose every retro-actionable entry has been processed, when
-  `./next --findings` runs, then it does not report the gate as reached.
+- [ ] AC1 — Given a buffer every entry of which a retro pass has dispositioned, when
+  `./next --findings` runs, then it reports `0 entries` and `under the threshold`.
 - [ ] AC2 — Given `skills/queue/SKILL.md` Step 5, when read, then it states what a sweep does when
-  it cannot finish.
-- [ ] AC3 — Given the buffer's header, when read, then it states how a cross-referencing entry
-  names its subject.
+  it cannot finish: that entries are clustered after reading, that an entry and a ticket are not
+  one-to-one, and that what is left behind is reported.
+- [ ] AC3 — Given the buffer's header in `skills/queue/templates/FINDINGS.md`, when read, then it
+  states that a cross-referencing entry names an item id or a file path rather than quoting a
+  sibling entry.
+- [ ] AC4 — Given the buffer's header and `skills/queue/templates/item.md`, when read, then each
+  states that a written date is UTC.
 - [ ] AC5 — Given `skills/queue/SKILL.md` Step 5, when read, then it states that a bundled ticket's
   removal list comes from its FRs.
-- [ ] AC4 — Given the buffer's header and `templates/item.md`, when read, then the timezone of a
-  written date is stated.
+- [ ] AC6 — Given `skills/retro/SKILL.md` Step 1, when read, then it states that reading is cheap
+  and only writing is sliced, and the sentence directing a pass to read fewer entries before the
+  cross-entry read is gone.
+- [ ] AC7 — Given a buffer entry carrying a head token — `- 2026-09-05 [->0060] — **x.**` — when
+  `count_findings` runs over it, then it counts as one entry and prints no `MALFORMED` line; and
+  given the same entry in the bolded shape, likewise.
+- [ ] AC8 — Given `skills/queue/SKILL.md` Step 5, when read, then it names the **absorbed**
+  disposition and what it writes: the row, one dated line in that row's *Notes & decisions*, and the
+  marker.
+- [ ] AC9 — Given `references/REPORTING.md`, when read, then it states that a stage report carries
+  the buffer count against the threshold and says a retro is due at or over it.
+- [ ] AC10 — Given a project whose `config.yml` resolves `tools.path` to a checkout holding its own
+  `FINDINGS.md`, when `./next --findings` runs, then the reported count is the sum over both buffers
+  and the line names each; and given a `config.yml` with no `tools.path`, then the count is the local
+  buffer alone.
+- [ ] AC11 — Given `skills/queue/templates/next`, when read, then the comment above `count_findings`
+  states that the count is every entry **because** `retro` is the terminal sweeper; and a guard
+  asserts that sentence still stands in `skills/retro/SKILL.md` Step 4, failing if it is removed.
+- [ ] AC12 — Given `skills/queue/templates/next` and `.claude/backlog/next`, when compared, then
+  they are identical, so the installed reader carries every change above.
 
 ## QA plan
 
-- **Level:** unit — provisional, argued across the candidate shapes: any answer touching
-  `count_findings` or `--drive` is `unit`, a prose-only answer is `verify` with a named scripted
-  assertion, and this project's `unit` command runs every `tests/*.test.sh`, so `unit` subsumes both.
-- **Why this level:** the level is the same across every candidate.
-- **Specific checks:** settled by the design pass. `tests/next.test.sh` covers `--findings` and
-  `--drive` and runs in every case; note 0038 and 0053 also reach that file.
+- **Level:** unit — this project's `unit` command runs every `tests/*.test.sh`, and the answer
+  touches both `count_findings` and prose, so `unit` subsumes the scripted-assertion half.
+- **Why this level:** settled by the design pass — the counting change is code, so the provisional
+  argument in the earlier draft no longer has to be carried.
+- **Specific checks:**
+  - `tests/next.test.sh` — AC1, AC7, AC10, AC12 against fixture buffers: an entry with a head token
+    in both shapes, a `tools.path` that resolves and one that does not.
+  - a prose guard (extend `tests/citations.test.sh` or add `tests/findings-buffer.test.sh`) — AC2,
+    AC3, AC4, AC5, AC6, AC8, AC9, AC11.
+  - `tests/backlog-scripts-installed.test.sh` already compares the template against the installed
+    copy; AC12 is its existing assertion and needs no new guard if that holds.
+  - **Quote every asserted phrase within one line of the file as it is wrapped** — `grep` is
+    line-based, and a phrase straddling a wrap matches nothing and reads as absent (`CLAUDE.md`,
+    *Tests*).
+- **0038 and 0053 also reach `tests/next.test.sh`.** `--drive`'s exit codes are untouched by this
+  answer, which is most of why the two-gate shape was rejected.
 
 ## Out of scope
 
@@ -232,3 +262,52 @@ Cannot be written until the design question is settled. These hold regardless:
   work-and-lesson case and not this one. Whatever FR2 decides about counting should decide this
   alongside it — a disposition only one sweeper has is the same defect as a gate only one sweeper
   can satisfy.
+
+- **2026-09-10 (design) — SETTLED. The gate keeps counting every entry, and the marker stays but
+  moves to the head of the line.** Re-read that day against the checkout, not against this ticket's
+  own summary of it, and the premise had moved: `retro` Step 4 now reads *"Every entry you read gets
+  one of four dispositions — landed, absorbed, filed or dropped"* and *"no entry survives the pass
+  that read it"*, and *filed* explicitly covers a pure unit of work (*"A pure unit of work is filed,
+  not handed back"*). **`retro` is the terminal sweeper.** So the opening defect — a count only
+  `queue` could reduce — is already discharged in prose, and what is left is an invariant nobody
+  wrote down: the count is every entry *because* every entry is retro-actionable. FR1 states it
+  beside `count_findings` and guards it; that is the whole of the counting change.
+  - **Rejected: two counts and a gate on both sweepers.** It buys nothing now that retro is
+    terminal, and it costs `config.yml`'s shape plus `--drive`'s exit codes, which 0038 and 0131
+    build against.
+  - **Rejected: a marker-aware count that skips marked entries.** It goes quiet exactly when
+    deferred and handed-over entries accumulate — the gate's whole job is to be loud then.
+  - **Trade-off accepted:** a buffer far past the threshold re-trips the gate after every sliced
+    retro pass, so a driver may dispatch several. That is churn, and it is loud churn; each pass
+    makes real progress because everything it reads leaves. Silence was the alternative.
+  - **The marker's shape, decided on the 2026-09-05 evidence above:** a head token,
+    `- 2026-09-05 [->0060] — **what happened.**`, so a large buffer partitions with one `grep` on
+    `\[->`. Verified against the counter: the token sits after the date, so both `dated()` and
+    `bolded()` in `count_findings` still match and nothing is reported malformed. Trailing prose was
+    tried in practice and bought the next sweeper nothing.
+  - **The write-time question, answered explicitly.** A noticer may **not** write the head token.
+    The token means *a sweeper dispositioned this*, and the header's rule that nothing is classified
+    at the moment of noticing stands. The cheap hint the note above asks about — the row the parking
+    session was holding — is admissible and already has a home: the `(pointer: …, item NNNN)` clause
+    at the end of the entry, which is not a classification and needs no new rule.
+  - **The scope half.** The gate counts what the retro it dispatches will read — the local buffer
+    plus the tools repo's buffer where `tools.path` resolves (FR10). Sibling backlogs under a shared
+    workspace are not counted, because 0111 FR5 settled that a retro cannot reach them; a gate over
+    an unreachable buffer would be this ticket's opening defect rebuilt. The 6/6/6/6 workspace case
+    is real and stays uncaught by any single project's gate — each project gates its own, and
+    nothing in this design pretends otherwise. Two consuming projects both counting the tools
+    buffer may each dispatch a retro for it; the second finds it swept, and `retro` Step 2 already
+    holds that finding nothing is a complete result.
+  - **The `retro`-side scope gap is taken here rather than given its own row** (FR2), on the note
+    above reserving it, and the 2026-09-09 note names the fix: the slice is chosen after the
+    cross-entry read, or equivalently, reading is cheap and only writing is sliced.
+  - **Depends on nothing outstanding.** 0111 is closed; `--drive` is untouched.
+- **2026-09-10 — `size` raised `m` → `l`, and `expects:` widened.** The answer reaches two skills,
+  the buffer header in both its copies, `references/REPORTING.md`, `templates/item.md`, the `next`
+  reader in both copies and the tests — FR7 to FR10 did not exist when this was sized `m`.
+- **2026-09-10 — 0080 is the same decision and is settled by this one.** *Let a findings entry's
+  lesson half be removed independently of its work half* asks the marker-or-two-halves question and
+  whether `./next --findings` counts a marked entry; FR1 and FR7 answer both. `relates:` now carries
+  it, and a dated line was appended to its own *Notes & decisions*. **A `queue` pass should withdraw
+  or re-scope 0080** — it is not this stage's call, and leaving it at `next: design` invites a
+  second design session to re-litigate what is decided here.
