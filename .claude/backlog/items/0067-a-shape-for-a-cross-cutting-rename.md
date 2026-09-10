@@ -12,27 +12,27 @@ parent:
 blocked_by: []
 relates: ["0001", "0005", "0045", "0049", "0050"]
 expects:
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
+  - references/CONCURRENCY.md  # also transiently mutated to prove the prose guards red
+  - references/CONCURRENCY-INCIDENTS.md  # also transiently mutated to prove the prose guards red
   - .claude/backlog/next
   - .claude/backlog/claim
   - skills/queue/templates/next
   - skills/queue/templates/claim
   - tests/next.test.sh
   - tests/claim.test.sh
-  - tests/cross-cutting-change.test.sh
+  - tests/cross-cutting-change.test.sh  # new file, created by this ticket
 claimed_by: "f582"
 claimed_at: 2026-09-10T19:02:21Z
 touches:
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
+  - references/CONCURRENCY.md  # also transiently mutated to prove the prose guards red
+  - references/CONCURRENCY-INCIDENTS.md  # also transiently mutated to prove the prose guards red
   - .claude/backlog/next
   - .claude/backlog/claim
   - skills/queue/templates/next
   - skills/queue/templates/claim
   - tests/next.test.sh
   - tests/claim.test.sh
-  - tests/cross-cutting-change.test.sh
+  - tests/cross-cutting-change.test.sh  # new file, created by this ticket
 ---
 
 ## Problem
