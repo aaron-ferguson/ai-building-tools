@@ -495,7 +495,23 @@ show_claimed() {
 collision_report() {
   for hid in $(all_ids); do
     htok="$(held_by "$hid")" || continue
-    shared="$(paths_shared "$2" "$(fm_list "$(item_for "$hid")" touches)")"
+    htouches="$(fm_list "$(item_for "$hid")" touches)"
+    # An EXCLUSIVE CLAIM — `touches: "*"` — holds the whole tree, so it collides with every
+    # candidate rather than with the ones naming a path it happens to share (0067 FR5;
+    # `CONCURRENCY.md`, *A change that touches every file takes an exclusive claim*). Tested BEFORE
+    # `paths_shared`, which matches path words exactly and so intersects `*` with nothing at all —
+    # which is how a cross-cutting rename came to be invisible to the one mechanism that reports
+    # scope. It has to short-circuit for a second reason: a candidate whose own `expects:` is empty
+    # has no path to intersect, so no intersection filter, however wide the holder's side, can ever
+    # report it.
+    #
+    # Only from a HELD row, which `held_by` above already decides. A stale `"*"` left on an unheld
+    # row must collide with nothing, or one un-stripped field freezes the stage for everyone.
+    if contains_word '*' "$htouches"; then
+      printf 'COLLIDES  %s | every file — exclusive claim held by %s [%s]\n' "$1" "$hid" "$htok"
+      continue
+    fi
+    shared="$(paths_shared "$2" "$htouches")"
     [ -n "$shared" ] || continue
     printf 'COLLIDES  %s | %s — held by %s [%s]\n' "$1" "${shared% }" "$hid" "$htok"
   done

@@ -1327,6 +1327,98 @@ out="$(run_next develop)" && rc=0 || rc=$?
 assert_not_contains "no TAKE across a live verify claim" "$out" 'TAKE      0001'
 assert_contains     "and the collision is reported"      "$out" 'COLLIDES  0001'
 
+
+# --- 0067 AC5/AC6 — an exclusive claim collides with every row ---------------------------------
+# `touches: "*"` is how a cross-cutting change declares that it holds the whole tree
+# (references/CONCURRENCY.md, *A change that touches every file takes an exclusive claim*). Before
+# this, `paths_shared` matched path words exactly, so a `"*"` entry collided with nothing at all and
+# the change was invisible to the one mechanism that reports scope.
+#
+# AC5 and AC6 are a PAIR on purpose: the second is what proves the first is testing HELDNESS and not
+# the literal string. Without it, a filter that collided on `"*"` wherever it appeared would pass
+# AC5 while freezing the stage against a stale `touches:` on an unheld row.
+
+echo "0067 AC5 — a held exclusive claim collides with a row sharing none of its paths"
+scaffold
+add_row 0001 'A row sharing nothing with the holder' develop ready 0000
+add_row 0002 'The cross-cutting change, held' develop in-progress 0000
+add_item_scope 0001 develop ready       free/file.md  '' ''
+add_item_scope 0002 develop in-progress other/file.md "$(printf '\n  - "*"')" '"aa11"'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+line="$(collides_line "$out" 0001)"
+assert_contains     "the row is reported as colliding" "$line" 'COLLIDES  0001'
+assert_contains     "naming the holder"                "$line" '0002'
+assert_contains     "and its token"                    "$line" 'aa11'
+assert_not_contains "and no row is offered"            "$out"  'TAKE      0001'
+
+echo "0067 AC5 — the inline list form declares the same hold"
+scaffold
+add_row 0001 'A row sharing nothing with the holder' develop ready 0000
+add_row 0002 'The cross-cutting change, held' develop in-progress 0000
+add_item_scope 0001 develop ready free/file.md '' ''
+add_item_lists  0002 in-progress '[]' ' ["*"]'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_contains     "the inline form collides too" "$(collides_line "$out" 0001)" 'COLLIDES  0001'
+assert_not_contains "and no row is offered"        "$out" 'TAKE      0001'
+
+# A candidate declaring NO paths is the case a path-intersection filter structurally cannot catch:
+# there is nothing to intersect, so `paths_shared` is empty however wide the holder's scope is.
+echo "0067 AC5 — it collides with a candidate that declares no paths at all"
+scaffold
+add_row 0001 'A row declaring nothing' develop ready 0000
+add_row 0002 'The cross-cutting change, held' develop in-progress 0000
+# Written inline rather than via `add_item_blank_scope`, which hardcodes a `claimed_by` — a HELD
+# candidate is skipped by the take loop before any collision is computed, so that helper would have
+# made this case green for a reason that has nothing to do with the exclusive claim.
+cat > "$FIX/.claude/backlog/items/0001-fixture.md" <<'ITEM'
+---
+id: "0001"
+title: Fixture 0001
+next: develop
+status: ready
+qa_level: unit
+size: s
+parent:
+blocked_by: []
+expects:
+claimed_by:
+claimed_at:
+touches:
+---
+
+## Problem
+ITEM
+add_item_scope 0002 develop in-progress other/file.md "$(printf '\n  - "*"')" '"aa11"'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_contains     "the empty-scope row still collides" "$(collides_line "$out" 0001)" 'COLLIDES  0001'
+assert_not_contains "and no row is offered"              "$out" 'TAKE      0001'
+
+echo "0067 AC5 — every row colliding on it reads as held, not as an empty stage"
+scaffold
+add_row 0001 'The only takeable row' develop ready 0000
+add_row 0002 'The cross-cutting change, held' develop in-progress 0000
+add_item_scope 0001 develop ready       free/file.md  '' ''
+add_item_scope 0002 develop in-progress other/file.md "$(printf '\n  - "*"')" '"aa11"'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_contains     "says the stage is held" "$out" 'every takeable develop row collides'
+assert_not_contains "not the empty-stage wording" "$out" 'nothing is takeable at stage develop'
+
+echo "0067 AC6 — an unheld row's stale exclusive touches collides with nothing"
+scaffold
+add_row 0001 'A row sharing nothing' develop ready 0000
+add_row 0002 'Not held, with a stale exclusive touches' develop ready 0000
+add_item_scope 0001 develop ready free/file.md  '' ''
+add_item_scope 0002 develop ready other/file.md "$(printf '\n  - "*"')" ''
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0
+assert_contains     "the top row is offered"   "$out" 'TAKE      0001'
+assert_not_contains "and nothing collides"     "$out" 'COLLIDES  0001'
 # --- 0086 AC8 — the take line carries close_by ------------------------------------------------
 # A develop session reads this one line to decide what it is taking on, and `close_by` decides
 # whether that session closes the ticket itself or hands it to a QA pass. Printed unconditionally,
