@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0140 | Decide whether a held item under a ready row is drift, and stop offering it twice | bug | unit | 2026-09-10 | [items/0140-a-held-item-under-a-ready-row.md](items/0140-a-held-item-under-a-ready-row.md) |
 | 0136 | Stop two gates sharing a file through a row neither lead names | bug | verify | 2026-09-10 | [items/0136-two-gates-can-share-a-file-through-a-non-lead-row.md](items/0136-two-gates-can-share-a-file-through-a-non-lead-row.md) |
 | 0090 | Close the four contract gaps 0081 and 0082 left in claim, close and handoff | bug | unit | 2026-09-09 | [items/0090-remaining-script-contract-gaps.md](items/0090-remaining-script-contract-gaps.md) |
 | 0115 | Make --drift see a row and its item disagreeing, as three files say it does | bug | unit | 2026-09-09 | [items/0115-drift-sees-row-item-disagreement.md](items/0115-drift-sees-row-item-disagreement.md) |

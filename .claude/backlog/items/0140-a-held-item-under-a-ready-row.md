@@ -2,8 +2,8 @@
 id: "0140"
 title: Decide whether a held item under a ready row is drift, and stop offering it twice
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-09
@@ -16,9 +16,10 @@ expects:
   - skills/queue/templates/next
   - tests/next.test.sh
   - references/CONCURRENCY.md
-claimed_by: "b59a"
-claimed_at: 2026-09-10T02:18:45Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-10
 ---
 
 ## Problem
@@ -104,37 +105,37 @@ Settled by `/design` on 2026-09-09 `[e1ec]` — candidate **(c)**, with the item
 
 Fixtures are `tests/next.test.sh`'s scaffolded backlog; `0001` below is its fixture row.
 
-- [ ] AC1 — Given a row reading `develop | ready` whose item carries `claimed_by: tok9`, when
+- [x] AC1 — Given a row reading `develop | ready` whose item carries `claimed_by: tok9`, when
   `./next develop` runs, then it does not print `TAKE 0001`. Red-making input: today's `next`, which
   prints exactly that, captured in *Problem*.
-- [ ] AC2 — Given that same row, when `./next develop` runs, then it prints a skip line naming both
+- [x] AC2 — Given that same row, when `./next develop` runs, then it prints a skip line naming both
   the id and `tok9`, and exits 0. Red-making input: a line naming the id alone (the NFR's own red).
-- [ ] AC3 — Given a held row ranked above a clear one at the same stage, when `./next develop` runs,
+- [x] AC3 — Given a held row ranked above a clear one at the same stage, when `./next develop` runs,
   then it prints the skip line for the held row **and** `TAKE` for the clear one. Red-making input:
   `break` in place of `continue` — the clear row goes unoffered.
-- [ ] AC4 — Given a row that is both held and has an open `blocked_by` entry, when `./next develop`
+- [x] AC4 — Given a row that is both held and has an open `blocked_by` entry, when `./next develop`
   runs, then exactly one line is printed for it, the `SKIP … blocked_by still open` one. Red-making
   input: moving the held check above the blocker check, which prints two.
-- [ ] AC5 — Given a row reading `ready` over an item with `claimed_by: tok9` and `status: ready`,
+- [x] AC5 — Given a row reading `ready` over an item with `claimed_by: tok9` and `status: ready`,
   when `./next --drift` runs, then it prints one line naming the id and `tok9`, and exits 1.
   Red-making input: today's `next`, which prints `no drift` and exits 0, captured in *Problem*.
-- [ ] AC6 — Given that same row, when `./next --drift` runs, then it prints exactly one line for it.
+- [x] AC6 — Given that same row, when `./next --drift` runs, then it prints exactly one line for it.
   Red-making input: a sixth branch appended as a separate `if` rather than into the `elif` chain,
   where a row disagreeing on `status:` as well reports twice.
-- [ ] AC7 — Given the held row is the top takeable `next: develop` row, when `./next --drive` runs,
+- [x] AC7 — Given the held row is the top takeable `next: develop` row, when `./next --drive` runs,
   then it does not dispatch it and the `DEPTH` count does not include it. Red-making input:
   `takeable_develop` left filtering on the column alone.
-- [ ] AC8 — Given a row reading `ready` over an item with `claimed_by: tok9`, when `./next develop`
+- [x] AC8 — Given a row reading `ready` over an item with `claimed_by: tok9`, when `./next develop`
   runs, then `CLAIMED FILES` lists `0001 [tok9]`. Red-making input: `show_claimed` left filtering on
   `status == in-progress`, which omits it.
-- [ ] AC9 — Given a row reading `in-progress` over an item with an empty `claimed_by:`, when
+- [x] AC9 — Given a row reading `in-progress` over an item with an empty `claimed_by:`, when
   `./next develop` runs, then it appears in no `CLAIMED FILES` line and produces no `COLLIDES`
   against a candidate sharing its `touches:`. Red-making input: FR3 implemented as a union of the
   column and the token rather than a replacement.
-- [ ] AC10 — Given `references/CONCURRENCY.md` and both copies of `next`, when the suite runs, then
+- [x] AC10 — Given `references/CONCURRENCY.md` and both copies of `next`, when the suite runs, then
   the *held* definition appears once, in `CONCURRENCY.md`, and `next` cites it. Red-making input: a
   comment in `next` restating "a non-empty `claimed_by:` and nothing else".
-- [ ] AC11 — Given the change, when `tests/backlog-scripts-installed.test.sh` runs, then it is
+- [x] AC11 — Given the change, when `tests/backlog-scripts-installed.test.sh` runs, then it is
   green. Red-making input: editing one copy of `next` and not the other.
 
 ## QA plan
@@ -158,6 +159,50 @@ Fixtures are `tests/next.test.sh`'s scaffolded backlog; `0001` below is its fixt
   thing a stage must not write (`CONCURRENCY.md`, *A stage writes only the ticket it holds*).
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+Verified 2026-09-09 `[b59a]` at `qa_level: unit` against `7f54025`, tree clean at Step 2 and at
+verdict. `config.yml` configures no `lint` or `typecheck`, so `unit` is the whole gate: every
+`tests/*.test.sh` run individually rather than through the fail-fast one-liner (`config.yml` says
+why). All 27 files green; `tests/next.test.sh` **266 passed, 0 failed**,
+`tests/backlog-scripts-installed.test.sh` **37 passed, 0 failed** — tallies pasted from the runs.
+
+**Which copy was executed.** `tests/next.test.sh` copies `skills/queue/templates/next` into its
+fixture (`NEXT_SRC`, line 23), so every behavioural case exercises the TEMPLATE. Behavioural
+mutations were therefore applied there; `.claude/backlog/next` is byte-identical to it (`diff`), and
+AC10/AC11 read both. The repo copies are the authority here — this session's own skills resolved
+from the 0.9.22 install, which predates this change.
+
+| # | Criterion | How checked | Mutation that reddens it | Result |
+|---|---|---|---|---|
+| AC1 | held row not offered | `0140 AC1/AC2` case, `TAKE 0001` absent | M1 take-loop skip removed → 5 red | PASS |
+| AC2 | skip line names id and token, exit 0 | same case, `SKIP 0001` matched for `0001` and `tok9` | M1 → *names the id on a skip line*, *and names the token* red | PASS |
+| AC3 | held row above a clear one does not stop the walk | `0140 AC3` case, `SKIP 0001` + `TAKE 0002` | M2 `continue`→`break` → *and still offers the clear one* red | PASS |
+| AC4 | held **and** blocked reports once, the blocker | `0140 AC4` case, `lines_naming ^SKIP      0001 ` = 1 | M3 held check moved above the blocker check → *reports the open blocker* red | PASS |
+| AC5 | `--drift` names id and token, exits 1 | `0140 AC5/AC6` case | M4 class 6 removed → 4 red | PASS |
+| AC6 | exactly one `DRIFT` line, incl. a row also disagreeing on `status:` | both `0140 AC6` cases | M5 class 6 as a separate `if` → *one DRIFT line for the row* red | PASS |
+| AC7 | `--drive` neither dispatches nor counts it | `0140 AC7` case, `DEPTH 0 develop gate(s)`, rc 3 | M6 `takeable_develop` check removed → *counts no takeable gate* red; M7 rank-walk NOTE removed → *dispatches nothing* red | PASS |
+| AC8 | `CLAIMED FILES` lists `0001 [tok9]` under a `ready` column | `0140 AC8` case | M8 `show_claimed` keyed back on the column → 2 red | PASS |
+| AC9 | tokenless `in-progress` is not a claim | `0140 AC9` case, no `COLLIDES`, no `CLAIMED FILES` line | M9 `collision_report` keyed back on the column → 2 red | PASS |
+| AC10 | *held* defined once, in `CONCURRENCY.md`; `next` cites it | `0140 AC10` case; both copies `grep -c 'non-empty'` = 0 | appending a restating comment to `.claude/backlog/next` → 265/1 red | PASS |
+| AC11 | `tests/backlog-scripts-installed.test.sh` green | run directly, 37/0 | editing the template only → 36/1 red | PASS |
+
+Control: unmutated template, **266 passed, 0 failed**. Eleven mutations, every one red, each with a
+non-empty `git diff --stat` confirming it landed. The build notes' sweep was re-run rather than
+trusted.
+
+| NFR | How checked | Result |
+|---|---|---|
+| Observability | Every ownership line names id **and** token: `SKIP … held by tok9`, `DRIFT … claimed_by: tok9`, `NOTE … is held by tok9`, `CLAIMED FILES … 0001 [tok9]`. The NFR's own red — a line naming the id alone — is AC2's second assertion, red under M1. | PASS |
+| Documentation | The six drift classes are enumerated only in `next`'s `--drift` header; *held* is defined only in `CONCURRENCY.md`, which gains the consequence sentence, and both copies of `next` cite *A stage writes only the ticket it holds* rather than restating it. AC10 guards the second copy. | PASS |
+| Dependencies | The diff adds `held_by`, built from `item_for`/`fm` and `printf`. No binary beyond `/bin/sh`, `git`, `awk`. | PASS |
+
+Always-on pass (`CONVENTIONS_CORE.md`): one predicate doing one thing with its inputs guarded at the
+top (`held_by` returns 1 on a missing item and on an empty token); comments give the why and cite
+rather than restate; no magic strings; no secrets; no new nesting beyond two levels. The change adds
+no log field, analytics event or egress destination, and touches no auth, credential or
+data-visibility path, so `data-privacy-conventions.md` and `security-conventions.md` have no
+surface here; no UI, so no accessibility surface. Newly reachable states: the change only *narrows*
+what `./next` offers — it creates no new route to a destructive or privileged action.
 
 ## Notes & decisions
 
