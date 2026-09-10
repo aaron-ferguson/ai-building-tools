@@ -88,3 +88,17 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   says "you write it" without saying that `./handoff` demands a token, so the session has to work out
   on its own that it must `./claim` first (pointer: `skills/design/SKILL.md` Step 4,
   `references/CONCURRENCY.md` *Lock every write to the backlog directory*).
+
+- **2026-09-10 — a BACKGROUNDED mutation sweep runs `git checkout` against the working tree you are
+  still editing in the foreground, and `develop` Step 5 recommends both halves separately.** Step 5
+  tells a session to background a long sweep and wait on a sentinel (`until grep -q`), and tells it
+  to mutate-and-restore with `git checkout -- <path>`. Combined, the sweep issues `checkout` on its
+  own schedule while the foreground session edits other files — and a `checkout` of a path the
+  foreground later edits destroys that edit with no error, a green suite, and nothing to notice it
+  by. Observed on this ticket: a six-mutation sweep ran `git checkout -- skills/queue/templates/next`
+  six times while the session worked on two other files, and was safe only by the accident of which
+  files came next; a later foreground `checkout` on that same path then did delete an uncommitted
+  refactor of it. Step 5's "mutate only what is committed" is the right rule and is stated for the
+  foreground case only — a sweep that is asynchronous needs the stronger form, which is that it must
+  run in a throwaway worktree or hold paths the session has finished with (pointer:
+  `skills/develop/SKILL.md` Step 5).
