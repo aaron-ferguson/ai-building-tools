@@ -3,7 +3,7 @@ id: "0060"
 title: Decide how the findings buffer is emptied and gated
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -21,8 +21,8 @@ expects:
   - skills/queue/templates/item.md
   - references/REPORTING.md
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "328c"
+claimed_at: 2026-09-10T20:45:15Z
 touches:
 ---
 
