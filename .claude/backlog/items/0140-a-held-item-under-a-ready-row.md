@@ -2,8 +2,8 @@
 id: "0140"
 title: Decide whether a held item under a ready row is drift, and stop offering it twice
 type: bug
-next: design
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 size: m
 created: 2026-09-09
@@ -16,10 +16,9 @@ expects:
   - skills/queue/templates/next
   - tests/next.test.sh
   - references/CONCURRENCY.md
-claimed_by: "e1ec"
-claimed_at: 2026-09-10T01:32:16Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/items/0140-a-held-item-under-a-ready-row.md
 ---
 
 ## Problem
