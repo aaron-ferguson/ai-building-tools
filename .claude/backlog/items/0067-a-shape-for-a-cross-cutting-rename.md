@@ -235,3 +235,46 @@ source line — `grep` is line-based here, and an asserted phrase straddling a l
 - Ranked in Tier 2 rather than Tier 5 despite no rename being planned. The mechanisms read as
   complete, which is what makes the gap dangerous: the next cross-cutting change will be started by
   a session that has checked `expects:` against `touches:` and concluded it is safe.
+
+- **2026-09-10 — Built, `/develop` [f582].** All seven FRs landed as specified; the design pass's
+  shape needed no revision. Prose in `CONCURRENCY.md` (34 lines) and `CONCURRENCY-INCIDENTS.md`
+  (45), the two script changes in both copies, and 21 new prose cases plus 8 script cases.
+
+- **Both YAML forms of the marker parse to a bare `*`, which the ticket did not settle.** `touches:
+  ["*"]` (inline) and `- "*"` (block) reach `fm_list` by different branches — the inline one strips
+  quotes with `gsub(/[][",]/, " ")`, the block one through `decomment`, which also strips a leading
+  and trailing quote. Both yield `*`, so `contains_word '*'` catches either. Asserted for both forms
+  rather than assumed, because they are genuinely different code paths. A **bare** `- *` is invalid
+  YAML — `*` is the alias indicator — so the quoted form is the one to write.
+
+- **`claim` reads `expects:`, `next` reads `touches:`, and that asymmetry is deliberate.** At the
+  point `claim` must refuse, it has not yet seeded `touches:` from `expects:`, so `touches:` still
+  holds whatever the ticket was authored with. `next` asks the opposite question — what a session
+  has actually claimed against the code — and `touches:` is that field. Each reads the only field
+  that can answer its own question.
+
+- **A guard's independence has to be proved per clause, and two of them shared a source line.** The
+  AC9 deletion probes red not only when a phrase survives its own deletion but when deleting it
+  removes a *second* asserted phrase — which caught `one commit` and `green before it and green
+  after it` sitting on one line of `CONCURRENCY.md`, where a single `grep -v` took both. Split onto
+  separate lines. This is the line-based-`grep` hazard `CLAUDE.md` names, arriving from the guard
+  side rather than from a rewrap.
+
+- **AC6 was green before the implementation and is the case that matters most.** It asserts that a
+  stale `"*"` on an *unheld* row collides with nothing, and it passed both before and after — so it
+  was mutation-proved rather than trusted: hoisting the `*` test above `held_by` in the copy the
+  harness runs turns it red, naming `[MUTANT]` as the holder. Without that proof, AC6 is a guard
+  never seen failing. The mutation was made to `skills/queue/templates/next` in place and restored
+  in the same turn, because relocating the *test* breaks its `ROOT` derivation — parked as a finding.
+
+- **Adjacent and NOT fixed here: `gate_from` composes a batch from takeable rows' `expects:` via
+  `paths_overlap`, which has no `"*"` case.** A takeable (unheld) exclusive-claim row would therefore
+  sweep every pairwise-reachable row into one gate. It is not reachable through this ticket's FRs —
+  FR5 and FR6 both key on a *held* row — and narrowing or widening a contract is not this stage's
+  call, so it needs its own row rather than a silent fix here (pointer: `.claude/backlog/next`
+  `gate_from`, `paths_overlap`).
+
+- **The QA plan's "prove by mutation that a sentence moved out of its section fails" is built in
+  rather than left to the QA pass.** `tests/cross-cutting-change.test.sh` carries the out-of-section
+  fixture and the empty-section case as ordinary cases, so the scoping claim reds in the suite rather
+  than depending on a session remembering to check it.
