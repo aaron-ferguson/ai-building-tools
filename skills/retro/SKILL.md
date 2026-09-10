@@ -186,10 +186,6 @@ that were earned.
 
 Only for the findings that survived the gate.
 
-**Grep the destination before writing anything.** One command, and the difference between sharpening a
-rule and duplicating it. Where something related exists, **sharpen it in place**: an adjacent second
-bullet is how a file grows without getting better.
-
 **Fetch every repo it will edit before the first grep, and stop if you are behind.** A check
 against a stale tree is not evidence — it reads as one, which is what makes it expensive. On
 2026-09-01 a pass ran every grep in this step 47 commits behind `origin/main`, re-ran all of them
@@ -201,6 +197,10 @@ theirs (`git-conventions.md`). The repos are the ones already resolved — the c
 `tools.path` — and **never the plugin install** (`references/CONVENTIONS.md`, *Routing a finding to
 the repo it is about*): the marketplace clone beside it reads as a working checkout and reports a
 stale divergence in the direction that looks safe.
+
+**Grep the destination before writing anything.** One command, and the difference between sharpening a
+rule and duplicating it. Where something related exists, **sharpen it in place**: an adjacent second
+bullet is how a file grows without getting better.
 
 Three traps, each of which has cost a real session:
 
@@ -328,6 +328,11 @@ sessions it was written for.
   is a standing cost rather than news: `Skills changed — ran tools/release, restart required.` is
   the whole message. It is a consequence of an edit, never a *finding*: it does not belong in
   `FINDINGS.md`, where it would sit un-triageable and make a healthy buffer look neglected.
+- **That chain begins with a fetch, and the version comes from it.** `tools/release` fetches first
+  and derives the next version from the **remote's `plugin.json`**, reporting the observed remote
+  version and the derived one — **never the local file**, which is how a bump read off the local
+  version and incremented once **collided with a version already released** upstream (2026-09-01).
+  A checkout behind the remote refuses before anything is pushed.
 - **The push is the release, so the session asks the user before the invocation**, naming the
   branch and that other machines install from it (`git-conventions.md`). That ask is where the
   approval is evidenced; `--yes` carries an approval already granted and
@@ -341,11 +346,6 @@ sessions it was written for.
   plugin version` commit in `git log origin/<branch>..HEAD`. Re-run the same invocation: the local
   version is already ahead of the installed one, so it **re-bumps nothing**, finds nothing to
   commit, and pushes what is there.
-- **That chain begins with a fetch, and the version comes from it.** `tools/release` fetches first
-  and derives the next version from the **remote's `plugin.json`**, reporting the observed remote
-  version and the derived one — **never the local file**, which is how a bump read off the local
-  version and incremented once **collided with a version already released** upstream (2026-09-01).
-  A checkout behind the remote refuses before anything is pushed.
 
 ---
 

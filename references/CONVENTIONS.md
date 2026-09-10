@@ -5,7 +5,7 @@ Read by `queue`, `develop`, `verify`, and `retro` before they do anything that c
 These tools hold **no principles about code or product**. Every claim about what good software
 looks like — TDD, secrets handling, input validation, PII in logs, accessibility, migration
 safety — lives in the [`ai-building-conventions`](https://github.com/aaron-ferguson/ai-building-conventions)
-repository and is **cited, never restated**. A restated rule is a rule that drifts.
+repository and is **cited, never restated**. A restated rule is a rule that drifts, and the dangerous case is not the wrong restatement but the **incomplete** one: it reads as correct, so nothing prompts a reader to open the source. A skill restating a locking rule kept its *reason* and dropped the condition that reason depended on, and a session following the restatement literally had to choose between writing an unreviewable blob and skipping the work the step exists for (`0126`). This applies to a rule restated from anywhere, not only from the conventions — a reference file's rule quoted into a skill drifts the same way.
 
 What these tools *do* own is workflow: how work is queued, ranked, claimed, verified, and
 closed. That split is the whole design. The test for any line is not "is this a principle?" but:

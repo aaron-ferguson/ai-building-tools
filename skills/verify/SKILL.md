@@ -232,6 +232,15 @@ threshold chosen precisely so the thing under test becomes necessary. That manuf
 decision taken on other grounds and tests nothing. Record the gap in the item and in the close note, and
 leave it uncovered.
 
+**Where the AC is a quantifier, named mutations sample it and only a sweep settles it**
+(`testing-conventions.md`). An AC reading *anywhere inside* is a claim over a space, and hand-picked
+cases test the cases you thought of — one such AC bounced back twice, each pass finding one more
+uncaught shape by hand and each hand-back costing a whole `develop` session for a one-clause change.
+Enumerate the space mechanically instead. A sweep of that size outruns the tool's default timeout,
+so it has to print a sentinel line last and be waited on with an `until grep -q` over its output
+file, which means **planning the sentinel before you start it** rather than discovering the need
+once it is already running in the background.
+
 **Then ask what the mutation changed: the AC's named outcome, or only the message.** If the outcome
 the AC names still holds against deliberately broken code, **the AC is unverified** and that is the
 red this step exists for. If the outcome moved and only the wording differs — a deleted branch

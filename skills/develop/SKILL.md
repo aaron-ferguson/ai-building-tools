@@ -262,6 +262,14 @@ only in `DONE.md` requires already knowing to look. Four FRs across two tickets 
 each naming files that still existed, with prose that stayed internally consistent while becoming
 false — one would have deleted a sibling's acceptance criterion outright.
 
+**Grep your own id as well as the symbols, and do it first.** A sibling ticket may have already
+built your FR and cited you by number while doing it: `0075` FR3 asked that the version bump derive
+from the remote, and `tools/release` had done exactly that since `0084`, in a comment reading *"the
+next version it names has to be derived from the REMOTE's plugin.json (0075: a hand-picked version
+collided)"*, with a guard on it. `grep -rn '<your id>' --exclude-dir=.claude` is one call, resolves
+at the site rather than through `DONE.md`, and re-scopes the ticket before a line is read — where
+the symbol grep only finds it if you guessed the right symbol.
+
 **That grep covers a figure an FR *reprices*, not only a symbol it names.** A guard can pin the old
 figure as a literal, so the ticket ranked to change it takes a green suite red on a correct document
 at the very end of the work; `grep -rn '32%' tests/` before the edit costs one call and reframes the
@@ -460,6 +468,11 @@ repeating showed 1 failure in 6 **at the baseline** against 0 in 6 on the workin
 
 Fix the first. **Queue the second rather than stabilising it inside this ticket** — a ticket that
 adopts every fragile check it brushes against stops being the ticket that was ranked.
+
+**A guard whose claim is a quantifier is proved by a sweep, not by named mutations**
+(`testing-conventions.md`), and a sweep of that size is a long-running job: give the script a
+sentinel line it prints last and wait on it with an `until grep -q`, planned before the run is
+backgrounded rather than after.
 
 **If you mutation-check your own guards here, mutate only what is committed.** `git checkout -- <path>`
 restores that file to `HEAD` rather than to the state you found it in, so reverting a mutation over a
