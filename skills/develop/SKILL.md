@@ -28,18 +28,27 @@ USD 0.1203 at 151,669 — context per turn down 30%, cost 14.5%, short of the pr
 (`MEASUREMENT.md`). **No standard is relaxed** — the rigour is all in the fifth of spend that is output.
 
 **One gate per invocation, not one ticket.** The unit is a gate: **one gate per session, not one
-ticket per session** — a set of tickets that share a file scope (their `expects:` overlap) or share a
-parent slice, all `next: develop` and takeable. Tickets from unrelated projects do not batch, because
-what a batch saves is the startup a session pays before it writes a line — the conventions, the
-project's `CLAUDE.md`, `CONCURRENCY.md`, this file, the orientation in the code — and that is only
-shared where the files are. Two guardrails, both of which a real eleven-ticket run needed:
+ticket per session** — and the condition is takeability at the stage, nothing narrower: **any row
+`./next develop` hands you may be worked in the same session**. Tickets from unrelated projects do
+not batch, because what a batch saves is the startup a session pays before it writes a line — the
+conventions, the project's `CLAUDE.md`, `CONCURRENCY.md`, this file — and a different project's are a
+different startup rather than a shared one. Shared file scope (their `expects:` overlap) and a shared
+parent slice are why a batch pays more, adding the orientation in the code on top of the startup any
+batch already amortises; they are not a test the rows must pass first. **Assemble the batch by
+repeating `./next develop` after each close** — claim, work, close, ask again — never by selecting a
+set up front: a claimed row is not takeable, so the next call hands the next row, and nothing is held
+before it is worked (`CONCURRENCY.md`, *The working tree is shared too*). Two guardrails, both of
+which a real eleven-ticket run needed:
 **Claim and close each ticket individually** — the row is the unit of ownership whatever the session
 is, and a batch holding rows it is not yet working on is the scope reservation `CONCURRENCY.md`
 forbids — and **Stop at the first ticket whose contract turns out wrong** rather than carrying a bad
 assumption into the rest of the batch. The figure behind this is capture-side and dated
 **2026-08-22**: five related tickets in one session cost measurably less per ticket than five
 sessions would have. **0026** looked for the develop-side figure in the 2026-08-23/24 sessions and
-found no batched session to measure; producing it needs a run designed for it.
+found no batched session to measure; producing it needs a run designed for it. **`verify`
+batches on a different condition — that the tickets were developed together in one gate — because
+what a verify batch spends is the gate's independence, which no startup saving amortises. Do not
+carry this rule there.**
 
 **Another session may be working this same backlog.** Read `references/CONCURRENCY.md` at the plugin root
 (`../../references/CONCURRENCY.md` from this file) before touching any backlog file.

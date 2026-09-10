@@ -20,16 +20,25 @@ sessions: a `verify` turn is the suite's cheapest at **USD 0.0946 and 97,965 con
 baseline USD 0.1203 at 151,669 (`MEASUREMENT.md`). **No standard is relaxed** — the rigour is all in the
 fifth of spend that is output.
 
-**One gate per invocation, not one ticket.** The same batching case applies for the same reason:
-**one gate per session, not one ticket per session** — tickets that share a file scope or a parent
-slice are checked in one session, since the conventions, this file and the suite's startup are a
-shared cost paid once however many verdicts come out of it. **A batch does not license one verdict
+**One gate per invocation, not one ticket.** A `verify` batch has its own condition, and it is not
+`develop`'s: the tickets were **developed together in one gate**. Rows merely sitting at the stage —
+`next: verify`, ready and unclaimed — are not thereby a batch. The conditions differ because the two
+stages spend different things: `develop` batches to amortise a startup, which is a pure saving, while
+what a verify batch spends is the gate's independence, which no startup saving amortises because it
+is the property being traded rather than a cost. So nothing licenses widening the batch past the
+membership a develop gate already fixed. **A batch does not license one verdict
 covering several tickets.** Each ticket closes on its **own acceptance criteria** at its own declared
 `qa_level`, and a failing AC fails that ticket alone — never the batch, and never the reverse: one
 green ticket does not carry its neighbours. Claim and close each row individually
-(`CONCURRENCY.md`, *A stage writes only the ticket it holds*). The dated figure is capture-side,
-**2026-08-22**; the recorded 2026-08-23/24 run held no batched session, so the figure for this side of
-the gate is still unmeasured (`MEASUREMENT.md`).
+(`CONCURRENCY.md`, *A stage writes only the ticket it holds*). **Verify one ticket at a time, with
+the tree at a clean committed state before the next ticket's first run.** Step 3 proves a check by
+breaking it, and in a batch that mutation lands in the working tree the other tickets' runs share —
+so a suite run taken for ticket B while ticket A's mutation is live reads as B's red, a verdict about
+a tree that never existed as a commit. Ordering is what isolates it, not a worktree: Step 3's
+commit → mutate → confirm red → restore-by-path → control-green cycle completes inside the ticket
+that opened it (`testing-conventions.md`, restore before you assert). The dated figure `develop`
+carries is capture-side and about that stage's startup; this side of the gate is still unmeasured
+(`MEASUREMENT.md`).
 
 **`verify` closes the ticket.** On green it ticks the ACs, sets it done, moves the row to `DONE.md` and
 releases its claim. `develop` closes nothing: a verdict that must travel from the session producing it
