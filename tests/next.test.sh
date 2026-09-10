@@ -1733,6 +1733,24 @@ assert_rc       "exits 0"                          "$rc" 0
 assert_contains "states the stage and the count"   "$out" 'PROPOSE   verify | 1 ticket(s)'
 assert_contains "names the ticket"                 "$out" 'TICKET    0101 | size s | A built ticket awaiting QA'
 
+echo "0130 — a retro dispatch is proposed too, holding no ticket of its own"
+# The findings gate dispatches `retro`, which holds no row. It is still a STAGE SESSION, so it is
+# still something a person is being asked to approve — a stage that silently skipped the proposal
+# would be the one hole in "no stage runs unconfirmed", and it is the hole nobody would look for.
+scaffold
+set_threshold 2
+add_row 0101 'Work the gate will not reach' develop ready ''
+add_ticket 0101 develop ready '[]' '' a/one.md
+add_findings "$(printf -- '- 2026-01-02 — one entry.\n- 2026-01-03 — and a second, which reaches the threshold.')"
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_rc       "exits 5 — the findings gate"        "$rc" 5
+assert_contains "dispatches retro"                   "$out" 'DISPATCH  retro'
+assert_contains "proposes the retro as a stage with no ticket" "$out" 'PROPOSE   retro | no ticket of its own'
+# The develop gate it displaced is NOT described. A proposal naming tickets beside a retro dispatch
+# is a scope a person would approve believing those tickets are about to be built.
+assert_not_contains "describes no ticket the retro will not touch" "$out" 'TICKET    0101'
+
 echo "0130 — --propose adds nothing to a decision that dispatches no stage"
 scaffold
 add_row 0105 'A design question' design ready ''

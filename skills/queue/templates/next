@@ -758,36 +758,39 @@ if [ "${1:-}" = "--drive" ]; then
   # and never by how verbose its tickets are.
   PROPOSE_JOIN_CAP=5
 
+  # `pb_` prefixes because sh has no locals, and this script's own `held_by` records why that
+  # matters: `paths_shared` loops over a bare `pa`, so a future call to it from inside this block
+  # would corrupt the loop it was called from, silently.
   propose_block() {
     [ "$PROPOSE" = 1 ] || return 0
     [ -n "$PROPOSE_STAGE" ] || return 0
 
-    pn=0
-    for p in $PROPOSE_IDS; do pn=$((pn + 1)); done
+    pb_n=0
+    for pb_id in $PROPOSE_IDS; do pb_n=$((pb_n + 1)); done
 
     # `retro` is dispatched by the findings gate and holds no row. It is still a stage session, so
     # it is still something a person is being asked to approve — a stage that silently skipped the
     # proposal would be the one hole in "no stage runs unconfirmed".
-    if [ "$pn" = 0 ]; then
+    if [ "$pb_n" = 0 ]; then
       printf 'PROPOSE   %s | no ticket of its own — the findings buffer is the subject\n' "$PROPOSE_STAGE"
       return 0
     fi
 
-    printf 'PROPOSE   %s | %s ticket(s)\n' "$PROPOSE_STAGE" "$pn"
-    for p in $PROPOSE_IDS; do
-      pit="$(item_for "$p")"
-      printf 'TICKET    %s | size %s | %s\n' "$p" "$(fm "$pit" size)" "$(field "$(row_for "$p")" "$TITLE")"
-      pwork="$(problem_line "$pit")"
-      [ -z "$pwork" ] || printf 'WORK      %s\n' "$pwork"
+    printf 'PROPOSE   %s | %s ticket(s)\n' "$PROPOSE_STAGE" "$pb_n"
+    for pb_id in $PROPOSE_IDS; do
+      pb_item="$(item_for "$pb_id")"
+      printf 'TICKET    %s | size %s | %s\n' "$pb_id" "$(fm "$pb_item" size)" "$(field "$(row_for "$pb_id")" "$TITLE")"
+      pb_work="$(problem_line "$pb_item")"
+      [ -z "$pb_work" ] || printf 'WORK      %s\n' "$pb_work"
     done
 
     # One `fm_list` per ticket rather than one per (ticket, path) pair: the counting is awk's, so a
     # forty-row gate naming a hundred and sixty paths stays forty reads rather than six thousand.
     # A row naming the same path twice counts once — `expects:` is a set, and a duplicated entry
     # would otherwise inflate the very number a person is being asked to judge.
-    for p in $PROPOSE_IDS; do
-      for pa in $(fm_list "$(item_for "$p")" expects); do printf '%s %s\n' "$pa" "$p"; done
-    done | awk -v n="$pn" -v cap="$PROPOSE_JOIN_CAP" '
+    for pb_id in $PROPOSE_IDS; do
+      for pb_path in $(fm_list "$(item_for "$pb_id")" expects); do printf '%s %s\n' "$pb_path" "$pb_id"; done
+    done | awk -v n="$pb_n" -v cap="$PROPOSE_JOIN_CAP" '
       !($1 SUBSEP $2 in pair) {
         pair[$1 SUBSEP $2] = 1
         if (!($1 in count)) { path[++k] = $1 }
@@ -819,7 +822,7 @@ if [ "${1:-}" = "--drive" ]; then
     # The gate's OTHER join mechanism. `gate_from` batches on a shared `parent:` as well as on a
     # shared file, so a proposal explaining only the files mislabels a row that joined by slice as
     # unexplained — and that row is the one a person is most likely to think was included by mistake.
-    for p in $PROPOSE_IDS; do fm "$(item_for "$p")" parent; done | awk -v n="$pn" '
+    for pb_id in $PROPOSE_IDS; do fm "$(item_for "$pb_id")" parent; done | awk -v n="$pb_n" '
       NF { if (!($0 in count)) { par[++k] = $0 } ; count[$0]++ }
       END {
         for (i = 1; i <= k; i++)
