@@ -101,6 +101,49 @@ the decision line and the depth line come from the same call.
 
 ---
 
+## The proposal — what a person confirms before any stage runs
+
+**Dispatch no stage session until a person has confirmed the scope.** The three checks above still
+happen first — the probe, the marker, the depth read — and what is gated is the first *stage*:
+`--drive`'s exit 0 is a decision, not permission. The gate behind it is a **conflict** unit, and
+presenting a conflict unit as a plan is how a person approves thirteen tickets meaning to approve
+four.
+
+**One call produces it: `./next --drive --propose`** — the read Step 1 already makes, with the flag
+on. Made **once per run**, before the first stage; every later cycle drops it, because re-sending the
+block each cycle spends the one term the cost model above can actually move.
+
+The proposal states, all of it from that one call:
+
+- **How many tickets** the sprint expects to work.
+- **Which tickets**, by id and title.
+- **What the work is** for each, in one line drawn from the ticket rather than invented.
+- **Why these** — and where a gate is held together by a shared file, *which* file and how many rows
+  join through it. Ten rows joining through one `SKILL.md` is a grouping artefact, not a theme; a
+  count alone reads as a large sprint and hides that. `--propose` ranks those joins by how much of
+  the gate each explains, and names the parent slice too, which is the gate's other join mechanism.
+- **An estimate in real-world time, tokens and dollars.** Recompute it from `MEASUREMENT.md`'s
+  per-stage means and `config.yml`'s gate model; quote no figure from here, which would be a cache of
+  another file. **A figure with no prior is labelled as having no prior rather than presented as
+  derived** — as at 2026-09-10 `MEASUREMENT.md` records no wall-clock at all, so the time figure has
+  none, and `0135` is what accumulates one.
+
+**Where the confirmed scope is only part of a gate, name the rows left behind and what resuming them
+costs.** They were un-takeable while the rest is in progress anyway, so the real price is one
+additional session floor later, at the develop mean. That is usually a fine price for not doing nine
+tickets nobody chose — and it is a decision a person can only make if they are shown it.
+
+**Three answers, and two of them are not yes.** Confirm it · **amend** it, where the rule above says
+what the amendment leaves behind · or **decline**, which ends the run with no stage session and
+releases the marker: remove `.claude/backlog/runs/.active`, exactly as the end of a run does.
+
+**Write the confirmed scope to the run log before the first dispatch**, as one `scope_confirmed`
+event (Step 5). A resuming supervisor then reads what was agreed rather than re-deriving a scope the
+person never saw, and the **ordering** is the requirement rather than the logging: the case that
+loses it is the first stage killing the supervisor that had not written it down yet.
+
+---
+
 ## Step 2 — The cycle
 
 One call decides everything:
@@ -220,8 +263,8 @@ and a pointer worth opening gets named.
 ## Step 5 — The run log
 
 **One JSON line per event, appended as it happens, under `.claude/backlog/runs/<run-id>.jsonl`.**
-Every stage started, every outcome, every gate decision and every escalation, each with a UTC
-timestamp and the run id. The supervising conversation is what dies; a decision that reached only
+The confirmed scope as one `scope_confirmed` event, then every stage started, every outcome, every
+gate decision and every escalation, each with a UTC timestamp and the run id. The supervising conversation is what dies; a decision that reached only
 the transcript is unrecoverable.
 
 **The log is provenance. It is not state, and this is the point of it.** A resuming supervisor —

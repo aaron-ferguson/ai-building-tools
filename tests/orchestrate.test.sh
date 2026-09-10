@@ -112,6 +112,15 @@ section() {
 # says <file> <heading-text> <phrase> — 0 when that section states that phrase.
 says() { section "$1" "$2" | grep -qF -- "$3"; }
 
+# The same, case-insensitively, for a phrase that may open a sentence or a bolded bullet.
+#
+# WHY A SECOND HELPER. A presence grep pins one casing, so an assertion written before the prose it
+# will match reds a guard whose subject is present and correct — `how many tickets` against a bullet
+# opening `**How many tickets**`, which is 0130 AC3 failing on a correct skill
+# (testing-conventions.md, the mirror of the absence-grep casing trap). Normalise in the MATCHER,
+# never by choosing the prose to suit the guard.
+says_ci() { section "$1" "$2" | grep -qiF -- "$3"; }
+
 # ------------------------------------------------------------------------------------------------
 echo "AC2 — the schema is a single committed file that parses"
 
@@ -1337,6 +1346,189 @@ if derivation "$TPL" | grep -qF 'cost_tracking'; then
   ok "the template tells a project to derive its cap from cost_tracking history"
 else
   bad "AC26 — the template does not say where the cap comes from; the first number written there will be a guess"
+fi
+
+# ------------------------------------------------------------------------------------------------
+# 0130 — the proposal a person confirms before any stage runs.
+#
+# WHY THESE ARE GREPS AND WHAT THAT BUYS. The mechanical half of 0130 — that the proposal can
+# actually name the file a gate is held together by, and how many rows join through it — is asserted
+# in tests/next.test.sh against the real `./next --drive --propose` and a fixture backlog. What is
+# left here is the supervisor's own obligation, which is an instruction to a session: the only
+# reachable property of an instruction is that it is present, and these cases are honest about that.
+#
+# EVERY ONE IS SECTION-SCOPED. A rule about the proposal is not satisfied by the words appearing in
+# Step 1's probe or Step 5's run-log description, both of which talk about the same machinery for
+# different reasons — the `section` helper above exists because three earlier cases measured
+# something NEXT TO the defect they named.
+PROPSEC="The proposal"
+
+echo "0130 AC1 — the proposal section exists and is where the confirmation gate lives"
+if [ -n "$(section "$SKILL" "$PROPSEC")" ]; then
+  ok "the skill carries a proposal section"
+else
+  bad "AC1 — the skill has no '## $PROPSEC' section; there is nothing between the depth read and the dispatch"
+fi
+
+# AC1 is an ORDERING claim, and the order is the whole criterion: a proposal described after the
+# dispatch step satisfies every word of FR1 and none of its point. Anchored to the STAGE dispatch's
+# own `--session-id` line rather than to a step heading — Step 1's probe is also a `claude -p`, and
+# an ordinal anchor is re-aimed rather than broken when a step is inserted ahead of it
+# (testing-conventions.md). The marker line is what an edit moving the dispatch must also move.
+prop_at="$(grep -n "^## $PROPSEC" "$SKILL" | head -1 | cut -d: -f1)"
+stage_at="$(grep -n '\-\-session-id' "$SKILL" | head -1 | cut -d: -f1)"
+marker_at="$(grep -n 'mkdir .claude/backlog/runs/.active' "$SKILL" | head -1 | cut -d: -f1)"
+if [ -n "$prop_at" ] && [ -n "$stage_at" ] && [ "$prop_at" -lt "$stage_at" ]; then
+  ok "the proposal is stated before the stage dispatch (line $prop_at before $stage_at)"
+else
+  bad "AC1 — the proposal is not stated before the stage dispatch (proposal ${prop_at:-absent}, dispatch ${stage_at:-absent})"
+fi
+# And AFTER the three checks, which FR1 says still happen first. Without this half the criterion is
+# satisfied by a skill that proposes a scope before it knows whether it can dispatch at all.
+if [ -n "$prop_at" ] && [ -n "$marker_at" ] && [ "$marker_at" -lt "$prop_at" ]; then
+  ok "and after the supervisor marker is taken (line $marker_at before $prop_at)"
+else
+  bad "AC1 — the proposal precedes the marker; a scope would be confirmed before the run knows it may drive at all"
+fi
+
+if says "$SKILL" "$PROPSEC" 'no stage session'; then
+  ok "the section forbids a stage session before confirmation"
+else
+  bad "AC1 — the section does not say that no stage runs before a person confirms"
+fi
+
+# AC3 — FIVE SEPARATE ASSERTIONS, because the criterion says so in as many words: "checked as five
+# separate assertions, not one, so a proposal missing only the estimate still fails". One grep over
+# a conjunction would be satisfied by any single element surviving.
+echo "0130 AC3 — the proposal's five elements are each required, checked one by one"
+prop_element() {
+  if says_ci "$SKILL" "$PROPSEC" "$2"; then
+    ok "the proposal must carry $1"
+  else
+    bad "AC3 — the proposal does not have to carry $1 (looked for: $2)"
+  fi
+}
+prop_element "how many tickets"              'how many tickets'
+prop_element "which tickets, by id and title" 'by id and title'
+prop_element "a line of work per ticket"      'drawn from the ticket'
+prop_element "why these tickets"              'why these'
+prop_element "a three-part estimate"          'time, tokens and dollars'
+
+# AC3's estimate half again, from the side the ticket actually cares about. FR6 does not ask for an
+# estimate, it asks for one whose unsourced parts are LABELLED -- and on 2026-09-10 the wall-clock
+# part has no prior at all, because MEASUREMENT.md records none and 0135 has not landed. A skill
+# that presents three derived figures where one is a guess is worse than one that shows two.
+echo "0130 AC3/FR6 — a figure with no prior is labelled rather than presented as derived"
+if says "$SKILL" "$PROPSEC" 'no prior'; then
+  ok "the section requires an unsourced figure to be labelled as having no prior"
+else
+  bad "AC3/FR6 — nothing says what to do with a figure the repo cannot source; wall-clock has no prior today"
+fi
+# A quoted figure is a cache of another file, and this repo has shipped one that went stale. The
+# estimate's inputs are config.yml and MEASUREMENT.md, so the section has to send a reader there
+# rather than carrying a number of its own.
+if says "$SKILL" "$PROPSEC" 'MEASUREMENT.md'; then
+  ok "and sources the figures from MEASUREMENT.md rather than quoting them"
+else
+  bad "AC3/FR6 — the section names no source for the estimate; the first number written there is a guess"
+fi
+
+echo "0130 AC4 — a partly-taken gate names what it left behind, and what resuming costs"
+if says "$SKILL" "$PROPSEC" 'rows left behind'; then
+  ok "the section requires the remainder to be named"
+else
+  bad "AC4 — an amended scope can be proposed with no mention of the rows it displaced"
+fi
+if says "$SKILL" "$PROPSEC" 'session floor'; then
+  ok "and states the resume cost as one additional session floor"
+else
+  bad "AC4/FR7 — the remainder is named with no cost attached; the trade-off a person is making is unpriced"
+fi
+
+echo "0130 AC5 — declining ends the run and releases the marker"
+if says "$SKILL" "$PROPSEC" 'decline'; then
+  ok "declining is one of the three answers"
+else
+  bad "AC5/FR9 — the section offers no way to decline; a proposal that can only be accepted is not a gate"
+fi
+# Anchored to the marker PATH, not to the word "release": correct prose is free to mention releasing
+# for other reasons, and Step 1 already does. The path is what an edit dropping the release must
+# also drop.
+if says "$SKILL" "$PROPSEC" '.claude/backlog/runs/.active'; then
+  ok "and the decline path names the marker it removes"
+else
+  bad "AC5 — nothing says the supervisor marker is removed on a decline; the next sprint reports the backlog as held"
+fi
+if says "$SKILL" "$PROPSEC" 'amend'; then
+  ok "amending the scope is the third answer"
+else
+  bad "FR9 — a person may only accept or decline, so a scope that is nearly right costs the whole run"
+fi
+
+echo "0130 AC6 — the confirmed scope reaches the run log BEFORE the first dispatch"
+if says "$SKILL" "$PROPSEC" 'before the first dispatch'; then
+  ok "the section states the ordering"
+else
+  bad "AC6/FR8 — the scope is not required to be logged before the dispatch; the ordering that loses it is the one where the first stage kills the supervisor"
+fi
+# The event has a NAME, so a resuming supervisor can find it and this suite can anchor to it. A
+# rule written only as prose about "the scope" is a rule whose artifact nobody can grep for.
+if says "$SKILL" "Step 5" 'scope_confirmed'; then
+  ok "the run log's event vocabulary carries the confirmed scope"
+else
+  bad "AC6/FR8 — the run log section does not name the scope event; a resuming supervisor has nothing to read"
+fi
+
+# The ordering, as a property of a run log rather than of the prose. Two fixtures, one of each
+# ordering, so the check can fail in both directions: asserted green on the good log and RED on the
+# bad one, which is what stops this being a reader wired to nothing.
+echo "0130 AC6 — the ordering is decidable from a run log, and both orderings are distinguishable"
+scope_first() {
+  awk '
+    /"event": *"scope_confirmed"/ { if (!dispatched) { good = 1 } ; seen = 1 }
+    /"event": *"stage_started"/   { dispatched = 1 }
+    END { print (seen ? (good ? "ok" : "late") : "absent") }
+  ' "$1"
+}
+cat > "$FIX/run-good.jsonl" <<'LOG'
+{"ts":"2026-09-10T09:00:00Z","run":"r1","event":"depth","gates":2}
+{"ts":"2026-09-10T09:01:00Z","run":"r1","event":"scope_confirmed","tickets":["0101","0102"]}
+{"ts":"2026-09-10T09:02:00Z","run":"r1","event":"stage_started","stage":"develop"}
+LOG
+cat > "$FIX/run-late.jsonl" <<'LOG'
+{"ts":"2026-09-10T09:00:00Z","run":"r1","event":"depth","gates":2}
+{"ts":"2026-09-10T09:02:00Z","run":"r1","event":"stage_started","stage":"develop"}
+{"ts":"2026-09-10T09:03:00Z","run":"r1","event":"scope_confirmed","tickets":["0101","0102"]}
+LOG
+cat > "$FIX/run-none.jsonl" <<'LOG'
+{"ts":"2026-09-10T09:00:00Z","run":"r1","event":"depth","gates":2}
+{"ts":"2026-09-10T09:02:00Z","run":"r1","event":"stage_started","stage":"develop"}
+LOG
+for pair in "run-good.jsonl:ok" "run-late.jsonl:late" "run-none.jsonl:absent"; do
+  lf="${pair%%:*}"; want="${pair#*:}"
+  got="$(scope_first "$FIX/$lf")"
+  if [ "$got" = "$want" ]; then
+    ok "$lf reads as $want"
+  else
+    bad "AC6 — $lf read as '$got', wanted '$want'; the ordering rule cannot tell the two logs apart"
+  fi
+done
+
+echo "0130 — the proposal is one call, not a new turn in the cycle"
+# The Performance NFR: built from the --drive call the skill makes anyway. A second read would be a
+# turn, and the turn count is the only term the supervisor's cost model can move.
+if says "$SKILL" "$PROPSEC" '--propose'; then
+  ok "the section names the flag that produces it"
+else
+  bad "Performance NFR — the section does not name --propose, so the proposal has no stated source and the obvious one is a second read"
+fi
+# The skill states no routing rules of its own (references/CONVENTIONS.md), and the gate's
+# composition is --drive's answer. A section that recomputed the grouping here would be the second
+# copy of a rule that then diverges from the script with neither being wrong.
+if says "$SKILL" "$PROPSEC" 'once per run'; then
+  ok "and says the proposal is made once per run, not once per cycle"
+else
+  bad "Performance NFR — nothing bounds the proposal to one call; a block re-sent every cycle is the cost this skill exists to hold down"
 fi
 
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
