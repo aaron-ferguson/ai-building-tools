@@ -77,3 +77,14 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   owes it for the id it is asked about — today neither does, and the session that follows the skill
   literally is the one that collides (pointer: `.claude/backlog/claim`,
   `skills/queue/templates/next`, `skills/develop/SKILL.md` Step 1).
+
+- 2026-09-10 (design) — **`design` Step 4 tells a session to write an item file and commit, and
+  never names the lock.** `references/CONCURRENCY.md` requires it for *every* write to the backlog
+  directory, item files included, and `develop` and `verify` name it five and four times each;
+  `skills/design/SKILL.md` names it zero times (repo and the installed 0.9.23 copy are identical, so
+  this is not install drift). Step 4's unclaimed path is the whole point of the skill and is the
+  largest by-hand item write outside those two skills — this session made its edits unlocked before
+  noticing, and the sequence would have read as correct afterwards. Same shape for the claim: Step 4
+  says "you write it" without saying that `./handoff` demands a token, so the session has to work out
+  on its own that it must `./claim` first (pointer: `skills/design/SKILL.md` Step 4,
+  `references/CONCURRENCY.md` *Lock every write to the backlog directory*).
