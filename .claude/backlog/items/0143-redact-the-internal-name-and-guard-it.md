@@ -116,3 +116,39 @@ suite — and is deliberately left whole: this row adds the pattern, `0118` adds
 - **2026-09-09 (retro)** — Filed from a `verify` park on `0111`. The park found one item file; the
   retro's own `git grep` found five files, which is why FR2 is scoped by a search and not by a list.
   Written without naming the token, on the reading of `0122` that is safe under both answers.
+- **2026-09-09 (develop, 8ca0)** — **The scope was eight tracked files and eighteen lines, not
+  five files.** The Problem section's count was a cache of the retro's own grep taken the same day,
+  and `FINDINGS.md` — one of the five — was drained by `c666eb6` between the filing and this claim.
+  Four of the five remained; four more files the retro's narrower search did not reach were found by
+  running FR1's guard, which is the search FR1 said to use. The count moved in both directions at
+  once, which is why the FR was right to scope by a search and not by a list.
+- **2026-09-09 (develop, 8ca0)** — **`CLAUDE.md`'s own statement of the rule was redacted too, and
+  that is the answer this row was allowed to give.** *Out of scope* requires the row to be correct
+  under either answer to `0122` (whether a rule's prose may name what it forbids). Redacting is
+  correct under both; leaving it is correct under only one. `0122` is therefore still open and this
+  row did not decide it — but it no longer has a live occurrence to decide *about* in this repo.
+- **2026-09-09 (develop, 8ca0)** — **AC3 has no tree-level form, and the substitution is recorded at
+  the check.** AC3's red-making mutation ("dropping the exemption flags this item file itself")
+  needs a tracked file holding a wrapped internal name; committing one is exactly what the Security
+  NFR forbids, so the state is unreachable by construction rather than by oversight. The claim is
+  carried instead by the falsification control's assembled samples over a synthetic list of its own,
+  and the paragraph naming what the control does *not* prove sits beside it in
+  `tests/measurement.test.sh` — because the next QA pass reads the plan, not this note. **Verify
+  should read AC3 as satisfied by that control or bounce the substitution, not look for the file.**
+- **2026-09-09 (develop, 8ca0)** — **The control drives a synthetic list rather than the configured
+  one, deliberately.** A control that only runs where a real list happens to exist is green by
+  construction on every machine that has not configured one — including a fresh clone and any CI
+  box — which is precisely the check that cannot fail. Driving it from a list the control writes
+  itself makes the exemption and the pattern testable everywhere, and is what lets AC2's
+  not-applicable path coexist with FR4 rather than cancel it.
+- **2026-09-09 (develop, 8ca0)** — **A guard reported a leak it could not name, on a clean tree.**
+  `elif named=$(git grep ... | cut ...)` reads `cut`'s status, and `cut` succeeds on empty input, so
+  the failure branch fired when the search found nothing. Split into two statements, with the reason
+  written at the site. Parked to the conventions repo as a testing-conventions gap: the existing
+  rule says to assert the message rather than the status, and does not yet say that a search you
+  then format must be a separate statement from its formatting.
+- **2026-09-09 (develop, 8ca0)** — **The guard protects a machine that has declared its names and
+  cannot protect one that has not.** `.private-names` is machine-local by design (FR1), so a fresh
+  clone reports the check not applicable and stays runnable. That is a real hole and the named
+  trade, not an oversight: `0118` — reaching the sessions that commit without running a suite — is
+  the row that narrows it, and it is unblocked by this one.

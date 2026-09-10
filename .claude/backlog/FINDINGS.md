@@ -43,3 +43,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   restated rule failing by omission rather than by drift: no rule was restated, so nothing looks
   wrong (pointer: `skills/retro/SKILL.md` Step 4 *Filed*, `skills/queue/SKILL.md` Step 2,
   `.claude/backlog/config.yml` `next_id`).
+- 2026-09-09 — **an acceptance criterion asked for a red-making state that reaching would itself be
+  the defect.** 0143 AC3 wanted the guard's redaction exemption proved by a tracked file carrying a
+  wrapped internal name, so that dropping the exemption reds the repo — but any such file is a
+  committed name, which the same item's Security NFR forbids. The two clauses are individually
+  reasonable and jointly unsatisfiable, and nothing in `queue`'s AC form catches it: the AC names a
+  red-making input, which is exactly what the form asks for. A privacy guard is the general case —
+  its tree-level evidence is always the thing it exists to prevent — so the claim has to be carried
+  by assembled samples and the substitution recorded beside the check (pointer: `skills/queue/SKILL.md`
+  AC form, `tests/falsifiable-acs.test.sh`, item 0143 AC3).
