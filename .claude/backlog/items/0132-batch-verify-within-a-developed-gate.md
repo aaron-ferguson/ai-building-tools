@@ -3,7 +3,7 @@ id: "0132"
 title: Let verify batch within a gate that was developed together, with per-ticket evidence
 type: feature
 next: develop
-status: blocked
+status: ready
 qa_level: verify
 close_by: verify
 size: m

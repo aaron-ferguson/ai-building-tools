@@ -26,7 +26,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0142 | Let the driver see the drift classes that stop a human reader | develop | ready |  |
 | 0148 | Make the internal-name guard red rather than green when its own pattern will not compile | develop | ready |  |
 | 0129 | Rename orchestrate to sprint and leave the old command resolving | develop | ready | 0128 |
-| 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | develop | blocked | 0128 |
+| 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | develop | ready | 0128 |
 | 0133 | Close a sprint with a retro and a queue sweep only when the findings earn it | develop | blocked | 0128 |
 | 0135 | Record what a sprint was estimated to cost against what it did, and estimate from that | develop | ready | 0128 |
 | 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | develop | ready | 0128 |
@@ -59,7 +59,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0058 | Give verify the outcomes its steps assume can never happen | develop | ready |  |
 | 0127 | Say that a deferral is licensed by understanding and never by writing | develop | ready |  |
 | 0056 | Give design a non-UI reading list and complete its write step | develop | ready |  |
-| 0059 | Decide what the batching rule actually licenses | verify | in-progress |  |
 | 0064 | Make a stage skill say which copy of it is running | develop | ready |  |
 | 0062 | Let a ticket's contract express a removal and cover its own prose | develop | ready |  |
 | 0048 | Decide which remaining backlog write sites become scripts | design | ready |  |

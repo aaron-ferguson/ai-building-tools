@@ -2,8 +2,8 @@
 id: "0059"
 title: Decide what the batching rule actually licenses
 type: chore
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -15,9 +15,10 @@ expects:
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
   - tests/batching.test.sh
-claimed_by: "a3d6"
-claimed_at: 2026-09-10T20:01:59Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-10
 ---
 
 ## Problem
@@ -94,30 +95,30 @@ old FR2 and narrows it to `verify`, where Step 3 lives. FR7 *confirms* the old F
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the batching paragraph in `skills/develop/SKILL.md`, when read, then it states
+- [x] AC1 — Given the batching paragraph in `skills/develop/SKILL.md`, when read, then it states
   that any row `./next develop` hands you is batchable. **Red input:** the paragraph still offering
   "tickets that share a file scope or a parent slice" as the test of batchability.
-- [ ] AC2 — Given that paragraph, when read, then shared file scope and a shared parent slice appear
+- [x] AC2 — Given that paragraph, when read, then shared file scope and a shared parent slice appear
   as the reason a batch pays more, not as a condition on entry. **Red input:** naming them only in a
   conditional clause governing whether the rows may be batched.
-- [ ] AC3 — Given that paragraph, when read, then it states the batch is assembled by repeating
+- [x] AC3 — Given that paragraph, when read, then it states the batch is assembled by repeating
   `./next develop` after each close, and that rows are not claimed ahead of being worked. **Red
   input:** a paragraph naming no assembly mechanism.
-- [ ] AC4 — Given `skills/develop/SKILL.md`, when read, then "Tickets from unrelated projects do not
+- [x] AC4 — Given `skills/develop/SKILL.md`, when read, then "Tickets from unrelated projects do not
   batch", "Claim and close each ticket individually" and "Stop at the first ticket whose contract
   turns out wrong" are all still present. **Red input:** deleting any one of the three.
-- [ ] AC5 — Given the batching paragraph in `skills/verify/SKILL.md`, when read, then its condition
+- [x] AC5 — Given the batching paragraph in `skills/verify/SKILL.md`, when read, then its condition
   is that the tickets were developed together in one gate, and it says in terms that rows merely
   sitting at `next: verify` are not a batch. **Red input:** the paragraph reading "any rows at the
   stage", which is `0132` AC2's red exactly.
-- [ ] AC6 — Given both paragraphs, when read together, then neither offers the other's rationale and
+- [x] AC6 — Given both paragraphs, when read together, then neither offers the other's rationale and
   each says why the conditions differ. **Red input:** restoring "The same batching case applies for
   the same reason" to `verify`.
-- [ ] AC7 — Given `skills/verify/SKILL.md`'s batching paragraph, when read, then it names the
+- [x] AC7 — Given `skills/verify/SKILL.md`'s batching paragraph, when read, then it names the
   intra-session mutation hazard *and* the isolation that answers it. **Red input:** a paragraph
   carrying one without the other — "verify one ticket at a time" with no statement of what goes
   wrong otherwise is the likely half-done outcome.
-- [ ] AC8 — Given `tests/batching.test.sh`, when run against the edited skills, then it passes; and
+- [x] AC8 — Given `tests/batching.test.sh`, when run against the edited skills, then it passes; and
   given either skill's pre-decision batching sentence restored, when run, then it fails naming the
   condition rather than the paragraph window.
 
@@ -276,3 +277,55 @@ first line and so gives the whole paragraph rather than starting mid-way as deve
 **Verified against the source rather than the ticket:** `tests/measurement.test.sh` also greps for
 `batch`, but against `MEASUREMENT.md`, not these two paragraphs — so nothing outside
 `tests/batching.test.sh` is coupled to this wording. Whole suite green, 28 files.
+
+## QA evidence
+
+Verified 2026-09-10, token `a3d6`, at `qa_level: unit` (frontmatter and the QA plan agree — no
+drift). Tree clean at Step 2 and at the verdict; **advisory intersection empty**. Baseline commit
+`be973ed`. `lint:` and `typecheck:` are unset in `config.yml`, so `unit` is the whole level.
+
+**Which copy executed:** the guard and both skills were read and run from the **repo**, which
+`CLAUDE.md` makes the authority. The installed copy at
+`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.23/skills/verify/SKILL.md` does
+**not** carry this change (`grep -c 'developed together in one gate'` → `0`) while the repo's
+`plugin.json` also reads `0.9.23` — the same version with different bytes that `CLAUDE.md` warns
+about. Releasing this needs a version bump; that is not an AC here.
+
+| # | Requirement | How checked | Result |
+|---|---|---|---|
+| AC1 | develop's condition is takeability at the stage | Read `skills/develop/SKILL.md` batching paragraph: "the condition is takeability at the stage, nothing narrower: **any row `./next develop` hands you may be worked in the same session**". **Mutation A** — restored `a set of tickets that share a file scope or share a parent slice` → `36 passed, 3 failed`, all three naming the condition; extraction did not exit 2 | PASS |
+| AC2 | shared scope/slice are why a batch pays more, not a condition on entry | Paragraph reads "Shared file scope (their `expects:` overlap) and a shared parent slice are why a batch pays more … they are not a test the rows must pass first". **Mutation E** (coherent regression: scope re-made a condition *and* the denial sentence dropped) → `38 passed, 1 failed`. **Mutation D** (same regression, denial sentence retained) → `39 passed, 0 failed` — see the gap below | PASS, with a recorded guard gap |
+| AC3 | batch assembled by repeating `./next develop`, nothing claimed ahead | Paragraph names the mechanism and refuses set-selection, citing `CONCURRENCY.md`. **Mutation F** — replaced the whole clause with "Take the rows you judge cheapest together." → `36 passed, 3 failed` | PASS |
+| AC4 | the three surviving phrases | All three present on the unwrapped paragraph. **Mutation G** — deleted "Stop at the first ticket whose contract turns out wrong" → `38 passed, 1 failed` | PASS |
+| AC5 | verify's condition is the develop gate; stage alone is not a batch | `skills/verify/SKILL.md`: "the tickets were **developed together in one gate**. Rows merely sitting at the stage … are not thereby a batch". **Mutation B** (below) reds it | PASS |
+| AC6 | neither borrows the other's rationale; each says why they differ | verify gives the gate's independence and "no startup saving amortises"; develop gives the amortised startup and points across with "`verify` batches on a different condition … Do not carry this rule there". **Mutation B** — restored "The same batching case applies for the same reason" → `35 passed, 4 failed`. **Mutation H2** — "Do not carry this rule there" → "Carry this rule there too" → `38 passed, 1 failed` | PASS |
+| AC7 | verify names the hazard *and* the isolation | Both present. **Mutation C** — the AC's own named half-done outcome: deleted the hazard sentences, kept "Verify one ticket at a time" → `38 passed, 1 failed` | PASS |
+| AC8 | guard green on the edited skills; reds on either pre-decision sentence, naming the condition not the window | `tests/batching.test.sh` → `39 passed, 0 failed`. Mutations A and B both red on condition assertions, neither exits 2 — the anchors (`one gate per session` in develop, `One gate per invocation` in verify) survive both, which was the QA plan's flagged risk | PASS |
+| NFR Documentation | decision lands in both skills or the guard reds | Mutations A/F/G/H2 red from `develop` alone and B/C from `verify` alone, so each file is independently load-bearing | PASS |
+| NFR Progressive delivery | both skills ship to every install | Change is in both skill files; nothing gated or partial. `progressive-delivery-conventions.md` carries no rule binding a prose/skill change | PASS |
+
+**Suite:** every `tests/*.test.sh` run individually (not fail-fast, per `config.yml`'s note on 0084)
+— 28 files, exit `0` on all 28, `0 failed` in every tally. `tests/batching.test.sh`: `39 passed, 0
+failed` (pasted, not summed).
+
+**Always-on pass (`CONVENTIONS_CORE.md`):** diff is prose plus one shell guard — no secrets, no
+egress, no log or analytics field, no auth or data-visibility surface, no UI, so no Security,
+Privacy or Accessibility row is owed. Public-repo check per `CLAUDE.md`: the implementation diff
+carries no company, client or case material. Newly reachable by this change: `develop` sessions may
+now batch rows sharing nothing, which the decision states and accepts, and whose guardrails AC4
+pins.
+
+**Guard gap, published rather than papered over** (`verify` Step 3; `testing-conventions.md` line
+15, *Anchor an assertion to the claim, not to the document that contains it*). The build notes
+credit `binds` as "what makes AC2 falsifiable at all". It is not: its span
+`expects:.{0,120}parent slice.{0,40}why a batch pays more` matches straight **across a sentence
+boundary**, so Mutation D — `…(their `expects:` overlap) or a parent slice. Orientation in the code
+is why a batch pays more` — left it green at 39/39 with scope restored as a condition on entry. AC2
+is nonetheless guarded, by the `says` on `not a test the rows must pass first` (Mutation E, 38/1).
+No assertion was invented to close this; it is parked in `FINDINGS.md` at `598c73d` and needs a row.
+
+**Mutation hygiene:** every mutation was applied to a committed tree, confirmed non-empty via
+`git diff --stat`, restored with `git checkout -- <the one path>`, and followed by a control run
+(`39 passed, 0 failed`, `git status --porcelain` empty). One substitution matched nothing and
+returned a clean pass — "Do not carry this rule there" wraps across lines 50–51 — and was re-run
+against the wrapped form as Mutation H2 rather than being read as a green.
