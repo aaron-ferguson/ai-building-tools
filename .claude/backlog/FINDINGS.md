@@ -216,3 +216,21 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   would have (pointer: `skills/verify/SKILL.md` opening, items/0064 FR1).
 
 - 2026-09-10 (develop) — **`develop` Step 2 tells you to `grep -rn "<your id>"`, and this  repo answers with test fixtures.** Grepping `0059` returned four hits, all of them fixture rows  inside `tests/close.test.sh` (`| 0059 | Checklist performed | verify | in-progress | 0000 |`) and  none of them about item 0059. The check is cheap and correct, but in a repo whose suite builds  synthetic backlogs its signal-to-noise is inverted: every low id collides, and a session that  skims the hits could equally read a fixture as a sibling citation or dismiss a real one as a  fixture. Fixture ids in a backlog-shaped fixture want a form no live row can take. This still  needs a row; no ticket in QUEUE.md covers it (pointer: `tests/close.test.sh`, `skills/develop`  Step 2 "Grep your own id as well as the symbols").
+
+- 2026-09-10 (verify) — **`tests/batching.test.sh`'s `binds` helper matches across a sentence
+  boundary, so it does not do what its own comment claims.** The helper exists to tell "shared scope
+  is *why a batch pays more*" from a paragraph that merely contains both phrases in unrelated
+  sentences, and 0059's build notes credit it as "what makes AC2 falsifiable at all". Verifying 0059
+  falsified that: rewriting develop's sentence to `Rows must share a file scope (their `expects:`
+  overlap) or a parent slice. Orientation in the code is why a batch pays more` — scope restored as a
+  condition on entry, the pre-0059 shape — left the guard at **39/39**, because the bounded span
+  `expects:.{0,120}parent slice.{0,40}why a batch pays more` happily spans the full stop between the
+  two sentences. AC2 is still guarded, but by the `says` on `not a test the rows must pass first`,
+  which reds when the coherent regression drops it (38/1); the span assertion contributes nothing the
+  presence assertion does not. This is `testing-conventions.md` line 15's own rule — *Anchor an
+  assertion to the claim, not to the document that contains it* — recurring one level down: the span
+  is anchored to a *window* of characters rather than to the sentence, and a character budget is a
+  guess at sentence length exactly as a line count was a guess at paragraph length (the mistake the
+  same file's `extract` comment records fixing at 0032). Left uncovered deliberately per `verify`
+  Step 3, *a mutation that does not redden is a result to publish*. Needs a row (pointer:
+  `tests/batching.test.sh` `binds()` and the AC2 block).
