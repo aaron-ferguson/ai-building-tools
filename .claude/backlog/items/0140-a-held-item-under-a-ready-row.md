@@ -205,3 +205,35 @@ Fixtures are `tests/next.test.sh`'s scaffolded backlog; `0001` below is its fixt
   the row. `./next develop` will report the collision on `expects:` when this reaches build; no
   ordering constraint is written into `blocked_by`, because the two changes touch different
   functions and either order works once the other has landed.
+
+- **Built 2026-09-09 `[4cbb]`.** Candidate (c) as designed, one commit (`7f54025`). `0136` had landed
+  by claim time so the `expects:` collision its *Sequencing* note predicted never arose, and
+  `gate_from`'s rewrite there does not meet any site this ticket changes.
+
+- **FR3 and *Out of scope* disagree about the take loop, and the resolution is deliberate.** FR3 says
+  "no site keys ownership off the Status column"; read literally that condemns the take loop's
+  `case "$written" in ready|blocked)` filter and `--drive`'s `in-progress` skips, which would make a
+  tokenless `in-progress` row TAKEable. *Out of scope* defers exactly that direction to `0115` FR3,
+  and AC9 constrains only `show_claimed` and `collision_report`. So those two sites were rewritten to
+  read the token and nothing else, and the `in-progress` column skips were LEFT: `in-progress` there
+  is a status a stage wrote about itself, not an ownership read, and `--drift` class 5 reports the
+  tokenless case for a person to reconcile rather than silently promoting it to takeable. If that is
+  the wrong call it is a row of its own, not a widening of this one.
+
+- **AC10's first red was a pre-existing restatement, not one this change introduced.** The AC's
+  red-making input is "a comment in `next` restating 'a non-empty `claimed_by:` and nothing else'" —
+  which `next:483`, the `--drift` class 5 comment, had said verbatim since `0115`. So satisfying AC10
+  meant *removing* existing prose, and a session reading the AC as a constraint on its own new
+  comments would have left the guard red with nothing it wrote to blame. Worth knowing because the
+  same shape will recur: a single-source AC is a claim about the whole file, not about the diff.
+
+- **The `--drift` class 6 branch is an assignment used as a condition** — `elif [ … ] && dtok="$(held_by "$id")"; then` — which is POSIX (a bare assignment's status is the last command
+  substitution's) and is what lets one call both test and capture the token. The same shape is in
+  the take loop and the `--drive` walk. It reads as a typo for `==`; it is not.
+
+- **Mutation sweep, 2026-09-09, against the committed tree.** Ten mutations plus a no-op control, the
+  control green at 266/266 and every mutation red: take-loop skip removed (5 red), `continue`→`break`
+  (1), held check moved above the blocker check (1), class 6 removed (4), class 6 as a separate `if`
+  (1), `takeable_develop` check removed (1), rank-walk NOTE removed (2), `show_claimed` keyed back on
+  the column (2), `collision_report` keyed back on the column (2). AC4 and the second AC6 case pass
+  vacuously on today's code and only their mutations prove them, which is why both are in the list.

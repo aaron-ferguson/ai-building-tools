@@ -325,3 +325,15 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   guard exercises the template and `.claude/backlog/next` — the copy this repo actually runs — is
   covered only transitively, by `tests/backlog-scripts-installed.test.sh`. That is the intended
   "fix the template, never the copy" direction, and this ticket's AC4 is what closes the loop.
+- 2026-09-09 (develop, 0140) — **A mutation sweep outgrows a foreground tool call, and the obvious
+  way to wait for it is refused.** `develop` Step 5 and several QA plans now prescribe neutering each
+  new branch and re-running the suite; eleven runs of `tests/next.test.sh` (266 cases) took about
+  four minutes, past the Bash tool's 120s default, so the call was moved to the background — and the
+  natural follow-up, `sleep 150 && cat <output>`, is blocked by the harness with an instruction to
+  use an `until` loop instead. The shape that works is to make the sweep script print a sentinel line
+  last and then `until grep -q '<sentinel>' <output file>; do sleep 5; done` with a raised timeout,
+  which means the sentinel has to be planned before the sweep starts rather than discovered after it
+  backgrounds. Nothing in `develop`, `verify` or `testing-conventions.md` says a sweep is a
+  long-running job or how to wait on one. Bears on the sweep prose in both skills and on
+  `testing-conventions.md`'s "prove a new guard fails"; parked rather than filed, by a session
+  holding neither.
