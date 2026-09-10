@@ -567,6 +567,119 @@ out="$(run_next --findings)" && rc=0 || rc=$?
 assert_rc       "exits 1"                       "$rc" 1
 assert_contains "names the key and the value"   "$out" 'findings_threshold'
 
+
+# --- 0060 — what the gate counts, and over which buffers ---------------------------------------
+# The count is EVERY entry, deliberately and unchanged (0060 FR1). What made that safe is an
+# invariant recorded beside `count_findings` rather than a change to it: `retro` is the terminal
+# sweeper, so every entry left in the file is work a retro can still do. A marker-aware count that
+# skipped dispositioned entries was rejected in design — it goes quiet exactly when deferred
+# entries accumulate, which is when the gate's whole job is to be loud.
+
+# $1 the tools.path value, written verbatim so a case can supply one that does not resolve.
+set_tools_path() {
+  printf 'project: Fixture\nfindings_threshold: %s\ntools:\n  path: %s\n' "${2:-8}" "$1" \
+    > "$FIX/.claude/backlog/config.yml"
+}
+
+# A second checkout beside the fixture, with its own backlog buffer. $1 dir name, $2 the body.
+add_tools_repo() {
+  mkdir -p "$FIX/../$1/.claude/backlog"
+  {
+    printf '# Findings\n\nPreamble, which holds no entries.\n\n---\n\n'
+    printf '%s\n' "$2"
+  } > "$FIX/../$1/.claude/backlog/FINDINGS.md"
+}
+
+echo "0060 AC1 — a buffer a retro has fully dispositioned reports zero and reads as under"
+scaffold
+set_threshold 8
+add_findings ''
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 0"                      "$rc" 0
+assert_contains "reports no entries"           "$out" '0 entries'
+assert_contains "and says it is under"         "$out" 'under the threshold'
+
+# AC7 — the head token `[->NNNN]` sits between the date and the lead, so both line shapes still
+# match and nothing reads as malformed. This is the regression pin for the marker's SHAPE: a
+# marker written anywhere ahead of the date would break every reader of this file at once.
+echo "0060 AC7 — a head-token entry counts as one and is not malformed, in both shapes"
+scaffold
+set_threshold 8
+add_findings "$(printf -- '- 2026-09-05 [->0060] — **a bare-date entry handed over.** why it matters.\n- **2026-09-06 [->none] — a bold-date entry with no destination yet.**\n- 2026-09-07 — an unmarked entry.')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc           "exits 0 — the token is not a third shape" "$rc" 0
+assert_contains     "counts all three entries"                 "$out" '3 entries'
+assert_not_contains "reports nothing malformed"                "$out" 'MALFORMED'
+
+echo "0060 AC10 — a resolving tools.path is summed in, and each buffer is named"
+scaffold
+set_tools_path '../toolsrepo' 8
+add_findings "$(printf -- '- 2026-09-05 — a local entry.\n- 2026-09-06 — a second local entry.')"
+add_tools_repo toolsrepo "$(printf -- '- 2026-09-05 — a tools entry.\n- **2026-09-06 — a second tools entry.**\n- 2026-09-07 — a third tools entry.')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 0"                              "$rc" 0
+assert_contains "counts both buffers — 2 + 3"          "$out" '5 entries'
+assert_contains "names the local buffer's own count"   "$out" 'local 2'
+assert_contains "names the tools buffer's own count"   "$out" 'tools 3'
+assert_contains "and where the tools buffer was read"  "$out" 'toolsrepo'
+
+echo "0060 AC10 — with no tools.path the count is the local buffer alone, and the line says so"
+scaffold
+set_threshold 8
+add_findings "$(printf -- '- 2026-09-05 — a local entry.\n- 2026-09-06 — a second local entry.')"
+add_tools_repo toolsrepo "$(printf -- '- 2026-09-05 — a tools entry nobody asked for.')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 0"                                  "$rc" 0
+assert_contains "counts the local buffer alone"            "$out" '2 entries'
+assert_contains "and says that is all it counted"          "$out" 'local buffer only'
+assert_not_contains "does not reach a buffer no key named" "$out" 'tools 1'
+
+# A configured path that does not resolve falls back to the local buffer and SAYS SO, rather than
+# counting silently low. A gate reading low fires late and silently, which is 0038's whole reason
+# for the shape guard — the same failure arriving from the resolution step instead.
+echo "0060 AC10 — a tools.path that does not resolve counts local alone and names the miss"
+scaffold
+set_tools_path '../no-such-checkout' 8
+add_findings "$(printf -- '- 2026-09-05 — a local entry.')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 0 — an absent sibling is not an error"  "$rc" 0
+assert_contains "counts the local buffer alone"                "$out" '1 entries'
+assert_contains "names the path that did not resolve"          "$out" 'no-such-checkout'
+assert_contains "and says it did not resolve"                  "$out" 'did not resolve'
+
+# The gate a driver routes on reads the same total as the line a human reads. Two counts over one
+# question is the divergence this ticket opened on, in miniature: the human is told 5 and the
+# driver dispatches on 2.
+echo "0060 AC10 — --drive gates on the summed count, not the local buffer alone"
+scaffold
+set_tools_path '../toolsrepo' 4
+add_findings "$(printf -- '- 2026-09-05 — a local entry.\n- 2026-09-06 — a second local entry.')"
+add_tools_repo toolsrepo "$(printf -- '- 2026-09-05 — a tools entry.\n- 2026-09-06 — a second tools entry.')"
+add_row 0101 'A ready ticket' develop ready ''
+add_ticket 0101 develop ready '[]' '' a/one.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 5 — the findings gate, on 4 summed against 4" "$rc" 5
+assert_contains "dispatches retro"                                   "$out" 'retro'
+
+# A malformed entry in the TOOLS buffer is as untrustworthy as one at home, and the report has to
+# say which file it was in — otherwise the fix is hunted for in the wrong repo.
+echo "0060 AC10 — a malformed entry in the tools buffer fails the count and names its file"
+scaffold
+set_tools_path '../toolsrepo' 8
+add_findings "$(printf -- '- 2026-09-05 — a local entry.')"
+add_tools_repo toolsrepo "$(printf -- '- a bullet with no date at all, which neither shape covers.')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 1 — the count is not trustworthy" "$rc" 1
+assert_contains "calls it malformed"                     "$out" 'MALFORMED'
+assert_contains "names the tools buffer it was found in" "$out" 'toolsrepo'
+
 # --- AC9 — every row of FR8's table ------------------------------------------------------------
 
 echo "0038 AC9 — develop wrote verify/ready: dispatch verify"

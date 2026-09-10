@@ -61,8 +61,25 @@ read_threshold() {
 #
 # A third shape is neither counted nor ignored — it is named, and the caller fails. A count nobody
 # can trust is worse than no count, because it looks like one.
+#
+# THE COUNT IS EVERY ENTRY, AND WHAT MAKES THAT REDUCIBLE IS AN INVARIANT IN ANOTHER FILE (0060).
+# `retro` is the TERMINAL SWEEPER: `skills/retro/SKILL.md` Step 4 gives every entry it reads one of
+# four dispositions and states that `no entry survives the pass that read it`. So every entry left
+# in this file is work a retro can still do, and the gate below is satisfiable by the stage it
+# dispatches. Lose that sentence and this counter silently becomes what it was before 0060 — a gate
+# only the OTHER sweeper could clear, diverting drivers into retros that correctly find nothing.
+# tests/findings-buffer.test.sh guards the sentence for this reason; do not delete it as a
+# duplicate of the disposition guard in tests/retro-tool-edit.test.sh, which asserts the same words
+# about a different claim.
+#
+# A marker-aware count that skipped `[->NNNN]` entries was considered and REJECTED in design: it
+# goes quiet exactly when deferred and handed-over entries pile up, which is when the gate's whole
+# job is to be loud. The token sits after the date precisely so both shapes below still match it.
+#
+# $1 the buffer to read, named in any MALFORMED line so a second buffer's bad entry is not hunted
+# for in the wrong repo.
 count_findings() {
-  awk '
+  awk -v src="$1" '
     function dated(s)  { return s ~ /^- [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ }
     function bolded(s) { return s ~ /^- \*\*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ }
     # The preamble above the rule is prose about the file, and counting it inflates every read.
@@ -70,11 +87,97 @@ count_findings() {
     !body { next }
     /^- / {
       if (dated($0) || bolded($0)) { n++; next }
-      printf "MALFORMED FINDINGS.md:%d  %s\n", NR, $0
+      printf "MALFORMED %s:%d  %s\n", src, NR, $0
       bad = 1
     }
     END { printf "COUNT %d %d\n", n + 0, bad + 0 }
-  ' "$FINDINGS"
+  ' "$1"
+}
+
+# --- the second buffer, and only the second (0060 FR10) ----------------------------------------
+#
+# The gate counts the buffers the retro it would dispatch will actually READ. `retro` Step 1 reads
+# the resolved local buffer, plus the tools repo's where one is configured — so a gate counting only
+# the local one under-reports a project whose sessions park tool findings by subject, and a gate
+# counting anything MORE would fire for a buffer its own retro cannot reach, which is the defect
+# this ticket opened on. Sibling backlogs under a shared workspace are deliberately not counted:
+# 0111 FR5 makes them unreachable by construction.
+#
+# RESOLVED, NEVER DISCOVERED, and never derived from the plugin install — references/CONVENTIONS.md,
+# *Routing a finding to the repo it is about*, is where that is settled. Relative paths resolve from
+# the project root, exactly as `conventions.path` does.
+#
+# Unlike the threshold, a `#` is NOT stripped here: it can be part of a path. That asymmetry is
+# stated in read_threshold above and is the reason these two readers are not unified.
+TOOLS_FINDINGS=""
+TOOLS_NOTE=""
+read_tools_buffer() {
+  TOOLS_FINDINGS=""
+  TOOLS_NOTE="local buffer only — config.yml names no tools.path"
+  [ -f "$CONFIG" ] || return 0
+  tpath="$(awk '
+    /^tools:[ \t]*$/ { intools = 1; next }
+    intools && /^[^ \t#]/ { intools = 0 }
+    intools && /^[ \t]+path:/ {
+      v = $0; sub(/^[ \t]*path:[ \t]*/, "", v)
+      sub(/[ \t]+$/, "", v)
+      print v; exit
+    }
+  ' "$CONFIG")"
+  [ -n "$tpath" ] || return 0
+
+  case "$tpath" in
+    /*) troot="$tpath" ;;
+    *)  troot="$DIR/../../$tpath" ;;
+  esac
+  tbuf="$troot/.claude/backlog/FINDINGS.md"
+
+  if [ ! -f "$tbuf" ]; then
+    TOOLS_NOTE="local buffer only — tools.path $tpath did not resolve to a backlog buffer"
+    return 0
+  fi
+  # A project configured to point at ITSELF would otherwise double every entry it holds, and the
+  # gate would fire at half the threshold with nothing to show for it. The template tells a tool
+  # repo to omit the key; this is what happens when it does not.
+  if [ "$(cd -- "$(dirname -- "$tbuf")" && pwd)/$(basename -- "$tbuf")" \
+     = "$(cd -- "$(dirname -- "$FINDINGS")" && pwd)/$(basename -- "$FINDINGS")" ]; then
+    TOOLS_NOTE="local buffer only — tools.path resolves to this project's own buffer"
+    return 0
+  fi
+  TOOLS_FINDINGS="$tbuf"
+  TOOLS_NOTE=""
+}
+
+# Sets FCOUNT (the total the gate reads), FLOCAL, FTOOLS and FBAD, and prints any MALFORMED line
+# from either buffer. One tally, so the line a human reads and the code a driver routes on can
+# never report different numbers — two counts over one question is this ticket's own defect in
+# miniature.
+tally_findings() {
+  FLOCAL=0; FTOOLS=0; FBAD=0
+  if [ -f "$FINDINGS" ]; then
+    lrep="$(count_findings "$FINDINGS")"
+    printf '%s\n' "$lrep" | grep '^MALFORMED' || true
+    FLOCAL="$(printf '%s\n' "$lrep" | awk '/^COUNT/ { print $2; exit }')"
+    [ "$(printf '%s\n' "$lrep" | awk '/^COUNT/ { print $3; exit }')" = 0 ] || FBAD=1
+  fi
+  if [ -n "$TOOLS_FINDINGS" ]; then
+    trep="$(count_findings "$TOOLS_FINDINGS")"
+    printf '%s\n' "$trep" | grep '^MALFORMED' || true
+    FTOOLS="$(printf '%s\n' "$trep" | awk '/^COUNT/ { print $2; exit }')"
+    [ "$(printf '%s\n' "$trep" | awk '/^COUNT/ { print $3; exit }')" = 0 ] || FBAD=1
+  fi
+  FCOUNT=$((FLOCAL + FTOOLS))
+}
+
+# The provenance line: which buffers that total came from. A count whose sources are not named
+# cannot be argued with — and where a second buffer was expected and missed, the miss is the thing
+# worth seeing.
+findings_sources() {
+  if [ -n "$TOOLS_FINDINGS" ]; then
+    printf 'local %s (%s) + tools %s (%s)\n' "$FLOCAL" "$FINDINGS" "$FTOOLS" "$TOOLS_FINDINGS"
+  else
+    printf 'local %s (%s) — %s\n' "$FLOCAL" "$FINDINGS" "$TOOLS_NOTE"
+  fi
 }
 
 usage() {
@@ -135,18 +238,18 @@ esac
 # a driver asking it on a project mid-scaffold should get the count rather than a parse error.
 if [ "${1:-}" = "--findings" ]; then
   read_threshold || exit 1
-  if [ ! -f "$FINDINGS" ]; then
+  read_tools_buffer
+  if [ ! -f "$FINDINGS" ] && [ -z "$TOOLS_FINDINGS" ]; then
     printf 'FINDINGS  0 entries; threshold %s — no FINDINGS.md at %s\n' "$THRESHOLD" "$FINDINGS"
     exit 0
   fi
-  report="$(count_findings)"
-  printf '%s\n' "$report" | grep '^MALFORMED' || true
-  fcount="$(printf '%s\n' "$report" | awk '/^COUNT/ { print $2; exit }')"
-  fbad="$(printf '%s\n' "$report" | awk '/^COUNT/ { print $3; exit }')"
-  if [ "$fcount" -ge "$THRESHOLD" ]; then state='at or over the threshold'; else state='under the threshold'; fi
+  tally_findings
+  if [ "$FCOUNT" -ge "$THRESHOLD" ]; then state='at or over the threshold'; else state='under the threshold'; fi
   printf 'FINDINGS  %s entries; threshold %s (config.yml findings_threshold) — %s\n' \
-    "$fcount" "$THRESHOLD" "$state"
-  [ "$fbad" = 0 ] || {
+    "$FCOUNT" "$THRESHOLD" "$state"
+  printf '          %s' "$(findings_sources)"
+  printf '\n'
+  [ "$FBAD" = 0 ] || {
     echo "the count above is not trustworthy: an entry matches neither '- <date>' nor '- **<date>'" >&2
     exit 1
   }
@@ -889,17 +992,17 @@ if [ "${1:-}" = "--drive" ]; then
   # Checked where a NEW gate would be dispatched, and not before a verify: a ticket already built is
   # finished rather than abandoned for a retro. Evaluating the gate once per run is 0039's.
   findings_gate() {
-    [ -f "$FINDINGS" ] || return 0
-    greport="$(count_findings)"
-    gcount="$(printf '%s\n' "$greport" | awk '/^COUNT/ { print $2; exit }')"
-    gbad="$(printf '%s\n' "$greport" | awk '/^COUNT/ { print $3; exit }')"
-    if [ "$gbad" != 0 ]; then
-      printf '%s\n' "$greport" | grep '^MALFORMED' || true
+    read_tools_buffer
+    [ -f "$FINDINGS" ] || [ -n "$TOOLS_FINDINGS" ] || return 0
+    # The same tally the `--findings` line prints (0060 FR10). A driver routing on one number while
+    # the human beside it reads another is the divergence this gate exists to prevent, not to add.
+    tally_findings
+    if [ "$FBAD" != 0 ]; then
       decide "$ESCALATE" "ESCALATE  FINDINGS.md carries an entry shape the count does not recognise, so the gate cannot be trusted — and a gate reading a low number fires late and silently"
     fi
-    if [ "$gcount" -ge "$THRESHOLD" ]; then
+    if [ "$FCOUNT" -ge "$THRESHOLD" ]; then
       PROPOSE_STAGE="retro"; PROPOSE_IDS=""
-      decide "$FINDINGS_GATE" "DISPATCH  retro — FINDINGS.md holds $gcount entries against a threshold of $THRESHOLD"
+      decide "$FINDINGS_GATE" "DISPATCH  retro — $(findings_sources | sed 's/^/holds /') against a threshold of $THRESHOLD"
     fi
   }
 
