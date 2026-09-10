@@ -3,7 +3,7 @@ id: "0136"
 title: Stop two gates sharing a file through a row neither lead names
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: s
@@ -16,9 +16,12 @@ expects:
   - .claude/backlog/next
   - skills/queue/templates/next
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "601e"
+claimed_at: 2026-09-10T01:30:50Z
 touches:
+  - .claude/backlog/next
+  - skills/queue/templates/next
+  - tests/next.test.sh
 ---
 
 ## Problem
