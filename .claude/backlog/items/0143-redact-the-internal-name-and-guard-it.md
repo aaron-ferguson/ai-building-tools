@@ -3,7 +3,7 @@ id: "0143"
 title: Redact the internal organisation name from this public repo and guard the rule forbidding it
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-09
@@ -15,8 +15,8 @@ expects:
   - tests/measurement.test.sh
   - .claude/backlog/items
   - .claude/backlog/RANKING-HISTORY.md
-claimed_by:
-claimed_at:
+claimed_by: "94ea"
+claimed_at: 2026-09-10T04:15:49Z
 touches:
 ---
 
