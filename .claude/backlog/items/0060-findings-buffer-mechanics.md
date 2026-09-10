@@ -322,3 +322,68 @@ anything older than about two weeks.
   it, and a dated line was appended to its own *Notes & decisions*. **A `queue` pass should withdraw
   or re-scope 0080** — it is not this stage's call, and leaving it at `next: design` invites a
   second design session to re-litigate what is decided here.
+
+- **2026-09-10 (develop, token 3929) — BUILT.** All ten FRs landed; the whole suite is green (29
+  files) and `skills/queue/templates/next` and `.claude/backlog/next` are byte-identical (AC12).
+  Four commits: the counter and its tests, the prose across both sweepers and both header copies,
+  the `touches:` widenings, and one refinement to the gate's wording.
+
+- **A guarded phrase that straddles a line wrap is unmatchable, and on a NEGATIVE assertion that
+  reads as a pass.** AC6's absence check — *the sentence directing a pass to read fewer entries is
+  gone* — was written as `read fewer entries and finish each` and went green **while the rule was
+  still fully present**, because the file wrapped it as `…and finish` / `each**, rather than…`. A
+  positive assertion in that state fails loudly and gets fixed in seconds; a negative one returns
+  exactly what you were hoping for. It was caught only by running the guard before writing the
+  prose, which is the one ordering that makes an unfalsifiable absence check visible. Re-anchored to
+  `read fewer entries and finish`, which sits within the line, and the same trap then bit twice more
+  on prose *this* session wrote — `reading is cheap and only writing is\nsliced` and `counts every
+  entry, marked or\nnot` — both fixed by moving the wrap, never the phrase. `CLAUDE.md` says
+  rewrapping a guarded paragraph is a breaking change; the half it does not say is that **writing** a
+  new assertion has the same hazard, and that only the negative ones are silent about it.
+
+- **AC1 and AC7 were green on arrival, and that was the design's prediction rather than a gap.** The
+  head token sits *after* the date, so `dated()` and `bolded()` in `count_findings` match it
+  unchanged — the token was shaped that way precisely so no reader had to change. Both are therefore
+  **regression pins, not discriminating checks**, and both were mutation-proved rather than trusted:
+  narrowing `dated()` to require an em-dash straight after the date reds AC7's first two assertions,
+  and changing the `under the threshold` wording reds AC1's third. AC1 remains the weaker of the two
+  — a counter that double-counted every entry would still report `0` on an empty buffer, so what AC1
+  actually pins is the wiring and the wording, not the arithmetic. AC7 is where the shape is held.
+
+- **AC11's second assertion deliberately duplicates one in `tests/retro-tool-edit.test.sh`.** Both
+  match `no entry survives the pass that read it` in `retro` Step 4. They are not one guard written
+  twice: that one holds the claim *Step 4 names four terminal dispositions*, this one holds *the
+  gate is satisfiable by the stage it dispatches*, which is the premise `count_findings` now rests
+  on. Delete either and one of the two claims goes unheld. Both files say so at the assertion, so a
+  later tidy-up argues with a judgement rather than re-deriving it. (0146 — *when a required
+  duplication earns a drift guard* — is the open row on exactly this question; this is an instance
+  for it, not a decision on it.)
+
+- **`references/REPORTING.md` had four bytes of headroom, and FR9 required adding a rule to it.**
+  6053 bytes against `tests/reference-size.test.sh`'s 6057 goal. Checking the budget *before*
+  writing turned an end-of-session red into a decision: the section was tightened from 828 bytes to
+  ~590, and relocation was rejected on both of the payback test's conditions — every stage's closing
+  step cites this file on every run (p ≈ 0) and the rule is mandatory the moment a stage reports.
+  The reason is recorded in the guard, which is why `tests/reference-size.test.sh` joined `touches:`
+  mid-session. **`develop` Step 3 sends you to grep the project's guards for the mechanism you are
+  introducing; it does not send you to check the budget of a file you are about to grow**, and that
+  is the cheaper of the two checks.
+
+- **Two judgement calls in the code, both worth arguing with rather than re-deriving.**
+  A `tools.path` resolving to the project's own buffer is detected and refused, so a tool repo that
+  fills the key in anyway does not double every entry and fire the gate at half the threshold. That
+  is a guard against a misconfiguration nobody has made yet, which is a YAGNI tension — kept because
+  the failure it prevents is a *silently wrong count*, the exact class this ticket exists to close,
+  and it is four lines. And `tally_findings` both sets globals and prints `MALFORMED` lines, which
+  the conventions' *return a value or cause a side effect* rule would normally refuse; it matches
+  `count_findings` directly above it, and in a POSIX `sh` file with no locals the alternative is a
+  second parse of the same report. Consistency with the surrounding file won.
+
+- **The `retro`-side scope half was taken here, as the ticket's own note reserved it** — FR2 covers
+  both sweepers, and no new row was split off. Step 1 now slices the writing rather than the
+  reading; Step 2 gained the smaller form it lacked, which is that past the threshold the gate is
+  asking about the **write** list, since Step 1 has already read everything.
+
+- **Still outstanding, and not this stage's call: `0080` should be withdrawn or re-scoped by a
+  `queue` pass.** The design note records that FR1 and FR7 settle it; it is still sitting at
+  `next: design`, where a second design session would re-litigate what this ticket decided.

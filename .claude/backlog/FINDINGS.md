@@ -265,3 +265,19 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   same file's `extract` comment records fixing at 0032). Left uncovered deliberately per `verify`
   Step 3, *a mutation that does not redden is a result to publish*. Needs a row (pointer:
   `tests/batching.test.sh` `binds()` and the AC2 block).
+- 2026-09-10 (develop, 0060) — **a size guard can sit four bytes from its goal, and nothing in
+  `develop` tells you to look before you write.** `references/REPORTING.md` was 6053 bytes against
+  `tests/reference-size.test.sh`'s 6057; the ticket required a rule in it, so the guard was destined
+  to red at the very end of the work. Step 3 says to grep the project's guards for the *mechanism*
+  you are introducing, which does not reach a *budget* on a file you are merely growing — and the
+  budget check is one `wc -c`. Same shape as the "grep the figure an FR reprices" rule Step 2
+  already carries, arriving from the size guards instead (pointer: `skills/develop/SKILL.md` Step 3,
+  `tests/reference-size.test.sh`, item 0060).
+- 2026-09-10 (develop, 0060) — **a NEGATIVE prose assertion whose phrase straddles a line wrap is
+  green on arrival and proves nothing.** `CLAUDE.md` warns that rewrapping a guarded paragraph is a
+  breaking change; the unwritten half is that *writing* one has the same hazard, and that only the
+  negative direction is silent about it — a positive assertion fails loudly and is fixed at once,
+  while an absence check returns exactly the colour you wanted. Caught here only because the guard
+  was run before the prose it asserts on was written. Three instances in one session, one in
+  pre-existing prose and two in prose written the same hour (pointer: `CLAUDE.md` *Tests*,
+  `tests/findings-buffer.test.sh`, item 0060).
