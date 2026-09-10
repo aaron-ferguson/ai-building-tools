@@ -3,7 +3,7 @@ id: "0140"
 title: Decide whether a held item under a ready row is drift, and stop offering it twice
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-09
@@ -16,8 +16,8 @@ expects:
   - skills/queue/templates/next
   - tests/next.test.sh
   - references/CONCURRENCY.md
-claimed_by:
-claimed_at:
+claimed_by: "b59a"
+claimed_at: 2026-09-10T02:18:45Z
 touches:
 ---
 
