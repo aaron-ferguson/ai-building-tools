@@ -17,9 +17,11 @@ expects:
   - skills/queue/templates/next
   - tests/next.test.sh
   - skills/orchestrate/SKILL.md
+  - tests/orchestrate.test.sh   # AC11's guard, added by design 2026-09-10
 claimed_by: "78c7"
 claimed_at: 2026-09-10T04:42:39Z
 touches:
+  - .claude/backlog/items/0131-finish-before-start.md   # design writes the decision only
 ---
 
 ## Problem
@@ -62,10 +64,28 @@ protects a built ticket from the findings gate, and not from the next develop ga
   preference, not a re-ranking.
 - FR4 — `sprint` states the rule in its own prose as a property it relies on, citing `--drive` as
   the thing that enforces it, and does not restate the routing rule itself — the skill states no
-  routing rules of its own.
-- FR5 — The rule is scoped to rows the run **started**. A ticket left at `next: verify` by a
-  hand-driven session before the sprint began is not the sprint's to hold, and jumping the rank for
-  it would let unrelated stale work reorder every run.
+  routing rules of its own. It also states how the driver composes FR5's input from its run log.
+- FR5 — The rule is scoped to rows the run **started**, and the run says which by naming them: the
+  set is an input (FR6), never derived from `parent:` or `expects:`. A ticket left at `next: verify`
+  by a hand-driven session before the sprint began is not the sprint's to hold, and jumping the rank
+  for it would let unrelated stale work reorder every run.
+- FR6 — `--drive` accepts `--started <id>`, repeatable and optional, each value a four-digit id.
+  Its values are the tickets the run has dispatched work on, **cumulative over the whole run** and
+  not just the last call — the gate whose non-lead ticket goes unverified is two calls old by the
+  time the rank walk would step over it. `--completed`'s id, where it carries one, is unioned into
+  that set, so a run whose gates are all single tickets needs no `--started` at all.
+- FR7 — `--started` handles an id with no row without stopping the run: a started ticket that
+  closed, or that became a project, has legitimately left `QUEUE.md`. An id with **neither** a row
+  nor an item file prints a `NOTE` naming it and the run continues — that one is a driver bug, and
+  a rule that silently stops applying is the failure mode `references/CONVENTIONS.md` names in the
+  fail-open ladder. A value that is not four digits is a usage error, exit 2.
+- FR8 — `--completed` stays singular and its guard stays. The comment deferring the widening to
+  `0039` is stale — `0039` closed 2026-09-08 without needing it — and is replaced by a pointer to
+  `--started` and the reason the two are different inputs.
+- FR9 — The preference applies where a **new gate** would be formed, alongside `findings_gate` and
+  ahead of it. So it does not preempt an escalation that outranks it — a `waiting`, `design` or
+  `queue` row above the develop row still stops the run — and it does not change what happens when
+  a `verify` row already outranks the develop row.
 
 ## Non-functional requirements
 
@@ -75,76 +95,61 @@ protects a built ticket from the findings gate, and not from the next develop ga
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture backlog holding a row at rank 12 at `next: develop` and a row at rank 40
-      at `next: verify, status: ready` which this run built, when `./next --drive --completed
-      develop:<id>` runs, then it dispatches `verify` for the rank-40 row. **Red if** it dispatches
-      the rank-12 develop gate — which is today's behaviour and what this ticket changes.
-- [ ] AC2 — Given the same fixture with the rank-40 verify row **not** built by this run, when
-      `--drive` runs, then it dispatches the rank-12 develop gate. **Red if** the rule is written
-      without FR5's scoping, which would make every stale verify row outrank all new work.
-- [ ] AC3 — Given two rows both at `next: verify, status: ready`, when `--drive` runs, then it
-      dispatches the higher-ranked one. **Red if** the change replaces rank with arrival order among
-      verify rows.
+- [ ] AC1 — Given a fixture backlog whose rank order is `0103 | develop | ready` then
+      `0102 | verify | ready`, when `./next --drive --started 0102` runs, then it dispatches
+      `verify 0102`. **Red if** it dispatches `develop 0103` — the behaviour observed on this
+      fixture on 2026-09-09, and what this ticket changes.
+- [ ] AC2 — Given the same fixture, when `./next --drive` runs with no `--started`, then it
+      dispatches `develop 0103`. **Red if** the rule is written without FR5's scoping, which would
+      make every stale verify row outrank all new work.
+- [ ] AC3 — Given a fixture whose rank order is `0103 | develop | ready`, `0102 | verify | ready`,
+      `0104 | verify | ready`, when `./next --drive --started 0104 --started 0102` runs, then it
+      dispatches `verify 0102`. **Red if** it dispatches `0104` — the change would have replaced
+      rank with the order the ids arrived in.
 - [ ] AC4 — Given the repo after this ticket, when `diff .claude/backlog/next
       skills/queue/templates/next` runs, then the files are identical. **Red if** the fix lands in
       one copy only — the drift `queue` Step 0 checks for on every open.
-- [ ] AC5 — Given `tests/next.test.sh`, when the suite runs, then it holds a case for AC1 and a case
-      for AC2, and each fails when the rule is reverted. **Red if** only the positive case is
+- [ ] AC5 — Given a fixture holding `0103 | develop | ready` and no row for `0102`, but an item file
+      for `0102`, when `./next --drive --started 0102` runs, then it dispatches `develop 0103` and
+      exits 0. **Red if** a started ticket that has since closed stops the run.
+- [ ] AC6 — Given the same fixture with **no** item file for `0102` either, when
+      `./next --drive --started 0102` runs, then it dispatches `develop 0103` and prints a line
+      naming `0102`. **Red if** an id nothing recognises is swallowed — the rule then stops applying
+      with no output that says so.
+- [ ] AC7 — Given any fixture, when `./next --drive --started 12` runs, then it exits 2. **Red if**
+      a malformed id is accepted, where it matches no row and disables the rule in silence.
+- [ ] AC8 — Given a fixture whose rank order is `0105 | design | ready`, `0103 | develop | ready`,
+      `0102 | verify | ready`, when `./next --drive --started 0102` runs, then it escalates on
+      `0105` and exits 4. **Red if** the preference is applied before the rank walk rather than at
+      the gate, which would let a started verify row jump a decision only a person can make.
+- [ ] AC9 — Given any fixture, when
+      `./next --drive --completed develop:0101 --completed verify:0101` runs, then it exits 2.
+      **Red if** the widening was applied to `--completed` instead of adding `--started` — the
+      rejected option, whose guard this pins.
+- [ ] AC10 — Given `tests/next.test.sh`, when the suite runs, then it holds a case for AC1 and a
+      case for AC2, and each fails when the rule is reverted. **Red if** only the positive case is
       guarded: a rule with no negative case passes trivially by dispatching verify always.
+- [ ] AC11 — Given `skills/orchestrate/SKILL.md`, when `tests/orchestrate.test.sh` runs, then it
+      asserts the file names `--started` and describes it as cumulative over the run. **Red if** the
+      skill gains the routing rule itself in prose — a restated rule drifts
+      (`references/CONVENTIONS.md`), and `--drive` is the only place it may live.
 
 ## QA plan
 
 - **Why that level:** `next` is a shell script with no runner configured in this project, and
   `tests/next.test.sh` is the existing self-contained guard for it.
 - **Specific checks:** `tests/next.test.sh` against a purpose-built fixture backlog, not the live
-  one — a guard reading the real `QUEUE.md` changes meaning every time a ticket closes. Run the
-  suite file-by-file per `config.yml`'s note on fail-fast attribution.
+  one — a guard reading the real `QUEUE.md` changes meaning every time a ticket closes, and AC1's
+  whole point is a fixture whose rank order is fixed. `tests/orchestrate.test.sh` carries AC11.
+  Run the suite file-by-file per `config.yml`'s note on fail-fast attribution.
 
 ## Out of scope
 
-- Batching verify across a gate — that is `0132`.
+- Batching verify across a gate — that is `0132`. An input carrying several *verdicts* from one
+  batched verify session is that ticket's, and is a third input, not this one (see the notes).
+- Widening `--completed`. Decided against on 2026-09-10 and pinned by AC9.
 - Any change to how develop gates are formed.
 - Reordering `QUEUE.md`. This changes dispatch preference, never the rank.
-
-## Open design question
-
-**FR5 asks `--drive` to know which verify rows *this run* started, and the CLI carries no input
-that says so. Two answers exist, they are opposite products, and one of them contradicts a
-committed guard — so `develop` will not pick between them.**
-
-What was established by probing the script on a throwaway fixture (2026-09-09):
-
-- **AC1 as written is already green.** With a rank-1 `next: develop` row and a lower `next: verify,
-  status: ready` row, `./next --drive --completed develop:<the verify row>` dispatches
-  `verify <id>` today, not the develop gate — the completed-outcome branch
-  (`.claude/backlog/next`, `lstage = develop && lnext = verify && lstatus = ready`) fires long
-  before the rank walk is reached. AC1's *Red if* clause states the opposite about today's
-  behaviour and is mistaken.
-- **The real defect is a gate of more than one ticket.** `--drive` dispatches a *gate* — a lead plus
-  every takeable develop row sharing its parent or `expects:` scope — to one `develop` session, and
-  `--completed` accepts **at most one** `<stage>:<id>`. So after a two-ticket gate, only the lead's
-  id comes back; the other built ticket sits at `next: verify, status: ready` and loses the rank
-  walk to any higher-ranked develop row. That is the state Aaron's rule is about, and no invocation
-  of the current CLI can express it.
-
-The decision, therefore:
-
-- **(a) Widen `--completed` to accept a run log** — several outcomes per call. This is what
-  `.claude/backlog/next` itself defers to `0039` in as many words (*"0039 widens it if its run log
-  ever needs to pass more"*), and `tests/next.test.sh` currently **guards the opposite**: a second
-  `--completed` is asserted to be a usage error. Choosing (a) means retiring that guard.
-- **(b) Add a distinct input naming the rows the run has started** — e.g. `--started <id> ...` —
-  leaving `--completed` singular and its guard intact.
-
-A third option, **deriving** the set (treat a verify row sharing the completed ticket's parent or
-`expects:` scope as run-started), needs no CLI change but re-admits exactly what FR5 forbids: a
-stale verify row that happens to share a file scope would reorder the run.
-
-Each answer also decides who else changes — (a) and (b) both put a new obligation on
-`skills/orchestrate/SKILL.md`, which today tells the driver to *"give it at most once per call"*.
-
-Nothing else in the ticket is unsettled: FR1-FR4 are buildable as written once the input exists,
-and AC1/AC2's fixtures need rewriting against whichever input is chosen.
 
 ## Notes & decisions
 
@@ -152,8 +157,45 @@ and AC1/AC2's fixtures need rewriting against whichever input is chosen.
   2026-09-08 and its implementation site is a `case` in a script that already encodes the same
   principle one branch away. Nothing is undecided; FR5's scoping was the only open question and it
   is settled here.
-- **2026-09-09 — bounced to `design` by `develop` [9776] before writing code.** See *Open design
-  question*: FR5 needs an input the CLI does not have, and the two candidate inputs are opposite
-  contracts, one of which retires a committed guard. Also recorded there: AC1 is green today, so
-  the ticket's stated "today's behaviour" is wrong and the fixture that would be red is a
-  multi-ticket gate, which the current `--completed` cannot express. No code was written.
+- **2026-09-09 — bounced to `design` by `develop` [9776] before writing code.** FR5 needed an input the CLI does not have, and the two candidate inputs are opposite
+  contracts, one of which retires a committed guard. Also recorded: AC1 as first written was green
+  already, so the ticket's stated "today's behaviour" was wrong and the fixture that would be red
+  is a multi-ticket gate, which the current `--completed` cannot express. No code was written.
+  The *Open design question* section that carried this is deleted — it is answered below.
+- **2026-09-10 — DECIDED: a new `--started <id>` input, option (b). `--completed` stays singular.**
+  Rejected (a), widening `--completed` to a run log, on four grounds. **First, it contradicts its
+  own documented reason**: the comment at the guard says the same-stage check needs *an* intervening
+  outcome, *not a history*, and a caller who must accumulate every outcome forever to feed a reader
+  that consumes one element is the trap that comment names, inverted. **Second, it makes position
+  load-bearing** — the last entry routes the escalation ladder, the rest only widen a set — and a
+  driver that reorders its run log then changes routing with nothing to catch it. **Third, the two
+  facts have different lifetimes**: "what just finished" is per-call and transient, "what this run
+  has opened" is cumulative and monotonic; different lifetimes want different inputs. **Fourth, it is the additive change**:
+  `api-conventions.md`, *Versioning and Compatibility* — a new optional flag is safe where
+  re-meaning an existing one is not — and `next` ships as a template into other
+  projects' backlogs, so `--completed` has consumers this repo does not control.
+- **2026-09-10 — the consolidation argument for (a) was tested and does not hold.** (a)'s best case
+  is that `0132` (batched verify) will need several outcomes per call anyway, so widen once. It
+  would not help: `0132` needs *this call's* verdicts routed individually, while FR5 needs *the
+  run's* ids as a set, so a single widened `--completed` would have to distinguish the two by
+  grouping — two levels of structure in one flag. If `0132` needs an input, it is a third one.
+- **2026-09-10 — the rejected third option, deriving the set** from a shared `parent:` or `expects:`
+  scope, needs no CLI change and is still wrong: it re-admits exactly what FR5 forbids, a stale
+  verify row reordering the run because it happens to name one of the same files.
+- **2026-09-10 — trade-off accepted: two inputs the driver must keep in step, and `--started` fails
+  open in silence when omitted.** A driver that forgets it gets today's behaviour with no error.
+  Two things hold that down and both are requirements above: `--completed`'s id is unioned in
+  (FR6), so the single-ticket case is right with no `--started` at all, and an unrecognised id is
+  reported rather than swallowed (FR7). Neither makes an omitted flag loud; that residue is the
+  cost of the decision.
+- **2026-09-10 — re-verified on a throwaway fixture, not carried from the bounce note.** With rank
+  order `0103 develop` / `0102 verify ready`, `--completed verify:<a closed id>` dispatches
+  `develop 0103` while `0102` sits built and unverified — the defect, reproduced. A two-ticket
+  gate is real and its members need not be rank-adjacent: rank `0101(a.md)`, `0103(b.md)`,
+  `0102(a.md)` dispatches `develop 0101 0102`. AC1 as previously written is green today, confirmed
+  again; `--completed` twice exits 2, confirmed again. The ACs above are rewritten against these.
+- **2026-09-10 — the plural fact the run already holds.** `skills/orchestrate/outcome.schema.json`
+  is already an envelope over an ARRAY of tickets, and says why: "a develop or verify gate handles
+  several tickets in one session: singular, it reports one verdict and silently drops the rest."
+  The driver therefore needs no new bookkeeping for FR6 — `--started` is the union of `tickets[].id`
+  over the run log it already keeps. That is what makes (b) cheap for the caller.
