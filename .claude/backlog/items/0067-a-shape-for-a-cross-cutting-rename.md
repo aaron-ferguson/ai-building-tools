@@ -3,7 +3,7 @@ id: "0067"
 title: Decide what shape a cross-cutting rename takes in the backlog
 type: chore
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -21,9 +21,18 @@ expects:
   - tests/next.test.sh
   - tests/claim.test.sh
   - tests/cross-cutting-change.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "f582"
+claimed_at: 2026-09-10T19:02:21Z
 touches:
+  - references/CONCURRENCY.md
+  - references/CONCURRENCY-INCIDENTS.md
+  - .claude/backlog/next
+  - .claude/backlog/claim
+  - skills/queue/templates/next
+  - skills/queue/templates/claim
+  - tests/next.test.sh
+  - tests/claim.test.sh
+  - tests/cross-cutting-change.test.sh
 ---
 
 ## Problem
