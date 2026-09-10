@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0131 | Dispatch no new develop gate while a started ticket is still awaiting verify | feature | verify | 2026-09-10 | [items/0131-finish-before-start.md](items/0131-finish-before-start.md) |
 | 0130 | Propose a sprint scope and dispatch nothing until a person confirms it | feature | verify | 2026-09-10 | [items/0130-propose-a-sprint-scope-and-confirm-it.md](items/0130-propose-a-sprint-scope-and-confirm-it.md) |
 | 0143 | Redact the internal organisation name from this public repo and guard the rule forbidding it | bug | unit | 2026-09-10 | [items/0143-redact-the-internal-name-and-guard-it.md](items/0143-redact-the-internal-name-and-guard-it.md) |
 | 0140 | Decide whether a held item under a ready row is drift, and stop offering it twice | bug | unit | 2026-09-10 | [items/0140-a-held-item-under-a-ready-row.md](items/0140-a-held-item-under-a-ready-row.md) |

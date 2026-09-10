@@ -2,8 +2,8 @@
 id: "0131"
 title: Dispatch no new develop gate while a started ticket is still awaiting verify
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: verify
 size: m
@@ -18,9 +18,10 @@ expects:
   - tests/next.test.sh
   - skills/orchestrate/SKILL.md
   - tests/orchestrate.test.sh   # AC11's guard, added by design 2026-09-10
-claimed_by: "5e56"
-claimed_at: 2026-09-10T15:31:08Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-10
 ---
 
 ## Problem
@@ -94,41 +95,41 @@ protects a built ticket from the findings gate, and not from the next develop ga
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture backlog whose rank order is `0103 | develop | ready` then
+- [x] AC1 — Given a fixture backlog whose rank order is `0103 | develop | ready` then
       `0102 | verify | ready`, when `./next --drive --started 0102` runs, then it dispatches
       `verify 0102`. **Red if** it dispatches `develop 0103` — the behaviour observed on this
       fixture on 2026-09-09, and what this ticket changes.
-- [ ] AC2 — Given the same fixture, when `./next --drive` runs with no `--started`, then it
+- [x] AC2 — Given the same fixture, when `./next --drive` runs with no `--started`, then it
       dispatches `develop 0103`. **Red if** the rule is written without FR5's scoping, which would
       make every stale verify row outrank all new work.
-- [ ] AC3 — Given a fixture whose rank order is `0103 | develop | ready`, `0102 | verify | ready`,
+- [x] AC3 — Given a fixture whose rank order is `0103 | develop | ready`, `0102 | verify | ready`,
       `0104 | verify | ready`, when `./next --drive --started 0104 --started 0102` runs, then it
       dispatches `verify 0102`. **Red if** it dispatches `0104` — the change would have replaced
       rank with the order the ids arrived in.
-- [ ] AC4 — Given the repo after this ticket, when `diff .claude/backlog/next
+- [x] AC4 — Given the repo after this ticket, when `diff .claude/backlog/next
       skills/queue/templates/next` runs, then the files are identical. **Red if** the fix lands in
       one copy only — the drift `queue` Step 0 checks for on every open.
-- [ ] AC5 — Given a fixture holding `0103 | develop | ready` and no row for `0102`, but an item file
+- [x] AC5 — Given a fixture holding `0103 | develop | ready` and no row for `0102`, but an item file
       for `0102`, when `./next --drive --started 0102` runs, then it dispatches `develop 0103` and
       exits 0. **Red if** a started ticket that has since closed stops the run.
-- [ ] AC6 — Given the same fixture with **no** item file for `0102` either, when
+- [x] AC6 — Given the same fixture with **no** item file for `0102` either, when
       `./next --drive --started 0102` runs, then it dispatches `develop 0103` and prints a line
       naming `0102`. **Red if** an id nothing recognises is swallowed — the rule then stops applying
       with no output that says so.
-- [ ] AC7 — Given any fixture, when `./next --drive --started 12` runs, then it exits 2. **Red if**
+- [x] AC7 — Given any fixture, when `./next --drive --started 12` runs, then it exits 2. **Red if**
       a malformed id is accepted, where it matches no row and disables the rule in silence.
-- [ ] AC8 — Given a fixture whose rank order is `0105 | design | ready`, `0103 | develop | ready`,
+- [x] AC8 — Given a fixture whose rank order is `0105 | design | ready`, `0103 | develop | ready`,
       `0102 | verify | ready`, when `./next --drive --started 0102` runs, then it escalates on
       `0105` and exits 4. **Red if** the preference is applied before the rank walk rather than at
       the gate, which would let a started verify row jump a decision only a person can make.
-- [ ] AC9 — Given any fixture, when
+- [x] AC9 — Given any fixture, when
       `./next --drive --completed develop:0101 --completed verify:0101` runs, then it exits 2.
       **Red if** the widening was applied to `--completed` instead of adding `--started` — the
       rejected option, whose guard this pins.
-- [ ] AC10 — Given `tests/next.test.sh`, when the suite runs, then it holds a case for AC1 and a
+- [x] AC10 — Given `tests/next.test.sh`, when the suite runs, then it holds a case for AC1 and a
       case for AC2, and each fails when the rule is reverted. **Red if** only the positive case is
       guarded: a rule with no negative case passes trivially by dispatching verify always.
-- [ ] AC11 — Given `skills/orchestrate/SKILL.md`, when `tests/orchestrate.test.sh` runs, then it
+- [x] AC11 — Given `skills/orchestrate/SKILL.md`, when `tests/orchestrate.test.sh` runs, then it
       asserts the file names `--started` and describes it as cumulative over the run. **Red if** the
       skill gains the routing rule itself in prose — a restated rule drifts
       (`references/CONVENTIONS.md`), and `--drive` is the only place it may live.
@@ -149,6 +150,51 @@ protects a built ticket from the findings gate, and not from the next develop ga
 - Widening `--completed`. Decided against on 2026-09-10 and pinned by AC9.
 - Any change to how develop gates are formed.
 - Reordering `QUEUE.md`. This changes dispatch preference, never the rank.
+
+## QA evidence
+
+Verified 2026-09-10 by `verify` [5e56] at `qa_level: verify`. Level command: the scripted
+assertions the QA plan names, run file-by-file per `config.yml`. Every AC was additionally driven
+against a **hand-built fixture backlog** scaffolded independently of `tests/next.test.sh`, so the
+guard and the verdict do not share a harness.
+
+| AC / NFR | How it was checked | Result |
+|---|---|---|
+| AC1 | Fixture `0103 develop ready` / `0102 verify ready`; `./next --drive --started 0102` | PASS — `DISPATCH  verify 0102`, exit 0 |
+| AC2 | Same fixture, `./next --drive` with no `--started` | PASS — `DISPATCH  develop 0103`, exit 0 |
+| AC3 | Fixture `0103 develop` / `0102 verify` / `0104 verify`; `--started 0104 --started 0102` | PASS — `DISPATCH  verify 0102`; arrival order ignored, rank decides |
+| AC4 | `diff .claude/backlog/next skills/queue/templates/next` | PASS — identical, exit 0 |
+| AC5 | Fixture with an item file for `0102` and no row | PASS — `DISPATCH  develop 0103`, exit 0 |
+| AC6 | Same fixture, item file removed | PASS — `NOTE      --started 0102 matches no row and no item file — nothing recognises that id`, then `DISPATCH  develop 0103`, exit 0 |
+| AC7 | `--started 12`, and additionally `00102`, `abcd`, `0102x`, `-0102`, and a bare `--started` | PASS — exit 2 in all six, each naming the value it refused |
+| AC8 | Fixture `0105 design ready` / `0103 develop` / `0102 verify`; `--started 0102` | PASS — `ESCALATE  0105 is at next: design`, exit 4; the started verify row does not jump it |
+| AC9 | `--drive --completed develop:0101 --completed verify:0101` | PASS — exit 2, `--completed takes one <stage>[:<id>]` |
+| AC10 | `tests/next.test.sh` control 326 passed / 0 failed. **Mutation 1** — `if false` in place of `if sv="$(started_verify)"` in the copy the harness runs (`skills/queue/templates/next`, per `tests/next.test.sh:23`) → `323 passed, 3 failed`, reddening AC1's two assertions and AC3's one. **Mutation 2** — deleting the `contains_word "$sv_id" "$STARTED"` line → `324 passed, 2 failed`, reddening AC2's two. Both restored by pathspec; control re-run green. | PASS — both cases fail when the rule is reverted |
+| AC11 | `tests/orchestrate.test.sh` control 155 passed / 0 failed. **Mutation** — `git checkout 928a4a2 -- skills/orchestrate/SKILL.md` → `153 passed, 2 failed`, both AC11 assertions red. Read the prose: it states the property and the input, and states no routing rule of its own. | PASS — with the caveat in Findings |
+| NFR Documentation | Read the diff against `documentation-conventions.md`. The reason sits beside the code at all three sites — the `--started` parse, `started_verify()`, and the gate hook — and each says *why* rather than restating the code (line 94). FR8's stale `0039` pointer on `--completed` is replaced by the live one, which is the line-86 rule ("a rationale is a cached claim… it ages with no contradicting change at all") being honoured rather than broken. | PASS |
+| Always-on (`CONVENTIONS_CORE.md`) | Shell-script and prose change only: no secrets, no logging or egress field, no auth or data-visibility surface, no UI. `company: none` holds — nothing company-shaped in the diff. Newly reachable paths: one new dispatch route, non-destructive, and FR9 bounds it. | PASS |
+| FR9 beyond AC8 (probe) | Only `design` is AC'd; ran the other two escalation shapes on the same fixture — `0105` at `next: queue` and at `status: waiting`, each above the develop row, with `--started 0102` | PASS — exit 4 both, escalating on `0105`; the preference preempts neither |
+
+**Probes that held.** `--started 0102 --started 0102` → deduped, one dispatch. `--drive --propose
+--started 0102` → the proposal block describes the verify dispatch, not a develop gate. A started
+verify row that is `blocked` (`blocked_by: ["0999"]`) → stepped over, `DISPATCH  develop 0103`. A
+started verify row held under another session's token → stepped over likewise. `--completed
+verify:0102` with no `--started`, on a fixture where `0102` is still `verify | ready` → exit 4 on
+the same-stage guard, which independently confirms the build note's claim that FR6's union is
+unobservable through behaviour: that branch decides and exits before the rank walk the preference
+lives in.
+
+**Which copy executed.** The repo copy, and it is the authority. The pinned install at
+`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.23/` carries neither this change
+nor `0130`'s — it predates `928a4a2` — so `--started` is in no installed backlog until the next
+`tools/release`. That is the release step, not this ticket's, and FR2 is satisfied in the repo.
+
+**Advisory:** not advisory. `git status --porcelain` was empty at Step 2 and the dirty set was
+therefore empty, so its intersection with the evidence set
+(`.claude/backlog/next`, `skills/queue/templates/next`, `skills/orchestrate/SKILL.md`,
+`tests/next.test.sh`, `tests/orchestrate.test.sh`, this item, and
+`../ai-building-conventions/documentation-conventions.md`) is empty.
+
 
 ## Notes & decisions
 
