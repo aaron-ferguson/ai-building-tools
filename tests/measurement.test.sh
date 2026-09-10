@@ -851,5 +851,117 @@ else
   ok "no tracked file publishes a home-directory path, in either spelling"
 fi
 
+
+echo "Privacy & data NFR — no internal organisation or client name in any tracked file"
+# `CLAUDE.md` states this repo's defining constraint — `company: none` "is not a default, it is
+# the constraint" — and until 0143 it was the one privacy rule with no check behind it. The guard
+# above matches home-directory paths and nothing else, so an internal repository name published
+# with the suite green, in five tracked files at once.
+#
+# THE LIST IS NOT IN THIS FILE, and that is the whole design. The names ARE the secret, so a
+# committed enumeration would be the leak the guard exists to stop; and a guard that enumerates
+# its own subjects is green by construction the day a fourth name joins the set
+# (`testing-conventions.md`). So the names come from a machine-local file that is read if present
+# and SKIPPED if absent — a fresh clone has none, and failing closed there would make the suite
+# unrunnable for anyone who cloned this repo. The trade is deliberate: this check protects the
+# machine that holds names against publishing them, and cannot protect a machine that has not
+# said what its names are.
+NAMES_FILE="${PRIVATE_NAMES_FILE:-$ROOT/.private-names}"
+
+# names_pattern <list-file> — one ERE alternation from the list, blank and `#` lines dropped.
+# Prints nothing when the list yields no names, which the caller reads as "not applicable".
+names_pattern() {
+  awk 'BEGIN{n=0}
+       /^[[:space:]]*#/ {next}
+       {sub(/^[[:space:]]+/,""); sub(/[[:space:]]+$/,"")}
+       $0=="" {next}
+       {if(n++) printf "|"; printf "%s", $0}
+       END{if(n) printf "\n"}' "$1"
+}
+
+# THE SAME REDACTION EXEMPTION `HOME_PATH_PAT` CARRIES, for the same reason: prose that has to
+# describe this defect must be writable without reddening the guard that wanted it. There the
+# exemption is a required name character after the separator; here it is the mirror — a name is
+# a leak only when it is NOT already wrapped as a placeholder. `<name>`, `{name}` and `$NAME` all
+# pass; every bare use still fails, in any capitalisation.
+EXEMPT_PREFIX='(^|[^<{$])'
+
+# FALSIFICATION CONTROL, because an exemption nothing tests is how a privacy guard goes quietly
+# green. Two departures from the block above, both forced:
+#
+#   1. The samples are ASSEMBLED, for that block's own reason — a literal real-shaped name here
+#      would be a tracked internal name and the guard would flag itself.
+#   2. The control drives a SYNTHETIC list of its own rather than the configured one, so it runs
+#      identically on a machine with no list and on one with ten. A control that only runs where
+#      a real list happens to exist is exactly the check that cannot fail.
+#
+# WHAT THIS CONTROL DOES NOT PROVE, stated because the plan asked for it and it is unreachable:
+# 0143 AC3 wanted the exemption proved by a tracked file carrying a wrapped name, so that
+# dropping the exemption reds this repo. Reaching that state means COMMITTING a name, wrapped or
+# bare, which is precisely what the Security NFR forbids. The claim is the same and it is carried
+# here instead; there is no tree-level form of it that is not itself the defect.
+SYN_DIR=$(mktemp -d) || SYN_DIR=''
+if [ -z "$SYN_DIR" ]; then
+  bad "Privacy & data NFR — could not create a temporary directory for the falsification control"
+else
+  Ac='A'; Me='cme'
+  printf '%s\n' '# a comment, which must not become a name' '' "${Ac}${Me}" "${Ac}${Me}_repos" \
+    > "$SYN_DIR/names"
+  SYN=$(names_pattern "$SYN_DIR/names")
+  SYN_PAT="${EXEMPT_PREFIX}(${SYN})"
+
+  if [ "$SYN" = "${Ac}${Me}|${Ac}${Me}_repos" ]; then
+    ok "Privacy & data NFR — the list reader drops comments and blank lines and yields one alternation"
+  else
+    bad "Privacy & data NFR — the list reader mis-parsed its own list: a comment or a blank line became a name"
+  fi
+
+  for sample in "the ${Ac}${Me} profile treats it as" "${Ac}${Me}_repos/Client is the second backlog" \
+                "$(printf '%s' "${Ac}${Me}" | tr 'A-Z' 'a-z')-ds MCP"; do
+    printf '%s' "$sample" | grep -qiE "$SYN_PAT" \
+      && ok "Privacy & data NFR — the pattern still catches a real-shaped internal name (${sample})" \
+      || bad "Privacy & data NFR — the pattern MISSED a real-shaped internal name (${sample}) — the exemption is too wide"
+  done
+
+  for sample in "<${Ac}${Me}>" "{${Ac}${Me}}" "\$${Ac}${Me}"; do
+    printf '%s' "$sample" | grep -qiE "$SYN_PAT" \
+      && bad "Privacy & data NFR — the pattern flagged a redacted name (${sample}) — the exemption did not apply" \
+      || ok "Privacy & data NFR — a redacted name is not a leak (${sample})"
+  done
+
+  # The list must never become a tracked file. Belt and braces over `.gitignore`, because the
+  # ignore rule protects one path and `PRIVATE_NAMES_FILE` can point anywhere.
+  if git -C "$ROOT" ls-files --error-unmatch -- "$NAMES_FILE" >/dev/null 2>&1; then
+    bad "Privacy & data NFR — the configured name list is TRACKED by git, so the names are published"
+  else
+    ok "Privacy & data NFR — the configured name list is not tracked"
+  fi
+
+  rm -rf "$SYN_DIR"
+fi
+
+if [ ! -f "$NAMES_FILE" ]; then
+  ok "internal-name check not applicable — no name list configured (a fresh clone has none)"
+elif [ -z "$(names_pattern "$NAMES_FILE")" ]; then
+  ok "internal-name check not applicable — the configured list holds no names"
+elif ! git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+  bad "Privacy & data NFR — cannot check: $ROOT is not a git repository, so the tracked set is unknown"
+# `cut` to file:line. THE MATCHED TEXT IS DELIBERATELY NOT PRINTED — interpolating the match is
+# the obvious implementation and it publishes the name into every CI log that runs this suite.
+#
+# The redaction is a SEPARATE STATEMENT from the search, and that is load-bearing. Written as one
+# pipeline the `elif` reads `cut`'s status rather than `git grep`'s, and `cut` succeeds on empty
+# input — so the branch was taken on a perfectly clean tree and the guard reported a leak it could
+# not name. Caught here only because the failure was the harmless direction.
+elif named=$(git -C "$ROOT" grep -inE "${EXEMPT_PREFIX}($(names_pattern "$NAMES_FILE"))"); then
+  named=$(printf '%s\n' "$named" | cut -d: -f1,2)
+  bad "Privacy & data NFR — a tracked file publishes an internal organisation or client name.
+File and line only; the token is withheld on purpose. Redact each to a placeholder that keeps the
+sentence's meaning (an internal repository, a second backlog):
+$named"
+else
+  ok "no tracked file publishes a configured internal organisation or client name"
+fi
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]

@@ -11,7 +11,7 @@ backlog scripts they drive. **This repo is public.**
 - company: none
 - release: released
 
-`company: none` is not a default — it is the constraint. This repo is public, so **no Neumo
+`company: none` is not a default — it is the constraint. This repo is public, so **no company
 material reaches it**: no court, case or client data, no internal names, no company profile.
 `.claude/backlog/config.yml` carries the same rule as `routing.company: none`, and a ticket that
 would need a company profile does not belong here.

@@ -27,7 +27,7 @@ closes — and for those the skill points at nothing and omits what every other 
 
 **Step 2's three ordered lookups are prior art, the design system, and "the files the core's index
 names for design, UI and accessibility".** Followed literally on 0007, that sends the session to
-`design-conventions.md` and the `neumo-ds` MCP, neither of which has anything to say. What actually
+`design-conventions.md` and the company's design-system MCP, neither of which has anything to say. What actually
 decided it was `migration-conventions.md` (*Expand, Migrate, Contract*) and the project's own
 `CONCURRENCY-INCIDENTS.md`. The step has a clause for "if the question touches user-facing UI" and
 none for the other case, so a non-UI design session either invents its own reading list or cites
@@ -128,7 +128,7 @@ invisible.
 - **Whether `design`'s row edit should be a script rather than a by-hand lock.** That is 0048.
   FR3 states the rule as it stands today, which is correct whichever way 0048 goes.
 - Changing what `next: design` catches, or the two routing triggers in `queue`.
-- The `neumo-ds` MCP itself, which is a company tool this public repo must not depend on.
+- The company's design-system MCP itself, which is a company tool this public repo must not depend on.
 
 ## Notes & decisions
 

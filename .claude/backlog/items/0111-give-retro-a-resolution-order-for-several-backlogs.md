@@ -29,7 +29,7 @@ sentence is *"`.claude/backlog/FINDINGS.md` is the input, and the only one"*.
 
 **Measured 2026-09-07.** `/retro` was invoked from `/Users/<name>/Documents/AI`, which is
 not a git repository and holds no backlog, with four beneath it: `ai-building-tools` (22 entries,
-2.75x this project's `findings_threshold: 8`), `ai-building-conventions` (3), `neumo_repos/Probation`
+2.75x this project's `findings_threshold: 8`), `ai-building-conventions` (3), an internal repository
 (4, all invalidated by that backlog's retirement on 2026-09-04) and `tools/jury-config` (0). The
 pass swept all four, selecting them on freshness and threshold. **That was defensible and it was
 invention** — no step licensed it, and a retro standing in the same place tomorrow has nothing to
@@ -75,7 +75,7 @@ is where this user starts sessions, and it is where `queue` landed too on the sa
 
 | Dimension | Requirement for this item | Convention |
 |---|---|---|
-| Privacy & data | The order must not license carrying a finding from a company-tracked project into this repo, which is public. `Probation` routes to Jira under company policy and `ai-building-tools` is public; a rule that sweeps both in one pass is one step from writing one into the other. Say so where the order is stated, and treat an absent `routing:` block as company-tracked — unknown classification resolves to the stricter handling, never the looser. | `data-privacy-conventions.md` |
+| Privacy & data | The order must not license carrying a finding from a company-tracked project into this repo, which is public. That internal repository routes to Jira under company policy and `ai-building-tools` is public; a rule that sweeps both in one pass is one step from writing one into the other. Say so where the order is stated, and treat an absent `routing:` block as company-tracked — unknown classification resolves to the stricter handling, never the looser. | `data-privacy-conventions.md` |
 | Documentation | `CONVENTIONS.md`'s ladder and refusal are cited, never copied. Two ladders that must agree is the drift this repo has already paid for. | `documentation-conventions.md` |
 
 ## Acceptance criteria
@@ -148,10 +148,10 @@ the cheap fix buys workspace visibility with a privacy boundary and an unbounded
 visibility is a **report**, not a sweep, and it belongs to **0060**, which owns what the gate counts
 across buffers. 0060's open design question already anticipates this and is unblocked by it.
 
-**Why privacy decided it rather than tie-broke it.** Under a sweep, one session holds Neumo
-Probation's buffer and this public repo's in the same context and commits into the public one in the
+**Why privacy decided it rather than tie-broke it.** Under a sweep, one session holds an internal
+repository's buffer and this public repo's in the same context and commits into the public one in the
 same pass. `data-privacy-conventions.md`'s *highest classification sets the bar for the record*
-would make the public repo's retro run under Neumo handling rules, which is backwards and
+would make the public repo's retro run under company handling rules, which is backwards and
 unenforceable. Resolving upward makes a sibling buffer unreachable by construction — the boundary
 stops depending on a rule anyone can forget.
 
@@ -161,10 +161,10 @@ moved, which is expected — that day's retro swept three of them):
 - Four backlogs under `Documents/AI`, buffers now 20 / 0 / 0 / 0 against the earlier 22 / 3 / 4 / 0.
 - The workspace root is still not a git repository and holds no backlog, so it falls to rung 3 and
   stops. That is the measured failure, fixed.
-- All four backlogs sit at their own git repo root — `probation-starter`, not `Probation`, is the
-  repo — so rung 1 resolves every real case here and rung 2 exists for a nested backlog, not for
+- All four backlogs sit at their own git repo root — the internal one's repo directory and its
+  backlog name differ, and it is the directory that is the repo — so rung 1 resolves every real case here and rung 2 exists for a nested backlog, not for
   these.
-- `Probation`'s retirement carries two signals, `QUEUE.md`'s `**RETIRED 2026-09-04**` banner and
+- That internal repository's retirement carries two signals, `QUEUE.md`'s `**RETIRED 2026-09-04**` banner and
   `tracker.status: superseded-by-jira`; neither is universal, and `jury-config` has neither a
   `tracker:` nor a `routing:` block. **That is why FR4 checks the resolved backlog only** — detecting
   retirement across arbitrary backlogs fails open on signals a backlog is not obliged to carry.
@@ -243,7 +243,7 @@ a final unmutated control run returned **38 passed, 0 failed**.
 | AC5 — upward only, and never discovered | Deleted the `walks upward only` line | ✅ reds both halves (36/2) |
 | AC6 — retirement checked on the resolved backlog's own `QUEUE.md` | Deleted `retirement banner` | ✅ reds both halves (36/2) |
 | AC7 — a second buffer only when a rule names it | Deleted `only when a rule names it` | ✅ reds alone (37/1) |
-| NFR Privacy & data | `git grep -in 'neumo\|probation'` over the change: **no hit** in `skills/retro/SKILL.md` or `tests/retro-tool-edit.test.sh`. Step 1's clause states the absent-`routing:` rule at the order itself and cites `data-privacy-conventions.md` | ✅ — the pre-existing hit is in **this item's own prose**, not the change; already parked |
+| NFR Privacy & data | `git grep -in` for the configured internal names (0143) over the change: **no hit** in `skills/retro/SKILL.md` or `tests/retro-tool-edit.test.sh`. Step 1's clause states the absent-`routing:` rule at the order itself and cites `data-privacy-conventions.md` | ✅ — the pre-existing hit is in **this item's own prose**, not the change; already parked |
 | NFR Documentation — ladder cited, never copied | Read `references/CONVENTIONS.md` rungs 1–3 against the new block. The buffer ladder is a *different* ladder; only rung 3's refusal is shared and it is cited twice | ✅ with one note below |
 
 ### Two probes that did not redden, published rather than papered over

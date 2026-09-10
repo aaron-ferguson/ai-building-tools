@@ -784,7 +784,7 @@ either.
 
 0111 above 0114 on the **regret operator**, the tie-breakers having failed to separate two Tier 2
 rows. Both compound. What decided it is the privacy edge: 0111's undecided resolution order is what
-let one pass reach a company-tracked backlog (`Probation`, routed to Jira under company policy) and
+let one pass reach a company-tracked backlog (routed to Jira under company policy) and
 this public repo in the same sweep. Nothing bad happened, and nothing in the skill prevents it
 either. 0114's damage is bounded — a bump committed and unpushed, recoverable, with `--yes` a known
 workaround — where 0111's is a rule that does not exist.

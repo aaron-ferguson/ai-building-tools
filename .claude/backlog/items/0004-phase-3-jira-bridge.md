@@ -26,7 +26,7 @@ Three gaps remain, and one of them is a correctness problem in a company project
    and nothing validates that a local chain is legal in the target project.
 2. **The mirror writes its own ticket format.** TRACKER.md specifies title + problem + AC +
    item path, and explicitly not the NFR table. In a generic tracker that is right. Against
-   Neumo's Jira it produces a ticket that fails the story rubric on user-story format, AC field
+   the company's Jira it produces a ticket that fails the story rubric on user-story format, AC field
    placement, Requirements/SOW, Site field, Affects Variant/s, and scope declaration — a
    rubric-failing ticket filed automatically into a shared board.
 3. **Only one direction is modelled.** Mirroring assumes the agent generates the work. When a
@@ -68,7 +68,7 @@ Three gaps remain, and one of them is a correctness problem in a company project
 
 ## Open design question
 
-- **Question:** which Jira project is the test case, and does a standalone probation product warrant
+- **Question:** which Jira project is the test case, and does a standalone client-domain product warrant
   its own Jira project key, or a ticket-graph project inside an existing Court-family one?
 - **Why it blocks specification:** FR3's chain validation and FR6's claim protocol both depend on
   the target project's issue types and workflow statuses, which vary per project — AAT does not
@@ -88,7 +88,7 @@ work; the local claim mechanism (0007) covers the single-machine case.
   concentrated in **who writes the ticket body** and **which side owns the claim**, which is what
   FR2 and FR1 resolve. Adopt its `tracker_key` and `tracker:` naming rather than introducing a
   parallel `external:` block.
-- **2026-08-19** — Test case is Aaron's standalone probation product in the Court family. It will
+- **2026-08-19** — Test case is Aaron's standalone client-domain product in the Court family. It will
   start at discovery, not delivery: `epic.md` makes a missing discovery link Major, so the first
   push will correctly refuse an epic with no CTD idea behind it. That is the gate working.
 - **2026-08-19** — This project is `routing.default: local`, so phase 3 cannot be tested here.

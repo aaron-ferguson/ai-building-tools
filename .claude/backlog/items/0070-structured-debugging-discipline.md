@@ -68,7 +68,7 @@ Written after the design question is settled. What is fixed regardless:
   is shallower than the bug's real trigger path, that absence is itself the finding, reported
   rather than papered over with a shallow regression test.
 - FR4 — Any command output, log line, or captured artifact the skill has the session show is
-  redacted for secrets and — per this toolkit's own `company: none` / no-Neumo-material rule — for
+  redacted for secrets and — per this toolkit's own `company: none` / no-company-material rule — for
   anything that would identify a specific company, court, case, or client, before it appears in a
   report or a commit.
 

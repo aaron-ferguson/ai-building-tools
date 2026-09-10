@@ -40,7 +40,7 @@ step never identifies, and the prescribed literal has no form for the pass that 
 
 **Measured 2026-09-07.** One retro pass edited three repos: `ai-building-tools` (skills, references,
 tests, backlog), `ai-building-conventions` (`testing-conventions.md` and its root `FINDINGS.md`) and
-`neumo_repos/Probation` (buffer only). One has a release chain, one needs a push and no release, one
+an internal repository (buffer only). One has a release chain, one needs a push and no release, one
 needs neither. The prescribed one-liner covers none of that, so the pass **reported in full
 instead** — which is the paragraph the one-line rule exists to stop.
 

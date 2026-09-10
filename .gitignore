@@ -5,3 +5,8 @@
 # The single-instance marker, never the run logs beside it. Committed, a marker makes every clone
 # of this repo report that a supervisor is already driving the backlog.
 .claude/backlog/runs/.active/
+
+# Machine-local list of internal organisation and client names (0143). NEVER COMMITTED:
+# the names are the secret, so a committed enumeration would be the leak the guard exists to
+# stop. tests/measurement.test.sh reads it if present and skips the check if absent.
+.private-names

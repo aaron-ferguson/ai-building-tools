@@ -66,7 +66,7 @@ Anything Jira-writing. The gate *reads* the rubrics; pushing tickets is 0004.
      and it is exactly the one Aaron identified independently.
   2. **No progressive-delivery check anywhere.** Nothing asks whether a change ships behind a flag,
      who owns it, or when it expires — despite the conventions requiring all three, and despite
-     court-tenanted rollout carrying per-court notification obligations the Neumo profile treats as
+     court-tenanted rollout carrying per-court notification obligations the company profile treats as
      strict by default.
   3. **`Independence` is review-mode only** (`story.md`). A story can be *created* in Ready-for-Dev
      with open blocking links and nothing flags it at write time.
