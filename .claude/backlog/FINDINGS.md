@@ -132,3 +132,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   typo rather than by a bad assertion. Nothing in the harness reports an empty extraction, and the
   three suites carrying this pair copy it byte for byte (pointer: `tests/orchestrate.test.sh:104`,
   item 0131).
+- 2026-09-10 (verify) — **a `says <file> <section> <token>` guard over prose is satisfied by a code
+  fence in the same section, so the paragraph it was written for can be deleted green.**
+  `tests/orchestrate.test.sh`'s AC11 pair asserts `--started` and `cumulative` inside
+  `Step 2 — The cycle`. Deleting the whole `**--started` is how the run keeps its promise…**`
+  paragraph leaves `--started` in the section's `sh` fence one line up, so only the `cumulative`
+  assertion reds: `154 passed, 1 failed`. Reverting the file's whole change reds both, which is why
+  the mutation at the AC's altitude looks conclusive. The grip a token-presence guard has on prose
+  is the section minus its code blocks, and no harness here draws that line (pointer:
+  `tests/orchestrate.test.sh:1534`, `skills/orchestrate/SKILL.md` Step 2, item 0131).
