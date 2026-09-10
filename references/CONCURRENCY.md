@@ -63,6 +63,40 @@ in one component, unwarned.
   Such a worktree may run tests and **must never claim, close or hand off**: the lock and the queue
   it would write are per-checkout, so a claim made there is invisible to every other session.
 
+## A change that touches every file takes an exclusive claim
+
+A vocabulary rename rewrites the whole tree at once, and that scope is
+**not expressible in `expects:`, `touches:` or the per-row lock** — all three are per-row, and a
+change like this has no row to be per. The mechanisms read as though they cover it, which is the
+danger: the next one gets started by a session that compared the two fields, found nothing, and
+concluded it was safe.
+
+It is still an **ordinary ticket** — claimed the ordinary way, with an ordinary token, whose
+`touches:` is `"*"`. No new machinery follows from it: `./next` reports every candidate as
+colliding while it is held, and `./claim` refuses it while anything else is.
+
+- **Three preconditions, and they are the rule.** It is claimed only when **nothing else is held**.
+  It lands in **one commit** — what leaves no half state for a later session to meet, the
+  2026-08-23 rename having been split across a guard and the file it guards while a held ticket
+  read the red.
+  And the suite is **green before it and green after it**, never between.
+- **A session that discovers one underway claims nothing while an exclusive claim stands.** Wait:
+  the claim is bounded and committed, so `./next` names the holder and its token rather than
+  leaving an unexplained conflict.
+- **An unexplained red is not evidence about its own ticket.** Hold the verdict rather than
+  releasing an advisory pass — an advisory release buys a re-verification later, and the exclusive
+  claim clears in the meantime.
+- **A rename does not rewrite closed tickets' files.** It rewrites the *product* — what a guard
+  reads and a future session acts on — plus the live surfaces: `QUEUE.md`, `RANKING.md`,
+  `SCHEDULED.md`, and the items of tickets that are open and unheld. A closed item is the record of
+  what was built and verified, and forward-only governs a record as much as a database. The
+  substitution is **recorded once, dated**, where the vocabulary is defined, so a reader meeting the
+  retired word in an old ticket can resolve it.
+- **Being cross-cutting is not an exemption from *A stage writes only the ticket it holds***, which
+  is precisely what the session performing one will assume.
+
+Narrative, verified figures and the shapes that were rejected: `CONCURRENCY-INCIDENTS.md`.
+
 ## A claim must be durable the moment it is made
 
 **Durable = visible to the other session with no further act by you.** A claim only you can see

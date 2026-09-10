@@ -194,3 +194,48 @@ columns, `./next` printed "0 ready of 2 rows" and `./claim` refused every row �
 erroring. The failure was safe but silent, and a reader would conclude the backlog was empty rather
 than that the parser was wrong. `./next` now refuses a table shape it cannot parse; that is why
 "refuse rather than guess" is stated as a property of both scripts.
+
+### The rename that no mechanism could see — rule: *A change that touches every file takes an exclusive claim*
+
+Renaming the container ticket type effort → project (`267d13f`, 2026-08-23) touched **30 files**:
+`QUEUE.md`, `RANKING.md`, `SCHEDULED.md`, the item template, two skills, three test suites and
+**20 item files**, **9** of which belonged to tickets that were already `done` (19 tickets were in
+`DONE.md` at `267d13f^`). No `touches:` list can usefully declare that, no single ticket owned it,
+and `claim` protects one row at a time — so the change was invisible to every concurrency mechanism
+this repo has.
+
+Two distinct defects came out of it, and only the first is what the rule addresses:
+
+- **It was not atomic across a guard and the file it guards.** `tests/graph-fields.test.sh`
+  asserted the new wording while `skills/queue/templates/item.md` still carried the old. 0005 held
+  the test file in `touches:` and read a red it had not caused, against a contract it never agreed
+  to. One commit fixes this by construction, and the exclusive claim covers the working-tree window.
+- **It edited a held ticket's requirements** — 0005's FR2 and FR5 were rewritten while 0005 sat at
+  `verify`. That needed no new rule: *A stage writes only the ticket it holds* already forbade it.
+  What the rule adds is the explicit statement that being cross-cutting is not an exemption.
+
+The audit-trail half of the same event — the rename's commits tagged with another ticket's live
+claim token, sweeping 41 lines of that ticket's uncommitted notes into their own message — is 0049,
+and has a different root cause.
+
+**The ticket's own figures were wrong, and re-verifying them changed the answer.** It read "27 files
+… 21 closed tickets"; the commit is 30 files, 20 item files, 9 of them closed. The 21-of-27 figure
+makes closed tickets look like the bulk of the work, which argues for a project with slices; 9-of-20,
+all of them excludable, argues for one commit.
+
+**Rejected — a scheduling rule alone** ("vocabulary changes only when nothing is claimed"). It
+survives as the first precondition, but it is not a shape on its own: it says nothing about
+atomicity, nothing about closed tickets, and nothing about the session that *starts* mid-change. It
+would win if sessions never started mid-rename. They do.
+
+**Rejected — a project with a slice per affected area.** Slices that each touch everything collide
+with *each other*, so the machinery reintroduces the problem inside the project; and a project holds
+one outcome carried by children with distinct outcomes, whereas a rename's outcome is only true when
+the last file changes. A half-landed rename is the failure, not a milestone. The escape hatch, stated
+so it is not re-derived: a vocabulary change that genuinely cannot be one commit is not a rename but
+a redesign, and then it is a project whose first slice introduces the new term as an addition.
+
+**Rejected — expand/contract.** `migration-conventions.md` governs schema under running code, where
+both shapes must be live because both old and new code are. Prose has no old code still running, and
+its dual-write step is two live names for one concept — the exact defect the rename exists to remove.
+Forward-only survives from that file, and is what the closed-tickets rule rests on.
