@@ -3,7 +3,7 @@ id: "0059"
 title: Decide what the batching rule actually licenses
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -15,8 +15,8 @@ expects:
   - skills/verify/SKILL.md
   - skills/develop/SKILL.md
   - tests/batching.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "a3d6"
+claimed_at: 2026-09-10T20:01:59Z
 touches:
 ---
 

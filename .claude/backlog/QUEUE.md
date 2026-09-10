@@ -59,7 +59,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0058 | Give verify the outcomes its steps assume can never happen | develop | ready |  |
 | 0127 | Say that a deferral is licensed by understanding and never by writing | develop | ready |  |
 | 0056 | Give design a non-UI reading list and complete its write step | develop | ready |  |
-| 0059 | Decide what the batching rule actually licenses | verify | ready |  |
+| 0059 | Decide what the batching rule actually licenses | verify | in-progress |  |
 | 0064 | Make a stage skill say which copy of it is running | develop | ready |  |
 | 0062 | Let a ticket's contract express a removal and cover its own prose | develop | ready |  |
 | 0048 | Decide which remaining backlog write sites become scripts | design | ready |  |
