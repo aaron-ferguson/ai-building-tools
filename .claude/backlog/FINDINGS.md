@@ -299,3 +299,16 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   mutation site by a phrase that the script also *documents itself with* is the specific trap, and it
   is likelier here than elsewhere because these scripts carry long rationale comments quoting their
   own output strings.
+
+- 2026-09-09 (design, 0140) — **`design` Step 4 prescribes a by-hand backlog write that
+  `CONCURRENCY.md` forbids and `handoff` exists to replace.** Its item-scoped path says "set
+  `next: develop` / `status: ready`, and commit by pathspec in the same turn" — which is an edit to
+  `QUEUE.md` and the item, unlocked and untokened, and `.claude/backlog/handoff` refuses to perform
+  it that way for six documented reasons (`handoff:37-41`). It also has no correct answer for an
+  **unclaimed** ticket, because `handoff` requires the token the item records and `design` never
+  tells the session to mint one. Resolved here by claiming first (`./claim 0140` → `e1ec`), writing,
+  then handing off — the same shape `develop` uses — and `./claim` itself prompted the missing half,
+  printing that `touches:` is not seeded for `design` and must be set to what the design pass will
+  write. Neither `touches:` nor the claim appears anywhere in `design`'s SKILL.md. Bears on 0091
+  (by-hand writes take the lock) and 0048 (which write sites become scripts); parked rather than
+  filed as a row by a session holding neither.
