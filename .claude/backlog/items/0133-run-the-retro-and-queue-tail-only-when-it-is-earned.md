@@ -3,7 +3,7 @@ id: "0133"
 title: Close a sprint with a retro and a queue sweep only when the findings earn it
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: m
@@ -18,9 +18,14 @@ expects:
   - .claude/backlog/next
   - skills/queue/templates/next
   - skills/queue/templates/config.yml
-claimed_by:
-claimed_at:
+claimed_by: "9265"
+claimed_at: 2026-09-11T21:34:50Z
 touches:
+  - skills/orchestrate/SKILL.md
+  - .claude/backlog/config.yml
+  - .claude/backlog/next
+  - skills/queue/templates/next
+  - skills/queue/templates/config.yml
 ---
 
 ## Problem
