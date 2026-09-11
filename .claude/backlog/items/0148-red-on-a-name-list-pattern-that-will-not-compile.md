@@ -125,3 +125,51 @@ this is its own row rather than a hand-back.
 - **2026-09-09 (verify, 94ea)** — Filed from `0143`'s verification. `0143` passed on all seven of its
   own criteria; this is the probe that went past them. The reproduction above was run in a throwaway
   worktree at `4dbd220` with a synthetic name, so no real name was staged, matched or printed.
+
+- **2026-09-10 (develop, ceb2)** — Built. The search moved into `names_search`, the whole decision
+  into `name_check_verdict`, and the diagnostic into `malformed_entry_report`. Four things this
+  session learned that the ticket could not have said:
+
+  - **`set -eu` is on in this file, and it kills the exact status this ticket exists to read.**
+    `named=$(names_search "$L"); status=$?` never reaches the second statement: an assignment from a
+    failing command substitution is a failing command, so the script exits 128 mid-suite with no
+    tally at all. Every status capture here is written `status=0; x=$(cmd) || status=$?`, and
+    `[ "$s" -le 1 ] && continue` had to become an `if`, since a false `&&` list also exits.
+  - **No tool's error text can be forwarded, and `git grep` is not the worst offender.** FR2
+    anticipated `fatal:` quoting the pattern once; this machine's `grep` is `ugrep`, which echoes
+    the pattern on its own line *plus* a caret diagram beneath it. The complaint is therefore
+    re-derived — the text after the quoted pattern's closing `':` in `git grep`'s own message — and
+    dropped entirely when the entry survives in it anyway. Per-entry compilation is checked with
+    `git grep -q ... -- <pathspec matching nothing>`: the compile happens before the walk, so the
+    status is the entry's verdict and the tree is never touched.
+  - **FR3's control, written the obvious way, passes while the defect is restored.** The first
+    implementation put the controls on the two extracted helpers. Reverting only the *consumer* —
+    `|| _status=$?` back to `|| _status=1` — reproduced the original silent green with the suite at
+    `0 failed`, because the controls reached the helpers and nothing reached the branch. That is why
+    the decision itself returns a verdict word: the control drives `name_check_verdict`, not the
+    pieces under it. Parked as a conventions gap (`ai-building-conventions/FINDINGS.md`, 2026-09-10).
+  - **The `leak` verdict is the one branch no synthetic list can reach**, since reaching it needs a
+    tracked file to match and committing a name is the defect the guard exists to stop. Left
+    unpinned, moving the uncompilable branch ahead of the match branch swallowed every real leak with
+    the suite green. The control's list now names `EXEMPT_PREFIX`, a symbol this file defines, which
+    is present in the tracked set by construction.
+
+  **Mutation sweep, ten mutations plus a no-op control, each restored from the committed file**
+  (`git checkout --` after the fix was committed, never over it): conflating 128 with no-match;
+  `names_search` swallowing its status; forwarding `fatal:`; dropping the line number; treating
+  no-match as an error; the uncompilable branch reporting clean; the absent-list branch deleted; the
+  uncompilable branch ahead of the match branch; the leak detail printing the matched text; the leak
+  branch reporting clean. Every one redded the case aimed at it and only that case. The control ran
+  green at `129 passed, 0 failed`. **M8's first form was a bad mutation, not a passing guard** — it
+  tested `!= 1 && != 0` ahead of the match branch, which is semantically a no-op; the green was the
+  mutation's fault and the real reordering reds two cases.
+
+  **Out of scope, as the ticket states:** the entries are still matched as regexes rather than
+  literally. `grep -F` would make a malformed entry impossible, and would change `0143`'s FR1 pattern
+  contract, so it stays a separate row if anyone wants it.
+
+  **All four list/tree combinations were driven in a throwaway worktree with `PRIVATE_NAMES_FILE`**
+  and an assembled name, never the checkout's index or a real list: well-formed x clean → `ok`, exit
+  0; well-formed x leak → FAIL naming `fixture-leak.md:1`, token withheld; malformed x clean and
+  malformed x leak → FAIL naming `list line 1: parentheses not balanced`, entry withheld. The
+  worktree is removed.
