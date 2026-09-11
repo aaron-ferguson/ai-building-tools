@@ -241,6 +241,35 @@ touches:
 ITEM
 }
 
+# The same, carrying a live claim. A row reading `in-progress` over an item with an EMPTY
+# `claimed_by:` is drift (0115 class 5, 0140's definition of *held*), so a case whose subject is
+# "another session holds this row" has to scaffold the token as well — otherwise it is a case about
+# drift wearing the words of a case about ownership, and since 0142 `--drive` routes it as drift.
+#
+# $1 id, $2 next, $3 status, $4 blocked_by inline, $5 parent, $6 one expects path, $7 the
+# claimed_by value written verbatim.
+add_ticket_held() {
+  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: $2
+status: $3
+qa_level: unit
+size: s
+parent: "$5"
+blocked_by: $4
+expects:
+  - $6
+claimed_by: $7
+claimed_at: 2026-09-09T00:00:00Z
+touches:
+---
+
+## Problem
+ITEM
+}
+
 # $1 id, $2 the section body including its `## ` heading line
 append_section() {
   printf '\n%s\n' "$2" >> "$FIX/.claude/backlog/items/$1-fixture.md"
@@ -835,11 +864,16 @@ assert_contains     "escalates"                    "$out" 'ESCALATE'
 assert_contains     "carries the waiting question" "$out" 'which of the two hosts'
 assert_not_contains "dispatches nothing"           "$out" 'DISPATCH'
 
+# The column reads `blocked` alongside the new entry, which is what makes this a case about
+# RE-DERIVATION rather than about drift: since 0142 a row left at `ready` over an open blocker is
+# reported as the stale cache it is and stops the driver, so scaffolding it that way here would
+# test that instead, and this branch — the NOTE that reads a new blocker as re-derivable rather
+# than as stuck — would never be reached again.
 echo "0038 AC9 — develop gave the ticket a blocked_by: re-derive and take the next takeable row"
 scaffold
-add_row 0101 'Newly blocked' develop ready 0091
+add_row 0101 'Newly blocked' develop blocked 0091
 add_row 0102 'Still takeable' develop ready 0092
-add_ticket 0101 develop ready '["0199"]' 0091 a/one.md
+add_ticket 0101 develop blocked '["0199"]' 0091 a/one.md
 add_ticket 0102 develop ready '[]' 0092 b/two.md
 add_ticket 0199 develop ready '[]' 0093 c/three.md
 seal
@@ -848,15 +882,24 @@ assert_rc       "exits 0 — dispatch"            "$rc" 0
 assert_contains "says 0101 gained a blocker"    "$out" '0101'
 assert_contains "dispatches the next row"       "$out" 'DISPATCH  develop 0102'
 
-echo "0038 AC9 — a close reconciled a dependent from blocked to ready: the row is dispatched"
+# 0024's property, and 0142 splits it by reader. The graph is still the authority and the column
+# still only caches it — `./next develop` offers the row exactly as it always did. What changed is
+# the DRIVER: a stale cache is drift, and since 0142 a driver stops on it rather than quietly
+# re-deriving, because the driver is the reader that has a person to ask. Both halves are asserted
+# here, because either alone reads as the whole rule.
+echo "0038 AC9 / 0142 — a dependent whose close was never reconciled: offered to a session, drift to a driver"
 scaffold
 add_row 0102 'A stale blocked column' develop blocked 0092
 add_ticket 0102 develop blocked '["0101"]' 0092 b/two.md
 add_ticket 0101 develop done '[]' 0091 a/one.md
 seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_rc       "./next develop still exits 0"       "$rc" 0 "$out"
+assert_contains "and still offers the re-derived row" "$out" 'TAKE      0102'
 out="$(run_next --drive)" && rc=0 || rc=$?
-assert_rc       "exits 0 — dispatch"        "$rc" 0
-assert_contains "dispatches the re-derived row" "$out" 'DISPATCH  develop 0102'
+assert_rc           "--drive escalates on the stale cache" "$rc" 4 "$out"
+assert_contains     "naming the row"                       "$out" 'DRIFT     0102'
+assert_not_contains "and dispatching nothing"              "$out" 'DISPATCH'
 
 echo "0038 AC9 — a ticket that became a project left QUEUE.md: not an error and not a loop"
 scaffold
@@ -1103,7 +1146,7 @@ add_row 0101 'A takeable row'    develop ready       0091
 add_row 0102 'Held by a session' design  in-progress 0092
 add_row 0103 'The real stopper'  design  ready       0093
 add_ticket 0101 develop ready       '[]' 0091 a/one.md
-add_ticket 0102 design  in-progress '[]' 0092 b/two.md
+add_ticket_held 0102 design in-progress '[]' 0092 b/two.md '"tok9"'
 add_ticket 0103 design  ready       '[]' 0093 c/three.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
@@ -1136,7 +1179,7 @@ add_row 0101 'A takeable row'    develop ready       0091
 add_row 0102 'Held by a session' develop in-progress 0092
 add_row 0103 'Held for an answer' develop waiting    0093
 add_ticket 0101 develop ready       '[]' 0091 a/one.md
-add_ticket 0102 develop in-progress '[]' 0092 b/two.md
+add_ticket_held 0102 develop in-progress '[]' 0092 b/two.md '"tok9"'
 add_ticket 0103 develop waiting     '[]' 0093 c/three.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
@@ -1227,7 +1270,7 @@ assert_contains     "and counts two takeable gates"     "$out" 'DEPTH     2'
 echo "0038 FR8 — a completed stage that never released its claim: escalate"
 scaffold
 add_row 0101 'Still held' verify in-progress 0091
-add_ticket 0101 verify in-progress '[]' 0091 a/one.md
+add_ticket_held 0101 verify in-progress '[]' 0091 a/one.md '"tok9"'
 seal
 out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
 assert_rc           "exits 4 — escalate"              "$rc" 4
@@ -1239,7 +1282,7 @@ echo "0038 FR8 — an in-progress row is stepped over, not taken"
 scaffold
 add_row 0101 'Held by another session' develop in-progress 0091
 add_row 0102 'Free'                    develop ready       0092
-add_ticket 0101 develop in-progress '[]' 0091 a/one.md
+add_ticket_held 0101 develop in-progress '[]' 0091 a/one.md '"tok9"'
 add_ticket 0102 develop ready '[]' 0092 b/two.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
@@ -1738,15 +1781,19 @@ out="$(run_next --drift)" && rc=0 || rc=$?
 assert_rc "exits 1"                          "$rc" 1 "$out"
 assert_eq "one DRIFT line for the row"       "$(lines_naming "$out" '^DRIFT     0001 ')" 1
 
-echo "0140 AC7 — --drive neither dispatches nor counts a held row"
+# The exit moved from 3 to 4 under 0142 and the claim did not: a `ready` row over a held item is
+# drift class 6, and a driver stops on it rather than reading the queue as finished. Which is the
+# sharper reading of this very fixture — the row reads takeable while somebody is building it.
+echo "0140 AC7 / 0142 — --drive neither dispatches nor counts a held row, and stops on it"
 scaffold
 add_row 0001 'Held, and the top develop row' develop ready 0000
 add_item_held 0001 ready '[]' '"tok9"' some/file.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
-assert_rc           "exits 3, run complete"      "$rc" 3 "$out"
+assert_rc           "exits 4 — a person decides" "$rc" 4 "$out"
 assert_not_contains "dispatches nothing"         "$out" 'DISPATCH  develop'
 assert_contains     "counts no takeable gate"    "$out" 'DEPTH     0 develop gate(s)'
+assert_contains     "and names the row as drift" "$out" 'DRIFT     0001'
 
 echo "0140 AC8 — a held row appears in CLAIMED FILES whatever its Status column says"
 scaffold
@@ -2097,6 +2144,114 @@ seal
 out="$(run_next --help)" && rc=0 || rc=$?
 assert_contains "the usage line carries it"      "$out" '--started <id>'
 assert_contains "and says it is cumulative"      "$out" 'cumulative'
+
+# ==============================================================================================
+# 0142 — the driver sees the drift classes that stop a human reader
+#
+# The defect: `--drift` exits non-zero on every class precisely so that a row disagreeing with its
+# own item stops the work, and `--drive` — the one reader that is never a person — ran no drift
+# check at all. Driven on the 0084 shape, `--drift` exited 1 while `--drive` printed
+# `COMPLETE nothing takeable` and exited 3 over the same queue, so a drifted backlog read as a
+# FINISHED one to a driver.
+#
+# The code is 4, the escalate code, reused rather than minted: the outcome is *a person decides*,
+# which `orchestrate` already routes. 3 is forbidden by FR2 — 3 is what the bug is.
+
+echo "0142 AC1 — --drive reports drift, names the row, and exits non-zero and not 3"
+scaffold
+add_row 0101 'Ready by the column, blocked by the graph' develop ready ''
+add_row 0102 'A perfectly takeable row'                  develop ready ''
+add_ticket 0101 develop ready '["0102"]' '' a/one.md
+add_ticket 0102 develop ready '[]'       '' b/two.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc_nonzero   "exits non-zero"                  "$rc" "$out"
+assert_rc           "exits 4 — a person decides"      "$rc" 4 "$out"
+assert_contains     "reports the drift"               "$out" 'DRIFT     0101'
+dline="$(printf '%s\n' "$out" | grep '^DRIFT     0101 ' || true)"
+assert_contains     "and the drift line names the open blocker" "$dline" '0102'
+# The dispatch is what a driver would have acted on. A drift report printed beside
+# `DISPATCH develop 0102` leaves the run going, which is the same silent failure by a slower route.
+assert_not_contains "and dispatches nothing"          "$out" 'DISPATCH'
+
+echo "0142 AC2 — a drift-free backlog with a takeable row dispatches and exits 0 as today"
+scaffold
+add_row 0101 'A takeable row' develop ready ''
+add_ticket 0101 develop ready '[]' '' a/one.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"     "$rc" 0 "$out"
+assert_contains "dispatches the gate"    "$out" 'DISPATCH  develop 0101'
+# Running the check unconditionally fatal is the mutation this pins: it would red every clean run.
+assert_not_contains "and reports no drift" "$out" 'DRIFT'
+
+echo "0142 AC3 — with drift and nothing takeable, the drift exit wins over COMPLETE"
+scaffold
+add_row 0101 'Ready by the column, blocked by the graph' develop ready ''
+add_row 0102 'Held by another session'                   develop in-progress ''
+add_ticket    0101 develop ready '["0102"]' '' a/one.md
+add_item_held 0102 in-progress '[]' '"tok9"' b/two.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 4, not 3"                    "$rc" 4 "$out"
+assert_contains     "reports the drift"                 "$out" 'DRIFT     0101'
+# The current shape's failure is ordering the check after the takeability walk, which reaches
+# COMPLETE first and exits 3 with the drift never printed.
+assert_not_contains "never says the run is complete"    "$out" 'COMPLETE'
+
+echo "0142 FR3 — --drive and --drift name the same rows and classes, because they share the check"
+scaffold
+add_row 0101 'Ready by the column, blocked by the graph' develop ready ''
+add_row 0102 'A row whose Next disagrees with its item'  verify  ready ''
+add_row 0103 'A row whose item vanished'                 develop ready ''
+add_ticket 0101 develop ready '["0102"]' '' a/one.md
+add_ticket 0102 develop ready '[]'       '' b/two.md
+seal
+drift_out="$(run_next --drift)" || true
+drive_out="$(run_next --drive)" || true
+assert_eq "the DRIFT lines are identical, line for line"   "$(printf '%s\n' "$drive_out" | grep '^DRIFT ' || true)"   "$(printf '%s\n' "$drift_out" | grep '^DRIFT ' || true)"
+# Not vacuous: the fixture really does carry three classes, so an empty-against-empty comparison
+# cannot be what passed above.
+assert_eq "three rows drifted"  "$(printf '%s\n' "$drift_out" | grep -c '^DRIFT ' || true)" 3
+
+echo "0142 compatibility — a clean queue still spends 3, 4 and 5 exactly as today"
+scaffold
+add_row 0101 'Held by another session' develop in-progress ''
+add_item_held 0101 in-progress '[]' '"tok9"' a/one.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "nothing takeable still exits 3" "$rc" 3 "$out"
+assert_contains "and still says so"              "$out" 'COMPLETE'
+scaffold
+add_row 0101 'An undecided ticket' design ready ''
+add_ticket 0101 design ready '[]' '' a/one.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "a design row still escalates with 4" "$rc" 4 "$out"
+scaffold
+set_threshold 2
+add_row 0101 'A takeable row' develop ready ''
+add_ticket 0101 develop ready '[]' '' a/one.md
+add_findings "$(printf -- '- 2026-01-02 - one entry.\n- 2026-01-03 - two entries.')"
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "the findings gate still exits 5" "$rc" 5 "$out"
+
+echo "0142 AC4 — orchestrate's routing paragraph names every code --drive can emit"
+orch="$ROOT/skills/orchestrate/SKILL.md"
+route="$(awk '/Route on the exit code/, /^$/' "$orch")"
+assert_contains "names 0 — dispatch"        "$route" '`0`'
+assert_contains "names 3 — run complete"    "$route" '`3`'
+assert_contains "names 4 — escalate"        "$route" '`4`'
+assert_contains "names 5 — the findings gate" "$route" '`5`'
+assert_contains "names 1 and 2 as the stops"  "$route" '`1` and `2`'
+# The clause this row adds, and the wording is what pins it. A guard on the codes alone stays green
+# over the OLD paragraph, which named every one of them while saying --drive checks no drift; and a
+# bare `drift` is satisfied by that same sentence. So the assertion is the code the drift outcome
+# spends, which the old text could not have carried.
+assert_contains     "ties drift to the escalate code"       "$route" 'exits `4` on drift'
+assert_not_contains "no longer says it cannot report drift" "$route" 'cannot report it'
+assert_not_contains "and no longer says it does not check"  "$route" 'does not check for drift'
 
 # --- result -----------------------------------------------------------------------------------
 echo

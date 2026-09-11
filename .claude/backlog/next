@@ -15,7 +15,9 @@
 # Two modes answer a driver rather than a human. `--drive` says what should happen next and spends a
 # distinct exit code per outcome, because a human reading "nothing is takeable" off a zero gets away
 # with it and a loop does not; `--findings` counts the findings buffer, tolerant of both entry
-# shapes it actually carries. Both are documented under `--help` and specified by 0038.
+# shapes it actually carries. Both are documented under `--help` and specified by 0038. `--drive`
+# runs `--drift`'s check before it picks a gate (0142): the classes that stop a human reading that
+# report were invisible to the one reader that is never a person.
 #
 # Read the whole file when you genuinely need the whole file — a re-rank, a themes pass, or any
 # judgement about *order* rather than about what to do next.
@@ -193,7 +195,9 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] 
                      one line per row, exits 1 if any
   ./next --findings  how many entries FINDINGS.md holds, and the threshold a driver gates on
   ./next --drive     what should happen next, for a driver rather than a human: one decision line,
-                     how deep the backlog is, and a distinct exit code per outcome.
+                     how deep the backlog is, and a distinct exit code per outcome. It runs the
+                     same drift check --drift runs before it picks a gate, and escalates on it:
+                     a drifted queue is not a finished one.
                      --completed <stage>[:<id>] says which stage just finished on which ticket.
                      That input is what tells a verify bounce from a fresh develop row, and a
                      crash-recovery re-dispatch from a loop. Give it at most once.
@@ -223,9 +227,11 @@ Where every row at the stage collides, the closing line says so in different wor
 empty stage — the two mean different things to whoever reads them.
 
 --drive spends a code per outcome, and they are the contract: 0 dispatch this · 3 run complete,
-nothing takeable · 4 escalate, a person decides · 5 the findings gate is reached, dispatch retro.
-1 (drift, malformed) and 2 (usage error) mean what they mean everywhere else. Every other mode
-still spends 0 on "nothing is takeable", which is why --drive could not reuse it.
+nothing takeable · 4 escalate, a person decides, drift included · 5 the findings gate is reached,
+dispatch retro. 1 (drift, malformed) and 2 (usage error) mean what they mean everywhere else —
+--drive reports drift on 4 rather than on 1 because what it has found is a decision for a person,
+which is the one thing 4 already means. Every other mode still spends 0 on "nothing is takeable",
+which is why --drive could not reuse it.
 USAGE
 }
 
@@ -670,9 +676,17 @@ fi
 # non-zero on any drift: a report that prints and exits zero is invisible to anything scripted
 # around it, which is the same silent failure it exists to remove. Nothing here writes —
 # reconciling belongs to whatever closed the blocker or left the hand-off half-applied.
-if [ "${1:-}" = "--drift" ]; then
-  drifted=0
-  for id in $(all_ids); do
+#
+# A FUNCTION, and shared with `--drive` rather than restated there (0142 FR3). Two copies of the
+# class list is the defect 0115 and 0141 each recorded once already: the second copy is written
+# from the first and then diverges silently, because nothing reds when one of them stops naming a
+# class. Prints one line per drifted row and returns 1 if any drifted, 0 if none — the return is
+# the report's verdict, so a caller that only wants the verdict discards the output rather than
+# re-deriving it. `dr_` prefixes because sh has no locals and both callers loop over `id`.
+drift_report() {
+  dr_drifted=0
+  for dr_id in $(all_ids); do
+    id="$dr_id"
     row="$(row_for "$id")"
     written="$(field "$row" "$STATUS")"
     derived="$(derived_of "$id")"
@@ -683,33 +697,40 @@ if [ "${1:-}" = "--drift" ]; then
     # still a lie about takeability, and that direction is reported.
     if [ -z "$item" ]; then
       printf 'DRIFT     %s | row present, no item file — items/%s-*.md resolves to nothing\n' "$id" "$id"
-      drifted=1
+      dr_drifted=1
     elif [ "$written" = "blocked" ] && [ "$derived" = "ready" ]; then
       printf 'DRIFT     %s | written blocked, derived ready — no blocked_by entry is still open\n' "$id"
-      drifted=1
+      dr_drifted=1
     elif [ "$written" != "blocked" ] && [ "$derived" = "blocked" ]; then
       printf 'DRIFT     %s | written %s, derived blocked — blocked_by still open: %s\n' \
         "$id" "$written" "$(open_blockers_of "$id")"
-      drifted=1
+      dr_drifted=1
     elif [ "$(field "$row" "$NEXT")" != "$(fm "$item" next)" ]; then
       printf 'DRIFT     %s | row Next %s, item next: %s — the row and its item disagree about the stage\n' \
         "$id" "$(field "$row" "$NEXT")" "$(fm "$item" next)"
-      drifted=1
+      dr_drifted=1
     elif [ "$written" != "$(fm "$item" status)" ]; then
       printf 'DRIFT     %s | row Status %s, item status: %s — the row and its item disagree about the status\n' \
         "$id" "$written" "$(fm "$item" status)"
-      drifted=1
+      dr_drifted=1
     elif [ "$written" = "in-progress" ] && ! held_by "$id" >/dev/null; then
       printf 'DRIFT     %s | row Status in-progress, item claimed_by: empty — nobody holds it\n' "$id"
-      drifted=1
+      dr_drifted=1
     elif [ "$written" != "in-progress" ] && dtok="$(held_by "$id")"; then
       printf 'DRIFT     %s | row Status %s, item claimed_by: %s — held, and the row does not say so\n' \
         "$id" "$written" "$dtok"
-      drifted=1
+      dr_drifted=1
     fi
   done
-  [ "$drifted" -eq 1 ] || printf 'no drift: every row agrees with its blocked_by and with its item\n'
-  exit "$drifted"
+  return "$dr_drifted"
+}
+
+if [ "${1:-}" = "--drift" ]; then
+  if drift_report; then
+    printf 'no drift: every row agrees with its blocked_by and with its item\n'
+    exit 0
+  fi
+  exit 1
 fi
 
 # --- --drive ----------------------------------------------------------------------------------
@@ -1033,6 +1054,24 @@ if [ "${1:-}" = "--drive" ]; then
     done
     return 1
   }
+
+  # --- the queue has to agree with itself before anything is dispatched ------------------------
+  # FR1/FR2 of 0142. `--drift` exits non-zero on every class precisely so that a row disagreeing
+  # with its own item stops the work, and until this landed the only reader that saw that exit was
+  # a person running the mode by hand: `--drive`'s body carried no drift check, so a drifted
+  # backlog read as a FINISHED one to a driver. Measured on the 0084 shape — `--drift` exited 1
+  # while `--drive` printed `COMPLETE nothing takeable` and exited 3 over the same queue.
+  #
+  # FIRST, and before the walk, because that ordering IS the requirement: run it after the
+  # takeability walk and a queue with drift and nothing takeable reaches COMPLETE and exits 3 with
+  # the drift never printed, which is the bug rather than the fix.
+  #
+  # It spends ESCALATE rather than a sixth code. The outcome is *a person decides* — reconciling a
+  # row against its item is not a stage's to do, and `orchestrate` already routes 4 exactly that
+  # way. 3 is forbidden: 3 is what the bug is.
+  if ! drift_report; then
+    decide "$ESCALATE" "ESCALATE  the rows above disagree with their own items — a drifted queue is not a finished one, and reconciling it is a person's call"
+  fi
 
   # --- what the caller says just finished -----------------------------------------------------
   # Order matters here and is not alphabetical. `waiting`, `design` and `queue` are checked before

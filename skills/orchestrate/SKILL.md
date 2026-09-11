@@ -170,10 +170,11 @@ the set is composed once and resent rather than rebuilt per call.
 **Route on the exit code, never on your own reading of the queue.** `0` dispatch what it named ·
 `3` the run is complete, nothing takeable · `4` escalate, a person decides · `5` the findings gate
 is reached, dispatch `retro`. `1` and `2` are a malformed config and a usage error, and both stop
-the run. **`--drive` does not check for drift and cannot report it** — its body contains no drift
-check, so the classes `./next --drift` exits 1 on stop a human reading that report and are invisible
-to this loop, which prints `COMPLETE nothing takeable` and exits `3` over the same queue. Read a `3`
-as *nothing takeable*, never as *nothing wrong* (item `0142`).
+the run. **`--drive` runs the same drift check `./next --drift` runs, before it picks a gate, and
+exits `4` on drift** — so a row disagreeing with its own item reaches this loop as *a person
+decides* rather than as *nothing takeable*, and the report names the same rows and classes the
+by-hand mode names. A `3` therefore means the queue is consistent AND spent; before item `0142` it
+meant only the second, and a drifted backlog read to a driver as a finished one.
 
 **The dispatch unit is a gate, not a row.** `--drive` prints the whole gate — the topmost takeable
 row plus every other takeable row sharing its `expects:` scope or its parent slice — and all of it
