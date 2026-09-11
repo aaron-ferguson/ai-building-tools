@@ -103,6 +103,43 @@ in_window() {
 }
 
 # ---------------------------------------------------------------------------
+# 0107's matcher. `in_window` above is line-based, which makes every reflow of a guarded paragraph
+# a breaking change even when the claim never moved. An assertion about a CLAIM is made against the
+# window unwrapped to one logical line instead (`CLAUDE.md`, *Tests*; 0059's build notes, where a
+# line-based grep reddened an untouched phrase the moment its paragraph rewrapped).
+# ---------------------------------------------------------------------------
+
+# flatten <text> — the window as one logical line.
+flatten() { printf '%s' "$1" | tr '\n' ' ' | tr -s ' '; }
+
+# count_in <flattened-text> <fixed-string> — non-overlapping occurrences. Counted on FLATTENED text
+# because a line-based count returns one for a phrase that wraps, and so under-reports exactly the
+# phrases most likely to be repeated in flowing prose (`testing-conventions.md`).
+count_in() {
+  printf '%s\n' "$1" | awk -v s="$2" '
+    { n = 0; t = $0
+      while (t != "" && (i = index(t, s)) > 0) { n++; t = substr(t, i + length(s)) }
+      print n }'
+}
+
+# says <label> <window-text> <fixed-string> — the claim is in the step, unwrapped, EXACTLY ONCE.
+# Uniqueness is counted INSIDE THE WINDOW and never over the file: a phrase occurring twice in the
+# very section a guard extracts is as unfalsifiable as one occurring twice in the file
+# (`testing-conventions.md`, and 0107's QA plan, which asks for this count explicitly).
+says() {
+  if [ -z "$2" ]; then
+    bad "$1 — the window is EMPTY; its opening phrase is gone, so nothing was searched"
+    return 0
+  fi
+  n="$(count_in "$(flatten "$2")" "$3")"
+  case "$n" in
+    1) ok "$1"; saw_on_pass "$2" ;;
+    0) bad "$1 — expected in the step: $3"; saw "$2" ;;
+    *) bad "$1 — found $n times inside the step, so it pins nothing: $3"; saw "$2" ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
 # The shipped tree
 # ---------------------------------------------------------------------------
 
@@ -140,6 +177,39 @@ echo "AC5 — the item template carries the requirement where the criteria are w
 in_window "AC5 — the template asks for what would make it red" "$IW" \
   'Each criterion names what would make it red'
 in_window "AC5 — and refuses one for which nothing can be named" "$IW" 'is not a criterion yet'
+
+# ---------------------------------------------------------------------------
+# 0107 — the same question, asked of the NFR table. `0052` made an ACCEPTANCE CRITERION name what
+# would make it red; nothing asked it of an NFR row, and the measurement in 0107 found a row is
+# guarded exactly when an AC happens to cover it — four rows of six on `0039`, with Observability
+# unguarded outright and Security half-guarded.
+# ---------------------------------------------------------------------------
+
+QN="$(window "$QUEUE" 'Fill the NFR table by elimination' '^\*\*Set ')"
+
+echo "0107 AC2/FR2 — queue's NFR step requires a kept row to name how it would red"
+says "AC2 — the step requires it"                   "$QN" 'Each row names how it would red'
+says "AC2 — and refuses a row that cannot"          "$QN" 'is not a commitment and does not ship'
+says "FR2 — the step says why, from the measurement" "$QN" 'guarded exactly when an AC happens to cover it'
+says "AC4/FR4 — the permitted prose form is named"  "$QN" 'prose only — no artifact yet'
+says "AC4/FR4 — an empty cell is the other state"   "$QN" 'An empty cell is an unanswered row'
+
+V4="$(window "$VERIFY" '## Step 4 — Check the NFRs that the ticket declared' '^## Step 5')"
+
+echo "0107 AC3/FR3 — verify Step 4 asks the falsifiability question of the TABLE, not only the ACs"
+says "AC3 — the question is asked of each row"      "$V4" 'Ask of each filled row how it would red'
+says "AC3 — true today is not the same as guarded"  "$V4" 'true today and guarded by nothing'
+says "AC6 — an unguarded row is reported"           "$V4" 'flag the row as unguarded'
+says "AC4/FR4 — the permitted prose form is honoured" "$V4" 'prose only — no artifact yet'
+
+IN="$(window "$ITEM" '## Non-functional requirements' '^## Waiting on')"
+
+echo "0107 AC1/FR1 — the item template gives every NFR row a place to name how it would red"
+says "AC1 — the table carries the column"           "$IN" '| Dimension | Requirement for this item | How it would red | Convention |'
+says "AC1 — the preamble requires it"               "$IN" 'Each row names how it would red'
+says "AC1 — and refuses a row that cannot"          "$IN" 'is not a commitment and does not ship'
+says "AC4/FR4 — the permitted prose form is named"  "$IN" 'prose only — no artifact yet'
+says "AC4/FR4 — an empty cell is the other state"   "$IN" 'An empty cell is an unanswered row'
 
 # ---------------------------------------------------------------------------
 # The cases below prove the guard can fail. A guard only ever seen passing is indistinguishable
@@ -200,6 +270,62 @@ elif window_has "$W" 'anything at all'; then
   bad "FR8 — an empty window matched; every case below it would prove nothing"
 else
   ok "an empty window is a named failure, never a vacuous pass"
+fi
+
+
+echo "0107 AC6 — a Step 4 clause present only OUTSIDE the step does not satisfy the check"
+cat > "$FIX/step4-outside.md" <<'FIXTURE'
+## Step 4 — Check the NFRs that the ticket declared
+
+For each filled NFR row, confirm the requirement holds.
+
+## Step 5 — Act on the verdict
+
+Ask of each filled row how it would red, somewhere else entirely.
+FIXTURE
+W="$(window "$FIX/step4-outside.md" '## Step 4 — Check the NFRs that the ticket declared' '^## Step 5')"
+if [ -z "$W" ]; then
+  bad "AC6 — the Step 4 window came back empty on a fixture that holds its heading"
+elif window_has "$(flatten "$W")" 'Ask of each filled row how it would red'; then
+  bad "AC6 — the Step 4 window read past its boundary into Step 5"
+else
+  ok "a Step 4 clause beyond the step is not counted, so AC6 is scoped to the step"
+fi
+
+echo "0107 — says() reds a claim repeated inside the window, which pins nothing"
+cat > "$FIX/twice.md" <<'FIXTURE'
+## Non-functional requirements
+
+Each row names how it would red.
+
+Each row names how it would red.
+
+## Waiting on
+FIXTURE
+W="$(window "$FIX/twice.md" '## Non-functional requirements' '^## Waiting on')"
+n="$(count_in "$(flatten "$W")" 'Each row names how it would red')"
+if [ "$n" = 2 ]; then
+  ok "a claim occurring twice inside the window is counted twice, so says() reds it"
+else
+  bad "a doubled claim counted $n times; the uniqueness half of says() cannot fail"
+fi
+
+echo "0107 — a claim wrapped across a line break is still matched, so a rewrap is not a breaking change"
+cat > "$FIX/wrapped.md" <<'FIXTURE'
+## Non-functional requirements
+
+Each row names how it
+would red.
+
+## Waiting on
+FIXTURE
+W="$(window "$FIX/wrapped.md" '## Non-functional requirements' '^## Waiting on')"
+if window_has "$W" 'Each row names how it would red'; then
+  bad "the line-based matcher matched a wrapped claim; this fixture proves nothing"
+elif [ "$(count_in "$(flatten "$W")" 'Each row names how it would red')" = 1 ]; then
+  ok "a wrapped claim is matched exactly once on the flattened window"
+else
+  bad "a wrapped claim was not matched on the flattened window"
 fi
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"

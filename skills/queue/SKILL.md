@@ -242,6 +242,17 @@ which `verify` checks the stale copy. The same holds for any **set** the ticket 
 it in an FR and the FR is false the day the set grows, having read green the whole way. The core's
 always-on rules apply to every ticket and need no row.
 
+**Each row names how it would red** — the check, mutation or observation that would fail if the
+requirement were not met — and a row for which none can be named **is not a commitment and does not
+ship**. Measured across all six NFR rows of `0039` on the pass that closed it, a row is guarded
+exactly when an AC happens to cover it: four of the six reddened only by that coincidence,
+Observability had no guard of any kind, and Security's authority clause stayed green when deleted.
+An unfalsifiable row costs two QA passes rather than one, because only whichever pass reads it
+carefully catches it. Where nothing exists yet to assert against, write **`prose only — no artifact
+yet`** — a permitted answer, and **An empty cell is an unanswered row**, which is the state this
+rule refuses. Which checks read as a check and are not is `testing-conventions.md`'s subject, not
+restated here.
+
 **Set `qa_level` now, at queue time** — the decision that stops QA rigour quietly sliding session to
 session. **It must be a level the project's `config.yml` can actually resolve to a command**, checked
 against that file rather than recalled: a level with no command leaves the QA session nothing to run,

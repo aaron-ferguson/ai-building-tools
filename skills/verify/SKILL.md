@@ -281,6 +281,14 @@ For each filled NFR row, confirm the requirement holds and **load the cited conv
 says what this ticket must satisfy, the convention says what the rule is, and you check against the
 rule. Record each checked row's paths into Step 3's evidence set on the same terms.
 
+**Then ask of the table what Step 3 asks of the criteria.** **Ask of each filled row how it would
+red** — run the check the row names, or perform its mutation and watch it fail. A row can be **true
+today and guarded by nothing**, and that is a different verdict from one that holds and is pinned:
+the second still catches the requirement being broken tomorrow, the first never will. Where the row
+names no check, **flag the row as unguarded** in the evidence rather than ticking it. A row reading
+**`prose only — no artifact yet`** is answered rather than unanswered — check that prose against the
+cited convention and say so.
+
 Then the always-on pass regardless of the table: **read `CONVENTIONS_CORE.md` for the current always-on
 rules and check the diff against them.** This skill deliberately does not list them; a copy here would
 drift and you would check the stale version.

@@ -113,23 +113,30 @@ requirement yet.
 Keep only the rows that apply and delete the rest. An empty row is noise; a filled row is a
 commitment `develop` and `verify` will hold you to.
 
-The middle column says what **this item** must satisfy. The third cites the convention file that
-defines the rule — by bare filename, since the conventions directory is resolved per project.
+The second column says what **this item** must satisfy. The third names the check, mutation or
+observation that would fail if it did not: **Each row names how it would red**, and a row for which
+none can be named **is not a commitment and does not ship**. The fourth cites the convention file
+that defines the rule — by bare filename, since the conventions directory is resolved per project.
 **Cite, never restate:** a rule copied in here drifts from source, and `verify` will then verify the
 stale copy. The convention files below are the usual mapping; check the conventions core's index
 for the authoritative list.
 
-| Dimension | Requirement for this item | Convention |
-|---|---|---|
-| Security | | `security-conventions.md` |
-| Privacy & data | | `data-privacy-conventions.md` |
-| Performance | | `observability-conventions.md` |
-| Accessibility | | `accessibility-conventions.md` |
-| Observability | | `observability-conventions.md` |
-| Migration / schema | | `migration-conventions.md` |
-| Progressive delivery | | `progressive-delivery-conventions.md` |
-| Dependencies | | `dependency-conventions.md` |
-| Documentation | | `documentation-conventions.md` |
+Where the honest answer is that nothing exists yet to assert against — a log format no run emits, a
+metric nothing records — write **`prose only — no artifact yet`**. That is a permitted answer and a
+different state from an unanswered one: **An empty cell is an unanswered row**, and `verify` Step 4
+reads the two differently.
+
+| Dimension | Requirement for this item | How it would red | Convention |
+|---|---|---|---|
+| Security | | | `security-conventions.md` |
+| Privacy & data | | | `data-privacy-conventions.md` |
+| Performance | | | `observability-conventions.md` |
+| Accessibility | | | `accessibility-conventions.md` |
+| Observability | | | `observability-conventions.md` |
+| Migration / schema | | | `migration-conventions.md` |
+| Progressive delivery | | | `progressive-delivery-conventions.md` |
+| Dependencies | | | `dependency-conventions.md` |
+| Documentation | | | `documentation-conventions.md` |
 
 The always-on rules in `CONVENTIONS_CORE.md` apply to every item and get no row here — they are
 never optional, so a row would only invite treating them as a choice. `verify` reads them from source
