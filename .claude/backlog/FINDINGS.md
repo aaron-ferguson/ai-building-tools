@@ -423,3 +423,19 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   this line is fail-fast and that files should be run individually to attribute a red; it does not
   warn that the obvious way to keep the output readable destroys the signal entirely. Needs a row
   (pointer: `.claude/backlog/config.yml` `commands.unit`).
+- 2026-09-11 (develop 0133) — **the script guards run the TEMPLATE copy, not the installed one, and
+  editing only `.claude/backlog/<script>` reds nothing.** `tests/next.test.sh` sets
+  `NEXT_SRC="$ROOT/skills/queue/templates/next"` and copies that into every fixture;
+  `claim`/`close`/`handoff` presumably do the same. A correct implementation written into the copy a
+  session has open reads as a guard wired to nothing — the run came back byte-identical, 13 failures
+  before and after, with no cue that the edit had not been exercised. `backlog-scripts-installed`
+  catches the divergence afterwards, but only once both copies are committed. Worth a line at each
+  `*_SRC` saying which copy the harness runs (pointer: `tests/next.test.sh:23`).
+- 2026-09-11 (develop 0133) — **two guards constrain a cost figure in skill prose, and no step sends
+  a session to either before it writes one.** A `$` before a digit is banned outright
+  (`money-in-skill-prose.test.sh`: the harness substitutes it as an invocation argument), and the
+  obvious fix — bolding it as `**USD n.nn**` — enrols the figure in `sprint.test.sh` AC14's
+  reconciliation against `MEASUREMENT.md`'s cost-per-closed-ticket column, which reds any derived
+  figure that is not one of those. `develop` Step 3 says to grep the project's guards for *the
+  mechanism you are about to introduce*, and quoting a number does not read as a mechanism. Needs a
+  row, or a line in the skill's own house rules (pointer: `skills/sprint/SKILL.md`, `develop` Step 3).

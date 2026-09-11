@@ -144,3 +144,39 @@ Written against whatever `0060` settles for *what is counted*; these hold regard
   numbers are re-derived from that rather than defended.
 - **2026-09-09 — a git-derived staleness window was considered and rejected**, with the reasoning in
   the Problem section. It is recorded because the idea is a natural one to have twice.
+- **2026-09-11 — `expects:` named `skills/orchestrate/SKILL.md`, which `0128` had renamed to
+  `skills/sprint/`.** Corrected in `touches:` at claim. Nothing else in the ticket went stale with
+  it: `0060` settled the count as *every entry* with `retro` as terminal sweeper, and this ticket's
+  FRs were written to hold regardless of that shape, which they did.
+- **2026-09-11 — where "completed sprints" is recorded, and why it is not a counter in
+  `config.yml`.** FR3 fixes the unit and not the ledger, and the obvious home — a monotonic counter
+  beside `next_id`, which is the repo's own precedent for state in `config.yml` — is **closed to the
+  supervisor**: `sprint` Step 7 forbids it the backlog lock, and `CONCURRENCY.md` requires the lock
+  for every write to that directory. The only durable record a supervisor may write is its own
+  per-run log, which is single-writer and needs none. So a **completed sprint is a run log carrying
+  a `sprint_ended` event** — not a run log *file*, because a supervisor killed mid-run offered the
+  buffer no opportunity to be swept, and counting files would score that as one.
+- **2026-09-11 — that made Step 5's "the log is not state" false, and it was narrowed rather than
+  left standing.** The age limit reads `runs/` across the whole history, so *"delete the log between
+  two sessions and the next action does not change at all"* no longer holds for the gate. What still
+  holds is the claim the sentence exists for: a resuming supervisor places itself from `--drive` and
+  `--findings` and reads no log to do it. The exception is named beside the claim and guarded
+  (`tests/sprint.test.sh` AC17), because an unnamed one reads correctly on its own while the next
+  reader acts on it. Deleting the history resets the age half only, and errs toward a tail that
+  fires late rather than one that fires on nothing.
+- **2026-09-11 — the same-day comparison is an acknowledged over-strictness, not an oversight.** An
+  entry carries a date and a run an instant, so on a shared day nothing says which came first. A
+  sprint ending the day an entry was parked is therefore not counted: that delays the gate by at
+  most one sprint, where counting it would fire the whole tail on a finding parked minutes earlier.
+  Guarded as its own case so the choice cannot be silently reversed.
+- **2026-09-11 — `findings_threshold` was left at 8 here rather than raised to the note's interim
+  12.** The key's own comment records why this repo holds it at retro's stated cadence, `0100` puts
+  moving it out of scope, and raising it is a judgement `0135`'s yield figures should settle. At 8
+  the count crosses first on this repo and the age half rarely fires — which is correct for a
+  project whose rate is inflated because its tickets are *about* the tooling.
+- **2026-09-11 — a cost figure in skill prose is constrained twice, by guards nothing sends you
+  to.** `**$6.75**` broke `tests/money-in-skill-prose.test.sh` (a `$` before a digit is substituted
+  by the harness as an invocation argument), and rewriting it as `**USD 6.75**` then broke
+  `tests/sprint.test.sh` AC14, which reconciles every *bolded* USD figure in the skill against
+  `MEASUREMENT.md`'s cost-per-closed-ticket column — a set this figure does not belong to. Both are
+  correct; neither is reachable from "I am about to quote a number". Parked.
