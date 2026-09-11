@@ -51,6 +51,8 @@ touches:
   - .claude-plugin/plugin.json
   - .claude-plugin/marketplace.json
   - commands/orchestrate.md           # NEW — the FR2 deprecation alias, created by this ticket
+  - skills/orchestrate/               # TRANSIENT — recreated and removed inside one turn to
+                                      # prove AC1 reds on a copy rather than a move; never committed
 ---
 
 ## Problem
