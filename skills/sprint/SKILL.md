@@ -320,8 +320,9 @@ both and `--drive` spends exit `5` on either, saying which.
 
 **An uncrossed gate dispatches neither tail stage, and the findings carry forward untouched** to be
 swept by a later sprint alongside its own. A sprint that parks nothing ends with no tail at all: the
-tail is roughly **$6.75** against a one-ticket sprint that may itself cost less, and an
-unconditional one spends that on a buffer with nothing in it. **Mark nothing on the way past** — an
+tail is roughly USD 6.75 — `retro` plus `queue` at `MEASUREMENT.md`'s per-session means, which is
+a cache of that file and is recomputed from it rather than quoted — against a one-ticket sprint that
+may itself cost less, and an unconditional one spends that on a buffer with nothing in it. **Mark nothing on the way past** — an
 entry the sprint did not process is not the sprint's to disposition, and a marked one makes the next
 gate read low.
 

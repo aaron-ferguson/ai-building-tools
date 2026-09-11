@@ -1699,7 +1699,7 @@ fi
 if printf '%s' "$step6" | grep -qF 'dispatches neither'; then
   ok "AC1 — and dispatches neither tail stage"
 else
-  bad "0133 AC1 — Step 6 does not state that an uncrossed gate runs NO tail, which spends about \$6.75 on a buffer with nothing in it"
+  bad "0133 AC1 — Step 6 does not state that an uncrossed gate runs NO tail, which spends about USD 6.75 on a buffer with nothing in it"
 fi
 
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
