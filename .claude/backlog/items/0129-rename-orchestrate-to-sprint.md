@@ -3,7 +3,7 @@ id: "0129"
 title: Rename orchestrate to sprint and leave the old command resolving
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: m
@@ -27,8 +27,8 @@ expects:
   - .claude-plugin/marketplace.json
   - skills/develop/SKILL.md
   - skills/queue/templates/config.yml
-claimed_by:
-claimed_at:
+claimed_by: "841c"
+claimed_at: 2026-09-11T02:56:49Z
 touches:
                                       # prove AC1 reds on a copy rather than a move; never committed
 ---
