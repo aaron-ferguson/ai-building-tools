@@ -2253,6 +2253,157 @@ assert_contains     "ties drift to the escalate code"       "$route" 'exits `4` 
 assert_not_contains "no longer says it cannot report drift" "$route" 'cannot report it'
 assert_not_contains "and no longer says it does not check"  "$route" 'does not check for drift'
 
+# --- 0133 — the findings gate's second limit: an unswept buffer aged past N completed sprints ----
+#
+# WHY A SECOND LIMIT AT ALL. The count alone strands a low-yield project: a repo parking two
+# findings a sprint never reaches a threshold of eight, so its buffer is never swept and the
+# lessons in it are never landed. The age half fires on TIME SERVED rather than on volume.
+#
+# WHY THE UNIT IS COMPLETED SPRINTS AND NOT CALENDAR DAYS (0133 FR3). The gate is only ever
+# evaluated when a sprint ends, so a calendar window and a sprint count fire identically on the
+# next sprint whenever it comes — and a dormant project's calendar clock runs while nothing is
+# there to read it. What a sprint count measures is opportunities missed, which is the thing.
+#
+# WHERE THE COUNT COMES FROM. `.claude/backlog/runs/<run-id>.jsonl`, one file per run, each
+# carrying a `sprint_ended` event when its run finished. That directory is the ONLY durable record
+# a supervisor may write: `sprint` Step 7 forbids it the backlog lock, so config.yml — where a
+# counter would otherwise live beside `next_id` — is closed to it.
+
+# $1 threshold, $2 max sprints. Both verbatim, so a case can supply a non-number.
+set_findings_limits() {
+  printf 'project: Fixture\nfindings_threshold: %s\nfindings_max_sprints: %s\n' "$1" "$2" \
+    > "$FIX/.claude/backlog/config.yml"
+}
+
+# A run that ENDED: $1 the run id, $2 the UTC date of its `sprint_ended` event.
+add_ended_run() {
+  mkdir -p "$FIX/.claude/backlog/runs"
+  printf '{"event":"sprint_ended","at":"%sT12:00:00Z","run":"%s"}\n' "$2" "$1" \
+    > "$FIX/.claude/backlog/runs/$1.jsonl"
+}
+
+# A run that started and never ended — provenance, and not a completed sprint.
+add_open_run() {
+  mkdir -p "$FIX/.claude/backlog/runs"
+  printf '{"event":"scope_confirmed","at":"%sT12:00:00Z","run":"%s"}\n' "$2" "$1" \
+    > "$FIX/.claude/backlog/runs/$1.jsonl"
+}
+
+# A backlog with one takeable develop row, so `--drive` has something to dispatch when the gate
+# does NOT fire. Without it every case below exits 3 and the two outcomes are indistinguishable.
+one_takeable_row() {
+  add_row 0001 'Fixture' develop ready ''
+  add_item 0001 ready '[]'
+}
+
+echo "0133 AC1 — a buffer under both limits runs no tail"
+scaffold
+set_findings_limits 8 2
+one_takeable_row
+add_findings "$(printf -- '- 2026-01-02 — one entry.')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 0"                          "$rc" 0
+assert_contains "reports the age against the limit" "$out" 'findings_max_sprints'
+assert_contains "and says it is under it"           "$out" 'under the limit'
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "dispatches the ticket rather than the tail" "$rc" 0 "$out"
+assert_not_contains "no retro is dispatched"                     "$out" 'DISPATCH  retro'
+
+echo "0133 AC3 — an entry that has survived the configured number of sprints crosses the gate"
+scaffold
+set_findings_limits 8 2
+one_takeable_row
+add_findings "$(printf -- '- 2026-01-02 — one entry.')"
+add_ended_run r1 2026-01-03
+add_ended_run r2 2026-01-04
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 0"                     "$rc" 0
+assert_contains "counts the two sprints"      "$out" '2 completed sprint'
+assert_contains "and says it is at the limit" "$out" 'at or over the limit'
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "spends the findings-gate code on age alone" "$rc" 5 "$out"
+assert_contains "names the sprints served"                   "$out" 'completed sprint'
+
+echo "0133 AC2/FR5 — the tail the gate dispatches is retro AND THEN queue"
+# The count half and the age half both end in a tail, so both lines carry it. A gate naming only
+# the retro leaves the buffer's work half unswept, which is 0060's asymmetry arriving as a dispatch.
+scaffold
+set_findings_limits 2 2
+one_takeable_row
+add_findings "$(printf -- '- 2026-01-02 — one.\n- 2026-01-03 — two.')"
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "the count half still fires"       "$rc" 5 "$out"
+assert_contains "and names both tail stages"       "$out" 'retro, then queue'
+
+echo "0133 FR1 — an empty buffer runs no tail however many sprints have ended"
+scaffold
+set_findings_limits 8 2
+one_takeable_row
+add_findings ''
+add_ended_run r1 2026-01-03
+add_ended_run r2 2026-01-04
+add_ended_run r3 2026-01-05
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "a sprint that parks nothing ends without a tail" "$rc" 0 "$out"
+
+echo "0133 — a run that never ended is not a completed sprint"
+# The falsifiable half of \"completed\": count the FILES and this case is green while a supervisor
+# killed mid-run counts as an opportunity the buffer was offered and missed.
+scaffold
+set_findings_limits 8 2
+one_takeable_row
+add_findings "$(printf -- '- 2026-01-02 — one entry.')"
+add_ended_run r1 2026-01-03
+add_open_run  r2 2026-01-04
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_contains "counts one, not two" "$out" '1 completed sprint'
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "and the gate stays shut" "$rc" 0 "$out"
+
+echo "0133 — a sprint ending the day the entry was parked is not counted"
+# An ACKNOWLEDGED OVER-STRICTNESS (testing-conventions.md). An entry carries a date and a run an
+# instant, so on the shared day there is no fact saying which came first. Not counting it delays
+# the gate by at most one sprint; counting it fires the tail on a finding parked minutes earlier.
+scaffold
+set_findings_limits 8 1
+one_takeable_row
+add_findings "$(printf -- '- 2026-01-02 — one entry.')"
+add_ended_run r1 2026-01-02
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_contains "counts nothing on the shared day" "$out" '0 completed sprint'
+
+echo "0133 — the oldest entry decides, not the newest"
+# A buffer that keeps receiving entries would otherwise reset its own clock every sprint, which is
+# exactly the low-yield project the age half exists for.
+scaffold
+set_findings_limits 8 2
+one_takeable_row
+add_findings "$(printf -- '- 2026-01-02 — old.\n- 2026-01-09 — new.')"
+add_ended_run r1 2026-01-03
+add_ended_run r2 2026-01-04
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_contains "measures from 2026-01-02" "$out" '2026-01-02'
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "and the gate is crossed" "$rc" 5 "$out"
+
+echo "0133 — a non-numeric findings_max_sprints fails loudly rather than defaulting"
+# The same rule read_threshold already holds to: a driver silently gating on a default where the
+# project wrote something else is wrong with nothing to notice it by.
+scaffold
+set_findings_limits 8 'a couple'
+add_findings "$(printf -- '- 2026-01-02 — one entry.')"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 1"                     "$rc" 1
+assert_contains "names the key and the value" "$out" 'findings_max_sprints'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

@@ -96,6 +96,107 @@ count_findings() {
   ' "$1"
 }
 
+# --- the gate's SECOND limit: time served rather than volume (0133) ----------------------------
+#
+# The count alone strands a low-yield project. A repo parking two findings a sprint never reaches a
+# threshold of eight, so its buffer is never swept, and the lessons in it are never landed — the
+# gate is silent in exactly the case where nothing else will notice.
+#
+# THE UNIT IS COMPLETED SPRINTS, NOT CALENDAR DAYS, and the reason is that the gate is only ever
+# evaluated when a sprint ends. A dormant project's calendar clock runs while nothing is there to
+# read it, so a window and a sprint count fire identically on the next sprint whenever it comes —
+# and the sprint count is the one that measures what it claims to: opportunities offered and missed.
+#
+# WHERE THE COUNT COMES FROM, and why it is not a counter in config.yml beside `next_id`. A
+# supervisor may not take the backlog lock (`sprint` Step 7), and every write to this directory
+# needs it (`CONCURRENCY.md`, *Lock every write to the backlog directory*) — so the one durable
+# record a supervisor can write is its own per-run log, which is single-writer and needs no lock.
+# A completed sprint is therefore a run log carrying a `sprint_ended` event. Counting FILES instead
+# would score a supervisor killed mid-run as an opportunity the buffer was offered, which is the
+# opposite of true.
+#
+# Loud rather than defaulted, for read_threshold's reason: a driver gating on 2 where the project
+# wrote 6 is wrong with nothing to notice it by.
+MAX_SPRINTS=2
+read_max_sprints() {
+  [ -f "$CONFIG" ] || return 0
+  raw="$(awk '/^findings_max_sprints:/ {
+    v = $0; sub(/^findings_max_sprints: */, "", v); sub(/#.*/, "", v); gsub(/[ \t]/, "", v)
+    print v; exit
+  }' "$CONFIG")"
+  [ -n "$raw" ] || return 0
+  case "$raw" in
+    *[!0-9]*) echo "findings_max_sprints in $CONFIG is not a whole number: $raw" >&2; return 1 ;;
+  esac
+  MAX_SPRINTS="$raw"
+}
+
+RUNS="$DIR/runs"
+
+# The earliest date any entry in either buffer carries, or nothing where both are empty. The OLDEST
+# and never the newest: a buffer still receiving entries would otherwise reset its own clock every
+# sprint, which is precisely the low-yield project this limit exists for.
+#
+# Both entry shapes `count_findings` tolerates are read here too, and by the same preamble rule —
+# two readers disagreeing about which lines are entries is 0060's defect in miniature.
+oldest_entry_date() {
+  for oed_buf in "$FINDINGS" "$TOOLS_FINDINGS"; do
+    [ -n "$oed_buf" ] && [ -f "$oed_buf" ] || continue
+    awk '
+      !body && /^---$/ { body = 1; next }
+      !body { next }
+      /^- / {
+        v = $0
+        sub(/^- (\*\*)?/, "", v)
+        if (v ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) print substr(v, 1, 10)
+      }
+    ' "$oed_buf"
+  done | sort | head -n 1
+}
+
+# How many sprints have ENDED since $1, an ISO date.
+#
+# STRICTLY AFTER, and that is an ACKNOWLEDGED OVER-STRICTNESS rather than an oversight. An entry
+# carries a date and a run an instant, so on a shared day there is no fact saying which came first.
+# Not counting it delays the gate by at most one sprint; counting it fires the whole tail on a
+# finding parked minutes before the run ended, which is the worse of the two by the cost of a tail.
+sprints_since() {
+  [ -d "$RUNS" ] || { printf '0\n'; return 0; }
+  ss_n=0
+  for ss_f in "$RUNS"/*.jsonl; do
+    [ -f "$ss_f" ] || continue
+    ss_hit="$(awk -v since="$1" '
+      /"event"[ \t]*:[ \t]*"sprint_ended"/ {
+        if (match($0, /"at"[ \t]*:[ \t]*"[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)) {
+          d = substr($0, RSTART + RLENGTH - 10, 10)
+          if (d > since) { print "yes"; exit }
+        }
+      }
+    ' "$ss_f")"
+    [ -z "$ss_hit" ] || ss_n=$((ss_n + 1))
+  done
+  printf '%s\n' "$ss_n"
+}
+
+# Sets FOLDEST and FAGE. Call after `tally_findings`, which is what resolves the second buffer.
+FOLDEST=""
+FAGE=0
+tally_age() {
+  FOLDEST="$(oldest_entry_date)"
+  FAGE=0
+  [ -n "$FOLDEST" ] || return 0
+  FAGE="$(sprints_since "$FOLDEST")"
+}
+
+# The age half of the gate, as one predicate both readers share. An EMPTY buffer never crosses it,
+# however many sprints have ended: a sprint that parks nothing ends without a tail (0133 FR1), and
+# a tail costs about $6.75 against a one-ticket sprint that may cost less.
+age_gate_crossed() {
+  [ -n "$FOLDEST" ] || return 1
+  [ "$FCOUNT" -gt 0 ] || return 1
+  [ "$FAGE" -ge "$MAX_SPRINTS" ]
+}
+
 # --- the second buffer, and only the second (0060 FR10) ----------------------------------------
 #
 # The gate counts the buffers the retro it would dispatch will actually READ. `retro` Step 1 reads
@@ -193,7 +294,9 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] 
   ./next --drift     every row that disagrees with its blocked_by or with its own item —
                      stage, status, a claim the row does not match either way, a missing item file;
                      one line per row, exits 1 if any
-  ./next --findings  how many entries FINDINGS.md holds, and the threshold a driver gates on
+  ./next --findings  how many entries FINDINGS.md holds, and the TWO limits a driver gates on:
+                     the count against findings_threshold, and the oldest entry's age in completed
+                     sprints against findings_max_sprints. Either one crossed dispatches the tail
   ./next --drive     what should happen next, for a driver rather than a human: one decision line,
                      how deep the backlog is, and a distinct exit code per outcome. It runs the
                      same drift check --drift runs before it picks a gate, and escalates on it:
@@ -244,6 +347,7 @@ esac
 # a driver asking it on a project mid-scaffold should get the count rather than a parse error.
 if [ "${1:-}" = "--findings" ]; then
   read_threshold || exit 1
+  read_max_sprints || exit 1
   read_tools_buffer
   if [ ! -f "$FINDINGS" ] && [ -z "$TOOLS_FINDINGS" ]; then
     printf 'FINDINGS  0 entries; threshold %s — no FINDINGS.md at %s\n' "$THRESHOLD" "$FINDINGS"
@@ -255,6 +359,14 @@ if [ "${1:-}" = "--findings" ]; then
     "$FCOUNT" "$THRESHOLD" "$state"
   printf '          %s' "$(findings_sources)"
   printf '\n'
+  # The second limit, printed only where there is an entry to date. A line reading `oldest entry
+  # (none)` on an empty buffer invites the reading that the tail is merely overdue.
+  tally_age
+  if [ -n "$FOLDEST" ]; then
+    if age_gate_crossed; then astate='at or over the limit'; else astate='under the limit'; fi
+    printf '          oldest entry %s has survived %s completed sprint(s); limit %s (config.yml findings_max_sprints) — %s\n' \
+      "$FOLDEST" "$FAGE" "$MAX_SPRINTS" "$astate"
+  fi
   [ "$FBAD" = 0 ] || {
     echo "the count above is not trustworthy: an entry matches neither '- <date>' nor '- **<date>'" >&2
     exit 1
@@ -763,6 +875,7 @@ if [ "${1:-}" = "--drive" ]; then
   FINDINGS_GATE=5
 
   read_threshold || exit 1
+  read_max_sprints || exit 1
   shift
   COMPLETED=""
   STARTED=""
@@ -1021,13 +1134,24 @@ if [ "${1:-}" = "--drive" ]; then
     if [ "$FBAD" != 0 ]; then
       decide "$ESCALATE" "ESCALATE  FINDINGS.md carries an entry shape the count does not recognise, so the gate cannot be trusted — and a gate reading a low number fires late and silently"
     fi
+    tally_age
+    # The provenance clause rides along only where a SECOND buffer was counted: where the total is
+    # the local buffer alone, the original sentence already says everything a driver acts on.
+    gsrc=""
+    [ -z "$TOOLS_FINDINGS" ] || gsrc="; $(findings_sources)"
+    # TWO LIMITS, WHICHEVER COMES FIRST (0133 FR2), and the line says WHICH crossed — a driver that
+    # cannot tell volume from time served cannot report why it spent a tail.
+    #
+    # THE TAIL IS `retro` AND THEN `queue`. Naming only the retro is 0060's asymmetry arriving as a
+    # dispatch: retro lands the lesson halves and only a queue sweep can take the work halves, so a
+    # gate that dispatches one of the two leaves the buffer holding what it came to clear.
     if [ "$FCOUNT" -ge "$THRESHOLD" ]; then
       PROPOSE_STAGE="retro"; PROPOSE_IDS=""
-      # The provenance clause rides along only where a SECOND buffer was counted: where the total is
-      # the local buffer alone, the original sentence already says everything a driver acts on.
-      gsrc=""
-      [ -z "$TOOLS_FINDINGS" ] || gsrc="; $(findings_sources)"
-      decide "$FINDINGS_GATE" "DISPATCH  retro — FINDINGS.md holds $FCOUNT entries against a threshold of $THRESHOLD$gsrc"
+      decide "$FINDINGS_GATE" "DISPATCH  retro, then queue — FINDINGS.md holds $FCOUNT entries against a threshold of $THRESHOLD$gsrc"
+    fi
+    if age_gate_crossed; then
+      PROPOSE_STAGE="retro"; PROPOSE_IDS=""
+      decide "$FINDINGS_GATE" "DISPATCH  retro, then queue — FINDINGS.md holds $FCOUNT entries whose oldest ($FOLDEST) has survived $FAGE completed sprint(s) against a limit of $MAX_SPRINTS$gsrc"
     fi
   }
 
