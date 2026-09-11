@@ -466,3 +466,11 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   holds* forbids this session doing it — and plausibly a line in `verify` Step 7 saying a pasted
   tally is redacted before it is written (pointer: `tests/measurement.test.sh`,
   `skills/verify/SKILL.md` Step 7).
+
+- 2026-09-11 (verify 0133) — **a single-line mutation that stays green can mean redundancy rather
+  than a gap, and `verify` Step 3 gives no way to tell the two apart.** `age_gate_crossed` carries
+  two empty-buffer guards and `tally_age` a third; removing any ONE left 413/413 green, which reads
+  exactly like the uncovered AC the step tells you to publish. Removing all three reddened AC1's
+  case immediately. Three sweep runs at ~2min each to reach a fact one conjunction-aware pass would
+  have found: after a silent mutation, widen to every line that could make the AC true before
+  concluding it is unguarded (pointer: `skills/verify/SKILL.md` Step 3, item 0133).
