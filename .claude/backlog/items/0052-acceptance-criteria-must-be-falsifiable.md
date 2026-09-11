@@ -3,7 +3,7 @@ id: "0052"
 title: Require an acceptance criterion to name the input that would make it red
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -16,8 +16,8 @@ expects:
   - skills/verify/SKILL.md
   - skills/queue/templates/item.md
   - tests/citations.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "504f"
+claimed_at: 2026-09-11T21:31:41Z
 touches:
 ---
 
