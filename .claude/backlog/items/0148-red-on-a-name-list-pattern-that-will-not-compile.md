@@ -2,8 +2,8 @@
 id: "0148"
 title: Make the internal-name guard red rather than green when its own pattern will not compile
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -14,10 +14,9 @@ blocked_by: []
 relates: ["0143", "0118", "0095"]
 expects:
   - tests/measurement.test.sh
-claimed_by: "ceb2"
-claimed_at: 2026-09-11T01:55:56Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/measurement.test.sh
 ---
 
 ## Problem
