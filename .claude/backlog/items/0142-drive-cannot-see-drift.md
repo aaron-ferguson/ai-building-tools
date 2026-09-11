@@ -2,8 +2,8 @@
 id: "0142"
 title: Let the driver see the drift classes that stop a human reader
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: s
 created: 2026-09-09
@@ -15,9 +15,10 @@ expects:
   - .claude/backlog/next
   - skills/queue/templates/next
   - tests/next.test.sh
-claimed_by: "1f54"
-claimed_at: 2026-09-11T01:26:15Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-11
 ---
 
 ## Problem
@@ -63,19 +64,19 @@ will end a sprint clean over a backlog that needs a person.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture backlog carrying one drifted row (a `ready` row over an item with an open
+- [x] AC1 — Given a fixture backlog carrying one drifted row (a `ready` row over an item with an open
   `blocked_by`), when `./next --drive` runs, then it reports the drift, names the row, and exits
   non-zero and not `3`. Red-making input: today's `next`, which exits `3` on that fixture.
-- [ ] AC2 — Given a drift-free fixture backlog with one takeable row, when `./next --drive` runs, then
+- [x] AC2 — Given a drift-free fixture backlog with one takeable row, when `./next --drive` runs, then
   it dispatches as today and exits `0`. Red-making mutation: running the drift check unconditionally
   fatal, which breaks every clean run.
-- [ ] AC3 — Given a fixture backlog with drift and nothing takeable, when `./next --drive` runs, then
+- [x] AC3 — Given a fixture backlog with drift and nothing takeable, when `./next --drive` runs, then
   the drift exit wins over `COMPLETE nothing takeable`. Red-making mutation: ordering the drift check
   after the takeability walk, which is the current shape's failure.
-- [ ] AC4 — Given `skills/orchestrate/SKILL.md`, when the routing paragraph is read, then every exit
+- [x] AC4 — Given `skills/orchestrate/SKILL.md`, when the routing paragraph is read, then every exit
   code `--drive` can emit is named there, including the one FR2 adds. Red-making mutation: deleting
   the new code's clause.
-- [ ] AC5 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
+- [x] AC5 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
   reports `0 failed`. Red-making change: editing `skills/queue/templates/next` and not
   `.claude/backlog/next`.
 

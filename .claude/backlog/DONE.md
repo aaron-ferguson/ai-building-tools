@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0142 | Let the driver see the drift classes that stop a human reader | bug | unit | 2026-09-11 | [items/0142-drive-cannot-see-drift.md](items/0142-drive-cannot-see-drift.md) |
 | 0060 | Decide how the findings buffer is emptied and gated | chore | unit | 2026-09-10 | [items/0060-findings-buffer-mechanics.md](items/0060-findings-buffer-mechanics.md) |
 | 0059 | Decide what the batching rule actually licenses | chore | unit | 2026-09-10 | [items/0059-what-the-batching-rule-licenses.md](items/0059-what-the-batching-rule-licenses.md) |
 | 0067 | Decide what shape a cross-cutting rename takes in the backlog | chore | unit | 2026-09-10 | [items/0067-a-shape-for-a-cross-cutting-rename.md](items/0067-a-shape-for-a-cross-cutting-rename.md) |
