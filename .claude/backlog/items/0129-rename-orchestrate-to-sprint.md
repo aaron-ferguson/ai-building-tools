@@ -179,7 +179,13 @@ tooling, not only to what it ships to customers.
   is not this ticket's to make. Parked in `FINDINGS.md`. **This still needs a row** — no row exists
   for it.
 
-- **AC6 is not discharged here.** `tools/release` pushes to a public remote, which `develop` Step 5
-  and `git-conventions.md` both make the author's call rather than this stage's. The work is
-  committed and the tree is green; the version bump, the push and the install are outstanding, and
-  until they run AC6 has nothing to verify against.
+- **AC6 — released as 0.9.25, on the author's explicit authorisation.** `tools/release` pushes to a
+  public remote, which `develop` Step 5 and `git-conventions.md` both make the author's call rather
+  than this stage's, so it was asked before the run and `--yes` carries that answer. The chain
+  verified the bytes: 230 tracked paths identical to `59d4b2d`, and the recorded `gitCommitSha`
+  agrees. The resolved install carries `skills/sprint/` and `commands/orchestrate.md` and has no
+  `skills/orchestrate/` — which is the check that matters here, a renamed directory being precisely
+  what a version-keyed cache can fail to re-extract while reporting success (`CLAUDE.md`).
+  **A restart is required before `/orchestrate` or `/sprint` resolves to the new copy**: skills
+  resolve once at session start, so AC3's end-to-end half — a session invoking the alias and seeing
+  the notice — is only observable in a session started after this release, never in this one.
