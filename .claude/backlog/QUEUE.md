@@ -32,7 +32,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | design | ready |  |
 | 0041 | Write release notes for what a work session delivered | design | ready | 0128 |
 | 0107 | Require an NFR row to name how it would red | verify | ready |  |
-| 0144 | Anchor the scope report's commit range to the claim commit for this ticket | develop | ready |  |
+| 0144 | Anchor the scope report's commit range to the claim commit for this ticket | develop | in-progress |  |
 | 0147 | Make claim name the declared paths that do not exist instead of reserving them | develop | ready |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
 | 0145 | Decide what an empty touches means to the scope report | design | ready |  |
