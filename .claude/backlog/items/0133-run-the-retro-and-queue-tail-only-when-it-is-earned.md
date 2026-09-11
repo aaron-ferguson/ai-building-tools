@@ -2,8 +2,8 @@
 id: "0133"
 title: Close a sprint with a retro and a queue sweep only when the findings earn it
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: verify
 size: m
@@ -18,9 +18,10 @@ expects:
   - .claude/backlog/next
   - skills/queue/templates/next
   - skills/queue/templates/config.yml
-claimed_by: "27b8"
-claimed_at: 2026-09-11T22:06:04Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-11
 ---
 
 ## Problem
@@ -92,22 +93,22 @@ Written against whatever `0060` settles for *what is counted*; these hold regard
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a sprint that parks no findings and a buffer below the threshold, when the sprint
+- [x] AC1 — Given a sprint that parks no findings and a buffer below the threshold, when the sprint
       ends, then no retro and no queue session is dispatched. **Red if** the tail is unconditional,
       which spends about $6.75 on a buffer with nothing in it.
-- [ ] AC2 — Given a buffer at the threshold, when the sprint ends, then `retro` is dispatched and
+- [x] AC2 — Given a buffer at the threshold, when the sprint ends, then `retro` is dispatched and
       then `queue`, and no other stage session is running during either. **Red if** they run
       concurrently with a stage, or with each other.
-- [ ] AC3 — Given a buffer below the threshold holding one finding older than the configured number
+- [x] AC3 — Given a buffer below the threshold holding one finding older than the configured number
       of sprints, when the sprint ends, then the tail runs. **Red if** only the count is checked,
       which strands an old finding indefinitely on a low-yield project.
-- [ ] AC4 — Given a buffer below both limits, when the sprint ends, then every finding is still in
+- [x] AC4 — Given a buffer below both limits, when the sprint ends, then every finding is still in
       `FINDINGS.md` and the next sprint's gate counts them alongside its own. **Red if** the sprint
       drains or marks entries it did not process.
-- [ ] AC5 — Given a completed retro within a sprint, when the sprint re-evaluates, then it does not
+- [x] AC5 — Given a completed retro within a sprint, when the sprint re-evaluates, then it does not
       dispatch a second retro. **Red if** the gate is re-derived statelessly after the retro, which
       reads the entries the retro itself parked and fires again.
-- [ ] AC6 — Given `config.yml`, when the two settings are read, then each carries its derivation.
+- [x] AC6 — Given `config.yml`, when the two settings are read, then each carries its derivation.
       **Red if** either is a bare number — the shape `lock_stale_seconds` and `stage_budget_usd`
       were both written to avoid.
 

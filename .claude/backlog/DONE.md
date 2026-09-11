@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0133 | Close a sprint with a retro and a queue sweep only when the findings earn it | feature | verify | 2026-09-11 | [items/0133-run-the-retro-and-queue-tail-only-when-it-is-earned.md](items/0133-run-the-retro-and-queue-tail-only-when-it-is-earned.md) |
 | 0052 | Require an acceptance criterion to name the input that would make it red | bug | unit | 2026-09-11 | [items/0052-acceptance-criteria-must-be-falsifiable.md](items/0052-acceptance-criteria-must-be-falsifiable.md) |
 | 0129 | Rename orchestrate to sprint and leave the old command resolving | chore | verify | 2026-09-11 | [items/0129-rename-orchestrate-to-sprint.md](items/0129-rename-orchestrate-to-sprint.md) |
 | 0148 | Make the internal-name guard red rather than green when its own pattern will not compile | bug | unit | 2026-09-11 | [items/0148-red-on-a-name-list-pattern-that-will-not-compile.md](items/0148-red-on-a-name-list-pattern-that-will-not-compile.md) |
