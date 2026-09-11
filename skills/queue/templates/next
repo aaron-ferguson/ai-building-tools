@@ -1067,7 +1067,7 @@ if [ "${1:-}" = "--drive" ]; then
   # the drift never printed, which is the bug rather than the fix.
   #
   # It spends ESCALATE rather than a sixth code. The outcome is *a person decides* — reconciling a
-  # row against its item is not a stage's to do, and `orchestrate` already routes 4 exactly that
+  # row against its item is not a stage's to do, and `sprint` already routes 4 exactly that
   # way. 3 is forbidden: 3 is what the bug is.
   if ! drift_report; then
     decide "$ESCALATE" "ESCALATE  the rows above disagree with their own items — a drifted queue is not a finished one, and reconciling it is a person's call"

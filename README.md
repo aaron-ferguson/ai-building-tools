@@ -12,15 +12,18 @@ it, and verify it without asking a single clarifying question.
 | `/develop` | Takes the top `ready` item, builds it TDD, and stops at `next: verify` | Build |
 | `/verify` | Checks a change against the item's written acceptance criteria, then closes it or sends it back | Check |
 | `/retro` | Sweeps the parked findings of many sessions and lands the lessons where they get read again | Learn |
-| `/orchestrate` | Drives the loop: dispatches each stage as its own session and routes on what comes back | Drive |
+| `/sprint` | Drives the loop: dispatches each stage as its own session and routes on what comes back | Drive |
+
+`/orchestrate` is a **deprecated** alias for `/sprint`: it still resolves, and is removed in the
+first version released on or after 2026-12-10.
 
 `/design` and `/prototype` split the Design phase by output: **tell me** versus **show me**.
 Default to `/design` — escalation is cheap, a prototype you didn't need is not. `/design` never
 invokes `/prototype`; it names what a prototype would have to settle and leaves the call to you.
 
-**No skill invokes another, and `/orchestrate` is not an exception.** `/develop` stops at
+**No skill invokes another, and `/sprint` is not an exception.** `/develop` stops at
 `next: verify` and names the command; `/verify` closes; `/retro` runs on its own cadence over what
-many sessions parked. `/orchestrate` *dispatches* the others as separate processes rather than
+many sessions parked. `/sprint` *dispatches* the others as separate processes rather than
 pulling them into its own context — which is the same rule, honoured by a different mechanism, and
 why a supervised stage costs what a hand-typed one costs. Building an item, checking
 it, and learning from it are three jobs, and the last two are the ones that get cut short when one
@@ -87,8 +90,8 @@ rigour is what caught a real zip-bomb vulnerability every acceptance criterion i
 passed over, and a test that stayed green with the guard it existed for deleted. Both live in the
 15% of spend that was output. What moved is *where* work happens, not what is required of it.
 
-**Who types the next command — a person, or `/orchestrate`.** Every stage ends by naming the
-command that follows it, and for most of this suite's life a person typed it. `/orchestrate` runs
+**Who types the next command — a person, or `/sprint`.** Every stage ends by naming the
+command that follows it, and for most of this suite's life a person typed it. `/sprint` runs
 that command instead: it dispatches each stage as its own `claude -p` process, reads back one
 schema-validated outcome, and routes on `./next --drive` until the queue runs dry or the findings
 gate ends the run in a retro. **Isolation is unchanged, which is the point** — a supervised stage is
@@ -147,13 +150,13 @@ markdown, the backlog is text, and the scripts under `.claude/backlog/` and the 
 are POSIX `sh` with `grep`, `awk` and `python3` — all of which a machine running Claude Code
 already has.
 
-**`/orchestrate` is the exception, and it is a real dependency: it requires the `claude` CLI on
+**`/sprint` is the exception, and it is a real dependency: it requires the `claude` CLI on
 PATH**, authenticated, and able to be dispatched from inside the session doing the supervising. It
 drives the loop by launching each stage as its own `claude -p` subprocess, so there is no fallback
 binary and nothing bundled — an unauthenticated CLI and a nested session that is refused
 permission both fail here exactly as an absent one does.
 
-**Where that dispatch cannot be made, `/orchestrate` fails closed and says so**, rather than
+**Where that dispatch cannot be made, `/sprint` fails closed and says so**, rather than
 appearing to drive a loop it is not driving: before the first real stage it dispatches a trivial
 no-op and checks the answer, and on anything other than the fixed object coming back it degrades
 to **the hand-driven loop** — naming the command for you to run in a new session, which is what

@@ -1837,7 +1837,7 @@ done
 # --- 0130 — --drive --propose, the gate made legible before a person approves it ----------------
 #
 # WHY THESE ARE NOT PROSE CASES. Every other requirement of 0130 is an instruction to a supervisor
-# and can only be greped for (tests/orchestrate.test.sh carries those). AC2 is the exception: it
+# and can only be greped for (tests/sprint.test.sh carries those). AC2 is the exception: it
 # says the proposal NAMES the file a gate is held together by and the COUNT of rows joining through
 # it, and that is an arithmetic answer about a real backlog. So it is asserted here, against the
 # real script.
@@ -2155,7 +2155,7 @@ assert_contains "and says it is cumulative"      "$out" 'cumulative'
 # FINISHED one to a driver.
 #
 # The code is 4, the escalate code, reused rather than minted: the outcome is *a person decides*,
-# which `orchestrate` already routes. 3 is forbidden by FR2 — 3 is what the bug is.
+# which `sprint` already routes. 3 is forbidden by FR2 — 3 is what the bug is.
 
 echo "0142 AC1 — --drive reports drift, names the row, and exits non-zero and not 3"
 scaffold
@@ -2237,8 +2237,8 @@ seal
 out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc "the findings gate still exits 5" "$rc" 5 "$out"
 
-echo "0142 AC4 — orchestrate's routing paragraph names every code --drive can emit"
-orch="$ROOT/skills/orchestrate/SKILL.md"
+echo "0142 AC4 — sprint's routing paragraph names every code --drive can emit"
+orch="$ROOT/skills/sprint/SKILL.md"
 route="$(awk '/Route on the exit code/, /^$/' "$orch")"
 assert_contains "names 0 — dispatch"        "$route" '`0`'
 assert_contains "names 3 — run complete"    "$route" '`3`'

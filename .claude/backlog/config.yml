@@ -28,7 +28,7 @@ next_id: 149
 findings_threshold: 8
 
 # How long a held `.claude/backlog/.lock/` may be before a driver escalates instead of waiting on
-# it (`orchestrate` Step 7). A lock in use is held for seconds; every figure above it is a stage
+# it (`sprint` Step 7). A lock in use is held for seconds; every figure above it is a stage
 # that died holding it, which blocks every future claim and close in the repo until a human clears
 # it. 900s is two orders of magnitude above the normal hold and well under a stage's own runtime,
 # so a live stage is never escalated and a dead one is not waited on for a session.

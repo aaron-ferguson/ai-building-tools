@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Guard for the orchestrate skill and the stage outcome schema (0039).
+# Guard for the sprint skill and the stage outcome schema (0039).
 #
 # WHY THIS EXISTS:
 #
@@ -36,7 +36,7 @@
 # Every fixture is AUTHORED here, never copied from a real outcome or a real backlog
 # (testing-conventions.md, the fixture rule).
 #
-# Usage:  tests/orchestrate.test.sh
+# Usage:  tests/sprint.test.sh
 #
 # Requires: sh, python3, grep. `claude` optional -- the probe skips loudly without it.
 
@@ -44,8 +44,8 @@ set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 
-SKILL="$ROOT/skills/orchestrate/SKILL.md"
-SCHEMA="$ROOT/skills/orchestrate/outcome.schema.json"
+SKILL="$ROOT/skills/sprint/SKILL.md"
+SCHEMA="$ROOT/skills/sprint/outcome.schema.json"
 VALIDATE="$ROOT/tools/validate-json-schema.py"
 README="$ROOT/README.md"
 VERIFY="$ROOT/skills/verify/SKILL.md"
@@ -125,9 +125,9 @@ says_ci() { section "$1" "$2" | grep -qiF -- "$3"; }
 echo "AC2 — the schema is a single committed file that parses"
 
 if [ -f "$SCHEMA" ]; then
-  ok "skills/orchestrate/outcome.schema.json exists"
+  ok "skills/sprint/outcome.schema.json exists"
 else
-  bad "skills/orchestrate/outcome.schema.json is missing — FR13's single source has no file"
+  bad "skills/sprint/outcome.schema.json is missing — FR13's single source has no file"
 fi
 
 if [ -f "$SCHEMA" ] && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$SCHEMA" 2>/dev/null; then
@@ -145,7 +145,7 @@ copies="$(grep -rl '"findings_parked"' "$ROOT/skills" "$ROOT/references" 2>/dev/
 case "$(printf '%s\n' "$copies" | grep -c .)" in
   0) bad "FR13 — no file declares the envelope at all" ;;
   1) case "$copies" in
-       *"skills/orchestrate/outcome.schema.json") ok "only the schema file declares the envelope" ;;
+       *"skills/sprint/outcome.schema.json") ok "only the schema file declares the envelope" ;;
        *) bad "FR13 — the envelope is declared in $copies, not in the schema file" ;;
      esac ;;
   *) bad "FR13 — the envelope shape is declared in more than one file:
@@ -285,7 +285,7 @@ import json, sys
 doc = json.load(open(sys.argv[1]))
 out = sys.argv[2]
 for name, mutate in (
-    ("stage",  lambda d: d.__setitem__("stage", "orchestrate")),
+    ("stage",  lambda d: d.__setitem__("stage", "sprint")),
     ("verdict", lambda d: d["tickets"][0].__setitem__("verdict", "done-ish")),
     ("next",    lambda d: d["tickets"][0].__setitem__("next", "released")),
     ("status",  lambda d: d["tickets"][0].__setitem__("status", "greenish")),
@@ -554,7 +554,7 @@ else
 fi
 
 echo "AC2 — the skill points at the schema file rather than restating the shape"
-if grep -qF 'skills/orchestrate/outcome.schema.json' "$SKILL"; then
+if grep -qF 'skills/sprint/outcome.schema.json' "$SKILL"; then
   ok "the skill names the schema file"
 else
   bad "AC2 — the skill does not name the schema file it dispatches with"
@@ -635,15 +635,15 @@ fi
 if printf '%s' "$req" | grep -qiE 'claude.{0,2}cli'; then
   ok "the Requirements section names the claude CLI"
 else
-  bad "Dependencies NFR — README's Requirements section does not name the claude CLI; /orchestrate's one binary dependency is unnamed"
+  bad "Dependencies NFR — README's Requirements section does not name the claude CLI; /sprint's one binary dependency is unnamed"
 fi
 if printf '%s' "$req" | grep -qF 'PATH'; then
   ok "the Requirements section says the CLI has to be on PATH"
 else
   bad "Dependencies NFR — README does not say the claude CLI must be on PATH; 'requires the CLI' is not an installable statement"
 fi
-if printf '%s' "$req" | grep -qF 'orchestrate'; then
-  ok "the requirement is attributed to /orchestrate, not to the whole suite"
+if printf '%s' "$req" | grep -qF 'sprint'; then
+  ok "the requirement is attributed to /sprint, not to the whole suite"
 else
   bad "Dependencies NFR — README's Requirements section does not say which skill needs the CLI, so it reads as a requirement of all seven"
 fi
@@ -655,8 +655,8 @@ fi
 
 echo "AC24 — README describes the supervised loop alongside the hand-driven one"
 sec="$(awk '/^## One skill per session/ { inside = 1; next } /^## / { inside = 0 } inside' "$README")"
-if printf '%s' "$sec" | grep -qF 'orchestrate'; then
-  ok "README's One skill per session names the orchestrate loop"
+if printf '%s' "$sec" | grep -qF 'sprint'; then
+  ok "README's One skill per session names the sprint loop"
 else
   bad "AC24 — README's One skill per session does not mention the supervised loop; it still implies a person types every command"
 fi
@@ -858,8 +858,8 @@ echo "AC22 — a real nested dispatch returns the fixed object"
 
 if ! command -v claude >/dev/null 2>&1; then
   skip "AC22 — no \`claude\` on PATH; the nested-dispatch premise under AC1 is UNVERIFIED in this run"
-elif [ -n "${ORCHESTRATE_SKIP_PROBE:-}" ]; then
-  skip "AC22 — ORCHESTRATE_SKIP_PROBE is set; the nested-dispatch premise under AC1 is UNVERIFIED in this run"
+elif [ -n "${SPRINT_SKIP_PROBE:-}" ]; then
+  skip "AC22 — SPRINT_SKIP_PROBE is set; the nested-dispatch premise under AC1 is UNVERIFIED in this run"
 else
   probe_schema='{"type":"object","properties":{"probe":{"type":"string"}},"required":["probe"],"additionalProperties":false}'
   # `< /dev/null` is not tidiness. Without it the nested CLI waits on stdin and then prints
@@ -905,7 +905,7 @@ python3 - "$RUNDIR" <<'INNER'
 import json, sys
 root = sys.argv[1]
 lines = []
-lines.append({"type": "user", "message": {"content": "<command-name>/orchestrate</command-name>"}})
+lines.append({"type": "user", "message": {"content": "<command-name>/sprint</command-name>"}})
 for i, ctx in enumerate((20000, 20900, 21800, 22700, 23600, 24500)):
     lines.append({
         "type": "assistant",
@@ -1076,17 +1076,17 @@ for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json; do
   else
     bad "AC23 — $f no longer parses; the plugin would not load at all"
   fi
-  if grep -qF 'orchestrate' "$ROOT/$f"; then
-    ok "$f names the orchestrate skill"
+  if grep -qF 'sprint' "$ROOT/$f"; then
+    ok "$f names the sprint skill"
   else
-    bad "AC24 — $f does not name the orchestrate skill"
+    bad "AC24 — $f does not name the sprint skill"
   fi
 done
 sec="$(awk '/^\| Skill \| Does \| Phase \|/ { inside = 1 } inside && /^\|/ { print } inside && !/^\|/ { inside = 0 }' "$README")"
-if printf '%s' "$sec" | grep -qF '/orchestrate'; then
-  ok "README's skill table lists /orchestrate"
+if printf '%s' "$sec" | grep -qF '/sprint'; then
+  ok "README's skill table lists /sprint"
 else
-  bad "AC24 — README's skill table does not list /orchestrate"
+  bad "AC24 — README's skill table does not list /sprint"
 fi
 
 # ------------------------------------------------------------------------------------------------
@@ -1122,20 +1122,20 @@ fi
 # instruction file is its FENCED BLOCKS — the only text a session copies and runs — so the check
 # extracts those and asserts none of them removes the lock.
 #
-# Derived over every file in skills/orchestrate/ rather than over a named list, so a second file
+# Derived over every file in skills/sprint/ rather than over a named list, so a second file
 # added to that directory is under the check the day it lands (testing-conventions.md, a guard that
 # enumerates its own subjects cannot notice a new one).
 fenced() {
   awk '/^```/ { inside = !inside; next } inside' "$1"
 }
 removers=""
-for f in "$ROOT"/skills/orchestrate/*; do
+for f in "$ROOT"/skills/sprint/*; do
   [ -f "$f" ] || continue
   hit="$(fenced "$f" | grep -nE '(rm|rmdir|unlink)[^|]*\.lock' || true)"
   [ -n "$hit" ] && removers="$removers $(basename "$f"):$hit"
 done
 if [ -z "$removers" ]; then
-  ok "no fenced block in skills/orchestrate/ removes the lock"
+  ok "no fenced block in skills/sprint/ removes the lock"
 else
   bad "AC25 — a dispatchable path removes the lock:$removers — a driver stealing a lock from a stage that is still working"
 fi
@@ -1548,6 +1548,67 @@ if says_ci "$SKILL" "Step 2" 'cumulative'; then
   ok "and says the set is cumulative over the run"
 else
   bad "0131 AC11 — nothing says --started is cumulative over the whole run; sent per-call it drops the ticket the rule exists to protect"
+fi
+
+
+echo "0129 — the skill is /sprint, and the retired command still resolves while it is deprecated"
+# THE RETIRED WORD IS ASSEMBLED, NEVER WRITTEN. A guard whose subject is a string is a match for
+# its own sweep, and excluding this file from AC2 instead would make the one file most likely to
+# carry a stale citation the one file the sweep cannot see (testing-conventions.md, a check that
+# filters for a set and then asserts over it).
+OLD="orch""estrate"
+ALIAS="$ROOT/commands/$OLD.md"
+
+# AC1 — MOVED, not copied. The `! -e` half is the whole criterion: a copy leaves the old skill
+# registered under its own name, which reads as a successful rename from the new directory alone.
+if [ -f "$ROOT/skills/sprint/SKILL.md" ] && [ -f "$ROOT/skills/sprint/outcome.schema.json" ]; then
+  ok "AC1 — skills/sprint/ carries the skill and its outcome schema"
+else
+  bad "AC1 — skills/sprint/SKILL.md or its outcome.schema.json is missing, so the move did not land"
+fi
+if [ -e "$ROOT/skills/$OLD" ]; then
+  bad "AC1 — skills/$OLD still exists: the directory was copied rather than moved and both names are registered"
+else
+  ok "AC1 — the old skill directory is gone"
+fi
+
+# AC2 — a SWEEP of the live surface, never a list of the files that happened to cite the old name
+# when this was written: a guard enumerating its own subjects is green by construction the day a
+# new citation is added outside the list (testing-conventions.md). Two homes are allowed, and
+# README.md is allowed only LINE BY LINE — allowing the whole file would let a stale mention of
+# the retired command anywhere in it pass under cover of the deprecation notice.
+stale=""
+for f in $(cd "$ROOT" && grep -rl -i -- "$OLD" skills tests references tools commands README.md .claude-plugin 2>/dev/null | sort); do
+  case "$f" in
+    "commands/$OLD.md") ;;
+    README.md)
+      # every matching line must be about the deprecation itself
+      if grep -i -- "$OLD" "$ROOT/README.md" | grep -qvi 'deprecat'; then stale="$stale README.md"; fi ;;
+    *) stale="$stale $f" ;;
+  esac
+done
+if [ -z "$stale" ]; then
+  ok "AC2 — the live surface names the retired skill only where the deprecation is recorded"
+else
+  bad "AC2 — the retired name is still cited as live in:$stale"
+fi
+
+# AC3 — the alias itself, carrying the two facts deprecation-conventions.md requires be recorded
+# the moment a deprecation is announced: the replacement path, and a named owner with a date.
+# Asserted on the alias rather than on a release note, because the machine that still has the old
+# command installed is the one reading this file.
+if [ -f "$ALIAS" ]; then
+  ok "AC3 — /$OLD still resolves: commands/$OLD.md is present"
+  alias_text="$(tr '\n' ' ' < "$ALIAS" | tr -s ' ')"
+  for want in '/sprint' 'skills/sprint/SKILL.md' 'Deprecated' '2026-12-10' 'Aaron Ferguson'; do
+    if printf '%s' "$alias_text" | grep -qF -- "$want"; then
+      ok "  the alias states $want"
+    else
+      bad "AC3 — the alias does not state $want, so the command resolves without naming its replacement, its owner or its removal date"
+    fi
+  done
+else
+  bad "AC3 — commands/$OLD.md is absent: /$OLD resolves to nothing on every machine that has it installed"
 fi
 
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"

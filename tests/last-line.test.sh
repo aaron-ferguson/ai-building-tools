@@ -46,7 +46,7 @@ ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 RULE="references/REPORTING.md"
 # skills_in <root> — every skill in that tree, derived from the directories rather than listed.
 #
-# It was a hardcoded list, and the day `orchestrate` landed the list was green by construction:
+# It was a hardcoded list, and the day `sprint` landed the list was green by construction:
 # a guard that enumerates its own subjects cannot notice a new one, and the moment a rule most
 # needs checking is the moment a new member joins the set it governs
 # (testing-conventions.md). Taking <root> as a parameter is what lets the fixture cases below

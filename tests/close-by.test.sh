@@ -159,8 +159,8 @@ in_window "FR4 — and says why, citing the record rather than restating it" \
 echo "FR7 — a DRIVEN light close has a verdict word in the outcome schema"
 # Not an FR of 0086, and found only by asking what a driven run does with the new ending: the
 # schema's `verdict` enum had no member for it, so a perfectly good stage would have read as a
-# schema failure and `orchestrate` Step 4 escalates on those. One word, additive.
-SCHEMA="$ROOT/skills/orchestrate/outcome.schema.json"
+# schema failure and `sprint` Step 4 escalates on those. One word, additive.
+SCHEMA="$ROOT/skills/sprint/outcome.schema.json"
 if [ ! -f "$SCHEMA" ]; then
   bad "FR7 — no outcome schema at $SCHEMA"
 else

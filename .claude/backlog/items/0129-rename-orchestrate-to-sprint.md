@@ -30,20 +30,27 @@ expects:
 claimed_by: "cfec"
 claimed_at: 2026-09-11T02:22:59Z
 touches:
-  - skills/orchestrate/SKILL.md
-  - skills/orchestrate/outcome.schema.json
-  - tests/orchestrate.test.sh
-  - tests/skill-size.test.sh
+  - skills/sprint/SKILL.md            # moved from skills/orchestrate/SKILL.md
+  - skills/sprint/outcome.schema.json # moved from skills/orchestrate/
+  - tests/sprint.test.sh              # moved from tests/orchestrate.test.sh
+  - tests/next.test.sh
+  - tests/close-by.test.sh
   - tests/last-line.test.sh
   - tests/reporting.test.sh
-  - tests/close-by.test.sh
+  - tests/skill-size.test.sh
   - references/REPORTING.md
-  - tools/harvest-usage.sh
+  - tools/harvest-usage.sh            # not in expects:, cites the skill and the test by path
+  - tools/validate-json-schema.py     # not in expects:, same
+  - skills/develop/SKILL.md
+  - skills/retro/SKILL.md             # not in expects:, cites the skill twice
+  - skills/queue/templates/next       # not in expects:, and its installed copy must move with it
+  - skills/queue/templates/config.yml
+  - .claude/backlog/next              # installed copy of the template above, byte-identity guarded
+  - .claude/backlog/config.yml        # this project instance of the template above
   - README.md
   - .claude-plugin/plugin.json
   - .claude-plugin/marketplace.json
-  - skills/develop/SKILL.md
-  - skills/queue/templates/config.yml
+  - commands/orchestrate.md           # NEW — the FR2 deprecation alias, created by this ticket
 ---
 
 ## Problem

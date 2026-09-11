@@ -349,8 +349,8 @@ sessions it was written for.
   branch and that other machines install from it (`git-conventions.md`). That ask is where the
   approval is evidenced; `--yes` carries an approval already granted and
   **never stands in for one** — never a default, and never supplied on the user's behalf.
-- **Nobody to ask — an `orchestrate`-dispatched run — does not invoke the chain**, and reports
-  every remaining step of it **outstanding on that run's checklist**; `orchestrate` Step 8 forbids
+- **Nobody to ask — an `sprint`-dispatched run — does not invoke the chain**, and reports
+  every remaining step of it **outstanding on that run's checklist**; `sprint` Step 8 forbids
   the push outright, and the two must not contradict. Invoking it with nobody to answer is the one
   outcome to avoid: the run stops before writing anything, so nothing is released and nothing is
   half-released either.

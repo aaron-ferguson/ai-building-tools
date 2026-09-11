@@ -97,7 +97,7 @@ The verdict word and the values a stage may legitimately print are **that skill'
 closing step: only the stage knows which outcomes it can reach, and a shared list of them would be
 wrong for every skill at once. What is shared is the shape and the position.
 
-**Adding or renaming a verdict word is editing `skills/orchestrate/outcome.schema.json`.** Its
+**Adding or renaming a verdict word is editing `skills/sprint/outcome.schema.json`.** Its
 `verdict` enum carries the union of every stage's vocabulary and a driven session validates against
 it, so a stage printing a word the enum lacks is a correct stage that reads as a schema failure and
 escalates. No guard catches it: the line's *shape* is asserted, its vocabulary is not.

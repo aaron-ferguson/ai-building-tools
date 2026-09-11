@@ -33,7 +33,7 @@
 #                      them -- it cannot go red, because a longer run improves it while the
 #                      supervisor gets steadily worse.
 #   --budget           turns-per-cycle budget to judge against (default DEFAULT_TURN_BUDGET).
-#                      Keep it equal to the number skills/orchestrate/SKILL.md states.
+#                      Keep it equal to the number skills/sprint/SKILL.md states.
 #
 # Requires: sh and python3. No packages — a one-directory JSON read does not earn a dependency.
 
@@ -59,8 +59,8 @@ RATES = {
     "claude-sonnet-5": (3.00, 15.00),
     "claude-haiku-4-5": (1.00, 5.00),
 }
-# The turns-per-cycle budget skills/orchestrate/SKILL.md states. Two files carry this number and
-# tests/orchestrate.test.sh reads BOTH and compares them, rather than restating it a third time.
+# The turns-per-cycle budget skills/sprint/SKILL.md states. Two files carry this number and
+# tests/sprint.test.sh reads BOTH and compares them, rather than restating it a third time.
 DEFAULT_TURN_BUDGET = 3
 
 CACHE_READ_MULT = 0.1

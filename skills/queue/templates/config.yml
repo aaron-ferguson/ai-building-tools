@@ -41,7 +41,7 @@ next_id: 1
 findings_threshold: 8
 
 # How long a held `.claude/backlog/.lock/` may be before a driver escalates instead of waiting on
-# it (`orchestrate` Step 7). Seconds. A lock in use is held for seconds; anything far above that is
+# it (`sprint` Step 7). Seconds. A lock in use is held for seconds; anything far above that is
 # a stage that died holding it, and it blocks every claim and close in the repo until a human
 # clears it. Read from the lock DIRECTORY's mtime, never from `held-by`, which the claim path
 # writes without a timestamp.

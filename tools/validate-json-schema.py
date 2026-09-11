@@ -4,12 +4,12 @@
 WHY THIS EXISTS RATHER THAN `pip install jsonschema`. The suite is portable POSIX `sh` plus
 python3's standard library, and `dependency-conventions.md` asks first whether we could write it
 in under ~100 lines. This is that: the keywords below are the ones
-`skills/orchestrate/outcome.schema.json` actually uses, and nothing else is supported --
+`skills/sprint/outcome.schema.json` actually uses, and nothing else is supported --
 an unknown keyword is IGNORED, which is what JSON Schema itself specifies.
 
 WHAT IT IS NOT. It is not a general validator and must not be used as evidence that a document
 would pass a real one. The authority for the outcome schema is the `claude` CLI's own
-`--json-schema` enforcement, which `tests/orchestrate.test.sh` exercises directly against the
+`--json-schema` enforcement, which `tests/sprint.test.sh` exercises directly against the
 live CLI; this validator is what makes the OFFLINE cases deterministic and free.
 
 It is deliberately NOT written by reading the schema the way the skill reads it

@@ -325,7 +325,7 @@ to invalidate the claim.
 **And a QA plan's named check can itself be wrong; the plan is not the authority on what is
 checkable.** The staleness rules above cover an FR and an AC. A plan's *specific checks* are written
 at capture time, against code the author may not have opened, and inherit none of that scrutiny.
-One plan asked for "a grep asserting `--bare` appears nowhere in `skills/orchestrate/`" — but the
+One plan asked for "a grep asserting `--bare` appears nowhere in `skills/sprint/`" — but the
 skill has to *explain* why `--bare` is disqualifying, so the check as specified reds exactly the
 file that documents the rule best. That is the negative-assertion trap `testing-conventions.md`
 already names, arriving from a ticket rather than from an author. Where a plan's check cannot be

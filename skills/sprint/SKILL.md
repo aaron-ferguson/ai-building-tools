@@ -1,18 +1,18 @@
 ---
-name: orchestrate
+name: sprint
 description: >
   Drive a project's backlog without a person typing the next command: dispatch each stage as its
   own `claude -p` session, read back one schema-validated outcome, and route on `./next --drive`
   until the queue runs dry or the findings gate ends the run in a retro. Use when the user says
   "work the backlog", "keep going until it's done", "run the loop", "drive it", "supervise this",
-  "do the next few tickets", "run develop then verify", or invokes /orchestrate. Also use when the
-  user is about to hand-drive several cycles and would rather watch than type. Reads
+  "do the next few tickets", "run develop then verify", "run a sprint", or invokes /sprint. Also use
+  when the user is about to hand-drive several cycles and would rather watch than type. Reads
   .claude/backlog/ — created by the queue skill. NOT for building one ticket, which is /develop,
   and NOT for deciding anything: a design question, a push, a release and a narrowed contract are
   all escalations to the user, never automation.
 ---
 
-# /orchestrate
+# /sprint
 
 Drive the loop the suite is already built for. Every stage skill ends by naming the command a
 person types next; this runs that command instead, as a separate session, and routes on what comes
@@ -200,7 +200,7 @@ asking a running stage whether it has finished reports no change and costs a ful
 ```sh
 claude -p \
   --session-id "$RUN_STAGE_UUID" \
-  --json-schema "$(cat <plugin root>/skills/orchestrate/outcome.schema.json)" \
+  --json-schema "$(cat <plugin root>/skills/sprint/outcome.schema.json)" \
   --add-dir ../ai-building-conventions \
   --setting-sources user,project \
   --allowed-tools '<the tools that stage needs>' \
@@ -245,7 +245,7 @@ replace the tooling it is running on; it acquires none of that beyond the cycle 
 
 ## Step 4 — Read the outcome, and nothing else
 
-Stdout is a single JSON object satisfying `skills/orchestrate/outcome.schema.json`, or the stage
+Stdout is a single JSON object satisfying `skills/sprint/outcome.schema.json`, or the stage
 failed. That object is **all you read**: not the transcript, not the skill file, not any other
 output of that process. The envelope carries the stage, the session id, the commits, the cost, the
 findings-parked count, which conventions resolved, and an escalation or null; the array carries one
@@ -412,7 +412,7 @@ root. Three things it cannot say, because they are specific to a run rather than
 The ID slot is a dash: this session holds no row, so there is no ticket to hand off, and the
 `next` slot names the command a person runs rather than a stage.
 
-Example: `- — RUN COMPLETE — next: restart, then /orchestrate` — the queue ran dry or the retro ended it.
+Example: `- — RUN COMPLETE — next: restart, then /sprint` — the queue ran dry or the retro ended it.
 Example: `- — ESCALATED — next: /design 0080` — a person decides, and the run stopped there.
 Example: `- — DEGRADED — next: /develop 0039` — no CLI to dispatch with; the commands are named for a person.
 Example: `- — REFUSED — next: nothing, another supervisor holds this backlog`.
