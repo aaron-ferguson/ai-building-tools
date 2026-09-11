@@ -106,3 +106,28 @@ will end a sprint clean over a backlog that needs a person.
   the `0084` drift shape; those figures are in the Problem section. The retro corrected
   `orchestrate:117`'s false sentence in the same pass and deliberately did not try to fix the
   behaviour there, because the skill is not where the check lives.
+- **2026-09-10 (develop)** — FR2's implementation choice went to `4`, the escalate code, not a sixth
+  one. The outcome is *a person decides*, which is what `4` already means and what `orchestrate`
+  already routes; a new code would have needed a new routing rule for an outcome that has one.
+- **2026-09-10 (develop)** — FR3 is satisfied by extracting the `--drift` walk into `drift_report()`
+  and calling it from both modes. It returns the verdict and prints the report, so `--drive`
+  discards neither: the DRIFT lines a driver prints are the same bytes `--drift` prints, asserted
+  line for line rather than by wording.
+- **2026-09-10 (develop)** — **the check runs on ALL classes, and that reverses two behaviours
+  `--drive` had on purpose.** A stale `blocked` cache and a `ready` row over an open blocker were
+  both re-derived and dispatched, because the graph is the authority and the column only caches it
+  (0024). AC1's own fixture is exactly the second of those and requires a non-zero exit, so the
+  ticket settles it: the property splits by reader. `./next develop` still offers such a row — the
+  0024 half is asserted alongside the new one in `tests/next.test.sh` — and the DRIVER stops,
+  because it is the reader with a person to ask. The two falsified cases say this where they stand.
+- **2026-09-10 (develop)** — **and that collides with `handoff`, which is neither this ticket's file
+  nor its call.** `handoff` refuses to write `blocked` ("derived from blocked_by and never
+  authored"), and `develop` Step 5 tells a stage that cannot go green to add a `blocked_by` entry
+  for the same reason. The row is then `ready` over an open blocker — drift class 2 — so the next
+  `--drive` call stops a run on a state the tooling produced and gives no way to avoid. Built as
+  specified, because 0142's *Out of scope* reserves the class list to 0115 and 0141 and narrowing a
+  contract is the author's call. Filed to `FINDINGS.md`; it still needs a row.
+- **2026-09-10 (develop)** — three pre-existing cases scaffolded a tokenless `in-progress` row while
+  describing a row another session holds. 0140 settled that as unheld and 0115 class 5 as drift, so
+  they were cases about drift wearing the words of cases about ownership; nothing red until a reader
+  crossed the two. They now carry a token, via a new `add_ticket_held` fixture helper.

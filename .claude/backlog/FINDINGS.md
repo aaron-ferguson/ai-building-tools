@@ -281,3 +281,22 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   was run before the prose it asserts on was written. Three instances in one session, one in
   pre-existing prose and two in prose written the same hour (pointer: `CLAUDE.md` *Tests*,
   `tests/findings-buffer.test.sh`, item 0060).
+- 2026-09-10 (develop, 0142) — **`handoff` refuses to write `blocked`, so the state it leaves behind
+  is drift — and since 0142 that state stops a driver.** A develop stage that cannot get the tree
+  green and adds a `blocked_by` entry leaves the row at `ready` over an open blocker: `handoff`
+  rejects `blocked` as "derived from blocked_by and never authored", and `develop` Step 5 says the
+  same in as many words. `./next --drift` calls exactly that class 2 drift, and `--drive` now
+  escalates on it. So the documented hand-off shape and the drift class list disagree, and the run
+  the tooling itself produced is the one that stops. One of the two has to move — either `handoff`
+  writes the `blocked` cache when the item's `blocked_by` says so, or the class stops firing on a
+  row whose column is merely un-refreshed. 0142's *Out of scope* reserves the class list to 0115 and
+  0141, so this is neither ticket's to settle alone. Needs a row (pointer: `.claude/backlog/handoff`
+  status validation, `skills/develop/SKILL.md` Step 5, `--drift` class 2, item 0142).
+- 2026-09-10 (develop, 0142) — **a fixture whose words describe ownership while its bytes describe
+  drift stays green until something starts reading the difference.** Three cases in
+  `tests/next.test.sh` scaffolded a row at `in-progress` over an item with an empty `claimed_by:` —
+  titled "Held by a session", "Still held", "Held by another session" — which 0140 settled is not
+  held by anybody and 0115 class 5 calls drift. Nothing red, because no reader crossed the two until
+  `--drive` did. The tell is cheap and general: a fixture's title is a claim about the state it
+  builds, and the two drifted apart the moment a *neighbouring* ticket sharpened what the state
+  means (pointer: `tests/next.test.sh` `add_ticket_held`, items 0115, 0140, 0142).
