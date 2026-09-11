@@ -300,3 +300,12 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `--drive` did. The tell is cheap and general: a fixture's title is a claim about the state it
   builds, and the two drifted apart the moment a *neighbouring* ticket sharpened what the state
   means (pointer: `tests/next.test.sh` `add_ticket_held`, items 0115, 0140, 0142).
+- 2026-09-10 (verify, 0142) — **one test file indents its tally, and the anchored grep a batch run
+  uses then reports it as no tally at all — which `verify` Step 3 names as the tell of a collided
+  self-mutating guard.** Twenty-eight of twenty-nine files print `N passed, M failed` at column one;
+  `tests/cross-cutting-change.test.sh:190` prints `printf '\n  %s passed, %s failed\n'`. Sweeping
+  the suite with `grep -E '^[0-9]+ passed'` therefore flagged the one green file as the one shape a
+  QA session is told to treat as red, and it cost a re-run to clear. The tally line is a machine
+  interface between the suite and every reader that batches it, so its format is a contract; nothing
+  asserts it (pointer: `tests/cross-cutting-change.test.sh:190`, `config.yml` `commands: unit`,
+  `verify` Step 3's missing-tally rule). Needs a row.
