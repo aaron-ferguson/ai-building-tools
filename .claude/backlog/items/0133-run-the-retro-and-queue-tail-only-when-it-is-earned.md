@@ -173,3 +173,63 @@ Written against whatever `0060` settles for *what is counted*; these hold regard
   `tests/sprint.test.sh` AC14, which reconciles every *bolded* USD figure in the skill against
   `MEASUREMENT.md`'s cost-per-closed-ticket column — a set this figure does not belong to. Both are
   correct; neither is reachable from "I am about to quote a number". Parked.
+
+## QA evidence
+
+Verified 2026-09-11 at `qa_level: verify` (claim `27b8`), against HEAD `85e809d`. Suites run
+individually; every tally below is pasted from the run that produced it. Control run after the
+mutation sweep: `tests/sprint.test.sh` **179 passed, 0 failed, 0 skipped**; `tests/next.test.sh`
+**413 passed, 0 failed**; `tests/money-in-skill-prose.test.sh` **12 passed, 0 failed**;
+`tests/findings-buffer.test.sh` **46 passed, 0 failed**; `tests/backlog-scripts-installed.test.sh`
+**37 passed, 0 failed**.
+
+**Which copy executed.** `.claude/backlog/next` runs from the repo, so the script half of this
+change is live and was executed here. `tests/next.test.sh` runs the *template* copy
+(`skills/queue/templates/next`, `NEXT_SRC` at line 23), so every script mutation below was applied
+to both copies; `backlog-scripts-installed.test.sh` holds them identical. `skills/sprint/SKILL.md`
+is **not** live — the pinned install at 0.9.25 differs from the repo across eight files, this one
+included, which is the ordinary pre-release state and not a defect of this ticket. Repo copy taken
+as the authority (`verify` Step 2).
+
+| # | How it was checked | Mutation that proves the check could redden | Result |
+|---|---|---|---|
+| AC1 | `next.test.sh` "0133 AC1 — a buffer under both limits runs no tail" (`--findings` reports `under the limit`, `--drive` exits 0 and prints no `DISPATCH  retro`) and "FR1 — an empty buffer runs no tail however many sprints have ended". Plus `sprint.test.sh` grep for `dispatches neither` in Step 6 | **M3** — removed all three empty-buffer guards (`tally_age`'s `[ -n "$FOLDEST" ]` and both in `age_gate_crossed`) → `FAIL — a sprint that parks nothing ends without a tail`. **M13** — `dispatches neither tail stage` → `runs no tail stage` → `FAIL 0133 AC1` | PASS |
+| AC2 | `next.test.sh` "0133 AC2/FR5 — the tail the gate dispatches is retro AND THEN queue" (exit 5, output contains `retro, then queue`). Serialisation is prose: `sprint.test.sh` greps Step 6 for `` `retro`, and then `queue` `` and `no other stage session running` | **M4** — `DISPATCH  retro, then queue` → `DISPATCH  retro` → `FAIL — and names both tail stages`. **M14** — dropped `` and then `queue` `` from Step 6 → `FAIL 0133 AC2`. **M11** — broke `no other stage session running` → `FAIL 0133 AC2` | PASS |
+| AC3 | `next.test.sh` "0133 AC3" — one entry dated 2026-01-02, two `sprint_ended` runs after it, threshold 8: `--findings` prints `2 completed sprint` / `at or over the limit`, `--drive` exits 5 on age alone. Plus `sprint.test.sh` grep for `findings_max_sprints` scoped to Step 6 | **M2** — `-ge "$MAX_SPRINTS"` → `-gt` → 4 reds including `spends the findings-gate code on age alone`. **M15b** — renamed the key inside Step 6 only → `FAIL 0133 AC3` | PASS |
+| AC4 | Structural on the script side: `./next` performs no write of any kind — no redirect, `sed -i`, `mv`, `rm` or git call outside comments — so it cannot drain or mark the buffer. Prose side: `sprint.test.sh` greps Step 6 for `carry forward untouched` | **M12** — `carry forward untouched` → `carry forward` → `FAIL 0133 AC4` | PASS |
+| AC5 | `sprint.test.sh` line 578 greps the skill for `once per run` (pre-existing guard, which 0133 extended rather than replaced) | **M16** — `once per run` → `once per cycle` → `FAIL AC6 — the skill does not state that the findings gate fires once per run`, plus a second red on the Performance NFR case | PASS |
+| AC6 | `sprint.test.sh` "0133 AC6" extracts the *contiguous comment block immediately above* each key in both `.claude/backlog/config.yml` and `skills/queue/templates/config.yml` — four key/derivation pairs | **M8** — deleted the block above `findings_max_sprints` in the live config → `FAIL 0133 AC6 — … is a bare number`. **M9** — deleted the block above `findings_threshold` in the template → same red on the template | PASS |
+| FR4 | `sprint.test.sh` derives the template's value from the script's own `MAX_SPRINTS=` default rather than a literal, and compares | **M10** — template `findings_max_sprints: 2` → `5` → `FAIL 0133 FR4 — the template ships '5' against a script default of '2'` | PASS |
+| NFR Performance | Nothing asserted here by design — the row defers the figures to `0135`. The one figure in the prose is unbolded (`roughly USD 6.75`) with its source named, so `sprint.test.sh` AC14 correctly does not reconcile it against `MEASUREMENT.md`'s cost-per-closed-ticket column, and `money-in-skill-prose.test.sh` is green at 12/12 | n/a — no claim to falsify | PASS |
+| NFR Documentation | Same evidence as AC6: each setting's derivation sits beside it in both copies (`documentation-conventions.md`) | M8 / M9 above | PASS |
+| Always-on (`CONVENTIONS_CORE.md`) | Fail-loudly on input validation; no secrets; no company material (public repo); no new log field, analytics event or egress destination; no auth or data-visibility surface; no UI, so no accessibility surface. `sh -n` clean on both copies of `next` | **M17** — removed the `case "$raw" in *[!0-9]*` validation so a non-numeric `findings_max_sprints` defaults silently → `FAIL — exits 1` | PASS |
+| Newly reachable (Step 4) | The change adds one new read path, `.claude/backlog/runs/*.jsonl`, and no new write, no privileged or destructive action, and no second way to reach one. `--drive` gains a second route to the existing exit `5`. Malformed or absent `runs/` degrades to `0 completed sprint(s)` rather than erroring — observed live on this repo, which has no `runs/` yet | n/a | PASS |
+
+**Live gate output on this repo's real buffer**, confirming both limits report and that the count
+crosses first here exactly as the item's notes predict:
+
+```
+FINDINGS  41 entries; threshold 8 (config.yml findings_threshold) — at or over the threshold
+          local buffer only — config.yml names no tools.path (…/.claude/backlog/FINDINGS.md)
+          oldest entry 2026-09-09 has survived 0 completed sprint(s); limit 2 (config.yml findings_max_sprints) — under the limit
+```
+
+**Two mutation-silent results, published rather than papered over** (`verify` Step 3):
+
+- `age_gate_crossed`'s `[ -n "$FOLDEST" ] || return 1` and `[ "$FCOUNT" -gt 0 ] || return 1` are
+  each individually dead: removing either alone left `next.test.sh` at 413/413 green, because
+  `tally_age` already returns with `FAGE=0` on an empty buffer. AC1 is genuinely guarded — it is
+  the *conjunction* that is load-bearing (M3) — so this is defensive redundancy, not a gap, and no
+  assertion was invented to make either line necessary.
+- Step 6's new sentence *"This covers the whole tail"* — the extension of the once-per-run rule
+  across the retro→queue boundary — has no guard of its own; `grep -rn 'whole tail' tests/` is
+  empty. AC5 as written ("does not dispatch a second retro") is covered by the pre-existing
+  `once per run` guard (M16), so this is left uncovered and recorded rather than manufactured.
+
+**Advisory intersection: empty.** Dirty at Step 2: nothing. Foreign uncommitted work appeared
+mid-pass — `.claude/backlog/close`, `.claude/backlog/handoff`, `skills/queue/templates/close`,
+`skills/queue/templates/handoff`, `tests/close.test.sh`, `tests/handoff.test.sh` — and was
+committed by its own session before the control run (`HEAD` advanced `5c0222f` → `85e809d`). None
+of those six paths is in this verdict's evidence set, and no mutation or suite above read them.
+Nothing of that session's work was stashed, reverted or checked out; every restore was by the
+mutated pathspec only.
