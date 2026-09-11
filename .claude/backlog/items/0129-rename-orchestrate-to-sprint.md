@@ -2,8 +2,8 @@
 id: "0129"
 title: Rename orchestrate to sprint and leave the old command resolving
 type: chore
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: verify
 size: m
@@ -27,10 +27,11 @@ expects:
   - .claude-plugin/marketplace.json
   - skills/develop/SKILL.md
   - skills/queue/templates/config.yml
-claimed_by: "841c"
-claimed_at: 2026-09-11T02:56:49Z
+claimed_by:
+claimed_at:
 touches:
                                       # prove AC1 reds on a copy rather than a move; never committed
+closed: 2026-09-11
 ---
 
 ## Problem
@@ -88,22 +89,22 @@ tooling, not only to what it ships to customers.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the repo after this ticket, when `ls skills/` runs, then `sprint/` exists and
+- [x] AC1 — Given the repo after this ticket, when `ls skills/` runs, then `sprint/` exists and
       `orchestrate/` does not. **Red if** the directory is copied rather than moved, leaving both.
-- [ ] AC2 — Given the live surface, when `grep -rl 'orchestrate' skills/ tests/ references/ tools/
+- [x] AC2 — Given the live surface, when `grep -rl 'orchestrate' skills/ tests/ references/ tools/
       README.md .claude-plugin/` runs, then the only matches are the FR2 alias and its recorded
       removal date. **Red if** any test, reference or tool still names the old skill.
-- [ ] AC3 — Given a session invoking `/orchestrate`, when the skill resolves, then it loads the
+- [x] AC3 — Given a session invoking `/orchestrate`, when the skill resolves, then it loads the
       sprint skill and prints the deprecation notice naming the removal version. **Red if** the
       alias is dropped, which makes the command resolve to nothing on every machine that has it.
-- [ ] AC4 — Given `.claude/backlog/items/`, when `grep -rl orchestrate items/` runs, then the closed
+- [x] AC4 — Given `.claude/backlog/items/`, when `grep -rl orchestrate items/` runs, then the closed
       item files still contain the historical citations unchanged. **Red if** a bulk `sed` rewrites
       the record of what was verified — the failure `0067` was opened for.
-- [ ] AC5 — Given `tests/sprint.test.sh`, when the whole suite runs, then it passes and its own
+- [x] AC5 — Given `tests/sprint.test.sh`, when the whole suite runs, then it passes and its own
       tally is non-zero. **Red if** the file is renamed while its asserted phrases still quote the
       old skill's text, or if a rewrap splits an asserted phrase across a line break, which prints
       no tally rather than a failure (`0119`).
-- [ ] AC6 — Given the pushed commit, when `tools/release verify` runs, then the resolved install
+- [x] AC6 — Given the pushed commit, when `tools/release verify` runs, then the resolved install
       directory matches it. **Red if** the version is not bumped, since the cache is keyed by
       version and nothing is re-extracted while the record is updated anyway.
 
@@ -167,3 +168,35 @@ tooling, not only to what it ships to customers.
   **A restart is required before `/orchestrate` or `/sprint` resolves to the new copy**: skills
   resolve once at session start, so AC3's end-to-end half — a session invoking the alias and seeing
   the notice — is only observable in a session started after this release, never in this one.
+
+## QA evidence
+
+Verified 2026-09-10, token `841c`, at `qa_level: verify`. Tree clean at Step 2 (`git status
+--porcelain` empty) and clean at verdict. Suite run file-by-file per `config.yml`'s note, never
+fail-fast: **29 test files, 0 failed**, tallies pasted from each file's own output.
+
+| # | Criterion | How it was checked | Result |
+|---|---|---|---|
+| AC1 | `sprint/` exists, `orchestrate/` does not | `ls skills/` → `design develop prototype queue retro sprint verify`. Commit `bb8b778` records `R098 skills/orchestrate/SKILL.md → skills/sprint/SKILL.md` and `R100` for the schema — a git-recorded rename, not a copy. **Mutation:** recreated `skills/orchestrate/SKILL.md` → `FAIL AC1 — skills/orchestrate still exists: the directory was copied rather than moved`, 163 passed / 1 failed; restored, control green | PASS |
+| AC2 | live surface names the old skill only at the alias | `grep -rl 'orchestrate' skills/ tests/ references/ tools/ README.md .claude-plugin/` → `README.md` alone, line 17, the deprecation notice. The `commands/orchestrate.md` alias is the FR2 home. **Mutation:** appended `# see the orchestrate skill` to `tools/harvest-usage.sh` → `FAIL AC2 — the retired name is still cited as live in: tools/harvest-usage.sh`; restored | PASS |
+| AC3 | `/orchestrate` resolves and prints the notice | `commands/orchestrate.md` present, naming `/sprint`, `skills/sprint/SKILL.md`, `Deprecated`, owner `Aaron Ferguson`, removal `2026-12-10`. End-to-end half observed live: this session started after the 0.9.25 release and its skill listing carries `ai-building-tools:orchestrate — Deprecated alias for /sprint … Removed on or after 2026-12-10 — use /sprint` alongside `ai-building-tools:sprint`. The alias was **not invoked** — doing so starts a backlog-driving run. **Mutations:** alias file moved away → `FAIL AC3 — commands/orchestrate.md is absent`; owner rewritten to "the team" → `FAIL AC3 — the alias does not state Aaron Ferguson`; both restored | PASS |
+| AC4 | closed item files keep their historical citations | `grep -rl orchestrate items/` → 26 files, counts intact (`0036`:7, `0039`:44, `0040`:7, …). `git show --name-status bb8b778` touches exactly one item file, `0129`'s own; `git diff --name-only bb8b778~1 0c8f65f -- .claude/backlog/items/` returns only `0129`. No bulk `sed` reached the record | PASS |
+| AC5 | `tests/sprint.test.sh` passes with a non-zero tally | `tests/orchestrate.test.sh` is gone (`R094` in `bb8b778`); `tests/sprint.test.sh` prints `164 passed, 0 failed, 0 skipped`, and its `SKILL=` resolves to `skills/sprint/SKILL.md`. **Mutation:** split the asserted phrases `CLAUDE.md auto-discovery` and `no conventions` across line breaks in the skill → `FAIL AC1 — the skill bans --bare without saying it means no conventions`, 163 passed / 1 failed **with a tally printed**; restored, control green at 164/0. A first attempt splitting only the one phrase stayed green — that guard is a two-branch `||`, so both branches had to move | PASS |
+| AC6 | install matches the pushed commit | `tools/release verify` **reported FAILED** and the red is not this ticket's: it compares the install against `HEAD` (`7726456`), which has advanced past the release by three backlog commits, and its three differing paths are `QUEUE.md`, `items/0107` (another session's claim) and `items/0129` (this stage's claim) — no product path among them. The AC's own condition was checked directly instead: worktree at the released commit `59d4b2d`, `diff -rq` against `~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.25` → **all 230 tracked paths identical**, only the runtime `.in_use` marker extra. The install carries `skills/sprint/` and `commands/orchestrate.md` and no `skills/orchestrate/`, so the version-keyed cache did re-extract. AC6's stated "Red if" — the version not bumped — is absent. Parked in `FINDINGS.md`; needs a row | PASS |
+
+**NFRs.** *Migration* — the alias is purely additive: `bb8b778` adds `commands/orchestrate.md` and
+removes no entry point; the removal of `/orchestrate` is out of scope with its own notice.
+*Documentation* — `README.md` lines 15–18 name `/sprint` in the skill table and record the
+deprecation with its removal date; `references/REPORTING.md` line 100 cites
+`skills/sprint/outcome.schema.json`. *Dependencies* — no package manifest in the diff; none added.
+
+**Always-on pass (`CONVENTIONS_CORE.md`).** No secrets, log fields, analytics events or egress
+destinations in the diff, so no `data-privacy-conventions.md` trigger; no auth, credential or
+data-visibility surface, so no Security gap; no UI, so no Accessibility gap. `company: none` holds —
+`tests/measurement.test.sh` passes 129/129 including its guard that no tracked file publishes a
+configured internal organisation or client name. **Newly reachable:** one new entry point,
+`/orchestrate` as a plugin command. It is a strict alias — it prints the notice and reads
+`skills/sprint/SKILL.md` — so it adds no state or action the skill did not already offer.
+
+**Advisory:** not advisory. Dirty set empty at Step 2 and at verdict; intersection with the evidence
+set therefore empty.
