@@ -21,11 +21,13 @@ expects:
 claimed_by: "9265"
 claimed_at: 2026-09-11T21:34:50Z
 touches:
-  - skills/orchestrate/SKILL.md
+  - skills/sprint/SKILL.md
   - .claude/backlog/config.yml
   - .claude/backlog/next
   - skills/queue/templates/next
   - skills/queue/templates/config.yml
+  - tests/sprint.test.sh
+  - tests/next.test.sh
 ---
 
 ## Problem
