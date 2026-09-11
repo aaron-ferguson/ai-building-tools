@@ -309,3 +309,13 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   interface between the suite and every reader that batches it, so its format is a contract; nothing
   asserts it (pointer: `tests/cross-cutting-change.test.sh:190`, `config.yml` `commands: unit`,
   `verify` Step 3's missing-tally rule). Needs a row.
+
+- 2026-09-10 — **a fixture name written into a ticket's own prose becomes tracked content, so the
+  privacy guard's "clean tree" case is not clean.** 0148 drove `tests/measurement.test.sh` with a
+  synthetic name list; the well-formed-list-and-no-leak combination failed, correctly, on a match in
+  `items/0148-*.md` itself, because the item's reproduction block quotes the very name the fixture
+  uses. Any guard that searches the tracked set has this coupling with the prose describing it, and
+  the failure reads as a defect in the guard rather than as the fixture matching the ticket. The
+  session rebuilt the fixture on a name absent from the tree and lost a drive doing it. Cheap rule
+  if it recurs: a name-shaped fixture is assembled in the test and never spelled in the item
+  (pointer: `tests/measurement.test.sh` falsification controls, items/0148 QA plan, items/0143 FR1).
