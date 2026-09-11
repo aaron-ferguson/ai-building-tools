@@ -251,6 +251,16 @@ Four entries, and each names a shape FR2's list does not yet carry.
   half belongs here: a criterion whose subject is an operation only an agent performs should have to
   say so.
 
+- 2026-09-11 (verify, claim `504f`) — **ADVISORY, not closed, and the blocker is `AC7` alone.**
+  `AC1`-`AC6` and `AC8` are verified green, each with a mutation confirmed to land and then
+  restored; `## QA evidence` below carries the table and the mutation for every row. `AC7`'s glob
+  over `tests/*.test.sh` was intersected by a sibling session's in-progress work under three
+  different dirty sets during the pass, so no honest whole-suite answer exists right now. **The
+  ticket needs no code.** What it needs is `AC7` pinned to a commit or enumerated into the suites it
+  means — a contract change, and `queue`'s to make. Left at `next: verify` rather than routed to
+  `queue`, because the remaining eight-ninths of the contract is discharged and re-specifying the
+  whole ticket would discard that; a `queue` pass that only rewrites `AC7` is the cheaper move.
+
 ## QA evidence
 
 Verified 2026-09-11 by `verify` session, claim token `504f`, at `qa_level: unit`. Skill prose is
