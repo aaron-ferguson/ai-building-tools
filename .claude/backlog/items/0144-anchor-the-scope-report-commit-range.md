@@ -2,8 +2,8 @@
 id: "0144"
 title: Anchor the scope report's commit range to the claim commit for this ticket, not any commit carrying the token
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: s
 created: 2026-09-09
@@ -18,15 +18,9 @@ expects:
   - .claude/backlog/handoff
   - tests/close.test.sh
   - tests/handoff.test.sh
-claimed_by: "7af7"
-claimed_at: 2026-09-11T22:08:51Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/close
-  - skills/queue/templates/handoff
-  - .claude/backlog/close
-  - .claude/backlog/handoff
-  - tests/close.test.sh
-  - tests/handoff.test.sh
 ---
 
 ## Problem
