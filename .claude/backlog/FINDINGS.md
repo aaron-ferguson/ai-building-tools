@@ -439,3 +439,14 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   figure that is not one of those. `develop` Step 3 says to grep the project's guards for *the
   mechanism you are about to introduce*, and quoting a number does not read as a mechanism. Needs a
   row, or a line in the skill's own house rules (pointer: `skills/sprint/SKILL.md`, `develop` Step 3).
+- 2026-09-11 (verify 0052) — **the worktree `verify` Step 2 prescribes makes `tests/citations.test.sh`
+  fail for an environmental reason that reads exactly like a red.** `config.yml`'s
+  `conventions.path: ../ai-building-conventions` resolves from the repo root, so a worktree taken
+  under the scratchpad has no sibling conventions directory and the guard reports *"no conventions
+  directory resolved from config.yml — filename resolution not checked"*, exit 1, while the same
+  file is green in the checkout. The fix is one `ln -s` beside the worktree, and it is the exact
+  analogue of the `node_modules` symlink Step 2 already names — but the skill names only that one,
+  and the whole point of the worktree is to let a session trust a red it did not cause. A session
+  that stops here hands a correct ticket back to `develop` over its own scaffolding. Needs a row, or
+  a clause at Step 2's worktree recipe naming the conventions directory alongside `node_modules`
+  (pointer: `skills/verify/SKILL.md` Step 2, `.claude/backlog/config.yml` `conventions.path`).
