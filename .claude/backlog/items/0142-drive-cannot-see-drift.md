@@ -3,7 +3,7 @@ id: "0142"
 title: Let the driver see the drift classes that stop a human reader
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: s
 created: 2026-09-09
@@ -15,8 +15,8 @@ expects:
   - .claude/backlog/next
   - skills/queue/templates/next
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "1f54"
+claimed_at: 2026-09-11T01:26:15Z
 touches:
 ---
 
