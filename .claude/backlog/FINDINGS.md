@@ -319,3 +319,25 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   session rebuilt the fixture on a name absent from the tree and lost a drive doing it. Cheap rule
   if it recurs: a name-shaped fixture is assembled in the test and never spelled in the item
   (pointer: `tests/measurement.test.sh` falsification controls, items/0148 QA plan, items/0143 FR1).
+
+- 2026-09-10 (develop, 0129) — **renaming a skill leaves every OPEN sibling ticket's `expects:`
+  pointing at the path it moved from, and no rule says who may fix it.** The rename moved
+  `skills/orchestrate/` and `tests/orchestrate.test.sh`; eight `ready` items (0041, 0054, 0089,
+  0132, 0133, 0134, 0135, 0137) still name the old paths in `expects:`. 0067's rule permits a
+  rename to rewrite open unheld items, but it is written about the backlog's own *vocabulary*, and
+  *A stage writes only the ticket it holds* points the other way for a product rename — so the
+  session performing one has two applicable rules and no tie-break. The damage is bounded, because
+  `develop` Step 1 requires `touches:` to be `expects:` checked against the code rather than copied,
+  so the claiming session meets a path that does not exist and corrects it. What is unbounded is
+  `./next`'s file-scope triage, which compares the two fields verbatim and so compares against paths
+  nothing can ever hold (pointer: `references/CONCURRENCY.md` *A change that touches every file*,
+  items/0067 FR3, `develop` Step 1). Needs a row.
+
+- 2026-09-10 (develop, 0129) — **a guard whose subject is a word is a match for its own sweep, and
+  the obvious fix is the one that blinds it.** AC2 asserts that the retired name survives nowhere on
+  the live surface; written as a plain `grep -rl`, `tests/sprint.test.sh` matches itself, and
+  excluding the guard file makes the file most likely to carry a stale citation the one file the
+  sweep cannot see. Assembling the word at runtime — `OLD="orch""estrate"` — costs one line and
+  keeps the file inside its own sweep. Worth a line in `testing-conventions.md` beside the existing
+  "a check that filters for a set and then asserts over it" rule, which is the same failure reached
+  by the other route (pointer: `tests/sprint.test.sh` 0129 block).

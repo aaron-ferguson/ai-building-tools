@@ -150,3 +150,36 @@ tooling, not only to what it ships to customers.
 - **2026-09-09 — routed to `develop`, blocked on `0067`.** No design question is open *here*: the
   new name is chosen and the surface is enumerable. What is unsettled is the shape any cross-cutting
   rename takes in this backlog, which is `0067`'s question and applies to more than this rename.
+
+- **2026-09-10 — built, `cfec`. The alias is a plugin COMMAND, not a second skill directory**, which
+  is what lets FR2 and AC1 both hold: AC1 requires `skills/orchestrate/` to be gone, so the alias
+  cannot live there. `commands/orchestrate.md` is new to this repo and the mechanism is observed
+  rather than assumed — the `vercel` plugin in the official marketplace ships `commands/*.md` at its
+  root, and the descriptions in those files are exactly what this session's own skill listing shows
+  for `vercel:deploy` and its siblings. A plugin command surfaces under the same `plugin:name`
+  namespace a skill does, so `/orchestrate` resolves exactly where it did.
+
+- **The ticket's figures were caches and both were wrong low.** The Problem section says
+  `orchestrate` appears in 31 files; it is 50 (2026-09-10), of which 17 are live surface. FR3
+  enumerates the live citations and misses five: `skills/retro/SKILL.md`,
+  `skills/queue/templates/next` with its installed copy `.claude/backlog/next`,
+  `tests/next.test.sh`, `tools/validate-json-schema.py` and `.claude/backlog/config.yml`. FR3's
+  *rule* — every live citation resolves — is what was built to; its list is not the contract. AC2's
+  guard is a sweep for the same reason.
+
+- **`ORCHESTRATE_SKIP_PROBE` went with it, and it is the one interface change here.** The env var
+  that makes AC22's nested-dispatch probe skip loudly is now `SPRINT_SKIP_PROBE`. It is named in no
+  other file, so nothing else needed changing; anyone who had it exported gets the probe back rather
+  than a silent skip, which is the safe direction.
+
+- **Eight open sibling tickets still name the moved paths in `expects:`** — 0041, 0054, 0089, 0132,
+  0133, 0134, 0135, 0137. This session did not touch them. 0067's rule permits a rename to rewrite
+  open unheld items, but it is written about the backlog's own vocabulary rather than about a
+  product rename, and *A stage writes only the ticket it holds* points the other way; the tie-break
+  is not this ticket's to make. Parked in `FINDINGS.md`. **This still needs a row** — no row exists
+  for it.
+
+- **AC6 is not discharged here.** `tools/release` pushes to a public remote, which `develop` Step 5
+  and `git-conventions.md` both make the author's call rather than this stage's. The work is
+  committed and the tree is green; the version bump, the push and the install are outstanding, and
+  until they run AC6 has nothing to verify against.
