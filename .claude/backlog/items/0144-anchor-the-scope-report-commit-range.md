@@ -103,3 +103,40 @@ anchor a hole in the feature that added it.
 - **2026-09-09 (retro)** — Filed from a `develop` park on `0106` that marked itself NEEDS A ROW. The
   reproduction and the exact replacement grep are the park's, verified in a throwaway repo by that
   session.
+
+### 2026-09-11 — Built (token 7af7)
+
+**The replacement grep the park specified does not work as written, and the reason is the log
+format rather than the idea.** The park gives `grep -E "^Claim $ID \[$TOKEN\]"`, but the anchor
+reads `git log --format='%H %s'`, so every line begins with a 40-character SHA and the subject never
+sits at the start. Anchored as specified the match is empty for every ticket, which fails the way
+FR2 forbids — the scripts would silently stop reporting scope at all, and the existing
+`no claim commit for this token` cases would go on passing because they assert exactly that silence.
+Shipped as `^[0-9a-f]+ Claim $ID \[$TOKEN\]`, which keeps the park's precision and the format.
+
+**Both halves of the anchor are load-bearing, and one case cannot show it.** AC1's fixture (a token
+reused across two ids) reds a token-only match and is green under an id-only one; AC3's (one id
+claimed twice under different tokens) is the mirror. A single case would leave whichever half it did
+not exercise free to regress unnoticed. Proved by mutation: replacing the anchor with
+`^[0-9a-f]+ Claim $ID ` gives `237 passed, 3 failed` — AC3's two assertions plus
+`tests/close.test.sh`'s byte-for-byte block comparison, which is `0106` FR3's guard correctly
+objecting that only one of the two copies moved. Control after restore: `240 passed, 0 failed`,
+worktree clean.
+
+**AC5's byte-for-byte comparison proves the two blocks MATCH, never that either is right** — two
+identically wrong blocks satisfy it, which is why AC2 asserts the narrowed anchor against `handoff`
+directly rather than relying on the comparison to carry it across.
+
+**The mutation ran in a throwaway worktree, not in the checkout, because another session was
+mid-mutation in the shared tree.** `pgrep` found a live mutate-and-`git checkout --` script from
+another window. `develop` Step 5 says the session arriving second waits; a detached worktree at this
+ticket's own commit is stronger than waiting and costs nothing here, since this suite is `/bin/sh`
+with no `node_modules` to symlink. **One artefact to know about: `tests/citations.test.sh` fails in
+such a worktree** with `no conventions directory resolved from config.yml`, because the conventions
+repo is reached by a relative path that does not exist beside a temp checkout. It is green in the
+real checkout (`46 passed, 0 failed`). A worktree is not a neutral place to run this project's whole
+suite.
+
+**A `perl -pi -e` substitution matched nothing and returned a clean pass**, which read as "the guard
+is falsifiable and green" when it meant "nothing was mutated". Caught only by `git diff --stat`
+printing an empty diff. Confirm a mutation landed before believing the run that follows it.

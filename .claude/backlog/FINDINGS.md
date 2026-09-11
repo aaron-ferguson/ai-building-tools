@@ -450,3 +450,19 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   that stops here hands a correct ticket back to `develop` over its own scaffolding. Needs a row, or
   a clause at Step 2's worktree recipe naming the conventions directory alongside `node_modules`
   (pointer: `skills/verify/SKILL.md` Step 2, `.claude/backlog/config.yml` `conventions.path`).
+- 2026-09-11 (develop 0144) — **`tests/measurement.test.sh` is red on `main` over a home-directory
+  path published in a closed ticket's QA evidence table, and the leak is committed rather than
+  in-flight.** The guard names
+  `.claude/backlog/items/0052-acceptance-criteria-must-be-falsifiable.md:294` — an evidence row
+  quotes a guard's own failure message verbatim, and that message embeds the absolute path of the
+  conventions repo under `/Users/<name>/...`. Landed at `2be673f` (`Close 0052 [d3b6]`), present at
+  every commit since, and **not yet pushed**, so redacting it costs nothing today and costs a
+  history rewrite once it is. **This repo is public** (`CLAUDE.md`), and the redaction the guard
+  itself accepts is `/Users/<name>/`. Two consequences beyond the leak: `tools/release`'s gate uses
+  the FAIL-FAST `unit` command, so this reds the next release; and a `verify` session pasting a
+  guard's real output into an evidence table is the ordinary way to satisfy the evidence rule, so
+  nothing warns that the paste is the thing the privacy guard forbids. Needs a row — the redaction
+  is another ticket's closed item file and `CONCURRENCY.md`'s *A stage writes only the ticket it
+  holds* forbids this session doing it — and plausibly a line in `verify` Step 7 saying a pasted
+  tally is redacted before it is written (pointer: `tests/measurement.test.sh`,
+  `skills/verify/SKILL.md` Step 7).
