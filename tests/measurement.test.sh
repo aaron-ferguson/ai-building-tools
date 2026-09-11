@@ -932,6 +932,54 @@ malformed_entry_report() {
   done
 }
 
+# name_check_verdict <list-file> — THE WHOLE DECISION this check makes about one list, as a word on
+# the first line with any detail beneath it: `no-list`, `no-names`, `no-repo`, `leak`, `clean`, or
+# `uncompilable`. It is a function so the falsification control can drive the REAL decision instead of
+# a stand-in: with the branching written inline, restoring the conflating `elif` left every control
+# green and the silent green of 0148 back in place, because the controls reached the helpers and
+# nothing reached the branch (0148).
+name_check_verdict() {
+  _list=$1
+  if [ ! -f "$_list" ]; then
+    printf 'no-list\n'
+    return
+  fi
+  if [ -z "$(names_pattern "$_list")" ]; then
+    printf 'no-names\n'
+    return
+  fi
+  if ! git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    printf 'no-repo\n'
+    return
+  fi
+
+  # `|| _status=$?` rather than a bare `$?`, because `set -eu` is on and an assignment from a failing
+  # command substitution ends the run: the status this decision turns on is exactly the status that
+  # would kill the script before it could be read.
+  _status=0
+  _named=$(names_search "$_list") || _status=$?
+
+  # THE MATCH BRANCH IS FIRST and must stay first: a real leak is the search's own 0, and any branch
+  # tested ahead of it can only swallow one.
+  if [ "$_status" = 0 ]; then
+    # `cut` to file:line. THE MATCHED TEXT IS DELIBERATELY NOT PRINTED — interpolating the match is
+    # the obvious implementation and it publishes the name into every CI log that runs this suite.
+    #
+    # The redaction is a SEPARATE STATEMENT from the search, and that is load-bearing. Written as one
+    # pipeline the branch reads `cut`'s status rather than `git grep`'s, and `cut` succeeds on empty
+    # input — so it was taken on a perfectly clean tree and the guard reported a leak it could not
+    # name. Caught then only because the failure was the harmless direction; 0148 is the same
+    # conflation one status over, and that one was silent in the dangerous direction.
+    printf 'leak\n'
+    printf '%s\n' "$_named" | cut -d: -f1,2
+  elif [ "$_status" = 1 ]; then
+    printf 'clean\n'
+  else
+    printf 'uncompilable\n'
+    malformed_entry_report "$_list"
+  fi
+}
+
 # FALSIFICATION CONTROL, because an exemption nothing tests is how a privacy guard goes quietly
 # green. Two departures from the block above, both forced:
 #
@@ -1020,45 +1068,50 @@ else
     bad "Privacy & data NFR — a well-formed list was reported as malformed, so every clean run would red"
   fi
 
+  # AND THE DECISION ITSELF, not only the helpers under it. The controls above all passed while the
+  # branch that reads the status was reverted to the conflating form — the defect restored, the suite
+  # green — because nothing drove the decision. These two do, and they turn on a synthetic list and a
+  # missing one, so neither depends on the tracked tree or on this machine holding a list at all.
+  if [ "$(name_check_verdict "$SYN_DIR/malformed" | head -1)" = uncompilable ]; then
+    ok "Privacy & data NFR — a list that will not compile is a verdict of its own, not a searched tree"
+  else
+    bad "Privacy & data NFR — a list that will not compile was not reported as such, so a leak behind it goes unseen"
+  fi
+
+  if [ "$(name_check_verdict "$SYN_DIR/no-such-list" | head -1)" = no-list ]; then
+    ok "Privacy & data NFR — an absent list is not applicable rather than an error (a fresh clone has none)"
+  else
+    bad "Privacy & data NFR — an absent name list no longer reads as not-applicable, so a fresh clone cannot run this suite"
+  fi
+
   rm -rf "$SYN_DIR"
 fi
 
-if [ ! -f "$NAMES_FILE" ]; then
-  ok "internal-name check not applicable — no name list configured (a fresh clone has none)"
-elif [ -z "$(names_pattern "$NAMES_FILE")" ]; then
-  ok "internal-name check not applicable — the configured list holds no names"
-elif ! git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
-  bad "Privacy & data NFR — cannot check: $ROOT is not a git repository, so the tracked set is unknown"
-# `cut` to file:line. THE MATCHED TEXT IS DELIBERATELY NOT PRINTED — interpolating the match is
-# the obvious implementation and it publishes the name into every CI log that runs this suite.
-#
-# The redaction is a SEPARATE STATEMENT from the search, and that is load-bearing. Written as one
-# pipeline the `elif` reads `cut`'s status rather than `git grep`'s, and `cut` succeeds on empty
-# input — so the branch was taken on a perfectly clean tree and the guard reported a leak it could
-# not name. Caught here only because the failure was the harmless direction.
-else
-  # `|| search_status=$?` rather than a bare `$?`, because `set -eu` is on and an assignment from a
-  # failing command substitution ends the run: the status this branch exists to read is exactly the
-  # status that would kill the script before it could be read.
-  search_status=0
-  named=$(names_search "$NAMES_FILE") || search_status=$?
-  # THE MATCH BRANCH IS FIRST and must stay first: a real leak is reported by the search's own 0,
-  # and any branch tested ahead of it can only swallow one.
-  if [ "$search_status" = 0 ]; then
-    named=$(printf '%s\n' "$named" | cut -d: -f1,2)
+verdict_out=$(name_check_verdict "$NAMES_FILE")
+verdict=$(printf '%s\n' "$verdict_out" | head -1)
+verdict_detail=$(printf '%s\n' "$verdict_out" | tail -n +2)
+case "$verdict" in
+  no-list)
+    ok "internal-name check not applicable — no name list configured (a fresh clone has none)" ;;
+  no-names)
+    ok "internal-name check not applicable — the configured list holds no names" ;;
+  no-repo)
+    bad "Privacy & data NFR — cannot check: $ROOT is not a git repository, so the tracked set is unknown" ;;
+  leak)
     bad "Privacy & data NFR — a tracked file publishes an internal organisation or client name.
 File and line only; the token is withheld on purpose. Redact each to a placeholder that keeps the
 sentence's meaning (an internal repository, a second backlog):
-$named"
-  elif [ "$search_status" = 1 ]; then
-    ok "no tracked file publishes a configured internal organisation or client name"
-  else
+$verdict_detail" ;;
+  clean)
+    ok "no tracked file publishes a configured internal organisation or client name" ;;
+  uncompilable)
     bad "Privacy & data NFR — the configured name list will not compile as a regex, so THE TRACKED
 SET WAS NEVER SEARCHED and a leak in it would go unreported. Fix the entry at each line below — the
 entry itself is withheld, being one of the names this check exists to keep out of this output:
-$(malformed_entry_report "$NAMES_FILE")"
-  fi
-fi
+$verdict_detail" ;;
+  *)
+    bad "Privacy & data NFR — the internal-name check returned a verdict this file does not handle ($verdict), so the tracked set's state is unknown" ;;
+esac
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]
