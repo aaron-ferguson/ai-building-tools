@@ -1084,6 +1084,29 @@ else
     bad "Privacy & data NFR — an absent name list no longer reads as not-applicable, so a fresh clone cannot run this suite"
   fi
 
+  # AND THE LEAK VERDICT ITSELF, which is the one verdict a synthetic list cannot reach on its own:
+  # it needs a tracked file to match, and committing a name is the defect this guard exists to stop.
+  # So the list names a symbol THIS FILE defines — present by construction, since if it ever goes
+  # missing the guard has gone with it. Without this case, moving the uncompilable branch ahead of
+  # the match branch swallows every real leak with the suite green.
+  printf '%s\n' 'EXEMPT_PREFIX' > "$SYN_DIR/self"
+  syn_leak=$(name_check_verdict "$SYN_DIR/self")
+  if [ "$(printf '%s\n' "$syn_leak" | head -1)" = leak ]; then
+    ok "Privacy & data NFR — a name that IS in the tracked set reaches the leak verdict"
+  else
+    bad "Privacy & data NFR — a name present in the tracked set did not reach the leak verdict, so real leaks are swallowed"
+  fi
+
+  syn_leak_detail=$(printf '%s\n' "$syn_leak" | tail -n +2)
+  case "$syn_leak_detail" in
+    *"tests/measurement.test.sh:"*"EXEMPT_PREFIX"*)
+      bad "Privacy & data NFR — the leak verdict published the matched text, which is the name it exists to withhold" ;;
+    *'tests/measurement.test.sh:'*)
+      ok "Privacy & data NFR — the leak verdict reports file and line with the matched text withheld" ;;
+    *)
+      bad "Privacy & data NFR — the leak verdict did not report the file and line of the match: [$syn_leak_detail]" ;;
+  esac
+
   rm -rf "$SYN_DIR"
 fi
 
