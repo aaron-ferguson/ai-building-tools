@@ -126,3 +126,28 @@ will end a sprint clean over a backlog that needs a person.
   describing a row another session holds. 0140 settled that as unheld and 0115 class 5 as drift, so
   they were cases about drift wearing the words of cases about ownership; nothing red until a reader
   crossed the two. They now carry a token, via a new `add_ticket_held` fixture helper.
+
+## QA evidence
+
+Verified 2026-09-10 at `qa_level: unit`, against the repo copy of
+`skills/queue/templates/next` (the copy `tests/next.test.sh` executes) and
+`.claude/backlog/next`, which `tests/backlog-scripts-installed.test.sh` holds byte-identical to it.
+The `verify` and `orchestrate` skills driving this session ran from the 0.9.24 plugin cache, so the
+prose change under test is not the prose this session followed; the repo copy is the authority.
+Tree clean at Step 2 and at verdict. Fixture ids below are `9990`/`9991` — deliberately outside the
+issued range, and no row in this backlog.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 | Own fixture: row `9990` `ready` over an open `blocked_by: ["9991"]`. `./next --drive` printed `DRIFT 9990 \| written ready, derived blocked — blocked_by still open: 9991`, then `ESCALATE`, exit **4**. Mutation: `if ! drift_report` → `if false` in the `--drive` body; fixture then printed `DISPATCH develop 9991`, exit **0**, and `tests/next.test.sh` went 379 passed / **14 failed**. Restored, control 393/0. | PASS |
+| AC2 | Own drift-free fixture, one takeable row: `DISPATCH develop 9990`, exit **0**. Mutation: drift check made unconditionally fatal (`drift_report; if true`); same fixture exited **4** and `tests/next.test.sh` went 288 passed / **105 failed**. Restored, control 393/0. | PASS |
+| AC3 | Own fixture with drift and nothing takeable (class 6 — row `ready` over a held item): `DEPTH 0 … takeable`, then `ESCALATE`, exit **4**; `COMPLETE` never printed. Mutation: the drift block moved below the `COMPLETE` decide, i.e. after the takeability walk; the same fixture then printed `COMPLETE nothing takeable` and exited **3** while `./next --drift` exited 1 over the same queue — the original bug, reproduced — and `tests/next.test.sh` went 379/**14 failed**. Restored, control 393/0. | PASS |
+| AC4 | `skills/orchestrate/SKILL.md:170-177` names `0`, `3`, `4`, `5`, and `1`/`2` as the stops, and carries `exits `4` on drift`. Its claim that `1` is a malformed config holds for `--drive`: the only `exit 1` on that path is `read_threshold \|\| exit 1` plus the malformed-queue guards; the `--drift` mode's `exit 1` is a different branch. Mutation: the `, and exits `4` on drift` clause deleted → `tests/next.test.sh` 392/**1 failed** ("ties drift to the escalate code"). Restored. | PASS |
+| AC5 | Whole suite file-by-file with `\|\| true`, 29 files: **all `0 failed`** (largest: `next.test.sh` 393, `close.test.sh` 233, `orchestrate.test.sh` 155/0/0 skipped, `handoff.test.sh` 123). Mutation: a comment line appended to `skills/queue/templates/next` only → `tests/backlog-scripts-installed.test.sh` 36/**1 failed**, "next has diverged from skills/queue/templates/next". Restored; `diff -q` reports the two copies identical. | PASS |
+| NFR Compatibility | Own drift-free fixture with one held row: `COMPLETE nothing takeable`, exit **3**, `--drift` exit 0 — unchanged. Exit `0` covered by AC2, `4` by AC1/AC3, `5` by `tests/next.test.sh`'s findings-gate case. | PASS |
+| NFR Documentation | The AC4 guard at `tests/next.test.sh:2240-2254` scopes itself to the `Route on the exit code` paragraph with `awk` and asserts each code plus the drift clause; mutating the clause reds it (see AC4). | PASS |
+| FR3 (shared check, not restated) | The `DRIFT` lines `--drive` prints are byte-identical to `--drift`'s over the same fixture — confirmed on the AC3 fixture, both printing `DRIFT 9990 \| row Status ready, item claimed_by: zz99 — held, and the row does not say so`. One `drift_report()` at `skills/queue/templates/next:686`, two callers. | PASS |
+| Always-on conventions | Diff `de6b879` is four files, all within `touches:`. No secrets, no company material (this repo is public, `company: none`). No log field, analytics event or egress destination added, so no privacy pass is triggered; no auth, credential or data-visibility surface; no UI. | PASS |
+| Newly reachable states | The change adds one new stop to `--drive` and no new route to any action. It does **not** add a destructive or privileged path: `drift_report()` writes nothing, and `orchestrate` is told to stop rather than act on the code. The one behavioural reversal — a stale `blocked` cache and a `ready` row over an open blocker now stop the driver where they were previously re-derived and dispatched — is stated in the item's *Notes & decisions*, asserted both ways in `tests/next.test.sh`, and its collision with `handoff` is already in `FINDINGS.md` awaiting a row. | PASS |
+
+Dirty set at Step 2: empty. Intersection with the evidence set: empty.
