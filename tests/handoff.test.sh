@@ -573,6 +573,30 @@ assert_item_line "the item still holds its claim" 'claimed_by: "ab12"'
 assert_item_line "and is still at develop"        'next: develop'
 if [ -d "$FIX/.claude/backlog/.lock" ]; then bad "the lock does not exist afterwards"; else ok "the lock does not exist afterwards"; fi
 
+# --- 0144 AC2 — handoff's anchor narrows with close's ------------------------------------------
+# The same bare token grep, in the copy of the block `close` carries verbatim. Asserted here as well
+# as in tests/close.test.sh because fixing one and not the other is the shape the shared-block
+# comment warns about, and the byte-for-byte comparison in tests/close.test.sh proves only that the
+# two blocks MATCH — two identically wrong blocks satisfy it.
+echo "0144 AC2 — a token reused across tickets does not widen the hand-off's range"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0700 | Token reused | develop | in-progress | 0000 |' 0700 develop in-progress ab12
+mkdir -p "$FIX/src"
+printf 'declared\n' > "$FIX/src/one.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "baseline"
+# An ancient claim for a DIFFERENT ticket, carrying the same four characters.
+git -C "$FIX" commit -q --allow-empty -m "Claim 0001 [ab12]"
+mkdir -p "$FIX/ancient"
+printf 'a\n' > "$FIX/ancient/unrelated-a.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Build 0001 [ab12]"
+# This ticket's own claim, and the one edit it actually made.
+git -C "$FIX" commit -q --allow-empty -m "Claim 0700 [ab12]"
+printf 'edited\n' >> "$FIX/src/one.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Build 0700 [ab12]"
+out="$(run_handoff 0700 ab12 verify)" && rc=0 || rc=$?
+assert_rc "the hand-off still succeeds — this is a note, not a gate" "$rc" 0 "$out"
+assert_not_contains "the older ticket's file is not charged to this one" "$out" 'ancient/unrelated-a.ts'
+assert_contains "and the declared path no commit changed is still named" "$out" 'declared but untouched: src/two.ts'
+
 # --- result -------------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

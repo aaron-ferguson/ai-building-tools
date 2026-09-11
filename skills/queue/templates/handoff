@@ -317,7 +317,15 @@ scope_note() {
   [ -n "$declared" ] || return 0
 
   # Oldest first: a token can appear on several commits, and the claim is the first of them.
-  claim_sha="$(git -C "$DIR" log --format='%H %s' | grep -F "[$TOKEN]" | tail -1 | cut -d' ' -f1)"
+  #
+  # Anchored on the id AND the token, never the token alone (0144). A token is four hex characters
+  # and nothing checks one for reuse, so a bare `grep -F "[$TOKEN]"` over the whole history makes
+  # the FIRST reuse win: an older ticket's claim commit becomes the range start and everything
+  # between reads as this ticket's work. That is the same wrong-attribution this report exists to
+  # prevent, arriving as a confident, specific, wrong answer rather than an error. Both halves are
+  # load-bearing — the id alone re-breaks a ticket claimed twice under different tokens, where the
+  # superseded pass's commits are not this one's.
+  claim_sha="$(git -C "$DIR" log --format='%H %s' | grep -E "^[0-9a-f]+ Claim $ID \[$TOKEN\]" | tail -1 | cut -d' ' -f1)"
   [ -n "$claim_sha" ] || return 0
 
   # `A^..HEAD` includes A itself. On a root commit there is no `A^`, and `--root` is what makes

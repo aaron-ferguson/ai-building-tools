@@ -1183,6 +1183,57 @@ assert_contains "git parses a Co-Authored-By trailer on the close commit" \
   'Claude <noreply@anthropic.com>'
 assert_contains "the subject still names the close" "$(git -C "$FIX" log -1 --format=%s)" 'Close 0094 [ab12]'
 
+# --- 0144 AC1, AC3 — the range is anchored to THIS ticket's claim, not any commit carrying the token
+# The anchor was a bare `grep -F "[$TOKEN]"` over the whole history, oldest match wins. A token is
+# four hex characters and nothing checks one for reuse, so the first reuse makes an OLDER ticket's
+# claim commit the range start and every commit in between reads as this ticket's work — a
+# confident, specific, wrong report rather than an error. The scripts already know the id, so the
+# precise anchor costs nothing.
+#
+# Both halves of the anchor are asserted, because each alone is satisfiable by a wrong script:
+# AC1's fixture reds a token-only match, AC3's reds an id-only one. A single case would leave
+# whichever half it did not exercise free to regress.
+echo "0144 AC1 — a token reused across tickets does not attribute the older ticket's files to this one"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0700 | Token reused | verify | in-progress | 0000 |'
+mkitem 0700 verify in-progress '"ab12"' '[]'
+mkdir -p "$FIX/some/reserved"
+printf 'declared\n' > "$FIX/some/reserved/file.md"
+commit_fixture
+# An ancient claim for a DIFFERENT ticket, carrying the same four characters.
+git -C "$FIX" commit -q --allow-empty -m "Claim 0001 [ab12]"
+mkdir -p "$FIX/ancient"
+printf 'a\n' > "$FIX/ancient/unrelated-a.ts"
+printf 'b\n' > "$FIX/ancient/unrelated-b.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Build 0001 [ab12]"
+# This ticket's own claim, and the one edit it actually made.
+git -C "$FIX" commit -q --allow-empty -m "Claim 0700 [ab12]"
+printf 'declared and edited\n' > "$FIX/some/reserved/file.md"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Build 0700 [ab12]"
+out="$(run_close 0700 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+refute_contains "the older ticket's first file is not charged to this one"  "$out" 'ancient/unrelated-a.ts'
+refute_contains "nor the second of them"                                    "$out" 'ancient/unrelated-b.ts'
+assert_contains "and the scope that does match is still reported" "$out" 'scope: touches: and the commits since the claim agree'
+
+echo "0144 AC3 — an id claimed twice under different tokens anchors on this token's claim"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0701 | Re-entered | verify | in-progress | 0000 |'
+mkitem 0701 verify in-progress '"cd34"' '[]'
+mkdir -p "$FIX/some/reserved"
+printf 'declared\n' > "$FIX/some/reserved/file.md"
+commit_fixture
+# The superseded pass: same ticket, a different token, and work this pass did not do.
+git -C "$FIX" commit -q --allow-empty -m "Claim 0701 [ab12]"
+mkdir -p "$FIX/earlier"
+printf 'a\n' > "$FIX/earlier/first-pass.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Build 0701 [ab12]"
+git -C "$FIX" commit -q --allow-empty -m "Claim 0701 [cd34]"
+printf 'declared and edited\n' > "$FIX/some/reserved/file.md"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Build 0701 [cd34]"
+out="$(run_close 0701 cd34)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+refute_contains "the superseded pass's file is not charged to this one" "$out" 'earlier/first-pass.ts'
+assert_contains "and this pass's own scope agrees" "$out" 'scope: touches: and the commits since the claim agree'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
