@@ -341,3 +341,18 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   keeps the file inside its own sweep. Worth a line in `testing-conventions.md` beside the existing
   "a check that filters for a set and then asserts over it" rule, which is the same failure reached
   by the other route (pointer: `tests/sprint.test.sh` 0129 block).
+
+- 2026-09-10 (verify, 0129) — **`tools/release verify` compares the install against `HEAD`, not
+  against the released commit, so it goes red on every backlog commit that lands after a release.**
+  AC6 names it as the check that the version bump re-extracted the bytes. Run one release and three
+  claim commits later, it reported `FAILED -- the install does not hold 7726456` with three
+  differing paths — `.claude/backlog/QUEUE.md`, `items/0107-…` (another session's claim) and
+  `items/0129-…` (this stage's own claim) — plus `record FAILED -- gitCommitSha is 59d4b2d but the
+  verified commit is 7726456`, where 59d4b2d is in fact the released commit and the record is
+  correct. Every one of those is backlog state, none is product, and in a repo where two sessions
+  claim rows continuously the tool is red within minutes of the release it exists to verify. The
+  substituted check that answers the real question costs one worktree: `git worktree add --detach
+  <path> <released-sha>` then `diff -rq <path> <install>` — 230 paths identical, only `.in_use`
+  extra. Either the tool should take the released SHA as an argument, or it should compare only
+  tracked paths outside `.claude/backlog/`. Needs a row (pointer: `tools/release`, `CLAUDE.md`
+  *When asked to release*, items/0129 AC6).
