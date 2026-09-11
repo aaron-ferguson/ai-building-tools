@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0052 | Require an acceptance criterion to name the input that would make it red | bug | unit | 2026-09-11 | [items/0052-acceptance-criteria-must-be-falsifiable.md](items/0052-acceptance-criteria-must-be-falsifiable.md) |
 | 0129 | Rename orchestrate to sprint and leave the old command resolving | chore | verify | 2026-09-11 | [items/0129-rename-orchestrate-to-sprint.md](items/0129-rename-orchestrate-to-sprint.md) |
 | 0148 | Make the internal-name guard red rather than green when its own pattern will not compile | bug | unit | 2026-09-11 | [items/0148-red-on-a-name-list-pattern-that-will-not-compile.md](items/0148-red-on-a-name-list-pattern-that-will-not-compile.md) |
 | 0142 | Let the driver see the drift classes that stop a human reader | bug | unit | 2026-09-11 | [items/0142-drive-cannot-see-drift.md](items/0142-drive-cannot-see-drift.md) |

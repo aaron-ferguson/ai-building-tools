@@ -2,8 +2,8 @@
 id: "0052"
 title: Require an acceptance criterion to name the input that would make it red
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -16,9 +16,10 @@ expects:
   - skills/verify/SKILL.md
   - skills/queue/templates/item.md
   - tests/citations.test.sh
-claimed_by: "d3b6"
-claimed_at: 2026-09-11T21:50:22Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-11
 ---
 
 ## Problem
@@ -103,21 +104,21 @@ a red. Both cases were live in one ticket.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/queue/SKILL.md`'s acceptance-criteria step, when read, then it requires
+- [x] AC1 — Given `skills/queue/SKILL.md`'s acceptance-criteria step, when read, then it requires
   each AC to name what would make it red.
-- [ ] AC2 — Given that step, when read, then it names the tolerance-too-wide, the cardinality and
+- [x] AC2 — Given that step, when read, then it names the tolerance-too-wide, the cardinality and
   the wrong-side-mutation shapes.
-- [ ] AC3 — Given that step, when read, then it requires a QA plan's absence assertions to be
+- [x] AC3 — Given that step, when read, then it requires a QA plan's absence assertions to be
   checked against shipped guards.
-- [ ] AC4 — Given `skills/verify/SKILL.md` Step 3, when read, then it separates an unchanged named
+- [x] AC4 — Given `skills/verify/SKILL.md` Step 3, when read, then it separates an unchanged named
   outcome from an unchanged message, and calls only the first unverified.
-- [ ] AC5 — Given `skills/queue/templates/item.md`, when its acceptance-criteria section is read,
+- [x] AC5 — Given `skills/queue/templates/item.md`, when its acceptance-criteria section is read,
   then it carries the name-what-would-red requirement.
-- [ ] AC6 — Given every convention citation added by this ticket, when `tests/citations.test.sh`
+- [x] AC6 — Given every convention citation added by this ticket, when `tests/citations.test.sh`
   runs, then each resolves.
-- [ ] AC7 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
+- [x] AC7 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
   then every suite passes.
-- [ ] AC8 — Given `tests/skill-size.test.sh`, when it runs after these additions, then either every
+- [x] AC8 — Given `tests/skill-size.test.sh`, when it runs after these additions, then either every
   skill file is within its goal or the one that is not carries a recorded justification naming this
   ticket.
 
