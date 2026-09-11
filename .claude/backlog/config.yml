@@ -27,6 +27,27 @@ next_id: 150
 # number to make the gate quiet would hide exactly what it exists to show (0036).
 findings_threshold: 8
 
+# The gate's SECOND limit: how many COMPLETED SPRINTS the oldest unswept finding may survive before
+# the tail runs whatever the count says. Either limit crossed dispatches the tail (0133 FR2).
+#
+# WHY A SECOND LIMIT. The count alone is silent on a project that parks two findings a sprint: it
+# never reaches eight, so the buffer is never swept and its lessons are never landed. This one
+# fires on time served.
+#
+# WHY SPRINTS RATHER THAN DAYS. The gate is only evaluated when a sprint ends, so a calendar window
+# and a sprint count fire identically on the next sprint whenever it comes — and a dormant
+# project's calendar clock runs with nothing there to read it. Measured on this repo: 21 active
+# days in the 25 to 2026-09-08, longest idle gap two days, so a window would have bought nothing.
+#
+# INTERIM, AND SET WITH THE THRESHOLD ABOVE OR ONE OF THEM GOES DEAD. At this repo's rate the count
+# crosses first and this limit rarely fires, which is correct — the rate here is inflated because
+# the tickets are about the tooling. 0135 is what records findings-parked-per-sprint and retro
+# yield, and both numbers are re-derived from that rather than defended.
+#
+# A completed sprint is a run log under `runs/` carrying a `sprint_ended` event, not a run log
+# file: a supervisor killed mid-run offered the buffer no opportunity and is not counted.
+findings_max_sprints: 2
+
 # How long a held `.claude/backlog/.lock/` may be before a driver escalates instead of waiting on
 # it (`sprint` Step 7). A lock in use is held for seconds; every figure above it is a stage
 # that died holding it, which blocks every future claim and close in the repo until a human clears

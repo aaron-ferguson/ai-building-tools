@@ -36,9 +36,23 @@ next_id: 1
 # retro instead. Read by `./next --findings` (which reports it) and `./next --drive` (which gates
 # on it, exit code 5). The default matches retro's stated cadence of about eight entries; raise it
 # on a project whose tickets are about a product rather than about this tooling, where the rate is
-# inflated because every ticket surfaces a tooling defect. Only the COUNT is read — retro's "or
-# weekly if the buffer fills slower" has no fixture and stays a human's judgement.
+# inflated because every ticket surfaces a tooling defect.
 findings_threshold: 8
+
+# The gate's SECOND limit: how many COMPLETED SPRINTS the oldest unswept finding may survive before
+# the tail runs whatever the count says. Either limit crossed dispatches the tail (0133 FR2), and
+# this is the half that covers retro's "or weekly if the buffer fills slower" — a project parking
+# two findings a sprint never reaches the threshold above, so without this its buffer is never
+# swept and the lessons in it are never landed.
+#
+# SPRINTS RATHER THAN DAYS, because the gate is only ever evaluated when a sprint ends: a dormant
+# project's calendar clock runs with nothing there to read it, so a window and a sprint count fire
+# identically on the next sprint whenever it comes. A completed sprint is a run log under `runs/`
+# carrying a `sprint_ended` event — a supervisor killed mid-run offered the buffer no opportunity.
+#
+# SET IT WITH THE THRESHOLD ABOVE or one of the two goes dead: they should roughly coincide at the
+# project's own parking rate. Raise this one on a project whose sprints are long.
+findings_max_sprints: 2
 
 # How long a held `.claude/backlog/.lock/` may be before a driver escalates instead of waiting on
 # it (`sprint` Step 7). Seconds. A lock in use is held for seconds; anything far above that is

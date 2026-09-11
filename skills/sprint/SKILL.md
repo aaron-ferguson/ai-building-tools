@@ -289,6 +289,15 @@ next action does not change at all; what is lost is the record, not the position
 `--drive`'s completed-outcome input, which needs to know a stage finished in between. What already
 completed, never what to do next.
 
+**One fact crosses runs, and it is named here because it is the exception.** `findings_max_sprints`
+counts `sprint_ended` events across the whole of `runs/`, so the *history* of completed runs is an
+input to the findings gate (`./next`, `sprints_since`). Everything above still holds for the
+supervisor: it reads no log to place itself, and deleting the history moves no ticket. What deleting
+it does move is the age half of the findings gate, which resets — the count half is untouched, and
+the direction of the error is a tail that fires later rather than one that fires on nothing. The
+supervisor may not keep this fact anywhere else: a counter in `config.yml` beside `next_id` would be
+a backlog write, and Step 7 forbids it the lock every such write needs.
+
 **A supervisor killed mid-cycle leaves a backlog a hand-driven session can pick up**, and that
 falls out of holding no row: `./next` offers a takeable row, `./next --drift` exits zero, and any
 claim belongs to a stage process that made it and is responsible for releasing it. If a killed
@@ -299,17 +308,44 @@ tokens* — never a row to take over.
 
 ## Step 6 — The findings gate, and the end of the run
 
-**The gate stops dispatch and fires once per run.** When `./next --findings` reaches the project's
-threshold, start no further stage session, let any running one finish, and dispatch a `retro`
-context. Log the crossing as one line.
+**The gate stops dispatch and fires once per run.** When `./next --findings` crosses either limit,
+start no further stage session, let any running one finish, and dispatch the tail. Log the crossing
+as one line, naming which limit crossed.
+
+**Two limits, whichever comes first.** The count against `findings_threshold`, and the oldest
+unswept entry's age in **completed sprints** against `findings_max_sprints`. The second is not
+redundant: a project parking two findings a sprint never reaches a threshold of eight, so without
+it that buffer is never swept and the lessons in it are never landed. `./next --findings` reports
+both and `--drive` spends exit `5` on either, saying which.
+
+**An uncrossed gate dispatches neither tail stage, and the findings carry forward untouched** to be
+swept by a later sprint alongside its own. A sprint that parks nothing ends with no tail at all: the
+tail is roughly **$6.75** against a one-ticket sprint that may itself cost less, and an
+unconditional one spends that on a buffer with nothing in it. **Mark nothing on the way past** — an
+entry the sprint did not process is not the sprint's to disposition, and a marked one makes the next
+gate read low.
+
+**The tail is `retro`, and then `queue`.** Dispatching only the retro is the asymmetry `0060` opens
+on, arriving as a dispatch: `retro` is the terminal sweeper for the *lesson* half and only a `queue`
+sweep can take the *work* half, so a tail of one leaves the buffer holding what it came to clear.
+**Each runs with no other stage session running**, including each other — both rewrite the skills
+and the backlog scripts every other session is executing, and a stage that resolved its instructions
+before the rewrite is running a version nothing else in the repo agrees with.
 
 **Once per run, and a completed retro does not re-arm it.** `retro`'s own closing step parks what
 surprised *it*, so a supervisor that re-derives statelessly afterwards can read a count and
-dispatch again, which parks more. The run is over at the retro either way; evaluating the gate once
-is what makes that true in the unplanned case too.
+dispatch again, which parks more. The run is over at the tail either way; evaluating the gate once
+is what makes that true in the unplanned case too. **This covers the whole tail**, not the retro
+alone: re-reading the count between the retro and the queue sweep asks the same question a second
+time and gets the retro's own parkings for an answer.
 
-**The run ends at the retro, and the release chain is handed over as a checklist.** See the retro's
-edits committed, then stop. **No push, no version bump, no install, no restart, and no further
+**Write the run's ending as a `sprint_ended` event** (Step 5), whichever way it ends. That event is
+what `findings_max_sprints` counts — a completed sprint is a run log carrying one, never a run log
+file, because a supervisor killed mid-run offered the buffer no opportunity to be swept. Unwritten,
+this run does not count and the age limit silently measures one sprint short.
+
+**The run ends at the tail, and the release chain is handed over as a checklist.** See the retro's
+and the queue sweep's edits committed, then stop. **No push, no version bump, no install, no restart, and no further
 stage** — report every remaining step of the chain `retro`'s durability step names, each marked
 done or outstanding, so no step can go silently missing. A chain reported as a sentence is a chain
 with a step missing; the installed copy diverging from source at the same version number is exactly

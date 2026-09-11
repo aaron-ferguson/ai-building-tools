@@ -1054,6 +1054,15 @@ if grep -qF 'exactly three things' "$SKILL"; then
 else
   bad "AC17 — the skill does not bound what the log is read for"
 fi
+# 0133 narrowed that bound rather than leaving it false: `findings_max_sprints` counts
+# `sprint_ended` events across every run, so the run HISTORY is an input to the findings gate even
+# though the supervisor still places itself without reading a log. An unnamed exception is the
+# worse artifact — the sentence above reads correctly on its own while a reader acts on it.
+if grep -qF 'One fact crosses runs' "$SKILL" && grep -qF 'findings_max_sprints' "$SKILL"; then
+  ok "AC17 — and names the one cross-run exception to it"
+else
+  bad "AC17 — the log's cross-run reader is unnamed, so \"delete the log and nothing changes\" reads as true where it is not"
+fi
 
 echo "AC21 — the report carries what the run learned"
 
@@ -1609,6 +1618,88 @@ if [ -f "$ALIAS" ]; then
   done
 else
   bad "AC3 — commands/$OLD.md is absent: /$OLD resolves to nothing on every machine that has it installed"
+fi
+
+# --- 0133 — the tail is earned, and it is two stages -------------------------------------------
+#
+# WHAT THESE CASES ARE. The two config cases are behavioural: they read the real files and the
+# script's own default, and a bare number or a drifted template reds them. The rest are greps over
+# Step 6, honest about being greps — they prove the rule is written down, never that a supervisor
+# obeyed it. That split is this file's own convention, stated in its header.
+
+echo "0133 AC6 — both findings limits carry their derivation, in both copies of config.yml"
+
+# The contiguous comment block immediately above $2 in $1, and nothing else. Extracting the block
+# is what makes this falsifiable: delete the reasoning and the key becomes the bare number AC6
+# exists to forbid, with the assertion reading empty rather than reading the file's other prose.
+comment_above() {
+  awk -v key="$2" '
+    /^#/   { if (!started) { started = 1; block = "" } ; block = block $0 "\n"; next }
+    /^$/   { started = 0; block = ""; next }
+    $0 ~ "^" key ":" { printf "%s", block; exit }
+    { started = 0; block = "" }
+  ' "$1"
+}
+
+for cfg in "$ROOT/.claude/backlog/config.yml" "$ROOT/skills/queue/templates/config.yml"; do
+  cfgname="${cfg#$ROOT/}"
+  for key in findings_threshold findings_max_sprints; do
+    if awk -v k="$key" '$0 ~ "^" k ":" { found = 1 } END { exit !found }' "$cfg"; then
+      ok "$cfgname carries $key"
+    else
+      bad "0133 AC6 — $cfgname has no $key; a driver then gates on a number no project can see"
+    fi
+    block="$(comment_above "$cfg" "$key")"
+    if [ -n "$block" ]; then
+      ok "  and states where the number came from"
+    else
+      bad "0133 AC6 — $key in $cfgname is a bare number: raising it later is a preference rather than an argument"
+    fi
+  done
+done
+
+echo "0133 FR4 — the template ships the script's own default, not a second opinion"
+# DERIVED FROM THE SCRIPT, never restated. A literal here would guard the day it was written and
+# nothing after: the two could drift apart and this case would hold at every value of either.
+script_default="$(awk -F= '/^MAX_SPRINTS=/ { print $2; exit }' "$ROOT/skills/queue/templates/next")"
+template_value="$(awk '/^findings_max_sprints:/ { v = $2; sub(/#.*/, "", v); print v; exit }' \
+  "$ROOT/skills/queue/templates/config.yml")"
+if [ -n "$script_default" ] && [ "$script_default" = "$template_value" ]; then
+  ok "template findings_max_sprints ($template_value) matches the script default"
+else
+  bad "0133 FR4 — the template ships '$template_value' against a script default of '$script_default'; a fresh backlog then gates on a number neither file agrees with"
+fi
+
+echo "0133 AC1/AC2/AC4/AC5 — Step 6 says when the tail runs, what it is, and what it leaves alone"
+
+# SCOPED TO STEP 6. A file-wide grep for these words pins vocabulary rather than the step that
+# carries the rule, and `retro` and `queue` both appear all over this skill.
+step6="$(awk '/^## Step 6 /{ inside = 1; next } /^## Step 7 /{ inside = 0 } inside' "$SKILL")"
+
+if printf '%s' "$step6" | grep -qF '`retro`, and then `queue`'; then
+  ok "AC2 — the tail is retro and then queue, in that order"
+else
+  bad "0133 AC2 — Step 6 does not name queue as the tail's second half; retro lands the lesson halves and only a queue sweep takes the work halves"
+fi
+if printf '%s' "$step6" | grep -qF 'no other stage session running'; then
+  ok "AC2 — and each runs with no other stage session running"
+else
+  bad "0133 AC2 — Step 6 does not serialise the tail against the stages; both rewrite the skills and scripts every other session is executing"
+fi
+if printf '%s' "$step6" | grep -qF 'findings_max_sprints'; then
+  ok "AC3 — Step 6 names the age limit as a way across the gate"
+else
+  bad "0133 AC3 — Step 6 gates on the count alone, which strands an old finding indefinitely on a low-yield project"
+fi
+if printf '%s' "$step6" | grep -qF 'carry forward untouched'; then
+  ok "AC4 — an uncrossed gate leaves the buffer alone"
+else
+  bad "0133 AC4 — Step 6 does not say the findings carry forward untouched; a sprint marking entries it did not process makes the next gate read low"
+fi
+if printf '%s' "$step6" | grep -qF 'dispatches neither'; then
+  ok "AC1 — and dispatches neither tail stage"
+else
+  bad "0133 AC1 — Step 6 does not state that an uncrossed gate runs NO tail, which spends about \$6.75 on a buffer with nothing in it"
 fi
 
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
