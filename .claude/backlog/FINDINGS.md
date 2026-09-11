@@ -356,3 +356,38 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   extra. Either the tool should take the released SHA as an argument, or it should compare only
   tracked paths outside `.claude/backlog/`. Needs a row (pointer: `tools/release`, `CLAUDE.md`
   *When asked to release*, items/0129 AC6).
+
+- 2026-09-10 (develop, 0107) — **`./next <stage>` prints a row as TAKE and prints, in the same
+  breath, the held set that row collides with.** `./next develop` offered `0132`, whose `expects:`
+  names `skills/orchestrate/SKILL.md`, directly under `CLAIMED FILES — 0129 [841c] none declared;
+  predicted by expects: skills/orchestrate/SKILL.md … — assume held, ask`. Takeability's fourth test
+  compares against a held row's `touches:`, and `0129`'s is empty, so the *predicted* set the script
+  computes and prints for a human is not fed back into its own COLLIDES test. `CONCURRENCY.md` says
+  to read an empty `touches:` on an in-progress row as *its files are held*, so the script contradicts
+  the protocol it implements — and it fails in the direction that steers a session INTO the
+  collision, since TAKE is the line a session acts on. The same call would have handed `0133`, `0134`
+  and `0135` too, all of which name that file. Needs a row (pointer: `.claude/backlog/next`,
+  takeability's fourth test; `references/CONCURRENCY.md`, *The working tree is shared too*).
+
+- 2026-09-10 (develop, 0107) — **the paragraph-window helper in `tests/falsifiable-acs.test.sh`
+  carries a guard clause that can never fire.** `window()` reads
+  `inw && $0 ~ endre && !first { exit }` with the body then setting `first = 0`. `first` is unset
+  (falsy) on entry and `0` (also falsy) ever after, so `!first` is true on every line and the clause
+  protects nothing — its evident purpose, stopping the window exiting on its own opening line when
+  that line also matches the end regex, is not achieved. Nothing currently triggers it because no
+  case pairs a start phrase with an end regex the start line satisfies, which is exactly why it will
+  be trusted by whoever writes the case that does. `first = 1` is the fix. Needs a row (pointer:
+  `tests/falsifiable-acs.test.sh`, `window()`).
+
+- 2026-09-10 (develop, 0107) — **four open tickets carry `expects:` paths that the `0129` rename
+  deleted, and nothing in the lifecycle re-points them.** `0132`, `0133`, `0134` and `0135` all name
+  `skills/orchestrate/SKILL.md`, and `0134` also names `tests/orchestrate.test.sh`; both paths are
+  gone since `bb8b778` renamed the skill to `sprint`. `queue` writes `expects:` at capture and only a
+  claiming session rewrites it, so a rename leaves every unclaimed row downstream pointing at
+  nothing — which both defeats the file-scope check (a path that cannot collide with anything) and
+  is the reservation-of-a-nonexistent-path problem `0147` is already ranked for, arriving from the
+  other direction. `CONCURRENCY.md`'s *A change that touches every file* rule says a rename rewrites
+  the items of tickets that are open and unheld; that did not happen here. These still need a row —
+  none was written, and a stage may only write the ticket it holds. Needs a row (pointer:
+  items/0132, 0133, 0134, 0135 `expects:`; `references/CONCURRENCY.md`; items/0147).
+

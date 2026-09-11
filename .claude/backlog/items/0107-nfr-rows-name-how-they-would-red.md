@@ -70,9 +70,9 @@ check at queue time rather than a test per row — the same shape `0052` chose f
 
 ## Non-functional requirements
 
-| Dimension | Requirement for this item | Convention |
-|---|---|---|
-| Documentation | The template's NFR preamble states the requirement where the table is filled, not elsewhere | `documentation-conventions.md` |
+| Dimension | Requirement for this item | How it would red | Convention |
+|---|---|---|---|
+| Documentation | The template's NFR preamble states the requirement where the table is filled, not elsewhere | `tests/falsifiable-acs.test.sh`, case *AC1 — the preamble requires it*, reds when the sentence is deleted from the template's NFR window — Mutation E below, 32/2 | `documentation-conventions.md` |
 
 ## Acceptance criteria
 
@@ -125,3 +125,65 @@ check at queue time rather than a test per row — the same shape `0052` chose f
   in `verify` Step 4 asks whether a checked NFR is *guarded* as opposed to merely true today, so a
   template requirement that a row name how it would red is only half the fix if the checking stage
   never asks for it.
+
+### 2026-09-10 — Built (token 6a08)
+
+**The rule landed as a fourth column rather than as a sentence, and that is what makes FR4
+checkable.** An NFR row had two states before this — filled or deleted — and FR4 asks for a third:
+answered, but with prose because no artifact exists yet to assert against. A sentence in the
+preamble cannot distinguish those; a column can, because the cell is either empty (unanswered), a
+named check, or the literal `prose only — no artifact yet`. This ticket's own Documentation row is
+written in the new form above, which is the cheapest demonstration available and the reason the
+table was not left for the next ticket to fill.
+
+**`in_window` was the wrong instrument and this ticket did not need to be the one to find that
+out — `0059` had already paid for it.** Its build notes record a line-based `present` going red on
+untouched prose the moment a rewrapped paragraph split the asserted phrase across a line break, and
+`batching.test.sh` grew `says`/`says_not`/`binds` in response. `falsifiable-acs.test.sh` never got
+the same treatment, so every case here was one reflow away from a false red. The new `says()` in
+this file matches on the window flattened to one logical line, which is the same answer arrived at
+independently; the two files now have parallel matchers and neither knows about the other.
+**Worth noting for whoever unifies them:** `says()` additionally *counts*, which `batching.test.sh`
+does not, because this ticket's QA plan asked for the count explicitly.
+
+**The count is not decoration — it is the half of the QA plan that has teeth.** The plan warned
+that a phrase occurring twice inside the extracted section is as unfalsifiable as one occurring
+twice in the file. That is not hypothetical here: `verify` Step 4 already contains
+*gap in the ticket*, which was the natural phrase for the new unguarded-row clause. Asserting it
+would have produced a case that stayed green when the new clause was deleted, because the old
+sentence keeps the phrase alive inside the same window. The clause is worded
+*flag the row as unguarded* for that reason, and `says()` would have reddened the collision rather
+than shipping it silently.
+
+**AC6's two halves need two different mutations, and only the second one tests the claim.** Deleting
+the clause from Step 4 reds the guard (3 failures) — but so would a file-wide grep, so that proves
+nothing about scoping. The mutation that does is **moving** the clause into Step 5: the file still
+contains `flag the row as unguarded` (`grep -c` → 1) and the guard still reds 3. That is the
+difference between pinning vocabulary and pinning structure (`testing-conventions.md`, *anchor an
+assertion to the claim, not to the document that contains it*).
+
+**Mutations, all against the committed tree at `32fdd42`, each restored by path with a control run
+after it** (`develop` Step 5 — `git checkout --` restores to `HEAD`, so the fix is committed before
+anything is broken). Control after every restore: `34 passed, 0 failed`, `git status --porcelain`
+empty.
+
+| # | Mutation | Result |
+|---|---|---|
+| A | AC5 — the requirement sentence deleted from `queue`'s NFR step | `32 passed, 2 failed` |
+| B | AC6 — the falsifiability clause deleted from `verify` Step 4 | `31 passed, 3 failed` |
+| C | AC6 scoping — the same clause **moved** into Step 5, still present in the file | `31 passed, 3 failed` |
+| D | AC1 — the template table reverted to three columns | `33 passed, 1 failed` |
+| E | AC4/FR4 — the permitted prose form deleted from the template | `32 passed, 2 failed` |
+
+**Whole suite green, 29 files, 0 failed in every tally** — baseline taken before the first edit was
+identical except `falsifiable-acs.test.sh` at 17, now 34.
+
+**Not done, and deliberately:** the existing `in_window` cases were left on the line-based matcher
+rather than migrated to `says()`. Migrating them is a change to `0052`'s guarded claims with no
+ticket behind it, and `0063` — *Give the prose guards a matcher that survives a rewrap* — is already
+ranked for exactly that. This ticket adds the matcher that ticket will want; it does not pre-empt
+its scope.
+
+**Also not done:** the NFR tables of tickets already queued still have three columns. The template
+governs what `queue` writes next, and rewriting other tickets' item files is forbidden to a stage
+holding only this one (`CONCURRENCY.md`, *A stage writes only the ticket it holds*).
