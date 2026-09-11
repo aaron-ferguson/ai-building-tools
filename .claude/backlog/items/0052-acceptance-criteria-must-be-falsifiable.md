@@ -261,62 +261,57 @@ Four entries, and each names a shape FR2's list does not yet carry.
   `queue`, because the remaining eight-ninths of the contract is discharged and re-specifying the
   whole ticket would discard that; a `queue` pass that only rewrites `AC7` is the cheaper move.
 
+- 2026-09-11 (verify, claim `d3b6`) — **PASS, and `AC7` was settled by pinning rather than by a
+  contract change.** The previous pass was right that the glob cannot be answered against a tree a
+  sibling session is writing; what it did not take is the state `verify` Step 2 already provides for
+  exactly this — a whole-project gate run in a `git worktree` at a named commit. `AC7` is green at
+  `7c0e7fa`, all 29 suites, and no evidence-set file changed between that SHA and `426e8e2`. **`AC7`
+  is still a weak criterion** and the ticket's own FINDINGS entry says so; pinning discharges it
+  without repairing it, and enumerating the suites it means remains a fair `queue` row. It is not a
+  blocker, so it is not this session's to force.
+
 ## QA evidence
 
-Verified 2026-09-11 by `verify` session, claim token `504f`, at `qa_level: unit`. Skill prose is
-the subject, so the **repo copy is the authority**; the installed copy executing this session is
-`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.25`, whose only delta from the
-repo on these three files is `0107`'s unreleased NFR work — `0052`'s prose is present in both.
+Verified 2026-09-11 by `verify` session, claim token `d3b6`, at `qa_level: unit`. Skill prose is the
+subject, so the **repo copy is the authority**; the installed copy executing this session is
+`~/.claude/plugins/cache/ai-building-tools/ai-building-tools/0.9.25`, which differs from the repo on
+all three files (later tickets' unreleased work) but carries `0052`'s own prose in each — one match
+per file for the three phrases `AC1`, `AC4` and `AC5` rest on.
 
-Every mutation below was confirmed to land (non-empty `git diff`) before its result was believed,
-and restored by its own path with a control run after it.
+Step 2 capture: `HEAD` `4af29dc`, dirty set `skills/sprint/SKILL.md` and `tests/sprint.test.sh`
+(claim `9265`, ticket `0133`). Every mutation below was confirmed to land (non-empty `git diff --stat`)
+before its result was believed, was restored by its own path, and was followed by a control run.
 
 | Row | How it was checked | Result |
 |---|---|---|
-| AC1 | `tests/falsifiable-acs.test.sh` cases "the step asks for what would make an AC red" / "refuses one for which nothing can be named", scoped to `queue`'s acceptance-criteria step. Mutation: `Name what would make each AC red` → `…green` in `skills/queue/SKILL.md` | PASS — guard exit 1, `33 passed, 1 failed`, naming the expected phrase |
-| AC1 (scope) | Altitude check on the guard's own claim that its window is structural: moved the phrase out of the step to end of file, leaving it present file-wide (`grep -c` = 1) | PASS — still red, `33 passed, 1 failed`. The window is structural, not a file-wide grep |
-| AC2 | Guard cases for the three named shapes. Mutation: `A cardinality claim over a set the ticket does not own` → `A cardinality claim of some kind` | PASS — guard exit 1, `33 passed, 1 failed` |
-| AC3 | Guard case "absence assertions checked against shipped guards". Mutation: `Check a QA plan's absence assertions against the guards already shipped` → `Consider the QA plan` | PASS — guard exit 1, `33 passed, 1 failed` |
-| AC4 | Guard cases over `verify` Step 3's window. Mutation: `named outcome, or only the message` → `outcome or the message` in `skills/verify/SKILL.md` | PASS — guard exit 1, `33 passed, 1 failed` |
-| AC5 | Guard case over `templates/item.md`'s acceptance-criteria window. Mutation: `Each criterion names what would make it red` → `Each criterion is clear` | PASS — guard exit 1, `33 passed, 1 failed` |
-| AC6 | `tests/citations.test.sh` — live mutation of the citation this ticket added at `skills/queue/SKILL.md:332`, `testing-conventions.md` → `absent-conventions.md` | PASS — exit 1, `45 passed, 1 failed`: *"skills/queue/SKILL.md cites \"absent-conventions.md\", which is not a file in …/ai-building-conventions"*. Control `46 passed, 0 failed` |
-| AC7 | Whole suite, 29 files run individually. Green at `115f0a5` (clean tree, all 29 exit 0). **Not reproducible at verdict time** — see below | **ADVISORY** |
-| AC8 | `tests/skill-size.test.sh`. `skills/verify/SKILL.md` is 37704 bytes, over the 20190 goal, and carries the justification naming `0052`. Mutation at the AC's altitude: deleted that justification entry | PASS — exit 1, `24 passed, 2 failed`, naming the overage and *"has no recorded justification"*. Control `27 passed, 0 failed` |
-| NFR Documentation | The three rules are cited, not copied: *anchor an assertion to the claim*, *assert membership never cardinality*, *break the definition never the expectation* all verified present at `testing-conventions.md:15`. How it would red: the AC6 mutation above, which names the file, the citation and the directory | PASS |
-| NFR Progressive delivery | The release is the version bump and the install (`CLAUDE.md`). Plugin at `0.9.25`; `diff` of repo `skills/` against the resolved install confirms `0052`'s prose is live in the installed copy | PASS |
+| AC1 | `tests/falsifiable-acs.test.sh`, cases scoped to `queue`'s acceptance-criteria step. Mutation: `**Name what would make each AC red**` → `**Name what each AC checks**` | PASS — exit 1, `33 passed, 1 failed`, naming the expected phrase |
+| AC1 (scope) | Altitude check on the guard's claim that its window is structural: the same mutation, with the phrase re-added at end of file so `grep -c` over the file is 1 | PASS — still `33 passed, 1 failed`. The window is structural, not a file-wide grep |
+| AC2 | Three separate mutations, one per named shape: `A tolerance wider than the effect it measures` → `A tolerance of some width`; `A cardinality claim over a set the ticket does not own` → `A cardinality claim of some kind`; `on the far side of the boundary under test` → `on the near side of the thing` | PASS — each exit 1, `33 passed, 1 failed`, each naming its own shape |
+| AC3 | Guard case "absence assertions checked against shipped guards". Mutation: `Check a QA plan's absence assertions against the guards already shipped` → `Note the QA plan's absence assertions` | PASS — exit 1, `33 passed, 1 failed` |
+| AC4 | Guard cases over `verify` Step 3's window. Mutation: `named outcome, or only the message` → `outcome or the message` in `skills/verify/SKILL.md` | PASS — exit 1, `33 passed, 1 failed` |
+| AC5 | Guard case over `templates/item.md`'s acceptance-criteria window. Mutation: `Each criterion names what would make it red` → `Each criterion is testable` | PASS — exit 1, `33 passed, 1 failed` |
+| AC6 | `tests/citations.test.sh`. Mutation of the citation this ticket added in `queue`'s step: `` `testing-conventions.md`'s; three shapes `` → `` `absent-conventions.md`'s; three shapes `` | PASS — exit 1, `45 passed, 1 failed`: *"skills/queue/SKILL.md cites \"absent-conventions.md\", which is not a file in /Users/aaronferguson/AI/ai-building-conventions"*. Control `46 passed, 0 failed` |
+| AC7 | Whole suite in a `git worktree` pinned at **`7c0e7fa`**, 29 files run individually: every one exit 0. Run pinned rather than in the checkout because the glob is a whole-project gate and the Step 2 dirty set intersects it (`tests/sprint.test.sh`). No evidence-set file changed between `7c0e7fa` and `426e8e2` | PASS — 29/29 exit 0 at a named SHA |
+| AC8 | `tests/skill-size.test.sh`. `skills/verify/SKILL.md` is 37704 bytes against the 20190 goal and carries the justification naming `0052`. Mutation at the AC's altitude: repointed that justification's case label to a path that no longer matches | PASS — exit 1, `24 passed, 2 failed`, naming the overage and *"0035 AC4 — skills/verify/SKILL.md has no recorded justification"*. Control `27 passed, 0 failed` |
+| NFR Documentation | Cited, not copied: *anchor an assertion to the claim*, *assert membership never cardinality* and *break the definition never the expectation* all present at `testing-conventions.md:15`; `queue`'s step says *"The underlying rules are `testing-conventions.md`'s"* rather than restating them. How it would red: the AC6 mutation above, which names the file, the citation and the directory | PASS |
+| NFR Progressive delivery | The release is the version bump and the install (`CLAUDE.md`). Plugin at `0.9.25`; `0052`'s three phrases each match once in the resolved install directory, so the prose is live | PASS |
 
-**Step 4, newly reachable states:** none. The change is prose in three skill files — no routing,
-visibility, permission or destructive-action surface is added. Always-on pass against
-`CONVENTIONS_CORE.md`: no secrets, no company material (this repo is public), no log field,
+**Step 4, newly reachable states:** none. The change is prose in three skill files plus three guard
+files — no routing, visibility, permission or destructive-action surface is created. Always-on pass
+against `CONVENTIONS_CORE.md`: no secrets, no company material (this repo is public), no log field,
 analytics event or egress destination, no auth or data-visibility surface, no UI.
 
-### Why this is ADVISORY and not a PASS
+**Advisory derivation.** Step 2's dirty set was `skills/sprint/SKILL.md` and `tests/sprint.test.sh`.
+Neither was read or executed by any row above: `AC1`–`AC6` and `AC8` rest on
+`skills/queue/SKILL.md`, `skills/verify/SKILL.md`, `skills/queue/templates/item.md`,
+`tests/falsifiable-acs.test.sh`, `tests/citations.test.sh` and `tests/skill-size.test.sh`, all clean
+at every capture; `AC7` rests on the pinned worktree at `7c0e7fa`, not on the checkout. **Intersection
+empty.** `0133` committed both dirty files during the pass (`7c0e7fa`, then `b1df91b` and `426e8e2`),
+and the fresh capture taken after the last evidence command was clean — but the label is computed
+from the Step 2 capture regardless.
 
-`AC7` reads *"given the whole suite, when `for t in tests/*.test.sh` runs, then every suite passes"*.
-That glob is the evidence set, and throughout this pass another session — claim `9265`, ticket
-`0133` — was building inside it. Observed in sequence at one clean starting point:
-
-- Step 2 capture: tree **clean** at `115f0a5`; all 29 suites exit 0.
-- Verdict-time capture: `tests/next.test.sh` and `.claude/backlog/next` dirty; `tests/next.test.sh`
-  reporting `400 passed, 13 failed` — an in-progress TDD red, not a defect.
-- Pinned at `f3101f3` in a `git worktree`, `tests/next.test.sh` standalone: `393 passed, 0 failed`.
-  The red was entirely the uncommitted work.
-- `.claude/backlog/config.yml` then changed underneath the pass (`findings_max_sprints` added), and
-  by the final capture the dirty set had moved again to `config.yml`,
-  `skills/queue/templates/config.yml`, `skills/sprint/SKILL.md` and `tests/sprint.test.sh`.
-
-So the intersection of the dirty set with `AC7`'s evidence set is **non-empty**, and it was non-empty
-under three different dirty sets in one session. Nothing here is evidence against this ticket:
-`AC1`–`AC6` and `AC8` are green with landed mutations, and their own evidence files
-(`skills/queue/SKILL.md`, `skills/verify/SKILL.md`, `skills/queue/templates/item.md`,
-`tests/falsifiable-acs.test.sh`, `tests/citations.test.sh`, `tests/skill-size.test.sh`) were clean at
-every capture. What cannot be had right now is an honest whole-suite answer, because the set `AC7`
-quantifies over is being written while it is quantified.
-
-**This ticket's own notes predicted this.** The `FINDINGS 2026-08-30` entry landed at `d655d8e`
-records that `0044`'s identical glob AC was verified while another session added an unfinished
-guard, says *"a glob names no input"*, and ends: *"this ticket's own AC7 is exactly that glob … whoever
-builds this decides whether the rule applies to itself."* The build left it a glob, and it is now the
-one criterion of the eight that cannot be settled. Pinning `AC7` to a commit, or enumerating the
-suites it means, is what would make it closeable — and that is a contract change, which is `queue`'s
-to make, not this session's.
+**One note on the pinned run, because it would read as a red.** At the first pin, `4af29dc`,
+`tests/money-in-skill-prose.test.sh` failed on `skills/sprint/SKILL.md:323` — `0133`'s own in-flight
+work, fixed by them at `7c0e7fa`. And `tests/citations.test.sh` fails in *any* scratchpad worktree
+for an environmental reason: `config.yml`'s `conventions.path` is `../ai-building-conventions`, which
+has no sibling there. One `ln -s` beside the worktree clears it. Parked in `FINDINGS.md`.
