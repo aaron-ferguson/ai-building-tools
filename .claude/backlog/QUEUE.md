@@ -99,6 +99,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0124 | Split the stop-rather-than-guess refusal out of the conventions ladder that instances it | design | ready |  |
 | 0125 | Pin the citation enumeration to its decision record so widening one cannot leave the other stale | develop | ready |  |
 | 0137 | Decide whether two develop sessions may run at once, and in what isolation | design | ready | 0128 |
+| 0149 | Audit sprint efficiency — suite-check dedup, per-agent overhead, and model tiering | design | ready | 0128 |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
