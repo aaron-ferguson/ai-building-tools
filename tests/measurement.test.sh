@@ -886,6 +886,52 @@ names_pattern() {
 # pass; every bare use still fails, in any capitalisation.
 EXEMPT_PREFIX='(^|[^<{$])'
 
+# names_search <list-file> — the tracked-set search for one list, returning THE SEARCH'S OWN status:
+# 0 a match, 1 no match, and anything else (`git grep` uses 128) a pattern it could not compile. The
+# caller must branch on that status and never on whether the output came back empty.
+#
+# It is a function so that the status survives the branch. Written inline as
+# `elif named=$(git grep ...)`, the test reads "not 0" and so takes a pattern that NEVER RAN for a
+# clean tree: one unbalanced `(` in a hand-maintained list turned this whole guard green with a leak
+# in the tracked set, `fatal:` on stderr where no summary reads it, and `0 failed` in the tally
+# (0148). That is the second status this one branch conflated — see the `cut` note below — and both
+# were silent in the direction that reports the repo clean.
+names_search() {
+  git -C "$ROOT" grep -inE "${EXEMPT_PREFIX}($(names_pattern "$1"))" 2>/dev/null
+}
+
+# malformed_entry_report <list-file> — the LIST LINE NUMBER of every entry that is not a valid ERE,
+# with the regex compiler's complaint, so a broken list can be fixed without being published.
+#
+# THE ENTRY'S TEXT IS NEVER PRINTED, on the same reasoning as the withheld match below: the entries
+# are the names this guard exists to keep out of every log that runs this suite. No tool's own error
+# text can be forwarded, because every one of them interpolates the pattern — `git grep`'s `fatal:`
+# quotes it once, and the system `grep` on a `ugrep` machine echoes it twice with a caret diagram.
+# So the complaint is re-derived as the text after the quoted pattern's closing `':`, and dropped
+# altogether if the entry turns up in it anyway.
+NO_MATCH_PATHSPEC='this/pathspec/matches/no/tracked/file'
+TAB=$(printf '\t')
+malformed_entry_report() {
+  awk '{ entry = $0
+         if (entry ~ /^[[:space:]]*#/) next
+         sub(/^[[:space:]]+/, "", entry); sub(/[[:space:]]+$/, "", entry)
+         if (entry == "") next
+         printf "%d\t%s\n", NR, entry }' "$1" |
+  while IFS="$TAB" read -r lineno entry; do
+    # `-q` and a pathspec matching nothing: the compile happens before the search, so the status is
+    # the entry's verdict and the walk never touches the tree.
+    status=0
+    fatal=$(git -C "$ROOT" grep -qinE "$entry" -- "$NO_MATCH_PATHSPEC" 2>&1) || status=$?
+    if [ "$status" -le 1 ]; then continue; fi
+    complaint=$(printf '%s' "$fatal" | sed -n "s/.*': //p")
+    case "$complaint" in
+      '' | *"$entry"*)
+        complaint='rejected by the regex compiler, whose complaint quoted the entry and is withheld' ;;
+    esac
+    printf '  list line %s: %s\n' "$lineno" "$complaint"
+  done
+}
+
 # FALSIFICATION CONTROL, because an exemption nothing tests is how a privacy guard goes quietly
 # green. Two departures from the block above, both forced:
 #
@@ -937,6 +983,43 @@ else
     ok "Privacy & data NFR — the configured name list is not tracked"
   fi
 
+
+  # SECOND FALSIFICATION CONTROL, for the branch that reports a list which will not compile (0148).
+  # Assembled and driven through a synthetic list for the two reasons above, and for a third: the
+  # case that was green with a leak in the tree can only be reached by holding a list that breaks,
+  # and a control that waits for a real list to hold a bad entry never runs at all.
+  printf '%s\n' '# a comment, which must not become a name' '' "${Ac}${Me}" "${Ac}${Me}_repos(" \
+    > "$SYN_DIR/malformed"
+
+  syn_status=0
+  names_search "$SYN_DIR/malformed" >/dev/null 2>&1 || syn_status=$?
+  if [ "$syn_status" != 0 ] && [ "$syn_status" != 1 ]; then
+    ok "Privacy & data NFR — a list that will not compile returns the search's own status, distinct from no-match"
+  else
+    bad "Privacy & data NFR — a list that will not compile returned $syn_status, which the check reads as a searched tree — nothing was searched"
+  fi
+
+  syn_report=$(malformed_entry_report "$SYN_DIR/malformed")
+  case "$syn_report" in
+    *'list line 4: '?*)
+      ok "Privacy & data NFR — the malformed-entry report names the list's line number and the compiler's complaint" ;;
+    *)
+      bad "Privacy & data NFR — the malformed-entry report does not name the offending list line and its complaint: [$syn_report]" ;;
+  esac
+
+  case "$syn_report" in
+    *"${Ac}${Me}_repos("*)
+      bad "Privacy & data NFR — the malformed-entry report PUBLISHED the entry, which is one of the withheld names" ;;
+    *)
+      ok "Privacy & data NFR — the malformed-entry report withholds the entry itself" ;;
+  esac
+
+  if [ -z "$(malformed_entry_report "$SYN_DIR/names")" ]; then
+    ok "Privacy & data NFR — a well-formed list is reported malformed nowhere"
+  else
+    bad "Privacy & data NFR — a well-formed list was reported as malformed, so every clean run would red"
+  fi
+
   rm -rf "$SYN_DIR"
 fi
 
@@ -953,14 +1036,28 @@ elif ! git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
 # pipeline the `elif` reads `cut`'s status rather than `git grep`'s, and `cut` succeeds on empty
 # input — so the branch was taken on a perfectly clean tree and the guard reported a leak it could
 # not name. Caught here only because the failure was the harmless direction.
-elif named=$(git -C "$ROOT" grep -inE "${EXEMPT_PREFIX}($(names_pattern "$NAMES_FILE"))"); then
-  named=$(printf '%s\n' "$named" | cut -d: -f1,2)
-  bad "Privacy & data NFR — a tracked file publishes an internal organisation or client name.
+else
+  # `|| search_status=$?` rather than a bare `$?`, because `set -eu` is on and an assignment from a
+  # failing command substitution ends the run: the status this branch exists to read is exactly the
+  # status that would kill the script before it could be read.
+  search_status=0
+  named=$(names_search "$NAMES_FILE") || search_status=$?
+  # THE MATCH BRANCH IS FIRST and must stay first: a real leak is reported by the search's own 0,
+  # and any branch tested ahead of it can only swallow one.
+  if [ "$search_status" = 0 ]; then
+    named=$(printf '%s\n' "$named" | cut -d: -f1,2)
+    bad "Privacy & data NFR — a tracked file publishes an internal organisation or client name.
 File and line only; the token is withheld on purpose. Redact each to a placeholder that keeps the
 sentence's meaning (an internal repository, a second backlog):
 $named"
-else
-  ok "no tracked file publishes a configured internal organisation or client name"
+  elif [ "$search_status" = 1 ]; then
+    ok "no tracked file publishes a configured internal organisation or client name"
+  else
+    bad "Privacy & data NFR — the configured name list will not compile as a regex, so THE TRACKED
+SET WAS NEVER SEARCHED and a leak in it would go unreported. Fix the entry at each line below — the
+entry itself is withheld, being one of the names this check exists to keep out of this output:
+$(malformed_entry_report "$NAMES_FILE")"
+  fi
 fi
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
