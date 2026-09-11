@@ -391,3 +391,35 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   none was written, and a stage may only write the ticket it holds. Needs a row (pointer:
   items/0132, 0133, 0134, 0135 `expects:`; `references/CONCURRENCY.md`; items/0147).
 
+
+- 2026-09-11 (verify 0052) — **a glob AC is unverifiable in a repo where sessions run concurrently,
+  and `0052` is the ticket that predicted it about itself.** `AC7` reads "given the whole suite, when
+  `for t in tests/*.test.sh` runs, then every suite passes". Over one pass the dirty set intersecting
+  that glob changed three times as claim `9265` built `0133`: `tests/next.test.sh` at `400 passed, 13
+  failed` (an in-progress TDD red — `393 passed, 0 failed` when pinned at `f3101f3` in a worktree),
+  then `.claude/backlog/config.yml` changing underneath the pass, then `tests/sprint.test.sh`. Seven
+  of eight ACs verified green with landed mutations; the eighth cannot be settled at all, so the
+  ticket goes back at `next: verify` having had everything *about itself* proved. The buffer already
+  carries the 2026-08-30 entry saying "a glob names no input" and naming this very AC; the build
+  read it and left the glob. The lesson is not that the rule is missing but that **a rule which
+  arrives as a note in Notes & decisions does not change the contract** — `FR2`'s list was never
+  extended to carry the glob shape, so nothing asked at queue time and nothing refused at build time.
+  Needs a row (pointer: items/0052 `AC7` and `FR2`; skills/queue/SKILL.md's acceptance-criteria step).
+
+- 2026-09-11 (verify 0052) — **`verify` Step 7 is self-contradictory on which capture derives the
+  advisory label.** It says the label is computed "from Step 2's capture, whatever the tree says now",
+  and two paragraphs earlier requires a fresh verdict-time capture precisely because "clean at Step 2
+  is not a statement about the tree at verdict time", citing `0085` where six files went dirty
+  mid-pass. Read literally, a pass that starts clean can never be advisory no matter what appears
+  later — which is exactly this pass, and would have closed a ticket on a suite run nobody can
+  reproduce. The prohibition on "re-deriving" plainly means *do not relabel from the extra
+  mutation-restoration read*, but the sentence does not say so. Needs a row (pointer:
+  skills/verify/SKILL.md Step 7).
+
+- 2026-09-11 (verify 0052) — **the declared `unit` command cannot be piped without silently
+  discarding its verdict.** `config.yml`'s `for t in tests/*.test.sh; do "$t" || exit 1; done` puts
+  the loop's exit status on the left of any pipe, so `… | tail -60` reports the exit code of `tail`
+  — `0`, always — while also hiding 27 of 29 files' output. The config comment already warns that
+  this line is fail-fast and that files should be run individually to attribute a red; it does not
+  warn that the obvious way to keep the output readable destroys the signal entirely. Needs a row
+  (pointer: `.claude/backlog/config.yml` `commands.unit`).
