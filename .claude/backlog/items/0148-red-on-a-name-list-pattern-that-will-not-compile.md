@@ -2,8 +2,8 @@
 id: "0148"
 title: Make the internal-name guard red rather than green when its own pattern will not compile
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -14,9 +14,10 @@ blocked_by: []
 relates: ["0143", "0118", "0095"]
 expects:
   - tests/measurement.test.sh
-claimed_by: "541b"
-claimed_at: 2026-09-11T02:12:13Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-11
 ---
 
 ## Problem
@@ -82,19 +83,19 @@ this is its own row rather than a hand-back.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a configured list holding an entry that is not a valid ERE, when
+- [x] AC1 — Given a configured list holding an entry that is not a valid ERE, when
   `tests/measurement.test.sh` runs, then the file reports a failure and a non-zero exit. Red-making
   input: today's guard, which reports `0 failed` on exactly this list.
-- [ ] AC2 — Given that same run, when its output is read, then it names the list's line number and
+- [x] AC2 — Given that same run, when its output is read, then it names the list's line number and
   does not contain the malformed entry's text. Red-making mutation: forwarding `git grep`'s `fatal:`,
   which echoes the pattern and therefore every name in the list.
-- [ ] AC3 — Given a well-formed list and no leak in the tracked set, when the test runs, then the
+- [x] AC3 — Given a well-formed list and no leak in the tracked set, when the test runs, then the
   check still reports the clean-tree `ok` and the file reports `0 failed`. Red-making mutation:
   treating status 1 as an error, which reds every clean run.
-- [ ] AC4 — Given a well-formed list and a leak in the tracked set, when the test runs, then it fails
+- [x] AC4 — Given a well-formed list and a leak in the tracked set, when the test runs, then it fails
   naming file and line and withholding the token. Red-making mutation: reordering the new branch
   ahead of the match branch, which would swallow real leaks.
-- [ ] AC5 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
+- [x] AC5 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
   reports `0 failed`.
 
 ## QA plan
@@ -118,6 +119,47 @@ this is its own row rather than a hand-back.
   `0143`'s FR1 pattern contract and wants its own row if the build finds it cheaper than reporting.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**2026-09-10 (verify, 541b)** — `qa_level: unit`, run as `for t in tests/*.test.sh; do "$t" || true; done`
+(per-file, not the fail-fast form, so a red is attributable). Tree clean at Step 2 and clean at the
+fresh capture after the last check; dirty set empty, so the intersection with the evidence set is
+empty and this is a plain PASS. All four list/tree combinations and every mutation were driven in a
+throwaway `git worktree --detach` at `24bdbed`, removed in the same pass; the checkout's index was
+never used and no real name list was read.
+
+The fixture name is **assembled in the shell and deliberately not spelled here** — the first attempt
+used a name the item's own reproduction block quotes, and the well-formed-list-and-clean-tree case
+correctly failed on a match in this very file (FINDINGS.md, 2026-09-10).
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 | Worktree + `PRIVATE_NAMES_FILE` pointing at a list whose 4th entry is an unbalanced `(`. `tests/measurement.test.sh` | **PASS** — `128 passed, 1 failed`, exit 1, `FAIL … the configured name list will not compile as a regex, so THE TRACKED SET WAS NEVER SEARCHED` |
+| AC2 | Same run, output read in full | **PASS** — `  list line 4: parentheses not balanced`; `grep -c` for the entry's text across the whole output returned `0` |
+| AC3 | Well-formed list, no fixture staged | **PASS** — `ok   no tracked file publishes a configured internal organisation or client name`, `129 passed, 0 failed`, exit 0 |
+| AC4 | Well-formed list, `SYNTHETIC-FIXTURE-LEAK.md` staged in the worktree carrying the assembled name | **PASS** — `128 passed, 1 failed`; detail is `SYNTHETIC-FIXTURE-LEAK.md:1` and `grep -c` for the token returned `0` |
+| AC5 | Whole suite, 29 files, per-file | **PASS** — every file reported `0 failed`; tallies pasted from the run, not summed |
+| NFR Security | AC2's zero-occurrence check, plus mutation M3b below; `security-conventions.md` read | **PASS** — the complaint is re-derived and the entry is never forwarded |
+| NFR Privacy & data | AC4's detail line, plus the in-suite control *the leak verdict reports file and line with the matched text withheld*; `data-privacy-conventions.md` read (redact at the boundary, not by hoping) | **PASS** — `0143` AC6's case stays green |
+
+**Falsification — five mutations, each on the committed file in the worktree, each restored with
+`git checkout -- tests/measurement.test.sh` and confirmed restored before the next.**
+
+| Mutation | Reddened |
+|---|---|
+| M1 — the `uncompilable` branch prints `clean` (the original 0148 defect) | *a list that will not compile was not reported as such, so a leak behind it goes unseen* — `128 passed, 1 failed` |
+| M2 — the report drops the list line number | *the malformed-entry report does not name the offending list line and its complaint* |
+| M3 — `complaint=$fatal` only | **no red aimed at it** — a bad mutation, not a passing guard: the withholding `case` fallback survived it and substituted the generic message |
+| M3b — `complaint=$fatal` **and** the withholding fallback deleted | *the malformed-entry report PUBLISHED the entry, which is one of the withheld names* — `127 passed, 2 failed` |
+| M4 — no-match (status 1) no longer reads as clean | AC3's clean run reds — `128 passed, 1 failed` |
+| M5 — the uncompilable branch moved ahead of the match branch, testing `!= 1` | *a name present in the tracked set did not reach the leak verdict, so real leaks are swallowed* **and** *the leak verdict did not report the file and line of the match* — `126 passed, 3 failed` |
+
+**Control run, all mutations restored, well-formed list, clean tree: `129 passed, 0 failed`, exit 0.**
+That green is what licenses every red above.
+
+Probed and found nothing: four entry shapes whose individual compile status might diverge from the
+joined alternation's (`a|`, `a\`, `*a`, `a{1`) all return 128 individually, so no case was found in
+which the verdict is `uncompilable` and the report has no line to name.
+
 
 ## Notes & decisions
 
