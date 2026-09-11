@@ -3,7 +3,7 @@ id: "0129"
 title: Rename orchestrate to sprint and leave the old command resolving
 type: chore
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: m
@@ -27,9 +27,23 @@ expects:
   - .claude-plugin/marketplace.json
   - skills/develop/SKILL.md
   - skills/queue/templates/config.yml
-claimed_by:
-claimed_at:
+claimed_by: "cfec"
+claimed_at: 2026-09-11T02:22:59Z
 touches:
+  - skills/orchestrate/SKILL.md
+  - skills/orchestrate/outcome.schema.json
+  - tests/orchestrate.test.sh
+  - tests/skill-size.test.sh
+  - tests/last-line.test.sh
+  - tests/reporting.test.sh
+  - tests/close-by.test.sh
+  - references/REPORTING.md
+  - tools/harvest-usage.sh
+  - README.md
+  - .claude-plugin/plugin.json
+  - .claude-plugin/marketplace.json
+  - skills/develop/SKILL.md
+  - skills/queue/templates/config.yml
 ---
 
 ## Problem
