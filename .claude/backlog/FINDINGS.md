@@ -720,3 +720,4 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   level to rewrite the rationale in the same edit, and for the guard to notice a rationale naming a
   different level than the frontmatter (pointer: `skills/verify/SKILL.md` Step 2, *the frontmatter
   field is the authority*; `tests/qa-level-once.test.sh`).
+- 2026-09-12 — **`retro` Step 1 still says "Leave the work entries where they are" after 0060 made it the terminal sweeper.** Step 4 says no entry survives the pass that read it and that a pure unit of work is filed, not handed back; a retro following Step 1 literally leaves read work entries in the buffer, re-opening the cost 0060 closed. Also, three sessions wrote "a queue pass should withdraw 0080" and none did — `design` settled it by withdrawing, which its Step 4 does not name as an outcome (pointer: `skills/retro/SKILL.md` Step 1 vs Step 4; `skills/design/SKILL.md` Step 4; items 0060, 0080).
