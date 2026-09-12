@@ -122,11 +122,22 @@ The proposal states, all of it from that one call:
   join through it. Ten rows joining through one `SKILL.md` is a grouping artefact, not a theme; a
   count alone reads as a large sprint and hides that. `--propose` ranks those joins by how much of
   the gate each explains, and names the parent slice too, which is the gate's other join mechanism.
-- **An estimate in real-world time, tokens and dollars.** Recompute it from `MEASUREMENT.md`'s
-  per-stage means and `config.yml`'s gate model; quote no figure from here, which would be a cache of
-  another file. **A figure with no prior is labelled as having no prior rather than presented as
-  derived** — as at 2026-09-10 `MEASUREMENT.md` records no wall-clock at all, so the time figure has
-  none, and `0135` is what accumulates one.
+- **An estimate in real-world time, tokens and dollars.** One call produces it:
+
+  ```sh
+  tools/sprint-ledger.sh estimate --ledger .claude/backlog/LEDGER.md \
+    --measurement MEASUREMENT.md --config .claude/backlog/config.yml \
+    --tickets <n> --develop-gates <n> --verify-sessions <n>
+  ```
+
+  It derives each figure from `.claude/backlog/LEDGER.md`'s recorded actuals where the ledger holds
+  any, and from `MEASUREMENT.md`'s per-skill table and `config.yml`'s gate model where it holds
+  none — so the estimate improves as the ledger fills instead of staying the first guess forever.
+  Quote no figure from here, which would be a cache of another file. **A figure with no prior is
+  labelled as having no prior rather than presented as derived** — as at 2026-09-10 `MEASUREMENT.md`
+  records no wall-clock at all, so the time figure has none until this ledger has a sprint in it,
+  and a proposal showing three derived figures where one is invented is worse than one showing two
+  and an admission.
 
 **Where the confirmed scope is only part of a gate, name the rows left behind and what resuming them
 costs.** They were un-takeable while the rest is in progress anyway, so the real price is one
@@ -136,6 +147,11 @@ tickets nobody chose — and it is a decision a person can only make if they are
 **Three answers, and two of them are not yes.** Confirm it · **amend** it, where the rule above says
 what the amendment leaves behind · or **decline**, which ends the run with no stage session and
 releases the marker: remove `.claude/backlog/runs/.active`, exactly as the end of a run does.
+
+**That estimate is written to the ledger before the first dispatch, and it is what makes it an
+estimate at all.** Keep the four figures and the source line the call printed; they are the
+`--estimate-*` arguments Step 6 pairs with the actuals. Recorded afterwards it is a memory of a
+guess, and the one thing nobody can reconstruct from the backlog is what this run *expected*.
 
 **Write the confirmed scope to the run log before the first dispatch**, as one `scope_confirmed`
 event (Step 5). A resuming supervisor then reads what was agreed rather than re-deriving a scope the
@@ -285,6 +301,14 @@ after a crash or after the planned ending — derives what to do next from `./ne
 `./next --findings` alone. The backlog *is* the state. Delete the log between two sessions and the
 next action does not change at all; what is lost is the record, not the position.
 
+**`.claude/backlog/LEDGER.md` is the opposite, and the two are not interchangeable.** The log is
+per-run, uncommitted and deletable; the ledger is one committed row per sprint pairing what the run
+was estimated to cost with what it did, and deleting it sends every future estimate back to being a
+guess. `tools/sprint-ledger.sh` derives the ledger's actuals **from this log** — wall-clock from the
+first and last event timestamps, and the session-id set the harvest is pinned to from the dispatch
+events — which is why the log's timestamps and `session_id` fields are load-bearing beyond this run
+even though the file itself is not.
+
 **It is read for exactly three things**: what already escalated, what the run has spent, and
 `--drive`'s completed-outcome input, which needs to know a stage finished in between. What already
 completed, never what to do next.
@@ -339,6 +363,24 @@ dispatch again, which parks more. The run is over at the tail either way; evalua
 is what makes that true in the unplanned case too. **This covers the whole tail**, not the retro
 alone: re-reading the count between the retro and the queue sweep asks the same question a second
 time and gets the retro's own parkings for an answer.
+
+**Score the estimate before the run ends, in the same turn as the ending event.** One call:
+
+```sh
+tools/sprint-ledger.sh record --ledger .claude/backlog/LEDGER.md \
+  --run .claude/backlog/runs/<run-id>.jsonl --transcripts <transcript-dir> \
+  --measurement MEASUREMENT.md --config .claude/backlog/config.yml \
+  --estimate-tickets <n> --estimate-wall <n|no-prior> \
+  --estimate-tokens <n> --estimate-usd <n> --estimate-source '<the source line>'
+```
+
+The `--estimate-*` values are the ones the proposal printed and nothing else; re-deriving them here
+scores the estimate against itself. It appends one block pairing all four figures, the develop
+gate's observed cost against `config.yml`'s linear prediction for that ticket count, verify cost per
+ticket for each session batched or unbatched, and what the run parked. **Commit it** — uncommitted
+it is one `git stash` from gone, and a sprint that is not recorded is a sprint the next estimate
+cannot learn from. This is the only moment the attribution exists: aggregate spend is recoverable
+from the transcripts later, which run it belonged to is not.
 
 **Write the run's ending as a `sprint_ended` event** (Step 5), whichever way it ends. That event is
 what `findings_max_sprints` counts — a completed sprint is a run log carrying one, never a run log
