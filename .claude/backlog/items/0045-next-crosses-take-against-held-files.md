@@ -3,7 +3,7 @@ id: "0045"
 title: Cross the take loop against the held file set in next
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -15,9 +15,12 @@ expects:
   - skills/queue/templates/next
   - .claude/backlog/next
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "8f62"
+claimed_at: 2026-09-12T04:12:43Z
 touches:
+  - skills/queue/templates/next
+  - .claude/backlog/next
+  - tests/next.test.sh
 ---
 
 ## Problem
