@@ -67,6 +67,10 @@ HARVEST = os.path.join(HERE, "harvest-usage.sh")
 
 FIGURES = ["tickets", "wall_clock_min", "tokens", "usd"]
 NO_PRIOR = "no prior"
+# How much of a failed harvest's own output a refusal quotes back. Bounded because harvest
+# output is unbounded, and wide enough to carry a changed header line, which is the likeliest
+# cause of an unparsable TOTAL.
+HARVEST_QUOTE_CHARS = 300
 
 
 def die(msg):
@@ -361,7 +365,7 @@ def harvest(transcripts, session_ids):
     # stays one line, and it is truncated because harvest output is unbounded.
     shown = "; ".join(proc.stdout.split("\n")).strip()
     die("%s exit 0 over %s but printed no parsable TOTAL line; its output was: %s"
-        % (os.path.basename(HARVEST), transcripts, shown[:300] or "empty"))
+        % (os.path.basename(HARVEST), transcripts, shown[:HARVEST_QUOTE_CHARS] or "empty"))
 
 
 # --- record -------------------------------------------------------------------------------------

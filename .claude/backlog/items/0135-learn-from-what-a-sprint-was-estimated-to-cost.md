@@ -361,6 +361,67 @@ and no AC catches it. No AC requires the tool to validate the format of a source
 supplies, and `paired()` asserting the stamp on the fixture is the coverage the ticket scoped.
 Recorded so the next pass does not rediscover it as a defect.
 
+### 2026-09-12 — Re-entry built against the 2026-09-11 verify verdict (token 0db6)
+
+**Both constraints named one remedy each, so nothing here was chosen.** `harvest()` now `die()`s on
+each of its two swallows, and the AC6 guard reports a pending ratio from a flush. The one
+observation the verdict marked as *not* a constraint — `--estimate-source` accepting a string with
+no `@` stamp — was left alone, as it said.
+
+**The exception is the load-bearing half of Constraint 1, and it now has its own case.** A real
+directory holding none of the run's sessions makes `harvest-usage.sh` exit 0 with a `TOTAL` line
+reading `0.00`. That is a *measured* zero. Probed before building: an empty dir gives exit 0 and
+that line; a missing dir gives exit 2 and `no such transcript directory: …` on **stderr**, stdout
+empty. Without a case pinning the empty store, the next session reading *validate inputs at the
+top* widens the refusal and turns a real measurement into an error — proved by M3, which reds the
+exception case and names why.
+
+**The verdict named two swallows and only one is reachable through the real `harvest-usage.sh`.**
+The non-zero exit is exercised with a missing directory. The second — exit 0 with no parsable
+`TOTAL` — cannot be produced by the real tool, so it is exercised against a **copy** of
+`sprint-ledger.sh` placed beside a stub `harvest-usage.sh`, `HARVEST` being resolved relative to
+the tool's own directory. The copy is made fresh from `$TOOL` on every run, so it cannot drift from
+the subject under test. Guarding only the reachable swallow would have left the other as an
+assertion nobody ever ran.
+
+**The refusal quotes the output it could not parse, and the first attempt did not.** Joining
+`stdout.split()[:20]` with `" / "` shreds the text across word boundaries, so an assertion on a
+phrase the stub printed could not match it — the guard caught the message's own unreadability.
+Newlines now collapse to `; ` and the quote is truncated at `HARVEST_QUOTE_CHARS`. *"printed no
+parsable TOTAL line"* with nothing after it is unactionable, and a format change is the likeliest
+cause.
+
+**Constraint 2 is guard coverage, and the fix is checked by cases rather than by a mutation ledger
+entry.** `ratio_bad()` is now a function, and five synthetic fixtures run against it before it is
+trusted on the recorded block: a fully stamped ratio, an unstamped denominator, an unstamped
+numerator, a missing denominator line, and a missing denominator **followed by another `RATIO`** —
+the last because `END` alone would have caught only the final ratio in the file and the guard would
+still have been blind everywhere else. The previous pass's M10 (delete the denominator line →
+`53 passed, 0 failed`, no redden) is what this replaces.
+
+**Mutation ledger** — each applied to a committed tree, `git diff --quiet` confirming it landed,
+restored with `git checkout -- <one path>`, control green after each (`68 passed, 0 failed`, tree
+clean):
+
+| # | Mutation | Result |
+|---|---|---|
+| M1 | restore `harvest()`'s two swallows — drop the exit-status `die()` and revert the no-`TOTAL` `die()` to `return 0.0, 0` | `61 passed, 7 failed` — both refusals, their messages, and nothing-appended |
+| M2 | restore the old `RATIOBAD` awk, printing only from inside the `/^ *denominator /` rule | `66 passed, 2 failed` — the two missing-denominator cases, and only those |
+| M3 | widen the refusal onto the empty store (`die` when stdout says `0 sessions`) | `65 passed, 3 failed` — the exception case reds and names why it is a measurement |
+
+**The whole suite is green, run file-by-file rather than fail-fast** per `config.yml`'s note on
+`0084`: 30 files, every one at `0 failed`. **The `tests/measurement.test.sh` red that two previous
+passes carried forward is gone** — `129 passed, 0 failed`. It was a home-directory path committed
+inside closed item `0052`'s QA evidence; something has since removed it, so `tools/release` step 5
+is no longer red on that line. Not this session's doing and not this ticket's, recorded because two
+passes reported it as outstanding.
+
+**Still owed a row, and still without one: the `sh`-wrapping-`python3` typing question across
+`tools/*.sh`.** Left exactly where both previous verdicts left it — repo-wide, not this ticket's to
+settle, and not what this session changed. `CONCURRENCY.md` forbids this stage from filing it. It
+**needs a row**; there is none.
+
+
 ## QA evidence
 
 ### 2026-09-11 — verify pass, token 7a9b (FAIL)
