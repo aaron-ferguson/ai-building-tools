@@ -677,3 +677,34 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   fall back to the fail-fast `config.yml` line, which is exactly the `0084` masking FR4 exists to
   stop. Needs a row (pointer: `skills/verify/SKILL.md` Step 2 batch-reporting paragraph and Step 3's
   sentinel recipe; `.claude/backlog/config.yml` `commands.unit`).
+
+- 2026-09-12 — **`develop` Step 2 tells you to probe an external tool's interface before building on
+  a ticket's claim about it, and the same probe is what tells a refusal from a measurement — but
+  nothing says so.** `0135`'s verdict required `harvest()` to `die()` on a failed harvest while
+  leaving the empty store recording `0.00`. The two are one character apart in the calling code and
+  opposite in meaning, and only a three-second probe separates them (missing dir → exit 2, stderr;
+  empty dir → exit 0, `TOTAL … 0.00`). Step 2's probe paragraph is framed entirely around a *stale*
+  claim ageing out; the case where the claim is current and the probe is what defines the fix's
+  boundary is not named. Cheap addition, and the failure it prevents is a refusal widened onto a
+  real measurement (pointer: `skills/develop/SKILL.md` Step 2, *the same holds for any claim a
+  ticket makes about an external tool's interface*).
+
+- 2026-09-12 — **A guard against a subprocess's failure mode may be unreachable through the real
+  subprocess, and no skill names the stub-copy recipe that reaches it.** `sprint-ledger.sh` resolves
+  `harvest-usage.sh` relative to its own directory, so the "exit 0 with unparsable stdout" swallow
+  cannot be produced by the real tool at all. Copying the tool under test beside a stub sibling is
+  two lines and keeps the copy fresh from the original each run, but a session that does not think
+  of it will guard the reachable half and leave the other as an assertion nobody ever runs — which
+  reads identically to coverage. `testing-conventions.md` covers mutating *the copy the harness
+  runs* and not deliberately running a copy to reach an unreachable path (pointer:
+  `testing-conventions.md`, *prove a new guard fails*; `tests/sprint-ledger.test.sh` no-TOTAL case).
+
+- 2026-09-12 — **An error message's own readability can make its guard unfalsifiable, and the guard
+  is what catches it.** `sprint-ledger.sh`'s first refusal quoted the unparsable output as
+  `" / ".join(stdout.split()[:20])`, shredding every phrase across word boundaries, so an assertion
+  on text the stub really had printed could not match. The correct reading is that the *message* was
+  wrong, not the assertion — but the cheaper move is to loosen the assertion to a word, and that
+  yields a guard which passes on a message no human can act on. Worth a line wherever the "assert
+  the message, never the status" rule already sits: a message you cannot write a phrase assertion
+  against is a message nobody can read (pointer: `testing-conventions.md`, *`exits non-zero` is
+  satisfied by the silent refusal*).
