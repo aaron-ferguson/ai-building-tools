@@ -21,11 +21,17 @@
 # Usage:
 #   tools/harvest-usage.sh <transcript-dir> [--since YYYY-MM-DD] [--until YYYY-MM-DD]
 #                          [--sessions] [--exclude <session-id-prefix>]
+#                          [--session <session-id-prefix>]...
 #
 #   --since / --until  keep turns whose UTC timestamp date falls in the range, inclusive
 #   --sessions         one row per session as well as the per-skill table
 #   --exclude          drop a session by id prefix, repeatable; for the in-flight session that
 #                      produced the harvest, whose own cost is not yet complete
+#   --session          keep ONLY these sessions, by id prefix, repeatable. A date window is not a
+#                      pin on a live store -- MEASUREMENT.md records the window that once selected
+#                      30 sessions now returning 42 -- so a figure that has to stay true is
+#                      selected by id set and never by --since/--until (0135 FR3). Applied before
+#                      --exclude, which still subtracts from whatever this selected.
 #   --run              a supervised run's log (.claude/backlog/runs/<id>.jsonl). Adds the three
 #                      figures a supervisor is bounded by (0039 AC13): the per-turn FLOOR, the
 #                      per-cycle GROWTH as an absolute number, and TURNS per cycle against a
@@ -40,7 +46,7 @@
 set -eu
 
 if [ $# -lt 1 ]; then
-  echo "usage: $0 <transcript-dir> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--sessions] [--exclude <prefix>] [--run <run-log.jsonl> [--budget N]]" >&2
+  echo "usage: $0 <transcript-dir> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--sessions] [--session <prefix>] [--exclude <prefix>] [--run <run-log.jsonl> [--budget N]]" >&2
   exit 2
 fi
 
@@ -142,19 +148,21 @@ def marker_skill(message):
 
 
 def parse_args(argv):
-    opts = {"since": None, "until": None, "sessions": False, "exclude": [],
+    opts = {"since": None, "until": None, "sessions": False, "exclude": [], "session": [],
             "run": None, "budget": DEFAULT_TURN_BUDGET}
     i = 0
     while i < len(argv):
         a = argv[i]
         if a == "--sessions":
             opts["sessions"] = True
-        elif a in ("--since", "--until", "--exclude", "--run", "--budget"):
+        elif a in ("--since", "--until", "--exclude", "--session", "--run", "--budget"):
             i += 1
             if i >= len(argv):
                 sys.exit("%s needs a value" % a)
             if a == "--exclude":
                 opts["exclude"].append(argv[i])
+            elif a == "--session":
+                opts["session"].append(argv[i])
             elif a == "--budget":
                 opts["budget"] = int(argv[i])
             else:
@@ -287,6 +295,13 @@ def report_run_bound(directory, opts):
     cycles = cycles_in(log)
     contexts = []
     for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
+        # The same narrowing the per-skill table gets. Without it a --run bound computed over a
+        # shared store reads its FLOOR off whichever session sorts first, which is very often not
+        # one of the run's at all.
+        sid = os.path.basename(path).split("-")[0]
+        if opts["session"] and not any(sid.startswith(x) or x.startswith(sid)
+                                       for x in opts["session"]):
+            continue
         contexts.extend(turn_contexts(path, opts))
     if not contexts:
         print("RUN no priced turns in %s; no bound reported" % directory)
@@ -322,6 +337,12 @@ totals, by_skill, session_rows = blank(), {}, []
 unpriced_total = 0
 for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
     sid = os.path.basename(path).split("-")[0]
+    # --session NARROWS first, --exclude then subtracts. Two filters rather than one because they
+    # answer different questions: "which run was this" and "whose cost is not finished yet", and a
+    # harvest of a run that also produced the harvest needs both.
+    if opts["session"] and not any(sid.startswith(x) or x.startswith(sid)
+                                   for x in opts["session"]):
+        continue
     if any(sid.startswith(x) or x.startswith(sid) for x in opts["exclude"]):
         continue
     per_skill, unpriced = harvest_session(path, opts)
