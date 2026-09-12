@@ -5,22 +5,26 @@ type: feature
 next: design
 status: in-progress
 qa_level: unit
-size: m
+size: l
 created: 2026-08-25
 source: user
 parent: "0128"
 blocked_by: []
-relates: ["0016", "0026", "0036", "0039", "0037"]
+relates: ["0016", "0026", "0036", "0039", "0037", "0135"]
 expects:
+  - CHANGELOG.md
+  - .claude/backlog/close
+  - tests/close.test.sh
+  - skills/verify/SKILL.md
+  - tools/release
+  - tests/release.test.sh
   - tools/harvest-usage.sh
-  - tools/classify-turns.sh
-  - tools/cost-by-category.sh
   - tests/measurement.test.sh
+  - tools/sprint-ledger.sh
+  - tests/sprint-ledger.test.sh
+  - .claude/backlog/LEDGER.md
+  - skills/sprint/SKILL.md
   - README.md
-  - MEASUREMENT.md
-  - skills/retro/SKILL.md
-  - skills/orchestrate/SKILL.md
-  - .claude-plugin/plugin.json
 claimed_by: "8423"
 claimed_at: 2026-09-12T22:44:19Z
 touches:
@@ -81,6 +85,8 @@ file that implements them** — see *Open design question*.
 
 - **FR1 — Report the tickets the work session closed.** ID, title, and the verdict that closed each
   one, read from the record on disk — `DONE.md` and the FR10 run log — never from a session's memory.
+  *(Design, 2026-09-12: this lands in the `LEDGER.md` block per FR9, and it lists the IDs the run
+  log's `outcome` events closed.)*
 - **FR2 — Write release notes to a shareable file.** Per `launch-conventions.md`: what changed, who
   it is for, what to do, and what did **not** change. A ticket ID is provenance, not a release note;
   an entry whose only description of a change is its ID does not satisfy this.
@@ -104,6 +110,38 @@ file that implements them** — see *Open design question*.
   established, the report says what it could not attribute and does not present a partial total as a
   complete one.
 
+**Placement FRs — added by design, 2026-09-12.** There are two artifacts with different audiences.
+Neither is a new skill, a `retro` mode, or new work in the sprint tail. See *Notes & decisions*.
+
+- **FR8 — Release notes are `CHANGELOG.md` at the repo root, and the stage that closes a ticket
+  writes its entry.** `./close` takes an optional `--note <text>` and appends it under
+  `## Unreleased` in the **same locked commit** that moves the row to `DONE.md`. If no note is given,
+  nothing is appended: a ticket with no observable change records none and never pads the file.
+  `verify` Step *close* writes the note, voiced as *what a session running these skills will do
+  differently*, in plain language, leading with the behaviour and not the ticket ID. The ID may
+  follow in parentheses as provenance.
+- **FR9 — `tools/release` promotes `## Unreleased` to `## <version> — <date>`** in the same commit
+  as the version bump. **It refuses before step 5's authorisation** (so it writes nothing) when
+  `## Unreleased` is empty, unless it is given `--no-behaviour-change`. That flag writes the explicit
+  line `No behaviour change — internal guards and records only.` in its place. The version section
+  ends with a `### Did not change` line, and the release session writes it, because only a
+  whole-release view can say what did not change.
+- **FR10 — The metrics are the sprint's `LEDGER.md` block, which `tools/sprint-ledger.sh record`
+  already writes, extended rather than duplicated.** It gains the closed-ticket list (FR1), and **a
+  per-context-window table** with one row per session id: stage, first-to-last turn elapsed
+  minutes, context tokens and USD. Totals and per-window averages are computed from those rows.
+  Cost per closed ticket against `MEASUREMENT.md`'s pair is read at record time, with its as-at
+  stamp (FR5).
+- **FR11 — Per-window elapsed time is the first-to-last turn timestamp in the transcript, and
+  `tools/harvest-usage.sh` owns it.** It gains a `--by-session` table (session-id prefix, skill,
+  turns, elapsed minutes, context, USD) de-duplicated by `message.id` as today, and
+  `sprint-ledger.sh` consumes it. Run-log timestamps keep bracketing the **sprint** total, which is
+  unchanged from 0135.
+- **FR12 — No run log, no ledger block; the notes are unaffected.** A hand-driven backlog still gets
+  `CHANGELOG.md` from FR8–FR9. Its metrics are `tools/harvest-usage.sh --by-session --since/--until`,
+  whose output names the date boundary and states that it attributes no run and no closed tickets
+  (FR7).
+
 ## Non-functional requirements
 
 | Dimension | Requirement for this item | Convention |
@@ -114,40 +152,6 @@ file that implements them** — see *Open design question*.
 | Compatibility | Every signal the review reads is a contract between the stages and the reviewer. Adding it must not change what a hand-driven session does | `api-conventions.md` |
 | Dependencies | Runs on what the repo already has — POSIX `sh` plus the `python3` already on the machine. Reading one directory of JSON earns no package, and outbound mail is out of scope precisely because it would earn one | `dependency-conventions.md` |
 | Documentation | `README.md` is the canonical statement of how this suite is run. If this adds an invocation, that section changes in the same change | `documentation-conventions.md` |
-
-## Open design question
-
-- **Question:** Where does the work-session review live — **its own skill**, a **second mode of
-  `retro`**, a **step in `orchestrate`'s FR4 ending**, or a **`tools/` script** that whichever
-  session needs it runs?
-
-- **Why it blocks specification:** FR2's output path, FR7's implementing file, and the invocation
-  every AC would name are all determined by the answer. It also decides whether this ticket gains
-  `blocked_by: "0039"`, which changes when it can be built at all.
-
-- **Five sub-questions, each with a decidable answer:**
-  1. Skill, `retro` mode, `orchestrate` step, or `tools/` script? **Weigh this against a smaller
-     ticket than the one first written** — with the cost tooling already built and guarded, the
-     deliverable is release notes plus a wrapper, which makes a seventh skill harder to justify.
-  2. Does the review **require** 0039's run log, or does it work today from `DONE.md` dates plus
-     transcript timestamps? If it requires it, design records the `blocked_by`.
-  3. Are the release notes and the metrics **one artifact or two**? They have different audiences —
-     the notes are shareable and eventually emailed; the cost figures are internal.
-  4. Which clock is authoritative for elapsed time — **transcript turn timestamps** or **run-log
-     event timestamps** — and does `harvest-usage.sh` grow the timing, or does a sibling own it?
-     This is now the ticket's only unbuilt measurement, per FR4.
-  5. If the answer is a new skill: does a seventh skill in the suite **pay its rent**, against
-     `retro`'s own argument that the cheapest nothing is the one not run, and against 0021's trim?
-
-- **Inputs to weigh, so design does not re-derive them:** `retro` runs on a cadence and is not a
-  lifecycle stage, and 0036 FR4 already ends every supervised run *with* a retro — so the two
-  candidates that need no new invocation are a `retro` mode and an `orchestrate` step, and both
-  couple a delivery report to a process review that may run on a different rhythm. `retro`'s
-  measured cost was **$5.50, 36% of that run**, at the lowest output per turn of any phase, because
-  it ran last where context was largest; adding work to it lands in the most expensive turn in the
-  suite.
-
-- **Settle it with:** `/design`.
 
 ## Acceptance criteria
 
@@ -179,6 +183,35 @@ that name the invocation, the output path and the implementing file.**
       computation runs over it, then the sentinel appears nowhere in the output.
 - [ ] AC10 — Given a fixture in which two content-block lines repeat one `message.id`, when the
       computation runs, then that turn is counted once.
+
+**Placement ACs — added by design, 2026-09-12.** How the placement touches the ACs above:
+- **AC1, AC3–AC6 and AC8 are confirmed** and now name their file: the `LEDGER.md` block written by
+  `tools/sprint-ledger.sh record`.
+- **AC2 is changed**: its release-notes file is `CHANGELOG.md`, checked per version section (AC13).
+- **AC7 is confirmed** and made concrete by AC16.
+- **AC9 and AC10 are confirmed** for `--by-session`.
+
+- [ ] AC11 — Given a claimed ticket, when `./close <id> <token> --note "<text>"` runs, then
+      `CHANGELOG.md` gains `<text>` under `## Unreleased` and `DONE.md` gains the row, both in
+      **one** commit.
+- [ ] AC12 — Given a claimed ticket, when `./close <id> <token>` runs with no `--note`, then
+      `CHANGELOG.md` is unchanged, byte for byte.
+- [ ] AC13 — Given `CHANGELOG.md` with entries under `## Unreleased`, when `tools/release --bump`
+      completes, then those entries sit under `## <new version> — <date>`, `## Unreleased` is
+      present and empty, and that edit is in the bump commit.
+- [ ] AC14 — Given an empty `## Unreleased`, when `tools/release --bump` runs without
+      `--no-behaviour-change`, then it exits non-zero before step 5 and nothing is committed,
+      pushed or edited. With the flag, the version section carries the explicit no-change line.
+- [ ] AC15 — Given a fixture transcript whose session's first and last turns are 42 minutes apart,
+      when `tools/harvest-usage.sh --by-session` runs, then that session's row reads 42 elapsed
+      minutes, alongside its skill, turns, context and USD.
+- [ ] AC16 — Given a fixture run log and transcripts, when `tools/sprint-ledger.sh record` runs,
+      then the appended block holds one per-window row per dispatched session id, the closed-ticket
+      list, total and average elapsed time and cost, and cost per closed ticket beside
+      `MEASUREMENT.md`'s pair with its as-at stamp.
+- [ ] AC17 — Given `skills/verify/SKILL.md`, when grepped, then its close step instructs a `--note`
+      voiced as what a session will do differently, plain language and ID not leading, and it
+      instructs **no note** for a ticket with no observable change.
 
 ## QA plan
 
@@ -274,3 +307,45 @@ that name the invocation, the output path and the implementing file.**
     gate: refuse to release on an empty `Unreleased` section with no explicit no-change line.
   This is input to the design question, which stays open: where the review lives, and whether it is
   its own skill, is still undecided.
+
+- **2026-09-12 — design settled the placement. There are two artifacts and no new skill.**
+  - **Facts re-verified today.** `0135` closed 2026-09-12 and shipped `tools/sprint-ledger.sh`, and
+    its `record` mode already derives sprint wall-clock from the run log's first and last stamps
+    and cost over the run's session ids into a committed `LEDGER.md`. Most of FR3–FR6 therefore
+    already has a home. The only unbuilt measurement is **per-window** elapsed time
+    (`sprint-ledger.sh` has no per-session time; `harvest-usage.sh` reads `timestamp` only as a
+    date, `[:10]`). `0039` is closed, so it cannot block. `DONE.md` carries dates, not times, which
+    is why a sub-day boundary needs the run log. `.claude/backlog/runs/` does not exist in this
+    repo yet: no sprint has run. `CHANGELOG.md` does not exist.
+  - **Sub-question 1 — a `tools/` extension plus a note at close, not a skill.** The notes are
+    written by `verify` through `./close --note`, and the metrics extend `sprint-ledger.sh`. The
+    alternatives lose as follows.
+    - A **seventh skill** would pay per-invocation instruction rent to wrap two scripts.
+    - A **`retro` mode** would add the work to the most expensive turn in the suite, and couple a
+      delivery report to a process review that only runs when the findings gate fires (0133).
+    - A **sprint-tail step** would miss every hand-driven backlog, which FR7 requires this to serve.
+    - **Generating notes at release from `DONE.md` or commits** would write them at the moment
+      context is thinnest. `launch-conventions.md` requires notes *drafted in advance* in plain
+      language, and a commit subject is neither.
+    - `verify` has just read the ACs and evidence for exactly that change. This is the cheapest
+      moment the "what will a session do differently" answer exists.
+  - **Sub-question 2 — the run log is required for the metrics' sprint attribution, not for the
+    notes.** No `blocked_by`, because 0039 and 0135 are both closed. Without a log, FR12 applies.
+  - **Sub-question 3 — two artifacts.** `CHANGELOG.md` is keyed to a released version and
+    shareable; the future email sender reads that one file. `LEDGER.md` is keyed to a sprint and is
+    internal. This adopts the 2026-09-08 shape above as proposed.
+  - **Sub-question 4 — transcript turn timestamps per window; run-log stamps for the sprint total.**
+    Transcripts are the only clock present with no run log, and `harvest-usage.sh` already opens
+    those files and de-duplicates turns. A sibling script would re-implement both.
+  - **Sub-question 5 — no, so it does not arise.**
+  - **Trade-offs accepted.**
+    - Every `verify` close gains one sentence of work, and verify's instruction file grows by a
+      paragraph.
+    - Notes written per ticket can read as a list rather than a narrative. The release session's
+      `### Did not change` line is the only whole-release prose.
+    - First-to-last-turn elapsed time excludes process start-up and the wait before the first turn.
+      That is an undercount the ledger must label, not hide.
+  - **`size` raised `m` → `l`, and `expects:` rewritten** to the files the placement names. The
+    work spans `close`, `release`, `harvest-usage`, `sprint-ledger` and `verify`. It splits cleanly
+    into a notes half (FR8–FR9, AC11–AC14, AC17) and a timing half (FR10–FR11, AC15–AC16), with no
+    shared file. If `queue` or `develop` finds `l` too big for one pass, split it along that line.
