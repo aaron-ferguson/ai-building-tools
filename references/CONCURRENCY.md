@@ -60,8 +60,17 @@ in one component, unwarned.
   state it can describe: **verify a named commit in a `git worktree`, remove it the same turn, and
   report the SHA in the verdict.** A verdict pinned to "the tree" is pinned to nothing where
   `git status` answers differently minute to minute and `HEAD` advances mid-pass — both observed.
-  Such a worktree may run tests and **must never claim, close or hand off**: the lock and the queue
-  it would write are per-checkout, so a claim made there is invisible to every other session.
+  That worktree is a second checkout (*A second checkout never writes the backlog*).
+
+## A second checkout never writes the backlog
+
+The lock and `QUEUE.md` live in the working tree, so every checkout has its own of both.
+**A second checkout — a linked `git worktree` or a second clone — may read and run tests, and
+must never claim, close or hand off**: a write there is invisible to every other session, and from a
+worktree it is lost outright — `./claim` once exited 0 and committed onto a detached worktree `HEAD` that no branch
+reached after the worktree was removed. `claim`, `close` and `handoff` refuse from a linked worktree
+before taking the lock. **A second clone is caught by nothing but this rule**: nothing inside a clone
+tells it from the primary.
 
 ## A change that touches every file takes an exclusive claim
 

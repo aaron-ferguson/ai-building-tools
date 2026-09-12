@@ -71,6 +71,25 @@ ID="${1:-}"
 
 TOKEN="${2:-$(head -c2 /dev/urandom | xxd -p)}"
 
+# --- the linked-worktree refusal (0083) --------------------------------------------------------
+# The lock and QUEUE.md live in the working tree, so a linked worktree has its own copy of both and
+# a claim made there is invisible to the primary. Worse than invisible: the 0083 design probe saw a
+# claim from a detached worktree exit 0, commit onto the detached HEAD, and become unreachable from
+# every branch once the worktree was removed — which the skills tell a session to do the same turn.
+# A linked worktree is the checkout whose git dir is not the common dir. A second CLONE passes this
+# check and nothing inside a clone can tell it from the primary, so the rule covers that case alone:
+# See `CONCURRENCY.md`, *A second checkout never writes the backlog*.
+# **Before the lock, deliberately**, for the reason the refusal below gives.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 &&
+   [ "$(git -C "$DIR" rev-parse --path-format=absolute --git-dir)" != \
+     "$(git -C "$DIR" rev-parse --path-format=absolute --git-common-dir)" ]; then
+  echo "refusing to claim $ID: this is a linked worktree, whose lock and QUEUE.md no other session reads" >&2
+  echo "run it from the primary checkout: $(git -C "$DIR" worktree list --porcelain | sed -n '1s/^worktree //p')" >&2
+  echo "see references/CONCURRENCY.md, 'A second checkout never writes the backlog'" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
 # --- the fourth refusal: a foreign edit this claim's commit would carry ------------------------
 # This script used to *warn* here and commit anyway, which is the shape a warning always has: it
 # was right, it was read, and the other window's row went into the git record under this claim's

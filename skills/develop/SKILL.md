@@ -443,6 +443,7 @@ before anything ran them. Handing a red tree to a QA session spends that session
 (`git log -1 -- <path>`, the in-progress rows). Another session's red is theirs to fix and yours to
 report. If the tree is too entangled to judge, run it in a throwaway worktree (`git worktree add`) and
 remove it in the same turn.
+It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the backlog*).
 
 **An *untracked* file is the cheap case and needs no worktree at all.** `git status` settles it in one
 call: a file git has never seen is definitionally neither your change nor the tree's baseline, so it is
@@ -466,6 +467,7 @@ comparison you want. Build the state that is exactly your work on a clean base:
 `git cherry-pick <your commits>`. About two minutes, and the failure it prevents is expensive in the
 wrong direction — meeting a red at your own tip, the natural next move is to start debugging your own
 change. **The resulting SHA is throwaway and must never be reported as a verified commit.**
+It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the backlog*).
 
 **That settles it only for a deterministic check, and the failure is confidently backwards.** Where
 the check samples anything the runner re-rolls — a seed, a generated fixture, wall-clock pacing, a

@@ -108,6 +108,7 @@ turns out to belong to nobody. The verdict has to be pinned to a SHA either way,
 whole saving: `git worktree add --detach <path> <sha>` plus a `node_modules` symlink costs about ten
 seconds, against the twenty minutes a session spends attributing another window's in-progress edit to
 its own ticket — or, worse, reporting a FAIL for it.
+It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the backlog*).
 
 **Holding more than one ticket, run the level so that every file reports rather than stopping at
 the first red — and do it before any verdict is written.** A fail-fast command ends at the first red
@@ -133,6 +134,7 @@ exactly as an e2e run does. Measured: a `qa_level: unit` pass ran 1365 unit test
 dirty set captured above is non-empty and the level's commands include a whole-project gate, run that
 gate in a worktree at a named commit.** A session that stops at such a red sends a correct ticket back
 to `develop` naming a file it never touched.
+It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the backlog*).
 - `in-progress` under a token **you did not mint in this conversation** → another session's. Say whose
   it seems to be and stop; Step 1's refusal normally prevents this, so reaching here means the field
   and the claim disagree.

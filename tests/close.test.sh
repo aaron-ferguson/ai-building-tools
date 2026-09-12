@@ -29,7 +29,7 @@ PASS=0
 FAIL=0
 FIX=""
 
-cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
+cleanup() { [ -n "$FIX" ] && rm -rf "$FIX" "$FIX.wt"; return 0; }
 trap cleanup EXIT INT TERM
 
 BL=".claude/backlog"
@@ -1233,6 +1233,25 @@ out="$(run_close 0701 cd34)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 refute_contains "the superseded pass's file is not charged to this one" "$out" 'earlier/first-pass.ts'
 assert_contains "and this pass's own scope agrees" "$out" 'scope: touches: and the commits since the claim agree'
+
+# --- 0083 AC3 — a linked worktree is refused before the lock -----------------------------------
+# A real `git worktree add` of a row the primary holds. Without the refusal this close succeeds in
+# the worktree — DONE.md and all — on a detached HEAD the primary never sees.
+echo "0083 AC3 — a close from a linked worktree is refused and changes nothing"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0036 | Worktree row | verify | in-progress | 0000 |'
+mkitem 0036 verify in-progress '"ab12"' '[]'
+commit_fixture
+WT="$FIX.wt"
+git -C "$FIX" worktree add -q --detach "$WT"
+before_head="$(git -C "$WT" rev-parse HEAD)"
+before_sums="$(find "$WT/$BL" -type f | sort | xargs cksum)"
+out="$( (cd "$WT" && "$BL/close" 0036 ab12) 2>&1 )" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names a linked worktree" "$out" 'linked worktree'
+assert_contains "cites CONCURRENCY.md" "$out" 'CONCURRENCY.md'
+assert_contains "names the primary checkout to run from" "$out" "$(cd "$FIX" && pwd -P)"
+assert_eq "no commit lands on the worktree's HEAD" "$(git -C "$WT" rev-parse HEAD)" "$before_head"
+assert_eq "the worktree's backlog is byte-identical" "$(find "$WT/$BL" -type f | sort | xargs cksum)" "$before_sums"
 
 # --- result -----------------------------------------------------------------------------------
 echo

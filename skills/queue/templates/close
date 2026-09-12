@@ -75,6 +75,24 @@ TOKEN="${2:-}"
 
 TODAY="$(date -u +%Y-%m-%d)"
 
+# --- the linked-worktree refusal (0083) --------------------------------------------------------
+# The lock, QUEUE.md and DONE.md live in the working tree, so a linked worktree has its own copy of
+# all three and a close made there is invisible to the primary — and the commit lands on a detached
+# HEAD that is unreachable once the worktree is removed. A linked worktree is the checkout whose git
+# dir is not the common dir. A second CLONE passes this check and nothing inside a clone can tell it
+# from the primary, so the rule covers that case alone:
+# See `CONCURRENCY.md`, *A second checkout never writes the backlog*.
+# **Before the lock, deliberately**, for the reason the refusal below gives.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 &&
+   [ "$(git -C "$DIR" rev-parse --path-format=absolute --git-dir)" != \
+     "$(git -C "$DIR" rev-parse --path-format=absolute --git-common-dir)" ]; then
+  echo "refusing to close $ID: this is a linked worktree, whose lock and QUEUE.md no other session reads" >&2
+  echo "run it from the primary checkout: $(git -C "$DIR" worktree list --porcelain | sed -n '1s/^worktree //p')" >&2
+  echo "see references/CONCURRENCY.md, 'A second checkout never writes the backlog'" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
 # Anything already dirty in the two shared files would ride along on our commit, so REFUSE rather
 # than warn and carry on (0090 FR3). A pathspec limits a commit to the paths it names and never to
 # authorship (`CONCURRENCY.md`, *A pathspec is necessary but not sufficient*), so there is no form of

@@ -37,7 +37,7 @@ PASS=0
 FAIL=0
 FIX=""
 
-cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
+cleanup() { [ -n "$FIX" ] && rm -rf "$FIX" "$FIX.wt"; return 0; }
 trap cleanup EXIT INT TERM
 
 # --- assertions -------------------------------------------------------------------------------
@@ -596,6 +596,24 @@ out="$(run_handoff 0700 ab12 verify)" && rc=0 || rc=$?
 assert_rc "the hand-off still succeeds — this is a note, not a gate" "$rc" 0 "$out"
 assert_not_contains "the older ticket's file is not charged to this one" "$out" 'ancient/unrelated-a.ts'
 assert_contains "and the declared path no commit changed is still named" "$out" 'declared but untouched: src/two.ts'
+
+# --- 0083 AC2 — a linked worktree is refused before the lock -----------------------------------
+# A real `git worktree add` of a row the primary holds. Without the refusal this hand-off succeeds
+# in the worktree, commits onto its detached HEAD, and the primary still reads the row as held.
+echo "0083 AC2 — a hand-off from a linked worktree is refused and changes nothing"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0036 | Worktree row | develop | in-progress | 0000 |' 0036 develop in-progress tok0
+WT="$FIX.wt"
+git -C "$FIX" worktree add -q --detach "$WT"
+before_head="$(git -C "$WT" rev-parse HEAD)"
+before_sums="$(find "$WT/.claude/backlog" -type f | sort | xargs cksum)"
+out="$( (cd "$WT" && .claude/backlog/handoff 0036 tok0 verify) 2>&1 )" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names a linked worktree" "$out" 'linked worktree'
+assert_contains "cites CONCURRENCY.md" "$out" 'CONCURRENCY.md'
+assert_contains "names the primary checkout to run from" "$out" "$(cd "$FIX" && pwd -P)"
+assert_eq "no commit lands on the worktree's HEAD" "$(git -C "$WT" rev-parse HEAD)" "$before_head"
+assert_eq "the worktree's backlog is byte-identical" \
+  "$(find "$WT/.claude/backlog" -type f | sort | xargs cksum)" "$before_sums"
 
 # --- result -------------------------------------------------------------------------------------
 echo
