@@ -645,3 +645,25 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   ticket's mutable frontmatter either pins those bytes into a fixture or is written against one.
   Needs a row (pointer: `skills/queue/SKILL.md` acceptance criteria; `tests/falsifiable-acs.test.sh`;
   items/0147 AC5).
+
+- 2026-09-12 — **`--drive`'s develop gate is still formed on `expects:`/parent overlap, which is no
+  longer what `develop`'s prose says its batching condition is.** `0059` settled develop's condition
+  as *takeability at the stage* and demoted shared scope to "why a batch pays more"; `gate_from` in
+  `.claude/backlog/next` still groups by parent-or-shared-file, so the tool and the skill now
+  describe different develop batching units. That is precisely the tool/prose disagreement `0132`
+  existed to remove, surviving on the other side of the gate. It may well be correct — a `--drive`
+  gate is a *conflict* unit and a human session's batch is a *cost* unit, which is an argument for
+  two different rules — but nothing anywhere says so, so the next reader meets two conditions and no
+  reconciliation. `0132` could not touch it: "changing how develop gates are formed" is its stated
+  Out of scope. Needs a row (pointer: `.claude/backlog/next` `gate_from`; `skills/develop/SKILL.md`
+  batching paragraph; items/0059 FR1, items/0132 Out of scope).
+
+- 2026-09-12 — **`assert_contains "DISPATCH  verify 0102"` cannot tell one dispatched row from a
+  batch, so every pre-`0132` dispatch assertion in `tests/next.test.sh` is green under
+  over-batching.** `DISPATCH  verify 0102 0103 0104` contains the expected substring. It did not
+  matter while the script only ever printed one id; it does now. `0132` added an `assert_eq` for its
+  own cases and left `0131`'s alone rather than rewriting another ticket's criteria, and `0132`'s
+  own cases do cover the regression — so this is a redundancy question, not a hole. Cheap rule if it
+  recurs: an assertion about a *list* is an equality on the whole line, never a containment of one
+  member (pointer: `tests/next.test.sh` 0131 AC1/AC3; `testing-conventions.md`, assert membership
+  never cardinality).
