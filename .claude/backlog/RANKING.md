@@ -246,3 +246,12 @@ axis `0128` explicitly lets vary; its costs are tokens and tree safety, which ra
 
 **`0041` keeps its rank and gains a parent.** It was already specified and already ranked; adopting
 it into `0128` changes what it belongs to, not what it is worth.
+
+## 2026-09-12 — 0150 above 0134, and 0134 blocked on it
+
+`0150` (design claims its row at Step 1) goes at row 1, directly above `0134`. It is placed there by
+the rule that a prerequisite outranks the ticket that needs it: `0134`'s FR5 and AC8 are false
+until `0150` ships and is installed. On the tiers alone it is Tier 3, *Blocking*, and size `s`.
+Nothing else was compared against it, because `0134` was already row 1. `0134` keeps its rank as
+`blocked` rather than sinking. `0147` returns to its row at `verify`: its code stands and only a
+stale criterion was dropped, so its worth is unchanged.

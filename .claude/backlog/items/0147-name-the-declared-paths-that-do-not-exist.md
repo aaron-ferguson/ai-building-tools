@@ -2,7 +2,7 @@
 id: "0147"
 title: Make claim name the declared paths that do not exist instead of reserving them
 type: bug
-next: queue
+next: verify
 status: ready
 qa_level: unit
 size: s
@@ -67,8 +67,6 @@ discover that the ticket was specified against a file nobody wrote.
 - [ ] AC4 — Given an item declaring a path that exists and is held by another claim, when `./claim`
   runs, then it is reported as held and not as missing. Red-making mutation: reporting both from one
   branch.
-- [ ] AC5 — Given `0075`'s real item file, when `./claim 0075` runs against it, then
-  `tests/skill-prose.test.sh` is named as not existing. Red-making input: today's script.
 - [ ] AC6 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
   reports `0 failed`. Red-making change: editing the template and not `.claude/backlog/claim`.
 
@@ -160,6 +158,17 @@ discover that the ticket was specified against a file nobody wrote.
   about to correct. If a real-tree instance is wanted, pin the bytes into a fixture the suite owns;
   if it is not, drop AC5 — no FR requires one, and AC1 already pins FR1's behaviour. Parked the
   generalisable half in `FINDINGS.md`.
+
+- **2026-09-12 (queue) — Re-specified: the code at `5d51b9d` is right and stays; AC5 is dropped
+  and nothing else changes.** Verify `0d96` passed AC1–AC4, AC6 and the Compatibility NFR, each with
+  a mutation it ran, and found AC5 unsatisfiable. It was dropped rather than re-pointed, on verify's
+  constraint: a criterion must not depend on another ticket's frontmatter, which that ticket can
+  change. Re-pointing at `0132` repeats the defect. Pinning a real item's bytes into a fixture adds
+  nothing AC1 does not already prove on its own fixture. No FR asked for a real-tree instance.
+  **AC6 keeps its number**, as an id rather than a position, so the QA evidence above and every note
+  citing it still resolve. No guard cites AC5 (`grep 0147 tests/` names AC1–AC4 only). No criteria
+  gain code, so the stage is `verify`, not `develop`. The next verify pass re-runs the suite, since
+  `tests/claim.test.sh` has uncommitted edits from `0083` [`7bf5`] as of this re-spec.
 
 ## QA evidence
 

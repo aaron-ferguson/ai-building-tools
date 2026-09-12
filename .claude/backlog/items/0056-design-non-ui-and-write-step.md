@@ -170,3 +170,9 @@ happens or where a decision's consequences go when they land outside the ticket.
   `skills/develop/SKILL.md` Step 3 and `templates/item.md`, not in `design`. Recorded here because
   it is Step 1's contract that breaks, and whoever builds this is the session most likely to notice
   the other half is missing.
+
+- **2026-09-12 (queue) — the *whether design claims* half above is now `0150`, not this ticket.**
+  0134's design pass (`7a94`) settled it by running the scripts: design claims at Step 1 and
+  releases with `./handoff`, no script change. It was filed separately so `0134` is not blocked
+  behind this ticket's other seven FRs. FR3 (Step 4 cites the lock) stays here; build them knowing
+  `0150` rewrites the same Step 4 paragraph.

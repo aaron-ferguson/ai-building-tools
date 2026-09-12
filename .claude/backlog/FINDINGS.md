@@ -109,7 +109,7 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   literally is the one that collides (pointer: `.claude/backlog/claim`,
   `skills/queue/templates/next`, `skills/develop/SKILL.md` Step 1).
 
-- 2026-09-10 (design) — **`design` Step 4 tells a session to write an item file and commit, and
+- 2026-09-10 [->0150] (design) — **`design` Step 4 tells a session to write an item file and commit, and
   never names the lock.** `references/CONCURRENCY.md` requires it for *every* write to the backlog
   directory, item files included, and `develop` and `verify` name it five and four times each;
   `skills/design/SKILL.md` names it zero times (repo and the installed 0.9.23 copy are identical, so
@@ -182,7 +182,7 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the corrected `QUEUE.md` scrolled past on an unrelated write and a newer row's title mentioned
   batching. A one-line reverse-edge check belongs in `design` Step 1 or 2, where the contract is
   read (pointer: `skills/design/SKILL.md` Step 2, items 0059, 0132, 0137).
-- 2026-09-10 (design) — **`design` Step 4's write path names no lock and no script, and the one
+- 2026-09-10 [->0150] (design) — **`design` Step 4's write path names no lock and no script, and the one
   script that fits refuses the case.** The step says to set `next:`/`status:` and "commit by
   pathspec in the same turn" for an *unclaimed* ticket, but every write is inside
   `.claude/backlog/` and `CONCURRENCY.md` exempts nothing; `./handoff` cannot be the vehicle
@@ -736,7 +736,7 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   Step 2, *if what is missing is a decision rather than detail*, and Step 1, *run the staleness grep
   before you claim*; `.claude/backlog/handoff` usage).
 
-- 2026-09-12 (design) — **`design` claims only at Step 4, so the whole Step 2–3 pass runs on an
+- 2026-09-12 [->0150] (design) — **`design` claims only at Step 4, so the whole Step 2–3 pass runs on an
   unheld row, and on 0134 another session (`d08c`, commit `8d38048`) claimed it mid-pass.** `./next
   design` offered 0134 as `TAKE`; this session read the ledger tool, the run-log schema and the
   measurement convention, reached a decision, and found the row `in-progress` only when it went to

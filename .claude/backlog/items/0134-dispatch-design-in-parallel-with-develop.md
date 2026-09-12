@@ -2,15 +2,15 @@
 id: "0134"
 title: Dispatch a sprint's design sessions alongside develop instead of stopping for them
 type: feature
-next: queue
-status: ready
+next: develop
+status: blocked
 qa_level: verify
 close_by: verify
 size: m
 created: 2026-09-09
 source: user
 parent: "0128"
-blocked_by: []
+blocked_by: ["0150"]
 relates: ["0050", "0137"]
 expects:
   - skills/sprint/SKILL.md
@@ -68,6 +68,9 @@ scope a person already confirmed — the estimate they approved would no longer 
 - FR8 — That line says `concurrent` or `sequential`, derived from the run log alone: `concurrent`
   when the design session's dispatch-to-outcome window intersects any `develop` session's window,
   windows paired by stage and ticket id. No new field is trusted from the supervisor for this.
+- FR9 — Where a `next: design` row outside the confirmed scope outranks the scope's develop gate,
+  the proposal names that row as where the run will stop, before the person confirms. The run still
+  halts there; it is reported as the scope's edge, not dispatched for (FR3) and not refused.
 
 ## Non-functional requirements
 
@@ -81,7 +84,10 @@ scope a person already confirmed — the estimate they approved would no longer 
 
 - [ ] AC1 — Given a confirmed scope naming a `next: design` row and a develop gate, when the sprint
       runs, then both sessions are running at once and the design row's outcome does not stop the
-      run. **Red if** the design row still returns exit 4 and halts, which is today's behaviour.
+      run — including when that session ends by handing its row to `next: develop`. **Red if** the
+      design row still returns exit 4 and halts, which is today's behaviour; or if the supervisor
+      reports the finish as `--completed design:<id>`, which reaches `./next`'s `ESCALATE … which no
+      routing rule covers` branch and stops the run by another door.
 - [ ] AC2 — Given a sprint whose gate has been crossed, when the tail runs, then no design session
       is running during `retro` or `queue`. **Red if** FR2 is written as guidance rather than
       enforced at dispatch.
@@ -93,8 +99,10 @@ scope a person already confirmed — the estimate they approved would no longer 
       as available for the next sprint. **Red if** it is absorbed — the confirmed estimate then
       describes a scope that no longer exists.
 - [ ] AC5 — Given a design session and a develop session running together, when both write to the
-      backlog, then each write is taken under the lock and both land. **Red if** either writes
-      unlocked; the failure is silent and shows up as a lost row rather than an error.
+      backlog, then each write is taken under the lock and both land, the writer that finds the lock
+      busy retrying rather than giving up. **Red if** either writes unlocked; the failure is silent
+      and shows up as a lost row rather than an error. The fixture must model the retry: `./claim`
+      refuses a busy lock rather than waiting on it, so two claims at once red on the refusal alone.
 - [ ] AC6 — Given a run-log fixture with one design session overlapping a develop session and one
       that does not, when `record` runs over a fixture transcript, then the ledger block holds two
       `DESIGN` lines, one `concurrent` and one `sequential`, each with an observed and a predicted
@@ -110,6 +118,10 @@ scope a person already confirmed — the estimate they approved would no longer 
       supervisor re-calls `--drive` before the claim lands and acts on the repeated exit 4 — FR5's
       failure. Observed 2026-09-12 in a scratch copy: a claimed design row prints
       `NOTE 0134 is in-progress — another session holds it; stepping over it`.
+- [ ] AC9 — Given a fixture backlog where an unscoped `next: design` row ranks above the confirmed
+      develop gate, when the sprint prints its proposal, then the proposal names that row as the run's
+      stopping point. **Red if** the proposal reports the gate takeable and says nothing, which is the
+      observed `4 develop gate(s) takeable` beside an escalation on `0110`.
 
 ## QA plan
 
@@ -224,3 +236,16 @@ scope a person already confirmed — the estimate they approved would no longer 
   `4 develop gate(s) takeable`. FR3 forbids dispatching for it, so the builder has two choices. The
   proposal can refuse a confirmed scope whose design rows are outranked by an unscoped design row,
   or the halt can be reported as the scope's edge. Do not read this as AC1 failing.
+- **2026-09-12 (queue) — Re-specified. No code has been written; the contract changes and the
+  stage moves to `develop`, blocked.** Three changes. **The sibling is filed as `0150`** (design
+  holds its row with `./claim` from Step 1), and it goes in `blocked_by:` here because FR5 and AC8
+  are only true once it ships and is installed. It is a new row rather than an FR on `0056`: that
+  ticket is eight prose FRs sized `m`, and blocking this one behind all of them buys nothing.
+  **The builder's two choices above are decided, on fact: report the halt as the scope's edge
+  (FR9, AC9).** Refusing the scope would refuse almost every sprint on this backlog today, because
+  `0110` and `0041` are design rows at ranks 3 and 4, above every develop row except the held
+  `0083`. **AC1 and AC5 are sharpened** with the two facts the `4244` develop pass found, which
+  were in these notes but in no criterion: a design finish reported through `--completed` stops the
+  run, and `./claim` refuses a busy lock rather than waiting on it. FR1–FR8 and AC2–AC4 and AC6–AC8
+  are unchanged. Size stays `m`; FR9 is one proposal line over a `--drive` walk the skill already
+  makes.
