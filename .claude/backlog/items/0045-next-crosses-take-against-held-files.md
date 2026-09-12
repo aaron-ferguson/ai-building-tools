@@ -187,3 +187,76 @@ about. Deciding 0005 was safe meant opening 0026's item file — the read Step 1
   line: *"0044's evidence set meets 0074's declared `touches:` at `skills/verify/SKILL.md`"*. Worth
   the QA pass confirming that the built behaviour names the intersecting path and the holding id in
   that direction too, not only for the row it steps over.
+
+### Verify 2026-09-11 [7564] — FAIL on AC8 only, and the mechanism is cleared
+
+Handed back to `develop` for **one line**, not for a rebuild. AC1-AC7 are green and each is pinned
+by a mutation that reddened it; the full evidence is in `## QA evidence` below and does not need
+re-deriving. The only red is AC8's whole-suite clause, and its cause is `7fdd367` (2026-09-11), a
+home-directory path in **item `0052`'s** QA-evidence table — a file this ticket never touched,
+committed twelve days after `0045` reached verify.
+
+**The constraint, not a menu:** redact the absolute path at
+`.claude/backlog/items/0052-acceptance-criteria-must-be-falsifiable.md:294` so the quoted tool
+output keeps its meaning without publishing a home directory, then re-run `commands.unit` and tick
+AC8. `0052` is closed and unheld, so nothing stands over that file. Do **not** touch
+`skills/queue/templates/next`, `.claude/backlog/next` or `tests/next.test.sh` — they are verified.
+
+The red is already parked in `FINDINGS.md` (2026-09-11, verify `0135`) and still owes a row; do not
+park it again. It also means `tools/release` step 5 is currently red for the whole repo.
+
+
+## QA evidence
+
+Verified 2026-09-11, session token `7564`, at `qa_level: unit` (`config.yml` `commands.unit` —
+every `tests/*.test.sh`). Run file-by-file rather than fail-fast, per `config.yml`'s own note.
+Tree was **clean** at Step 2 (`git status --porcelain` empty), so the dirty∩evidence intersection
+is empty by construction and this verdict is not advisory. `HEAD` advanced mid-pass (`c158138`,
+another session) and two files were briefly dirty during it; both were committed by their own
+session and the tree read clean again at the verdict.
+
+Mutations were applied to `skills/queue/templates/next` — the copy `tests/next.test.sh` runs via
+`NEXT_SRC` (line 23) — never to `.claude/backlog/next`, which the harness does not execute.
+Every mutant was `sh -n` checked and its diff confirmed non-empty before its colour was believed.
+Control after every restore: `413 passed, 0 failed`.
+
+| Row | How it was checked | Result |
+|---|---|---|
+| AC1 — a row whose `expects:` meets a held `touches:` is not offered | `tests/next.test.sh`, case *0045 AC1*. **M1**: delete the take loop's collision branch (`next:1376-1380`) → `395 passed, 18 failed`, including *"no TAKE on the colliding top row"* | PASS |
+| AC2 — the walk continues to the first clear row | Same suite, case *0045 AC2*. **M2**: `continue` → `break` in that branch (`next:1379`) → `411 passed, 2 failed`, exactly *"offers the lower clear row"* and *"with its own expects"* — FR2's load-bearing half pinned independently of FR1 | PASS |
+| AC3 — the stepped-over row is named with the path and the holder | Same suite, case *0045 AC3*, asserting the whole `COLLIDES` line rather than three substrings. M1 reddens all three assertions. The case also asserts the holder's *non*-intersecting path is absent, so a report naming every declared path would fail | PASS |
+| AC4 — every row colliding reads differently from an empty stage | Same suite, case *0045 AC4*. M1 reddens *"says the stage is held, not empty"*. Live wording: `every takeable develop row collides with files another session holds — nothing here is safe to take` | PASS |
+| AC5 — empty `touches:` falls back to `expects:`, labelled predicted | Same suite, both *0045 AC5* cases. **M4**: `declared_scope` (`next:678`) always prints the bare wording → `410 passed, 3 failed`. The second case pins that a row declaring *neither* field keeps `none declared — assume held, ask` verbatim | PASS |
+| AC6 — the held set is not filtered by stage | Same suite, case *0045 AC6*. **M3**: add a stage filter to `collision_report`'s loop → `411 passed, 2 failed`, exactly the two AC6 assertions. This is the 0007/0038 instance — a `develop` candidate against a live `verify` claim | PASS |
+| AC7 — `.claude/backlog/next` matches the template | `tests/backlog-scripts-installed.test.sh`: `37 passed, 0 failed`; `diff -q` on the two paths reports identical. **M5**: append a comment line to `.claude/backlog/next` → `36 passed, 1 failed`, *"next has diverged from skills/queue/templates/next — fix the template and re-copy, never the copy"* | PASS |
+| AC8 — the whole suite passes | 30 files run individually. 29 green. `tests/measurement.test.sh`: **`128 passed, 1 failed`** — its privacy guard finds a home-directory path published at `.claude/backlog/items/0052-acceptance-criteria-must-be-falsifiable.md:294` | **FAIL** — see below |
+| FR1 (not an AC, but the design decision AC5 does not pin) | Case *0045 FR1*: a candidate colliding with a held row's **predicted** `expects:` and with nothing it has claimed is still offered. M4 reddens *"the prediction is still surfaced"*. Confirms the filter reads `touches:` while the display falls back to `expects:` | PASS |
+| NFR Documentation — the rule is stated where `--help` defines takeability | `./next --help` lines 36-43: takeability is now four tests including *"no file the row `expects:` is already held by a held row's `touches:`"*, followed by the `COLLIDES` report, the continue-don't-break behaviour, the cross-stage held set, and the distinct all-collide wording. `documentation-conventions.md` satisfied | PASS |
+
+**Step 4, newly reachable states:** the change can now *refuse* rows, which is a new way for the
+stage to be empty. The two shapes that could freeze it are both closed in the code: `held_by`
+gates the whole loop so a stale `touches:` on an unheld row collides with nothing, and the
+exclusive-claim short-circuit is tested before `paths_shared` for the same reason. No routing,
+permission, credential, log field, egress or UI surface is touched, so no Security, Privacy or
+Accessibility row is owed beyond the always-on pass, which is clean for this change's own files.
+
+### Why AC8 is a FAIL and what clears it
+
+The red is **not this ticket's**. It is a `grep` hit on line 294 of item `0052`'s QA-evidence
+table — a verdict that quoted a tool's output verbatim, where the tool prints an absolute path.
+It landed at **`7fdd367`, 2026-09-11 15:59**, twelve days after `0045` was handed to verify at
+`4871751` (2026-08-30 11:06), in a file `0045` does not touch and no `0045` guard reads. The
+mechanism this ticket built is **cleared** — every one of AC1-AC7 is green and mutation-pinned
+above, and none needs re-deriving.
+
+The remedy is one line: redact the absolute path in `.claude/backlog/items/0052-…md:294`
+(`/Users/<user>/AI/ai-building-conventions` → a relative or placeholder form) so the quoted tool
+output keeps its meaning without publishing a home directory. `0052` is **closed and unheld**, so
+no claim stands over it. Then re-run `commands.unit` and tick AC8. Nothing else in `0045` is owed.
+
+The same red is **already parked** in `FINDINGS.md` (2026-09-11, verify `0135`) and still owes a
+row; do not park it a third time. Note the disagreement in precedent honestly: `0135`'s verdict
+recorded it as *"PASS for this ticket"* because `0135` carried no whole-suite AC. `0045`'s **AC8
+is a whole-suite AC in as many words**, so the same red is a literal fail here, and softening it
+would tick a criterion that is false. This asymmetry — one repo defect, two opposite verdicts a
+day apart, decided by whether the ticket happened to write AC8 — is itself parked as a finding.
