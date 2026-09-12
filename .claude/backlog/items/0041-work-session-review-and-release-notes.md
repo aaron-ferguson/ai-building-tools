@@ -94,11 +94,11 @@ is for, what to do, and what did not change.
 
 The requirements below are the **content** of the review, and they hold whichever placement the
 design question settles. **Design adds the FRs that name the invocation, the output path and the
-file that implements them** — see *Open design question*.
+file that implements them** — settled 2026-09-12 as FR8–FR12 below; see *Notes & decisions*.
 
 - **FR1 — Report the tickets the work session closed.** ID, title, and the verdict that closed each
   one, read from the record on disk — `DONE.md` and the FR10 run log — never from a session's memory.
-  *(Design, 2026-09-12: this lands in the `LEDGER.md` block per FR9, and it lists the IDs the run
+  *(Design, 2026-09-12: this lands in the `LEDGER.md` block per FR10, and it lists the IDs the run
   log's `outcome` events closed.)*
 - **FR2 — Write release notes to a shareable file.** Per `launch-conventions.md`: what changed, who
   it is for, what to do, and what did **not** change. A ticket ID is provenance, not a release note;
