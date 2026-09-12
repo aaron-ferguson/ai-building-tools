@@ -16,7 +16,8 @@
 #   record     the same four figures as actuals, appended to LEDGER.md beside the estimate, plus
 #              the three model checks the ledger exists to make falsifiable: a develop gate's
 #              observed cost against config.yml's linear prediction for that ticket count, verify
-#              cost per ticket for batched and unbatched sessions, and findings parked.
+#              cost per ticket for batched and unbatched sessions, findings parked, and one DESIGN
+#              line per design session -- concurrent or sequential by the log's own windows (0134).
 #
 # PROVENANCE IS THE POINT, NOT A DECORATION. Every figure carries the source it was read from and
 # the stamp it was true at, and BOTH SIDES OF EVERY RATIO carry one. A pinned numerator over a live
@@ -333,6 +334,46 @@ def outcomes_of(events):
             if e.get("event") == "outcome" and isinstance(e.get("session_id"), str)]
 
 
+def windows_of(events, stage):
+    """{ticket id: [start, end or None]} for one stage, a dispatch paired with its outcome by stage
+    and ticket id (0134 FR8). The first dispatch opens a window and the first outcome after it
+    closes it; an unparsable stamp contributes nothing rather than a guessed time."""
+    out = {}
+    for e in events:
+        if e.get("stage") != stage or e.get("event") not in ("dispatch", "outcome"):
+            continue
+        stamp = next((e[k] for k in TS_KEYS if isinstance(e.get(k), str)), None)
+        try:
+            at = parse_ts(stamp) if stamp else None
+        except ValueError:
+            at = None
+        if at is None:
+            continue
+        for tid in ticket_ids(e):
+            if e["event"] == "dispatch":
+                out.setdefault(tid, [at, None])
+            elif tid in out and out[tid][1] is None:
+                out[tid][1] = at
+    return out
+
+
+def concurrency(window, develop_windows):
+    """`concurrent`, `sequential`, or -- where either answer would be a guess -- `concurrency not
+    measured` (0134 AC7). A killed session has no end, so it enters neither population. An
+    unanswered develop window that opened before the design session ended could have overlapped
+    it, so it makes the answer unknown rather than sequential; a definite overlap still wins."""
+    if not window or window[1] is None:
+        return "concurrency not measured"
+    start, end = window
+    unknown = False
+    for d_start, d_end in develop_windows:
+        if d_end is None:
+            unknown = unknown or d_start < end
+        elif d_start < end and start < d_end:
+            return "concurrent"
+    return "concurrency not measured" if unknown else "sequential"
+
+
 def harvest(transcripts, session_ids):
     """(usd, context tokens) over exactly these sessions. Shelling out rather than reimporting the
     pricing: two copies of the rate table is the divergence a single source exists to prevent."""
@@ -443,6 +484,27 @@ def record(opts):
                    % ("batched" if n > 1 else "unbatched", sid.split("-")[0], observed / n))
         out.append("  numerator USD %.2f (%s @ %s)" % (observed, harvest_src % 1, stamp))
         out.append("  denominator %d ticket(s) (%s @ %s)" % (n, outcome_src, stamp))
+
+    # 0134 FR7/FR8 -- one DESIGN line per design session, so "a design session run alongside
+    # develop costs no more than one run after it" is a claim the ledger can check. Predicted and
+    # observed share a line for the reason GATE's do. The concurrency word is derived from the log's
+    # own windows and never from a supervisor flag: the party being measured does not get to say
+    # which population its sessions belong to.
+    design = [(sid, tickets) for stage, sid, tickets in sessions if stage == "design"]
+    if design:
+        stages, meas_src = read_measurement(opts["measurement"])
+        mean = stages.get("design", {}).get("usd_per_session")
+        predicted = NO_PRIOR if mean is None else "USD %.2f" % mean
+        design_windows = windows_of(events, "design")
+        develop_windows = list(windows_of(events, "develop").values())
+        for sid, tickets in design:
+            observed, _ = harvest(opts["transcripts"], [sid])
+            for tid in tickets:
+                out.append("DESIGN %s session %s %s: predicted %s (%s @ %s) "
+                           "observed USD %.2f (%s @ %s)"
+                           % (tid, sid.split("-")[0],
+                              concurrency(design_windows.get(tid), develop_windows),
+                              predicted, meas_src, stamp, observed, harvest_src % 1, stamp))
 
     # FR5 -- what the sprint parked, and what its retro did with the buffer.
     parked = sum(e.get("findings_parked", 0) or 0

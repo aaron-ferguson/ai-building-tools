@@ -31,6 +31,13 @@ Each `## sprint` block carries one table and a few derived lines.
   is load-bearing rather than tidy.
 - `RATIO …` is written as **three** lines — the ratio, then a stamped numerator, then a stamped
   denominator.
+- `DESIGN <id> session <prefix> <concurrency>: predicted … observed …` is one line per `design`
+  session the sprint dispatched (`0134`), `MEASUREMENT.md`'s design mean beside what that one
+  session cost. `concurrent` means its dispatch-to-outcome window overlapped a `develop` window,
+  `sequential` that it did not; both are read from the run log, never from the supervisor.
+  `concurrency not measured` is a session with no outcome, or one beside an unanswered develop
+  window, and it belongs to neither population. The claim these lines check is that `concurrent`
+  costs no more than `sequential`; read it as *consistent with* until at least 5 are `concurrent`.
 - `FINDINGS parked` and `RETRO consumed … produced …` are the yield figures that replace `0133`'s
   interim threshold and age limit once there is enough of them.
 

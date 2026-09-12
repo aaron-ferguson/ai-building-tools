@@ -603,7 +603,7 @@ else
   bad "AC6 -- a ratio is missing a stamped side: $RATIOBAD"
 fi
 # And every figure line names a source. Anchored to the absence of a source, not to a vocabulary.
-NOSRC="$(grep -E '^(GATE|FINDINGS|RETRO) ' "$BLOCK" | grep -v '@' || true)"
+NOSRC="$(grep -E '^(GATE|DESIGN|FINDINGS|RETRO) ' "$BLOCK" | grep -v '@' || true)"
 if [ -z "$NOSRC" ]; then
   ok "every derived line carries an as-at stamp"
 else
@@ -654,6 +654,135 @@ if says "$SKILL" "Step 6 — The findings gate, and the end of the run" 'sprint-
   ok "and the actuals are recorded against it before the run ends"
 else
   bad "FR1 -- the run can end without ever scoring its estimate; an unscored estimate never improves"
+fi
+
+# --- 0134 FR7/FR8 -- one DESIGN line per design session the sprint dispatched --------------------
+# A design session run alongside develop is claimed to cost no more than one run after it. That
+# claim is only checkable if every such session is priced AND classified, and the classification
+# comes from the run log's own windows -- never from a flag the supervisor sets about itself.
+#
+# FOUR design sessions, one per shape the overlap rule has to get right:
+#   0202  dispatched and finished INSIDE the develop window          -> concurrent
+#   0205  dispatched inside it and finished AFTER it                -> concurrent (partial overlap)
+#   0203  dispatched after the develop outcome                      -> sequential
+#   0204  dispatched and never answered -- a killed session         -> not measured (AC7)
+# The partial overlap is what reds an implementation that only asks whether one window CONTAINS
+# the other.
+echo "0134 AC6/AC7 -- a DESIGN line per design session, classified from the run log's windows"
+DRUN="$FIX/r-design.jsonl"
+SID_DDEV="dddddddd-0000-0000-0000-000000000000"
+SID_DA="eeeeeeee-0000-0000-0000-000000000000"
+SID_DD="abababab-0000-0000-0000-000000000000"
+SID_DB="ffffffff-0000-0000-0000-000000000000"
+SID_DC="99999999-0000-0000-0000-000000000000"
+cat > "$DRUN" <<JSON
+{"ts":"2026-09-12T09:00:00Z","run":"r-design","event":"run_started"}
+{"ts":"2026-09-12T09:01:00Z","run":"r-design","event":"scope_confirmed","tickets":["0201","0202","0203","0204","0205"]}
+{"ts":"2026-09-12T09:02:00Z","run":"r-design","event":"dispatch","stage":"develop","session_id":"$SID_DDEV","tickets":["0201"]}
+{"ts":"2026-09-12T09:10:00Z","run":"r-design","event":"dispatch","stage":"design","session_id":"$SID_DA","tickets":["0202"]}
+{"ts":"2026-09-12T10:00:00Z","run":"r-design","event":"outcome","stage":"design","session_id":"$SID_DA","findings_parked":0,"tickets":[{"id":"0202"}]}
+{"ts":"2026-09-12T10:30:00Z","run":"r-design","event":"dispatch","stage":"design","session_id":"$SID_DD","tickets":["0205"]}
+{"ts":"2026-09-12T11:00:00Z","run":"r-design","event":"outcome","stage":"develop","session_id":"$SID_DDEV","findings_parked":0,"tickets":[{"id":"0201"}]}
+{"ts":"2026-09-12T11:20:00Z","run":"r-design","event":"outcome","stage":"design","session_id":"$SID_DD","findings_parked":0,"tickets":[{"id":"0205"}]}
+{"ts":"2026-09-12T11:30:00Z","run":"r-design","event":"dispatch","stage":"design","session_id":"$SID_DB","tickets":["0203"]}
+{"ts":"2026-09-12T12:00:00Z","run":"r-design","event":"outcome","stage":"design","session_id":"$SID_DB","findings_parked":0,"tickets":[{"id":"0203"}]}
+{"ts":"2026-09-12T12:10:00Z","run":"r-design","event":"dispatch","stage":"design","session_id":"$SID_DC","tickets":["0204"]}
+{"ts":"2026-09-12T12:30:00Z","run":"r-design","event":"sprint_ended"}
+JSON
+mkdir -p "$FIX/dstore"
+mk_session "$SID_DDEV" develop 400000 > "$FIX/dstore/$SID_DDEV.jsonl"
+mk_session "$SID_DA"   design   40000 > "$FIX/dstore/$SID_DA.jsonl"     # USD 1.00
+mk_session "$SID_DD"   design  160000 > "$FIX/dstore/$SID_DD.jsonl"     # USD 4.00
+mk_session "$SID_DB"   design   80000 > "$FIX/dstore/$SID_DB.jsonl"     # USD 2.00
+mk_session "$SID_DC"   design  120000 > "$FIX/dstore/$SID_DC.jsonl"     # USD 3.00
+
+# The prediction is DERIVED from MEASUREMENT.md's design row -- cost over sessions -- never written
+# here as a literal, which would pin a figure the ticket itself says is a prior of one session.
+PRED_DESIGN="$(awk -F'|' '$2 ~ /^ *design *$/ { c = $5; s = $3; gsub(/[ $,]/, "", c); gsub(/[ ,]/, "", s); printf "%.2f", c / s; exit }' "$MEAS")"
+if [ -n "$PRED_DESIGN" ]; then
+  ok "MEASUREMENT.md carries a design per-session mean to predict from (USD $PRED_DESIGN)"
+else
+  bad "0134 FR7 -- no design row in MEASUREMENT.md's per-skill table; the prediction has no source"
+fi
+
+DLEDGER="$FIX/design-ledger.md"
+cp "$EMPTY" "$DLEDGER"
+DREC="$("$TOOL" record --ledger "$DLEDGER" --run "$DRUN" --transcripts "$FIX/dstore" \
+  --measurement "$MEAS" --config "$CONF" --estimate-tickets 5 --estimate-wall no-prior \
+  --estimate-tokens 1200000 --estimate-usd 20.00 --estimate-source "$EST_SOURCE" 2>&1 || true)"
+DBLOCK="$FIX/dblock"
+awk '/^## sprint /{s=1} s' "$DLEDGER" > "$DBLOCK" 2>/dev/null || : > "$DBLOCK"
+
+NDESIGN="$(grep -c '^DESIGN ' "$DBLOCK" || true)"
+if [ "$NDESIGN" = 4 ]; then
+  ok "four design sessions produce four DESIGN lines"
+else
+  bad "0134 AC6 -- expected 4 DESIGN lines, got ${NDESIGN:-0}; record said: $(printf '%s' "$DREC" | tr '\n' ' ' | cut -c1-240)"
+fi
+
+design_line() { grep "^DESIGN $1 " "$DBLOCK" || true; }
+# $1 ticket, $2 the classification it must carry, $3 the observed USD
+design_case() {
+  dc_line="$(design_line "$1")"
+  case "$dc_line" in
+    *" $2:"*) ok "$1 is classified $2" ;;
+    *) bad "0134 AC6/AC7 -- $1 is not classified '$2': ${dc_line:-no DESIGN line}" ;;
+  esac
+  case "$dc_line" in
+    *"observed USD $3 ("*) ok "and observes its own session's USD $3" ;;
+    *) bad "0134 FR7 -- $1 does not observe USD $3 over its one session: ${dc_line:-no DESIGN line}" ;;
+  esac
+  case "$dc_line" in
+    *"predicted USD $PRED_DESIGN (MEASUREMENT.md"*) ok "and predicts MEASUREMENT.md's design mean, USD $PRED_DESIGN" ;;
+    *) bad "0134 FR7 -- $1 does not predict MEASUREMENT.md's design mean USD $PRED_DESIGN: ${dc_line:-no DESIGN line}" ;;
+  esac
+  # Both sides carry their own source AND stamp: an `@` inside the predicted clause, before the word
+  # `observed`, and another after it. Anchored to ORDER rather than to parentheses, because the
+  # harvest source reads `id(s)` and a `[^)]*` source pattern cannot match across it.
+  case "$dc_line" in
+    *"predicted "*"@ "*" observed USD "*"@ "*) ok "and both figures carry their own source and stamp" ;;
+    *) bad "0134 FR7 -- $1's predicted and observed figures do not each carry an @-stamped source: ${dc_line:-no DESIGN line}" ;;
+  esac
+}
+design_case 0202 concurrent 1.00
+design_case 0205 concurrent 4.00
+design_case 0203 sequential 2.00
+design_case 0204 "concurrency not measured" 3.00
+
+# AC7's red is a GUESS, and a guess can be either word. Asserted separately from the label above so
+# a line reading "concurrency not measured: sequential" cannot pass on the label alone.
+case "$(design_line 0204)" in
+  *" concurrent"*|*sequential*) bad "0134 AC7 -- the unpaired window was classified anyway: $(design_line 0204)" ;;
+  *) ok "the unpaired window is classified as neither concurrent nor sequential" ;;
+esac
+
+# The design sessions are not develop gates and not verify batches, so they add no GATE or RATIO
+# line of their own -- one develop session means one GATE line.
+NGATE="$(grep -c '^GATE ' "$DBLOCK" || true)"
+if [ "$NGATE" = 1 ]; then
+  ok "the design sessions add no GATE line beside the one develop gate"
+else
+  bad "0134 FR7 -- expected exactly 1 GATE line, got ${NGATE:-0}"
+fi
+
+# The privacy assertion covers the new line too: the fixture transcripts carry the same sentinel.
+if grep -q 'SENTINELPROSE' "$DLEDGER"; then
+  bad "0134 privacy -- message text from a design fixture transcript reached the ledger"
+else
+  ok "no design transcript text reaches the ledger"
+fi
+DBAD="$(grep -vn '^[A-Za-z0-9 .,%|:@/_#()=-]*$' "$DBLOCK" | head -1 || true)"
+if [ -z "$DBAD" ]; then
+  ok "every generated line, DESIGN lines included, is within the aggregate-figures character set"
+else
+  bad "0134 privacy -- a generated line is outside the aggregate-figures character set: $DBAD"
+fi
+
+echo "0134 -- LEDGER.md explains the DESIGN line where a reader learns to read a block"
+if says "$LEDGER" "How to read a block" '`DESIGN'; then
+  ok "How to read a block names the DESIGN line"
+else
+  bad "0134 FR7 -- LEDGER.md's How to read a block does not describe the DESIGN line"
 fi
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
