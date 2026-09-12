@@ -708,3 +708,15 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   the message, never the status" rule already sits: a message you cannot write a phrase assertion
   against is a message nobody can read (pointer: `testing-conventions.md`, *`exits non-zero` is
   satisfied by the silent refusal*).
+
+- 2026-09-12 — **`qa-level-once` guards a duplicated `**Level:**` line but not a stale
+  `**Why that level:**` rationale, and a prior verdict read the silence as agreement.** `0135`'s
+  frontmatter was raised to `qa_level: unit`; its QA plan still opens *"no runner applies"*, which is
+  the argument for `verify`. The item declares the level exactly once, so `tests/qa-level-once.test.sh`
+  is green and `verify` Step 2's drift rule — written against two *declarations* — has nothing to
+  fire on. A verify session reading the prose first can reasonably run the lower level and never
+  learn the frontmatter disagreed. Two prior verdicts recorded *"frontmatter and QA-plan prose agree;
+  no drift"* when the rationale had in fact never been updated. The cheap fix is for whoever raises a
+  level to rewrite the rationale in the same edit, and for the guard to notice a rationale naming a
+  different level than the frontmatter (pointer: `skills/verify/SKILL.md` Step 2, *the frontmatter
+  field is the authority*; `tests/qa-level-once.test.sh`).
