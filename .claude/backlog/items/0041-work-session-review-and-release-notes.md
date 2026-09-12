@@ -184,12 +184,10 @@ that name the invocation, the output path and the implementing file.**
 - [ ] AC10 — Given a fixture in which two content-block lines repeat one `message.id`, when the
       computation runs, then that turn is counted once.
 
-**Placement ACs — added by design, 2026-09-12.** How the placement touches the ACs above:
-- **AC1, AC3–AC6 and AC8 are confirmed** and now name their file: the `LEDGER.md` block written by
-  `tools/sprint-ledger.sh record`.
-- **AC2 is changed**: its release-notes file is `CHANGELOG.md`, checked per version section (AC13).
-- **AC7 is confirmed** and made concrete by AC16.
-- **AC9 and AC10 are confirmed** for `--by-session`.
+**Placement ACs — added by design, 2026-09-12.** AC1, AC3–AC6 and AC8 are confirmed and now name
+their file, the `LEDGER.md` block written by `tools/sprint-ledger.sh record`. AC2 is changed: its
+release-notes file is `CHANGELOG.md`, checked per version section (AC13). AC7 is confirmed and made
+concrete by AC16. AC9 and AC10 are confirmed for `--by-session`.
 
 - [ ] AC11 — Given a claimed ticket, when `./close <id> <token> --note "<text>"` runs, then
       `CHANGELOG.md` gains `<text>` under `## Unreleased` and `DONE.md` gains the row, both in
