@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | develop | in-progress | 0128 |
+| 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | verify | ready | 0128 |
 | 0135 | Record what a sprint was estimated to cost against what it did, and estimate from that | develop | ready | 0128 |
 | 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | develop | ready | 0128 |
 | 0080 | Let a findings entry's lesson half be removed independently of its work half | design | ready |  |

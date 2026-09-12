@@ -2,8 +2,8 @@
 id: "0132"
 title: Let verify batch within a gate that was developed together, with per-ticket evidence
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 close_by: verify
 size: m
@@ -19,15 +19,9 @@ expects:
   - skills/orchestrate/SKILL.md
   - .claude/backlog/config.yml
   - tests/next.test.sh
-claimed_by: "0a54"
-claimed_at: 2026-09-12T14:41:10Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/next
-  - skills/queue/templates/next
-  - skills/verify/SKILL.md
-  - skills/sprint/SKILL.md          # expects: said skills/orchestrate/SKILL.md; 0128 renamed it
-  - tests/next.test.sh
-  - tests/sprint.test.sh            # the QA plan names it for FR3; expects: omitted it
 ---
 
 ## Problem
