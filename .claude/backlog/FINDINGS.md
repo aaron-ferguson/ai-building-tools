@@ -745,3 +745,4 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   before its spend. The 2026-09-10 entry above asks Step 4 to claim; this asks for it at Step 1, or
   for `./next design` to skip a row another design session has been offered (pointer:
   `skills/design/SKILL.md` Step 1 and Step 4; `references/CONCURRENCY.md` *Claim tokens*).
+- 2026-09-12 (queue) — **`queue` Step 2's re-specify path says to un-tick touched ACs but is silent on a criterion that is *dropped*: renumber or keep a gap.** 0147 dropped AC5 and kept AC6's number, so its QA evidence and notes still resolve, reasoning from the withdraw rule for ticket ids. Nothing states that for AC ids, and `close` ticks by line form, not sequence, so a gap is harmless but undecided (pointer: `skills/queue/SKILL.md` Step 1 *Re-specify*; item 0147).
