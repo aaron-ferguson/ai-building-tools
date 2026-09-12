@@ -2,8 +2,8 @@
 id: "0134"
 title: Dispatch a sprint's design sessions alongside develop instead of stopping for them
 type: feature
-next: design
-status: in-progress
+next: develop
+status: ready
 qa_level: verify
 close_by: verify
 size: m
@@ -15,8 +15,11 @@ relates: ["0050", "0137"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "d08c"
-claimed_at: 2026-09-12T21:07:46Z
+  - tools/sprint-ledger.sh          # widened by design 2026-09-12 — the DESIGN line (FR7, FR8)
+  - tests/sprint-ledger.test.sh
+  - .claude/backlog/LEDGER.md       # "How to read a block" gains the DESIGN line
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -58,12 +61,20 @@ scope a person already confirmed — the estimate they approved would no longer 
   any other stage.
 - FR6 — The skill states that concurrency here is permitted because the sessions touch disjoint file
   kinds, and cites `0050` as the open general question rather than implying it is settled.
+- FR7 — Every `design` session a sprint dispatches carries its ticket id on its `dispatch` event,
+  and `tools/sprint-ledger.sh record` writes one `DESIGN` line per such session: observed USD from
+  `harvest-usage.sh` over that one session id, beside `MEASUREMENT.md`'s design per-session mean as
+  the prediction — each side with its own source and stamp, as `GATE` does.
+- FR8 — That line says `concurrent` or `sequential`, derived from the run log alone: `concurrent`
+  when the design session's dispatch-to-outcome window intersects any `develop` session's window,
+  windows paired by stage and ticket id. No new field is trusted from the supervisor for this.
 
 ## Non-functional requirements
 
 | Dimension | Requirement for this item | Convention |
 |---|---|---|
-| Performance | The claim is token-neutrality, and `0135`'s ledger records design cost per session under concurrent and sequential dispatch so the claim is checkable rather than asserted | `observability-conventions.md` |
+| Performance | The claim is token-neutrality, **declared before the build**: a concurrent design session costs no more than a sequential one. Checked from the ledger's `DESIGN` lines (FR7, FR8). Baseline is `MEASUREMENT.md`'s design mean — **n = 1 session, USD 2.32**, re-read 2026-09-12 — so it is a prior, not a control; the verdict is reported as counts, and read as *consistent with* until the ledger holds at least 5 concurrent design sessions | `measurement-conventions.md` |
+| Guardrail | Supervisor spend per closed ticket (Step 8's figure, supervisor in the numerator) does not rise on sprints that dispatch design concurrently. The wait-for-claim loop the Notes require is where a hidden cost would live | `measurement-conventions.md` |
 | Documentation | The three guards and their reason are in the skill, since a later reader will otherwise generalise this permission to develop | `documentation-conventions.md` |
 
 ## Acceptance criteria
@@ -84,6 +95,15 @@ scope a person already confirmed — the estimate they approved would no longer 
 - [ ] AC5 — Given a design session and a develop session running together, when both write to the
       backlog, then each write is taken under the lock and both land. **Red if** either writes
       unlocked; the failure is silent and shows up as a lost row rather than an error.
+- [ ] AC6 — Given a run-log fixture with one design session overlapping a develop session and one
+      that does not, when `record` runs over a fixture transcript, then the ledger block holds two
+      `DESIGN` lines, one `concurrent` and one `sequential`, each with an observed and a predicted
+      USD that carry their own source and stamp. **Red if** a design session produces no line —
+      today's behaviour, since `record` emits only `GATE develop` and `RATIO verify`.
+- [ ] AC7 — Given a design `dispatch` event with no matching `outcome`, when `record` runs, then
+      that session's line reads `not measured` for concurrency rather than guessing either value.
+      **Red if** an unpaired window is classified — a killed session would then enter the
+      comparison as a data point it never was.
 
 ## QA plan
 
@@ -91,26 +111,9 @@ scope a person already confirmed — the estimate they approved would no longer 
   checkable from a run log fixture plus `grep` assertions over the skill.
 - **Specific checks:** a run-log fixture showing overlapping design and develop windows for AC1 and
   non-overlapping tail windows for AC2; `tests/sprint.test.sh` for FR2, FR3, FR4 and FR6 as stated
-  rules; a two-writer fixture for AC5.
-
-## Open design question
-
-- **Question:** the Performance NFR requires this item's token-neutrality claim to be checkable
-  from `0135`'s ledger, and that ledger cannot answer it — so does `0134` widen to build the
-  instrumentation, ship the dispatch rule with the claim unmeasured, or drop the NFR?
-- **Why it blocks specification:** the NFR is written as a statement of fact about a file this
-  ticket does not own — *"`0135`'s ledger records design cost per session under concurrent and
-  sequential dispatch"* — and `tools/sprint-ledger.sh` records per-session cost for `develop`
-  (`GATE …`) and `verify` (`RATIO verify_usd_per_ticket …`) only. Nothing emits a design
-  per-session figure, and nothing anywhere records whether a dispatch was concurrent or
-  sequential, so the two cost populations the claim compares cannot be distinguished even in
-  principle. `design` reaches that tool only through the regex reading `MEASUREMENT.md`'s
-  per-skill table, which is the estimate side. The three answers are materially different work —
-  widening `touches:` into another closed ticket's tool, versus accepting an unmeasurable claim
-  against the core convention that *unmeasurable is unfinished*, versus narrowing the contract —
-  and only the author may pick.
-- **Settle it with:** `/design 0134`. FR1–FR6 and AC1–AC5 need no decision and no script change:
-  they are buildable as written once this is answered.
+  rules; a two-writer fixture for AC5; `tests/sprint-ledger.test.sh` with an overlapping and a
+  non-overlapping design fixture for AC6 and an unpaired dispatch for AC7, reusing its existing
+  fixture transcript and sentinel so the privacy assertion covers the new line too.
 
 ## Out of scope
 
@@ -148,3 +151,25 @@ scope a person already confirmed — the estimate they approved would no longer 
   decision"* is the sentence FR1 falsifies**, and no guard in `tests/` asserts it, so nothing will
   go red when it is rewritten. FR2, FR3 and FR4 are the three guards the Documentation NFR wants
   written in its place, and they need new assertions rather than amended ones.
+- **2026-09-12 — design: widen to build the instrumentation, and sharpen what it measures.** The
+  handed-back question (widen / ship unmeasured / drop the NFR) was settled on fact, not taste.
+  *Ship unmeasured* is excluded by a principle: `measurement-conventions.md`, *Instrumentation Ships
+  With the Feature* — "in the same change, not a follow-up ticket" — and a claim nobody can check
+  is exactly the one that gets generalised. *Drop the NFR* is excluded because token-neutrality is
+  the whole distinction from `0137`; if it is false, this permission should be reversed, so it is a
+  measure someone will act on and passes *Don't Instrument What You Won't Look At*. **Widening costs
+  little:** `0135` is done, so no claim holds `tools/sprint-ledger.sh`; `record()` already
+  harvests per session for `GATE` and `RATIO`, and the run log already has per-stage `dispatch` and
+  `outcome` timestamps, so a `DESIGN` line is the same shape as `GATE` (FR7, FR8, AC6, AC7).
+  **What changed from the NFR as written:** its "sequential dispatch" population cannot exist inside
+  a sprint today — a sprint never dispatches design at all, it halts — so the baseline is
+  `MEASUREMENT.md`'s hand-driven design mean, and the ledger grows its own sequential population
+  from sprints where the develop gate finished before the design session started. **Trade-off
+  accepted:** size `m` carries a second file family, and the baseline is one session, so the claim
+  stays *consistent with* for several sprints rather than being settled on day one. **Rejected:**
+  a per-sprint `concurrent: true` flag set by the supervisor — it would be a claim about the run
+  written by the party being measured, where window overlap is derivable from timestamps it
+  already logs. **Guardrail added:** the risk to neutrality is not the design session but the
+  supervisor's wait-for-claim loop, which Step 8's per-ticket figure already counts. **Existing
+  criteria:** FR1–FR6 and AC1–AC5 are confirmed unchanged; the Performance NFR is rewritten; a
+  Guardrail row, FR7–FR8 and AC6–AC7 are added.
