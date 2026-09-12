@@ -2,8 +2,8 @@
 id: "0147"
 title: Make claim name the declared paths that do not exist instead of reserving them
 type: bug
-next: verify
-status: in-progress
+next: queue
+status: ready
 qa_level: unit
 size: s
 created: 2026-09-09
@@ -15,8 +15,8 @@ expects:
   - skills/queue/templates/claim
   - .claude/backlog/claim
   - tests/claim.test.sh
-claimed_by: "0d96"
-claimed_at: 2026-09-12T14:38:25Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -145,3 +145,49 @@ discover that the ticket was specified against a file nobody wrote.
   live spellings `skills/sprint/SKILL.md` and `tests/sprint.test.sh` are both in `0135`'s set, and
   `0132` additionally shares `.claude/backlog/config.yml`. `./next develop` offered `0132` as TAKE
   because the collision is invisible at the declared spellings — the stale path is what hid it.
+
+- **2026-09-12 (verify, `0d96`) — sent to `queue` on a stale contract, not on a red. Five of six ACs
+  and the Compatibility NFR pass, each pinned by a mutation this session ran itself; the whole
+  suite is green across all 30 files. AC5 is the only thing standing in the way, and it is
+  unsatisfiable as written for the two reasons `develop` gave, both re-probed here: `0075` no
+  longer declares `tests/skill-prose.test.sh`, and being `done` it has no `QUEUE.md` row, so
+  `./claim 0075` exits 1 at `no row for 0075 in QUEUE.md`.
+  **The constraint on any replacement: an acceptance criterion must not rest on another ticket's
+  mutable frontmatter.** That is what failed here — the bytes AC5 depends on were edited by the
+  same pass that wrote it, and no guard can see a fixture that lives in someone else's item file.
+  Re-pointing at `0132` has the same defect and is worse today: `0132` is `in-progress` under
+  `0a54`, and its `skills/orchestrate/SKILL.md` is exactly the kind of entry a claiming session is
+  about to correct. If a real-tree instance is wanted, pin the bytes into a fixture the suite owns;
+  if it is not, drop AC5 — no FR requires one, and AC1 already pins FR1's behaviour. Parked the
+  generalisable half in `FINDINGS.md`.
+
+## QA evidence
+
+**2026-09-12, verify `0d96`, `qa_level: unit`.** Suite run per `config.yml`'s per-file form
+(`for t in tests/*.test.sh; do "$t" || true; done`); no `lint:` or `typecheck:` command is
+configured. Tree clean at Step 2 and at verdict, so the intersection with the evidence set is empty
+and this is not advisory. Both copies of `claim` are byte-identical (`diff` clean), so the guard
+harness — which copies `skills/queue/templates/claim` into its fixtures — exercises the installed
+script's bytes.
+
+| Criterion | How it was checked | Result |
+|---|---|---|
+| AC1 — missing path named, existing one not, claim succeeds | `tests/claim.test.sh` case *0147 AC1*: five assertions, incl. that the fictional path is still seeded (FR2 is a warning, not a refusal). Mutation M4 (`-e` test forced true) → `89 passed, 3 failed`; mutation M5 (existence test removed, nothing ever resolves) → `88 passed, 4 failed`, reddening *and not the one that does* | PASS |
+| AC2 — all-resolving item's output byte-identical to today's | `tests/claim.test.sh` case *0147 AC2* uses `assert_eq` over the whole report, not `assert_contains`. Named mutation run: report made unconditional (`if true; then`) → `89 passed, 3 failed` | PASS |
+| AC3 — an existing directory and a matching glob are neither reported | `tests/claim.test.sh` cases *0147 AC3* (both halves: resolving dir+glob silent, absent dir still named). Named mutation `-e` → `-f` → `91 passed, 1 failed`; glob mutation `for m in $p` → `for m in "$p"` → `91 passed, 1 failed` | PASS |
+| AC4 — an existing path held by another claim is reported held, not missing | `tests/claim.test.sh` case *0147 AC4* (`add_held 0034 yy88` + an existing declared path). Mutation M5 reddens its assertion *an existing path is not fiction just because it is held* | PASS |
+| AC5 — `./claim 0075` names `tests/skill-prose.test.sh` as not existing | **Unsatisfiable as written, two independent reasons, both probed.** `0075`'s `expects:` reads `skills/retro/SKILL.md`, `skills/develop/SKILL.md`, `tests/remote-anchor.test.sh` — the fictional path was removed by the same develop park that filed this ticket (`git log -p` on the item, `-  - tests/skill-prose.test.sh`). And `0075` is `status: done` with no `QUEUE.md` row: `./claim 0075` exits 1 at `no row for 0075 in QUEUE.md`, before any report. Neither pass nor fail is honest | **STALE** |
+| AC6 — whole suite, every file `0 failed` | 30 files, each run individually. Tallies pasted from each file's own line; largest `tests/next.test.sh` `413 passed, 0 failed`, `tests/close.test.sh` `240 passed, 0 failed`, `tests/claim.test.sh` `92 passed, 0 failed`, `tests/sprint.test.sh` `179 passed, 0 failed, 0 skipped`. `grep -cE '[1-9][0-9]* failed'` over the captured output → `0` | PASS |
+| NFR Compatibility — an all-resolving claim produces today's output | The equality assertion under AC2 is the case the NFR asks for; the unconditional-line mutation is the red it names | PASS |
+
+**Always-on convention pass (`CONVENTIONS_CORE.md`).** Shell change, no new log field, analytics
+event or egress destination, so no `data-privacy-conventions.md` trigger; no auth, credential or
+data-visibility surface, so no missing Security row; no UI. Step 4's *what did this make newly
+reachable* pass: the change adds one advisory stanza after the four existing scope outcomes and no
+new branch, exit code or write — nothing previously unreachable is now offered.
+
+**Mutation sweep, control-last.** Control before the sweep: `92 passed, 0 failed`. Five mutations,
+each applied to `skills/queue/templates/claim` (the copy the harness runs) over a committed tree,
+restored by that path alone, `git diff --stat` confirming each landed: `-e`→`-f` 1 failed; quoted
+`$p` 1; report unconditional 3; existence test forced true 3; existence test removed 4. Restored
+copy `diff`-identical to the pre-sweep copy; control after: `92 passed, 0 failed`; tree clean.
