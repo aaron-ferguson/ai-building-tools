@@ -3,7 +3,7 @@ id: "0150"
 title: Make design hold its row with claim from Step 1, and release it with handoff
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -15,8 +15,8 @@ relates: ["0134", "0056", "0048"]
 expects:
   - skills/design/SKILL.md
   - tests/design-hold.test.sh       # new; not claim.test.sh or handoff.test.sh, which 0083 holds
-claimed_by:
-claimed_at:
+claimed_by: "79f4"
+claimed_at: 2026-09-12T22:45:50Z
 touches:
 ---
 
