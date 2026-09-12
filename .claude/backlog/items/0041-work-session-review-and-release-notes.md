@@ -3,7 +3,7 @@ id: "0041"
 title: Write release notes for what a work session delivered
 type: feature
 next: develop
-status: in-progress
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -25,22 +25,9 @@ expects:
   - .claude/backlog/LEDGER.md
   - skills/sprint/SKILL.md
   - README.md
-claimed_by: "3107"
-claimed_at: 2026-09-12T22:49:43Z
+claimed_by:
+claimed_at:
 touches:
-  - CHANGELOG.md
-  - .claude/backlog/close
-  - tests/close.test.sh
-  - skills/verify/SKILL.md
-  - tools/release
-  - tests/release.test.sh
-  - tools/harvest-usage.sh
-  - tests/measurement.test.sh
-  - tools/sprint-ledger.sh
-  - tests/sprint-ledger.test.sh
-  - .claude/backlog/LEDGER.md
-  - skills/sprint/SKILL.md
-  - README.md
 ---
 
 ## Problem
