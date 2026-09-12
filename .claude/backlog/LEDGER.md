@@ -21,7 +21,7 @@ Each `## sprint` block carries one table and a few derived lines.
 |---|---|
 | `tickets` | how many tickets the sprint expected to work, against how many it actually touched |
 | `wall_clock_min` | elapsed minutes, bracketed by the run log's own first and last UTC timestamps |
-| `tokens` | context tokens over the run's own session ids |
+| `tokens` | context tokens over the run's own session ids — **summed per turn**, so cached context is counted once for every turn it survives. A sprint in the tens of millions is ordinary and is not a count of fresh input; `MEASUREMENT.md` prices it at USD 0.50 per million per turn survived |
 | `usd` | spend over the same session ids |
 
 - `GATE develop <n> ticket(s) …` pairs `config.yml`'s linear prediction — `base + per_extra × (n−1)`
