@@ -48,32 +48,6 @@ that widened scope then overlaps a running develop gate, the follow-on develop s
 is correct. What is not correct is the sprint silently absorbing the newly-unblocked ticket into a
 scope a person already confirmed — the estimate they approved would no longer describe the run.
 
-## Open design question
-
-**What holds a design row while its dispatched session runs, given that `design` never claims one?**
-Raised by `develop` 2026-09-12, no code written. FR5 says the session "claims its row through
-`claim` like any other stage", and the FR1 note's whole mechanism is *wait for that claim to land,
-then re-call `--drive`, which steps past the held row*. But `skills/design/SKILL.md` claims at no
-step: lines 31–35 and Step 4 (124–134) write an **unclaimed** ticket directly, by design. So for the
-whole design pass `--drive` returns exit 4 on the same row, the develop gate below it is unreachable,
-and AC1 cannot be met by the sprint skill alone. Every remedy crosses a line this ticket drew:
-
-- **(a) `design` claims via `./claim` at Step 1 when it works a ticket.** Durable and visible to every
-  other session (`CONCURRENCY.md`, *A claim must be durable the moment it is made*), makes FR5 true
-  as written, and also answers the two open `FINDINGS.md` entries about design sessions overlapping on
-  one row. Costs: it is exactly *"Any change to what a design session does once dispatched"*, which
-  Out of scope excludes, and it widens `expects:` to `skills/design/SKILL.md` and its guard.
-- **(b) `./next --drive` gains a supervisor-supplied `--designing <id>`**, stepped over like a held row.
-  No design change, but `./next` is not in `expects:`, the FR1 note says it should not need touching,
-  and the "hold" is supervisor memory — a hand-driven `/design` could take the same row, so FR5's
-  second half is unmet.
-- **(c) The supervisor claims on the design session's behalf.** Forbidden outright by sprint Step 8,
-  *It never claims a row and never mints a claim token*.
-
-**Recommendation: (a)**, as a blocking sibling rather than widened into this ticket — it changes a
-stage, is useful without any sprint, and splitting it is `queue`'s call. What would change it: if
-design claiming for the length of a pass is judged to hold rows too long for hand-driven work.
-
 ## Functional requirements
 
 - FR1 — A sprint may run one or more `design` sessions concurrently with its develop session.
@@ -130,6 +104,12 @@ design claiming for the length of a pass is judged to hold rows too long for han
       that session's line reads `not measured` for concurrency rather than guessing either value.
       **Red if** an unpaired window is classified — a killed session would then enter the
       comparison as a data point it never was.
+- [ ] AC8 — Given an in-scope `next: design` row that a dispatched design session has claimed, when
+      the supervisor re-calls `--drive`, then it steps over that row and names the develop gate below
+      it, and the supervisor dispatches no second design session for the same id. **Red if** the
+      supervisor re-calls `--drive` before the claim lands and acts on the repeated exit 4 — FR5's
+      failure. Observed 2026-09-12 in a scratch copy: a claimed design row prints
+      `NOTE 0134 is in-progress — another session holds it; stepping over it`.
 
 ## QA plan
 
@@ -213,3 +193,34 @@ design claiming for the length of a pass is judged to hold rows too long for han
   `verify_batch`), so a designed id in it does not by itself absorb that ticket into a develop gate;
   what does is `--drive` naming it as the topmost develop row after its design lands, which the
   partial-gate rule in *The proposal* is the nearest existing answer to (AC4).
+- **2026-09-12 — design (token `7a94`): the design session holds its own row with `./claim`, taken
+  at `design` Step 1; that change is a blocking sibling, not part of this ticket.** Settled on fact.
+  All three script paths were run in a scratch copy of this backlog, not read: `./claim` takes a
+  `next: design` row (rc 0, and it declines to seed `touches:` because design does not build);
+  `--drive` then steps over it (`NOTE … in-progress … stepping over it`); `./handoff <id> <token>
+  develop` and `./handoff <id> <token> design waiting` both release it; and a second `./claim` on
+  the held row refuses (`is 'in-progress', not ready`), which is FR5's first half enforced by an
+  existing script. So the remedy needs **no script change** — only `skills/design/SKILL.md` Step 1
+  and Step 4, which is why it is a sibling: it changes a stage, is useful with no sprint running,
+  and falls under this ticket's *"Any change to what a design session does once dispatched"*.
+  **Rejected:** a supervisor-supplied `--designing <id>` on `./next`, because the hold would live in
+  supervisor memory that a hand-driven `/design` cannot see, so FR5's second half stays unmet; and
+  the supervisor claiming for the session, which sprint Step 8 forbids (*It never claims a row and
+  never mints a claim token*). **The objection that claiming holds rows too long is answered by
+  fact:** a `develop` claim already holds a row for a whole session, and `CONCURRENCY.md` *Claim
+  tokens* already covers the dead claim. **Trade-off accepted:** 0134 cannot start until the sibling
+  ships and is installed; and a design pass that stops without deciding must still release through
+  `./handoff … design ready` rather than walking away. **Criteria:** FR1–FR8 and AC1–AC7 confirmed
+  unchanged, since FR5 as written becomes true once the sibling lands; AC8 added.
+  **For `queue`:** file the sibling and set 0134's `blocked_by:` to it. It is not a new question.
+  `0056`'s notes already assign *"whether design claims"* to that ticket, yet none of 0056's FRs
+  says so. Adding one there is the alternative to a new row, and which to use is `queue`'s call.
+  Either way the open `FINDINGS.md` entries of 2026-09-10 and 2026-09-12 about design reasoning over
+  an unheld row close with it. **Routed to `queue` rather than `develop`** because a blocker that
+  does not exist cannot be named in `blocked_by:`, and this session writes only the ticket it holds.
+- **2026-09-12 — design: an out-of-scope design row ranked *above* the confirmed gate still stops
+  the run, even after the sibling lands.** In the same drill, with 0134 held, `--drive` escalated on
+  the next design row (`0110 is at next: design and outranks everything below it`) while reporting
+  `4 develop gate(s) takeable`. FR3 forbids dispatching for it, so the builder has two choices. The
+  proposal can refuse a confirmed scope whose design rows are outranked by an unscoped design row,
+  or the halt can be reported as the scope's edge. Do not read this as AC1 failing.
