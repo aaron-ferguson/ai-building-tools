@@ -3,7 +3,7 @@ id: "0107"
 title: Require an NFR row to name how it would red
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 qa_manual:
 size: m
@@ -17,8 +17,8 @@ expects:
   - skills/queue/SKILL.md            # the step that fills it
   - skills/verify/SKILL.md           # Step 4's always-on convention pass
   - tests/falsifiable-acs.test.sh    # the AC analogue, and the likely home
-claimed_by:
-claimed_at:
+claimed_by: "7d2d"
+claimed_at: 2026-09-12T01:14:46Z
 touches:
 ---
 ## Problem
