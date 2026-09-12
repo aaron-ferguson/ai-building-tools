@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0135 | Record what a sprint was estimated to cost against what it did, and estimate from that | feature | unit | 2026-09-12 | [items/0135-learn-from-what-a-sprint-was-estimated-to-cost.md](items/0135-learn-from-what-a-sprint-was-estimated-to-cost.md) |
 | 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | feature | verify | 2026-09-12 | [items/0132-batch-verify-within-a-developed-gate.md](items/0132-batch-verify-within-a-developed-gate.md) |
 | 0045 | Cross the take loop against the held file set in next | bug | unit | 2026-09-12 | [items/0045-next-crosses-take-against-held-files.md](items/0045-next-crosses-take-against-held-files.md) |
 | 0144 | Anchor the scope report's commit range to the claim commit for this ticket | bug | unit | 2026-09-12 | [items/0144-anchor-the-scope-report-commit-range.md](items/0144-anchor-the-scope-report-commit-range.md) |

@@ -2,8 +2,8 @@
 id: "0135"
 title: Record what a sprint was estimated to cost against what it did, and estimate from that
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -21,9 +21,10 @@ expects:
   - MEASUREMENT.md
   - tests/sprint-ledger.test.sh     # NEW
   - tests/sprint.test.sh
-claimed_by: "99e3"
-claimed_at: 2026-09-12T17:38:54Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-12
 ---
 
 ## Problem
@@ -86,22 +87,22 @@ proportion to batch size.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a completed sprint, when its record is read, then it holds an estimate and an
+- [x] AC1 — Given a completed sprint, when its record is read, then it holds an estimate and an
       actual for tickets, wall-clock, tokens and dollars. **Red if** any of the four is recorded as
       an actual only, which is what every existing figure in the repo is.
-- [ ] AC2 — Given the very first sprint, when its proposal is produced, then the wall-clock figure is
+- [x] AC2 — Given the very first sprint, when its proposal is produced, then the wall-clock figure is
       marked as having no prior. **Red if** it is printed like the dollar figure, which does have
       one — the two are indistinguishable to a reader otherwise.
-- [ ] AC3 — Given two completed sprints, when the third is proposed, then its estimate is derived
+- [x] AC3 — Given two completed sprints, when the third is proposed, then its estimate is derived
       from the recorded actuals rather than from `MEASUREMENT.md`'s priors. **Red if** the ledger is
       written but never read, which is the failure that makes an estimate never improve.
-- [ ] AC4 — Given a develop gate of more than one ticket, when the sprint ends, then the record holds
+- [x] AC4 — Given a develop gate of more than one ticket, when the sprint ends, then the record holds
       the observed cost beside `stage_budget_usd`'s prediction for that count. **Red if** only the
       observed cost is recorded, which leaves the linear model unfalsifiable.
-- [ ] AC5 — Given the ledger, when `grep` runs over it for a message-text sentinel planted in a
+- [x] AC5 — Given the ledger, when `grep` runs over it for a message-text sentinel planted in a
       fixture transcript, then nothing matches. **Red if** the ledger writes anything but aggregates
       — the same assertion `tests/measurement.test.sh` already makes for `harvest-usage.sh`.
-- [ ] AC6 — Given any ratio in the ledger, when it is read, then its numerator and denominator each
+- [x] AC6 — Given any ratio in the ledger, when it is read, then its numerator and denominator each
       carry a source and a stamp. **Red if** either is bare — the shape that went stale in
       `MEASUREMENT.md` once already.
 
