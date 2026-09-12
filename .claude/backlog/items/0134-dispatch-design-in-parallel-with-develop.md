@@ -3,7 +3,7 @@ id: "0134"
 title: Dispatch a sprint's design sessions alongside develop instead of stopping for them
 type: feature
 next: develop
-status: blocked
+status: ready
 qa_level: verify
 close_by: verify
 size: m

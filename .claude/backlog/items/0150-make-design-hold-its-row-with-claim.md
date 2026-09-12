@@ -2,8 +2,8 @@
 id: "0150"
 title: Make design hold its row with claim from Step 1, and release it with handoff
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -15,9 +15,10 @@ relates: ["0134", "0056", "0048"]
 expects:
   - skills/design/SKILL.md
   - tests/design-hold.test.sh       # new; not claim.test.sh or handoff.test.sh, which 0083 holds
-claimed_by: "79f4"
-claimed_at: 2026-09-12T22:45:50Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-12
 ---
 
 ## Problem
@@ -72,25 +73,25 @@ row refuses with `is 'in-progress', not ready`.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/design/SKILL.md`, when `tests/design-hold.test.sh` greps the Step 1 section
+- [x] AC1 — Given `skills/design/SKILL.md`, when `tests/design-hold.test.sh` greps the Step 1 section
       only, then it names `./claim`. **Red if** the claim is named in Step 4 alone, or not at all —
       today's text.
-- [ ] AC2 — Given a fixture backlog whose row 1 is `next: design, status: ready` above a
+- [x] AC2 — Given a fixture backlog whose row 1 is `next: design, status: ready` above a
       `next: develop` row, when `./claim` takes the design row and `./next --drive` runs, then drive
       names the develop row and prints the `stepping over it` note for the design row. **Red if** the
       claim leaves the row `ready`, so drive exits 4 on it.
-- [ ] AC3 — Given that held design row, when a second `./claim` runs on it, then it refuses and the
+- [x] AC3 — Given that held design row, when a second `./claim` runs on it, then it refuses and the
       row's `claimed_by:` is unchanged. **Red if** a design row is exempt from the ready check.
-- [ ] AC4 — Given that held design row, when `./handoff <id> <token>` runs with each of `develop`,
+- [x] AC4 — Given that held design row, when `./handoff <id> <token>` runs with each of `develop`,
       `design waiting` and `design ready` (three fixtures), then each exits 0, clears `claimed_by:`,
       and leaves the row at the named stage and status. **Red if** handoff refuses a row whose
       current stage is `design`.
-- [ ] AC5 — Given the Step 4 section, when grepped, then it names `./handoff` and no longer contains
+- [x] AC5 — Given the Step 4 section, when grepped, then it names `./handoff` and no longer contains
       the phrase `commit by` on the unclaimed path. **Red if** the old by-hand stage write survives
       beside the new one.
-- [ ] AC6 — Given the skill, when grepped, then it states an ad-hoc question takes no claim. **Red
+- [x] AC6 — Given the skill, when grepped, then it states an ad-hoc question takes no claim. **Red
       if** the sentence is absent.
-- [ ] AC7 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then every
+- [x] AC7 — Given `for t in tests/*.test.sh; do "$t" || exit 1; done`, when it runs, then every
       file reports `0 failed`, including `tests/citations.test.sh` and `tests/skill-size.test.sh`.
       **Red if** the new citations do not resolve or the skill exceeds its size guard.
 
