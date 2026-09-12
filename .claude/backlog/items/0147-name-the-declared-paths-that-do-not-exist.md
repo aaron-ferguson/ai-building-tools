@@ -200,3 +200,31 @@ each applied to `skills/queue/templates/claim` (the copy the harness runs) over 
 restored by that path alone, `git diff --stat` confirming each landed: `-e`→`-f` 1 failed; quoted
 `$p` 1; report unconditional 3; existence test forced true 3; existence test removed 4. Restored
 copy `diff`-identical to the pre-sweep copy; control after: `92 passed, 0 failed`; tree clean.
+
+**2026-09-12, verify `b4d6`, `qa_level: unit` — re-verification after the AC5 re-spec.** No tick
+above was trusted; every criterion re-checked and every mutation cited below re-run by this session.
+`git status --porcelain` empty at Step 2 and empty after the last evidence command, so the dirty set
+is empty, the intersection with the evidence set (`skills/queue/templates/claim`,
+`.claude/backlog/claim`, `tests/claim.test.sh`, `tests/backlog-scripts-installed.test.sh`, `tests/`)
+is empty, and this is not advisory. `diff skills/queue/templates/claim .claude/backlog/claim` clean.
+The copy executing this session's skill is the 0.9.26 install; the change under test is a script
+run from the repo copies, which is what the suite exercises. No `lint:` or `typecheck:` configured.
+
+| Criterion | How it was checked | Result |
+|---|---|---|
+| AC1 — missing path named, existing one not, claim succeeds | `tests/claim.test.sh` case *0147 AC1*. M4 (report never printed — today's behaviour) → `95 passed, 3 failed` incl. *names the one that does not*; M6 (existence test → `false`) → `94 passed, 4 failed` incl. *and not the one that does*; M7 (warning turned into `exit 1`) → `89 passed, 9 failed` incl. *exits 0 — a path that does not exist is a warning, not a refusal* | PASS |
+| AC2 — all-resolving output byte-identical | case *0147 AC2*, `assert_eq` over the whole report. Named mutation M3 (report unconditional) → `95 passed, 3 failed` incl. *the report is byte-for-byte what it was before this ticket* | PASS |
+| AC3 — existing directory and matching glob not reported | cases *0147 AC3* (both). Named mutation M1 `-e`→`-f` → `97 passed, 1 failed` (*nothing is reported as fiction at all*); M2 `for m in "$p"` → `97 passed, 1 failed`, same case; M4 reddens *the absent directory is named* | PASS |
+| AC4 — existing path held by another claim reported held, not missing | case *0147 AC4*; `add_held` holds the same `some/other/file.md` the item declares. Named mutation M5 (a path any other item names is answered as missing, one branch) → `97 passed, 1 failed`, exactly *an existing path is not fiction just because it is held* | PASS |
+| AC6 — whole suite, every file `0 failed` | 31 files run individually (`|| true` form); tallies pasted, e.g. `tests/claim.test.sh: 98 passed, 0 failed`, `tests/next.test.sh: 428 passed, 0 failed`, `tests/close.test.sh: 246 passed, 0 failed`, `tests/backlog-scripts-installed.test.sh: 37 passed, 0 failed`, `tests/sprint.test.sh: 187 passed, 0 failed, 0 skipped`; `grep -cE '[1-9][0-9]* failed'` → `0`. Named change M8 (template edited, installed copy not) → `36 passed, 1 failed`: `claim has diverged from skills/queue/templates/claim` | PASS |
+| NFR Compatibility | AC2's equality case; M3 reddens it | PASS |
+
+**Sweep hygiene.** Tree committed (`86a2715`) before mutating; each mutation applied to
+`skills/queue/templates/claim` (the copy the harness copies into fixtures), confirmed landed by a
+non-empty `git diff --numstat`, restored by that path alone. Control before `98 passed, 0 failed`;
+restored copy `cmp`-identical to the pre-sweep copy; control after `98 passed, 0 failed` and
+`37 passed, 0 failed`; `git status --porcelain` empty.
+
+**Always-on pass.** Unchanged from `0d96`'s and re-read against the diff at `5d51b9d`: shell only,
+no log field, event or egress, no auth or visibility surface, no UI; the new stanza adds no branch,
+exit code or write, so nothing is newly reachable.
