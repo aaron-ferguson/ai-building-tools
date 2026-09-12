@@ -211,3 +211,44 @@ closes nothing is the likely half-done outcome and would otherwise pass. Both we
 (M2, M3). AC3 is the same shape and took the same treatment. **AC1, AC2 and AC6 are unaffected** —
 those are mechanical, and `tests/next.test.sh` and `tests/backlog-scripts-installed.test.sh` execute
 them against the real script.
+
+## QA evidence
+
+**Verified 2026-09-12, token `ada0`, at `qa_level: verify` against commit `48246df` (clean tree at
+Step 2 and at verdict).** Which copy executed: the **repo** copy is the authority and is what was
+tested — `tests/next.test.sh` runs `skills/queue/templates/next`, and the prose assertions read
+`skills/verify/SKILL.md` in the checkout. The installed plugin at `0.9.25` differs from the checkout
+in nine files including `skills/verify/SKILL.md`, so **this verify session's own instructions did
+not carry the batching rule under test** — noted rather than treated as a defect, since the release
+is a separate act.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 | `tests/next.test.sh` — "three tickets developed in one gate are dispatched as one verify session" and "the same batch is chosen on the `--completed` hand-off out of develop", both `assert_eq` on the exact `DISPATCH` line. Mutation **N3** (`verify_batch` returns its lead unconditionally) → 6 failures incl. both cases; **N4** (`lbatch="$lid"`, the `--completed` site only) → exactly 1 failure, proving the two dispatch sites are independently guarded | PASS |
+| AC2 | Same suite — "rows that merely sit at next: verify are NOT a batch", "a stale verify row does not join the batch by sharing the gate's files", "started rows that share neither a parent nor a file are separate gates". Mutation **N1** (drop the `--started` filter in `started_verify_pool`) → 4 failures incl. the first two; **N2** (`vb_gate="$vb_pool"`, dropping `gate_from`) → exactly the separate-gates case. Both filters load-bearing | PASS |
+| AC3 | Asserted as prose in `skills/verify/SKILL.md` (Step 7): "every ticket gets its own table under its own `## QA evidence` — never one table covering the batch", guarded by two `tests/sprint.test.sh` cases against the flattened file. Mutations **M1** (delete the refusal half) and **M2** (delete the per-ticket half) each reddened exactly their own case. Prose read directly, not taken from the assertion | PASS — at the prose level only, see below |
+| AC4 | Prose in `skills/verify/SKILL.md` (Step 2): "run the level so that every file reports rather than stopping at the first red — and do it before any verdict is written", plus the named `0084` masking. Guarded as a bounded span `every file reports.{0,200}before any verdict` and a second literal. Mutations **M3** (drop "before any verdict is written") and **M4** (drop "stopping at the first red") each reddened exactly their own case | PASS — at the prose level only, see below |
+| AC5 | Prose in `skills/verify/SKILL.md` (Step 2): "report it as unattributed, and it closes none of them". Two separate assertions. Mutations **M5** (reword "unattributed") and **M6** (drop "closes none of them") each reddened exactly their own case, confirming a half-written paragraph does not pass | PASS — at the prose level only, see below |
+| AC6 | `diff .claude/backlog/next skills/queue/templates/next` — executed, no output. Guarded by `tests/backlog-scripts-installed.test.sh` AC2; mutation **N5** (append a comment to `.claude/backlog/next` only) → `FAIL next has diverged from skills/queue/templates/next`, 36 passed 1 failed | PASS |
+| NFR Performance | The row requires the saving be *measured, not asserted*, by `0135`'s ledger. `0135` is still `next: develop, status: ready`, so no figure exists — and this ticket asserts none, which is what the row demands of it. `tests/sprint-ledger.test.sh` FR7 guards that the ledger block carries a `verify_usd_per_ticket` ratio; 53 passed, 0 failed | PASS — the measurement itself is `0135`'s and is still open |
+| NFR Documentation | The independence risk and the attribution rule are in `skills/verify/SKILL.md` where a verify session reads them (Step 2 batch paragraphs; the header's "A batch does not license one verdict covering several tickets" / "Claim and close each row individually"), not only in this item. Read directly | PASS |
+| Newly reachable (Step 4) | The change makes a *multi-ticket verify session* reachable for the first time. The state that adds — one verdict closing several rows — is refused in the skill header in terms, and per-ticket claim/close is stated. No routing, permission, logging or egress surface is touched | PASS |
+| Always-on conventions | Diff is 6 files, markdown prose plus one `/bin/sh` script, +372/−45. No secrets, no log field, no analytics event, no egress destination, no auth or data-visibility surface, no UI — so no `data-privacy`, `security` or `accessibility` pass is triggered beyond reading for it. `company: none` respected: fixtures carry no company material | PASS |
+
+**Controls.** Whole suite run **file-by-file, not fail-fast** (`for t in tests/*.test.sh; do "$t" || true; done`), 30 files, every one reporting `0 failed`; the two suites the criteria rest on pasted from their own output: `tests/next.test.sh` **428 passed, 0 failed**; `tests/sprint.test.sh` **187 passed, 0 failed, 0 skipped**; `tests/backlog-scripts-installed.test.sh` **37 passed, 0 failed**; `tests/sprint-ledger.test.sh` **53 passed, 0 failed**. Every one of the eleven mutations was applied to a committed tree, confirmed non-empty with `git diff --stat`, applied to **the copy the harness runs** (`skills/queue/templates/next`, not `.claude/backlog/next` — `NEXT_SRC` points at the template), restored with `git checkout -- <the one path>`, and followed by a green control. `git status --porcelain` empty after every restore and at the verdict.
+
+**AC3, AC4 and AC5 are verified at the prose level, and that is a real limit on this PASS.** Their
+subject is a verify *session's conduct* — "when the session reports, then …" — and nothing in this
+repo can execute a stage and observe what it concluded. `develop` recorded the substitution of the
+QA plan's "fixture with one deliberately red guard" for prose assertions and gave the reason; that
+reasoning was re-checked here and accepted, because a planted-red fixture exercises a test runner
+rather than a session and would be the green check measuring something adjacent that
+`testing-conventions.md` warns about. What the mutations do establish is that the rule is written,
+is written in both its halves, and cannot be deleted or half-deleted silently. What no check in this
+repo establishes is that a session obeys it.
+
+**Advisory:** not advisory. `git status --porcelain` was empty at Step 2 and empty again after the
+last evidence-gathering command, so the dirty set is empty and its intersection with the evidence set
+(`skills/queue/templates/next`, `.claude/backlog/next`, `skills/verify/SKILL.md`,
+`skills/sprint/SKILL.md`, `tests/next.test.sh`, `tests/sprint.test.sh`,
+`tests/backlog-scripts-installed.test.sh`, `tests/sprint-ledger.test.sh`) is empty.
