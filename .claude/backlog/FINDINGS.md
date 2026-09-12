@@ -667,3 +667,13 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   recurs: an assertion about a *list* is an equality on the whole line, never a containment of one
   member (pointer: `tests/next.test.sh` 0131 AC1/AC3; `testing-conventions.md`, assert membership
   never cardinality).
+
+- 2026-09-12 — **`0132` FR4 tells every batched verify to run the suite file-by-file, and in this
+  repo that run exceeds an agent's default 120s tool timeout — the rule as written gives no
+  recovery.** 30 files in `tests/`; `for t in tests/*.test.sh; do "$t" || true; done` ran past the
+  timeout and had to be re-run backgrounded, then waited on. `skills/verify/SKILL.md` names the
+  sentinel-plus-`until grep -q` recipe only in Step 3, for a quantifier sweep, so a session meeting
+  the timeout on FR4's reporting run has to rediscover it — and the obvious wrong recovery is to
+  fall back to the fail-fast `config.yml` line, which is exactly the `0084` masking FR4 exists to
+  stop. Needs a row (pointer: `skills/verify/SKILL.md` Step 2 batch-reporting paragraph and Step 3's
+  sentinel recipe; `.claude/backlog/config.yml` `commands.unit`).
