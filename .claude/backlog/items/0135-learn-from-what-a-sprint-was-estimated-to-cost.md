@@ -13,17 +13,25 @@ parent: "0128"
 blocked_by: []
 relates: ["0041", "0026", "0130", "0133"]
 expects:
-  - skills/orchestrate/SKILL.md
+  - skills/sprint/SKILL.md          # corrected: the 0129 rename deleted skills/orchestrate/
   - tools/harvest-usage.sh
+  - tools/sprint-ledger.sh          # NEW — writes and reads the ledger
+  - .claude/backlog/LEDGER.md       # NEW — the ledger itself
   - .claude/backlog/config.yml
   - MEASUREMENT.md
+  - tests/sprint-ledger.test.sh     # NEW
+  - tests/sprint.test.sh
 claimed_by: "887a"
 claimed_at: 2026-09-12T01:17:24Z
 touches:
-  - skills/orchestrate/SKILL.md
+  - skills/sprint/SKILL.md
   - tools/harvest-usage.sh
+  - tools/sprint-ledger.sh          # new file, created by this ticket
+  - .claude/backlog/LEDGER.md       # new file, created by this ticket
   - .claude/backlog/config.yml
   - MEASUREMENT.md
+  - tests/sprint-ledger.test.sh     # new file, created by this ticket
+  - tests/sprint.test.sh
 ---
 
 ## Problem
