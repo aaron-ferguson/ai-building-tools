@@ -2,7 +2,7 @@
 id: "0083"
 title: Decide what a second checkout may do with the backlog
 type: bug
-next: design
+next: develop
 status: ready
 qa_level: unit
 size: m
@@ -17,6 +17,11 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - skills/queue/templates/claim
+  - skills/queue/templates/close
+  - skills/queue/templates/handoff
+  - tests/claim.test.sh
+  - tests/close.test.sh
+  - tests/handoff.test.sh
 claimed_by:
 claimed_at:
 touches:
@@ -44,31 +49,30 @@ times in this repo, once to establish that a suite red was tree pollution rather
 Today the hazard is **latent, not live** — AetherWorks is one checkout, and its two configured working
 directories are the same inode on a case-insensitive volume.
 
-## Open design question
-
-**Do the scripts refuse outside the primary checkout, or does the rule simply say a worktree may run
-tests and must never claim, close or hand off?**
-
-1. **Refuse mechanically.** `claim`/`close`/`handoff` detect a linked worktree (`git rev-parse
-   --git-common-dir` differing from `--git-dir`) and refuse. Cannot be forgotten; but a second *clone*
-   is not a worktree and looks primary to this test, so it catches the case the skills create and not
-   the case a person creates.
-2. **State the rule and let the scripts stay ignorant.** One sentence in `CONCURRENCY.md`, cited by the
-   two skills that send sessions into worktrees. Costs nothing, catches both cases, and fails open.
-3. **Both**, with the mechanical check as defence in depth for the shape the tools themselves produce.
-
-Also to settle: **whether `.lock/` should live outside the tree at all** — a lock keyed on the repo's
-common git dir would be shared by every worktree of one clone, which would make option 1 unnecessary
-for worktrees while still not covering a second clone.
+**Worse than invisible — observed 2026-09-12 (design stage).** In a scratch clone with a
+`git worktree add --detach` beside it, `./claim 0089` from the worktree exited 0 and committed
+`Claim 0089 [aaaa]` onto the worktree's **detached HEAD**; `./claim 0089` from the primary then
+exited 0 as well. After `git worktree remove`, `git branch -a --contains` on the worktree's claim
+commit listed nothing: the claim is not merely unseen by the other session, it is **unreachable once
+the worktree goes** — which the skills tell the session to do in the same turn. The script's own
+durability test (*committed*) passed, and the claim was still destroyed.
 
 ## Functional requirements
 
-*(Completed by the design stage.)*
-
-1. A session in a linked worktree cannot silently claim, close or hand off a row.
-2. `develop` Step 5 and `verify` Step 2 state what their prescribed worktree may and may not do, at the
-   point they prescribe it.
-3. `CONCURRENCY.md` defines it once; the skills cite it.
+1. `claim`, `close` and `handoff` refuse when run from a **linked worktree** — detected as
+   `git rev-parse --git-dir` differing from `git rev-parse --git-common-dir` — before taking the lock,
+   changing nothing, with a message naming the primary checkout to run from and citing
+   `CONCURRENCY.md`. Placement matches `claim`'s existing *before the lock, deliberately* refusals.
+2. `CONCURRENCY.md` states the rule **once, in its own section** (Part 1): a second checkout of the
+   repository — a linked worktree **or a second clone** — may read and run tests and must never
+   claim, close or hand off, because the lock and `QUEUE.md` are per-checkout. It says the scripts
+   refuse the worktree case mechanically and that **a second clone is caught by nothing but this
+   rule**. The existing sentence inside the `qa_level: e2e` bullet is replaced by a citation of that
+   section, not left as a second statement.
+3. `develop` Step 5 (the throwaway worktree, both the checkout and the replay form) and `verify`
+   Step 2 (the e2e worktree and the whole-project-gate worktree) each cite that section at the point
+   they prescribe a worktree — one citation, no restatement.
+4. `./next` is unchanged: it only reads.
 
 ## Non-functional requirements
 
@@ -76,22 +80,65 @@ for worktrees while still not covering a second clone.
 |---|---|---|
 | Documentation | Stated once and cited, not restated in three skills. | `documentation-conventions.md` |
 | Testing | Any mechanical check is proved able to fail from inside a real linked worktree, not from a simulated path. | `testing-conventions.md` |
+| Guards | `tests/retro-tool-edit.test.sh` pins `worktree in the same turn` inside `develop` Step 5 — add the citation without rewrapping that line. | `CLAUDE.md` *Tests* |
 
 ## Acceptance criteria
 
-*(Written by the design stage.)*
+1. **Given** a fixture repo with a `ready` row and a real `git worktree add --detach` of it, **when**
+   `./claim <id>` runs from the worktree's `.claude/backlog/`, **then** it exits non-zero, the message
+   names a linked worktree and `CONCURRENCY.md`, no commit is added to the worktree's HEAD, and the
+   worktree's `QUEUE.md` and item file are byte-identical to before.
+2. **Given** the same fixture with the row claimed in the primary, **when** `./handoff <id> <token>
+   <stage>` runs from the worktree, **then** it exits non-zero and changes nothing, as in AC1.
+3. **Given** the same fixture with the row claimed in the primary, **when** `./close <id> <token>`
+   runs from the worktree, **then** it exits non-zero and changes nothing, as in AC1.
+4. **Given** the primary checkout of the same fixture, **when** each of the three scripts runs its
+   ordinary success case, **then** it succeeds as today — the check does not refuse a primary.
+5. **Given** each new worktree case, **when** the detection is mutated to always report "primary",
+   **then** that case fails — recorded in the verify notes as the proof the guard can fail.
+6. **Given** `references/CONCURRENCY.md`, **when** it is read, **then** exactly one passage states that
+   a second checkout must never claim, close or hand off, it names both a linked worktree and a second
+   clone, and it says the clone case has no mechanical check.
+7. **Given** `skills/develop/SKILL.md` Step 5 and `skills/verify/SKILL.md` Step 2, **when** each
+   prescribes a worktree, **then** the same paragraph cites the `CONCURRENCY.md` section by name, and
+   `tests/retro-tool-edit.test.sh` stays green.
+8. **Given** the change, **when** `skills/queue/templates/{claim,close,handoff}` are compared with
+   `.claude/backlog/{claim,close,handoff}`, **then** they match (`tests/backlog-scripts-installed.test.sh`
+   green).
 
 ## QA plan
 
-- **Level:** unit — this repo's whole suite; a mechanical check would extend `claim.test.sh` with a
-  case that adds a real `git worktree` and claims from it.
+- **Level:** unit — this repo's whole suite; `claim.test.sh`, `close.test.sh` and `handoff.test.sh`
+  each gain a case that adds a real `git worktree` to their fixture repo and runs the script from it.
 
 ## Out of scope
 
 - Moving the backlog out of the working tree, or to a shared service. A much larger change than the
   hazard warrants.
+- Detecting a second **clone**. Nothing in a clone distinguishes it from the primary without shared
+  state outside the repo; the rule covers it.
+- Relocating `.lock/` to the common git dir (rejected — see Notes).
+- An override flag for running the scripts from a worktree. No caller needs one; add it when one does.
 
 ## Notes & decisions
 
 - Recorded in AetherWorks' buffer 2026-08-25 (item 0051), and re-raised 2026-09-01 when `verify` gained
   a second worktree prescription.
+- **2026-09-12 — design: option 3, both.** The scripts refuse from a linked worktree; `CONCURRENCY.md`
+  states the rule for every second checkout and the skills cite it.
+  - **Why not the rule alone (option 2):** the rule already exists — `142562e` (2026-09-01) put
+    *must never claim, close or hand off* into `CONCURRENCY.md`'s e2e bullet — and the probe above
+    shows what failing open costs here: a destroyed claim with a success message, in exactly the
+    worktree the skills themselves create and remove. The shape the tools produce is the shape the
+    tools should catch.
+  - **Why not refusal alone (option 1):** a second clone passes the check (`--git-dir` equals
+    `--git-common-dir` in a clone — observed), so the rule is the only thing covering it.
+  - **Why not relocating `.lock/` to the common git dir:** the double grant in the probe was
+    *sequential* — the worktree claim finished before the primary one began — so a shared lock would
+    have serialised the two and granted both anyway. Each claim re-reads the row from its own
+    checkout's `QUEUE.md`, which is the stale copy; the lock is not where the defect is.
+  - **Accepted cost:** a person who deliberately runs the backlog from a linked worktree (their primary
+    checked out on another branch) is refused and has to move. Fail-closed is the direction the
+    scripts already take.
+  - The existing sentence at `CONCURRENCY.md` *The working tree is shared too* was scoped to e2e;
+    FR2 lifts it to its own section so `develop`'s worktrees can cite it too.
