@@ -3,7 +3,7 @@ id: "0134"
 title: Dispatch a sprint's design sessions alongside develop instead of stopping for them
 type: feature
 next: design
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: m
@@ -15,8 +15,8 @@ relates: ["0050", "0137"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "d08c"
+claimed_at: 2026-09-12T21:07:46Z
 touches:
 ---
 
