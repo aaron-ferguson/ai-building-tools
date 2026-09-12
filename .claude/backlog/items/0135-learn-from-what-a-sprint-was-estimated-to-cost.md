@@ -3,7 +3,7 @@ id: "0135"
 title: Record what a sprint was estimated to cost against what it did, and estimate from that
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -21,9 +21,17 @@ expects:
   - MEASUREMENT.md
   - tests/sprint-ledger.test.sh     # NEW
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "0db6"
+claimed_at: 2026-09-12T16:48:38Z
 touches:
+  - skills/sprint/SKILL.md          # corrected: the 0129 rename deleted skills/orchestrate/
+  - tools/harvest-usage.sh
+  - tools/sprint-ledger.sh          # NEW — writes and reads the ledger
+  - .claude/backlog/LEDGER.md       # NEW — the ledger itself
+  - .claude/backlog/config.yml
+  - MEASUREMENT.md
+  - tests/sprint-ledger.test.sh     # NEW
+  - tests/sprint.test.sh
 ---
 
 ## Problem
