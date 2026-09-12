@@ -28,18 +28,29 @@ project's conventions and cited, never restated. Resolve them per `references/CO
 resolve, stop as that file directs, because a verdict against no standard looks identical to a real
 one.
 
-**It writes the ticket it settled, when nobody else holds it.** Handing the answer back to `queue` to be
+**It writes the ticket it settled, under a claim it holds.** Handing the answer back to `queue` to be
 typed in costs that skill's whole instruction file — measured at 5,699 tokens, five turns and **USD 0.67**
-for one ticket. The rule against writing existed so two sessions could not write one item, so it applies
-exactly when one does. **How to tell:** `claimed_by:` set and the row `in-progress`. Unclaimed → you
-write it (Step 4). Claimed → hand off.
+for one ticket. The rule against writing existed so two sessions could not write one item, so a design
+session takes the row at Step 1 rather than discovering at Step 4 that someone else is on it.
+**How to tell:** `claimed_by:` is the token your own `./claim` minted →
+held by you, and you write it (Step 4).
+Any other token, or a `./claim` that refused →
+held by another, and you hand off.
 
 ---
 
 ## Step 1 — Get the question, and make it decidable
 
-From a ticket at `next: design`: read its **Open design question** section. That is the contract — answer
-*that*, not a broader topic you find more interesting. Ad-hoc: take the question as asked.
+From a ticket at `next: design`: **take the row with `./claim <id>` before any Step 2 reading.** A refusal
+means another session holds it — stop and report, having spent nothing on the question. The token it
+prints is yours for the whole pass, and the script takes the lock itself (`CONCURRENCY.md`, *Claim tokens*
+and *Lock every write to the backlog directory*). A pass that spends first and claims last is two sessions
+reasoning over one ticket, and in a sprint it is a second design session dispatched onto the same row.
+
+Then read its **Open design question** section. That is the contract — answer *that*, not a broader topic
+you find more interesting.
+
+Ad-hoc: take the question as asked. An ad-hoc question takes no claim — there is no row to hold.
 
 **Sharpen it before answering.** A decidable question has a small set of candidate answers and something
 that distinguishes them. "Bulk edit UX" is a topic; "modal or full page for bulk edit, given the user
@@ -121,7 +132,7 @@ that would change it.
 A decision living only in a chat log gets decided differently next month by someone with less context.
 This step is most of the skill's value.
 
-**Item-scoped, and the ticket is unclaimed** — you write it, here, now:
+**Item-scoped, and held by you** — you write it, here, now, under the token Step 1 minted:
 
 1. Record the answer and what it rejected in *Notes & decisions*.
 2. Write the FRs and given/when/then ACs the answer unblocks. If it unblocks none, it did not settle the
@@ -130,16 +141,20 @@ This step is most of the skill's value.
    ACs on a ticket that still carries one open decision, and against that shape "unblocks none" reads as
    a false negative. Say which existing criteria the answer confirms, which it changes, and which it
    adds — an answer that leaves every one of them untouched is the real negative.
-3. Delete the *Open design question* section, set `next: develop` / `status: ready`, and commit by
-   pathspec in the same turn.
+3. Delete the *Open design question* section, then release the row with
+   `./handoff <id> <token> develop`. It writes the stage and clears the claim in one locked commit, so
+   everything else this pass owes the item is written before it (`CONCURRENCY.md`, *The release is the final act*).
 
-**Item-scoped, and the ticket is claimed** (`claimed_by:` set, row `in-progress`) — hand `queue` the
-answer and the *Notes & decisions* entry, writing nothing yourself. The token is not yours, and two
-sessions in one item file has no merge protocol behind it.
+**Item-scoped, and held by another** (`./claim` refused, or `claimed_by:` names a token you did not mint)
+— hand `queue` the answer and the *Notes & decisions* entry, writing nothing yourself. The token is not
+yours, and two sessions in one item file has no merge protocol behind it.
 
-**It has to be *seen* rather than decided** — set `status: waiting`, write the ask into the ticket's
-`## Waiting on` section (what must be looked at, who can look), and stop; `./next --waiting` surfaces it
-without anyone opening the ticket. Still do not invoke `/prototype`.
+**It has to be *seen* rather than decided** — write the ask into the ticket's `## Waiting on` section
+(what must be looked at, who can look), release with `./handoff <id> <token> design waiting`, and stop;
+`./next --waiting` surfaces it without anyone opening the ticket. Still do not invoke `/prototype`.
+
+**Stopped without deciding** — the answer rests on a fact nobody has, or the pass ends early — release
+with `./handoff <id> <token> design ready` rather than walking away with the claim held.
 
 **Standing** — a pattern beyond this ticket: write a decision record where the project's
 `documentation-conventions.md` says they live, with the question, the answer, what was rejected and why,
