@@ -3,7 +3,7 @@ id: "0147"
 title: Make claim name the declared paths that do not exist instead of reserving them
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: s
 created: 2026-09-09
@@ -15,8 +15,8 @@ expects:
   - skills/queue/templates/claim
   - .claude/backlog/claim
   - tests/claim.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "b4d6"
+claimed_at: 2026-09-12T23:10:05Z
 touches:
 ---
 
