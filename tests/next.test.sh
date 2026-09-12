@@ -348,6 +348,11 @@ assert_contains() {
   esac
 }
 
+assert_eq() {
+  if [ "$2" = "$3" ]; then ok "$1"; saw_on_pass "$2"; else
+    bad "$1"; echo "         expected exactly: $3"; saw "$2"; fi
+}
+
 assert_not_contains() {
   case "$2" in
     *"$3"*) bad "$1"; echo "         expected NOT to contain: $3"; saw "$2" ;;
@@ -2403,6 +2408,127 @@ seal
 out="$(run_next --findings)" && rc=0 || rc=$?
 assert_rc       "exits 1"                     "$rc" 1
 assert_contains "names the key and the value" "$out" 'findings_max_sprints'
+
+
+# ==============================================================================================
+# 0132 — a verify batch is the develop gate that produced it, and nothing wider
+#
+# The condition is NOT develop's (0059): a verify batch spends the gate's INDEPENDENCE, which no
+# startup saving amortises, so the only thing licensing several tickets in one verify session is
+# that a develop gate already fixed the membership. Rows merely sitting at `next: verify` are not
+# thereby a batch — that is the halo-and-misattribution risk 0132's Problem records, and AC2's red.
+#
+# The run's own `--started` set is what carries "this run developed these": it is an INPUT, never
+# derived, for 0131 FR5's reason — a stale verify row somebody else left behind must not join a
+# batch because it happens to name one of the same files. Within that set the membership is
+# recovered by `gate_from`, the same grouping that formed the gate at dispatch, so the two ends of
+# the cycle agree by construction rather than by a second rule that can drift from the first.
+#
+# Every DISPATCH assertion here is an EXACT LINE. `assert_contains "DISPATCH  verify 0102"` is
+# satisfied by `DISPATCH  verify 0102 0103 0104`, so it cannot tell a batch from a single row —
+# which is the only distinction this whole ticket makes.
+
+dispatch_line() { printf '%s\n' "$1" | grep '^DISPATCH' | head -1; }
+
+echo "0132 AC1 — three tickets developed in one gate are dispatched as one verify session"
+scaffold
+add_row 0102 'First built'  verify ready 0100
+add_row 0103 'Second built' verify ready 0100
+add_row 0104 'Third built'  verify ready 0100
+add_ticket 0102 verify ready '[]' 0100 a/one.md
+add_ticket 0103 verify ready '[]' 0100 b/two.md
+add_ticket 0104 verify ready '[]' 0100 c/three.md
+seal
+out="$(run_next --drive --started 0102 --started 0103 --started 0104)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                      "$rc" 0 "$out"
+assert_eq "names all three in one verify session"   "$(dispatch_line "$out")" 'DISPATCH  verify 0102 0103 0104'
+
+echo "0132 AC1 — the same batch is chosen on the --completed hand-off out of develop"
+# The path a driven run actually takes: develop reports, and the very next call routes the gate it
+# just built. Batching only in the rank walk would leave this branch dispatching one id forever.
+scaffold
+add_row 0102 'First built'  verify ready 0100
+add_row 0103 'Second built' verify ready 0100
+add_ticket 0102 verify ready '[]' 0100 a/one.md
+add_ticket 0103 verify ready '[]' 0100 b/two.md
+seal
+out="$(run_next --drive --completed develop:0102 --started 0103)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                    "$rc" 0 "$out"
+assert_eq "batches the gate it just developed"    "$(dispatch_line "$out")" 'DISPATCH  verify 0102 0103'
+
+echo "0132 AC2 — rows that merely sit at next: verify are NOT a batch"
+# The whole of AC2. Same three rows, same shared parent, no --started: nothing says this run
+# developed them, so they are three independent verdicts and get three sessions.
+scaffold
+add_row 0102 'First built'  verify ready 0100
+add_row 0103 'Second built' verify ready 0100
+add_row 0104 'Third built'  verify ready 0100
+add_ticket 0102 verify ready '[]' 0100 a/one.md
+add_ticket 0103 verify ready '[]' 0100 b/two.md
+add_ticket 0104 verify ready '[]' 0100 c/three.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                       "$rc" 0 "$out"
+assert_eq "dispatches the topmost row alone"         "$(dispatch_line "$out")" 'DISPATCH  verify 0102'
+
+echo "0132 AC2 — a stale verify row does not join the batch by sharing the gate's files"
+# The 0131 FR5 hazard arriving through the new code path. 0104 names the same file as 0103 and
+# shares the parent, so `gate_from` over the WHOLE stage would swallow it; it was not started, so
+# it is not this run's to verify and must be left where it is.
+scaffold
+add_row 0102 'First built'   verify ready 0100
+add_row 0103 'Second built'  verify ready 0100
+add_row 0104 'Somebody else' verify ready 0100
+add_ticket 0102 verify ready '[]' 0100 a/one.md
+add_ticket 0103 verify ready '[]' 0100 b/two.md
+add_ticket 0104 verify ready '[]' 0100 b/two.md
+seal
+out="$(run_next --drive --started 0102 --started 0103)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                      "$rc" 0 "$out"
+assert_eq "batches the started pair and no more"    "$(dispatch_line "$out")" 'DISPATCH  verify 0102 0103'
+
+echo "0132 AC2 — started rows that share neither a parent nor a file are separate gates"
+# Two rows this run really did develop, in two different gates. `--started` alone would batch
+# them; recovering the membership with `gate_from` is what keeps them apart.
+scaffold
+add_row 0102 'From gate one' verify ready ''
+add_row 0103 'From gate two' verify ready ''
+add_ticket 0102 verify ready '[]' '' a/one.md
+add_ticket 0103 verify ready '[]' '' c/three.md
+seal
+out="$(run_next --drive --started 0102 --started 0103)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                       "$rc" 0 "$out"
+assert_eq "dispatches the higher-ranked one alone"   "$(dispatch_line "$out")" 'DISPATCH  verify 0102'
+
+echo "0132 FR6 — --propose states the verify batch it selected"
+# FR6 is "selects the batch AND states it". A batch a person cannot see is a batch they cannot
+# refuse, and the gate block is where 0130 put that.
+scaffold
+add_row 0102 'First built'  verify ready 0100
+add_row 0103 'Second built' verify ready 0100
+add_ticket 0102 verify ready '[]' 0100 a/one.md
+add_ticket 0103 verify ready '[]' 0100 b/two.md
+seal
+out="$(run_next --drive --propose --started 0102 --started 0103)" && rc=0 || rc=$?
+assert_rc       "exits 0 — dispatch"             "$rc" 0 "$out"
+assert_contains "names the stage and the count"  "$out" 'PROPOSE   verify | 2 ticket(s)'
+assert_contains "and lists the second ticket"    "$out" 'TICKET    0103'
+
+echo "0132 — the finish-before-start preference dispatches the whole batch, not its lead"
+# 0131 put a started verify row ahead of a new develop gate. It picked ONE. Left alone, the
+# preference would hand back a single id and the rest of the gate would be re-dispatched one at a
+# time on later calls — the session floors this ticket exists to stop being paid anyway.
+scaffold
+add_row 0105 'A new develop row' develop ready ''
+add_row 0102 'First built'       verify  ready 0100
+add_row 0103 'Second built'      verify  ready 0100
+add_ticket 0105 develop ready '[]' '' z/nine.md
+add_ticket 0102 verify  ready '[]' 0100 a/one.md
+add_ticket 0103 verify  ready '[]' 0100 b/two.md
+seal
+out="$(run_next --drive --started 0102 --started 0103)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
+assert_eq "the preference carries the whole batch"    "$(dispatch_line "$out")" 'DISPATCH  verify 0102 0103'
 
 # --- result -----------------------------------------------------------------------------------
 echo

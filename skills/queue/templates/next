@@ -1155,7 +1155,7 @@ if [ "${1:-}" = "--drive" ]; then
     fi
   }
 
-  # The highest-ranked row this RUN started that is still sitting at `verify | ready`, or nothing.
+  # Every row this RUN started that is still sitting at `verify | ready`, in rank order.
   #
   # Why it is scoped to the run's own tickets (0131 FR5): a ticket left at `next: verify` by a
   # hand-driven session before this run began is not this run's to hold, and jumping the rank for
@@ -1165,7 +1165,7 @@ if [ "${1:-}" = "--drive" ]; then
   #
   # Rank still decides among the candidates: the walk is `all_ids`, so the ids' arrival order on
   # the command line means nothing. `sv_` prefixes because sh has no locals.
-  started_verify() {
+  started_verify_pool() {
     for sv_id in $(all_ids); do
       contains_word "$sv_id" "$STARTED" || continue
       sv_row="$(row_for "$sv_id")"
@@ -1173,10 +1173,52 @@ if [ "${1:-}" = "--drive" ]; then
       [ "$(field "$sv_row" "$STATUS")" = "ready" ] || continue
       if held_by "$sv_id" >/dev/null; then continue; fi
       if [ -n "$(open_blockers_of "$sv_id")" ]; then continue; fi
-      printf '%s' "$sv_id"
-      return 0
+      printf '%s ' "$sv_id"
     done
-    return 1
+  }
+
+  # The verify batch $1 belongs to: $1 plus every other STARTED verify row that was in the same
+  # develop gate, in rank order. $1 alone where it was not started, or where nothing joins it.
+  #
+  # WHY THIS CONDITION AND NOT `develop`'s (0059, 0132 FR1). `develop` batches to amortise a
+  # startup, which is a pure saving, so anything takeable batches. A verify batch spends the gate's
+  # INDEPENDENCE — halo across verdicts read in one context, and a red misattributed across
+  # tickets, both recorded concretely on 0132 — and no startup saving amortises that. So the only
+  # thing that licenses several tickets in one verify session is that a develop gate already fixed
+  # the membership. Rows merely sitting at `next: verify` are NOT thereby a batch, however much
+  # scope they share; that is 0132 AC2 and it is the assertion this function exists to satisfy.
+  #
+  # TWO FILTERS, AND BOTH ARE LOAD-BEARING. `started_verify_pool` answers *did this run develop
+  # it*, and `gate_from` answers *which gate*. Dropping the first admits the stale row 0131 FR5
+  # excludes; dropping the second batches two unrelated gates because the run happened to open
+  # both. Recovering the membership with `gate_from` — the same grouping that formed the gate at
+  # dispatch, over a pool that is now a subset of it — is what makes the two ends of the cycle
+  # agree by construction rather than by a second rule that can drift from the first.
+  #
+  # Printed in RANK order rather than in `gate_from`'s lead-first order, so the line a person reads
+  # and the line a driver logs are in the backlog's own order whichever member led. `vb_` prefixes
+  # because sh has no locals, and `gate_from` loops over `gid` — it is called before this
+  # function's own loop starts, never inside it.
+  verify_batch() {
+    vb_lead="$1"
+    vb_pool="$(started_verify_pool)"
+    contains_word "$vb_lead" "$vb_pool" || { printf '%s' "$vb_lead"; return 0; }
+    vb_gate="$(gate_from "$vb_lead" "$vb_pool")"
+    vb_out=""
+    for vb_id in $(all_ids); do
+      if contains_word "$vb_id" "$vb_gate"; then vb_out="$vb_out $vb_id"; fi
+    done
+    printf '%s' "${vb_out# }"
+  }
+
+  # The whole batch led by the highest-ranked started verify row, or nothing. The finish-before-
+  # start preference (0131) reads this, and it hands back the GATE rather than its lead: picking
+  # one id would leave the rest of the same gate to be re-dispatched a session at a time on later
+  # calls, paying exactly the session floors 0132 exists to stop paying.
+  started_verify() {
+    sv_pool="$(started_verify_pool)"
+    [ -n "$sv_pool" ] || return 1
+    verify_batch "$(printf '%s' "$sv_pool" | awk '{ print $1 }')"
   }
 
   # --- the queue has to agree with itself before anything is dispatched ------------------------
@@ -1196,6 +1238,21 @@ if [ "${1:-}" = "--drive" ]; then
   if ! drift_report; then
     decide "$ESCALATE" "ESCALATE  the rows above disagree with their own items — a drifted queue is not a finished one, and reconciling it is a person's call"
   fi
+
+  # `--completed`'s id is a ticket this run opened work on too, so it joins the started set
+  # (0131 FR6). That is what lets a run whose gates are all single tickets pass no `--started` at
+  # all: the flag it already sends carries the same fact for the one ticket it names.
+  if [ -n "$COMPLETED" ]; then
+    cid="${COMPLETED#*:}"
+    if [ "$cid" != "$COMPLETED" ] && [ -n "$cid" ]; then
+      contains_word "$cid" "$STARTED" || STARTED="$STARTED $cid"
+    fi
+  fi
+  #
+  # MOVED AHEAD OF THE ROUTING BLOCK BELOW (0132). That block is where a develop hand-off routes
+  # to verify, and it now selects a batch — which reads the started set. Left where it was, the
+  # one ticket `--completed` names was absent from the pool at exactly the moment its own gate was
+  # being assembled, so the lead of every batch was missing from it.
 
   # --- what the caller says just finished -----------------------------------------------------
   # Order matters here and is not alphabetical. `waiting`, `design` and `queue` are checked before
@@ -1245,22 +1302,14 @@ if [ "${1:-}" = "--drive" ]; then
         elif [ "$lnext" = "$lstage" ]; then
           decide "$ESCALATE" "ESCALATE  $lid is still at next: $lstage after a completed $lstage — same ticket, same stage, with an outcome in between"
         elif [ "$lstage" = "develop" ] && [ "$lnext" = "verify" ] && [ "$lstatus" = "ready" ]; then
-          PROPOSE_STAGE="verify"; PROPOSE_IDS="$lid"
-          decide "$DISPATCH" "DISPATCH  verify $lid"
+          # The gate that was just developed, not the one row `--completed` names (0132 FR6).
+          lbatch="$(verify_batch "$lid")"
+          PROPOSE_STAGE="verify"; PROPOSE_IDS="$lbatch"
+          decide "$DISPATCH" "DISPATCH  verify $lbatch"
         else
           decide "$ESCALATE" "ESCALATE  $lid is at next: $lnext / $lstatus after $lstage, which no routing rule covers"
         fi
       fi
-    fi
-  fi
-
-  # `--completed`'s id is a ticket this run opened work on too, so it joins the started set
-  # (0131 FR6). That is what lets a run whose gates are all single tickets pass no `--started` at
-  # all: the flag it already sends carries the same fact for the one ticket it names.
-  if [ -n "$COMPLETED" ]; then
-    cid="${COMPLETED#*:}"
-    if [ "$cid" != "$COMPLETED" ] && [ -n "$cid" ]; then
-      contains_word "$cid" "$STARTED" || STARTED="$STARTED $cid"
     fi
   fi
 
@@ -1299,17 +1348,20 @@ if [ "${1:-}" = "--drive" ]; then
       queue)
         decide "$ESCALATE" "ESCALATE  $id is at next: queue — it has no acceptance criteria to build against, and specifying it is a person's call" ;;
       verify)
-        PROPOSE_STAGE="verify"; PROPOSE_IDS="$id"
-        decide "$DISPATCH" "DISPATCH  verify $id" ;;
+        # Batched only where this run developed it (0132 AC2): a row nobody here built is one
+        # verdict in one session, whatever scope it shares with the rows around it.
+        vbatch="$(verify_batch "$id")"
+        PROPOSE_STAGE="verify"; PROPOSE_IDS="$vbatch"
+        decide "$DISPATCH" "DISPATCH  verify $vbatch" ;;
       develop)
         # Finish before start (0131). Checked here, where a NEW gate would be formed, for the same
         # reason `findings_gate` is and just ahead of it: a ticket this run already built is
         # finished rather than left half-done while the run opens more work. Checked at the gate
         # rather than before the walk, so it preempts nothing a person is being asked to decide —
         # a `waiting`, `design` or `queue` row above this one still stops the run.
-        if sv="$(started_verify)"; then
-          PROPOSE_STAGE="verify"; PROPOSE_IDS="$sv"
-          decide "$DISPATCH" "DISPATCH  verify $sv"
+        if svbatch="$(started_verify)"; then
+          PROPOSE_STAGE="verify"; PROPOSE_IDS="$svbatch"
+          decide "$DISPATCH" "DISPATCH  verify $svbatch"
         fi
         gate="$(gate_from "$id" "$(takeable_develop)")"
         PROPOSE_STAGE="develop"; PROPOSE_IDS="$gate"
