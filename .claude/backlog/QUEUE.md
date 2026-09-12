@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0150 | Make design hold its row with claim from Step 1, and release it with handoff | develop | ready |  |
+| 0150 | Make design hold its row with claim from Step 1, and release it with handoff | develop | in-progress |  |
 | 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | develop | blocked | 0128 |
 | 0083 | Decide what a second checkout may do with the backlog | verify | ready |  |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | design | ready |  |
