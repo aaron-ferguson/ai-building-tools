@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0144 | Anchor the scope report's commit range to the claim commit for this ticket | bug | unit | 2026-09-12 | [items/0144-anchor-the-scope-report-commit-range.md](items/0144-anchor-the-scope-report-commit-range.md) |
 | 0107 | Require an NFR row to name how it would red | feature | unit | 2026-09-12 | [items/0107-nfr-rows-name-how-they-would-red.md](items/0107-nfr-rows-name-how-they-would-red.md) |
 | 0133 | Close a sprint with a retro and a queue sweep only when the findings earn it | feature | verify | 2026-09-11 | [items/0133-run-the-retro-and-queue-tail-only-when-it-is-earned.md](items/0133-run-the-retro-and-queue-tail-only-when-it-is-earned.md) |
 | 0052 | Require an acceptance criterion to name the input that would make it red | bug | unit | 2026-09-11 | [items/0052-acceptance-criteria-must-be-falsifiable.md](items/0052-acceptance-criteria-must-be-falsifiable.md) |
