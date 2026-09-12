@@ -24,7 +24,7 @@ expects:
   - tests/handoff.test.sh
 claimed_by: "8bdf"
 claimed_at: 2026-09-12T22:59:08Z
-touches:
+touches: [".claude/backlog/items/0083-decide-what-a-second-checkout-may-do.md", ".claude/backlog/FINDINGS.md"]
 ---
 
 ## Problem
