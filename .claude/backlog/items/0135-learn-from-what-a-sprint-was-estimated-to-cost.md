@@ -24,14 +24,8 @@ expects:
 claimed_by: "0db6"
 claimed_at: 2026-09-12T16:48:38Z
 touches:
-  - skills/sprint/SKILL.md          # corrected: the 0129 rename deleted skills/orchestrate/
-  - tools/harvest-usage.sh
-  - tools/sprint-ledger.sh          # NEW — writes and reads the ledger
-  - .claude/backlog/LEDGER.md       # NEW — the ledger itself
-  - .claude/backlog/config.yml
-  - MEASUREMENT.md
-  - tests/sprint-ledger.test.sh     # NEW
-  - tests/sprint.test.sh
+  - tools/sprint-ledger.sh          # re-entry: harvest() swallows two failures
+  - tests/sprint-ledger.test.sh     # re-entry: the AC6 END block, and the new refusal case
 ---
 
 ## Problem
