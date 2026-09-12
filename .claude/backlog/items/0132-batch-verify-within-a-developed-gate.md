@@ -197,3 +197,23 @@ non-empty with `git diff --stat`, restored with `git checkout -- <one path>`, an
 control run: prose M1–M4 gave 1, 2, 1 and 2 failures against a 187/0 control; script N1–N3 gave 2, 1
 and 4 against a 428/0 control. `git status --porcelain` empty after each sweep. Baseline commit
 `f8854a8`.
+
+**Substitution in the QA plan, recorded because the next QA pass reads the plan and not this note.**
+The plan asks for "a fixture with one deliberately red guard for the attribution cases", meaning
+AC4 and AC5. That check cannot be written as stated, and the reason is not a detail: AC4 and AC5 are
+each *"when the session reports, then …"* — their subject is a **verify session's conduct**, and a
+fixture with a planted red exercises a test runner, not a session. Nothing in this repo can execute
+a stage and observe what it concludes; `tests/sprint.test.sh`'s own header says so in terms — the
+prose cases "prove the rule is written down, never that a session obeyed it". A planted red would
+have produced a green check measuring something adjacent to the criterion, which is the guard that
+runs and cannot fail (`testing-conventions.md`).
+
+What was written instead carries the same claim at the only level it is reachable: AC4 and AC5 are
+asserted as **prose in `skills/verify/SKILL.md`**, anchored to the claim rather than the vocabulary —
+FR4 as a bounded span joining "every file reports" to "before any verdict", because either phrase
+alone is satisfied by prose about a single-ticket pass and it is their joining that carries the rule;
+FR5 as two separate assertions, because a paragraph naming the unattributed red without saying it
+closes nothing is the likely half-done outcome and would otherwise pass. Both were mutation-proved
+(M2, M3). AC3 is the same shape and took the same treatment. **AC1, AC2 and AC6 are unaffected** —
+those are mechanical, and `tests/next.test.sh` and `tests/backlog-scripts-installed.test.sh` execute
+them against the real script.
