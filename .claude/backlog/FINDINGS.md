@@ -735,3 +735,13 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   first and name why, or `handoff` needs a path for an unclaimed row (pointer: `skills/develop/SKILL.md`
   Step 2, *if what is missing is a decision rather than detail*, and Step 1, *run the staleness grep
   before you claim*; `.claude/backlog/handoff` usage).
+
+- 2026-09-12 (design) — **`design` claims only at Step 4, so the whole Step 2–3 pass runs on an
+  unheld row, and on 0134 another session (`d08c`, commit `8d38048`) claimed it mid-pass.** `./next
+  design` offered 0134 as `TAKE`; this session read the ledger tool, the run-log schema and the
+  measurement convention, reached a decision, and found the row `in-progress` only when it went to
+  write — so Step 4's claimed path applied and the pass could only be handed back. Two design
+  sessions reasoning over one ticket is `develop`'s FR5 failure in the stage that has no claim step
+  before its spend. The 2026-09-10 entry above asks Step 4 to claim; this asks for it at Step 1, or
+  for `./next design` to skip a row another design session has been offered (pointer:
+  `skills/design/SKILL.md` Step 1 and Step 4; `references/CONCURRENCY.md` *Claim tokens*).
