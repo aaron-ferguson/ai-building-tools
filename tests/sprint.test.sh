@@ -1702,5 +1702,72 @@ else
   bad "0133 AC1 — Step 6 does not state that an uncrossed gate runs NO tail, which spends about USD 6.75 on a buffer with nothing in it"
 fi
 
+
+# ------------------------------------------------------------------------------------------------
+echo "0132 — a batched verify keeps per-ticket evidence and attributes its reds"
+
+# FLATTENED BEFORE MATCHING, for the reason AC20 above records and 0059's build notes record
+# again: grep is line-based, so a claim that wraps across a break cannot be matched at all, and a
+# guard built from line greps makes every rewrap a breaking change whether or not the claim moved.
+# These are claims in flowing prose, so they are asserted against the paragraph as one logical line.
+verify_flat="$(tr '\n' ' ' < "$VERIFY" | tr -s ' ')"
+sprint_flat="$(tr '\n' ' ' < "$SKILL" | tr -s ' ')"
+
+# FR3. Anchored to the CLAIM — "its own, never one shared" — and not to the vocabulary, because
+# `## QA evidence` already appears in this file for AC20 above and a presence grep for it would be
+# green with the batch rule deleted outright.
+if printf '%s' "$verify_flat" | grep -qF 'its own table under its own `## QA evidence`'; then
+  ok "FR3 — each ticket in a batch gets its own evidence table"
+else
+  bad "0132 FR3 — verify does not say each batched ticket gets its OWN QA evidence table; one table over a batch cannot be read back against one ticket's criteria"
+fi
+if printf '%s' "$verify_flat" | grep -qF 'never one table covering the batch'; then
+  ok "FR3 — and a shared table is refused in terms"
+else
+  bad "0132 FR3 — verify does not refuse a batch-wide evidence table, which is the shape a session under load will reach for"
+fi
+
+# FR4. The rule is that every check REPORTS, so a red can be named before any verdict is written.
+# Asserted as a bounded span rather than as two independent phrases: "run every file" and "a red is
+# attributed" are both satisfiable by prose about a single-ticket pass, and it is their joining
+# that carries the claim.
+if printf '%s' "$verify_flat" | grep -qE 'every file reports.{0,200}before any verdict'; then
+  ok "FR4 — the suite is run so every file reports, before any verdict is written"
+else
+  bad "0132 FR4 — verify does not tie a reporting run to attribution; a fail-fast run stops at the first red file and leaves every later ticket in the batch unverified while reading as though the batch failed"
+fi
+if printf '%s' "$verify_flat" | grep -qF 'stopping at the first red'; then
+  ok "FR4 — and the fail-fast failure is named, not merely avoided"
+else
+  bad "0132 FR4 — verify does not say what goes wrong with a fail-fast run, so a session meeting one has no reason to change it (the 0084 masking)"
+fi
+
+# FR5. Two halves, and a paragraph carrying one without the other is the likely half-done outcome:
+# "report it" with no statement about the tickets leaves a session free to close the green ones.
+if printf '%s' "$verify_flat" | grep -qF 'report it as unattributed'; then
+  ok "FR5 — an unownable red is reported as unattributed"
+else
+  bad "0132 FR5 — verify does not name the unattributed outcome, so a red belonging to nobody is distributed across the batch"
+fi
+if printf '%s' "$verify_flat" | grep -qF 'closes none of them'; then
+  ok "FR5 — and it closes no ticket in the batch"
+else
+  bad "0132 FR5 — verify does not say an unattributed red closes nothing; charging it to the alphabetically-first ticket is the 0084 failure repeated"
+fi
+
+# FR6, the prose half. The skill said a ticket at `next: verify, status: ready` gets a NEW process
+# — the tool and the rule disagreeing, which is 0132's Problem. Asserted on the sprint skill
+# because that is the file a supervisor reads.
+if printf '%s' "$sprint_flat" | grep -qE 'verify.{0,160}developed together in one gate'; then
+  ok "FR6 — the sprint skill carries verify's batching condition"
+else
+  bad "0132 FR6 — the sprint skill does not say a verify batch is the develop gate that produced it; the tool now batches and the prose still describes one process per ticket"
+fi
+if printf '%s' "$sprint_flat" | grep -qF 'never one verdict spread over several ids'; then
+  ok "FR2 — and a batched verify still returns a verdict per ticket"
+else
+  bad "0132 FR2 — the sprint skill does not say a batched verify returns one envelope entry per ticket; a single verdict over several ids is the halo this ticket exists to stop"
+fi
+
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]

@@ -109,6 +109,23 @@ whole saving: `git worktree add --detach <path> <sha>` plus a `node_modules` sym
 seconds, against the twenty minutes a session spends attributing another window's in-progress edit to
 its own ticket — or, worse, reporting a FAIL for it.
 
+**Holding more than one ticket, run the level so that every file reports rather than stopping at
+the first red — and do it before any verdict is written.** A fail-fast command ends at the first red
+file and nothing after it runs, so the rest of the batch is unverified while the output reads as
+though the whole of it failed. That masking is an alphabetical accident: verifying `0084`, the
+alphabetically-first of seventeen guards was red from another session's in-flight work, the run
+stopped there, and the guard the verdict actually rested on never executed. Attribution is what a
+batch owes and a single pass does not, and it has to exist *before* a verdict, not after one is
+doubted. Where `config.yml` records the reporting form of its own command, use that form here and
+leave the configured one alone — the fail-fast line is often a release gate too, and it is right
+for that.
+
+**A red that no ticket in the batch owns is not distributed across it — report it as unattributed,
+and it closes none of them.** Another session's in-flight work is the ordinary cause, and the
+tickets in your batch are not evidence about each other: charging such a red to whichever ticket
+the output happened to name first is the `0084` failure repeated, now multiplied by the size of the
+batch. Leave every affected row open and say which red you could not place.
+
 **A whole-project gate takes the same treatment at every level, not only at `e2e`.** Typecheck and lint
 compile or scan the entire project by construction, so they collect every foreign path in the tree
 exactly as an e2e run does. Measured: a `qa_level: unit` pass ran 1365 unit tests green and had
@@ -478,6 +495,12 @@ evidence that each criterion was actually checked is gone while the ticks that a
 Append the section if the item has none — older tickets predate it. **Before, not after**: `./close`
 and `./handoff` commit the item, so a table written afterwards needs a second commit, and after
 either of them the claim is gone (`CONCURRENCY.md`, *The release is the final act*).
+
+**In a batch, every ticket gets its own table under its own `## QA evidence` — never one table
+covering the batch.** A shared table cannot be read back against one ticket's criteria, which is
+the whole thing the section is for, and it is the shape a session under load reaches for after
+running the same suite three times. The rows differ even where the commands did not: each table
+names *that ticket's* ACs and the mutation that reddened each one.
 
 This is a hand-driven improvement and not a supervised-only one — it costs one write, and it is
 what makes a closed ticket auditable by anyone who was not in the room.

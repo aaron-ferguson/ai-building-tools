@@ -200,7 +200,14 @@ writes a line, and those are shared across tickets touching the same files. Spli
 sessions re-pays that per ticket while every test still passes.
 
 **`develop` is followed by `verify`, and you verify nothing yourself.** A ticket left at
-`next: verify, status: ready` gets a **new** process running `verify` on it.
+`next: verify, status: ready` gets a **new** process running `verify` on it, and `--drive` names
+which tickets go into it. **A verify batch does not follow develop's condition, and widening it to
+match is the one mistake to avoid here.** The only rows that share a verify session are the ones
+this run **developed together in one gate** — because what a verify batch spends is that gate's
+independence, and no startup saving amortises it the way one amortises a develop batch. Rows merely
+sitting at the stage are not thereby a batch, however much scope they share. The envelope that
+comes back carries one entry per ticket with its own verdict, **never one verdict spread over
+several ids**.
 **A stage must not self-certify** — that is the whole reason there are two stages, and a supervisor
 that reads a green and closes the ticket has become the self-certification it was avoiding.
 
