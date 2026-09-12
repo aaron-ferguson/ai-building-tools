@@ -213,11 +213,15 @@ esac
 # --- record ------------------------------------------------------------------------------------
 OUTLEDGER="$FIX/out-ledger.md"
 cp "$EMPTY" "$OUTLEDGER"
+# One string, so the refusal cases below feed `record` exactly what the happy path feeds it and a
+# difference between the two cannot be what makes a case pass. It carries an `@` stamp because FR8
+# requires one and `paired()` now asserts it.
+EST_SOURCE="MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-06T09:01:00Z"
 if [ -x "$TOOL" ]; then
   REC="$("$TOOL" record --ledger "$OUTLEDGER" --run "$RUNLOG" --transcripts "$FIX/store" \
          --measurement "$MEAS" --config "$CONF" --estimate-tickets 3 --estimate-wall no-prior \
          --estimate-tokens 1200000 --estimate-usd 20.00 \
-         --estimate-source "MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-06T09:01:00Z" 2>&1 || true)"
+         --estimate-source "$EST_SOURCE" 2>&1 || true)"
 else
   REC=""
 fi
@@ -232,17 +236,118 @@ else
 fi
 # Anchored to the ROW and to both cells being populated: a document-wide grep for "tickets" is
 # satisfied by the ledger's own preamble and survives the whole block being deleted.
+#
+# AND ANCHORED TO THE SOURCE COLUMN, which is the half a default cannot forge. "The cell is
+# populated" is not "a figure was estimated": defaulting --estimate-usd to 0.0 leaves every
+# populated-cell assertion green while the estimate column holds a figure nobody supplied. FR8's
+# actual claim is that every figure carries the source it was read from AND the stamp it was true
+# at, so the fourth cell must carry an `@` stamp -- which `unsourced`, the string that default
+# once wrote, does not and cannot.
 paired() {
-  if grep -qE "^\|[[:space:]]*$1[[:space:]]*\|[^|]*[^|[:space:]][^|]*\|[^|]*[0-9][^|]*\|[^|]*\|" "$BLOCK"; then
-    ok "$1 carries both an estimate and an actual"
+  if grep -qE "^\|[[:space:]]*$1[[:space:]]*\|[^|]*[^|[:space:]][^|]*\|[^|]*[0-9][^|]*\|[^|]*@[^|]*\|" "$BLOCK"; then
+    ok "$1 carries an estimate, an actual, and a stamped estimate source"
   else
-    bad "AC1 -- $1 has no row with both cells populated in the recorded block"
+    bad "AC1/FR8 -- $1 has no row carrying an estimate, a numeric actual and an @-stamped source: $(grep -E "^\|[[:space:]]*$1[[:space:]]*\|" "$BLOCK" || echo 'no such row')"
   fi
 }
 paired tickets
 paired wall_clock_min
 paired tokens
 paired usd
+
+# --- AC1/FR8 -- `record` REFUSES a missing estimate rather than defaulting one -------------------
+# The red AC1 names and `paired()` above cannot see: `parse()` once defaulted --estimate-usd to
+# 0.0 and --estimate-source to the literal `unsourced`, so an omitted flag appended a committed
+# block reading `| usd | 0.00 | 16.00 | unsourced |` -- a figure nobody estimated, a source that is
+# an admission of having none, and no stamp -- and exited 0. `paired()` is green on that, because
+# a populated cell is not an estimated figure.
+#
+# THE SUBJECT LIST IS DERIVED FROM THE TOOL, never enumerated here: a fifth estimate figure added
+# to `parse()`'s defaults joins this list the day it is added, which is the moment the rule most
+# needs a guard (`testing-conventions.md`, a guard that enumerates its own subjects cannot notice
+# a new one). `--estimate-wall` is subtracted deliberately and that exception is pinned by its own
+# case below: its default `no prior` is the explicit declaration AC2 asks for, not a forged figure.
+REQUIRED_EST="$(sed -n '/^def parse(/,/^    i = 0$/p' "$TOOL" \
+  | grep -o '"estimate_[a-z_]*"' | tr -d '"' | sort -u \
+  | grep -v '^estimate_wall$' | sed 's/^estimate_/--estimate-/')"
+
+echo "AC1/FR8 -- record refuses an omitted estimate flag instead of defaulting it"
+if [ -n "$REQUIRED_EST" ]; then
+  ok "the required-estimate list was derived from the tool ($(printf '%s' "$REQUIRED_EST" | tr '\n' ' '))"
+else
+  bad "AC1/FR8 -- the derivation over parse()'s defaults matched nothing, so every case below would loop zero times and pass"
+fi
+
+# A value per flag. An unrecognised one is a LOUD failure rather than a skip: a new estimate figure
+# whose fixture value nobody supplied is exactly the case the derivation exists to surface.
+est_value() {
+  case "$1" in
+    --estimate-tickets) printf '3' ;;
+    --estimate-wall)    printf 'no-prior' ;;
+    --estimate-tokens)  printf '1200000' ;;
+    --estimate-usd)     printf '20.00' ;;
+    --estimate-source)  printf '%s' "$EST_SOURCE" ;;
+    *) return 1 ;;
+  esac
+}
+
+# `record` over the standard fixtures with $1 and its value left out. Every other flag is passed,
+# so a refusal naming a flag other than $1 is a failure of this case and not a pass by luck.
+record_without() {
+  rw_drop="$1"
+  rw_out="$FIX/refuse-ledger.md"
+  cp "$EMPTY" "$rw_out"
+  set -- record --ledger "$rw_out" --run "$RUNLOG" --transcripts "$FIX/store" \
+      --measurement "$MEAS" --config "$CONF"
+  for rw_f in $REQUIRED_EST --estimate-wall; do
+    [ "$rw_f" = "$rw_drop" ] && continue
+    set -- "$@" "$rw_f" "$(est_value "$rw_f")"
+  done
+  "$TOOL" "$@" 2>&1
+}
+
+for f in $REQUIRED_EST; do
+  if ! est_value "$f" >/dev/null; then
+    bad "AC1/FR8 -- no fixture value for the derived flag $f; this guard cannot exercise it"
+    continue
+  fi
+  OUT="$(record_without "$f" || true)"
+  RC=0; record_without "$f" >/dev/null 2>&1 || RC=$?
+  # The message, not the status: `exits non-zero` is satisfied by a silent refusal, which is the
+  # half of this rule a reader cannot act on (`testing-conventions.md`).
+  if [ "$RC" -ne 0 ]; then
+    ok "record without $f exits non-zero"
+  else
+    bad "AC1/FR8 -- record without $f exited 0; a figure nobody estimated was appended to the ledger"
+  fi
+  case "$OUT" in
+    *"$f"*) ok "and the refusal names $f" ;;
+    *)      bad "AC1/FR8 -- record without $f refused without naming it; got: $(printf '%s' "$OUT" | tr '\n' ' ' | cut -c1-160)" ;;
+  esac
+  # And nothing was appended. A tool that dies AFTER writing has already committed the fabrication.
+  if grep -q '^## sprint ' "$FIX/refuse-ledger.md"; then
+    bad "AC1/FR8 -- record without $f appended a sprint block before refusing"
+  else
+    ok "and appended no sprint block"
+  fi
+done
+
+# THE EXCEPTION, pinned so it cannot be widened by drift. --estimate-wall omitted is accepted, and
+# the figure is LABELLED `no prior` rather than given a number: there is no prior to read, which is
+# a different fact from an estimate the caller failed to supply.
+echo "AC2/FR8 -- --estimate-wall is the one estimate flag whose omission is a declaration"
+OUT="$(record_without --estimate-wall 2>&1 || true)"
+RC=0; record_without --estimate-wall >/dev/null 2>&1 || RC=$?
+if [ "$RC" -eq 0 ]; then
+  ok "record without --estimate-wall is accepted"
+else
+  bad "AC2/FR8 -- record refused an omitted --estimate-wall; its default is an explicit declaration, not a forged figure. Got: $(printf '%s' "$OUT" | tr '\n' ' ' | cut -c1-160)"
+fi
+if grep -qE "^\|[[:space:]]*wall_clock_min[[:space:]]*\|[[:space:]]*no prior[[:space:]]*\|" "$FIX/refuse-ledger.md"; then
+  ok "and the wall-clock estimate reads 'no prior'"
+else
+  bad "AC2/FR8 -- an omitted --estimate-wall did not record 'no prior'; got: $(grep -E '^\|[[:space:]]*wall_clock_min' "$FIX/refuse-ledger.md" || echo 'no wall_clock_min row')"
+fi
 
 echo "FR2 -- wall-clock is derived from the run log's own UTC timestamps"
 # 09:00:00Z to 14:00:00Z is 300 minutes, and nothing else in the repo emits it.

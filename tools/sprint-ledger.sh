@@ -447,8 +447,8 @@ def record(opts):
 def parse(argv):
     opts = {"ledger": None, "measurement": "MEASUREMENT.md", "config": None, "run": None,
             "transcripts": None, "tickets": 0, "develop_gates": 1, "verify_sessions": 1,
-            "retro": False, "estimate_tickets": 0, "estimate_wall": NO_PRIOR,
-            "estimate_tokens": 0, "estimate_usd": 0.0, "estimate_source": "unsourced"}
+            "retro": False, "estimate_tickets": None, "estimate_wall": NO_PRIOR,
+            "estimate_tokens": None, "estimate_usd": None, "estimate_source": None}
     ints = {"--tickets": "tickets", "--develop-gates": "develop_gates",
             "--verify-sessions": "verify_sessions", "--estimate-tickets": "estimate_tickets",
             "--estimate-tokens": "estimate_tokens"}
@@ -487,6 +487,22 @@ if mode == "estimate":
 elif mode == "record":
     if not opts["run"] or not opts["transcripts"]:
         die("record needs --run and --transcripts")
+    # FR8: every figure carries the source it was read from and the stamp it was true at. A default
+    # cannot satisfy that and must not pretend to -- `--estimate-usd` defaulting to 0.0 appended a
+    # committed `| usd | 0.00 | 16.00 | unsourced |`, a figure nobody estimated over a source that
+    # is an admission of having none. AC1 is what settles REFUSE rather than LABEL: a record with no
+    # estimate cannot hold "an estimate and an actual" for that figure, so there is nothing to
+    # label. Validated before `record()` runs, so nothing is appended to a committed ledger first.
+    #
+    # `--estimate-wall` is absent from this list deliberately. Its default is NO_PRIOR, which is a
+    # declaration that no prior exists -- the honest label AC2 requires -- rather than a figure.
+    for flag, key in (("--estimate-tickets", "estimate_tickets"),
+                      ("--estimate-tokens", "estimate_tokens"),
+                      ("--estimate-usd", "estimate_usd"),
+                      ("--estimate-source", "estimate_source")):
+        if opts[key] is None:
+            die("record needs %s: a figure nobody estimated is not an estimate, and a default "
+                "would forge one" % flag)
     print(record(opts))
 else:
     die("unknown mode: %s (expected estimate or record)" % mode)
