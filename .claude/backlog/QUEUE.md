@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | develop | ready | 0128 |
+| 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | develop | in-progress | 0128 |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | develop | ready |  |
 | 0041 | Write release notes for what a work session delivered | develop | ready | 0128 |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |

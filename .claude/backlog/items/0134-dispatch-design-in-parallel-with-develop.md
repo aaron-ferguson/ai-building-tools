@@ -3,7 +3,7 @@ id: "0134"
 title: Dispatch a sprint's design sessions alongside develop instead of stopping for them
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: m
@@ -18,9 +18,14 @@ expects:
   - tools/sprint-ledger.sh          # widened by design 2026-09-12 — the DESIGN line (FR7, FR8)
   - tests/sprint-ledger.test.sh
   - .claude/backlog/LEDGER.md       # "How to read a block" gains the DESIGN line
-claimed_by:
-claimed_at:
+claimed_by: "0d00"
+claimed_at: 2026-09-12T23:20:43Z
 touches:
+  - skills/sprint/SKILL.md
+  - tests/sprint.test.sh
+  - tools/sprint-ledger.sh          # widened by design 2026-09-12 — the DESIGN line (FR7, FR8)
+  - tests/sprint-ledger.test.sh
+  - .claude/backlog/LEDGER.md       # "How to read a block" gains the DESIGN line
 ---
 
 ## Problem
