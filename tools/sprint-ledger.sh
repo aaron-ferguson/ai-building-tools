@@ -217,27 +217,33 @@ def estimate(opts):
         emit("wall_clock_min", None,
              "none -- MEASUREMENT.md records no elapsed time and LEDGER.md holds no recorded actual")
 
-    for figure, key in (("tokens", "ctx"), ("usd", "usd")):
+    plan = [("develop", gates, tickets - gates),
+            ("verify", verify_sessions, tickets - verify_sessions)]
+    if opts["retro"]:
+        plan.append(("retro", 1, 0))
+
+    for figure in ("tokens", "usd"):
         if figure in hist:
             emit(figure, hist[figure] * tickets, ledger_src)
-            continue
-        total = 0.0
-        for stage, n_sessions, n_extra in (("develop", gates, tickets - gates),
-                                           ("verify", verify_sessions,
-                                            tickets - verify_sessions)):
-            s = stages.get(stage)
-            if not s:
-                continue
-            per_session = (s["usd_per_session"] if figure == "usd"
-                           else s["ctx_per_turn"] * s["turns_per_session"])
-            total += per_session * max(n_sessions, 0) + per_session * max(n_extra, 0)
-        if opts["retro"] and "retro" in stages:
-            s = stages["retro"]
-            total += (s["usd_per_session"] if figure == "usd"
-                      else s["ctx_per_turn"] * s["turns_per_session"])
-        emit(figure, total, meas_src)
+        else:
+            emit(figure, prior_total(figure, stages, plan), meas_src)
 
     return "\n".join(lines)
+
+
+def prior_total(figure, stages, plan):
+    """What `plan` costs at MEASUREMENT.md's per-session means. `plan` is (stage, sessions, extra
+    tickets): a gate's saving is the startup floor and not the work, so a ticket beyond the first
+    is charged at the same mean rather than at nothing."""
+    total = 0.0
+    for stage, n_sessions, n_extra in plan:
+        s = stages.get(stage)
+        if not s:
+            continue
+        per_session = (s["usd_per_session"] if figure == "usd"
+                       else s["ctx_per_turn"] * s["turns_per_session"])
+        total += per_session * (max(n_sessions, 0) + max(n_extra, 0))
+    return total
 
 
 # --- the run log --------------------------------------------------------------------------------
@@ -309,15 +315,18 @@ def sessions_of(events):
         seen.add(sid)
         out.append([e.get("stage"), sid, ticket_ids(e)])
     # An outcome names the tickets a dispatch may only have predicted; the later, truer list wins.
-    for e in events:
-        sid = e.get("session_id")
-        if e.get("event") != "outcome" or not isinstance(sid, str):
-            continue
+    by_sid = {row[1]: row for row in out}
+    for e in outcomes_of(events):
         ids = ticket_ids(e)
-        for row in out:
-            if row[1] == sid and ids:
-                row[2] = ids
+        row = by_sid.get(e.get("session_id"))
+        if row and ids:
+            row[2] = ids
     return out
+
+
+def outcomes_of(events):
+    return [e for e in events
+            if e.get("event") == "outcome" and isinstance(e.get("session_id"), str)]
 
 
 def harvest(transcripts, session_ids):

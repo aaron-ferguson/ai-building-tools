@@ -19,6 +19,12 @@ returns 42 of them and $170.17. What pins them is the session-id set, which *Re-
 carries in full. Give any figure added here the same two things: the source it was read from, and
 the stamp it was true at.
 
+**Every figure here is an actual, and that is a limit rather than an oversight.** What a sprint was
+*estimated* to cost, against what it did, lives in `.claude/backlog/LEDGER.md` — written before the
+work and scored after it by `tools/sprint-ledger.sh`. This record is the **prior** that ledger falls
+back to while it is empty; once it holds a sprint, it is the better source, and it is the only one
+for elapsed wall-clock, which nothing here measures.
+
 ## Verdict
 
 **The saving partly materialised, and it is roughly a fifth of what was modelled.**
