@@ -134,3 +134,59 @@ proportion to batch size.
   what it cost, all of it actuals. The learning loop — an estimate recorded before the work, scored
   against the outcome, feeding the next estimate — is a different artefact with a different
   lifetime, and folding it in would have made `0041` unclosable until the loop existed.
+
+### 2026-09-11 — Built (token 887a)
+
+**The ticket's `expects:` named a file the `0129` rename had deleted, and `./next develop` offered
+it anyway.** `skills/orchestrate/SKILL.md` is `skills/sprint/SKILL.md` since `bb8b778`;
+`tests/orchestrate.test.sh` is `tests/sprint.test.sh`. `FINDINGS.md` had already recorded this about
+this very ticket (2026-09-10, develop 0107) and no row was ever written for it, so the correction
+was made here in `touches:` as Step 1 requires. Worth stating plainly because a stale `expects:`
+path **defeats the file-scope check in the safe-looking direction**: a path that exists nowhere
+collides with nothing, so the row reads as clear precisely when nobody can tell.
+
+**0132 was the ranked row and was stepped over, not skipped.** It is `TAKE` at the top of
+`./next develop`, and `0107` is `in-progress` at `next: verify` with an empty `touches:` whose
+predicted scope includes `skills/verify/SKILL.md` — the file `0132` rewrites. `CONCURRENCY.md` says
+to read an empty `touches:` on an in-progress row as *its files are held*. `0135` was the next
+takeable row that avoided it.
+
+**`--session` had to be added to `harvest-usage.sh` before FR3 was satisfiable**, and the reason is
+in `MEASUREMENT.md` already: a date window is not a pin on a live store, and the window that
+selected 30 sessions now returns 42. The `--run` bound needed the same narrowing for a
+non-obvious reason — `report_run_bound` globs the whole transcript directory, so over a shared
+store it reads its FLOOR off whichever session sorts first, which is very often not one of the
+run's at all. That was a latent defect in `0039`'s bound, not something this ticket introduced.
+
+**A ratio is three lines here and that is the whole design, not formatting.** `AC6` cannot be
+checked on a ratio's own line: a pinned numerator over a live denominator is self-consistent on the
+page and every citation still resolves. The guard asserts the *shape* — a `RATIO` line followed by a
+stamped `numerator` and a stamped `denominator` — because that is the only property a reader
+can be held to.
+
+**The estimate model, stated so the next session can argue with it rather than reverse-engineer it.**
+Dollars and tokens are `Σ over planned stages of (mean per session × (sessions + extra tickets))`,
+at `MEASUREMENT.md`'s per-skill table means. A ticket beyond the first in a gate is charged the
+**same** mean rather than nothing, because a gate's saving is the startup floor and not the work —
+the same assumption `config.yml`'s `per_extra_ticket` makes, and `GATE` lines are what will falsify
+it. `config.yml` is deliberately **not** the estimate's source: its figures are caps (mean × 1.5),
+and estimating from a cap builds the safety margin into the expectation.
+
+**Deliberate deviation from `CONVENTIONS_CORE.md`'s "Python with full type hints", recorded rather
+than taken silently.** `tools/sprint-ledger.sh` is `sh` wrapping an inline `python3` heredoc with no
+hints, matching `tools/harvest-usage.sh`, `tools/classify-turns.sh` and `tools/cost-by-category.sh`
+— every tool in this directory. Typing this one alone would make it the outlier in a four-file set.
+The trade is real and it is a preference rather than a principle; `verify` may reasonably disagree.
+
+**What this ticket does NOT do, and it is visible in the ledger's shape.** `RETRO consumed …
+produced …` is emitted only where the run log carries a `retro` outcome with a
+`findings_consumed` field. No retro writes one today, so FR5's retro half is *derivable but not yet
+sourced* — the line is absent rather than zero, which is the honest of the two. A ticket wanting the
+figure needs `retro`'s outcome envelope to carry it, which is a change to
+`skills/sprint/outcome.schema.json` and out of scope here.
+
+**Guard hygiene:** ten mutations, each applied to a committed tree, confirmed non-empty via
+`git diff --quiet`, restored with `git checkout -- <one path>`, control run green after each. One
+(M1) matched nothing on its first attempt and returned a clean pass — the substitution was written
+against a line that does not wrap as assumed — and was re-run against the real text rather than read
+as a green.

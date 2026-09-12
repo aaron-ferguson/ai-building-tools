@@ -474,3 +474,37 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   case immediately. Three sweep runs at ~2min each to reach a fact one conjunction-aware pass would
   have found: after a silent mutation, widen to every line that could make the AC true before
   concluding it is unguarded (pointer: `skills/verify/SKILL.md` Step 3, item 0133).
+
+- 2026-09-11 (develop, 0135) — **`tools/harvest-usage.sh --run` computed its FLOOR over the whole
+  transcript directory, not over the run's sessions.** `report_run_bound` globs `*.jsonl` and takes
+  `contexts[0]` as "the first turn's context, before any run state exists" — but on a shared store
+  that is whichever session sorts first alphabetically, which is very often not one of the run's at
+  all. The three figures `0039` AC13 asks for are a bound on *a supervised run*, and two of the
+  three (FLOOR and GROWTH) were being read off unrelated sessions. Fixed in passing here, because
+  `0135` FR3 added the `--session` filter the fix needed; recorded because the defect predates this
+  ticket by two and nothing would otherwise say so. Needs no row — but it is the second time a
+  figure in this repo has been computed over a **live store** rather than a pinned set, and the
+  first (`MEASUREMENT.md`, repaired by `0051`) has a convention written about it that this code
+  never had applied to it. Worth a sweep for the third (pointer: `tools/harvest-usage.sh`,
+  `report_run_bound`; `MEASUREMENT.md`, *A date window is not a pin on a live store*).
+
+- 2026-09-11 (develop, 0135) — **four open tickets still carry `expects:` paths the `0129` rename
+  deleted, and the finding recording that has itself gone one sprint unactioned.** The 2026-09-10
+  entry above (develop, 0107) names `0132`, `0133`, `0134` and `0135`; `0135` was corrected by this
+  session because it claimed it, and the other three are untouched, because a stage may only write
+  the ticket it holds. The compounding part is the shape, not the count: `./next develop` offered
+  `0135` as `TAKE` with an `expects:` naming a path that **exists nowhere**, and a path that exists
+  nowhere collides with nothing — so a stale `expects:` makes a row read as *clear* exactly when
+  nobody can tell whether it is. That is the same failure direction as the held-file gap already
+  recorded, arriving from the other side. Still needs a row (pointer: items/0132, 0133, 0134
+  `expects:`; `.claude/backlog/next`, takeability's fourth test; `references/CONCURRENCY.md`,
+  *A change that touches every file*).
+
+- 2026-09-11 (develop, 0135) — **`develop` Step 5 tells a session to wait on a live whole-suite run
+  with `pgrep -f <runner>`, and this project has no runner to name.** The suite is
+  `for t in tests/*.test.sh`, so the only live process is `sh` running a file whose name changes
+  every second; `pgrep -f 'tests/.*test.sh'` matches the loop's own children and races its own
+  check. The rule is right and its mechanism does not exist here. What this session did instead was
+  run the sweep in the background and read the output file, which answers "is it finished" without
+  answering "is someone else running one" at all — the question the step actually asks. Needs a row
+  (pointer: `skills/develop/SKILL.md` Step 5, the `pgrep` sentence; `CLAUDE.md`, *Tests*).
