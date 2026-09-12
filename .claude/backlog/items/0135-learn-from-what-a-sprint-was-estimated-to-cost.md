@@ -3,7 +3,7 @@ id: "0135"
 title: Record what a sprint was estimated to cost against what it did, and estimate from that
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: m
@@ -17,9 +17,13 @@ expects:
   - tools/harvest-usage.sh
   - .claude/backlog/config.yml
   - MEASUREMENT.md
-claimed_by:
-claimed_at:
+claimed_by: "887a"
+claimed_at: 2026-09-12T01:17:24Z
 touches:
+  - skills/orchestrate/SKILL.md
+  - tools/harvest-usage.sh
+  - .claude/backlog/config.yml
+  - MEASUREMENT.md
 ---
 
 ## Problem
