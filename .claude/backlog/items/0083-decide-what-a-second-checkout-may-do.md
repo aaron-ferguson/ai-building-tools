@@ -161,3 +161,29 @@ durability test (*committed*) passed, and the claim was still destroyed.
     ACs as a numbered list `close` cannot tick. Converted to `- [ ] ACn —` with the wording unchanged.
   - **The worktree's copy of `.lock/`** is not reached by the refusal and needs nothing: the check
     runs before `mkdir`, so no refusal from a worktree ever creates one.
+- **2026-09-12 — verify [8bdf]: PASS.** Verified at `a2a1a93` in the primary checkout; Step 2 and
+  verdict-time `git status --porcelain` both empty, so the advisory intersection is empty. The
+  installed 0.9.26 `verify` skill that ran already carries the Step 2 citations. Develop's AC5 table
+  was re-run, not trusted, and reproduced exactly. FR3 is met; `verify` Step 5's deploy-from-a-worktree
+  paragraph cites nothing, but it writes no backlog and FR3 does not name it.
+
+## QA evidence
+
+Level `unit`, the whole suite run in reporting form (`for t in tests/*.test.sh; do "$t" || true; done`):
+all 31 files `0 failed`. Among them `claim` 98/0, `close` 246/0, `handoff` 132/0,
+`backlog-scripts-installed` 37/0, `retro-tool-edit` 50/0, `item-ac-form` 4/0.
+
+| Row | How checked | Result |
+|---|---|---|
+| AC1 claim from worktree | `tests/claim.test.sh` *0083 AC1*: a real `git worktree add --detach`; checks non-zero exit, message text, unmoved HEAD, and a cksum of the backlog | PASS. Mutation: detection forced to "primary" (`--git-common-dir)` → `--git-dir)`, 1-line diff) → **92 passed, 6 failed**, exactly the six AC1 assertions, including *no commit lands on the worktree's HEAD* |
+| AC2 handoff from worktree | `tests/handoff.test.sh` *0083 AC2* | PASS. Same mutation → **126 passed, 6 failed**, the six AC2 assertions |
+| AC3 close from worktree | `tests/close.test.sh` *0083 AC3* | PASS. Same mutation → **240 passed, 6 failed**, the six AC3 assertions |
+| AC4 primary unaffected | Existing primary success cases in each suite | PASS. Reverse mutation, detection forced to "worktree" (`--git-dir)x" !=`): claim, close and handoff each red their ordinary success cases (`exits 0`, `the claim/close/hand-off is committed`, …), so the guard can fail |
+| AC5 guard can fail | The two mutations above, each restored with `git checkout -- <that template>` | PASS. Clean `git status` after restoring; control run 98/0, 246/0, 132/0 |
+| AC6 stated once | `grep -rni "second checkout\|must never claim" references/ skills/ docs/` | PASS. One statement at `CONCURRENCY.md:65-73`, naming a linked worktree and a second clone, and saying *a second clone is caught by nothing but this rule*. The old e2e sentence is now a citation (`:63`). Every other hit is a citation |
+| AC7 skills cite it | Same grep, plus the paragraph read in context | PASS. `develop` `:446` (checkout form) and `:470` (replay form). `verify` `:111` (e2e) and `:137` (whole-project gate). Each citation is the last line of its paragraph, with no blank line before it. `retro-tool-edit` 50/0 |
+| AC8 templates = installed | `cmp` of each template against `.claude/backlog/*`; `backlog-scripts-installed` 37/0 | PASS. All three identical |
+| NFR Documentation | AC6/AC7 greps | PASS. Stated once, cited 4× in the skills and once in each script |
+| NFR Testing | The fixtures run `git worktree add` for real; mutations above | PASS. Not simulated, and proven to go red |
+| NFR Guards | `grep -rn "worktree in the same turn" tests/ skills/` | PASS. The only hit is `skills/retro/SKILL.md:322` (guard `retro-tool-edit.test.sh:112`), so the NFR named the wrong file, as develop recorded. That line is untouched and the guard is green |
+| Core always-on | Diff `79585c0` read | PASS. No secrets. The refusal fails loudly before the lock. Commits were staged by pathspec |
