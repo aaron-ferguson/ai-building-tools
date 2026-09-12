@@ -53,6 +53,32 @@ that widened scope then overlaps a running develop gate, the follow-on develop s
 is correct. What is not correct is the sprint silently absorbing the newly-unblocked ticket into a
 scope a person already confirmed — the estimate they approved would no longer describe the run.
 
+## Open design question
+
+**What holds a design row while its dispatched session runs, given that `design` never claims one?**
+Raised by `develop` 2026-09-12, no code written. FR5 says the session "claims its row through
+`claim` like any other stage", and the FR1 note's whole mechanism is *wait for that claim to land,
+then re-call `--drive`, which steps past the held row*. But `skills/design/SKILL.md` claims at no
+step: lines 31–35 and Step 4 (124–134) write an **unclaimed** ticket directly, by design. So for the
+whole design pass `--drive` returns exit 4 on the same row, the develop gate below it is unreachable,
+and AC1 cannot be met by the sprint skill alone. Every remedy crosses a line this ticket drew:
+
+- **(a) `design` claims via `./claim` at Step 1 when it works a ticket.** Durable and visible to every
+  other session (`CONCURRENCY.md`, *A claim must be durable the moment it is made*), makes FR5 true
+  as written, and also answers the two open `FINDINGS.md` entries about design sessions overlapping on
+  one row. Costs: it is exactly *"Any change to what a design session does once dispatched"*, which
+  Out of scope excludes, and it widens `expects:` to `skills/design/SKILL.md` and its guard.
+- **(b) `./next --drive` gains a supervisor-supplied `--designing <id>`**, stepped over like a held row.
+  No design change, but `./next` is not in `expects:`, the FR1 note says it should not need touching,
+  and the "hold" is supervisor memory — a hand-driven `/design` could take the same row, so FR5's
+  second half is unmet.
+- **(c) The supervisor claims on the design session's behalf.** Forbidden outright by sprint Step 8,
+  *It never claims a row and never mints a claim token*.
+
+**Recommendation: (a)**, as a blocking sibling rather than widened into this ticket — it changes a
+stage, is useful without any sprint, and splitting it is `queue`'s call. What would change it: if
+design claiming for the length of a pass is judged to hold rows too long for hand-driven work.
+
 ## Functional requirements
 
 - FR1 — A sprint may run one or more `design` sessions concurrently with its develop session.
@@ -178,3 +204,17 @@ scope a person already confirmed — the estimate they approved would no longer 
   supervisor's wait-for-claim loop, which Step 8's per-ticket figure already counts. **Existing
   criteria:** FR1–FR6 and AC1–AC5 are confirmed unchanged; the Performance NFR is rewritten; a
   Guardrail row, FR7–FR8 and AC6–AC7 are added.
+- **2026-09-12 — develop (token `4244`): handed back to design before any code, on FR5.** See the
+  *Open design question*. Two further facts checked against the source while restating the contract,
+  both of which a builder would otherwise meet as a surprise, whichever remedy is chosen:
+  **`--completed design:<id>` is not a routing input.** A design row handing off to `next: develop,
+  status: ready` reaches `.claude/backlog/next`'s final `ESCALATE … which no routing rule covers`
+  branch (the `--completed` block, ~line 1310), so the supervisor must report a design finish some
+  other way or a successful design session stops the run — AC1's red arriving by another door.
+  **`./claim` refuses a busy lock rather than waiting on it** (`skills/queue/templates/claim`, the
+  `mkdir "$LOCK" … exit 1` branch), so AC5's *"both land"* holds only if the losing writer retries;
+  a two-writer fixture that runs two claims at once will red on the refusal unless it models that
+  retry. **The supervisor's `--started` set only affects verify selection** (`started_verify`,
+  `verify_batch`), so a designed id in it does not by itself absorb that ticket into a develop gate;
+  what does is `--drive` naming it as the topmost develop row after its design lands, which the
+  partial-gate rule in *The proposal* is the nearest existing answer to (AC4).
