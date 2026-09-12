@@ -142,7 +142,7 @@ The proposal states, all of it from that one call:
 **Where a `next: design` row outside the scope outranks the gate, name it as where the run will
 stop.** `--propose` escalates on it in the same call. The run still halts there, reported as the
 scope's edge rather than dispatched for or refused. A design row a person takes into scope is
-dispatched instead (*Design alongside develop*).
+dispatched instead (the *Design alongside develop* section).
 
 **Where the confirmed scope is only part of a gate, name the rows left behind and what resuming them
 costs.** They were un-takeable while the rest is in progress anyway, so the real price is one
@@ -236,7 +236,7 @@ here.
 
 **Exit 4 on an in-scope design row is a dispatch, not a halt.** The confirmed scope names it; a
 design row outside the confirmed scope is never dispatched, and where one outranks the gate the run
-stops there, as the scope's edge (*The proposal*). For an in-scope row:
+stops there, as the scope's edge the proposal names. For an in-scope row:
 
 1. Dispatch `/design <id>` as its own process (Step 3), log its `dispatch` event, and add the id to
    the run's design set.
@@ -256,7 +256,7 @@ left means the run has reached its scope's edge. Step 9 names the designed ticke
 **Design runs never beside `retro` or `queue`**, which rewrite the skills and scripts every other
 session executes, and Step 6 enforces that with this check before the tail. Both stages still write
 the backlog, each under the lock; a stage finding it busy retries, since `./claim` refuses a busy
-lock rather than waiting (`CONCURRENCY-INCIDENTS.md`, *A busy or stale lock*).
+lock rather than waiting (`CONCURRENCY.md`, *Lock every write to the backlog directory*).
 
 ```sh
 # design-windows: every design session this run dispatched, open until its outcome is logged
@@ -428,7 +428,7 @@ gate read low.
 on, arriving as a dispatch: `retro` is the terminal sweeper for the *lesson* half and only a `queue`
 sweep can take the *work* half, so a tail of one leaves the buffer holding what it came to clear.
 **Each runs with no other stage session running**, and a design session is one: dispatch no design
-after the gate crosses, and run the design-windows check (*Design alongside develop*) before each
+after the gate crosses, and run the design-windows check (the *Design alongside develop* section) before each
 tail stage, waiting while it prints any `open` line. Including each other — both rewrite the skills
 and the backlog scripts every other session is executing, and a stage that resolved its instructions
 before the rewrite is running a version nothing else in the repo agrees with.
@@ -532,7 +532,7 @@ with the derivation beside it**, never a figure chosen here and never one rounde
   `4`: name what must be decided and stop. An in-scope design row is answered by the `design`
   session it dispatches, never by the supervisor. Queuing new work and designing tickets are escalations, not automation.
 - **It never runs two stage sessions at once, except a design session alongside a develop session**
-  (*Design alongside develop*). Otherwise the loop is sequential by decision, and what it
+  (the *Design alongside develop* section). Otherwise the loop is sequential by decision, and what it
   parallelises is *tickets*, through the gate.
 - **It never drives more than one backlog.**
 
