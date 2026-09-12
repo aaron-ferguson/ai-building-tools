@@ -721,3 +721,17 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   different level than the frontmatter (pointer: `skills/verify/SKILL.md` Step 2, *the frontmatter
   field is the authority*; `tests/qa-level-once.test.sh`).
 - 2026-09-12 — **`retro` Step 1 still says "Leave the work entries where they are" after 0060 made it the terminal sweeper.** Step 4 says no entry survives the pass that read it and that a pure unit of work is filed, not handed back; a retro following Step 1 literally leaves read work entries in the buffer, re-opening the cost 0060 closed. Also, three sessions wrote "a queue pass should withdraw 0080" and none did — `design` settled it by withdrawing, which its Step 4 does not name as an outcome (pointer: `skills/retro/SKILL.md` Step 1 vs Step 4; `skills/design/SKILL.md` Step 4; items 0060, 0080).
+- 2026-09-12 — **`develop`'s hand-back-to-design branch says "release the claim and stop", but the
+  checks that reach it run before the claim exists — and `handoff` will not move a row without a
+  token.** Step 2's two staleness rules (a figure a ticket quotes about a file it does not own; a
+  missing *decision* rather than missing detail) are deliberately placed at selection and
+  contract-restatement, and Step 1 says explicitly to run the staleness grep *before* claiming. On
+  `0134` the NFR's false claim about another ticket's tool was visible from a five-minute read of
+  `tools/sprint-ledger.sh`, with nothing claimed. The branch's instruction then has no correct
+  action: there is no claim to release, and `.claude/backlog/handoff` requires `<id> <token>` and
+  refuses a token that is not yours, so the only supported route to `next: design` is to claim a row
+  purely in order to hand it straight back. That is a real claim and a real commit for a session that
+  will write no code, and it reads in the log as work started. Either the branch should say to claim
+  first and name why, or `handoff` needs a path for an unclaimed row (pointer: `skills/develop/SKILL.md`
+  Step 2, *if what is missing is a decision rather than detail*, and Step 1, *run the staleness grep
+  before you claim*; `.claude/backlog/handoff` usage).
