@@ -523,3 +523,26 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   mutation reddened nothing while the same mutation applied to the template reddened two assertions.
   Needs a row (pointer: `tests/close.test.sh:25` `CLOSE_SRC`, `tests/handoff.test.sh`; `CLAUDE.md`,
   *This project is the tool its sessions are running*).
+
+- 2026-09-11 (verify 0135) — **"the cell is populated" is not "a figure was estimated", and an AC1
+  guard written the first way cannot see the red AC1 names.** `tests/sprint-ledger.test.sh`'s
+  `paired()` asserts a non-whitespace estimate cell beside a numeric actual. `tools/sprint-ledger.sh`
+  defaults three of its four `--estimate-*` figures to `0`/`0.00`/`unsourced`, so a `record` run with
+  a flag omitted writes a fabricated estimate that satisfies `paired()` exactly. Blanking the cell
+  outright reddens four assertions; filling it with a lie reddens none. The generalisable half is
+  that a guard for *a figure was supplied* has to anchor on the **source**, which a default cannot
+  forge, rather than on the figure, which it trivially can. Needs a row (pointer:
+  `tests/sprint-ledger.test.sh` `paired()`; `tools/sprint-ledger.sh` `parse()` defaults;
+  `testing-conventions.md`, mutation at the AC's altitude).
+
+- 2026-09-11 (verify 0135) — **the repo's whole-project gate is red on a committed file, and the
+  release gate is fail-fast over the same line.** `tests/measurement.test.sh` reports
+  `128 passed, 1 failed`: its privacy guard finds a home-directory path published in
+  `.claude/backlog/items/0052-…md:294`, landed at `7fdd367` by that ticket's own QA-evidence table —
+  a verdict quoting a tool's output verbatim, where the tool prints an absolute path. So the shape
+  `verify` Step 7 now asks every session to write into its item is itself a route for a
+  home-directory path into a public repo, and `tools/release` step 5 runs `commands.unit`, which is
+  `|| exit 1` — the repo currently cannot release. Nothing to do with `0135`; found because
+  `qa_level: unit` runs every file. Needs a row (pointer:
+  `.claude/backlog/items/0052-acceptance-criteria-must-be-falsifiable.md:294`;
+  `tests/measurement.test.sh` privacy guard; `references/REPORTING.md`; `CLAUDE.md`, *Tests*).
