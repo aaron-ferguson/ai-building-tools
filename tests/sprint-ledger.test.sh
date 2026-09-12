@@ -778,6 +778,27 @@ else
   bad "0134 privacy -- a generated line is outside the aggregate-figures character set: $DBAD"
 fi
 
+# The other half of AC7's rule. A develop session that never answered may have run past the design
+# session's end, so the answer is unknown -- reading it as `sequential` would put a data point in the
+# comparison that it never was, exactly as a killed design session would.
+echo "0134 AC7 -- an unanswered develop window that could overlap makes the answer unknown"
+URUN="$FIX/r-unanswered.jsonl"
+cat > "$URUN" <<JSON
+{"ts":"2026-09-12T09:00:00Z","run":"r-unanswered","event":"dispatch","stage":"develop","session_id":"$SID_DDEV","tickets":["0301"]}
+{"ts":"2026-09-12T09:10:00Z","run":"r-unanswered","event":"dispatch","stage":"design","session_id":"$SID_DA","tickets":["0302"]}
+{"ts":"2026-09-12T10:00:00Z","run":"r-unanswered","event":"outcome","stage":"design","session_id":"$SID_DA","tickets":[{"id":"0302"}]}
+JSON
+ULEDGER="$FIX/unanswered-ledger.md"
+cp "$EMPTY" "$ULEDGER"
+"$TOOL" record --ledger "$ULEDGER" --run "$URUN" --transcripts "$FIX/dstore" \
+  --measurement "$MEAS" --config "$CONF" --estimate-tickets 2 --estimate-wall no-prior \
+  --estimate-tokens 1200000 --estimate-usd 20.00 --estimate-source "$EST_SOURCE" >/dev/null 2>&1 || true
+ULINE="$(grep '^DESIGN 0302 ' "$ULEDGER" || true)"
+case "$ULINE" in
+  *" concurrency not measured:"*) ok "a design session beside an unanswered develop window is not measured" ;;
+  *) bad "0134 AC7 -- a design session beside an unanswered develop window was classified: ${ULINE:-no DESIGN line}" ;;
+esac
+
 echo "0134 -- LEDGER.md explains the DESIGN line where a reader learns to read a block"
 if says "$LEDGER" "How to read a block" '`DESIGN'; then
   ok "How to read a block names the DESIGN line"
