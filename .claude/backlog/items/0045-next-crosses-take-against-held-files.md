@@ -2,8 +2,8 @@
 id: "0045"
 title: Cross the take loop against the held file set in next
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -15,9 +15,10 @@ expects:
   - skills/queue/templates/next
   - .claude/backlog/next
   - tests/next.test.sh
-claimed_by: "a989"
-claimed_at: 2026-09-12T04:13:20Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-12
 ---
 
 ## Problem
@@ -79,23 +80,23 @@ about. Deciding 0005 was safe meant opening 0026's item file — the read Step 1
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a queue where the topmost row at a stage has an `expects:` intersecting an
+- [x] AC1 — Given a queue where the topmost row at a stage has an `expects:` intersecting an
   `in-progress` row's `touches:`, when `./next <stage>` runs, then it does not print `TAKE` for
   that row.
-- [ ] AC2 — Given that same queue with a lower row at the same stage whose `expects:` intersects
+- [x] AC2 — Given that same queue with a lower row at the same stage whose `expects:` intersects
   nothing held, when `./next <stage>` runs, then it prints `TAKE` for that lower row.
-- [ ] AC3 — Given a row stepped over for collision, when `./next <stage>` runs, then the output
+- [x] AC3 — Given a row stepped over for collision, when `./next <stage>` runs, then the output
   names that row's id, the intersecting path, and the id holding it.
-- [ ] AC4 — Given a queue where every row at a stage collides, when `./next <stage>` runs, then the
+- [x] AC4 — Given a queue where every row at a stage collides, when `./next <stage>` runs, then the
   output distinguishes that case in words from an empty stage.
-- [ ] AC5 — Given an `in-progress` row with an empty `touches:` and a non-empty `expects:`, when
+- [x] AC5 — Given an `in-progress` row with an empty `touches:` and a non-empty `expects:`, when
   `./next <stage>` runs, then the CLAIMED FILES block prints that `expects:` labelled as predicted,
   and still says to assume held and ask.
-- [ ] AC6 — Given an `in-progress` row at `verify`, when a `develop` row's `expects:` intersects
+- [x] AC6 — Given an `in-progress` row at `verify`, when a `develop` row's `expects:` intersects
   it, then AC1 holds — the held set is not filtered by stage.
-- [ ] AC7 — Given `.claude/backlog/next` compared against `skills/queue/templates/next`, when
+- [x] AC7 — Given `.claude/backlog/next` compared against `skills/queue/templates/next`, when
   `tests/backlog-scripts-installed.test.sh` runs, then it passes.
-- [ ] AC8 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
+- [x] AC8 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
   then every suite passes.
 
 ## QA plan

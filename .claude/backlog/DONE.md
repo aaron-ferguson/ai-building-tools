@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0045 | Cross the take loop against the held file set in next | bug | unit | 2026-09-12 | [items/0045-next-crosses-take-against-held-files.md](items/0045-next-crosses-take-against-held-files.md) |
 | 0144 | Anchor the scope report's commit range to the claim commit for this ticket | bug | unit | 2026-09-12 | [items/0144-anchor-the-scope-report-commit-range.md](items/0144-anchor-the-scope-report-commit-range.md) |
 | 0107 | Require an NFR row to name how it would red | feature | unit | 2026-09-12 | [items/0107-nfr-rows-name-how-they-would-red.md](items/0107-nfr-rows-name-how-they-would-red.md) |
 | 0133 | Close a sprint with a retro and a queue sweep only when the findings earn it | feature | verify | 2026-09-11 | [items/0133-run-the-retro-and-queue-tail-only-when-it-is-earned.md](items/0133-run-the-retro-and-queue-tail-only-when-it-is-earned.md) |
