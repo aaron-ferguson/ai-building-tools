@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | feature | verify | 2026-09-12 | [items/0132-batch-verify-within-a-developed-gate.md](items/0132-batch-verify-within-a-developed-gate.md) |
 | 0045 | Cross the take loop against the held file set in next | bug | unit | 2026-09-12 | [items/0045-next-crosses-take-against-held-files.md](items/0045-next-crosses-take-against-held-files.md) |
 | 0144 | Anchor the scope report's commit range to the claim commit for this ticket | bug | unit | 2026-09-12 | [items/0144-anchor-the-scope-report-commit-range.md](items/0144-anchor-the-scope-report-commit-range.md) |
 | 0107 | Require an NFR row to name how it would red | feature | unit | 2026-09-12 | [items/0107-nfr-rows-name-how-they-would-red.md](items/0107-nfr-rows-name-how-they-would-red.md) |

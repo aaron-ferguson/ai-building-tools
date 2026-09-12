@@ -2,8 +2,8 @@
 id: "0132"
 title: Let verify batch within a gate that was developed together, with per-ticket evidence
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: verify
 size: m
@@ -19,9 +19,10 @@ expects:
   - skills/orchestrate/SKILL.md
   - .claude/backlog/config.yml
   - tests/next.test.sh
-claimed_by: "ada0"
-claimed_at: 2026-09-12T16:07:42Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-12
 ---
 
 ## Problem
@@ -85,23 +86,23 @@ Written against whatever `0059` settles; these hold regardless of which shape it
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given three tickets developed in one gate and left at `next: verify`, when `--drive`
+- [x] AC1 — Given three tickets developed in one gate and left at `next: verify`, when `--drive`
       runs, then it dispatches one verify session naming all three. **Red if** it dispatches one id,
       which is today's behaviour.
-- [ ] AC2 — Given three tickets at `next: verify` that were **not** developed together, when
+- [x] AC2 — Given three tickets at `next: verify` that were **not** developed together, when
       `--drive` runs, then it dispatches them separately. **Red if** the batch condition is written
       as "any rows at the stage", which FR1 rejects.
-- [ ] AC3 — Given a completed batched verify, when each ticket's item file is read, then each holds
+- [x] AC3 — Given a completed batched verify, when each ticket's item file is read, then each holds
       its own `## QA evidence` table naming its own ACs. **Red if** one table names ACs from more
       than one ticket.
-- [ ] AC4 — Given a batch in which one ticket's guard is red and the others' are green, when the
+- [x] AC4 — Given a batch in which one ticket's guard is red and the others' are green, when the
       session reports, then the red is attributed to that ticket and the others still receive their
       own verdicts. **Red if** a fail-fast run is used, which stops at the first red and leaves the
       remaining tickets unverified while reading as though the batch failed.
-- [ ] AC5 — Given a red that no ticket in the batch owns — another session's in-flight work — when
+- [x] AC5 — Given a red that no ticket in the batch owns — another session's in-flight work — when
       the session reports, then it reports the red as unattributed and closes none of them. **Red
       if** it is charged to the alphabetically-first ticket, which is the `0084` failure repeated.
-- [ ] AC6 — Given the repo after this ticket, when `diff .claude/backlog/next
+- [x] AC6 — Given the repo after this ticket, when `diff .claude/backlog/next
       skills/queue/templates/next` runs, then they are identical. **Red if** only this project's
       copy is changed.
 
