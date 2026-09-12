@@ -586,3 +586,18 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   does not exist yet, which no stage is scripted to create. Needs a row (pointer: `skills/verify/SKILL.md`
   Step 5 fifth shape and Step 2's whole-project-gate paragraph, which handles the *dirty* case and
   not the *committed* one; `skills/queue/SKILL.md` acceptance-criteria step; `0045` AC8).
+
+- **2026-09-11 — `claim`'s exclusive-claim detector reads any `*` in an `expects:` entry as
+  `expects: "*"`, so a legitimate glob declares a whole-tree claim.** The test is
+  `if ($0 ~ /\*/) { print "yes"; exit }` over each bullet — it asks whether an asterisk appears
+  anywhere in the entry, where the rule it enforces is about an entry that *is* `"*"`
+  (`references/CONCURRENCY.md`, *A change that touches every file takes an exclusive claim*).
+  Probed while building `0147` FR3, which requires a glob to resolve like any other path: a fixture
+  declaring `expects:\n  - tests/*.test.sh` with one other ticket held was refused with *"its
+  expects: declares \"*\", an exclusive claim over the whole tree"*. The failure is quiet in the
+  worst direction — it reads as a correctly-enforced precondition, and the session's honest
+  response is to wait for a holder that has nothing to do with it. `0147` is scoped to the
+  missing-path report and deliberately did not touch this. Needs a row (pointer:
+  `skills/queue/templates/claim` and `.claude/backlog/claim`, the `exclusive="$(awk ...)"` block;
+  `tests/claim.test.sh` 0067 AC7 cases, which pin the refusal and its scope but use `"*"` bare and
+  so never reach the over-match).
