@@ -2,8 +2,8 @@
 id: "0135"
 title: Record what a sprint was estimated to cost against what it did, and estimate from that
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -21,8 +21,8 @@ expects:
   - MEASUREMENT.md
   - tests/sprint-ledger.test.sh     # NEW
   - tests/sprint.test.sh
-claimed_by: "5f9c"
-claimed_at: 2026-09-12T03:33:10Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -191,3 +191,63 @@ is the only level that covers the file this ticket edited but does not guard.
 (M1) matched nothing on its first attempt and returned a clean pass — the substitution was written
 against a line that does not wrap as assumed — and was re-run against the real text rather than read
 as a green.
+
+### 2026-09-11 — Sent back by verify (token 5f9c)
+
+**FR8 is unmet on a reachable path: `record` writes a fabricated estimate instead of refusing.**
+`tools/sprint-ledger.sh` `parse()` defaults `estimate_tickets` and `estimate_tokens` to `0`,
+`estimate_usd` to `0.0` and `estimate_source` to the literal string `unsourced`. A `record` run with
+any of those flags omitted therefore exits 0 and appends a committed block reading
+`| usd | 0.00 | 16.00 | unsourced |` — a number in the estimate column that nobody estimated,
+carrying a source that is an admission of having none, and no stamp. FR8 says *every* figure carries
+the source it was read from and the stamp it was true at; `unsourced` is not a source, and the file's
+own preamble is built on the observation that a figure of this shape decays **silently** while the
+arithmetic on the page stays self-consistent. `CONVENTIONS_CORE.md` carries the same rule from the
+other side — *validate inputs at the top, throw descriptive errors, never swallow failures silently*.
+
+**The constraint: in `record` mode a missing `--estimate-tickets`, `--estimate-tokens`,
+`--estimate-usd` or `--estimate-source` must `die()` naming the flag, the way `--ledger` already
+does.** AC1 is what settles refuse rather than label: a record with no estimate cannot hold "an
+estimate and an actual" for that figure, so there is nothing to label. `--estimate-wall no-prior`
+stays as it is — that one is an **explicit declaration** the guard already accepts, which is exactly
+what an omitted flag is not. The guard case is that `record` with a flag omitted exits non-zero and
+names it; it belongs beside the AC1 block in `tests/sprint-ledger.test.sh`.
+
+**And `paired()` cannot see this, which is why it survived to here.** It asserts a non-whitespace
+estimate cell beside a numeric actual, so blanking the cell reddens four assertions while filling it
+with `0.00` reddens none. Anchor the AC1 guard on the **source** column, which a default cannot
+forge, rather than on the figure, which it trivially can. Parked as a finding.
+
+**Everything else was checked and is green.** All six ACs hold on the documented path, each proved
+falsifiable by a mutation at the AC's own altitude — see `## QA evidence`. The three NFR rows hold.
+The `sh`-wrapping-`python3` deviation from *Python with full type hints* is **not** what sent this
+back: the argument that retyping one of four sibling tools makes it the outlier is a fair one, but
+`CONVENTIONS_CORE.md` enumerates *use types* among the principles rather than the preferences, so the
+build note's "it is a preference rather than a principle" is wrong as written. That is a repo-wide
+question about `tools/*.sh`, not this ticket's to settle — it needs its own row.
+
+## QA evidence
+
+Verified at `qa_level: unit` (frontmatter and QA-plan prose agree after the raising commit `0591f3b`;
+no drift). Repo checkout at `514b119`, working tree clean at Step 2 and clean again at the verdict,
+so the dirty set is empty and the intersection with the evidence set is empty — **not advisory**.
+Artefacts were read and executed from the **repo copy**, not the installed plugin: the suites invoke
+`tools/sprint-ledger.sh` and `tools/harvest-usage.sh` by repo path. The installed 0.9.25 tree does
+differ from the checkout for eight skill files, which is expected between releases and affects
+nothing here.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 — estimate and actual for all four figures | `tests/sprint-ledger.test.sh` `paired()` over the recorded block. Mutation: drop the Estimate cell from every figure row → `34 passed, 4 failed`. Control `38 passed, 0 failed` | **FAIL** — green on the documented path, but the guard cannot see the red the AC names: defaulting `--estimate-usd` to `0.00` leaves the run at `38 passed, 0 failed` while the estimate column holds a figure nobody estimated |
+| AC2 — a figure with no prior is labelled, not presented as derived | Same suite, AC2 block. Mutation: `emit("wall_clock_min", None, …)` → `emit("wall_clock_min", 99, …)` → `37 passed, 1 failed`, *"the wall-clock figure is not marked as having no prior"*, with the dollar figure still citing `MEASUREMENT.md` so the two stay distinguishable | PASS |
+| AC3 — the third sprint estimates from the ledger, not the priors | Same suite, two-recorded-sprint fixture. Mutation: `if sprints and total_tickets > 0:` → `if False and total_tickets > 0:` → `35 passed, 3 failed` | PASS |
+| AC4 — predicted beside observed for a multi-ticket gate | Same suite, `GATE` block; prediction asserted as `config.yml`'s model at n=3, `6.05 + 4.03 × 2 = 14.11`, against the gate session's observed `10.00`. Mutation: emit the `GATE` line keeping its shape but dropping the prediction → `36 passed, 2 failed` | PASS |
+| AC5 — no message text reaches the ledger | Same suite, sentinel `SENTINELPROSE` planted in the fixture transcript, plus a character-set sweep of every generated line. Two mutations: emitting the raw transcript line reddens the character-set check; emitting the assistant `text` field reddens the sentinel check. Each `37 passed, 1 failed`. Neither alone catches both shapes | PASS |
+| AC6 — both sides of every ratio carry a source and a stamp | Same suite, structural `awk` over `RATIO` / `numerator` / `denominator`. Mutation: drop `(%s @ %s)` from the denominator line → `37 passed, 1 failed`, *"a ratio is missing a stamped side"* | PASS |
+| NFR Privacy & data (`data-privacy-conventions.md`) | AC5 above, plus `grep -nE "/Users/\|/home/[a-z]"` over all six files the ticket touched — no match. The new egress path (transcripts → a committed public file) emits aggregates, stage names and 8-char session-id prefixes only | PASS |
+| NFR Performance (`observability-conventions.md`) | Three `sprint-ledger.sh` mentions in `skills/sprint/SKILL.md`, two of them call sites: one `estimate` at the proposal, one `record` at Step 6. Nothing per cycle | PASS |
+| NFR Documentation (`documentation-conventions.md`) | The block carries an `Estimate source` column and every `ESTIMATE` line a `source: … @ <stamp>` — except on the defaulted path, where the source reads `unsourced`. Covered by the FR8 finding above | PASS with the FR8 exception |
+| FR1/FR4 prose in `skills/sprint/SKILL.md` | `says()` assertions over the proposal and Step 6 sections. Mutation: *"estimate is written to the ledger before the first dispatch"* → *"… at some point"* → reddens *"nothing says the estimate is written before the work"* | PASS |
+| FR3 — actuals over a session-id set, not a date window | Fixture store of three sessions totalling USD 36.00, of which the run owns two. `harvest-usage.sh --session` returns 16.00 and the unrelated session never reaches the total | PASS |
+| Always-on (`CONVENTIONS_CORE.md`) | *Validate inputs at the top; throw descriptive errors; never swallow failures silently* — **breached**, see FR8 above. *Use types* — deviation documented in the build notes; flagged, not blocked on, and owed its own row | **FAIL** on input validation |
+| Whole-suite run (`commands.unit`) | All 33 files run individually rather than fail-fast, per `config.yml`'s own note. Every file green except `tests/measurement.test.sh` at `128 passed, 1 failed`, whose red is a home-directory path committed by **another ticket's** close (`7fdd367`, item `0052` line 294) and touches nothing in this ticket. Parked as a finding; it also means `tools/release` step 5 is currently red | PASS for this ticket |
