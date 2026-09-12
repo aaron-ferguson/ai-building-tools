@@ -3,7 +3,7 @@ id: "0083"
 title: Decide what a second checkout may do with the backlog
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -22,9 +22,19 @@ expects:
   - tests/claim.test.sh
   - tests/close.test.sh
   - tests/handoff.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "7bf5"
+claimed_at: 2026-09-12T22:27:25Z
 touches:
+  - references/CONCURRENCY.md
+  - references/CONCURRENCY-INCIDENTS.md
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - skills/queue/templates/claim
+  - skills/queue/templates/close
+  - skills/queue/templates/handoff
+  - tests/claim.test.sh
+  - tests/close.test.sh
+  - tests/handoff.test.sh
 ---
 
 ## Problem
