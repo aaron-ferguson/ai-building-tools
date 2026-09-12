@@ -24,14 +24,8 @@ expects:
 claimed_by: "ee4e"
 claimed_at: 2026-09-12T03:47:44Z
 touches:
-  - skills/sprint/SKILL.md          # corrected: the 0129 rename deleted skills/orchestrate/
-  - tools/harvest-usage.sh
-  - tools/sprint-ledger.sh          # NEW — writes and reads the ledger
-  - .claude/backlog/LEDGER.md       # NEW — the ledger itself
-  - .claude/backlog/config.yml
-  - MEASUREMENT.md
-  - tests/sprint-ledger.test.sh     # NEW
-  - tests/sprint.test.sh
+  - tools/sprint-ledger.sh          # the only file the bounce verdict names
+  - tests/sprint-ledger.test.sh     # the AC1 guard, re-anchored on the source column
 ---
 
 ## Problem
