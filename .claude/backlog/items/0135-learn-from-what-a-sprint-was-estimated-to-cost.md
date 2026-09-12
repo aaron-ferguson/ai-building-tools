@@ -2,8 +2,8 @@
 id: "0135"
 title: Record what a sprint was estimated to cost against what it did, and estimate from that
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -21,17 +21,9 @@ expects:
   - MEASUREMENT.md
   - tests/sprint-ledger.test.sh     # NEW
   - tests/sprint.test.sh
-claimed_by: "887a"
-claimed_at: 2026-09-12T01:17:24Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/sprint/SKILL.md
-  - tools/harvest-usage.sh
-  - tools/sprint-ledger.sh          # new file, created by this ticket
-  - .claude/backlog/LEDGER.md       # new file, created by this ticket
-  - .claude/backlog/config.yml
-  - MEASUREMENT.md
-  - tests/sprint-ledger.test.sh     # new file, created by this ticket
-  - tests/sprint.test.sh
 ---
 
 ## Problem
