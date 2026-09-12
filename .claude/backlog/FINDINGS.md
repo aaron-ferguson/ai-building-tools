@@ -601,3 +601,33 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `skills/queue/templates/claim` and `.claude/backlog/claim`, the `exclusive="$(awk ...)"` block;
   `tests/claim.test.sh` 0067 AC7 cases, which pin the refusal and its scope but use `"*"` bare and
   so never reach the over-match).
+
+- **2026-09-11 — a `verify` send-back names one constraint, and `develop`'s re-entry reads that
+  constraint as the whole scope, so a sibling instance of the identical defect in the same function
+  survives the bounce.** `0135` was sent back for `parse()` defaulting the estimate flags, which
+  wrote a fabricated figure into a committed public ledger. The re-entry fixed exactly that and
+  nothing else — correctly, by the letter of `skills/verify/SKILL.md` Step 5 (*name the constraint,
+  never a menu*) and `skills/develop/SKILL.md` Step 2 (*this section **is** the specification on a
+  re-entry*). But the same file's `harvest()` swallows a non-zero exit from `harvest-usage.sh` and
+  returns `(0.0, 0)`, so `record` against a missing transcripts directory appends
+  `| usd | 9.99 | 0.00 |` and `observed USD 0.00`, carrying `harvest-usage.sh over 1 session id(s)
+  @ <stamp>` as the source of a number harvest-usage.sh never produced — the same fabrication, the
+  same file, the other column, and a *false* citation rather than a missing one. Two passes of this
+  ticket each looked straight at `harvest()` and neither examined it, because the first was writing
+  a constraint and the second was discharging one. The generalisable half: a send-back is a
+  *minimum*, and neither skill says so — `verify` could ask for the **defect class** beside the
+  instance where one is visible, and `develop`'s re-entry could be told to sweep the enclosing
+  function for siblings before declaring the constraint discharged. Needs a row (pointer:
+  `skills/verify/SKILL.md` Step 5, *Name the constraint, never a menu*; `skills/develop/SKILL.md`
+  Step 2's re-entry paragraph).
+
+- **2026-09-11 — a structural guard that fires only inside its last branch cannot see that branch
+  absent.** `tests/sprint-ledger.test.sh`'s AC6 awk reports a ratio missing a stamped side from
+  within the `/^ *denominator /` rule, so deleting the numerator line reds (the denominator rule
+  still runs and finds `n == 0`) while deleting the **denominator** line is invisible: nothing runs,
+  nothing prints, `53 passed, 0 failed`. The asymmetry is not obvious from reading the awk, and it
+  is the shape every "A must be followed by B and C" check in this repo takes. The general rule is
+  that such a check needs an `END` block, or a reset that reports the pending record when the next
+  anchor or EOF arrives. Found by mutation while verifying `0135`; named in that ticket's send-back
+  so it is fixed there, parked here because the shape is repo-wide (pointer:
+  `tests/sprint-ledger.test.sh` `RATIOBAD`; `testing-conventions.md` on guards that cannot fail).
