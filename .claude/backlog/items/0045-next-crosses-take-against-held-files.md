@@ -191,7 +191,7 @@ about. Deciding 0005 was safe meant opening 0026's item file — the read Step 1
   the QA pass confirming that the built behaviour names the intersecting path and the holding id in
   that direction too, not only for the row it steps over.
 
-### Verify 2026-09-11 [7564] — FAIL on AC8 only, and the mechanism is cleared
+### Verify 2026-09-11 [7564] — FAIL on AC8 only, and the mechanism is cleared (SUPERSEDED)
 
 Handed back to `develop` for **one line**, not for a rebuild. AC1-AC7 are green and each is pinned
 by a mutation that reddened it; the full evidence is in `## QA evidence` below and does not need
@@ -207,6 +207,18 @@ AC8. `0052` is closed and unheld, so nothing stands over that file. Do **not** t
 
 The red is already parked in `FINDINGS.md` (2026-09-11, verify `0135`) and still owes a row; do not
 park it again. It also means `tools/release` step 5 is currently red for the whole repo.
+
+### Verify 2026-09-11 [8f62] — AC8 cleared, PASS, closed
+
+The hand-back above was answered in the same session on the user's instruction rather than by a
+`develop` pass. The redaction landed at **`4d22471`** — `…/ai-building-conventions` in place of the
+absolute path, which leaves the quoted failure message meaning what it meant — and the whole suite
+was re-run file-by-file: **30 files, all green**, `tests/measurement.test.sh` `129 passed, 0 failed`.
+AC1-AC7's evidence stands unchanged from the `7564` pass and was not re-derived; only AC8 was re-run.
+`tools/release` step 5 is unblocked for the repo as a side effect.
+
+The `0045` mechanism itself was never touched by any of this — `skills/queue/templates/next`,
+`.claude/backlog/next` and `tests/next.test.sh` are byte-identical to what `7564` verified.
 
 
 ## QA evidence
@@ -232,7 +244,7 @@ Control after every restore: `413 passed, 0 failed`.
 | AC5 — empty `touches:` falls back to `expects:`, labelled predicted | Same suite, both *0045 AC5* cases. **M4**: `declared_scope` (`next:678`) always prints the bare wording → `410 passed, 3 failed`. The second case pins that a row declaring *neither* field keeps `none declared — assume held, ask` verbatim | PASS |
 | AC6 — the held set is not filtered by stage | Same suite, case *0045 AC6*. **M3**: add a stage filter to `collision_report`'s loop → `411 passed, 2 failed`, exactly the two AC6 assertions. This is the 0007/0038 instance — a `develop` candidate against a live `verify` claim | PASS |
 | AC7 — `.claude/backlog/next` matches the template | `tests/backlog-scripts-installed.test.sh`: `37 passed, 0 failed`; `diff -q` on the two paths reports identical. **M5**: append a comment line to `.claude/backlog/next` → `36 passed, 1 failed`, *"next has diverged from skills/queue/templates/next — fix the template and re-copy, never the copy"* | PASS |
-| AC8 — the whole suite passes | 30 files run individually. 29 green. `tests/measurement.test.sh`: **`128 passed, 1 failed`** — its privacy guard finds a home-directory path published at `.claude/backlog/items/0052-acceptance-criteria-must-be-falsifiable.md:294` | **FAIL** — see below |
+| AC8 — the whole suite passes | 30 files run individually. First run: 29 green, `tests/measurement.test.sh` at **`128 passed, 1 failed`** on a home-directory path at `.claude/backlog/items/0052-…md:294` — a foreign red, see below. Redacted at `4d22471` and the suite re-run in full: **all 30 files green**, `tests/measurement.test.sh` now `129 passed, 0 failed`, `tests/next.test.sh` `413 passed, 0 failed`, `tests/backlog-scripts-installed.test.sh` `37 passed, 0 failed` | PASS |
 | FR1 (not an AC, but the design decision AC5 does not pin) | Case *0045 FR1*: a candidate colliding with a held row's **predicted** `expects:` and with nothing it has claimed is still offered. M4 reddens *"the prediction is still surfaced"*. Confirms the filter reads `touches:` while the display falls back to `expects:` | PASS |
 | NFR Documentation — the rule is stated where `--help` defines takeability | `./next --help` lines 36-43: takeability is now four tests including *"no file the row `expects:` is already held by a held row's `touches:`"*, followed by the `COLLIDES` report, the continue-don't-break behaviour, the cross-stage held set, and the distinct all-collide wording. `documentation-conventions.md` satisfied | PASS |
 
