@@ -26,12 +26,14 @@ claimed_by: "7bf5"
 claimed_at: 2026-09-12T22:27:25Z
 touches:
   - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
-  - skills/queue/templates/claim
-  - skills/queue/templates/close
-  - skills/queue/templates/handoff
+  - skills/queue/templates/claim  # also mutated transiently for AC5, restored in the same turn
+  - skills/queue/templates/close  # also mutated transiently for AC5, restored in the same turn
+  - skills/queue/templates/handoff  # also mutated transiently for AC5, restored in the same turn
+  - .claude/backlog/claim  # installed copy, AC8
+  - .claude/backlog/close  # installed copy, AC8
+  - .claude/backlog/handoff  # installed copy, AC8
   - tests/claim.test.sh
   - tests/close.test.sh
   - tests/handoff.test.sh
