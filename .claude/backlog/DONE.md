@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0083 | Decide what a second checkout may do with the backlog | bug | unit | 2026-09-12 | [items/0083-decide-what-a-second-checkout-may-do.md](items/0083-decide-what-a-second-checkout-may-do.md) |
 | 0150 | Make design hold its row with claim from Step 1, and release it with handoff | bug | unit | 2026-09-12 | [items/0150-make-design-hold-its-row-with-claim.md](items/0150-make-design-hold-its-row-with-claim.md) |
 | 0135 | Record what a sprint was estimated to cost against what it did, and estimate from that | feature | unit | 2026-09-12 | [items/0135-learn-from-what-a-sprint-was-estimated-to-cost.md](items/0135-learn-from-what-a-sprint-was-estimated-to-cost.md) |
 | 0132 | Let verify batch within a gate that was developed together, with per-ticket evidence | feature | verify | 2026-09-12 | [items/0132-batch-verify-within-a-developed-gate.md](items/0132-batch-verify-within-a-developed-gate.md) |

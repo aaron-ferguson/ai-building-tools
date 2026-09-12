@@ -2,8 +2,8 @@
 id: "0083"
 title: Decide what a second checkout may do with the backlog
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -22,9 +22,10 @@ expects:
   - tests/claim.test.sh
   - tests/close.test.sh
   - tests/handoff.test.sh
-claimed_by: "8bdf"
-claimed_at: 2026-09-12T22:59:08Z
-touches: [".claude/backlog/items/0083-decide-what-a-second-checkout-may-do.md", ".claude/backlog/FINDINGS.md"]
+claimed_by:
+claimed_at:
+touches:
+closed: 2026-09-12
 ---
 
 ## Problem
@@ -84,25 +85,25 @@ durability test (*committed*) passed, and the claim was still destroyed.
 
 ## Acceptance criteria
 
-- [ ] AC1 — **Given** a fixture repo with a `ready` row and a real `git worktree add --detach` of it,
+- [x] AC1 — **Given** a fixture repo with a `ready` row and a real `git worktree add --detach` of it,
   **when** `./claim <id>` runs from the worktree's `.claude/backlog/`, **then** it exits non-zero, the
   message names a linked worktree and `CONCURRENCY.md`, no commit is added to the worktree's HEAD, and
   the worktree's `QUEUE.md` and item file are byte-identical to before.
-- [ ] AC2 — **Given** the same fixture with the row claimed in the primary, **when** `./handoff <id>
+- [x] AC2 — **Given** the same fixture with the row claimed in the primary, **when** `./handoff <id>
   <token> <stage>` runs from the worktree, **then** it exits non-zero and changes nothing, as in AC1.
-- [ ] AC3 — **Given** the same fixture with the row claimed in the primary, **when** `./close <id>
+- [x] AC3 — **Given** the same fixture with the row claimed in the primary, **when** `./close <id>
   <token>` runs from the worktree, **then** it exits non-zero and changes nothing, as in AC1.
-- [ ] AC4 — **Given** the primary checkout of the same fixture, **when** each of the three scripts runs
+- [x] AC4 — **Given** the primary checkout of the same fixture, **when** each of the three scripts runs
   its ordinary success case, **then** it succeeds as today — the check does not refuse a primary.
-- [ ] AC5 — **Given** each new worktree case, **when** the detection is mutated to always report
+- [x] AC5 — **Given** each new worktree case, **when** the detection is mutated to always report
   "primary", **then** that case fails — recorded in the verify notes as the proof the guard can fail.
-- [ ] AC6 — **Given** `references/CONCURRENCY.md`, **when** it is read, **then** exactly one passage
+- [x] AC6 — **Given** `references/CONCURRENCY.md`, **when** it is read, **then** exactly one passage
   states that a second checkout must never claim, close or hand off, it names both a linked worktree
   and a second clone, and it says the clone case has no mechanical check.
-- [ ] AC7 — **Given** `skills/develop/SKILL.md` Step 5 and `skills/verify/SKILL.md` Step 2, **when**
+- [x] AC7 — **Given** `skills/develop/SKILL.md` Step 5 and `skills/verify/SKILL.md` Step 2, **when**
   each prescribes a worktree, **then** the same paragraph cites the `CONCURRENCY.md` section by name,
   and `tests/retro-tool-edit.test.sh` stays green.
-- [ ] AC8 — **Given** the change, **when** `skills/queue/templates/{claim,close,handoff}` are compared
+- [x] AC8 — **Given** the change, **when** `skills/queue/templates/{claim,close,handoff}` are compared
   with `.claude/backlog/{claim,close,handoff}`, **then** they match
   (`tests/backlog-scripts-installed.test.sh` green).
 
