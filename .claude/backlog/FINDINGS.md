@@ -546,3 +546,15 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   `qa_level: unit` runs every file. Needs a row (pointer:
   `.claude/backlog/items/0052-acceptance-criteria-must-be-falsifiable.md:294`;
   `tests/measurement.test.sh` privacy guard; `references/REPORTING.md`; `CLAUDE.md`, *Tests*).
+
+- 2026-09-11 (develop, 0135) — **`CONVENTIONS_CORE.md`'s *use types* is a principle, and every tool
+  in `tools/` is `sh` wrapping an inline `python3` heredoc with no hints.** `sprint-ledger.sh`,
+  `harvest-usage.sh`, `classify-turns.sh` and `cost-by-category.sh` are all the same shape.
+  `0135`'s build note called the deviation "a preference rather than a principle" and `0135`'s verify
+  pass correctly rejected that reading — the core file enumerates *use types* among the principles,
+  which no project may override downward. But the question is which of two things is true of the set:
+  the four tools are owed type hints, or `sh`-wrapping-`python3` is a shape the principle was never
+  written for and the conventions repo should say so. Retyping one tool inside the ticket that
+  happened to touch it makes that one the outlier and settles nothing, which is why the verify pass
+  declined it and this session did too. **This still needs a row; no row exists.** (Pointers:
+  `tools/*.sh`; `CONVENTIONS_CORE.md`, *Code* → *Use types*; items/0135 verify verdict 2026-09-11.)

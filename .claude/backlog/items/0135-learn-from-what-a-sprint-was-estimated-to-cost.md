@@ -228,6 +228,80 @@ back: the argument that retyping one of four sibling tools makes it the outlier 
 build note's "it is a preference rather than a principle" is wrong as written. That is a repo-wide
 question about `tools/*.sh`, not this ticket's to settle — it needs its own row.
 
+### 2026-09-11 — Re-entry built against the verify verdict (token ee4e)
+
+**The bounce verdict was the specification and it named one remedy, so nothing here was chosen.**
+Four flags refuse, `--estimate-wall` does not, and the AC1 guard re-anchors on the source column —
+all three are the verdict's words. `parse()`'s defaults for `estimate_tickets`, `estimate_tokens`,
+`estimate_usd` and `estimate_source` are now `None`, and `record` validates them before `record()`
+runs, so nothing is appended to a committed ledger before the refusal. The message names the omitted
+flag; `estimate` mode reads none of those four keys, so it is untouched.
+
+**`--estimate-wall` stays optional, and the exception is now pinned rather than merely intended.**
+Its default is `NO_PRIOR`, which is a declaration that no prior exists — the honest label AC2 asks
+for — not a figure nobody supplied. Left unpinned, the next session reading "validate inputs at the
+top" would widen the refusal to all five and turn AC2's own subject into an error; `AC2/FR8 — the one
+estimate flag whose omission is a declaration` is the case that reds when that happens (proved: M4,
+below).
+
+**The tool's own usage block already declared all five flags mandatory.** This was not a missing
+decision about the interface — the code simply did not enforce what its header documented, which is
+why the defect reads as a default rather than as an option. No usage text changed.
+
+**`paired()`'s re-anchor needed its own mutation, because the pre-fix mutation cannot reach it.**
+M1 restores the forging defaults and reds the twelve refusal assertions — but `paired()` reads the
+block produced by the *happy-path* run, which still passes `--estimate-source`, so it stays green
+under M1. Proving the new `@`-stamp requirement falsifiable took M2, which strips the stamp from the
+source column itself. Worth stating because the two mutations look interchangeable and are not: one
+tests the refusal, the other tests the record.
+
+**The refusal cases derive their subject list from `parse()`'s own defaults.** A guard enumerating
+the four flags is green by construction the day a fifth estimate figure is added — the moment the
+rule most needs it (`testing-conventions.md`, *a guard that enumerates its own subjects cannot notice
+a new one*). The derivation carries the trap that comes with it: a filter matching nothing loops zero
+times and passes, so there is an explicit non-empty assertion on the derived list, and M3 breaks the
+`sed` range to prove it reds (`38 passed, 3 failed`) rather than silently passing.
+
+**The assertion is on the message, not the exit status** (`testing-conventions.md`: *`exits
+non-zero` is satisfied by the silent refusal the rule exists to forbid*), and separately on nothing
+having been appended — a tool that dies *after* writing has already committed the fabrication.
+
+**Mutation ledger** — each applied to a committed tree, diff confirmed non-empty, restored with
+`git checkout -- <one path>`, control green after each (`53 passed, 0 failed`, tree clean):
+
+| # | Mutation | Result |
+|---|---|---|
+| M1 | restore the pre-fix defaults (`0`/`0.0`/`unsourced`) and delete the validation loop | `41 passed, 12 failed` — the four flags × exit code, named flag, nothing appended |
+| M2 | `src = "confirmed scope" if … else "unsourced"` — the source column loses its stamp | `49 passed, 4 failed`, each naming its row |
+| M3 | the derivation's `sed` range aimed at a function that does not exist | `38 passed, 3 failed` — the non-empty assertion reds rather than looping zero times |
+| M4 | widen the refusal to `--estimate-wall` as well | `29 passed, 24 failed` — AC2/FR8's exception case reds and names why; the large radius is the happy-path `record` refusing, so every assertion over `$BLOCK` follows |
+
+**Unrelated red carried forward, not mine and already parked twice.** `tests/measurement.test.sh`
+is `128 passed, 1 failed` on a home-directory path committed inside **closed** item `0052`'s QA
+evidence table (line 294, commit `7fdd367`). It predates this work, names no file this ticket
+touched, and the item is `status: done` — which `CONCURRENCY.md` makes the one kind of unclaimed item
+a session may *not* append to. It also means `tools/release` step 5, which is fail-fast over the same
+line, is currently red. Entries already exist at `FINDINGS.md` 2026-09-11 (develop 0144) and
+2026-09-11 (verify 0135); no third was written.
+
+**Everything else in the suite is green, run file-by-file rather than fail-fast** per `config.yml`'s
+own note on `0084`: 30 files, 29 at `0 failed`. `tests/sprint-ledger.test.sh` `53 passed, 0 failed`
+(pasted, not summed), up from 38.
+
+**The `sh`-wrapping-`python3` deviation is left as the verdict left it.** The verdict is right that
+`CONVENTIONS_CORE.md` enumerates *use types* among the principles rather than the preferences, so the
+previous build note's "it is a preference rather than a principle" was wrong as written — and it is
+right that the answer is repo-wide across `tools/*.sh` rather than this ticket's. Retyping one of
+four sibling tools inside this ticket would make it the outlier without settling anything. Parked as
+a finding; **it still needs a row**, and no row exists.
+
+**0132 was the ranked row and was stepped over, not skipped** — for the second consecutive session,
+on a different holder. `./next develop` printed `TAKE 0132` and, in the same breath,
+`CLAIMED FILES … 0045 [7564] none declared; predicted by expects: skills/queue/templates/next
+.claude/backlog/next tests/next.test.sh — assume held, ask`. That claim landed **between** this
+session's two `./next develop` calls — the window `develop` Step 1 tells you to re-run for, and it
+caught it. Already a parked finding (2026-09-10, develop 0107); not re-parked.
+
 ## QA evidence
 
 Verified at `qa_level: unit` (frontmatter and QA-plan prose agree after the raising commit `0591f3b`;
