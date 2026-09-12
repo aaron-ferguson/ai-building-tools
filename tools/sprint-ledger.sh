@@ -356,9 +356,12 @@ def harvest(transcripts, session_ids):
                      line)
         if m:
             return float(m.group(1)), int(m.group(2))
+    # The output is quoted, not just counted: "printed no parsable TOTAL line" is unactionable on
+    # its own, and a format change is the likeliest cause. Newlines collapse so the whole refusal
+    # stays one line, and it is truncated because harvest output is unbounded.
+    shown = "; ".join(proc.stdout.split("\n")).strip()
     die("%s exit 0 over %s but printed no parsable TOTAL line; its output was: %s"
-        % (os.path.basename(HARVEST), transcripts,
-           " / ".join(proc.stdout.split()[:20]) or "empty"))
+        % (os.path.basename(HARVEST), transcripts, shown[:300] or "empty"))
 
 
 # --- record -------------------------------------------------------------------------------------

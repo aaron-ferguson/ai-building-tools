@@ -408,6 +408,46 @@ else
   ok "and appended no sprint block"
 fi
 
+# THE SECOND SWALLOW, which the exit-status case above cannot reach. harvest() also returned
+# (0.0, 0) when the subprocess exited 0 but stdout carried no parsable TOTAL line -- a format
+# change or a truncated run, recorded as a measurement of zero under the same false citation.
+# Exercised against a COPY of the tool placed beside a stub harvest-usage.sh, because HARVEST is
+# resolved relative to the tool's own directory. The copy is made fresh from $TOOL on every run,
+# so it cannot drift from the subject under test.
+echo "AC1/FR8 -- record refuses a harvest that exits 0 with no parsable TOTAL line"
+mkdir -p "$FIX/bin"
+cp "$TOOL" "$FIX/bin/sprint-ledger.sh"
+cat > "$FIX/bin/harvest-usage.sh" <<'STUB'
+#!/bin/sh
+echo "HARVEST of 0 sessions"
+echo "this build prints no TOTAL line at all"
+exit 0
+STUB
+chmod +x "$FIX/bin/harvest-usage.sh" "$FIX/bin/sprint-ledger.sh"
+NT_LEDGER="$FIX/no-total-ledger.md"
+cp "$EMPTY" "$NT_LEDGER"
+NT_RC=0
+NT_OUT="$("$FIX/bin/sprint-ledger.sh" record --ledger "$NT_LEDGER" --run "$RUNLOG" \
+  --transcripts "$FIX/store" --measurement "$MEAS" --config "$CONF" \
+  --estimate-tickets 3 --estimate-wall no-prior --estimate-tokens 1200000 \
+  --estimate-usd 20.00 --estimate-source "$EST_SOURCE" 2>&1)" || NT_RC=$?
+if [ "$NT_RC" -ne 0 ]; then
+  ok "record refuses a harvest whose stdout carries no TOTAL line"
+else
+  bad "AC1/FR8 -- a harvest exiting 0 with no TOTAL line was recorded as a measurement of zero"
+fi
+# Anchored to the stdout the stub actually printed, so the message is shown to carry what it
+# refused rather than merely to have refused.
+case "$NT_OUT" in
+  *"no TOTAL line at all"*) ok "and the refusal quotes the unparsable output" ;;
+  *) bad "AC1/FR8 -- the refusal does not carry the output it could not parse; got: $(printf '%s' "$NT_OUT" | tr '\n' ' ' | cut -c1-200)" ;;
+esac
+if grep -q '^## sprint ' "$NT_LEDGER"; then
+  bad "AC1/FR8 -- record appended a sprint block before refusing the unparsable harvest"
+else
+  ok "and appended no sprint block"
+fi
+
 # THE EXCEPTION, pinned so the refusal above cannot be widened onto a real measurement.
 echo "AC1/FR8 -- an empty store is a measured zero, not a harvest failure"
 mkdir -p "$FIX/store-empty"
@@ -492,12 +532,65 @@ echo "AC6/FR8 -- every ratio carries a source and a stamp on BOTH sides"
 # Structural, not vocabulary: a RATIO line must be followed by a numerator line and a denominator
 # line, each carrying an `@` stamp. The defect this repairs -- a pinned numerator over a live
 # denominator -- is invisible to any assertion made on the ratio's own line.
-RATIOBAD="$(awk '
-  /^RATIO /   { r = $0; n = 0; d = 0; next }
-  /^ *numerator /   { if (r != "" && index($0, "@")) n = 1; next }
-  /^ *denominator / { if (r != "" && index($0, "@")) d = 1;
-                      if (!n || !d) { print r; } ; r = ""; next }
-' "$BLOCK" || true)"
+#
+# REPORTED FROM A FLUSH, never from inside the denominator rule. The first version printed only
+# when a `denominator ` line arrived, so a RATIO with a numerator and NO denominator at all ran
+# nothing and printed nothing -- the guard was green on the shape that satisfies "Red if either is
+# bare" least of all. A pending ratio is now reported when the next RATIO anchor or EOF arrives.
+ratio_bad() {
+  awk '
+    function flush() { if (r != "" && (!n || !d)) print r; r = ""; n = 0; d = 0 }
+    /^RATIO /         { flush(); r = $0; next }
+    /^ *numerator /   { if (r != "" && index($0, "@")) n = 1; next }
+    /^ *denominator / { if (r != "" && index($0, "@")) d = 1; flush(); next }
+    END               { flush() }
+  ' "$1"
+}
+
+# The guard is checked against its own four defect shapes before it is trusted on the real block.
+# Without this, "every ratio is stamped" and "this awk cannot see the defect" are the same green
+# (`testing-conventions.md`, a guard only ever seen passing is indistinguishable from one wired to
+# nothing).
+ratio_case() {
+  rc_name="$1"; rc_want="$2"; rc_file="$FIX/ratiocase"
+  cat > "$rc_file"
+  rc_got="$(ratio_bad "$rc_file" || true)"
+  if [ "$rc_want" = report ] && [ -n "$rc_got" ]; then
+    ok "the ratio guard reports $rc_name"
+  elif [ "$rc_want" = silent ] && [ -z "$rc_got" ]; then
+    ok "the ratio guard passes $rc_name"
+  else
+    bad "AC6 -- the ratio guard is wrong about $rc_name (wanted $rc_want, got: ${rc_got:-nothing})"
+  fi
+}
+ratio_case "a fully stamped ratio" silent <<'RC'
+RATIO verify_usd_per_ticket batched = 2.00
+  numerator USD 6.00 (run log @ 2026-09-06T14:00:00Z)
+  denominator 3 tickets (run log @ 2026-09-06T14:00:00Z)
+RC
+ratio_case "an unstamped denominator" report <<'RC'
+RATIO verify_usd_per_ticket batched = 2.00
+  numerator USD 6.00 (run log @ 2026-09-06T14:00:00Z)
+  denominator 3 tickets
+RC
+ratio_case "an unstamped numerator" report <<'RC'
+RATIO verify_usd_per_ticket batched = 2.00
+  numerator USD 6.00
+  denominator 3 tickets (run log @ 2026-09-06T14:00:00Z)
+RC
+ratio_case "a MISSING denominator line, which the first version could not see" report <<'RC'
+RATIO verify_usd_per_ticket batched = 2.00
+  numerator USD 6.00 (run log @ 2026-09-06T14:00:00Z)
+RC
+ratio_case "a missing denominator followed by another ratio, so EOF is not what catches it" report <<'RC'
+RATIO verify_usd_per_ticket batched = 2.00
+  numerator USD 6.00 (run log @ 2026-09-06T14:00:00Z)
+RATIO develop_usd_per_ticket = 4.03
+  numerator USD 12.09 (run log @ 2026-09-06T14:00:00Z)
+  denominator 3 tickets (run log @ 2026-09-06T14:00:00Z)
+RC
+
+RATIOBAD="$(ratio_bad "$BLOCK" || true)"
 NRATIO="$(grep -c '^RATIO ' "$BLOCK" || true)"
 if [ "$NRATIO" -ge 1 ]; then
   ok "the block carries at least one ratio to check"
