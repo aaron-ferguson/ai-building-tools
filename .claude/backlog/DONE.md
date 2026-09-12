@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0147 | Make claim name the declared paths that do not exist instead of reserving them | bug | unit | 2026-09-12 | [items/0147-name-the-declared-paths-that-do-not-exist.md](items/0147-name-the-declared-paths-that-do-not-exist.md) |
 | 0083 | Decide what a second checkout may do with the backlog | bug | unit | 2026-09-12 | [items/0083-decide-what-a-second-checkout-may-do.md](items/0083-decide-what-a-second-checkout-may-do.md) |
 | 0150 | Make design hold its row with claim from Step 1, and release it with handoff | bug | unit | 2026-09-12 | [items/0150-make-design-hold-its-row-with-claim.md](items/0150-make-design-hold-its-row-with-claim.md) |
 | 0135 | Record what a sprint was estimated to cost against what it did, and estimate from that | feature | unit | 2026-09-12 | [items/0135-learn-from-what-a-sprint-was-estimated-to-cost.md](items/0135-learn-from-what-a-sprint-was-estimated-to-cost.md) |

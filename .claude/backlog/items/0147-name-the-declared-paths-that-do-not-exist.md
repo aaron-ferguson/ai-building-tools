@@ -2,8 +2,8 @@
 id: "0147"
 title: Make claim name the declared paths that do not exist instead of reserving them
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: s
 created: 2026-09-09
@@ -15,9 +15,10 @@ expects:
   - skills/queue/templates/claim
   - .claude/backlog/claim
   - tests/claim.test.sh
-claimed_by: "b4d6"
-claimed_at: 2026-09-12T23:10:05Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-12
 ---
 
 ## Problem
@@ -56,18 +57,18 @@ discover that the ticket was specified against a file nobody wrote.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given an item whose `expects:` names one path that does not exist and one that does, when
+- [x] AC1 — Given an item whose `expects:` names one path that does not exist and one that does, when
   `./claim` runs, then it names the missing one and not the existing one, and the claim succeeds.
   Red-making input: today's `claim`, which names neither.
-- [ ] AC2 — Given an item whose `expects:` names only paths that exist, when `./claim` runs, then the
+- [x] AC2 — Given an item whose `expects:` names only paths that exist, when `./claim` runs, then the
   output is byte-identical to today's. Red-making mutation: printing an unconditional line.
-- [ ] AC3 — Given an item declaring a directory that exists and a glob that matches at least one file,
+- [x] AC3 — Given an item declaring a directory that exists and a glob that matches at least one file,
   when `./claim` runs, then neither is reported missing. Red-making mutation: testing with `-f`, which
   reports every directory as absent.
-- [ ] AC4 — Given an item declaring a path that exists and is held by another claim, when `./claim`
+- [x] AC4 — Given an item declaring a path that exists and is held by another claim, when `./claim`
   runs, then it is reported as held and not as missing. Red-making mutation: reporting both from one
   branch.
-- [ ] AC6 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
+- [x] AC6 — Given `for t in tests/*.test.sh; do "$t" || true; done`, when it runs, then every file
   reports `0 failed`. Red-making change: editing the template and not `.claude/backlog/claim`.
 
 ## QA plan
