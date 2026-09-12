@@ -96,27 +96,27 @@ durability test (*committed*) passed, and the claim was still destroyed.
 
 ## Acceptance criteria
 
-1. **Given** a fixture repo with a `ready` row and a real `git worktree add --detach` of it, **when**
-   `./claim <id>` runs from the worktree's `.claude/backlog/`, **then** it exits non-zero, the message
-   names a linked worktree and `CONCURRENCY.md`, no commit is added to the worktree's HEAD, and the
-   worktree's `QUEUE.md` and item file are byte-identical to before.
-2. **Given** the same fixture with the row claimed in the primary, **when** `./handoff <id> <token>
-   <stage>` runs from the worktree, **then** it exits non-zero and changes nothing, as in AC1.
-3. **Given** the same fixture with the row claimed in the primary, **when** `./close <id> <token>`
-   runs from the worktree, **then** it exits non-zero and changes nothing, as in AC1.
-4. **Given** the primary checkout of the same fixture, **when** each of the three scripts runs its
-   ordinary success case, **then** it succeeds as today — the check does not refuse a primary.
-5. **Given** each new worktree case, **when** the detection is mutated to always report "primary",
-   **then** that case fails — recorded in the verify notes as the proof the guard can fail.
-6. **Given** `references/CONCURRENCY.md`, **when** it is read, **then** exactly one passage states that
-   a second checkout must never claim, close or hand off, it names both a linked worktree and a second
-   clone, and it says the clone case has no mechanical check.
-7. **Given** `skills/develop/SKILL.md` Step 5 and `skills/verify/SKILL.md` Step 2, **when** each
-   prescribes a worktree, **then** the same paragraph cites the `CONCURRENCY.md` section by name, and
-   `tests/retro-tool-edit.test.sh` stays green.
-8. **Given** the change, **when** `skills/queue/templates/{claim,close,handoff}` are compared with
-   `.claude/backlog/{claim,close,handoff}`, **then** they match (`tests/backlog-scripts-installed.test.sh`
-   green).
+- [ ] AC1 — **Given** a fixture repo with a `ready` row and a real `git worktree add --detach` of it,
+  **when** `./claim <id>` runs from the worktree's `.claude/backlog/`, **then** it exits non-zero, the
+  message names a linked worktree and `CONCURRENCY.md`, no commit is added to the worktree's HEAD, and
+  the worktree's `QUEUE.md` and item file are byte-identical to before.
+- [ ] AC2 — **Given** the same fixture with the row claimed in the primary, **when** `./handoff <id>
+  <token> <stage>` runs from the worktree, **then** it exits non-zero and changes nothing, as in AC1.
+- [ ] AC3 — **Given** the same fixture with the row claimed in the primary, **when** `./close <id>
+  <token>` runs from the worktree, **then** it exits non-zero and changes nothing, as in AC1.
+- [ ] AC4 — **Given** the primary checkout of the same fixture, **when** each of the three scripts runs
+  its ordinary success case, **then** it succeeds as today — the check does not refuse a primary.
+- [ ] AC5 — **Given** each new worktree case, **when** the detection is mutated to always report
+  "primary", **then** that case fails — recorded in the verify notes as the proof the guard can fail.
+- [ ] AC6 — **Given** `references/CONCURRENCY.md`, **when** it is read, **then** exactly one passage
+  states that a second checkout must never claim, close or hand off, it names both a linked worktree
+  and a second clone, and it says the clone case has no mechanical check.
+- [ ] AC7 — **Given** `skills/develop/SKILL.md` Step 5 and `skills/verify/SKILL.md` Step 2, **when**
+  each prescribes a worktree, **then** the same paragraph cites the `CONCURRENCY.md` section by name,
+  and `tests/retro-tool-edit.test.sh` stays green.
+- [ ] AC8 — **Given** the change, **when** `skills/queue/templates/{claim,close,handoff}` are compared
+  with `.claude/backlog/{claim,close,handoff}`, **then** they match
+  (`tests/backlog-scripts-installed.test.sh` green).
 
 ## QA plan
 
@@ -154,3 +154,22 @@ durability test (*committed*) passed, and the claim was still destroyed.
     scripts already take.
   - The existing sentence at `CONCURRENCY.md` *The working tree is shared too* was scoped to e2e;
     FR2 lifts it to its own section so `develop`'s worktrees can cite it too.
+- **2026-09-12 — develop [7bf5].**
+  - **Detection** compares `git rev-parse --path-format=absolute --git-dir` with `--git-common-dir`,
+    so both sides are absolute and comparable; probed in a scratch repo from a subdirectory of both a
+    primary and a linked worktree before building on it. The primary checkout named in the message is
+    the first `worktree` line of `git worktree list --porcelain`.
+  - **AC4 has no new case on purpose**: each suite's existing primary success case (`claim` AC1,
+    `handoff` AC1, `close` AC1) exercises the new check and stayed green.
+  - **AC5, as run here** (verify still owes its own): mutating `--git-common-dir)" ]; then` to
+    `--git-dir)" ]; then` in each template (one line changed, diffed against a copy) reds exactly the
+    6 assertions of that script's worktree case — claim 92/6, handoff 126/6, close 240/6 — and
+    nothing else; restored byte-identical, control run 98/0, 132/0, 246/0.
+  - **The NFR's guard citation was wrong.** `tests/retro-tool-edit.test.sh` windows
+    `skills/retro/SKILL.md` Step 5, not `develop`'s; `worktree in the same turn` occurs only there.
+    `develop`'s citation was added as its own line after the paragraph's last sentence anyway, so no
+    guarded line was rewrapped.
+  - **`item-ac-form.test.sh` was red on this item** from the design commit `470ba67`, which wrote the
+    ACs as a numbered list `close` cannot tick. Converted to `- [ ] ACn —` with the wording unchanged.
+  - **The worktree's copy of `.lock/`** is not reached by the refusal and needs nothing: the check
+    runs before `mkdir`, so no refusal from a worktree ever creates one.
