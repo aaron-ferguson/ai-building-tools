@@ -3,7 +3,7 @@ id: "0134"
 title: Dispatch a sprint's design sessions alongside develop instead of stopping for them
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: m
@@ -15,9 +15,11 @@ relates: ["0050", "0137"]
 expects:
   - skills/orchestrate/SKILL.md
   - tests/orchestrate.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "9fd3"
+claimed_at: 2026-09-12T20:49:11Z
 touches:
+  - skills/orchestrate/SKILL.md
+  - tests/orchestrate.test.sh
 ---
 
 ## Problem
