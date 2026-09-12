@@ -446,6 +446,91 @@ out="$(run_claim 0022)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "the ordinary row is claimed" '| 0022 | An ordinary ticket | develop | in-progress | 0000 |'
 
+
+# --- 0147 AC1-AC4 — a declared path that does not exist is NAMED, not reserved in silence ------
+# The defect: `expects:` can name a file that has never existed — `0075` expected
+# `tests/skill-prose.test.sh`, absent from the tree and from the whole history — and `claim` seeds
+# it into `touches:` verbatim. A fictional path is then held scope, against which every other
+# session's file-scope check compares, until somebody narrows it by hand. The claim is the cheapest
+# moment to notice, because it is the moment the script is standing in the right place to look.
+#
+# A warning and never a refusal (FR2): declaring a file you are about to create is the common case
+# for a new guard, and refusing it would make the field unusable for exactly the tickets that need
+# it most.
+
+# Files the fixture declares. Created AFTER `scaffold`, which rm -rf's the whole tree. Untracked is
+# enough — the question the script asks is `does this resolve`, not `is this committed`.
+mkfile() { mkdir -p "$FIX/$(dirname "$1")"; : > "$FIX/$1"; }
+
+echo "0147 AC1 — the path that does not exist is named, and the one that does is not"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0030 | Mixed paths | develop | ready | 0000 |' 0030 'expects:
+  - src/real.ts
+  - tests/never-written.test.sh'
+mkfile src/real.ts
+out="$(run_claim 0030)" && rc=0 || rc=$?
+assert_rc "exits 0 — a path that does not exist is a warning, not a refusal" "$rc" 0 "$out"
+assert_contains "says which paths do not resolve"  "$out" 'do not exist in the working tree'
+assert_contains "names the one that does not"      "$out" 'tests/never-written.test.sh'
+assert_not_contains "and not the one that does"    "$out" 'src/real.ts'
+# The warning is about the SEED, so the seed still has to have happened — a script that reported
+# the path and then declined to write it would pass the three assertions above.
+assert_contains "the fictional path is still seeded, because FR2 warns rather than refuses" \
+  "$(cat "$FIX/.claude/backlog/items/0030-fixture.md")" 'touches:
+  - src/real.ts
+  - tests/never-written.test.sh
+---'
+
+# AC2's claim is *unchanged output*, which `assert_contains` cannot make: it is satisfied by a
+# string that has grown, and an unconditional line is precisely a string that has grown. Equality
+# over the whole report is the only form that reds on the mutation the criterion names.
+echo "0147 AC2 — an item whose every declared path exists reports exactly what it reports today"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0031 | All real | develop | ready | 0000 |' 0031 'expects:
+  - src/alpha.ts
+  - tests/alpha.test.ts'
+mkfile src/alpha.ts
+mkfile tests/alpha.test.ts
+out="$(run_claim 0031)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_eq "the report is byte-for-byte what it was before this ticket" "$out" \
+"claimed 0031 with token tok0
+touches: is set provisionally from expects: (2 paths) — NARROW it in $FIX/.claude/backlog/items/0031-fixture.md to
+what you will actually open, and widen it the moment the work reaches further"
+
+# `-f` reports every directory as absent, which is the mutation AC3 names. A directory is a
+# perfectly ordinary thing for a ticket to declare — `tests/`, `items/` — and reporting one as
+# fiction would make the warning noise on the first ticket that scoped itself broadly.
+echo "0147 AC3 — a directory that exists and a glob that matches are neither of them missing"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0032 | Dir and glob | develop | ready | 0000 |' 0032 'expects:
+  - src/
+  - tests/*.test.sh'
+mkdir -p "$FIX/src"
+mkfile tests/one.test.sh
+out="$(run_claim 0032)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_not_contains "nothing is reported as fiction at all" "$out" 'do not exist in the working tree'
+
+# And the directory test is a test rather than a switch-off: a directory that is NOT there is still
+# named. Without this case, a script that skipped every path ending in `/` would pass above.
+echo "0147 AC3 — a directory that does not exist is still named"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0035 | Absent dir | develop | ready | 0000 |' 0035 'expects:
+  - nowhere/at/all/'
+out="$(run_claim 0035)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the absent directory is named" "$out" 'nowhere/at/all/'
+
+# FR4: *does not exist* and *exists but another claim holds it* are different facts and the script
+# already keeps them apart — the holder report is the exclusive-claim refusal above, a different
+# branch with a different exit code. The mutation this case exists for is the two being answered
+# from one branch, which would turn every held path into a reported fiction.
+echo "0147 AC4 — a path that exists and is held by another claim is not reported as missing"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0033 | Held path | develop | ready | 0000 |' 0033 'expects:
+  - some/other/file.md'
+add_held 0034 yy88
+mkfile some/other/file.md
+out="$(run_claim 0033)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_not_contains "an existing path is not fiction just because it is held" \
+  "$out" 'do not exist in the working tree'
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

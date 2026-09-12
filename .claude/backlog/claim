@@ -265,6 +265,7 @@ esac
 
 tmp="$(mktemp)"
 count="$(mktemp)"
+paths="$(mktemp)"
 # The ownership keys are *replaced* where they exist and *added* where they do not. An item
 # written before the template carried them has nothing to replace, and a silent skip is the worst
 # outcome available: the row says claimed, the script says claimed, and the item file records no
@@ -282,7 +283,7 @@ count="$(mktemp)"
 # Every rule is guarded on `fm`. Without it the `intou`/`inexp` list rules would swallow an
 # indented bullet in the item's PROSE, which is a data-loss bug that no assertion about
 # frontmatter can see.
-awk -v tok="$TOKEN" -v now="$now" -v cf="$count" -v seed="$SEED" '
+awk -v tok="$TOKEN" -v now="$now" -v cf="$count" -v pf="$paths" -v seed="$SEED" '
   NR == 1 && /^---$/ { fm = 1; print; next }
   fm && /^---$/      {
     if (!by)  { print "claimed_by: \"" tok "\""; added = 1 }
@@ -310,11 +311,63 @@ awk -v tok="$TOKEN" -v now="$now" -v cf="$count" -v seed="$SEED" '
   fm && /^claimed_at:/ { print "claimed_at: " now;         at = 1; next }
   fm && /^status:/     { print "status: in-progress"; next }
   { print }
-  END { print n + 0 > cf }
+  # The count and the path list come out of this one pass for the reason the header gives: two
+  # parsers of the same frontmatter drift, and the drift is silent. `want[i]` is the raw line, so
+  # strip the bullet, then the trailing comment, then the quotes — comment before quotes, or a
+  # quoted `#` inside a path would survive as part of it. An entry that cleans to nothing is
+  # dropped rather than reported as a missing path named "".
+  END {
+    print n + 0 > cf
+    for (i = 1; i <= n; i++) {
+      p = want[i]
+      sub(/^[ \t]*-[ \t]*/, "", p)
+      sub(/[ \t]+#.*$/, "", p)
+      gsub(/["\047]/, "", p)
+      sub(/[ \t]+$/, "", p)
+      if (p != "") print p > pf
+    }
+  }
 ' "$item" > "$tmp"
 mv "$tmp" "$item"
 N_EXPECTS="$(cat "$count")"
 rm -f "$count"
+
+# --- which of the seeded paths are fiction (0147 FR1) -----------------------------------------
+# A ticket may name a path that has never existed — `0075` expected `tests/skill-prose.test.sh`,
+# absent from the tree and from the whole history — and the seed above reserves it verbatim as
+# held scope, against which every other session's file-scope check then compares. This is the
+# cheapest moment anyone finds out, because this is the one place standing in the right position
+# to look.
+#
+# A WARNING and never a refusal (FR2). Declaring a guard you are about to write is the common and
+# correct case; refusing it would make the field unusable for exactly the tickets that need it.
+#
+# `-e` and not `-f` (FR3): `tests/` and `items/` are ordinary things for a ticket to declare, and
+# reporting a directory as fiction would make this noise on the first broadly-scoped row. The
+# unquoted `$p` is what gives a glob the same treatment for free — it expands to its matches, or
+# stays literal when it has none, which is exactly the answer wanted either way.
+#
+# Resolved against the REPO ROOT, not the caller's cwd: `expects:` entries are root-relative and
+# `claim` is run from anywhere. Derived by path arithmetic from `$DIR` rather than from
+# `git rev-parse --show-toplevel`, which on a case-insensitive filesystem can spell the same
+# directory a different way — the hazard the pathspec comment above records.
+#
+# Existence only. *Does not exist* and *exists but another claim holds it* are different facts
+# answered by different branches (FR4); the holder report is the exclusive-claim refusal above,
+# and folding the two together would turn every held path into a reported fiction.
+paths_missing=""
+if [ "$SEED" -eq 1 ] && [ "${N_EXPECTS:-0}" -gt 0 ]; then
+  ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"
+  paths_missing="$(cd "$ROOT" && while IFS= read -r p; do
+    [ -n "$p" ] || continue
+    found=0
+    for m in $p; do
+      if [ -e "$m" ]; then found=1; break; fi
+    done
+    if [ "$found" -eq 0 ]; then printf '%s\n' "$p"; fi
+  done < "$paths")"
+fi
+rm -f "$paths"
 
 # --- commit, by pathspec, in the same breath as the edit --------------------------------------
 # Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
@@ -343,4 +396,13 @@ elif [ "${N_EXPECTS:-0}" -gt 0 ]; then
 else
   echo "touches: is unset: $ID declares no expects:, and a scope invented from nothing would be"
   echo "worse than none — set it in $item before you open anything"
+fi
+
+# Printed after the four outcomes rather than inside the seeded one, so the scope report reads the
+# same as it always has and this is plainly a second, separate statement about it.
+if [ -n "$paths_missing" ]; then
+  echo "these declared paths do not exist in the working tree:"
+  printf '  %s\n' $paths_missing
+  echo "fine for a file this ticket is about to create — and a finding about the ticket if it is"
+  echo "not: a path nobody ever wrote has just been reserved against every other session"
 fi
