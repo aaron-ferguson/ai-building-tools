@@ -508,3 +508,18 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   run the sweep in the background and read the output file, which answers "is it finished" without
   answering "is someone else running one" at all — the question the step actually asks. Needs a row
   (pointer: `skills/develop/SKILL.md` Step 5, the `pgrep` sentence; `CLAUDE.md`, *Tests*).
+
+- 2026-09-11 (verify 0144) — **this repo keeps two copies of every backlog script, and the suites run
+  the TEMPLATE, not the installed copy — while `CLAUDE.md`'s most memorable sentence says the
+  opposite.** `tests/close.test.sh` sets `CLOSE_SRC="$ROOT/skills/queue/templates/close"` and copies
+  that into each fixture, so a mutation applied to `.claude/backlog/close` lands a real non-empty
+  diff, reaches a file that exists and is executable, and leaves the suite at `240 passed, 0 failed`.
+  That reads as *this guard cannot be made to fail* — the exact verdict `verify` Step 3 tells a
+  session to publish as a gap — when it means *you mutated the copy the harness does not run*.
+  `CLAUDE.md` opens with **"The installed copy is what runs"**, which is true of skills and false of
+  these scripts, so the document a session reads first points it at the wrong file.
+  `testing-conventions.md` carries the general rule ("confirm the mutation reached the copy the
+  harness runs") and nothing here names which copy that is. Caught only by noticing that the id-only
+  mutation reddened nothing while the same mutation applied to the template reddened two assertions.
+  Needs a row (pointer: `tests/close.test.sh:25` `CLOSE_SRC`, `tests/handoff.test.sh`; `CLAUDE.md`,
+  *This project is the tool its sessions are running*).
