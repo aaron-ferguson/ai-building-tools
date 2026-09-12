@@ -128,3 +128,16 @@ row refuses with `is 'in-progress', not ready`.
   `0083` [`7bf5`] holds both; a new file keeps this row takeable now.
 - **Closes the FINDINGS entries of 2026-09-10 (two, the claim half) and 2026-09-12** about design
   working an unheld row; marked `[->0150]`. The lock half of the 2026-09-10 pair is `0056` FR3's.
+- **2026-09-12 (develop, `373f`) — built in `670ad93`; no script touched.** The behavioural half
+  (AC2–AC4) was green before any prose changed, as FR6 predicted, so its falsifiability rests on two
+  controls rather than on a red-first run: the file's own *AC2 control* case (an unclaimed design row
+  makes `--drive` exit 4, no step-over) and a throwaway probe where `./handoff 0001 tok0 develop` on an
+  unclaimed design row exits 1 with `records no claimed_by:` and leaves `next: design` — so every AC4
+  assertion reds without the claim. The prose half (AC1, AC5, AC6, FR4) was red 7/7 before the edit.
+- Added beyond the ACs: an FR4 case (`held by you` / `held by another` in the intro) and a
+  `design ready` grep on Step 4 for FR3, both scoped and single-line.
+- Step 4's held-by-you path now cites *The release is the final act*: `./handoff` is the last write,
+  so Notes & decisions and FRs go in before it. Whole suite 31 files, 0 failed — run over `0083`'s
+  uncommitted working-tree edits to claim/close/handoff, which were green too.
+- Progressive-delivery NFR stands: `0134` stays blocked until a release carries this and
+  `tools/release verify` confirms the install.
