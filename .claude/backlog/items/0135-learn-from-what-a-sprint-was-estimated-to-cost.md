@@ -2,8 +2,8 @@
 id: "0135"
 title: Record what a sprint was estimated to cost against what it did, and estimate from that
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -21,8 +21,8 @@ expects:
   - MEASUREMENT.md
   - tests/sprint-ledger.test.sh     # NEW
   - tests/sprint.test.sh
-claimed_by: "7a9b"
-claimed_at: 2026-09-12T04:17:14Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -300,7 +300,98 @@ on a different holder. `./next develop` printed `TAKE 0132` and, in the same bre
 session's two `./next develop` calls — the window `develop` Step 1 tells you to re-run for, and it
 caught it. Already a parked finding (2026-09-10, develop 0107); not re-parked.
 
+### 2026-09-11 — Sent back by verify (token 7a9b)
+
+**The estimate side was repaired and the actual side has the identical defect, in the same
+function.** `harvest()` runs `tools/harvest-usage.sh` with `check=False`, reads only stdout, and
+returns `(0.0, 0)` when no `TOTAL` line matches — so a non-zero exit becomes a measurement of zero.
+Observed, on the path `skills/sprint/SKILL.md` Step 6 documents:
+
+```
+$ tools/sprint-ledger.sh record --ledger … --run … --transcripts <dir that does not exist> \
+    --estimate-tickets 2 --estimate-tokens 100 --estimate-usd 9.99 --estimate-source 'X @ …'
+| usd    | 9.99 | 0.00 | X @ 2026-09-06T09:00:00Z |
+| tokens |  100 |    0 | X @ 2026-09-06T09:00:00Z |
+GATE develop 2 ticket(s) session aaaaaaaa: predicted USD 10.08 (…) observed USD 0.00
+  (harvest-usage.sh over 1 session id(s) @ 2026-09-12T04:28:09Z)
+exit=0
+```
+
+`harvest-usage.sh` itself behaves correctly — `no such transcript directory: …`, exit 2. The
+swallow is entirely on this side. This is worse than the defect that bounced the ticket on
+2026-09-11: `unsourced` was at least an admission, where `harvest-usage.sh over 1 session id(s) @
+<stamp>` is a **false citation** — a source named for a number that source never produced, which is
+precisely the silent decay `LEDGER.md`'s own preamble and `0051` exist to prevent. AC1 fails on this
+path (a fabricated zero is not an actual, by the same reading the previous verdict applied to the
+estimate column), FR8 fails (the figure carries a source it was not read from), and
+`CONVENTIONS_CORE.md`'s *validate inputs at the top; throw descriptive errors; never swallow
+failures silently* is breached.
+
+**Constraint 1 — `harvest()` must `die()` rather than return a figure, on both of its swallows:**
+the subprocess exiting non-zero, and stdout carrying no parsable `TOTAL` line. The message names the
+command's exit status and its stderr, the way `read_run`, `read_config` and `read_measurement`
+already `die()` on a missing input. AC1 settles refuse rather than label, on the previous verdict's
+own reasoning: a record that cannot hold an actual for a figure cannot hold "an estimate and an
+actual" for it, so there is nothing to label. **Do not widen this to the empty store**: a real
+directory holding none of the run's sessions makes `harvest-usage.sh` exit 0 with a `TOTAL` line
+reading `0.00`, which is a measured zero and must keep recording as one. Neither fix touches it.
+The guard case is `record` against a missing `--transcripts` directory exiting non-zero and naming
+the harvest failure, with nothing appended — beside the existing refusal block.
+
+**Constraint 2 — the AC6 guard cannot see an absent denominator, and the fix is an `END` block.**
+`RATIOBAD`'s awk reports a missing side only from inside the `/^ *denominator /` rule. Deleting the
+numerator line reds it (`52 passed, 1 failed`); deleting the **denominator** line is invisible
+(`53 passed, 0 failed`) — nothing runs, so nothing prints. A ratio with a numerator and no
+denominator at all satisfies AC6's *"Red if either is bare"* less than a bare one does, and the
+guard is green on it. Report the pending `RATIO` when the next anchor or EOF arrives. The product is
+correct today: `record` appends all three lines unconditionally, so this is guard coverage, not a
+live defect — but it is the assertion AC6 rests on.
+
+**Everything else was re-checked from this session's own evidence and is green**, including the
+four refusals the last bounce asked for, each proved falsifiable by restoring the pre-fix defaults
+(`41 passed, 12 failed`). Eleven mutations, table in `## QA evidence`. The `sh`-wrapping-`python3`
+deviation is left exactly where the previous verdict left it — repo-wide across `tools/*.sh`, owed
+its own row, still without one, and **not** what sends this back.
+
+**One observation that is not a constraint and must not be built as one.** `--estimate-source`
+accepts any string, so a caller passing one without an `@` stamp writes an unstamped source column
+and no AC catches it. No AC requires the tool to validate the format of a source its caller
+supplies, and `paired()` asserting the stamp on the fixture is the coverage the ticket scoped.
+Recorded so the next pass does not rediscover it as a defect.
+
 ## QA evidence
+
+### 2026-09-11 — verify pass, token 7a9b (FAIL)
+
+Verified at `qa_level: unit` (frontmatter and the QA plan agree; no drift). `commands.unit` is run
+file-by-file rather than fail-fast, per `config.yml`'s own note on `0084`. Repo checkout clean at
+Step 2 (`ec50dd1`) and clean at the verdict (`eeea581` — another session landed `0147` during the
+pass, touching none of this ticket's six files), so the dirty set is empty and its intersection with
+the evidence set is empty: **not advisory**. Artefacts were executed from the **repo copy**, not the
+installed plugin — both suites invoke `tools/sprint-ledger.sh` and `tools/harvest-usage.sh` by repo
+path.
+
+Evidence set: `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh`, `tools/harvest-usage.sh`,
+`.claude/backlog/LEDGER.md`, `skills/sprint/SKILL.md`, `.claude/backlog/config.yml`, `MEASUREMENT.md`.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 — an estimate and an actual for all four figures | `tests/sprint-ledger.test.sh` `paired()` plus the derived refusal block. **M1** restore `parse()`'s pre-fix defaults and delete the validation loop → `41 passed, 12 failed` (four flags x exit code, named flag, nothing appended). **M2a** blank the Estimate cell → `48 passed, 5 failed`. **M2b** strip the `@` stamp from the source column → `49 passed, 4 failed`. Then run directly against a missing `--transcripts` directory | **FAIL** — green on every documented path, but `record` against a missing transcripts dir exits 0 and appends `\| usd \| 9.99 \| 0.00 \|`, an actual nobody measured. See the send-back note |
+| AC2 — a figure with no prior is labelled, not presented as derived | Same suite, AC2 block. **M3** `emit("wall_clock_min", None, …)` → `emit(…, 90.0 * tickets, "MEASUREMENT.md per-skill table")` → `52 passed, 1 failed`, *"the wall-clock figure is not marked as having no prior"*, with the dollar figure still citing `MEASUREMENT.md` so the two stay distinguishable. The omitted-`--estimate-wall` exception is pinned by its own case and stayed green | PASS |
+| AC3 — the third sprint estimates from the ledger, not the priors | Same suite, two-recorded-sprint fixture. **M4** `read_ledger` reads the Estimate column where it should read the Actual → `51 passed, 2 failed` (the value assertion, 300 min/2 tickets, is what catches it). **M5** `sprints = []`, the ledger written but never read → `50 passed, 3 failed` | PASS |
+| AC4 — predicted beside observed for a multi-ticket gate | Same suite, `GATE` block. Prediction independently recomputed from `config.yml`: `6.05 + 4.03 x 2 = 14.11` at n=3, against the gate session's observed `10.00`. **M6** drop the prediction, keep the line's shape and its observed cost → `51 passed, 2 failed` — exactly the AC's own *"Red if only the observed cost is recorded"* | PASS |
+| AC5 — no message text reaches the ledger | Same suite, sentinel `SENTINELPROSE` in the fixture transcript plus a character-set sweep of every generated line. **M7** emit the assistant `text` field → sentinel check reds. **M8** emit the raw transcript line, which carries no sentinel → character-set check reds. Each `52 passed, 1 failed`; neither mutation alone catches both shapes | PASS |
+| AC6 — both sides of every ratio carry a source and a stamp | Same suite, structural `awk` over `RATIO` / `numerator` / `denominator`. **M9** drop `(%s @ %s)` from the denominator → `52 passed, 1 failed`. **M11** delete the numerator line → `52 passed, 1 failed`. **M10** delete the **denominator** line → `53 passed, 0 failed` — **no redden** | **PASS with an uncovered shape**, published rather than papered over: the product emits all three lines unconditionally so AC6 holds today, but the assertion it rests on is blind to an absent denominator. Constraint 2 in the send-back note; parked as a finding |
+| FR3 — actuals over a session-id set, not a date window | Fixture store of three sessions totalling USD 36.00, of which the run owns two; `--session` returns 16.00. **M12** `if opts["session"] and …` → `if False and …` in `harvest-usage.sh` → `49 passed, 4 failed` here. Note `tests/measurement.test.sh` stayed `129 passed, 0 failed` under M12, so this suite is the only guard on `--session` | PASS |
+| FR2 — wall-clock from the run log's own UTC timestamps | 09:00:00Z to 14:00:00Z recorded as 300 minutes; asserted on the row, and no new instrumentation was added | PASS |
+| FR5 / FR7 — findings parked, verify cost per ticket batched vs unbatched | `FINDINGS parked 5` (3 + 2 summed from the run's outcomes) and `RATIO verify_usd_per_ticket batched … = 2.00` (USD 6.00 over three tickets), both asserted on value | PASS |
+| NFR Privacy & data (`data-privacy-conventions.md`) | AC5 above, plus `grep -nE '/Users/\|/home/[a-z]\|~/'` over the ticket's six files — no match; `tests/measurement.test.sh`'s repo-wide sweep for home paths and configured organisation names green at `129 passed, 0 failed`. The new egress path (transcripts → a committed public file) emits aggregates, stage names and 8-char session-id prefixes only | PASS |
+| NFR Performance (`observability-conventions.md`) | Two call sites in `skills/sprint/SKILL.md` — one `estimate` at the proposal (line 128), one `record` at Step 6 (line 370). Nothing per cycle | PASS |
+| NFR Documentation (`documentation-conventions.md`) | The block carries an `Estimate source` column and every `ESTIMATE` line a `source: … @ <stamp>`; the previous pass's `unsourced` exception is closed. But the **actual** column's citation can now be false — see AC1 | **FAIL**, on the actual side rather than the estimate side |
+| Always-on (`CONVENTIONS_CORE.md`) | *Validate inputs at the top; throw descriptive errors; never swallow failures silently* — **breached** by `harvest()`'s `check=False` and its bare `return 0.0, 0`. *Use types* — the `sh`-wrapping-`python3` deviation stands where the last verdict left it: repo-wide, owed its own row, not this ticket's to settle and not what sends it back | **FAIL** on input validation |
+| Newly reachable states (Step 4) | The change adds one egress path (transcripts → a committed public file) and no routing, permission or visibility change. The egress is what the privacy NFR and AC5 cover | PASS |
+| Whole suite (`commands.unit`) | 30 files run individually; every tally pasted from its own run. `tests/sprint-ledger.test.sh` `53 passed, 0 failed`; `tests/measurement.test.sh` `129 passed, 0 failed` — the home-directory red the previous pass carried forward is gone. No file red. Re-run at the verdict after `0147` landed: unchanged | PASS |
+
 
 Verified at `qa_level: unit` (frontmatter and QA-plan prose agree after the raising commit `0591f3b`;
 no drift). Repo checkout at `514b119`, working tree clean at Step 2 and clean again at the verdict,
