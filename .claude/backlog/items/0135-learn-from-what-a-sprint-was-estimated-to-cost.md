@@ -4,7 +4,7 @@ title: Record what a sprint was estimated to cost against what it did, and estim
 type: feature
 next: develop
 status: in-progress
-qa_level: verify
+qa_level: unit
 close_by: verify
 size: m
 created: 2026-09-09
@@ -184,6 +184,15 @@ produced …` is emitted only where the run log carries a `retro` outcome with a
 sourced* — the line is absent rather than zero, which is the honest of the two. A ticket wanting the
 figure needs `retro`'s outcome envelope to carry it, which is a change to
 `skills/sprint/outcome.schema.json` and out of scope here.
+
+**`qa_level` raised from `verify` to `unit` by this session, which is a correction and not a
+preference.** The QA plan was written for "a record file and a set of derivations", where every
+criterion is a grep or a fixture run — true of `tools/sprint-ledger.sh` and
+`.claude/backlog/LEDGER.md`. It did not anticipate that FR3 is unsatisfiable without changing
+`tools/harvest-usage.sh`, whose behaviour `tests/measurement.test.sh` owns and whose regression no
+check named in this ticket's QA plan would run. At `verify` the pass would execute
+`tests/sprint-ledger.test.sh` and stop; at `unit` this project runs every `tests/*.test.sh`, which
+is the only level that covers the file this ticket edited but does not guard.
 
 **Guard hygiene:** ten mutations, each applied to a committed tree, confirmed non-empty via
 `git diff --quiet`, restored with `git checkout -- <one path>`, control run green after each. One
