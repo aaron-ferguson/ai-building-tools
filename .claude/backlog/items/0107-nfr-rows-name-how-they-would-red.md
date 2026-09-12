@@ -2,8 +2,8 @@
 id: "0107"
 title: Require an NFR row to name how it would red
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 qa_manual:
 size: m
@@ -17,9 +17,10 @@ expects:
   - skills/queue/SKILL.md            # the step that fills it
   - skills/verify/SKILL.md           # Step 4's always-on convention pass
   - tests/falsifiable-acs.test.sh    # the AC analogue, and the likely home
-claimed_by: "7d2d"
-claimed_at: 2026-09-12T01:14:46Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-12
 ---
 ## Problem
 
@@ -72,16 +73,16 @@ check at queue time rather than a test per row — the same shape `0052` chose f
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the item template's NFR table, when read, then each row has a place to name how it
+- [x] AC1 — Given the item template's NFR table, when read, then each row has a place to name how it
   would red, and the preamble requires it.
-- [ ] AC2 — Given `queue`'s NFR step, when read, then it states that a row with no nameable check
+- [x] AC2 — Given `queue`'s NFR step, when read, then it states that a row with no nameable check
   does not ship.
-- [ ] AC3 — Given `verify` Step 4, when read, then it asks the falsifiability question of the NFR
+- [x] AC3 — Given `verify` Step 4, when read, then it asks the falsifiability question of the NFR
   table explicitly, not only of the ACs.
-- [ ] AC4 — Given a row whose honest check is prose because the artifact does not exist, when
+- [x] AC4 — Given a row whose honest check is prose because the artifact does not exist, when
   written in the permitted form, then it is distinguishable from an unanswered row.
-- [ ] AC5 — Deleting the requirement from `queue`'s NFR step turns a guard red.
-- [ ] AC6 — Deleting the NFR clause from `verify` Step 4 turns a guard red, scoped to that step and
+- [x] AC5 — Deleting the requirement from `queue`'s NFR step turns a guard red.
+- [x] AC6 — Deleting the NFR clause from `verify` Step 4 turns a guard red, scoped to that step and
   not satisfied by the word appearing elsewhere in the file.
 
 ## QA plan
@@ -183,3 +184,43 @@ its scope.
 **Also not done:** the NFR tables of tickets already queued still have three columns. The template
 governs what `queue` writes next, and rewriting other tickets' item files is forbidden to a stage
 holding only this one (`CONCURRENCY.md`, *A stage writes only the ticket it holds*).
+
+## QA evidence
+
+Verified 2026-09-11 by `verify` (token 7d2d) at `qa_level: unit` — this repo's whole suite, run
+file-by-file rather than fail-fast (`config.yml` says why). Tree clean at Step 2 (`8f124e1`) and
+clean at verdict; `HEAD` advanced to `4abb780` mid-pass on another session's `0135` claim, which
+touches `QUEUE.md` and that item only — no intersection with this ticket's evidence set.
+
+**The copy that executed.** This session's own `verify` skill resolved from the pinned install at
+`0.9.25`, which predates `32fdd42` and so does **not** contain the Step 4 clause under test. The
+repo copy is the authority and is what every assertion below was made against; the change is not
+live for a session until the version is bumped and the install updated (`CLAUDE.md`).
+
+**Suite:** 29 files. 28 green; `tests/measurement.test.sh` at `128 passed, 1 failed`, which is a
+**pre-existing red unrelated to this ticket** — its privacy guard catches a home-directory path
+committed inside `0052`'s closed item file at `2be673f` (2026-09-06), four days before this
+ticket's build at `32fdd42`. Already parked in `FINDINGS.md` (2026-09-11) and still needs a row;
+redacting another ticket's closed item is forbidden to a stage holding only this one
+(`CONCURRENCY.md`, *A stage writes only the ticket it holds*). `tests/falsifiable-acs.test.sh`:
+**34 passed, 0 failed**.
+
+Every mutation below was taken against the committed tree, restored by the single path it touched,
+and followed by a control run of `34 passed, 0 failed` with `git status --porcelain` empty.
+
+| AC / NFR | How it was checked | Result |
+|---|---|---|
+| AC1 — the template's NFR table has a place to name how it would red, and the preamble requires it | Read `skills/queue/templates/item.md`: the table is four columns, `\| Dimension \| Requirement for this item \| How it would red \| Convention \|`, and the preamble carries *Each row names how it would red*. Mutation: header reverted to three columns → `33 passed, 1 failed` (case *AC1 — the table carries the column*) | PASS |
+| AC2 — `queue`'s NFR step says a row with no nameable check does not ship | Read `skills/queue/SKILL.md`'s *Fill the NFR table by elimination* step. Mutation: the requirement sentence deleted → `32 passed, 2 failed` (*AC2 — the step requires it*, *AC2 — and refuses a row that cannot*) | PASS |
+| AC3 — `verify` Step 4 asks the falsifiability question of the NFR table explicitly | Read `skills/verify/SKILL.md` Step 4: *Ask of each filled row how it would red* and *true today and guarded by nothing*. Mutation: that sentence deleted → `32 passed, 2 failed` | PASS |
+| AC4 — the permitted prose form is distinguishable from an unanswered row | Template and `queue`'s step both name `prose only — no artifact yet` and state *An empty cell is an unanswered row*; `verify` Step 4 reads the two differently. Mutation: the permitted-form paragraph deleted from the template → `32 passed, 2 failed`. This item's own Documentation row is written in the new four-column form, which is the demonstration | PASS |
+| AC5 — deleting the requirement from `queue`'s NFR step turns a guard red | The AC2 mutation above: `32 passed, 2 failed`, control green | PASS |
+| AC6 — deleting the NFR clause from `verify` Step 4 reds a guard, scoped to that step and not satisfied by the word appearing elsewhere | Two mutations. **Delete** *flag the row as unguarded* from Step 4 → `33 passed, 1 failed`, file-wide `grep -c` → 0. **Move** the same sentence verbatim into Step 5 → `33 passed, 1 failed` with file-wide `grep -c` → **1**. The guard reds on structure, not on vocabulary | PASS |
+| NFR — Documentation: the preamble states the requirement where the table is filled, not elsewhere | Ran the check the row itself names. Mutation: the requirement sentence deleted from the template's NFR window → `32 passed, 2 failed`, reddening case *AC1 — the preamble requires it* as the row claims. Scoping is structural — the case reads the window between `## Non-functional requirements` and `## Waiting on`, and the file's own fixture proves a window stops at its boundary. `documentation-conventions.md` loaded: the operative document carries the rule, which is what the template is here | PASS — guarded, not merely true today |
+| Always-on (`CONVENTIONS_CORE.md`) | Diff at `32fdd42` is prose in two skills and a template plus one `sh` guard. No secrets, no company material (this repo is public, `company: none`). Nothing is made newly reachable — no routing, permission or visibility surface is touched. The privacy pass applies to no new log field or egress. `tests/skill-size.test.sh` green, so the added rationale in `queue`'s step is within this repo's context-rent guard | PASS |
+
+**On the build notes' mutation table.** Rows A, D and E reproduced exactly (`32/2`, `33/1`, `32/2`).
+Rows B and C recorded `31 passed, 3 failed`; the mutations above are narrower — one sentence rather
+than the whole clause — and give `33/1`. The two are consistent: deleting the clause through
+*flag the row as unguarded* reds AC3's two cases and AC6's, which is the recorded three. No
+recorded result was contradicted.
