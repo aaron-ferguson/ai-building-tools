@@ -3,7 +3,7 @@ id: "0132"
 title: Let verify batch within a gate that was developed together, with per-ticket evidence
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: m
@@ -19,9 +19,15 @@ expects:
   - skills/orchestrate/SKILL.md
   - .claude/backlog/config.yml
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "0a54"
+claimed_at: 2026-09-12T14:41:10Z
 touches:
+  - .claude/backlog/next
+  - skills/queue/templates/next
+  - skills/verify/SKILL.md
+  - skills/orchestrate/SKILL.md
+  - .claude/backlog/config.yml
+  - tests/next.test.sh
 ---
 
 ## Problem
