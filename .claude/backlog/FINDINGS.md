@@ -631,3 +631,17 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   anchor or EOF arrives. Found by mutation while verifying `0135`; named in that ticket's send-back
   so it is fixed there, parked here because the shape is repo-wide (pointer:
   `tests/sprint-ledger.test.sh` `RATIOBAD`; `testing-conventions.md` on guards that cannot fail).
+
+- 2026-09-12 (verify 0147) — **an acceptance criterion whose fixture is another live ticket's
+  frontmatter can be stale before it is written, and nothing in the loop can see it.** `0147` AC5
+  asked that `./claim 0075` name `tests/skill-prose.test.sh` as not existing. It cannot, for two
+  independent reasons: `0075`'s `expects:` no longer carries that path, and `0075` is `done`, so
+  `claim` exits 1 at `no row for 0075 in QUEUE.md` before any report. The path was corrected by the
+  **same develop park that filed `0147`** — the criterion was false at the moment its author wrote
+  it. A fixture built inside a test is checked by running the test; a fixture that is another
+  ticket's file is checked by nobody, and it moves. Two passes paid: `develop` built five of six ACs
+  and recorded the sixth as unbuildable, and this `verify` cannot close a ticket whose
+  implementation is sound and fully mutation-tested. Cheap rule if it recurs: an AC citing another
+  ticket's mutable frontmatter either pins those bytes into a fixture or is written against one.
+  Needs a row (pointer: `skills/queue/SKILL.md` acceptance criteria; `tests/falsifiable-acs.test.sh`;
+  items/0147 AC5).
