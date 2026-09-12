@@ -3,7 +3,7 @@ id: "0144"
 title: Anchor the scope report's commit range to the claim commit for this ticket, not any commit carrying the token
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: s
 created: 2026-09-09
@@ -18,8 +18,8 @@ expects:
   - .claude/backlog/handoff
   - tests/close.test.sh
   - tests/handoff.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "ac9e"
+claimed_at: 2026-09-12T02:32:05Z
 touches:
 ---
 
