@@ -254,3 +254,25 @@ scope a person already confirmed — the estimate they approved would no longer 
   run, and `./claim` refuses a busy lock rather than waiting on it. FR1–FR8 and AC2–AC4 and AC6–AC8
   are unchanged. Size stays `m`; FR9 is one proposal line over a `--drive` walk the skill already
   makes.
+- **2026-09-12 — develop (token `0d00`): built.** Skill: a new `## Design alongside develop` section
+  plus edits to *The proposal* (FR9), Step 5 (the design dispatch carries its ticket id), Step 6 (the
+  tail runs the check first), Step 8 (the one exception) and Step 9 (designed tickets are named).
+  Tool: `record` writes one `DESIGN` line per design session. Four facts a verifier should not have
+  to rediscover:
+  **FR2 and FR5 are enforced by a runnable check, not prose.** The skill carries a fenced
+  `design-windows` block that prints `open <id>` / `closed <id>` from the run log.
+  `tests/sprint.test.sh` extracts it and runs it over authored logs, the way AC25 runs the lock-age
+  check. The tail waits while it prints `open`, and no id it lists is ever dispatched again.
+  **AC5 cannot be made red by this ticket's files.** Its fixture runs the real template `claim`
+  twice against a held lock, each writer retrying, and asserts both land. That is green before and
+  after, because no script changed. What the ticket adds is only the sentence telling a stage to
+  retry. The case is a premise, recorded here so no one reads it as a guard on the skill. AC9's
+  `--propose` fixture is the same kind of case.
+  **The concurrency word has a third reason to read `not measured` beyond AC7's literal case.** A
+  develop window with no outcome that opened before the design session ended could have overlapped
+  it, so `concurrency()` returns unknown rather than `sequential`. A definite overlap with an
+  answered develop window still wins. Windows pair dispatch to outcome by stage and ticket id (FR8),
+  not by session id.
+  **One gap is parked, not fixed.** `--propose` cannot describe the develop gate beneath an unheld
+  design row, because the rank walk escalates first (`FINDINGS.md`, 2026-09-12 develop). `./next`
+  was never in scope.
