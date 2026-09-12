@@ -139,6 +139,11 @@ The proposal states, all of it from that one call:
   and a proposal showing three derived figures where one is invented is worse than one showing two
   and an admission.
 
+**Where a `next: design` row outside the scope outranks the gate, name it as where the run will
+stop.** `--propose` escalates on it in the same call. The run still halts there, reported as the
+scope's edge rather than dispatched for or refused. A design row a person takes into scope is
+dispatched instead (*Design alongside develop*).
+
 **Where the confirmed scope is only part of a gate, name the rows left behind and what resuming them
 costs.** They were un-takeable while the rest is in progress anyway, so the real price is one
 additional session floor later, at the develop mean. That is usually a fine price for not doing nine
@@ -215,6 +220,66 @@ that reads a green and closes the ticket has become the self-certification it wa
 redirect the run to a specific ticket, hold it or stop it at any point. Answer from the run log and
 the backlog — both are on disk and current — rather than waiting for the cycle to end. A turn spent
 asking a running stage whether it has finished reports no change and costs a full floor.
+
+---
+
+## Design alongside develop
+
+**A `design` session is the one stage that may run beside another, and only beside `develop`.**
+The permission rests on two facts, and a reader generalising it has to break both. The sessions
+touch **disjoint** file kinds: `design` writes one item file and one `QUEUE.md` row, both under the
+lock and the claim scripts, and never the code tree two develop sessions cannot share. And it is
+token-neutral, because a design session is its own session either way, so running it concurrently
+re-pays no startup floor. Parallel develop fails the second fact, which is why `0137` declines it.
+How file scope works when the prose files are the product is `0050`'s open question, not settled
+here.
+
+**Exit 4 on an in-scope design row is a dispatch, not a halt.** The confirmed scope names it; a
+design row outside the confirmed scope is never dispatched, and where one outranks the gate the run
+stops there, as the scope's edge (*The proposal*). For an in-scope row:
+
+1. Dispatch `/design <id>` as its own process (Step 3), log its `dispatch` event, and add the id to
+   the run's design set.
+2. **Wait until that row reads held** — the item's `claimed_by:` non-empty, or the session's outcome
+   arrived first — with one backgrounded `until` loop, then re-call `--drive`. It steps over the held
+   row and names the develop gate below it. Re-calling before the claim lands returns exit 4 on the
+   same row, and acting on it starts a second session on one ticket: **never a second design session
+   for an id the design-windows check lists**, open or closed.
+3. **A design finish is never reported through `--completed`.** `--completed design:<id>` reaches
+   `./next`'s *no routing rule covers* escalation and stops the run by another door. Log the outcome;
+   the next `--drive` call carries only the develop or verify stage that finished.
+
+**A designed ticket feeds the next proposal and is not added to the running gate.** Where `--drive`
+later names a gate holding ids the confirmed scope does not, dispatch only the confirmed ids; none
+left means the run has reached its scope's edge. Step 9 names the designed tickets.
+
+**Design runs never beside `retro` or `queue`**, which rewrite the skills and scripts every other
+session executes, and Step 6 enforces that with this check before the tail. Both stages still write
+the backlog, each under the lock; a stage finding it busy retries, since `./claim` refuses a busy
+lock rather than waiting (`CONCURRENCY-INCIDENTS.md`, *A busy or stale lock*).
+
+```sh
+# design-windows: every design session this run dispatched, open until its outcome is logged
+python3 -c '
+import json, sys
+state = {}
+for line in open(sys.argv[1]):
+    try:
+        e = json.loads(line)
+    except ValueError:
+        continue
+    if e.get("stage") != "design" or e.get("event") not in ("dispatch", "outcome"):
+        continue
+    for t in e.get("tickets") or []:
+        tid = t.get("id") if isinstance(t, dict) else t
+        if e["event"] == "dispatch":
+            state.setdefault(tid, "open")
+        else:
+            state[tid] = "closed"
+for tid in sorted(state):
+    print(state[tid], tid)
+' ".claude/backlog/runs/$RUN_ID.jsonl"
+```
 
 ---
 
@@ -300,7 +365,9 @@ and a pointer worth opening gets named.
 
 **One JSON line per event, appended as it happens, under `.claude/backlog/runs/<run-id>.jsonl`.**
 The confirmed scope as one `scope_confirmed` event, then every stage started, every outcome, every
-gate decision and every escalation, each with a UTC timestamp and the run id. The supervising conversation is what dies; a decision that reached only
+gate decision and every escalation, each with a UTC timestamp and the run id. A design `dispatch`
+and its `outcome` carry `stage` and its ticket id in `tickets`, which is what the ledger pairs a
+design window by. The supervising conversation is what dies; a decision that reached only
 the transcript is unrecoverable.
 
 **The log is provenance. It is not state, and this is the point of it.** A resuming supervisor —
@@ -360,7 +427,9 @@ gate read low.
 **The tail is `retro`, and then `queue`.** Dispatching only the retro is the asymmetry `0060` opens
 on, arriving as a dispatch: `retro` is the terminal sweeper for the *lesson* half and only a `queue`
 sweep can take the *work* half, so a tail of one leaves the buffer holding what it came to clear.
-**Each runs with no other stage session running**, including each other — both rewrite the skills
+**Each runs with no other stage session running**, and a design session is one: dispatch no design
+after the gate crosses, and run the design-windows check (*Design alongside develop*) before each
+tail stage, waiting while it prints any `open` line. Including each other — both rewrite the skills
 and the backlog scripts every other session is executing, and a stage that resolved its instructions
 before the rewrite is running a version nothing else in the repo agrees with.
 
@@ -459,9 +528,11 @@ with the derivation beside it**, never a figure chosen here and never one rounde
   reservation *The working tree is shared too* forbids, and every `in-progress` row during a run
   should correspond to a stage process that is actually running.
 - **It never answers a design question, narrows a contract, or writes a ticket.** A `next: design`
-  row, a stale FR and a ticket that needs splitting are all exit code `4`: name what must be decided
-  and stop. Queuing new work and designing tickets are escalations, not automation.
-- **It never runs two stage sessions at once.** The loop is sequential by decision. What it
+  row outside the confirmed scope, a stale FR and a ticket that needs splitting are all exit code
+  `4`: name what must be decided and stop. An in-scope design row is answered by the `design`
+  session it dispatches, never by the supervisor. Queuing new work and designing tickets are escalations, not automation.
+- **It never runs two stage sessions at once, except a design session alongside a develop session**
+  (*Design alongside develop*). Otherwise the loop is sequential by decision, and what it
   parallelises is *tickets*, through the gate.
 - **It never drives more than one backlog.**
 
@@ -488,6 +559,8 @@ root. Three things it cannot say, because they are specific to a run rather than
   run log.
 - **What the run learned.** Every cycle's findings-parked count, and the pointers worth opening.
   This is the only signal left that the run is learning anything.
+- **What the run designed.** Every ticket a design session this run moved to `next: develop`, named
+  as available for the next sprint rather than as work this one did.
 
 **End on the hand-off line, the very last thing printed:**
 

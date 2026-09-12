@@ -1769,5 +1769,262 @@ else
   bad "0132 FR2 — the sprint skill does not say a batched verify returns one envelope entry per ticket; a single verdict over several ids is the halo this ticket exists to stop"
 fi
 
+# ------------------------------------------------------------------------------------------------
+# 0134 — design sessions dispatched alongside develop.
+#
+# THREE KINDS OF CASE, honest about which is which. The prose cases prove a rule is written where a
+# supervisor reads it, section-scoped as everything above is. The design-windows cases EXTRACT the
+# check the skill prescribes and run it over authored run logs, the way AC25 runs the lock-age
+# check — so FR2 and FR5 are enforced by a command the supervisor runs at dispatch rather than by
+# guidance (AC2's red). The two backlog fixtures run the real scripts from skills/queue/templates:
+# they pin the premises the prose rests on — that two writers who retry both land, and that
+# `--drive --propose` names an out-of-scope design row as its escalation — and cannot see whether a
+# session obeyed any of it.
+DSEC="Design alongside develop"
+
+echo "0134 FR1/AC1 — an in-scope design row is dispatched beside develop, and exit 4 there is not a halt"
+if [ -n "$(section "$SKILL" "$DSEC")" ]; then
+  ok "the skill carries a '## $DSEC' section"
+else
+  bad "0134 FR1 — the skill has no '## $DSEC' section; a design row still ends the run"
+fi
+if says "$SKILL" "$DSEC" 'a dispatch, not a halt'; then
+  ok "exit 4 on an in-scope design row is a dispatch, not a halt"
+else
+  bad "0134 AC1 — the section does not say exit 4 on an in-scope design row is a dispatch rather than a halt"
+fi
+if says "$SKILL" "$DSEC" '/design <id>'; then
+  ok "and names the command the design session is dispatched with"
+else
+  bad "0134 FR1 — the section names no /design dispatch"
+fi
+# AC1's second door: `--completed design:<id>` reaches ./next's no-routing-rule ESCALATE branch.
+if says "$SKILL" "$DSEC" 'never reported through `--completed`'; then
+  ok "a design finish is never reported through --completed"
+else
+  bad "0134 AC1 — nothing stops a design finish being passed as --completed design:<id>, which escalates and stops the run by another door"
+fi
+if says "$SKILL" "Step 8" 'except a design session alongside a develop session'; then
+  ok "Step 8 names design-beside-develop as the one exception to sequential stages"
+else
+  bad "0134 FR1 — Step 8 still says the run never has two stage sessions at once, which FR1 falsifies"
+fi
+
+echo "0134 FR2/FR3/FR4/FR6 — the three guards and the reason, stated where a supervisor reads them"
+if says "$SKILL" "$DSEC" 'outside the confirmed scope is never dispatched'; then
+  ok "FR3 — a design row outside the confirmed scope is never dispatched"
+else
+  bad "0134 AC3 — the section does not forbid dispatching design for a row the confirmed scope does not name"
+fi
+if says "$SKILL" "$DSEC" 'never beside `retro` or `queue`'; then
+  ok "FR2 — design runs never beside retro or queue"
+else
+  bad "0134 FR2 — the section does not forbid design running beside the tail"
+fi
+if says "$SKILL" "Step 6" 'design-windows'; then
+  ok "FR2 — Step 6 runs the design-windows check before dispatching the tail"
+else
+  bad "0134 AC2 — Step 6 dispatches the tail without the design-windows check, so FR2 is guidance rather than enforced at dispatch"
+fi
+if says "$SKILL" "$DSEC" 'not added to the running gate'; then
+  ok "FR4 — a ticket designed mid-sprint is not added to the running gate"
+else
+  bad "0134 AC4 — the section does not stop a designed ticket being absorbed into the confirmed scope"
+fi
+if says "$SKILL" "Step 9" 'available for the next sprint'; then
+  ok "FR4 — the report names designed tickets as available for the next sprint"
+else
+  bad "0134 AC4 — the report does not name tickets designed this run as available for the next sprint"
+fi
+if says "$SKILL" "$DSEC" 'disjoint' && says "$SKILL" "$DSEC" '0050'; then
+  ok "FR6 — the permission rests on disjoint file kinds and cites 0050 as the open general question"
+else
+  bad "0134 FR6 — the section does not state the disjoint-files reason and cite 0050"
+fi
+if says "$SKILL" "$DSEC" '0137'; then
+  ok "Documentation NFR — and names 0137, so the permission is not generalised to develop"
+else
+  bad "0134 Documentation NFR — the section does not say why this does not extend to parallel develop (0137)"
+fi
+if says "$SKILL" "Step 5" 'its ticket id'; then
+  ok "FR7 — a design dispatch event carries its ticket id in the run log"
+else
+  bad "0134 FR7 — Step 5 does not require a design dispatch to carry its ticket id; the ledger cannot pair its window"
+fi
+
+echo "0134 AC8/FR5 — the supervisor waits for the claim and never dispatches design twice for one id"
+if says "$SKILL" "$DSEC" 'reads held'; then
+  ok "the section waits until the design row reads held before re-calling --drive"
+else
+  bad "0134 AC8 — nothing says to wait for the design claim before re-calling --drive; the repeated exit 4 starts a second session"
+fi
+if says "$SKILL" "$DSEC" 'never a second design session'; then
+  ok "and forbids a second design session for an id already dispatched"
+else
+  bad "0134 FR5 — the section does not forbid a second design session on one ticket"
+fi
+
+# The check itself, extracted from the skill's fenced block that carries the token.
+dwcheck="$FIX/design-windows.sh"
+awk -v tok='design-windows' '
+  /^```/ {
+    if (inside) { if (hit) { for (i = 0; i < n; i++) print buf[i]; exit } ; n = 0; hit = 0 }
+    inside = !inside; next
+  }
+  inside { buf[n++] = $0; if (index($0, tok)) hit = 1 }
+' "$SKILL" > "$dwcheck" 2>/dev/null || true
+if [ -s "$dwcheck" ]; then
+  ok "the skill prescribes a runnable design-windows check"
+else
+  bad "0134 AC2/AC8 — the skill carries no fenced design-windows check; FR2 and FR5 are prose only"
+fi
+
+# $1 fixture name, $2 the run log body. Prints what the prescribed check prints over it.
+dw_run() {
+  dw_dir="$FIX/dw-$1"
+  mkdir -p "$dw_dir/.claude/backlog/runs"
+  printf '%s\n' "$2" > "$dw_dir/.claude/backlog/runs/r-dw.jsonl"
+  ( cd "$dw_dir" && RUN_ID=r-dw sh "$dwcheck" 2>&1 ) || true
+}
+
+# AC1's shape: a design session dispatched and not yet answered while develop runs.
+dw_open="$(dw_run open '{"ts":"2026-09-12T09:00:00Z","run":"r-dw","event":"dispatch","stage":"develop","session_id":"s-dev","tickets":["0301"]}
+{"ts":"2026-09-12T09:01:00Z","run":"r-dw","event":"dispatch","stage":"design","session_id":"s-des","tickets":["0302"]}')"
+case "$dw_open" in
+  *"open 0302"*) ok "a design session with no outcome reads open, so the tail waits and 0302 is not re-dispatched" ;;
+  *) bad "0134 AC2/AC8 — the check did not report 0302 open; it printed [$dw_open]" ;;
+esac
+case "$dw_open" in
+  *0301*) bad "0134 AC2 — the check reported the develop session as a design window: [$dw_open]" ;;
+  *) ok "and a develop session is not reported as a design window" ;;
+esac
+
+# The tail's precondition met: the outcome closes the window, and an outcome carrying ticket
+# OBJECTS closes it too, since both shapes appear in this suite's run logs.
+dw_closed="$(dw_run closed '{"ts":"2026-09-12T09:01:00Z","run":"r-dw","event":"dispatch","stage":"design","session_id":"s-des","tickets":["0302"]}
+{"ts":"2026-09-12T09:40:00Z","run":"r-dw","event":"outcome","stage":"design","session_id":"s-des","tickets":[{"id":"0302"}]}')"
+case "$dw_closed" in
+  *"closed 0302"*) ok "an answered design session reads closed, so the tail may be dispatched" ;;
+  *) bad "0134 AC2 — the check did not report 0302 closed after its outcome; it printed [$dw_closed]" ;;
+esac
+case "$dw_closed" in
+  *"open "*) bad "0134 AC2 — an answered design session still reads open, so the tail would wait forever: [$dw_closed]" ;;
+  *) ok "and nothing reads open once every design session has answered" ;;
+esac
+
+echo "0134 AC5 — a design and a develop writer on one backlog both land, the busy one retrying"
+if says "$SKILL" "$DSEC" 'retries'; then
+  ok "the section says a writer meeting a busy lock retries rather than giving up"
+else
+  bad "0134 AC5 — the section does not say a busy lock is retried; ./claim refuses rather than waits"
+fi
+
+# mk_two_row_backlog <dir> — row 0001 at next: design, row 0002 at next: develop, the real
+# claim/next/handoff scripts from the template every install scaffolds from.
+mk_two_row_backlog() {
+  tw="$1"
+  rm -rf "$tw"; mkdir -p "$tw/.claude/backlog/items"
+  git -C "$tw" init -q
+  git -C "$tw" config user.email test@example.invalid
+  git -C "$tw" config user.name "sprint test"
+  {
+    printf '# Backlog\n\n| ID | Title | Next | Status | Parent |\n|------|-------|------|--------|--------|\n'
+    printf '| 0001 | A design row | design | ready |  |\n'
+    printf '| 0002 | A develop row | develop | ready |  |\n'
+  } > "$tw/.claude/backlog/QUEUE.md"
+  for tw_pair in 0001:design 0002:develop; do
+    tw_id="${tw_pair%%:*}"; tw_next="${tw_pair#*:}"
+    printf -- '---\nid: "%s"\ntitle: Fixture %s\ntype: feature\nnext: %s\nstatus: ready\nqa_level: unit\nsize: s\nparent:\nblocked_by: []\nexpects:\n  - src/%s.ts\nclaimed_by:\nclaimed_at:\ntouches:\n---\n\n## Problem\n\nA fixture.\n' \
+      "$tw_id" "$tw_id" "$tw_next" "$tw_id" > "$tw/.claude/backlog/items/$tw_id-fixture.md"
+  done
+  for s in claim next handoff; do
+    cp "$ROOT/skills/queue/templates/$s" "$tw/.claude/backlog/$s"
+    chmod +x "$tw/.claude/backlog/$s"
+  done
+  git -C "$tw" add -A
+  git -C "$tw" commit -q -m fixture
+}
+
+TW="$FIX/two-writer"
+mk_two_row_backlog "$TW"
+mkdir "$TW/.claude/backlog/.lock"
+printf 'claim 9999 by held\n' > "$TW/.claude/backlog/.lock/held-by"
+
+# The control AC5 warns about: one claim, no retry, against a busy lock refuses outright.
+if ( cd "$TW" && .claude/backlog/claim 0001 tokc ) >/dev/null 2>&1; then
+  bad "0134 AC5 — ./claim took a busy lock; the fixture cannot model the retry it exists for"
+else
+  ok "control — a single ./claim against a busy lock refuses rather than waits"
+fi
+
+# claim_retrying <id> <token> — the writer AC5 describes: refused, it waits and tries again. The
+# number of refusals is recorded so the case can show both writers really met the busy lock.
+claim_retrying() {
+  cr_n=0
+  until ( cd "$TW" && .claude/backlog/claim "$1" "$2" ) >/dev/null 2>&1; do
+    cr_n=$((cr_n + 1))
+    [ "$cr_n" -lt 150 ] || return 1
+    sleep 0.1
+  done
+  printf '%s' "$cr_n" > "$FIX/tw-refusals-$2"
+}
+claim_retrying 0001 tokd & tw_p1=$!
+claim_retrying 0002 toke & tw_p2=$!
+sleep 1
+rm -rf "$TW/.claude/backlog/.lock"
+tw_rc1=0; wait "$tw_p1" || tw_rc1=$?
+tw_rc2=0; wait "$tw_p2" || tw_rc2=$?
+
+if [ "$tw_rc1" = 0 ] && [ "$tw_rc2" = 0 ]; then
+  ok "both writers land once the lock is free"
+else
+  bad "0134 AC5 — a retrying writer gave up (design rc $tw_rc1, develop rc $tw_rc2)"
+fi
+if [ "$(cat "$FIX/tw-refusals-tokd" 2>/dev/null || echo 0)" -ge 1 ] && [ "$(cat "$FIX/tw-refusals-toke" 2>/dev/null || echo 0)" -ge 1 ]; then
+  ok "and both met the busy lock first, so the retry is what landed them"
+else
+  bad "0134 AC5 — a writer never met the busy lock; the case did not exercise the retry"
+fi
+if grep -q '^| 0001 | A design row | design | in-progress |' "$TW/.claude/backlog/QUEUE.md" \
+   && grep -q '^| 0002 | A develop row | develop | in-progress |' "$TW/.claude/backlog/QUEUE.md"; then
+  ok "both rows read in-progress — neither write was lost"
+else
+  bad "0134 AC5 — a row was lost: $(grep '^| 000' "$TW/.claude/backlog/QUEUE.md" | tr '\n' ' ')"
+fi
+# `claim` writes the token quoted; either spelling is the same owner.
+if grep -qE '^claimed_by: "?tokd"?$' "$TW/.claude/backlog/items/0001-fixture.md" \
+   && grep -qE '^claimed_by: "?toke"?$' "$TW/.claude/backlog/items/0002-fixture.md"; then
+  ok "and each item carries its own writer's token"
+else
+  bad "0134 AC5 — an item does not carry its own writer's token"
+fi
+tw_commits="$(git -C "$TW" log --oneline | grep -c 'Claim 000' || true)"
+if [ "$tw_commits" = 2 ]; then
+  ok "each claim landed as its own commit, taken under the lock"
+else
+  bad "0134 AC5 — expected 2 claim commits, got $tw_commits"
+fi
+if [ -z "$(git -C "$TW" status --porcelain -- .claude/backlog/QUEUE.md .claude/backlog/items)" ]; then
+  ok "and nothing either writer touched is left uncommitted"
+else
+  bad "0134 AC5 — a write is left uncommitted: $(git -C "$TW" status --porcelain | tr '\n' ' ')"
+fi
+
+echo "0134 AC9/FR9 — an unscoped design row above the gate is named as where the run stops"
+if says "$SKILL" "$PROPSEC" 'where the run will stop'; then
+  ok "the proposal names an outranking unscoped design row as where the run will stop"
+else
+  bad "0134 AC9 — the proposal can report takeable gates and say nothing of the design row that will halt the run"
+fi
+# The premise: the one --propose call already carries that row, so naming it costs no second read.
+PR="$FIX/propose-edge"
+mk_two_row_backlog "$PR"
+pr_rc=0; pr_out="$( cd "$PR" && .claude/backlog/next --drive --propose 2>&1 )" || pr_rc=$?
+if [ "$pr_rc" = 4 ] && printf '%s' "$pr_out" | grep -q '^ESCALATE  0001 is at next: design'; then
+  ok "premise — --drive --propose escalates on the design row, naming it, from the call the proposal already makes"
+else
+  bad "0134 AC9 premise — --drive --propose over a design row above a develop row did not escalate naming 0001 (rc $pr_rc): $(printf '%s' "$pr_out" | tr '\n' ' ' | cut -c1-200)"
+fi
+
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]
