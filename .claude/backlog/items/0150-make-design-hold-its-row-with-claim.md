@@ -139,3 +139,27 @@ row refuses with `is 'in-progress', not ready`.
   uncommitted working-tree edits to claim/close/handoff, which were green too.
 - Progressive-delivery NFR stands: `0134` stays blocked until a release carries this and
   `tools/release verify` confirms the install.
+- **2026-09-12 (verify, `79f4`) — green on all seven ACs; closed only after a release.** The NFR and
+  `./close` pull in opposite directions: `close` reconciles `0134` to ready, and `0134`'s blocker is
+  exactly "released and verified". The installed 0.9.25 `skills/design/SKILL.md` differed from the
+  repo and lacked the Step 1 claim, so a plain close would have unblocked `0134` against an install
+  that cannot hold its row. The user chose release-then-close over a `verify waiting` hand-off.
+
+## QA evidence
+
+Verified at `qa_level: unit`, checkout at `5edd97e` (tree clean at Step 2); mutations run in a detached
+worktree at `670ad93`, restored by path, control run green (`design-hold: 34 passed, 0 failed`).
+
+| AC / NFR | How checked | Result |
+|---|---|---|
+| AC1 | `tests/design-hold.test.sh` Step 1 scoped grep. Mutation: drop `./claim` from Step 1 → `FAIL — Step 1 names ./claim`, `33 passed, 1 failed` | PASS |
+| AC2 | Fixture claim + `--drive`, plus the file's unclaimed control (exit 4). Mutation: `claim` template stubbed to `exit 0` without writing → `the row reads in-progress`, `drive dispatches`, `drive steps over the design row` all FAIL, `19 passed, 15 failed` | PASS |
+| AC3 | Second `./claim` refuses, `claimed_by:` unchanged. Same stub → `the second claim refuses`, `because the row is not ready` FAIL | PASS |
+| AC4 | Three fixtures, `develop` / `design waiting` / `design ready`. Mutation: `handoff` template refuses any `next: design` item → every `exits 0` and `claimed_by: is cleared` FAIL, `21 passed, 13 failed` | PASS |
+| AC5 | Step 4 scoped grep. Mutation: re-add `commit by pathspec` beside handoff → FAIL; drop `./handoff` from Step 4 → FAIL (each `33 passed, 1 failed`) | PASS |
+| AC6 | Whole-skill grep. Mutation: delete the sentence → `FAIL — the sentence is present` | PASS |
+| AC7 | Whole suite, run per-file: 31 files, every one `0 failed` (second run). First run showed `item-ac-form.test.sh :: 4 passed, 1 failed`, caused by 0041's in-flight item, fixed by its own session at `19649ec` mid-run; not in this evidence set. `citations` 46/0, `skill-size` 27/0 | PASS |
+| NFR Documentation | Step 1 cites `CONCURRENCY.md` *Claim tokens* and *Lock every write to the backlog directory*; Step 4 cites *The release is the final act*; `citations.test.sh` resolves them | PASS |
+| NFR Progressive delivery | Installed 0.9.25 copy differs from repo (`diff -q`), lacks the claim sentence (grep count 0); release run before close so `0134` unblocks only against a verified install | PASS after release |
+
+Evidence set: `skills/design/SKILL.md`, `tests/design-hold.test.sh`, `skills/queue/templates/{claim,next,handoff}`, `tests/*.test.sh`. Dirty set at Step 2: empty → not advisory.
