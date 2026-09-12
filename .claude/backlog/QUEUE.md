@@ -24,7 +24,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | develop | ready | 0128 |
-| 0083 | Decide what a second checkout may do with the backlog | verify | ready |  |
+| 0083 | Decide what a second checkout may do with the backlog | verify | in-progress |  |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | develop | ready |  |
 | 0041 | Write release notes for what a work session delivered | develop | ready | 0128 |
 | 0147 | Make claim name the declared paths that do not exist instead of reserving them | verify | ready |  |

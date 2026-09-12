@@ -3,7 +3,7 @@ id: "0083"
 title: Decide what a second checkout may do with the backlog
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-09-01
@@ -22,8 +22,8 @@ expects:
   - tests/claim.test.sh
   - tests/close.test.sh
   - tests/handoff.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "8bdf"
+claimed_at: 2026-09-12T22:59:08Z
 touches:
 ---
 
