@@ -3,7 +3,7 @@ id: "0135"
 title: Record what a sprint was estimated to cost against what it did, and estimate from that
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -21,8 +21,8 @@ expects:
   - MEASUREMENT.md
   - tests/sprint-ledger.test.sh     # NEW
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "7a9b"
+claimed_at: 2026-09-12T04:17:14Z
 touches:
 ---
 
