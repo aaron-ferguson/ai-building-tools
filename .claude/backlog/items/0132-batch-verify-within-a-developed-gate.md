@@ -25,9 +25,9 @@ touches:
   - .claude/backlog/next
   - skills/queue/templates/next
   - skills/verify/SKILL.md
-  - skills/orchestrate/SKILL.md
-  - .claude/backlog/config.yml
+  - skills/sprint/SKILL.md          # expects: said skills/orchestrate/SKILL.md; 0128 renamed it
   - tests/next.test.sh
+  - tests/sprint.test.sh            # the QA plan names it for FR3; expects: omitted it
 ---
 
 ## Problem
