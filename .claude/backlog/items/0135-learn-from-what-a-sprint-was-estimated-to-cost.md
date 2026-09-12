@@ -2,8 +2,8 @@
 id: "0135"
 title: Record what a sprint was estimated to cost against what it did, and estimate from that
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -21,11 +21,9 @@ expects:
   - MEASUREMENT.md
   - tests/sprint-ledger.test.sh     # NEW
   - tests/sprint.test.sh
-claimed_by: "ee4e"
-claimed_at: 2026-09-12T03:47:44Z
+claimed_by:
+claimed_at:
 touches:
-  - tools/sprint-ledger.sh          # the only file the bounce verdict names
-  - tests/sprint-ledger.test.sh     # the AC1 guard, re-anchored on the source column
 ---
 
 ## Problem
