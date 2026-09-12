@@ -558,3 +558,31 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
   happened to touch it makes that one the outlier and settles nothing, which is why the verify pass
   declined it and this session did too. **This still needs a row; no row exists.** (Pointers:
   `tools/*.sh`; `CONVENTIONS_CORE.md`, *Code* → *Use types*; items/0135 verify verdict 2026-09-11.)
+
+- 2026-09-11 (verify 0045) — **`./next --help` counts the collision test as the third of four, and
+  it is the fourth.** The takeability paragraph lists four tests — stage, `blocked_by`, the item's
+  claim, the held-file intersection — then says *"A row held out on that **third** test is reported
+  as COLLIDES"*. It was the third when `0045` wrote it; `0140` inserted the claim test ahead of it
+  at `7f54025` (2026-09-09) and renumbered nothing. Nobody is misled today because only one test
+  reports COLLIDES, but the number is the only thing tying the paragraph to the list, and the next
+  insertion breaks it silently in the same way. The generalisable half: **an ordinal into a list in
+  the same paragraph is a cross-reference no guard reads**, and prose here is the product — name
+  the test rather than its position. Needs a row (pointer: `skills/queue/templates/next` `usage()`,
+  the *"Takeable means four things"* paragraph; `.claude/backlog/next` takes the same fix under
+  `tests/backlog-scripts-installed.test.sh` AC2).
+
+- 2026-09-11 (verify 0045) — **one repo-wide red, two opposite verify verdicts a day apart, decided
+  by whether the ticket happened to write a whole-suite AC.** `tests/measurement.test.sh`'s privacy
+  guard is red on `.claude/backlog/items/0052-…md:294` (already parked above, verify 0135). Verify
+  `0135` recorded it *"PASS for this ticket"* and closed; verify `0045` must record it **FAIL**,
+  because `0045` AC8 says *"Given the whole suite … then every suite passes"* in as many words and
+  ticking it would assert something false. Same red, same day, same repo, and neither session was
+  wrong under its own contract. `verify` Step 5's fifth shape covers *a red whose cause is another
+  ticket's landed change* and routes it to `develop` — which here means a session holding `0045`
+  editing a **closed** ticket's file to clear a defect that already owes its own row. The
+  generalisable half is a gap between two rules that each read complete: **`queue` may write an AC
+  over a whole-project gate the ticket does not own**, and `verify` has no branch for *green on its
+  own contract, blocked on a foreign committed red* — the honest state is `blocked_by` a row that
+  does not exist yet, which no stage is scripted to create. Needs a row (pointer: `skills/verify/SKILL.md`
+  Step 5 fifth shape and Step 2's whole-project-gate paragraph, which handles the *dirty* case and
+  not the *committed* one; `skills/queue/SKILL.md` acceptance-criteria step; `0045` AC8).
