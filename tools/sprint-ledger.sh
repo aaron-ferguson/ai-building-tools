@@ -338,15 +338,27 @@ def harvest(transcripts, session_ids):
     for sid in session_ids:
         cmd += ["--session", sid]
     try:
-        out = subprocess.run(cmd, capture_output=True, text=True, check=False).stdout
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
     except OSError as exc:
         die("could not run %s: %s" % (HARVEST, exc))
-    for line in out.splitlines():
+    # Both of these once returned (0.0, 0), which is worse than refusing: the row below cites
+    # harvest-usage.sh as the source of a number harvest-usage.sh never produced, and a false
+    # citation is exactly the silent decay FR8 and this file's preamble exist to prevent.
+    # NOT the empty store -- a real directory holding none of the run's sessions makes
+    # harvest-usage.sh exit 0 with a TOTAL line reading 0.00, which is a MEASURED zero and is
+    # recorded as one. Only a non-zero exit or an unparsable stdout reaches a die() here.
+    if proc.returncode != 0:
+        die("%s failed (exit %d) over %s: %s"
+            % (os.path.basename(HARVEST), proc.returncode, transcripts,
+               (proc.stderr or "").strip() or "no stderr"))
+    for line in proc.stdout.splitlines():
         m = re.match(r"^TOTAL\s*\|\s*\d+\s*\|\s*\d+\s*\|\s*([\d.]+)\s*\|\s*[\d.]+\s*\|\s*(\d+)",
                      line)
         if m:
             return float(m.group(1)), int(m.group(2))
-    return 0.0, 0
+    die("%s exit 0 over %s but printed no parsable TOTAL line; its output was: %s"
+        % (os.path.basename(HARVEST), transcripts,
+           " / ".join(proc.stdout.split()[:20]) or "empty"))
 
 
 # --- record -------------------------------------------------------------------------------------

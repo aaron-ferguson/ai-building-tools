@@ -349,6 +349,82 @@ else
   bad "AC2/FR8 -- an omitted --estimate-wall did not record 'no prior'; got: $(grep -E '^\|[[:space:]]*wall_clock_min' "$FIX/refuse-ledger.md" || echo 'no wall_clock_min row')"
 fi
 
+# --- AC1/FR8 -- `record` REFUSES a failed harvest rather than recording its silence as zero ------
+# harvest() once ran harvest-usage.sh with `check=False`, read only stdout, and returned (0.0, 0)
+# when no TOTAL line matched. So `record` against a transcripts directory that does not exist
+# exited 0 and appended `| usd | 20.00 | 0.00 | MEASUREMENT.md ... @ <stamp> |` -- a FALSE CITATION,
+# a source named for a number that source never produced. That is worse than the `unsourced`
+# default the block above guards: `unsourced` was at least an admission of having none.
+#
+# THE FAILURE IS NOT WIDENED TO THE EMPTY STORE, and the second case below is what pins that. A
+# real directory holding none of the run's sessions makes harvest-usage.sh exit 0 with a TOTAL line
+# reading 0.00 -- a MEASURED zero, which must keep recording as one. Without that case a later
+# session reading "validate inputs at the top" would widen the refusal and turn a real measurement
+# into an error.
+echo "AC1/FR8 -- record refuses a failed harvest instead of recording a fabricated zero"
+record_over() {
+  ro_ledger="$1"; ro_store="$2"
+  "$TOOL" record --ledger "$ro_ledger" --run "$RUNLOG" --transcripts "$ro_store" \
+    --measurement "$MEAS" --config "$CONF" --estimate-tickets 3 --estimate-wall no-prior \
+    --estimate-tokens 1200000 --estimate-usd 20.00 --estimate-source "$EST_SOURCE" 2>&1
+}
+
+# The expected exit status and stderr are DERIVED by running harvest-usage.sh over the same bad
+# path, never written here as literals: a guard restating the message it checks for moves with any
+# edit to it and can never separate the two (`testing-conventions.md`).
+MISSING_STORE="$FIX/store-that-does-not-exist"
+H_RC=0; H_ERR="$("$HARVEST" "$MISSING_STORE" 2>&1 >/dev/null)" || H_RC=$?
+if [ "$H_RC" -ne 0 ] && [ -n "$H_ERR" ]; then
+  ok "harvest-usage.sh itself refuses the missing store (exit $H_RC), so the swallow is on the ledger side"
+else
+  bad "AC1/FR8 -- harvest-usage.sh did not refuse a missing transcripts directory, so this case cannot exercise the swallow"
+fi
+
+HF_LEDGER="$FIX/harvest-fail-ledger.md"
+cp "$EMPTY" "$HF_LEDGER"
+HF_RC=0; HF_OUT="$(record_over "$HF_LEDGER" "$MISSING_STORE")" || HF_RC=$?
+if [ "$HF_RC" -ne 0 ]; then
+  ok "record over a missing transcripts directory exits non-zero"
+else
+  bad "AC1/FR8 -- record over a missing transcripts directory exited 0; an actual nobody measured was recorded"
+fi
+# The message, not the status: `exits non-zero` is satisfied by the silent refusal the rule exists
+# to forbid. It must carry the subprocess's own stderr and its exit status, the way read_run and
+# read_config already name the input they refused.
+case "$HF_OUT" in
+  *"$H_ERR"*) ok "and the refusal carries harvest-usage.sh's own stderr" ;;
+  *) bad "AC1/FR8 -- the refusal does not carry the harvest stderr ($H_ERR); got: $(printf '%s' "$HF_OUT" | tr '\n' ' ' | cut -c1-200)" ;;
+esac
+# Anchored to `exit <n>`, never to the bare number: a lone "2" is satisfied by any figure the
+# block happens to print, and this assertion was observed passing against the UNFIXED tool for
+# exactly that reason.
+case "$HF_OUT" in
+  *"exit $H_RC"*) ok "and names its exit status" ;;
+  *) bad "AC1/FR8 -- the refusal does not name the harvest exit status as 'exit $H_RC'; got: $(printf '%s' "$HF_OUT" | tr '\n' ' ' | cut -c1-200)" ;;
+esac
+if grep -q '^## sprint ' "$HF_LEDGER"; then
+  bad "AC1/FR8 -- record appended a sprint block before refusing the harvest; the fabrication is already committed"
+else
+  ok "and appended no sprint block"
+fi
+
+# THE EXCEPTION, pinned so the refusal above cannot be widened onto a real measurement.
+echo "AC1/FR8 -- an empty store is a measured zero, not a harvest failure"
+mkdir -p "$FIX/store-empty"
+EZ_LEDGER="$FIX/empty-store-ledger.md"
+cp "$EMPTY" "$EZ_LEDGER"
+EZ_RC=0; EZ_OUT="$(record_over "$EZ_LEDGER" "$FIX/store-empty")" || EZ_RC=$?
+if [ "$EZ_RC" -eq 0 ]; then
+  ok "record over a real but empty store is accepted"
+else
+  bad "AC1/FR8 -- record refused an EMPTY store; harvest-usage.sh exits 0 with TOTAL 0.00 there, which is a measurement and not a failure. Got: $(printf '%s' "$EZ_OUT" | tr '\n' ' ' | cut -c1-200)"
+fi
+if grep -qE "^\|[[:space:]]*usd[[:space:]]*\|[^|]*\|[[:space:]]*0\.00[[:space:]]*\|" "$EZ_LEDGER"; then
+  ok "and the measured zero is recorded as the usd actual"
+else
+  bad "AC1/FR8 -- an empty store did not record 0.00 as the usd actual; got: $(grep -E '^\|[[:space:]]*usd' "$EZ_LEDGER" || echo 'no usd row')"
+fi
+
 echo "FR2 -- wall-clock is derived from the run log's own UTC timestamps"
 # 09:00:00Z to 14:00:00Z is 300 minutes, and nothing else in the repo emits it.
 if grep -qE "^\|[[:space:]]*wall_clock_min[[:space:]]*\|[^|]*\|[[:space:]]*300[[:space:]]*\|" "$BLOCK"; then
