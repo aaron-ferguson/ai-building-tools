@@ -3,7 +3,7 @@ id: "0041"
 title: Write release notes for what a work session delivered
 type: feature
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -21,8 +21,8 @@ expects:
   - skills/retro/SKILL.md
   - skills/orchestrate/SKILL.md
   - .claude-plugin/plugin.json
-claimed_by:
-claimed_at:
+claimed_by: "8423"
+claimed_at: 2026-09-12T22:44:19Z
 touches:
 ---
 
