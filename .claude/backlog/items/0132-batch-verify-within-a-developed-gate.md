@@ -132,3 +132,68 @@ Written against whatever `0059` settles; these hold regardless of which shape it
   recorded here as merely related; `0059`'s open question turns out to name both halves of this
   ticket — the batch condition and the mutation isolation — so specifying this one first would have
   pre-empted a decision that is explicitly still open.
+
+### 2026-09-12 — Built (token `0a54`)
+
+**Two of the six FRs were already discharged when this session opened, and both were re-verified at
+the source rather than taken from the ticket.** FR1's condition — a verify batch is the develop gate
+that produced it — landed in `skills/verify/SKILL.md` with `0059` on 2026-09-10, the blocker this
+ticket waited on; `grep -c 'developed together in one gate'` returns 1. FR2's per-ticket envelope
+entry was already required by `skills/sprint/outcome.schema.json`, whose own description says the
+envelope is an array *because* a gate handles several tickets and a singular shape "reports one
+verdict and silently drops the rest". So FR1 and FR2 were confirmed and cited, not rebuilt. What
+this ticket actually had to add was the selection (FR6), and the three rules a batched session needs
+that nothing had yet written down (FR3, FR4, FR5).
+
+**FR4's home is not `config.yml`, and changing it there would have broken a release gate.** The FR
+quotes `for t in tests/*.test.sh; do "$t" || true; done` and cites `config.yml`'s recorded reason —
+which reads as an instruction to change the `unit:` command. It is not: `config.yml`'s own note says
+the fail-fast `|| exit 1` form is *deliberate* because `tools/release` step 5 uses the same line as a
+release gate, where stopping at the first red is right. The two readers want opposite behaviour from
+one key, and the file already says so. The rule therefore went into `skills/verify/SKILL.md` as an
+instruction to the session, generically — "run the level so that every file reports … where
+`config.yml` records the reporting form of its own command, use that form here and leave the
+configured one alone". `config.yml` was dropped from `touches:` for this reason.
+
+**How `--drive` recovers the gate: two filters, and each is independently load-bearing.**
+`verify_batch()` intersects the run's `--started` set (does this run's own work include it — an
+INPUT, never derived, per `0131` FR5) with `gate_from` (which gate). Dropping the first admits the
+stale verify row `0131` excludes; dropping the second batches two unrelated gates because the run
+happened to open both. Both were mutation-proved: N1 removed the `--started` filter and reddened
+exactly the two AC2 cases; N2 replaced `gate_from` with the raw pool and reddened only the
+separate-gates case. Recovering membership with `gate_from` — the same grouping that formed the gate
+at dispatch, replayed over a pool that is now a subset of it, in the same rank order — is what makes
+the two ends of the cycle agree by construction rather than by a second rule that can drift.
+
+**The `--completed` → `--started` join had to move ahead of the routing block, and this was not
+visible in any test until the batch existed.** `--completed develop:0102` joins `0102` to the started
+set, but that join sat *after* the block that routes a develop hand-off to verify. Once that branch
+started selecting a batch, the one ticket `--completed` names was absent from the pool at exactly the
+moment its own gate was being assembled, so every batch was missing its lead. Mutation N3 shows the
+two dispatch sites are independent: reverting the rank walk alone left the `--completed` branch
+batching correctly.
+
+**Every DISPATCH assertion added here is an exact line, and that is not style.**
+`assert_contains "DISPATCH  verify 0102"` is satisfied by `DISPATCH  verify 0102 0103 0104`, so it
+cannot tell a batch from a single row — which is the only distinction this whole ticket makes. A new
+`assert_eq` helper carries them. The pre-existing `0131` cases still use `assert_contains`; they are
+not wrong and `0132`'s cases cover the regression, so they were left alone rather than rewritten —
+parked in `FINDINGS.md` instead.
+
+**NFR Performance claims nothing, deliberately.** The row says the saving is *measured* by `0135`'s
+ledger, and `0135` is still `next: develop, status: ready` — so no figure exists yet and none is
+asserted here. `tests/sprint-ledger.test.sh` FR7 already guards that the ledger block carries a
+`verify_usd_per_ticket` ratio distinguishing batched from unbatched, and it is green against its own
+authored fixture. A QA pass should not look for a number in this ticket.
+
+**`expects:` named `skills/orchestrate/SKILL.md`, which `0128` renamed to `skills/sprint/`.**
+`./claim` caught it at claim time and said so; `touches:` was narrowed to the real path, and
+`tests/sprint.test.sh` was added, which the ticket's own QA plan names for FR3 but `expects:` omitted.
+
+**Evidence.** Whole suite run file-by-file, not fail-fast: 30 files, every one exit `0`, every tally
+`0 failed` (`tests/next.test.sh` 428 passed; `tests/sprint.test.sh` 187 passed, 0 skipped — the
+`claude -p` probe ran). Seven mutations in total, each applied to a committed tree, confirmed
+non-empty with `git diff --stat`, restored with `git checkout -- <one path>`, and followed by a
+control run: prose M1–M4 gave 1, 2, 1 and 2 failures against a 187/0 control; script N1–N3 gave 2, 1
+and 4 against a 428/0 control. `git status --porcelain` empty after each sweep. Baseline commit
+`f8854a8`.
