@@ -422,6 +422,48 @@ settle, and not what this session changed. `CONCURRENCY.md` forbids this stage f
 
 ## QA evidence
 
+### 2026-09-12 — verify pass, token 99e3 (PASS)
+
+Verified at `qa_level: unit`, the frontmatter's level and the only one the item declares. **The QA
+plan's rationale is stale, not drift:** it still opens *"no runner applies"* — the argument for
+`verify` — because the raise to `unit` never rewrote it, but the item carries no second `**Level:**`
+line, so `tests/qa-level-once.test.sh` is green and Step 2's drift rule has nothing to fire on. Two
+prior verdicts recorded these as agreeing; they do not. Parked as a finding rather than fixed here.
+
+`commands.unit` is `for t in tests/*.test.sh`, run file-by-file rather than fail-fast per
+`config.yml`'s note on `0084`. No `lint` or `typecheck` is configured. Repo checkout at `f2c9a30`,
+working tree clean at Step 2 and clean again at the verdict, so the dirty set is empty and its
+intersection with the evidence set is empty — **not advisory**. Artefacts were executed from the
+**repo copy**, not the installed plugin: both suites invoke `tools/sprint-ledger.sh` and
+`tools/harvest-usage.sh` by repo path.
+
+Evidence set: `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh`, `tools/harvest-usage.sh`,
+`.claude/backlog/LEDGER.md`, `skills/sprint/SKILL.md`, `.claude/backlog/config.yml`, `MEASUREMENT.md`.
+
+Every mutation below was applied to a committed tree, confirmed landed with `git diff --quiet`,
+restored with `git checkout -- <the one path mutated>`, and followed by a control run — green at
+`68 passed, 0 failed` with the tree clean each time. Tallies are pasted from the run that produced
+them, never summed.
+
+| # | How it was checked | Result |
+|---|---|---|
+| AC1 — an estimate and an actual for all four figures | `tests/sprint-ledger.test.sh` `paired()` over the recorded block, the derived estimate-flag refusal block, and the harvest-refusal block. **N1** restore `parse()`'s forging defaults (`0`/`0`/`0.0`/`unsourced`) in place of the validation loop → `56 passed, 12 failed`, each naming its flag, its exit code and that a block was appended before refusing. **N2** strip the `@` stamp from the source column (`src = "confirmed scope" … else "unsourced"`) → `64 passed, 4 failed`, one per figure row — this is the re-anchor the 2026-09-11 verdict asked for, and it catches what `paired()`'s old figure-anchor could not. **N3** restore `harvest()`'s two swallows → `61 passed, 7 failed` | PASS |
+| AC2 — a figure with no prior is labelled, not presented as derived | Same suite, AC2 block. **N4** emit `wall_clock_min` as `90.0` sourced to the `MEASUREMENT.md` per-skill table, exactly as the dollar figure is → `67 passed, 1 failed`, *"the wall-clock figure is not marked as having no prior"*. The omitted-`--estimate-wall` exception case stayed green under N1 and N3, which is what keeps a declaration distinguishable from a forged figure | PASS |
+| AC3 — the third sprint estimates from the ledger, not the priors | Same suite, two-recorded-sprint fixture. **N5** `sprints = read_ledger(...)` → `sprints = []`, the ledger written but never read → `65 passed, 3 failed`, including the value assertion (300 min derived from the two recorded actuals) and the dollar estimate falling back to citing the priors | PASS |
+| AC4 — predicted beside observed for a multi-ticket gate | Same suite, `GATE` block. **N6** emit the `GATE` line keeping its shape, its session and its observed cost but dropping the prediction → `66 passed, 2 failed` — precisely the AC's own *"Red if only the observed cost is recorded"*. The prediction is independently recomputed against `config.yml`'s model at n=3: `6.05 + 4.03 × 2 = 14.11`, against the gate session's observed `10.00` | PASS |
+| AC5 — no message text reaches the ledger | Same suite: a `SENTINELPROSE` sentinel planted in the fixture transcript, plus a character-set sweep over every generated line. **N7** leak each transcript `text` field into the block → `67 passed, 1 failed` on the sentinel check. **N8** leak the same prose JSON-quoted with the sentinel substituted out, so only the character-set check can see it → `67 passed, 1 failed` on that check. Neither mutation alone reddens both, so the two assertions are independently load-bearing. N7's first attempt crashed the tool instead of leaking (a `str` in the content list); a crash is not the redden under test, so it was repaired and re-run rather than read as a result | PASS |
+| AC6 — both sides of every ratio carry a source and a stamp | Same suite, `ratio_bad()` plus its five self-test fixtures. **N9** restore the pre-fix `RATIOBAD` awk, which printed only from inside the `/^ *denominator /` rule → `66 passed, 2 failed`, and **only** the two missing-denominator cases — the shape the 2026-09-11 verdict found the guard blind to. **N10** drop `(%s @ %s)` from the product's denominator line → `67 passed, 1 failed` on the real block. The guard proves itself against its own defect shapes before it is trusted, which is stronger than a mutation-ledger entry | PASS |
+| Constraint 1 (2026-09-11 verdict) — `harvest()` must `die()` on both swallows | Read at `tools/sprint-ledger.sh:336-368`: non-zero exit dies naming the basename, the exit status, the transcripts path and the stderr; unparsable stdout dies quoting the output it could not parse, newline-collapsed and truncated at `HARVEST_QUOTE_CHARS`. N3 reddens both refusals, their messages and the nothing-appended assertions. **The exception the verdict marked load-bearing holds**: an empty store still records a measured `0.00` and is not refused — its case stayed green under every mutation above | **Met** |
+| Constraint 2 (2026-09-11 verdict) — the AC6 guard must see an absent denominator | N9 above. Reported from a flush on the next `RATIO` anchor or `END`, so a missing denominator mid-file is caught and not only the last ratio's | **Met** |
+| FR8 — every figure carries its source and stamp, both sides of every division | N2 (source column), N10 (denominator stamp), N1 (the `unsourced` default that bounced this ticket on 2026-09-11), N3 (the false `harvest-usage.sh` citation that bounced it on 2026-09-12). All four now redden | PASS |
+| NFR Privacy & data (`data-privacy-conventions.md`) | AC5 above, plus `grep -nE '/Users/\|/home/[a-z]\|~/'` over all seven files in the evidence set — no match. The one egress path (transcripts → a committed public file) emits aggregates, stage names, given paths and 8-char session-id prefixes only. `tests/measurement.test.sh` green at `129 passed, 0 failed` | PASS |
+| NFR Performance (`observability-conventions.md`) | Two call sites in `skills/sprint/SKILL.md` — `estimate` at the proposal (line 128) and `record` at Step 6 (line 377); the third mention (line 314) is prose. Nothing per cycle, and wall-clock is read from stamps the run log already carries | PASS |
+| NFR Documentation (`documentation-conventions.md`) | The block carries an `Estimate source` column; every `ESTIMATE` line a `source: … @ <stamp>`; `LEDGER.md`'s own preamble states the rule and why a three-line ratio exists. Both previously-reported exceptions are closed — the `unsourced` default refuses, and the actual column can no longer carry a citation for a figure its source never produced | PASS |
+| Always-on (`CONVENTIONS_CORE.md`) | *Validate inputs at the top; throw descriptive errors; never swallow failures silently* — **now satisfied**; the four estimate flags and both harvest swallows refuse, each message naming what was missing. *Use types* — the `sh`-wrapping-`python3` deviation stands exactly where both previous verdicts left it: a repo-wide question across `tools/*.sh`, owed its own row, **still without one**, and not this ticket's to settle. It does not block this close | PASS |
+| Newly reachable states (Step 4) | The re-entry only *narrows* — it converts two silent successes into refusals — and adds no routing, permission or visibility change. No new destructive or privileged path is reachable | PASS |
+| Whole suite (`commands.unit`) | 30 files run individually at `f2c9a30`; **every one at `0 failed`**. `tests/sprint-ledger.test.sh` `68 passed, 0 failed`; `tests/sprint.test.sh` `187 passed, 0 failed, 0 skipped`; `tests/measurement.test.sh` `129 passed, 0 failed` — the home-directory red two earlier passes carried forward is confirmed gone. Each tally pasted from its own run | PASS |
+
+
 ### 2026-09-11 — verify pass, token 7a9b (FAIL)
 
 Verified at `qa_level: unit` (frontmatter and the QA plan agree; no drift). `commands.unit` is run
