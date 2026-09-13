@@ -2,8 +2,8 @@
 id: "0153"
 title: Give the sprint supervisor marker a liveness signal that outlives one tool call
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -15,11 +15,9 @@ relates: ["0121"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "11ef"
-claimed_at: 2026-09-13T22:27:30Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/sprint/SKILL.md
-  - tests/sprint.test.sh
 ---
 
 ## Problem
@@ -89,3 +87,5 @@ Evidence set: `skills/sprint/SKILL.md`, `tests/sprint.test.sh`, `.claude/backlog
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** One buffer entry, filed because it would let two supervisors drive one backlog.
 - **2026-09-13 — reopened for re-verification, by the user's request.** The verify session that closed this ticket (433a37e3) ran on claude-sonnet-4-6, returned `conventions_resolved: null` and a placeholder `session_id`, and ran per-ticket test files instead of `config.yml` `commands.unit`. Composed by hand under the backlog lock by a `queue` session, since no operation reopens a closed ticket (that path is 0161): row moved from `DONE.md` back to the top of `QUEUE.md`, `next: verify`, `status: ready`, `closed:` removed, and the acceptance criteria UNTICKED — a tick is evidence of the pass being distrusted, and `close` re-ticks what the new pass checks. The QA evidence above is kept as the record of that pass; the next `verify` writes its own beside it and does not rely on it.
 - **2026-09-13 — re-verification (session 33d2edfe) FAILED; sent back to `develop`.** Constraint (FR1): **a supervisor that is alive and waiting on a single dispatched stage must never read as stale.** As written, the age is `lock_stale_seconds` (900 s), which `config.yml` itself places *under* a stage's runtime, and the signal is refreshed only before each `claude -p` call — so a stage running past 900 s (a queue stage took 860 s on run-20260913T151122Z) hands a live run to a second supervisor. The age the rule states has to cover the longest single wait the skill permits, and the skill says why. Separately, AC2's guard stays green when Step 3 names `.active/` but no longer refreshes it (mutation M4, 231/0); the guard must red on a Step 3 that stops refreshing. AC1 and the NFR were cleared and redden under mutation.
+- **2026-09-13 — develop re-entry (session b03e9ce0), 547f74a.** Picked a heartbeat over a larger stated age. No bound on a stage's runtime exists: `--max-budget-usd` caps spend, not time, so no fixed age can be shown to cover "the longest single wait the skill permits". Step 3 now carries a fenced `beat` loop that rewrites `.active/held-by` every 60 s, backgrounded in the same Bash call as the dispatch and killed after it. The loop checks `kill -0 "$$"`, so it stops if the dispatching shell dies and a dead supervisor's marker still ages. That is a check within one call, not a recorded pid, so Step 1's pid-cannot-serve clause still stands. Step 1 says the marker stays fresh *however long a stage runs*. The heartbeat block deliberately contains no `claude -p` literal, because `sprint.test.sh`'s per-dispatch flag guards select blocks by that text. **Snippet run under `sh`** with `sleep 1` and a 3 s stand-in stage: held-by was rewritten at t1 and t3, and the loop was gone after `kill`. **Guards** (`tests/sprint.test.sh`, *0153 AC2*, replacing the containment check) assert on Step 3's code block: a held-by write, the write inside a `while` loop, `sleep N` with 5·N ≤ `lock_stale_seconds` read from config.yml, background start → dispatch → kill order, `kill -0 "$$"`, and the Step 1 clause. **Mutations, all run against committed 547f74a, restored by path, then a 236/0 control run:** M4 (heartbeat block replaced by a sentence naming `.active/`) → 5 FAIL; M-once (single write, no loop) → 3 FAIL; M-orphan (`while :`) → 1 FAIL; M-slow (`sleep 600`) → 1 FAIL.
+- Item file written through Bash: the Edit tool refused 0152's item as a sensitive file, so it was not retried here.
