@@ -3,7 +3,7 @@ id: "0153"
 title: Give the sprint supervisor marker a liveness signal that outlives one tool call
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -15,9 +15,11 @@ relates: ["0121"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "11ef"
+claimed_at: 2026-09-13T22:27:30Z
 touches:
+  - skills/sprint/SKILL.md
+  - tests/sprint.test.sh
 ---
 
 ## Problem
