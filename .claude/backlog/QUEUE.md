@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0152 | Price and cap a sprint's retro and queue tail | develop | ready |  |
+| 0152 | Price and cap a sprint's retro and queue tail | develop | in-progress |  |
 | 0153 | Give the sprint supervisor marker a liveness signal that outlives one tool call | develop | ready |  |
 | 0154 | Let sprint park its own tooling findings, and propose the gate below a design row | develop | ready |  |
 | 0158 | Make --drive select a gate by rank, and let a join decide only batching | develop | ready |  |
