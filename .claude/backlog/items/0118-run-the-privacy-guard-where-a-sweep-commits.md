@@ -79,3 +79,4 @@ pattern at all.
 - 2026-09-09 (retro) — filed from the remaining half of the `FINDINGS.md` entry that recorded the
   landed fix at `2a69aa9`. The landed half is dropped from the buffer; this is what was left
   needing a row.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Another commit site: a QA-evidence table quoting a guard's failure message verbatim published a home-directory path in `items/0052-…md:294` (`Close 0052`), reddening `measurement.test.sh` and the fail-fast release gate. Since redacted and green, but `verify` Step 7's evidence write is the ordinary route and runs no privacy check before its commit.

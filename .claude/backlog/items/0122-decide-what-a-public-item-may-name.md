@@ -81,3 +81,4 @@ pattern.
 
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-08 and deferred once by this retro
   before being filed properly. The item list above was current at the park date; re-read the tree.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Neighbouring case: a fixture name spelled in an item's reproduction block becomes tracked content, so the privacy guard's clean-tree case matched the ticket describing it (0148). Rule if it recurs: a name-shaped fixture is assembled in the test and never spelled in the item.

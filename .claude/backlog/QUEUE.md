@@ -23,6 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
+| 0151 | Make sprint's stage dispatch accept its own outcome schema | develop | ready |  |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | develop | ready |  |
 | 0041 | Write release notes for what a work session delivered | develop | ready | 0128 |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
@@ -88,6 +89,12 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0125 | Pin the citation enumeration to its decision record so widening one cannot leave the other stale | develop | ready |  |
 | 0137 | Decide whether two develop sessions may run at once, and in what isolation | design | ready | 0128 |
 | 0149 | Audit sprint efficiency — suite-check dedup, per-agent overhead, and model tiering | design | ready | 0128 |
+| 0155 | Make claim and next agree on what blocks a take | develop | ready |  |
+| 0156 | Let handoff record a blocker without leaving drift that stops a driver | develop | ready |  |
+| 0152 | Price and cap a sprint's retro and queue tail | develop | ready |  |
+| 0157 | Make release verify compare the install against the released commit | develop | ready |  |
+| 0153 | Give the sprint supervisor marker a liveness signal that outlives one tool call | develop | ready |  |
+| 0154 | Let sprint park its own tooling findings, and propose the gate below a design row | develop | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in

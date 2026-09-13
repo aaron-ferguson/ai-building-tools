@@ -89,3 +89,4 @@ file.
 - 2026-09-07 — Filed by `retro`. The finding's own framing is the reason this is a guard and not a
   note: the rule was in force, findable, and a principle, and a reviewer still had to be the one to
   catch it.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** `CONVENTIONS_CORE.md`'s *use types* is a principle, and all four `tools/*.sh` (`sprint-ledger`, `harvest-usage`, `classify-turns`, `cost-by-category`) are `sh` wrapping an untyped inline `python3` heredoc. 0135's verify rejected calling it a preference and declined retyping one tool. Either the set is owed type hints or the conventions repo says this shape is outside the principle — one decision for all four (develop 0135).

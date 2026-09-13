@@ -80,3 +80,4 @@ Renumbering anything in `0081`. Whether an FR list can express a removal (`0062`
 
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-08 and deferred once by this retro
   before being filed properly.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Concrete instance: 0147 dropped AC5 and kept AC6's number, reasoning from the id-withdrawal rule, so its evidence and notes still resolve. `close` ticks by line form, so a gap is harmless — the rule this ticket writes should say keep the gap.

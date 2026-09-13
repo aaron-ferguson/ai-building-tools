@@ -74,3 +74,4 @@ Sweeping other guards for the same shape — that is `0089`. Changing what `hand
 
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-08. The collision was found while
   verifying an unrelated ticket, which is why the entry records the exact failing read-back string.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Same contract, other failure: `tests/cross-cutting-change.test.sh:190` indents its tally (`printf '\n  %s passed, %s failed\n'`), so a batch grep on `^[0-9]+ passed` reports the one green file as the no-tally shape `verify` Step 3 treats as red (verify 0142). The tally line is a machine interface and nothing asserts its format.

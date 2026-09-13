@@ -209,3 +209,4 @@ ones already specified.
     left out of `QUEUE.md` — has never been ranked at all, so re-specifying it needs Step 3's ranking
     walk to run for the first time, not be skipped. Surfaced while specifying `0138`; any lightweight
     capture front door produces exactly this never-ranked case on promotion.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** A fourth operation practised and unwritten: withdrawing a duplicate design question. 0060 and 0080 asked the same question with neither in `relates:`, `./next design` offered the narrower one, and three sessions wrote that a queue pass should withdraw 0080; `design` finally did, which its Step 4 does not name. A duplicate-question check at capture for rows routed to `design`.

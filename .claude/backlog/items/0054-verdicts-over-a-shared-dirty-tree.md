@@ -188,3 +188,4 @@ because the verifier happened to re-run the suite at the end.
   whose `cd` and `git checkout -- <path>` were confined to its own worktree. So Step 7 either names
   the revert/worktree-migration case and says the discriminator is your own log rather than
   `git status`, or it stops promising a fresh read distinguishes them.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Three more cases from the buffer: `develop` Step 5's `pgrep -f <runner>` matches its own command line and always reports a live run (develop 2026-09-10); this repo has no runner process to name at all, only `sh` over a changing file (develop 0135); and a BACKGROUNDED mutation sweep issues `git checkout` on its own schedule against files the foreground is still editing, which destroyed an uncommitted refactor of `skills/queue/templates/next` — a sweep that is asynchronous must run in a worktree.

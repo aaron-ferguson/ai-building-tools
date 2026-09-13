@@ -178,3 +178,4 @@ file second** — the claim is two seconds and the item file is the expensive re
 - `skills/develop/SKILL.md` carries a recorded size justification already (0035). AC9 is written to
   accept an updated one rather than to force a relocation, because relocation is the operation the
   size gate itself says rarely pays.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Two more develop cases: the probe Step 2 prescribes for an external tool's interface is also what separates a refusal from a measurement (0135: missing dir exits 2, empty dir exits 0 with 0.00); and the hand-back-to-design branch says release the claim, but the checks reaching it run before any claim exists and `./handoff` requires a token (0134) — say to claim first, or give handoff an unclaimed path. Also: re-entry after a send-back should sweep the enclosing function for siblings of the named defect.

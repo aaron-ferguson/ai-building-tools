@@ -71,3 +71,4 @@ Constraints the decision may not break: a backlog script sources nothing and tha
 - **2026-09-09 (retro)** — Filed from a park that enumerated all four duplications and framed the
   question as when a copy earns a guard rather than how to avoid copying. Routed to `design` because
   every part of it is a trigger to be chosen, not a defect to be fixed.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Evidence for this decision from four sessions: the suites copy `skills/queue/templates/<script>` into fixtures, so mutating `.claude/backlog/<script>` reddens nothing and reads as an unfalsifiable guard (verify 0146 next, develop 0133, verify 0144 close). A comment now sits at each `*_SRC=` line and `CLAUDE.md` scopes *installed copy is what runs* to skills; the equality guard between the copies is still this ticket's question (`backlog-scripts-installed` catches drift only once both are committed).

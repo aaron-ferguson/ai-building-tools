@@ -145,3 +145,4 @@ neither covers base selection for an *output-unchanged* comparison as distinct f
 - Which skill holds the rule and which cites it is FR4's constraint but not a design question — the
   comparison is run by both, and `develop` Step 5 already carries the neighbouring worktree
   guidance, so it is the natural home.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Three more gotchas: a scratchpad worktree has no sibling `../ai-building-conventions`, so `tests/citations.test.sh` fails environmentally until one `ln -s` is made (verify 0052); piping `config.yml`'s fail-fast `unit` line into `tail` reports tail's exit code and discards the verdict (verify 0052); and the file-by-file run exceeds the 120s tool timeout, whose recovery (background plus sentinel) `verify` names only in Step 3 (0132 FR4). Also: relocating a suite to point it at another copy fails because `ROOT` derives from `$0` (develop 2026-09-10).

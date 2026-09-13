@@ -12,7 +12,7 @@ parent: "0128"
 blocked_by: []
 relates: ["0050", "0054", "0059", "0134", "0136"]
 expects:
-  - skills/orchestrate/SKILL.md
+  - skills/sprint/SKILL.md
   - references/CONCURRENCY.md
   - .claude/backlog/next
 claimed_by:
@@ -95,3 +95,4 @@ Cannot be written until the design question is settled.
   design question can be *decided* on today's partition, and it is only an implementation of
   parallel dispatch that must not ship over a partition that can put two gates in one file. Blocking
   the decision on the fix would have stalled the cheaper half behind the more expensive one.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** `expects:` corrected from `skills/orchestrate/SKILL.md` to `skills/sprint/SKILL.md` by this pass (0129 renamed it). Also relevant to this decision: `--drive`'s `gate_from` still groups develop gates by parent-or-shared-file while `develop`'s prose (0059) makes takeability the batching condition — possibly right, as a conflict unit versus a cost unit, but nothing says so (2026-09-12 buffer entry, 0132 Out of scope).

@@ -72,3 +72,4 @@ claim in the repo and is not up for revision here; whatever is decided is record
   asked for the decision. Routed to `design` rather than `develop` because the park's own finding is
   that the behaviour is undecided, not that it is wrong — and `0106` reserved the question for
   whoever claims it, which no session has.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Related reading of empty `touches:` in the take loop, not only the scope report: `./next develop` printed `TAKE 0132` directly under a CLAIMED FILES line predicting `skills/orchestrate/SKILL.md` held by `0129` (empty touches), because the fourth takeability test compares against `touches:` alone. `CONCURRENCY.md` says an empty `touches:` means its files are held, so the take loop steers into the collision (develop 0107). Whatever this decides for the report should decide it for TAKE.
