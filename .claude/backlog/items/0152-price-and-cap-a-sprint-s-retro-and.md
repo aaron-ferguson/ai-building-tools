@@ -2,8 +2,8 @@
 id: "0152"
 title: Price and cap a sprint's retro and queue tail
 type: bug
-next:
-status: done
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -20,7 +20,6 @@ expects:
 claimed_by:
 claimed_at:
 touches:
-closed: 2026-09-13
 ---
 
 ## Problem
@@ -48,9 +47,9 @@ threshold. A fixed cap fires mid-sweep on exactly the runs that most need the ta
 
 ## Acceptance criteria
 
-- [x] AC1 — Given `estimate` with zero tickets and a tail, when it runs, then the USD figure is non-zero and cites its source. Red-making input: today's script with `--tickets 0 --develop-gates 0 --verify-sessions 0`.
-- [x] AC2 — Given `.claude/backlog/config.yml`, when the suite runs, then `stage_budget_usd` has a `queue` key. Red-making change: deleting it.
-- [x] AC3 — Given a findings count of 9× the threshold in a fixture, when the tail cap is computed, then it exceeds the base cap by the configured rule. Red-making change: returning the base cap.
+- [ ] AC1 — Given `estimate` with zero tickets and a tail, when it runs, then the USD figure is non-zero and cites its source. Red-making input: today's script with `--tickets 0 --develop-gates 0 --verify-sessions 0`.
+- [ ] AC2 — Given `.claude/backlog/config.yml`, when the suite runs, then `stage_budget_usd` has a `queue` key. Red-making change: deleting it.
+- [ ] AC3 — Given a findings count of 9× the threshold in a fixture, when the tail cap is computed, then it exceeds the base cap by the configured rule. Red-making change: returning the base cap.
 
 ## QA plan
 
@@ -76,3 +75,4 @@ threshold. A fixed cap fires mid-sweep on exactly the runs that most need the ta
 ## Notes & decisions
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** Two buffer entries from the same run, one row because both are the tail's cost model. The caps the user chose on that run are recorded above and not written into `config.yml` by this pass — setting a cap is the user's call.
+- **2026-09-13 — reopened for re-verification, by the user's request.** The verify session that closed this ticket (433a37e3) ran on claude-sonnet-4-6, returned `conventions_resolved: null` and a placeholder `session_id`, and ran per-ticket test files instead of `config.yml` `commands.unit`. Composed by hand under the backlog lock by a `queue` session, since no operation reopens a closed ticket (that path is 0161): row moved from `DONE.md` back to the top of `QUEUE.md`, `next: verify`, `status: ready`, `closed:` removed, and the acceptance criteria UNTICKED — a tick is evidence of the pass being distrusted, and `close` re-ticks what the new pass checks. The QA evidence above is kept as the record of that pass; the next `verify` writes its own beside it and does not rely on it.

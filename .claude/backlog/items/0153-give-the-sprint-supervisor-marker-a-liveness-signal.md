@@ -2,8 +2,8 @@
 id: "0153"
 title: Give the sprint supervisor marker a liveness signal that outlives one tool call
 type: bug
-next:
-status: done
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -18,7 +18,6 @@ expects:
 claimed_by:
 claimed_at:
 touches:
-closed: 2026-09-13
 ---
 
 ## Problem
@@ -42,8 +41,8 @@ following the rule would take over a live run (`.claude/backlog/runs/.active/hel
 
 ## Acceptance criteria
 
-- [x] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then Step 1's staleness rule does not key on a pid being alive. Red-making change: today's wording.
-- [x] AC2 — Given the rule, when the suite runs, then Step 3's dispatch refreshes the signal the staleness rule reads. Red-making change: a rule naming a signal nothing refreshes.
+- [ ] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then Step 1's staleness rule does not key on a pid being alive. Red-making change: today's wording.
+- [ ] AC2 — Given the rule, when the suite runs, then Step 3's dispatch refreshes the signal the staleness rule reads. Red-making change: a rule naming a signal nothing refreshes.
 
 ## QA plan
 
@@ -69,3 +68,4 @@ following the rule would take over a live run (`.claude/backlog/runs/.active/hel
 ## Notes & decisions
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** One buffer entry, filed because it would let two supervisors drive one backlog.
+- **2026-09-13 — reopened for re-verification, by the user's request.** The verify session that closed this ticket (433a37e3) ran on claude-sonnet-4-6, returned `conventions_resolved: null` and a placeholder `session_id`, and ran per-ticket test files instead of `config.yml` `commands.unit`. Composed by hand under the backlog lock by a `queue` session, since no operation reopens a closed ticket (that path is 0161): row moved from `DONE.md` back to the top of `QUEUE.md`, `next: verify`, `status: ready`, `closed:` removed, and the acceptance criteria UNTICKED — a tick is evidence of the pass being distrusted, and `close` re-ticks what the new pass checks. The QA evidence above is kept as the record of that pass; the next `verify` writes its own beside it and does not rely on it.

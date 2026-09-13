@@ -2,8 +2,8 @@
 id: "0154"
 title: Let sprint park its own tooling findings, and propose the gate below a design row
 type: feature
-next:
-status: done
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -21,7 +21,6 @@ expects:
 claimed_by:
 claimed_at:
 touches:
-closed: 2026-09-13
 ---
 
 ## Problem
@@ -47,8 +46,8 @@ holds the next develop gate's ids only by way of `./next develop`'s lead row (de
 
 ## Acceptance criteria
 
-- [x] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then a step instructs parking findings under the lock. Red-making change: today's skill.
-- [x] AC2 — Given a fixture with an unheld design row above a develop gate, when `./next --drive --propose` runs, then the output names the gate's ids. Red-making input: today's template.
+- [ ] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then a step instructs parking findings under the lock. Red-making change: today's skill.
+- [ ] AC2 — Given a fixture with an unheld design row above a develop gate, when `./next --drive --propose` runs, then the output names the gate's ids. Red-making input: today's template.
 
 ## QA plan
 
@@ -73,3 +72,4 @@ holds the next develop gate's ids only by way of `./next develop`'s lead row (de
 ## Notes & decisions
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** Two buffer entries about what a sprint run can see and keep.
+- **2026-09-13 — reopened for re-verification, by the user's request.** The verify session that closed this ticket (433a37e3) ran on claude-sonnet-4-6, returned `conventions_resolved: null` and a placeholder `session_id`, and ran per-ticket test files instead of `config.yml` `commands.unit`. Composed by hand under the backlog lock by a `queue` session, since no operation reopens a closed ticket (that path is 0161): row moved from `DONE.md` back to the top of `QUEUE.md`, `next: verify`, `status: ready`, `closed:` removed, and the acceptance criteria UNTICKED — a tick is evidence of the pass being distrusted, and `close` re-ticks what the new pass checks. The QA evidence above is kept as the record of that pass; the next `verify` writes its own beside it and does not rely on it.

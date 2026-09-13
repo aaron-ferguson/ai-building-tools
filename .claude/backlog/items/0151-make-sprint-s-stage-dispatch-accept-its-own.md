@@ -2,8 +2,8 @@
 id: "0151"
 title: Make sprint's stage dispatch accept its own outcome schema
 type: bug
-next:
-status: done
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -19,7 +19,6 @@ expects:
 claimed_by:
 claimed_at:
 touches:
-closed: 2026-09-13
 ---
 
 ## Problem
@@ -46,8 +45,8 @@ schema carries no `$schema`, so the probe cannot catch this.
 
 ## Acceptance criteria
 
-- [x] AC1 — Given `skills/sprint/outcome.schema.json`, when `tests/sprint.test.sh` runs, then an assertion that the file has no top-level `$schema` key passes. Red-making change: restoring line 2.
-- [x] AC2 — Given `skills/sprint/SKILL.md` Step 1, when the suite runs, then an assertion that the probe names `outcome.schema.json` passes. Red-making change: the probe's inline schema, as today.
+- [ ] AC1 — Given `skills/sprint/outcome.schema.json`, when `tests/sprint.test.sh` runs, then an assertion that the file has no top-level `$schema` key passes. Red-making change: restoring line 2.
+- [ ] AC2 — Given `skills/sprint/SKILL.md` Step 1, when the suite runs, then an assertion that the probe names `outcome.schema.json` passes. Red-making change: the probe's inline schema, as today.
 
 ## QA plan
 
@@ -79,3 +78,4 @@ schema carries no `$schema`, so the probe cannot catch this.
 ## Notes & decisions
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** Ranked first: it blocks every sprint dispatch.
+- **2026-09-13 — reopened for re-verification, by the user's request.** The verify session that closed this ticket (433a37e3) ran on claude-sonnet-4-6, returned `conventions_resolved: null` and a placeholder `session_id`, and ran per-ticket test files instead of `config.yml` `commands.unit`. Composed by hand under the backlog lock by a `queue` session, since no operation reopens a closed ticket (that path is 0161): row moved from `DONE.md` back to the top of `QUEUE.md`, `next: verify`, `status: ready`, `closed:` removed, and the acceptance criteria UNTICKED — a tick is evidence of the pass being distrusted, and `close` re-ticks what the new pass checks. The QA evidence above is kept as the record of that pass; the next `verify` writes its own beside it and does not rely on it.
