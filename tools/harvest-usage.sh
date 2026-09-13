@@ -57,14 +57,22 @@ exec python3 - "$DIR" "$@" <<'PY'
 import json, os, re, sys, glob
 
 # Per-million-token list rates, and the cache multipliers that apply to the input rate.
-# Source: the claude-api skill's model table and shared/prompt-caching.md, read 2026-08-24.
-# Cache read is 0.1x input; a 5-minute cache write is 1.25x input; a 1-hour cache write is 2x.
+# Source: the claude-api skill's model table (cached 2026-06-24) and shared/prompt-caching.md,
+# read 2026-09-13. Cache read is 0.1x input; a 5-minute cache write is 1.25x input; a 1-hour cache
+# write is 2x. Every model a stage session has actually run on belongs here: an unlisted one is an
+# UNPRICED turn, and run-20260913T034946Z recorded USD 0.00 for two real sessions on sonnet-4-6.
 RATES = {
-    "claude-opus-5":   (5.00, 25.00),
-    "claude-opus-4-8": (5.00, 25.00),
-    "claude-sonnet-5": (3.00, 15.00),
-    "claude-haiku-4-5": (1.00, 5.00),
+    "claude-opus-5":     (5.00, 25.00),
+    "claude-opus-4-8":   (5.00, 25.00),
+    "claude-opus-4-7":   (5.00, 25.00),
+    "claude-opus-4-6":   (5.00, 25.00),
+    "claude-sonnet-5":   (2.00, 10.00),
+    "claude-sonnet-4-6": (3.00, 15.00),
+    "claude-haiku-4-5":  (1.00, 5.00),
 }
+# Transcripts record some models with a snapshot date (claude-haiku-4-5-20251001) where the table
+# keys the bare id, so every such turn went unpriced until the suffix was stripped for the lookup.
+DATE_SUFFIX = re.compile(r'-\d{8}$')
 # The turns-per-cycle budget skills/sprint/SKILL.md states. Two files carry this number and
 # tests/sprint.test.sh reads BOTH and compares them, rather than restating it a third time.
 DEFAULT_TURN_BUDGET = 3
@@ -106,7 +114,7 @@ def text_of(content):
 
 def cost_of(usage, model):
     """(total, output-only) cost in dollars, or None on a model with no published rate."""
-    rates = RATES.get(model)
+    rates = RATES.get(model) or RATES.get(DATE_SUFFIX.sub("", model or ""))
     if rates is None:
         return None
     inp, outp = rates

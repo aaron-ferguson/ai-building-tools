@@ -186,6 +186,30 @@ case "$OUT2" in
   *) ok "no turn after the marker is left unmarked" ;;
 esac
 
+# run-20260913T034946Z harvested USD 0.00 for two stage sessions that did real work: they ran on
+# claude-sonnet-4-6, which had no rate, and Haiku turns arrive date-suffixed
+# (claude-haiku-4-5-20251001) where the table keyed the bare id. Rates from the claude-api skill's
+# model table, cached 2026-06-24: Sonnet 4.6 $3/$15, Sonnet 5 $2/$10, Haiku 4.5 $1/$5.
+#   sonnet-4-6 out 1,000,000 -> $15.00 | sonnet-5 out 1,000,000 -> $10.00
+#   haiku-4-5-20251001 out 1,000,000 -> $5.00                        total = $30.00
+echo "run-20260913T034946Z — every model a stage session actually ran on is priced"
+mkdir -p "$FIX/store3"
+{
+  printf '{"type":"user","timestamp":"2026-08-23T03:00:00.000Z","message":{"role":"user","content":"<command-name>/ai-building-tools:verify</command-name>"}}\n'
+  printf '{"type":"assistant","timestamp":"2026-08-23T03:00:01.000Z","message":{"id":"msg_fixture_s46","model":"claude-sonnet-4-6","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":%s}}\n' "$U2"
+  printf '{"type":"assistant","timestamp":"2026-08-23T03:00:02.000Z","message":{"id":"msg_fixture_s5","model":"claude-sonnet-5","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":%s}}\n' "$U2"
+  printf '{"type":"assistant","timestamp":"2026-08-23T03:00:03.000Z","message":{"id":"msg_fixture_h45","model":"claude-haiku-4-5-20251001","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":%s}}\n' "$U2"
+} > "$FIX/store3/cccccccc-0000-0000-0000-000000000000.jsonl"
+if [ -x "$HARVEST" ]; then OUT3="$("$HARVEST" "$FIX/store3" 2>&1 || true)"; else OUT3=""; fi
+case "$OUT3" in
+  *UNPRICED*) bad "run-20260913T034946Z — a turn on sonnet-4-6, sonnet-5 or a date-suffixed haiku id went unpriced: $(echo "$OUT3" | grep UNPRICED)" ;;
+  *) ok "no turn on sonnet-4-6, sonnet-5 or a date-suffixed haiku id is unpriced" ;;
+esac
+case "$OUT3" in
+  *"30.00"*) ok "priced at the published rates: 15.00 + 10.00 + 5.00 = 30.00" ;;
+  *) bad "run-20260913T034946Z — expected a total of 30.00 at the published rates; got: $(echo "$OUT3" | grep -E '^TOTAL' | tr -s ' ')" ;;
+esac
+
 echo "AC9 — the harvest emits no transcript content"
 case "$OUT" in
   *SENTINELPROSE*) bad "AC9/privacy — message text from the fixture reached the output" ;;
