@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | feature | verify | 2026-09-13 | [items/0134-dispatch-design-in-parallel-with-develop.md](items/0134-dispatch-design-in-parallel-with-develop.md) |
 | 0147 | Make claim name the declared paths that do not exist instead of reserving them | bug | unit | 2026-09-12 | [items/0147-name-the-declared-paths-that-do-not-exist.md](items/0147-name-the-declared-paths-that-do-not-exist.md) |
 | 0083 | Decide what a second checkout may do with the backlog | bug | unit | 2026-09-12 | [items/0083-decide-what-a-second-checkout-may-do.md](items/0083-decide-what-a-second-checkout-may-do.md) |
 | 0150 | Make design hold its row with claim from Step 1, and release it with handoff | bug | unit | 2026-09-12 | [items/0150-make-design-hold-its-row-with-claim.md](items/0150-make-design-hold-its-row-with-claim.md) |

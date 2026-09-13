@@ -2,8 +2,8 @@
 id: "0134"
 title: Dispatch a sprint's design sessions alongside develop instead of stopping for them
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: verify
 size: m
@@ -18,9 +18,10 @@ expects:
   - tools/sprint-ledger.sh          # widened by design 2026-09-12 — the DESIGN line (FR7, FR8)
   - tests/sprint-ledger.test.sh
   - .claude/backlog/LEDGER.md       # "How to read a block" gains the DESIGN line
-claimed_by: "203f"
-claimed_at: 2026-09-13T01:40:07Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-13
 ---
 
 ## Problem
@@ -82,43 +83,43 @@ scope a person already confirmed — the estimate they approved would no longer 
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a confirmed scope naming a `next: design` row and a develop gate, when the sprint
+- [x] AC1 — Given a confirmed scope naming a `next: design` row and a develop gate, when the sprint
       runs, then both sessions are running at once and the design row's outcome does not stop the
       run — including when that session ends by handing its row to `next: develop`. **Red if** the
       design row still returns exit 4 and halts, which is today's behaviour; or if the supervisor
       reports the finish as `--completed design:<id>`, which reaches `./next`'s `ESCALATE … which no
       routing rule covers` branch and stops the run by another door.
-- [ ] AC2 — Given a sprint whose gate has been crossed, when the tail runs, then no design session
+- [x] AC2 — Given a sprint whose gate has been crossed, when the tail runs, then no design session
       is running during `retro` or `queue`. **Red if** FR2 is written as guidance rather than
       enforced at dispatch.
-- [ ] AC3 — Given a `next: design` row outside the confirmed scope, when the sprint runs, then no
+- [x] AC3 — Given a `next: design` row outside the confirmed scope, when the sprint runs, then no
       design session is dispatched for it. **Red if** the sprint dispatches every takeable design
       row, which spends sessions on work it will not reach.
-- [ ] AC4 — Given a design session that sets its ticket to `next: develop` mid-sprint, when the
+- [x] AC4 — Given a design session that sets its ticket to `next: develop` mid-sprint, when the
       sprint continues, then that ticket is not added to the running gate and is named in the report
       as available for the next sprint. **Red if** it is absorbed — the confirmed estimate then
       describes a scope that no longer exists.
-- [ ] AC5 — Given a design session and a develop session running together, when both write to the
+- [x] AC5 — Given a design session and a develop session running together, when both write to the
       backlog, then each write is taken under the lock and both land, the writer that finds the lock
       busy retrying rather than giving up. **Red if** either writes unlocked; the failure is silent
       and shows up as a lost row rather than an error. The fixture must model the retry: `./claim`
       refuses a busy lock rather than waiting on it, so two claims at once red on the refusal alone.
-- [ ] AC6 — Given a run-log fixture with one design session overlapping a develop session and one
+- [x] AC6 — Given a run-log fixture with one design session overlapping a develop session and one
       that does not, when `record` runs over a fixture transcript, then the ledger block holds two
       `DESIGN` lines, one `concurrent` and one `sequential`, each with an observed and a predicted
       USD that carry their own source and stamp. **Red if** a design session produces no line —
       today's behaviour, since `record` emits only `GATE develop` and `RATIO verify`.
-- [ ] AC7 — Given a design `dispatch` event with no matching `outcome`, when `record` runs, then
+- [x] AC7 — Given a design `dispatch` event with no matching `outcome`, when `record` runs, then
       that session's line reads `not measured` for concurrency rather than guessing either value.
       **Red if** an unpaired window is classified — a killed session would then enter the
       comparison as a data point it never was.
-- [ ] AC8 — Given an in-scope `next: design` row that a dispatched design session has claimed, when
+- [x] AC8 — Given an in-scope `next: design` row that a dispatched design session has claimed, when
       the supervisor re-calls `--drive`, then it steps over that row and names the develop gate below
       it, and the supervisor dispatches no second design session for the same id. **Red if** the
       supervisor re-calls `--drive` before the claim lands and acts on the repeated exit 4 — FR5's
       failure. Observed 2026-09-12 in a scratch copy: a claimed design row prints
       `NOTE 0134 is in-progress — another session holds it; stepping over it`.
-- [ ] AC9 — Given a fixture backlog where an unscoped `next: design` row ranks above the confirmed
+- [x] AC9 — Given a fixture backlog where an unscoped `next: design` row ranks above the confirmed
       develop gate, when the sprint prints its proposal, then the proposal names that row as the run's
       stopping point. **Red if** the proposal reports the gate takeable and says nothing, which is the
       observed `4 develop gate(s) takeable` beside an escalation on `0110`.
@@ -271,3 +272,39 @@ scope a person already confirmed — the estimate they approved would no longer 
   **One gap is parked, not fixed.** `--propose` cannot describe the develop gate beneath an unheld
   design row, because the rank walk escalates first (`FINDINGS.md`, 2026-09-12 develop). `./next`
   was never in scope.
+- **2026-09-12 — verify (token `203f`): PASS.** Every AC reddened under a mutation at its own
+  altitude, then went green again once restored. Two limits are recorded rather than covered. AC5's
+  two-writer fixture is a premise, as the develop note says: only its prose clause is guarded. The
+  Guardrail NFR (supervisor spend per closed ticket) has no check of its own.
+
+## QA evidence
+
+Verified at `qa_level: verify` against commit `0930892`, using the repo copy. The installed 0.9.26
+`skills/sprint/SKILL.md` is different because the change is unreleased. `git status --porcelain`
+was empty at Step 2 and again after the control run, so nothing intersected the evidence set and
+the verdict is not advisory.
+
+Suite, one file at a time: all 31 `tests/*.test.sh` exit 0. Two of the tallies are
+`tests/sprint.test.sh` `217 passed, 0 failed, 0 skipped` and `tests/sprint-ledger.test.sh`
+`92 passed, 0 failed`.
+
+| AC / NFR | Mutation (restored by path afterwards) | Result |
+|---|---|---|
+| AC1 | `is a dispatch, not a halt.` changed to `is a halt.`; separately, `is never reported through --completed` negated | red: 216/1 each |
+| AC2 | Step 6 no longer names `design-windows`; separately, the check's outcome writes `open` where it wrote `closed` | red: 216/1, then 215/2 (`[open 0302]`) |
+| AC3 | `outside the confirmed scope is never dispatched` changed to `dispatched too` | red: 216/1 |
+| AC4 | `not added to the running gate` negated; separately, Step 9's `available for the next sprint` removed | red: 216/1 each |
+| AC5 | `a stage finding it busy retries` changed to `stops` | red: 216/1. The two-writer fixture is a premise that cannot redden from this ticket's files |
+| AC6 | `if design:` changed to `if False:`; overlap changed to containment; predicted source blanked | red: 74/18 (no DESIGN lines); 91/1 (`0205 … sequential`); 88/4 |
+| AC7 | unpaired window returns `sequential`; the unanswered-develop `unknown` branch removed | red: 90/2 (`0204 … sequential`); 91/1 (`0302 … sequential`) |
+| AC8 | `Wait until that row reads held` changed to `Re-call immediately`; separately, `never a second design session` negated | red: 216/1 each |
+| AC9 | `name it as where the run will stop` removed | red: 216/1 |
+| Control | all mutations restored, tree clean | 217 passed, 0 failed; 92 passed, 0 failed |
+| NFR Performance | DESIGN line instrumentation shipped, guarded by AC6/AC7 above; the verdict itself awaits ≥5 concurrent sessions, per the row | holds |
+| NFR Guardrail | relies on Step 8's existing per-ticket figure; no check reddens if it rises | **unguarded** |
+| NFR Documentation | FR6 and `0137` cases in `tests/sprint.test.sh` | guarded |
+| Privacy (always-on) | ledger sentinel and character-set cases cover the DESIGN line | guarded |
+
+Evidence set: `skills/sprint/SKILL.md`, `tools/sprint-ledger.sh`, `tests/sprint.test.sh`,
+`tests/sprint-ledger.test.sh`, `.claude/backlog/LEDGER.md`, `skills/queue/templates/{claim,next,handoff}`,
+`MEASUREMENT.md`.
