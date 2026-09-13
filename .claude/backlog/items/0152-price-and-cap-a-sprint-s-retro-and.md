@@ -2,8 +2,8 @@
 id: "0152"
 title: Price and cap a sprint's retro and queue tail
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -17,13 +17,9 @@ expects:
   - tests/sprint-ledger.test.sh
   - .claude/backlog/config.yml
   - skills/sprint/SKILL.md
-claimed_by: "51e4"
-claimed_at: 2026-09-13T22:24:24Z
+claimed_by:
+claimed_at:
 touches:
-  - tools/sprint-ledger.sh
-  - tests/sprint-ledger.test.sh
-  - .claude/backlog/config.yml
-  - skills/sprint/SKILL.md
 ---
 
 ## Problem
@@ -100,3 +96,7 @@ Evidence set: `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh`, `.claude/
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** Two buffer entries from the same run, one row because both are the tail's cost model. The caps the user chose on that run are recorded above and not written into `config.yml` by this pass — setting a cap is the user's call.
 - **2026-09-13 — reopened for re-verification, by the user's request.** The verify session that closed this ticket (433a37e3) ran on claude-sonnet-4-6, returned `conventions_resolved: null` and a placeholder `session_id`, and ran per-ticket test files instead of `config.yml` `commands.unit`. Composed by hand under the backlog lock by a `queue` session, since no operation reopens a closed ticket (that path is 0161): row moved from `DONE.md` back to the top of `QUEUE.md`, `next: verify`, `status: ready`, `closed:` removed, and the acceptance criteria UNTICKED — a tick is evidence of the pass being distrusted, and `close` re-ticks what the new pass checks. The QA evidence above is kept as the record of that pass; the next `verify` writes its own beside it and does not rely on it.
 - **2026-09-13 — re-verification (session 33d2edfe) FAILED; sent back to `develop`.** FR1 is unmet on the repo's real data: with LEDGER.md holding token history, `estimate --tickets 0 --develop-gates 0 --verify-sessions 0 --retro --queue` prints `ESTIMATE  tokens 0 source: LEDGER.md 1 recorded sprint(s) over 4 ticket(s)`, and with tickets the tokens figure is the ledger's per-ticket mean × tickets with the tail sessions dropped. The constraint: on any run that dispatches `retro` or `queue`, **both** the tokens and USD figures include those sessions, whatever LEDGER.md holds, and each names the source it was actually derived from (FR1, NFR Observability). Separately, AC1's guard stays green when queue pricing alone is deleted (M1a, 95/0); a guard must red on that. AC2 and AC3 were cleared and redden under mutation — no work owed there.
+- **2026-09-13 — develop re-entry (session b03e9ce0), b45b626.** `estimate` now prices the tail sessions from MEASUREMENT.md on top of whichever source prices the tickets: no history → one MEASUREMENT.md figure as before; history and no tail → the ledger figure as before; history and zero tickets → the tail alone citing MEASUREMENT.md `for retro, queue`; history and tickets → `LEDGER.md … for N ticket(s) + MEASUREMENT.md … for retro, queue`. On the real ledger, `--tickets 0 … --retro --queue` now prints tokens 6745030 citing MEASUREMENT.md, not `tokens 0 source: LEDGER.md`. New guards in `tests/sprint-ledger.test.sh` under *0152 re-verification*. Each compares one estimate run against another rather than pinning a MEASUREMENT.md figure, so re-recording the measurement cannot red them. **Mutations, all run, against committed b45b626, each restored by path, then a 106/0 control run:** M1a (queue append replaced with `pass`) → `FAIL 0152 FR1 -- --queue added nothing to usd` and `… tokens`, 104/2. The first attempt deleted the line, which left an empty `if`, and every guard red on the SyntaxError; it proved nothing and was re-run. M-hist (restore the old ledger-replaces-everything branch) → 8 FAIL, 98/8. M-src (composite source prints only the ledger source) → 2 `FAIL 0152 NFR`, 104/2.
+- **Possible double count, not decided here:** a recorded sprint's tokens and usd actuals are summed over *all* of that run's session ids, so where a recorded sprint dispatched a tail, the per-ticket mean already carries some tail cost and adding the tail again counts it twice. The re-verification's constraint requires the tail to be included whatever LEDGER.md holds, so this was built as specified. Separating tail cost out of the recorded actuals would be a new row.
+- **The verify probe's `tail-cap --threshold 0` traceback is fixed in the same commit:** the command now dies with `--threshold must be a positive findings_threshold`, and a guard asserts a non-zero exit, no traceback, and a message naming the threshold (red before the fix, run).
+- Item file written through Bash: the Edit tool refused it as a sensitive file.
