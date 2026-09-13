@@ -39,7 +39,9 @@
 # Usage:
 #   tools/sprint-ledger.sh estimate --ledger <LEDGER.md> --measurement <MEASUREMENT.md>
 #                                   --config <config.yml> --tickets N
-#                                   [--develop-gates N] [--verify-sessions N] [--retro]
+#                                   [--develop-gates N] [--verify-sessions N] [--retro] [--queue]
+#
+#   tools/sprint-ledger.sh tail-cap  --findings N --threshold N --base-cap X
 #
 #   tools/sprint-ledger.sh record   --ledger <LEDGER.md> --run <run-log.jsonl>
 #                                   --transcripts <dir> --measurement <MEASUREMENT.md>
@@ -226,6 +228,8 @@ def estimate(opts):
             ("verify", verify_sessions, tickets - verify_sessions)]
     if opts["retro"]:
         plan.append(("retro", 1, 0))
+    if opts["queue"]:
+        plan.append(("queue", 1, 0))
 
     for figure in ("tokens", "usd"):
         if figure in hist:
@@ -528,7 +532,7 @@ def record(opts):
 def parse(argv):
     opts = {"ledger": None, "measurement": "MEASUREMENT.md", "config": None, "run": None,
             "transcripts": None, "tickets": 0, "develop_gates": 1, "verify_sessions": 1,
-            "retro": False, "estimate_tickets": None, "estimate_wall": NO_PRIOR,
+            "retro": False, "queue": False, "estimate_tickets": None, "estimate_wall": NO_PRIOR,
             "estimate_tokens": None, "estimate_usd": None, "estimate_source": None}
     ints = {"--tickets": "tickets", "--develop-gates": "develop_gates",
             "--verify-sessions": "verify_sessions", "--estimate-tickets": "estimate_tickets",
@@ -540,6 +544,8 @@ def parse(argv):
         a = argv[i]
         if a == "--retro":
             opts["retro"] = True
+        elif a == "--queue":
+            opts["queue"] = True
         elif a in ints or a in strs or a in ("--estimate-usd", "--estimate-wall"):
             i += 1
             if i >= len(argv):
@@ -560,6 +566,30 @@ def parse(argv):
 
 
 mode = sys.argv[2]
+
+# tail-cap is ledger-free: it reads only config.yml's base cap and scales it.
+if mode == "tail-cap":
+    import math
+    tc_args = sys.argv[3:]
+    tc_opts = {"findings": None, "threshold": None, "base_cap": None}
+    i = 0
+    while i < len(tc_args):
+        if tc_args[i] == "--findings":
+            i += 1; tc_opts["findings"] = int(tc_args[i])
+        elif tc_args[i] == "--threshold":
+            i += 1; tc_opts["threshold"] = int(tc_args[i])
+        elif tc_args[i] == "--base-cap":
+            i += 1; tc_opts["base_cap"] = float(tc_args[i])
+        else:
+            die("tail-cap: unknown argument: %s" % tc_args[i])
+        i += 1
+    for k in tc_opts:
+        if tc_opts[k] is None:
+            die("tail-cap needs --%s" % k.replace("_", "-"))
+    multiplier = max(1, math.ceil(tc_opts["findings"] / tc_opts["threshold"]))
+    print("%.2f" % (tc_opts["base_cap"] * multiplier))
+    sys.exit(0)
+
 opts = parse(sys.argv[3:])
 if not opts["ledger"]:
     die("--ledger is required")
@@ -586,5 +616,5 @@ elif mode == "record":
                 "would forge one" % flag)
     print(record(opts))
 else:
-    die("unknown mode: %s (expected estimate or record)" % mode)
+    die("unknown mode: %s (expected estimate, record, or tail-cap)" % mode)
 PY

@@ -76,9 +76,21 @@ stage_budget_usd:
   develop: 6.05          # 4.03 x 1.5
   verify: 5.45           # 3.63 x 1.5
   retro: 3.75            # 2.51 x 1.5
+  queue: 6.36            # 4.24 x 1.5
   per_extra_ticket:
     develop: 4.03
     verify: 3.63
+#
+# TAIL SCALING. The base caps above are calibrated for a typical buffer. A buffer that has grown
+# far past the threshold will hold more entries per sweep, and a fixed cap fires mid-sweep on
+# exactly the runs that most need the tail. Scale the tail cap by:
+#
+#   multiplier = max(1, ceil(findings_count / findings_threshold))
+#   cap = base_cap * multiplier
+#
+# Computed at dispatch time from ./next --findings and this file.
+# tools/sprint-ledger.sh tail-cap --findings N --threshold findings_threshold --base-cap base
+# returns the scaled figure.
 
 # Where work in this project is tracked.
 #   local — this backlog is the source of truth. May live in a public repo.

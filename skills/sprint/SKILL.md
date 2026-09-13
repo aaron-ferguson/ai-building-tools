@@ -446,6 +446,22 @@ is what makes that true in the unplanned case too. **This covers the whole tail*
 alone: re-reading the count between the retro and the queue sweep asks the same question a second
 time and gets the retro's own parkings for an answer.
 
+**Scale the tail caps before dispatch.** `config.yml`'s `stage_budget_usd` carries base caps for
+`retro` and `queue`, sized for a typical buffer. A buffer that has grown far past `findings_threshold`
+holds more entries per sweep and needs a larger cap — a fixed cap firing mid-sweep is worse than no
+cap. Compute the cap from the rule in `config.yml`'s `TAIL SCALING` comment:
+
+```sh
+findings="$(./next --findings | head -1)"          # current buffer count
+threshold="$(sed -n 's/^findings_threshold: *//p' .claude/backlog/config.yml)"
+retro_base="$(grep -A30 'stage_budget_usd:' .claude/backlog/config.yml | grep -E '^\s+retro:' | sed 's/.*retro: *//' | cut -d'#' -f1 | tr -d ' \t')"
+queue_base="$(grep -A30 'stage_budget_usd:' .claude/backlog/config.yml | grep -E '^\s+queue:' | sed 's/.*queue: *//' | cut -d'#' -f1 | tr -d ' \t')"
+retro_cap="$(tools/sprint-ledger.sh tail-cap --findings "$findings" --threshold "$threshold" --base-cap "$retro_base")"
+queue_cap="$(tools/sprint-ledger.sh tail-cap --findings "$findings" --threshold "$threshold" --base-cap "$queue_base")"
+```
+
+Pass `$retro_cap` and `$queue_cap` as `--max-budget-usd` when dispatching each tail stage.
+
 **Score the estimate before the run ends, in the same turn as the ending event.** One call:
 
 ```sh

@@ -806,5 +806,53 @@ else
   bad "0134 FR7 -- LEDGER.md's How to read a block does not describe the DESIGN line"
 fi
 
+# --- 0152 AC1 -- estimate with --queue returns non-zero USD citing MEASUREMENT.md ---------------
+echo "0152 AC1 -- estimate with --queue --retro --tickets 0 returns non-zero USD with source"
+TAIL_EST="$("$TOOL" estimate --ledger "$EMPTY" --measurement "$MEAS" --config "$CONF" \
+  --tickets 0 --develop-gates 0 --verify-sessions 0 --retro --queue 2>&1 || true)"
+TAIL_USD="$(printf '%s' "$TAIL_EST" | grep '^ESTIMATE  usd' || true)"
+case "$TAIL_USD" in
+  "")
+    bad "0152 AC1 -- estimate produced no usd line for a tail-only run; got: $(printf '%s' "$TAIL_EST" | tr '\n' ' ' | cut -c1-200)"
+    ;;
+  *" 0.00 "*)
+    bad "0152 AC1 -- tail estimate returned USD 0.00; --queue flag is missing or queue has no MEASUREMENT.md row: $TAIL_USD"
+    ;;
+  *MEASUREMENT*|*LEDGER*)
+    ok "tail-only estimate is non-zero and cites its source"
+    ;;
+  *)
+    bad "0152 AC1 -- tail estimate does not cite its source: $TAIL_USD"
+    ;;
+esac
+
+# --- 0152 AC2 -- config.yml stage_budget_usd has a queue key -----------------------------------
+echo "0152 AC2 -- config.yml stage_budget_usd has a queue key"
+if grep -qE '^\s+queue:' "$CONF"; then
+  ok "config.yml stage_budget_usd has a queue cap"
+else
+  bad "0152 AC2 -- config.yml has no queue cap under stage_budget_usd; add queue: 6.36  # 4.24 x 1.5"
+fi
+
+# --- 0152 AC3 -- tail-cap scales above base cap at 9x threshold --------------------------------
+echo "0152 AC3 -- tail-cap with findings=9x threshold exceeds base cap"
+THRESHOLD="$(sed -n 's/^findings_threshold: *//p' "$CONF")"
+if [ -z "$THRESHOLD" ]; then
+  bad "0152 AC3 -- could not read findings_threshold from config.yml"
+else
+  FINDINGS_9X="$((THRESHOLD * 9))"
+  BASE_CAP="$(grep -A30 'stage_budget_usd:' "$CONF" | grep -E '^\s+queue:' | sed 's/.*queue: *//' | cut -d'#' -f1 | tr -d ' \t')"
+  if [ -z "$BASE_CAP" ]; then
+    bad "0152 AC3 -- no queue cap in config.yml to compare against"
+  else
+    SCALED="$("$TOOL" tail-cap --findings "$FINDINGS_9X" --threshold "$THRESHOLD" --base-cap "$BASE_CAP" 2>&1 || true)"
+    if python3 -c "import sys; f,b=float('$SCALED'),float('$BASE_CAP'); sys.exit(0 if f>b else 1)" 2>/dev/null; then
+      ok "at 9x threshold (findings=$FINDINGS_9X), scaled cap ($SCALED) exceeds base cap ($BASE_CAP)"
+    else
+      bad "0152 AC3 -- scaled cap does not exceed base cap at 9x threshold: scaled=${SCALED:-empty} base=$BASE_CAP"
+    fi
+  fi
+fi
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
