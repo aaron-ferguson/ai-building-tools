@@ -2086,11 +2086,49 @@ else
   bad "0153 NFR — Step 1 has no clause explaining why a pid cannot serve; add it so the rule is not restored as tidying"
 fi
 
-echo "0153 AC2 — Step 3 refreshes the liveness signal named by the staleness rule"
-if section "$SKILL" "Step 3" | grep -qF '.active/'; then
-  ok "Step 3 refreshes the .active/ signal"
+# Re-verification 2026-09-13 found the first form of this guard satisfied by Step 3 merely NAMING
+# `.active/` (mutation M4), and the rule itself refreshing only BEFORE the call: a stage waited on
+# for longer than lock_stale_seconds (a queue stage took 860 s against 900) handed a live run to a
+# second supervisor. So the claim is asserted on the code block that does the refreshing: a loop that
+# writes held-by, running for the whole dispatch, at an interval well inside the stale age.
+echo "0153 AC2 — Step 3 refreshes the liveness signal throughout the wait on a stage"
+HEARTBEAT="$(awk '
+  index($0, "## Step 3") == 1 { inside = 1; next }
+  /^## / { inside = 0 }
+  inside && /^```/ { if (infence) { if (body ~ /\.active\/held-by/) printf "%s", body; body = "" } infence = !infence; next }
+  inside && infence { body = body $0 "\n" }
+' "$SKILL" 2>/dev/null)"
+if printf '%s' "$HEARTBEAT" | grep -qE '>[[:space:]]*\.claude/backlog/runs/\.active/held-by'; then
+  ok "a Step 3 code block writes .active/held-by"
 else
-  bad "0153 AC2 — Step 3 does not refresh the .active/ liveness signal the staleness rule reads"
+  bad "0153 AC2 — no Step 3 code block writes .active/held-by; naming the marker in prose refreshes nothing"
+fi
+if printf '%s' "$HEARTBEAT" | awk '/while /{loop=1} loop && /held-by/{w=1} END{exit !w}'; then
+  ok "and the write is inside a loop, so it repeats while the stage runs"
+else
+  bad "0153 FR1 — the held-by write is not inside a loop; a refresh made once before the call goes stale during a long stage"
+fi
+BEAT_SLEEP="$(printf '%s' "$HEARTBEAT" | sed -n 's/.*sleep \([0-9][0-9]*\).*/\1/p' | head -1)"
+STALE_AGE="$(awk '/^lock_stale_seconds:/ { print $2 }' "$ROOT/.claude/backlog/config.yml")"
+if [ -n "$BEAT_SLEEP" ] && [ -n "$STALE_AGE" ] && [ $((BEAT_SLEEP * 5)) -le "$STALE_AGE" ]; then
+  ok "the heartbeat interval (${BEAT_SLEEP}s) fits at least five times inside lock_stale_seconds (${STALE_AGE}s)"
+else
+  bad "0153 FR1 — heartbeat interval '${BEAT_SLEEP:-none}' does not fit five times inside lock_stale_seconds '${STALE_AGE:-none}'"
+fi
+if printf '%s' "$HEARTBEAT" | awk '/&[[:space:]]*[A-Za-z_]*=?\$!|& *$/{s=NR} /dispatch/{if (s) d=NR} /kill /{if (d) k=1} END{exit !k}'; then
+  ok "the loop is started in the background before the dispatch and stopped after it"
+else
+  bad "0153 FR1 — the heartbeat is not backgrounded before the dispatch and killed after it, so it does not span the wait"
+fi
+if printf '%s' "$HEARTBEAT" | grep -qF 'kill -0 "$$"'; then
+  ok "and it stops with the dispatching shell, so a dead supervisor's marker still ages"
+else
+  bad "0153 FR1 — the heartbeat does not stop when its shell dies; an orphaned loop would keep a dead run looking alive"
+fi
+if says "$SKILL" "Step 1" 'however long a stage runs'; then
+  ok "Step 1 says the signal stays fresh however long a stage runs"
+else
+  bad "0153 FR1 — Step 1 does not say the signal stays fresh however long a stage runs"
 fi
 
 # run-20260913T034946Z: the dispatch named no model, so every stage ran on whatever the CLI

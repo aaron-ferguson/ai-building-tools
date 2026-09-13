@@ -95,8 +95,9 @@ marker have to be distinguishable, and one line is what distinguishes them.
 Busy → read `.active/held-by` for the run id and the UTC timestamp, and say who holds it
 rather than double-driving the queue. **A pid cannot serve as a liveness signal here: each Bash
 tool call runs in a fresh shell, so the recorded pid is always dead the moment it is written.**
-Instead, a live supervisor keeps `.active/` fresh by rewriting the timestamp on every dispatch
-(Step 3). A marker older than `lock_stale_seconds` (from `config.yml`) is stale — say that it is,
+Instead, a live supervisor keeps `.active/` fresh with a heartbeat that rewrites the timestamp every
+60 s for the whole of each dispatch (Step 3), so it stays fresh however long a stage runs. A
+marker older than `lock_stale_seconds` (from `config.yml`) is stale — say that it is,
 name the run id and age, and take it over. Write your own `held-by` the moment you take it, and
 remove the directory when the run ends.
 
@@ -328,10 +329,26 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
   JSON** — so a perfectly good stage reads as one that failed the schema, and Step 4 escalates on
   it. Redirect stdin on every dispatch, the probe included.
 
-**Refresh `.active/` before each dispatch.** A live supervisor rewrites the timestamp in
-`.active/held-by` immediately before the `claude -p` call; that is what Step 1's staleness check
-reads. Without this, a session that has dispatched even one stage looks stale to any supervisor
-arriving during the wait, and the pid-cannot-serve rule means there is nothing else to check.
+**Keep `.active/` fresh for the whole wait, not only before it.** Step 1's staleness check reads the
+timestamp in `.active/held-by` against `lock_stale_seconds` (900 s), and `config.yml` itself puts that
+age *under* a stage's runtime — a `queue` stage took 860 s — so one write before the call hands a
+live run to a second supervisor. Run the dispatch inside the same Bash call as this heartbeat:
+
+```sh
+beat() {
+  while kill -0 "$$" 2>/dev/null; do
+    printf '%s %s\n' "$RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .claude/backlog/runs/.active/held-by
+    sleep 60
+  done
+}
+beat & BEAT=$!
+# ... the stage dispatch above, in this same Bash call ...
+kill "$BEAT"
+```
+
+Sixty seconds fits fifteen times inside the stale age, so no single wait the skill permits reads as
+stale. `kill -0 "$$"` is a check inside one call, not a recorded pid: if the dispatching shell dies
+the loop stops, and a dead supervisor's marker ages out as it should.
 
 **`--bare` is disqualifying and appears nowhere.** It skips CLAUDE.md auto-discovery, which means
 **no conventions** — and a stage that builds without them passes every test in `tests/`, because
