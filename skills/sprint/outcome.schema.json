@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Stage outcome",
   "description": "What one stage session returns to a supervisor. Supplied by the invoker as `claude -p --json-schema \"$(cat this file)\"`, so no stage skill describes this shape and none should. An envelope over an ARRAY because a develop or verify gate handles several tickets in one session: singular, it reports one verdict and silently drops the rest.",
   "type": "object",

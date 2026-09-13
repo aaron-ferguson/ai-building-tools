@@ -61,15 +61,21 @@ All three happen before the first stage process, and the first two can end the r
 **1. Probe the CLI, by actually dispatching.** `command -v claude` is not the check: an
 unauthenticated CLI and a nested session that may not spawn one both look like a present binary,
 and whether a nested dispatch works at all is the premise everything below rests on. Run a trivial
-one:
+one — using the real schema file, so a schema the CLI rejects stops the run here rather than at
+the first real dispatch. The schema carries no top-level `$schema` key: the CLI rejects that key
+with *"no schema with key or ref https://json-schema.org/draft/2020-12/schema"* and every dispatch
+fails, so the key must stay absent.
 
 ```sh
-claude -p --json-schema '{"type":"object","properties":{"probe":{"type":"string"}},"required":["probe"],"additionalProperties":false}' \
-  --max-budget-usd 0.25 'Return the object with probe set to the string ok. Nothing else.' \
+# step-1-probe
+claude -p \
+  --json-schema "$(cat <plugin root>/skills/sprint/outcome.schema.json)" \
+  --max-budget-usd 0.25 \
+  'Return a minimal valid stage outcome: stage "retro", session_id "aaaaaaaa-0000-4000-8000-000000000001", empty arrays for commits and tickets, 0 for cost_usd and findings_parked, null for conventions_resolved and escalation.' \
   < /dev/null
 ```
 
-The fixed object comes back, or this host cannot drive a loop. **Where it cannot, say so plainly
+A schema-valid outcome comes back, or this host cannot drive a loop. **Where it cannot, say so plainly
 and fall back to naming the commands for a person to run** — today's behaviour, which is a working
 answer. What is forbidden is appearing to drive a loop you are not driving.
 

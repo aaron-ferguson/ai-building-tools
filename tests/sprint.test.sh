@@ -136,6 +136,32 @@ else
   bad "the schema does not parse as JSON — the CLI would reject it at dispatch"
 fi
 
+echo "0151 AC1 — the schema carries no top-level \$schema key"
+# The CLI rejects that key with "no schema with key or ref https://json-schema.org/draft/2020-12/schema",
+# exit 1, empty stdout — every dispatch fails before the stage session starts. Red-making change: restoring line 2.
+if [ -f "$SCHEMA" ] && python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(1 if "$schema" in d else 0)' "$SCHEMA" 2>/dev/null; then
+  ok 'outcome.schema.json has no top-level $schema key'
+else
+  bad '0151 AC1 — outcome.schema.json has a $schema key; the CLI rejects it and every sprint dispatch fails before a session starts'
+fi
+
+echo "0151 AC2 — Step 1 probe names outcome.schema.json, not an inline schema"
+# A probe using a broken schema file must catch it at Step 1, not at the first real dispatch.
+# Red-making change: the inline schema in today'"'"'s probe.
+if section "$SKILL" "Step 1" | grep -qF 'outcome.schema.json'; then
+  ok "Step 1's probe names the schema file (not an inline schema)"
+else
+  bad "0151 AC2 — Step 1's probe still uses an inline schema; a broken schema file is caught only at the first real dispatch, not the probe"
+fi
+
+echo "0151 NFR — Step 1 notes why the schema carries no top-level key"
+# Without this note, the key gets restored as tidying. Guard on the phrase to red when the note is removed.
+if section "$SKILL" "Step 1" | grep -qF 'no top-level'; then
+  ok "Step 1 notes the reason the schema key is absent"
+else
+  bad "0151 NFR — Step 1 carries no note about the absent top-level key; it will be restored as tidying"
+fi
+
 # The schema lives in exactly one file. A second copy is the divergence FR13 exists to prevent,
 # and it is found by looking for the envelope's own field names outside that file rather than by
 # a hand-written list of places to check (testing-conventions.md, a guard that enumerates its
@@ -468,10 +494,11 @@ dispatch_blocks() {
     infence { body = body "\n" $0 }
   ' "$1" 2>/dev/null || true
 }
-# probe_blocks — the Step 1 no-op. Counted only to prove the partition below is exhaustive.
+# probe_blocks — the Step 1 check. Identified by the step-1-probe marker (0151 FR2: the probe
+# now uses the real schema file, so the old "probe" field name is gone and this marker replaces it).
 probe_blocks() {
   awk '
-    /^```/ { if (infence) { if (body ~ /claude -p/ && body ~ /"probe"/) print NR
+    /^```/ { if (infence) { if (body ~ /claude -p/ && body ~ /step-1-probe/) print NR
                             infence = 0; body = "" }
              else { infence = 1 } ; next }
     infence { body = body "\n" $0 }
@@ -854,26 +881,30 @@ fi
 
 # ------------------------------------------------------------------------------------------------
 # AC22 — the probe, and the only case here that touches the REAL validator.
-echo "AC22 — a real nested dispatch returns the fixed object"
+#
+# The probe uses the actual outcome.schema.json (0151 FR2): if the schema file is broken the probe
+# catches it at Step 1 rather than at the first real dispatch. The minimal valid outcome is the
+# fixed object the supervisor asks the model to return — it is the simplest shape the schema accepts
+# and the quickest for the model to produce reliably.
+echo "AC22 — a real nested dispatch accepts the outcome schema and returns a schema-valid object"
 
 if ! command -v claude >/dev/null 2>&1; then
   skip "AC22 — no \`claude\` on PATH; the nested-dispatch premise under AC1 is UNVERIFIED in this run"
 elif [ -n "${SPRINT_SKIP_PROBE:-}" ]; then
   skip "AC22 — SPRINT_SKIP_PROBE is set; the nested-dispatch premise under AC1 is UNVERIFIED in this run"
 else
-  probe_schema='{"type":"object","properties":{"probe":{"type":"string"}},"required":["probe"],"additionalProperties":false}'
   # `< /dev/null` is not tidiness. Without it the nested CLI waits on stdin and then prints
   # "Warning: no stdin data received in 3s" INTO the output being parsed, so a supervisor reading
   # stdout as JSON gets a warning line first and concludes the stage failed the schema.
-  got="$(claude -p --json-schema "$probe_schema" --max-budget-usd 0.25 \
-          'Return the object with probe set to the string ok. Nothing else.' \
+  got="$(claude -p --json-schema "$(cat "$SCHEMA")" --max-budget-usd 0.25 \
+          'Return a minimal valid stage outcome: stage "retro", session_id "aaaaaaaa-0000-4000-8000-000000000001", empty arrays for commits and tickets, 0 for cost_usd and findings_parked, null for conventions_resolved and escalation.' \
           < /dev/null 2>/dev/null || true)"
-  case "$got" in
-    '{"probe":"ok"}')
-      ok "a nested claude -p returned exactly the fixed object" ;;
-    *)
-      bad "AC22 — the probe did not return the fixed object; a supervisor on this host would drive nothing. Got: $got" ;;
-  esac
+  printf '%s' "$got" > "$FIX/probe-got.json"
+  if valid "$FIX/probe-got.json"; then
+    ok "a nested claude -p returned a schema-valid outcome using the real schema file"
+  else
+    bad "AC22 — the probe did not return a schema-valid outcome; either the schema file is broken or the CLI cannot dispatch on this host. Got: $got"
+  fi
 fi
 
 # ------------------------------------------------------------------------------------------------
