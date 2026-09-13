@@ -2,8 +2,8 @@
 id: "0153"
 title: Give the sprint supervisor marker a liveness signal that outlives one tool call
 type: bug
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -15,8 +15,8 @@ relates: ["0121"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "5d3d"
-claimed_at: 2026-09-13T15:27:56Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -65,7 +65,25 @@ following the rule would take over a live run (`.claude/backlog/runs/.active/hel
 
 🔍 Probe: Confirmed `held-by` file no longer referenced in staleness rule — timestamp-based signal used instead.
 
+### Re-verification 2026-09-13 — session 33d2edfe, token 5d3d — **FAIL**
+
+**Suite — `config.yml` `commands.unit`, whole suite, run twice at 0dd303f (before and after the session-limit pause), exit 0 both times.** Per-file tallies, second run, pasted:
+`backlog-scripts-installed 37/0 · batching 39/0 · citations 46/0 · claim 98/0 · close-by 67/0 · close 246/0 · cost-by-category 29/0 · cross-cutting-change 21/0 · design-hold 34/0 · external-feedback 9/0 · falsifiable-acs 34/0 · findings-buffer 46/0 · findings-routing 41/0 · floor-probe 12/0 · graph-fields 36/0 · handoff 132/0 · item-ac-form 4/0 · last-line 17/0 · measurement 131/0 · money-in-skill-prose 12/0 · next 431/0 · qa-level-once 11/0 · reference-size 15/0 · release 45/0 · remote-anchor 20/0 · reporting 23/0 · retro-tool-edit 50/0 · skill-size 27/0 · sprint-ledger 95/0 · sprint 231/0/0 skipped · transient-mutation 6/0` (passed/failed, each file's own tally line).
+Conventions resolved: `/Users/aaronferguson/AI/ai-building-conventions` (config.yml `conventions.path`). Copy under test: the repo copy; the installed 0.9.28 cache differs from it (pre-fix `outcome.schema.json` and `SKILL.md`). Dirty set at both captures: `?? .claude/backlog/runs/` only. Written through Bash, not the Write tool (Write was not attempted). Every mutation below was applied to a committed file, confirmed by a non-empty `git diff --stat`, and restored by its own path; each cycle ended on a green control run.
+
+| Row | How checked | Result |
+|---|---|---|
+| AC1 | guard `0153 AC1`; Step 1 reads the `held-by` timestamp against `lock_stale_seconds`, no pid-alive check. Mutation M1 (restore the pre-8a979d1 passage *"A marker whose pid is no longer alive is stale"*) → `FAIL 0153 AC1` and `FAIL 0153 NFR`, 229 passed 2 failed | ✅ |
+| NFR Documentation | guard `0153 NFR`. Mutation M3 (delete the *"A pid cannot serve as a liveness signal"* clause) → `FAIL 0153 NFR`, 230 passed 1 failed | ✅ |
+| AC2 | Step 3 (SKILL.md ~331) says to rewrite the `held-by` timestamp immediately before each `claude -p`. Mutation M2 (delete that paragraph) → `FAIL 0153 AC2`, 230 passed 1 failed | ✅ prose present |
+| AC2 at its altitude | Mutation M4 (keep a Step 3 paragraph naming `.active/` but instructing no refresh) → 231 passed, 0 failed | ❌ the guard asserts `.active/` is *mentioned* in Step 3, not that it is *refreshed*; AC2's claim is unguarded |
+| **FR1** | the stated age is `lock_stale_seconds` = 900, whose own `config.yml` comment reads *"900s is two orders of magnitude above the normal hold and well under a stage's own runtime"*. Step 3 refreshes only before the call; the wait on the stage is one tool call. Run log `run-20260913T151122Z.jsonl` (untracked): a `queue` stage ran 860 s dispatch→outcome; `run-20260913T034946Z` develop 358 s | ❌ any stage longer than 900 s makes a live supervisor's marker read stale, and Step 1 then tells a second supervisor to take it over — the defect this ticket exists to remove |
+| Always-on (CONVENTIONS_CORE.md) | prose-only change; nothing to check beyond the rows above | ✅ |
+
+Evidence set: `skills/sprint/SKILL.md`, `tests/sprint.test.sh`, `.claude/backlog/config.yml`, and (supporting FR1 only) `.claude/backlog/runs/run-20260913T151122Z.jsonl`, which is in the dirty set. The FAIL rests on the committed `config.yml` comment and mutation M4, not on that log.
+
 ## Notes & decisions
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** One buffer entry, filed because it would let two supervisors drive one backlog.
 - **2026-09-13 — reopened for re-verification, by the user's request.** The verify session that closed this ticket (433a37e3) ran on claude-sonnet-4-6, returned `conventions_resolved: null` and a placeholder `session_id`, and ran per-ticket test files instead of `config.yml` `commands.unit`. Composed by hand under the backlog lock by a `queue` session, since no operation reopens a closed ticket (that path is 0161): row moved from `DONE.md` back to the top of `QUEUE.md`, `next: verify`, `status: ready`, `closed:` removed, and the acceptance criteria UNTICKED — a tick is evidence of the pass being distrusted, and `close` re-ticks what the new pass checks. The QA evidence above is kept as the record of that pass; the next `verify` writes its own beside it and does not rely on it.
+- **2026-09-13 — re-verification (session 33d2edfe) FAILED; sent back to `develop`.** Constraint (FR1): **a supervisor that is alive and waiting on a single dispatched stage must never read as stale.** As written, the age is `lock_stale_seconds` (900 s), which `config.yml` itself places *under* a stage's runtime, and the signal is refreshed only before each `claude -p` call — so a stage running past 900 s (a queue stage took 860 s on run-20260913T151122Z) hands a live run to a second supervisor. The age the rule states has to cover the longest single wait the skill permits, and the skill says why. Separately, AC2's guard stays green when Step 3 names `.active/` but no longer refreshes it (mutation M4, 231/0); the guard must red on a Step 3 that stops refreshing. AC1 and the NFR were cleared and redden under mutation.
