@@ -3,7 +3,7 @@ id: "0151"
 title: Make sprint's stage dispatch accept its own outcome schema
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -16,9 +16,12 @@ expects:
   - skills/sprint/outcome.schema.json
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "3daf"
+claimed_at: 2026-09-13T03:59:31Z
 touches:
+  - skills/sprint/outcome.schema.json
+  - skills/sprint/SKILL.md
+  - tests/sprint.test.sh
 ---
 
 ## Problem
