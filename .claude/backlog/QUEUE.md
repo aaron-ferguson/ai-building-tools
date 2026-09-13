@@ -94,7 +94,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0152 | Price and cap a sprint's retro and queue tail | verify | in-progress |  |
 | 0157 | Make release verify compare the install against the released commit | develop | ready |  |
 | 0153 | Give the sprint supervisor marker a liveness signal that outlives one tool call | verify | in-progress |  |
-| 0154 | Let sprint park its own tooling findings, and propose the gate below a design row | verify | ready |  |
+| 0154 | Let sprint park its own tooling findings, and propose the gate below a design row | verify | in-progress |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
