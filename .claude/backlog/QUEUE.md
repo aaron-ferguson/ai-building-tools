@@ -23,7 +23,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0151 | Make sprint's stage dispatch accept its own outcome schema | verify | in-progress |  |
 | 0152 | Price and cap a sprint's retro and queue tail | verify | in-progress |  |
 | 0153 | Give the sprint supervisor marker a liveness signal that outlives one tool call | verify | in-progress |  |
 | 0154 | Let sprint park its own tooling findings, and propose the gate below a design row | verify | in-progress |  |
