@@ -296,6 +296,7 @@ for tid in sorted(state):
 
 ```sh
 claude -p \
+  --model opus \
   --session-id "$RUN_STAGE_UUID" \
   --json-schema "$(cat <plugin root>/skills/sprint/outcome.schema.json)" \
   --add-dir ../ai-building-conventions \
@@ -308,6 +309,11 @@ claude -p \
 
 Every flag earns its place, and two of them are load-bearing in a way that is not obvious:
 
+- **`--model opus` is stated on every dispatch, because every stage is thinking work** — queue,
+  design, develop, verify and retro alike. Left out, a stage runs on whatever the CLI defaults to:
+  run-20260913T034946Z's stages ran on claude-sonnet-4-6, and its verify closed four tickets with
+  `conventions_resolved: null`. A stage may plan on Opus and hand mechanical implementation to
+  Haiku where quality holds; the supervisor never downgrades a stage's model for cost.
 - **`--json-schema` takes inline JSON, not a path.** Passing the filename fails with *"--json-schema
   is not valid JSON"*. `"$(cat …)"` is the form that works, and it keeps FR13's actual requirement:
   the shape is declared in **one file**, supplied by the invoker, so no stage skill describes it.
@@ -383,6 +389,12 @@ gate decision and every escalation, each with a UTC timestamp and the run id. A 
 and its `outcome` carry `stage` and its ticket id in `tickets`, which is what the ledger pairs a
 design window by. The supervising conversation is what dies; a decision that reached only
 the transcript is unrecoverable.
+
+**A run supervised from a conversation that already drove an earlier run says so.** Its
+`scope_confirmed` event carries `supervisor_context`, naming that earlier run id or `fresh`: the
+supervisor's floor, growth and turns then include the earlier run and everything discussed since,
+and are not comparable with a fresh run's. Stage sessions are new processes either way, and their
+figures stay comparable.
 
 **The log is provenance. It is not state, and this is the point of it.** A resuming supervisor —
 after a crash or after the planned ending — derives what to do next from `./next --drive` and
@@ -534,6 +546,18 @@ age=$(( $(date -u +%s) - mtime ))
 **Fresh** — it **waits rather than escalating**. A lock in use is the normal case and is held for
 seconds. **Aged** — it escalates, naming the age and the ticket `held-by` records, joined through
 the **run log** to the stage process that should have held it, and **dispatches nothing**.
+
+**A stage stopped by an account session limit is a pause, not a recovery.** Its stdout reads
+*"You've hit your session limit · resets <time>"* where the outcome should be, and it leaves the
+claim, the dirty tree and possibly the lock exactly as a cap kill does. The difference is that here
+the work is local and unpushed and no other session starts while one waits, so the same session
+picks it back up. Log a `limit_hit` event carrying the reset time the message names, wait for the
+reset or for the person to say tokens are back, then log `resumed` and dispatch
+`claude -p --resume <session-id>` with the same schema, model and flags, capped at what that session
+has left: its stage cap less what a harvest of that session id already shows spent. The resumed
+outcome's `cost_usd` covers only the resumed leg, so the harvest and never the outcome is that
+session's cost. A resume that returns no valid outcome is Step 4's failure, and a stop that names no
+session limit is the cap kill below.
 
 **A stage killed by `--max-budget-usd` is worse than a killed supervisor**, whose tree is at least
 clean: here the claim is held, the tree is dirty and the lock may be taken. That exit routes as an

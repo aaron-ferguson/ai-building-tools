@@ -2093,5 +2093,43 @@ else
   bad "0153 AC2 — Step 3 does not refresh the .active/ liveness signal the staleness rule reads"
 fi
 
+# run-20260913T034946Z: the dispatch named no model, so every stage ran on whatever the CLI
+# defaulted to (claude-sonnet-4-6) and a verify closed four tickets with conventions_resolved null.
+echo "run-20260913T034946Z — Step 3 dispatches every stage on Opus, and says why"
+if section "$SKILL" "Step 3" | grep -qF -- '--model opus'; then
+  ok "Step 3's dispatch passes --model opus"
+else
+  bad "run-20260913T034946Z — Step 3's dispatch names no model; stages run on the CLI default, which was claude-sonnet-4-6"
+fi
+if section "$SKILL" "Step 3" | grep -qF 'thinking work'; then
+  ok "Step 3 says stages are thinking work, so the model is not downgraded as tidying"
+else
+  bad "run-20260913T034946Z — Step 3 carries no reason for --model opus; it will be dropped or downgraded for cost"
+fi
+
+# The same run: an account session limit stopped develop mid-gate, and `claude -p --resume` on the
+# same session id finished it with a valid outcome. Here that stop is routine, not a recovery.
+echo "run-20260913T034946Z — Step 7 resumes a stage stopped by a session limit"
+S7="$(section "$SKILL" "Step 7")"
+case "$S7" in
+  *'session limit'*'--resume'*|*'--resume'*'session limit'*) ok "Step 7 resumes a session-limit stop with --resume" ;;
+  *) bad "run-20260913T034946Z — Step 7 has no session-limit case; a routine stop reads as a human's recovery and the run halts" ;;
+esac
+case "$S7" in
+  *'what that session has left'*) ok "Step 7 caps a resume at what the stopped session has left" ;;
+  *) bad "run-20260913T034946Z — Step 7 does not size a resume's cap from what the session has left; a fresh base cap double-grants it" ;;
+esac
+case "$S7" in
+  *limit_hit*resumed*) ok "Step 7 logs limit_hit and resumed events, so the wait is separable from the work" ;;
+  *) bad "run-20260913T034946Z — Step 7 logs no limit_hit/resumed events; wall-clock counts the wait as work (646 min recorded)" ;;
+esac
+
+echo "run-20260913T034946Z — Step 5 marks a rerun supervised from a conversation that drove an earlier run"
+if section "$SKILL" "Step 5" | grep -qF 'supervisor_context'; then
+  ok "Step 5 records supervisor_context on scope_confirmed"
+else
+  bad "run-20260913T034946Z — Step 5 has no supervisor_context marker; a rerun's inflated supervisor figures read as comparable"
+fi
+
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]
