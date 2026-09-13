@@ -64,3 +64,28 @@ a sentinel string.
 
 *No sprint has been recorded yet. The first `## sprint` block is appended by
 `tools/sprint-ledger.sh record`.*
+
+## sprint run-20260913T034946Z -- ended 2026-09-13T14:37:59Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 4 | 4 | confirmed scope @ 2026-09-13T15:10:05Z |
+| wall_clock_min | no prior | unmeasured: 646 elapsed, mostly an account session-limit wait | MEASUREMENT.md per-skill table, recorded 2026-08-24; wall-clock: none -- MEASUREMENT.md records no elapsed time and LEDGER.md holds no recorded actual |
+| tokens | 31985507 | 19112608 | MEASUREMENT.md per-skill table, recorded 2026-08-24; wall-clock: none -- MEASUREMENT.md records no elapsed time and LEDGER.md holds no recorded actual |
+| usd | 30.63 | not an Opus prior: 9.80 at claude-sonnet-4-6 rates | MEASUREMENT.md per-skill table, recorded 2026-08-24; wall-clock: none -- MEASUREMENT.md records no elapsed time and LEDGER.md holds no recorded actual |
+
+GATE develop 4 ticket(s) session 64921e84: predicted USD 18.14 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-13T15:10:05Z) observed USD 8.18 (harvest-usage.sh over 1 session id(s) @ 2026-09-13T15:10:05Z)
+RATIO verify_usd_per_ticket batched session 433a37e3 = 0.41
+  numerator USD 1.62 (harvest-usage.sh over 1 session id(s) @ 2026-09-13T15:10:05Z)
+  denominator 4 ticket(s) (run-20260913T034946Z.jsonl outcome events @ 2026-09-13T15:10:05Z)
+RATIO verify_usd_per_ticket batched session 00000000 = 0.00
+  numerator USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-13T15:10:05Z)
+  denominator 4 ticket(s) (run-20260913T034946Z.jsonl outcome events @ 2026-09-13T15:10:05Z)
+FINDINGS parked 0 (run-20260913T034946Z.jsonl outcome events @ 2026-09-13T15:10:05Z)
+NOTE Re-recorded after 75bec41 priced sonnet-4-6; the first record read USD 0.00. Two actuals are
+  written as text so read_ledger skips them rather than averaging them into a prior: wall-clock
+  includes a ~10h session-limit wait (active time is not yet separable), and every stage ran on
+  claude-sonnet-4-6, so its dollars understate an Opus run. Tokens stay a number. USD covers stage
+  sessions only; the supervisor's own spend is not in it. The 00000000 session is the placeholder
+  id verify returned in place of 433a37e3, not a real session. Develop's 8.18 spans both legs of
+  session 64921e84, stopped by a session limit and resumed.
