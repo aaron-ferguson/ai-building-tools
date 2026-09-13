@@ -2,8 +2,8 @@
 id: "0154"
 title: Let sprint park its own tooling findings, and propose the gate below a design row
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -18,14 +18,9 @@ expects:
   - skills/queue/templates/next
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by: "4ccc"
-claimed_at: 2026-09-13T04:20:04Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/sprint/SKILL.md
-  - .claude/backlog/next
-  - skills/queue/templates/next
-  - tests/sprint.test.sh
-  - tests/next.test.sh
 ---
 
 ## Problem
