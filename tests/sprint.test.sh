@@ -2057,5 +2057,26 @@ else
   bad "0134 AC9 premise — --drive --propose over a design row above a develop row did not escalate naming 0001 (rc $pr_rc): $(printf '%s' "$pr_out" | tr '\n' ' ' | cut -c1-200)"
 fi
 
+echo "0153 AC1 — Step 1 staleness rule does not key on a pid being alive"
+if section "$SKILL" "Step 1" | grep -qE 'pid.*alive|alive.*pid|pgrep|kill -0|\$\$.*alive|alive.*\$\$'; then
+  bad "0153 AC1 — Step 1 still checks whether a pid is alive; a fresh-shell pid is always dead"
+else
+  ok "Step 1 staleness rule carries no pid-alive check"
+fi
+
+echo "0153 NFR — Step 1 says why a pid cannot serve, in one clause"
+if section "$SKILL" "Step 1" | grep -qF 'pid cannot serve'; then
+  ok "Step 1 names why a pid cannot serve"
+else
+  bad "0153 NFR — Step 1 has no clause explaining why a pid cannot serve; add it so the rule is not restored as tidying"
+fi
+
+echo "0153 AC2 — Step 3 refreshes the liveness signal named by the staleness rule"
+if section "$SKILL" "Step 3" | grep -qF '.active/'; then
+  ok "Step 3 refreshes the .active/ signal"
+else
+  bad "0153 AC2 — Step 3 does not refresh the .active/ liveness signal the staleness rule reads"
+fi
+
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]

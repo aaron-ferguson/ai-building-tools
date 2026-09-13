@@ -92,10 +92,13 @@ the second `mkdir` fails on the missing parent, and `|| echo busy` reports *anot
 this backlog* — on the first run, with no second supervisor anywhere. An absent parent and a busy
 marker have to be distinguishable, and one line is what distinguishes them.
 
-Busy → read `.active/held-by` for the run id, the pid and the UTC timestamp, and say who holds it
-rather than double-driving the queue. **A marker whose pid is no longer alive is stale**: say that
-it is, name it, and take it over. Write your own `held-by` the moment you take it, and remove the
-directory when the run ends.
+Busy → read `.active/held-by` for the run id and the UTC timestamp, and say who holds it
+rather than double-driving the queue. **A pid cannot serve as a liveness signal here: each Bash
+tool call runs in a fresh shell, so the recorded pid is always dead the moment it is written.**
+Instead, a live supervisor keeps `.active/` fresh by rewriting the timestamp on every dispatch
+(Step 3). A marker older than `lock_stale_seconds` (from `config.yml`) is stale — say that it is,
+name the run id and age, and take it over. Write your own `held-by` the moment you take it, and
+remove the directory when the run ends.
 
 **3. Report the depth, in one line, from the read you make anyway.** `./next --drive` prints how
 many takeable gates deep the backlog is and where it runs dry. Say it before dispatching anything:
@@ -318,6 +321,11 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
   then prints *"Warning: no stdin data received in 3s"* **into the stream you are parsing as
   JSON** — so a perfectly good stage reads as one that failed the schema, and Step 4 escalates on
   it. Redirect stdin on every dispatch, the probe included.
+
+**Refresh `.active/` before each dispatch.** A live supervisor rewrites the timestamp in
+`.active/held-by` immediately before the `claude -p` call; that is what Step 1's staleness check
+reads. Without this, a session that has dispatched even one stage looks stale to any supervisor
+arriving during the wait, and the pid-cannot-serve rule means there is nothing else to check.
 
 **`--bare` is disqualifying and appears nowhere.** It skips CLAUDE.md auto-discovery, which means
 **no conventions** — and a stage that builds without them passes every test in `tests/`, because
