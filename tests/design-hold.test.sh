@@ -24,6 +24,8 @@ set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 SKILL="$ROOT/skills/design/SKILL.md"
+# The harness runs the TEMPLATE copy below, never .claude/backlog/<script>: a mutation applied to
+# the installed copy lands a real diff and reddens nothing.
 CLAIM_SRC="$ROOT/skills/queue/templates/claim"
 NEXT_SRC="$ROOT/skills/queue/templates/next"
 HANDOFF_SRC="$ROOT/skills/queue/templates/handoff"

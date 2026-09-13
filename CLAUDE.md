@@ -25,7 +25,8 @@ Sessions here work a backlog **using** the skills stored in this repo, so an edi
 `skills/**` changes the instructions the *next* session receives and nothing about the current one.
 Two consequences, and both have cost real work:
 
-- **The installed copy is what runs, and the version number does not prove it matches.** Skills
+- **For skills, the installed copy is what runs** (the suites run the backlog scripts' *templates*),
+  **and the version number does not prove it matches.** Skills
   resolve once at session start from `~/.claude/plugins/cache/`, which can sit at a different
   version than the checkout, or the same version with different bytes. A session has reported a
   rule missing that had shipped the same day. Diff the trees before concluding a rule is absent:

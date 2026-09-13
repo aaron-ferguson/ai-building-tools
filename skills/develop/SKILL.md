@@ -394,7 +394,9 @@ index names for coding and testing. Don't read all of them; don't read none.
 code. A ticket can be blocked by a project invariant it never names: one specified a timeout constant
 in a project whose `CLAUDE.md` bans wall-clock timers outright and whose suite enforces that against
 a named allowlist, so the ticket was silently asking for an allowlist entry plus the fresh argument
-the project demands for one. Step 2 restates the item's own citations and this step loads the
+the project demands for one. **The same grep covers a file you are only growing**: a size budget, or a
+guard on how a figure may be written, is no mechanism yet reds at the end of the work — one skill file
+sat four bytes under its size budget before a ticket that had to grow it. Step 2 restates the item's own citations and this step loads the
 conventions its NFR table names — neither reaches an invariant the item is silent about, and the
 failure mode is an unrelated-looking test going red with the rule to be reconstructed from it.
 
@@ -523,7 +525,9 @@ that field's own raise-only rule below does not reach it by implication.** Lower
 1. Run the review checklist the conventions define for changed code. A build-quality gate, not QA.
 2. **Write down what you learned while the item file is open** — a mechanism, a disproved theory, a
    rule that misled you — per the conventions' documentation rules, in *Notes & decisions*. The QA
-   session will not have had the context that produced any of it.
+   session will not have had the context that produced any of it. **Mark each mutation or
+   unreachability claim as run or reasoned**: both read alike in a table, and two reasoned ones were
+   wrong on consecutive days (0143, 0130).
 3. **Record the cost if `cost_tracking:` is configured** (`references/TRACKER.md`). This session is
    the only thing that knows which ticket its tokens belonged to; `verify` appends its own share. This
    is what turns `size: m` from a guess into a calibrated estimate.

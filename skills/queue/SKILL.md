@@ -350,6 +350,10 @@ contradicted, and `verify` closing on it records a check nobody ran. The underly
   wherever that value arrives by more than one path, and it fails in the direction that looks fine: the
   clause only bites when someone reads the entire rendered panel, so it passes by default. Name the
   element instead ("the Yield row shows…").
+- **An input the ticket does not hold** — a glob over a tree other sessions are editing, a
+  whole-project gate carrying someone else's committed red, another ticket's frontmatter. Each moves
+  under the criterion, and one was false the moment it was written. Pin the bytes into a fixture the
+  test builds, or name the files.
 
 **An AC set can span every FR and still miss the defect, because every AC measures the same instant.**
 Where an FR describes a *state* — "the subject is visible", "where the player is looking is theirs" —

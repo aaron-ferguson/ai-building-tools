@@ -20,6 +20,8 @@
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+# The harness runs the TEMPLATE copy below, never .claude/backlog/<script>: a mutation applied to
+# the installed copy lands a real diff and reddens nothing.
 NEXT_SRC="$ROOT/skills/queue/templates/next"
 [ -f "$NEXT_SRC" ] || { echo "no next script at $NEXT_SRC" >&2; exit 2; }
 

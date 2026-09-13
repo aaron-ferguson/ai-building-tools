@@ -49,7 +49,8 @@ every ticket would mostly find nothing, and the cheapest nothing is the one not 
 was largest.
 
 **This skill takes the lessons; `queue` takes the units of work.** Two sweepers, one file, neither waiting
-for the other — an entry that is both is taken by both. Leave the work entries where they are.
+for the other — an entry that is both is taken by both. What neither waits for is the other *sweeper*,
+never the entry: an entry this pass reads leaves in this pass, a work half included (Step 4).
 
 **Most of the value is on disk before this runs.** `documentation-conventions.md` fires on *discovery* —
 the mechanism is written down in the same change as the code. What reaches the buffer is the half with no
@@ -179,6 +180,9 @@ This order is deliberate: checking a destination properly means greps, reading t
 change, and comparing against the installed copy of a skill. All of that is wasted on a finding the
 user was never going to accept, and a rejected finding should cost nothing to have proposed. A menu
 of options hands the judgement back to the user, which is the opposite of the point — recommend.
+**An *absorbed* proposal is the exception, and opening its row is Step 1's read, not destination
+work**: "this already has a home" cannot be proposed without having looked, and a pass that did look
+found two of five proposals changed by it.
 
 **Past the threshold, what the gate asks about is the WRITE list, not the read.** Step 1 has already
 read the whole buffer, so the proposal covers every entry and its disposition; what you are asking
@@ -294,6 +298,8 @@ before writing one by hand.
 - **Filed** — the lesson needs work that does not exist yet, so write the row now while it is fresh.
   **A pure unit of work is filed, not handed back**: you have paid to understand it and `queue` would
   pay again. Beyond what this pass can specify, defer it per Step 1 rather than leave it unmarked.
+  **The id is minted per `queue` Step 2**, never read off `next_id` alone — one written from the
+  counter collided with a row created the same day.
 - **Dropped** — stale, or an observation that cannot answer Step 1's question. Record the reason.
 
 **Land it now unless the change cannot be complete in this session** — a rule this project would

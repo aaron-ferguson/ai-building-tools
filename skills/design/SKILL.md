@@ -140,7 +140,10 @@ This step is most of the skill's value.
    which case the job is to validate and extend rather than to author: `queue` can write full FRs and
    ACs on a ticket that still carries one open decision, and against that shape "unblocks none" reads as
    a false negative. Say which existing criteria the answer confirms, which it changes, and which it
-   adds — an answer that leaves every one of them untouched is the real negative.
+   adds — an answer that leaves every one of them untouched is the real negative. **That accounting
+   goes in *Notes & decisions*, and every criterion stays a `- [ ] ACn — ` checkbox**: a numbered list
+   and a bulleted cross-reference each took `tests/item-ac-form.test.sh` red on another stage's time,
+   so run it before the handoff.
 3. Delete the *Open design question* section, then release the row with
    `./handoff <id> <token> develop`. It writes the stage and clears the claim in one locked commit, so
    everything else this pass owes the item is written before it (`CONCURRENCY.md`, *The release is the final act*).

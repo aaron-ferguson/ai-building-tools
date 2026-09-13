@@ -19,6 +19,8 @@
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+# The harness runs the TEMPLATE copy below, never .claude/backlog/<script>: a mutation applied to
+# the installed copy lands a real diff and reddens nothing.
 CLAIM_SRC="$ROOT/skills/queue/templates/claim"
 [ -f "$CLAIM_SRC" ] || { echo "no claim script at $CLAIM_SRC" >&2; exit 2; }
 

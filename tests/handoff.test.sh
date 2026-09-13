@@ -29,6 +29,8 @@
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+# The harness runs the TEMPLATE copy below, never .claude/backlog/<script>: a mutation applied to
+# the installed copy lands a real diff and reddens nothing.
 HANDOFF_SRC="$ROOT/skills/queue/templates/handoff"
 NEXT_SRC="$ROOT/skills/queue/templates/next"
 [ -f "$HANDOFF_SRC" ] || { echo "no handoff script at $HANDOFF_SRC" >&2; exit 2; }
