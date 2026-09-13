@@ -2550,6 +2550,11 @@ assert_contains "still escalates on the design row" "$out" 'ESCALATE  0001'
 propose_line="$(printf '%s' "$out" | grep '^PROPOSE' || true)"
 assert_eq "PROPOSE line names the develop gate below the design row" \
   "$propose_line" 'PROPOSE   develop | 1 ticket(s)'
+# The count alone is satisfied by the wrong ticket: re-verification 2026-09-13 found the ids asserted
+# by nothing. The gate's TICKET lines, whole, by equality.
+ticket_lines="$(printf '%s\n' "$out" | grep '^TICKET' || true)"
+assert_eq "the gate below the design row is ticket 0002 and only 0002" \
+  "$ticket_lines" 'TICKET    0002 | size s | A develop ticket'
 
 # --- result -----------------------------------------------------------------------------------
 echo

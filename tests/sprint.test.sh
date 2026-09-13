@@ -2065,6 +2065,25 @@ else
   bad "0154 AC1 — no instruction to park findings under the lock; sprint's own tooling discoveries are lost when the conversation ends"
 fi
 
+# Re-verification 2026-09-13: the parking paragraph said "append to FINDINGS.md" and cited no
+# routing, so on any project but this one a sprint's findings about its own tooling land in the
+# wrong buffer. Asserted on THAT paragraph, unwrapped, not the file: the conventions citation at
+# the top of the skill is about resolving conventions and would satisfy a file-wide grep.
+echo "0154 FR1 — the parking paragraph routes findings per references/CONVENTIONS.md"
+PARK_PARA="$(awk '
+  /^\*\*The supervisor parks findings/ { inside = 1 }
+  inside && /^[[:space:]]*$/ { exit }
+  inside { print }
+' "$SKILL" 2>/dev/null | tr '\n' ' ' | tr -s ' ')"
+case "$PARK_PARA" in
+  *'`references/CONVENTIONS.md`, *Routing a finding to the repo it is about*'*) ok "the parking paragraph cites Routing a finding to the repo it is about" ;;
+  *) bad "0154 FR1 — the parking paragraph does not route per references/CONVENTIONS.md, Routing a finding to the repo it is about: ${PARK_PARA:-no paragraph}" ;;
+esac
+case "$PARK_PARA" in
+  *'tools.path'*) ok "and names tools.path as where a finding about the sprint's own tooling goes" ;;
+  *) bad "0154 FR1 — the parking paragraph does not send tooling findings to the tools repo at tools.path" ;;
+esac
+
 echo "0154 FR2 — Steps 8 and 9 prohibitions name findings parking as permitted"
 if section "$SKILL" "Step 8" | grep -qF 'findings'; then
   ok "Step 8 names findings parking as permitted"

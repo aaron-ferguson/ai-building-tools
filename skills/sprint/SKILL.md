@@ -639,8 +639,11 @@ root. Three things it cannot say, because they are specific to a run rather than
 line.** Every other stage parks what surprised it; this run is no different. An escalation about
 the supervisor's own behaviour (a misconfigured dispatch flag, a schema rejection, a probe that
 never came back) names a defect worth investigating, and that defect is lost when the conversation
-ends unless it is parked here. Take the lock, append to `FINDINGS.md`, release it — the same
-sequence every writer uses. Do not park findings discovered and already recorded by a stage session
+ends unless it is parked here. Route it by subject per `references/CONVENTIONS.md`, *Routing a finding to the repo it is about*:
+a finding about the supervisor, its scripts or this skill is about the tools repo, so it goes to
+the `FINDINGS.md` of the checkout `tools.path` resolves to, never this project's buffer unless the
+two are the same repo. Take that backlog's lock, append, release it — the same sequence every writer
+uses. Do not park findings discovered and already recorded by a stage session
 this run dispatched: those belong to the stage, and duplicating them inflates the next gate.
 
 **End on the hand-off line, the very last thing printed:**
