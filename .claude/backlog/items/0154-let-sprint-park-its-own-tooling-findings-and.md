@@ -2,8 +2,8 @@
 id: "0154"
 title: Let sprint park its own tooling findings, and propose the gate below a design row
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -18,14 +18,9 @@ expects:
   - skills/queue/templates/next
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by: "5290"
-claimed_at: 2026-09-13T22:30:25Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/sprint/SKILL.md
-  - .claude/backlog/next
-  - skills/queue/templates/next
-  - tests/sprint.test.sh
-  - tests/next.test.sh
 ---
 
 ## Problem
@@ -78,7 +73,7 @@ holds the next develop gate's ids only by way of `./next develop`'s lead row (de
 
 **Suite — `config.yml` `commands.unit`, whole suite, run twice at 0dd303f (before and after the session-limit pause), exit 0 both times.** Per-file tallies, second run, pasted:
 `backlog-scripts-installed 37/0 · batching 39/0 · citations 46/0 · claim 98/0 · close-by 67/0 · close 246/0 · cost-by-category 29/0 · cross-cutting-change 21/0 · design-hold 34/0 · external-feedback 9/0 · falsifiable-acs 34/0 · findings-buffer 46/0 · findings-routing 41/0 · floor-probe 12/0 · graph-fields 36/0 · handoff 132/0 · item-ac-form 4/0 · last-line 17/0 · measurement 131/0 · money-in-skill-prose 12/0 · next 431/0 · qa-level-once 11/0 · reference-size 15/0 · release 45/0 · remote-anchor 20/0 · reporting 23/0 · retro-tool-edit 50/0 · skill-size 27/0 · sprint-ledger 95/0 · sprint 231/0/0 skipped · transient-mutation 6/0` (passed/failed, each file's own tally line).
-Conventions resolved: `/Users/aaronferguson/AI/ai-building-conventions` (config.yml `conventions.path`). Copy under test: the repo copy; the installed 0.9.28 cache differs from it (pre-fix `outcome.schema.json` and `SKILL.md`). Dirty set at both captures: `?? .claude/backlog/runs/` only. Written through Bash, not the Write tool (Write was not attempted). Every mutation below was applied to a committed file, confirmed by a non-empty `git diff --stat`, and restored by its own path; each cycle ended on a green control run.
+Conventions resolved: `/Users/<name>/AI/ai-building-conventions` (config.yml `conventions.path`). Copy under test: the repo copy; the installed 0.9.28 cache differs from it (pre-fix `outcome.schema.json` and `SKILL.md`). Dirty set at both captures: `?? .claude/backlog/runs/` only. Written through Bash, not the Write tool (Write was not attempted). Every mutation below was applied to a committed file, confirmed by a non-empty `git diff --stat`, and restored by its own path; each cycle ended on a green control run.
 
 | Row | How checked | Result |
 |---|---|---|
@@ -98,3 +93,7 @@ Evidence set: `skills/sprint/SKILL.md`, `.claude/backlog/next`, `skills/queue/te
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** Two buffer entries about what a sprint run can see and keep.
 - **2026-09-13 — reopened for re-verification, by the user's request.** The verify session that closed this ticket (433a37e3) ran on claude-sonnet-4-6, returned `conventions_resolved: null` and a placeholder `session_id`, and ran per-ticket test files instead of `config.yml` `commands.unit`. Composed by hand under the backlog lock by a `queue` session, since no operation reopens a closed ticket (that path is 0161): row moved from `DONE.md` back to the top of `QUEUE.md`, `next: verify`, `status: ready`, `closed:` removed, and the acceptance criteria UNTICKED — a tick is evidence of the pass being distrusted, and `close` re-ticks what the new pass checks. The QA evidence above is kept as the record of that pass; the next `verify` writes its own beside it and does not rely on it.
 - **2026-09-13 — re-verification (session 33d2edfe) FAILED; sent back to `develop`.** FR1 is unmet: Step 9's parking instruction appends to `FINDINGS.md` without routing per `references/CONVENTIONS.md` *Routing a finding to the repo it is about*, which FR1 names and every other stage skill cites. The constraint: sprint's parking step routes by that section, with a guard that reds when the citation is removed. AC1, FR2 and AC2 were cleared (live fixture through both copies of `next`; each guard reddens under mutation) and are owed no work; AC2's guard asserts the ticket count rather than the ids, which is worth tightening while there.
+- **2026-09-13 — develop re-entry (session b03e9ce0), 4265aba.** Step 9's parking paragraph now routes by subject per `references/CONVENTIONS.md`, *Routing a finding to the repo it is about*. A finding about the supervisor, its scripts or the skill goes to the `FINDINGS.md` of the checkout `tools.path` resolves to, under that backlog's lock, never this project's buffer unless the two are the same repo. The citation is kept on one line, because the guard is line-unwrapped but the paragraph extractor stops at a blank line. **Guards** (`tests/sprint.test.sh`, *0154 FR1*) are asserted on that paragraph, not the file, because line 31's conventions citation would satisfy a file-wide grep: one checks the exact routing citation, one checks `tools.path`. **AC2 tightened** in `tests/next.test.sh`: the gate's TICKET lines, whole, by equality (`TICKET    0002 | size s | A develop ticket`). **Mutations, all run against committed 4265aba, restored by path, then control sprint 238/0 and next 432/0:** M-cite (citation removed) → 1 FAIL, 237/1; M-tools (`tools.path` replaced) → 1 FAIL, 237/1; M-id (template line 1064 prints `x$pb_id`, count unchanged) → the new id assertion FAILs, 427/5, the other four being existing TICKET-line cases. `.claude/backlog/next` was not mutated; `backlog-scripts-installed` already guards it by identity with the template.
+- `tests/next.test.sh` defines `assert_eq` twice, and the later definition wins. It prints the expected value on the `saw` line, so a failure truncated to its first lines shows an empty *expected exactly:*, which reads as a broken assertion. Noted, not changed.
+- Item file written through Bash: the Edit tool refused 0152's item as a sensitive file.
+- **Home-directory path redacted in this item's QA evidence.** The re-verification's *Conventions resolved:* line, committed in a512bb8, published the absolute home path, and `tests/measurement.test.sh` *Privacy & data NFR* failed on it (130/1). It now reads `/Users/<name>/AI/ai-building-conventions`, the redacted form that guard accepts. The evidence is otherwise unchanged. 0151, 0152 and 0153 carry the same line, and this session does not hold them, so they are parked in FINDINGS.md.
