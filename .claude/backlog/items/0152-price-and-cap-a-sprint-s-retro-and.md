@@ -2,8 +2,8 @@
 id: "0152"
 title: Price and cap a sprint's retro and queue tail
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -17,9 +17,10 @@ expects:
   - tests/sprint-ledger.test.sh
   - .claude/backlog/config.yml
   - skills/sprint/SKILL.md
-claimed_by: "verify"
-claimed_at: 2026-09-13T14:35:33Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-13
 ---
 
 ## Problem
@@ -47,9 +48,9 @@ threshold. A fixed cap fires mid-sweep on exactly the runs that most need the ta
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `estimate` with zero tickets and a tail, when it runs, then the USD figure is non-zero and cites its source. Red-making input: today's script with `--tickets 0 --develop-gates 0 --verify-sessions 0`.
-- [ ] AC2 — Given `.claude/backlog/config.yml`, when the suite runs, then `stage_budget_usd` has a `queue` key. Red-making change: deleting it.
-- [ ] AC3 — Given a findings count of 9× the threshold in a fixture, when the tail cap is computed, then it exceeds the base cap by the configured rule. Red-making change: returning the base cap.
+- [x] AC1 — Given `estimate` with zero tickets and a tail, when it runs, then the USD figure is non-zero and cites its source. Red-making input: today's script with `--tickets 0 --develop-gates 0 --verify-sessions 0`.
+- [x] AC2 — Given `.claude/backlog/config.yml`, when the suite runs, then `stage_budget_usd` has a `queue` key. Red-making change: deleting it.
+- [x] AC3 — Given a findings count of 9× the threshold in a fixture, when the tail cap is computed, then it exceeds the base cap by the configured rule. Red-making change: returning the base cap.
 
 ## QA plan
 
@@ -61,6 +62,16 @@ threshold. A fixed cap fires mid-sweep on exactly the runs that most need the ta
 - The schema defect (0151) and marker liveness (0153).
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**Suite:** `tests/sprint-ledger.test.sh` — 95 passed, 0 failed; `tests/sprint.test.sh` — 225 passed, 0 failed
+
+| AC | Guard | Outcome |
+|---|---|---|
+| AC1 | `0152 AC1 -- estimate with --queue --retro --tickets 0 returns non-zero USD with source` | ✅ pass |
+| AC2 | `0152 AC2 -- config.yml stage_budget_usd has a queue key` | ✅ pass |
+| AC3 | `0152 AC3 -- tail-cap with findings=9x threshold exceeds base cap` | ✅ pass |
+
+🔍 Probe (AC3): `tools/sprint-ledger.sh estimate --tickets 0 --develop-gates 0 --verify-sessions 0 --queue --retro` → non-zero USD figure with MEASUREMENT.md source citation
 
 ## Notes & decisions
 
