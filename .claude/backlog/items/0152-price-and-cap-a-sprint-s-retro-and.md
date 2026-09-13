@@ -2,8 +2,8 @@
 id: "0152"
 title: Price and cap a sprint's retro and queue tail
 type: bug
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -17,8 +17,8 @@ expects:
   - tests/sprint-ledger.test.sh
   - .claude/backlog/config.yml
   - skills/sprint/SKILL.md
-claimed_by: "2fd5"
-claimed_at: 2026-09-13T15:27:56Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -72,7 +72,27 @@ threshold. A fixed cap fires mid-sweep on exactly the runs that most need the ta
 
 🔍 Probe (AC3): `tools/sprint-ledger.sh estimate --tickets 0 --develop-gates 0 --verify-sessions 0 --queue --retro` → non-zero USD figure with MEASUREMENT.md source citation
 
+### Re-verification 2026-09-13 — session 33d2edfe, token 2fd5 — **FAIL**
+
+**Suite — `config.yml` `commands.unit`, whole suite, run twice at 0dd303f (before and after the session-limit pause), exit 0 both times.** Per-file tallies, second run, pasted:
+`backlog-scripts-installed 37/0 · batching 39/0 · citations 46/0 · claim 98/0 · close-by 67/0 · close 246/0 · cost-by-category 29/0 · cross-cutting-change 21/0 · design-hold 34/0 · external-feedback 9/0 · falsifiable-acs 34/0 · findings-buffer 46/0 · findings-routing 41/0 · floor-probe 12/0 · graph-fields 36/0 · handoff 132/0 · item-ac-form 4/0 · last-line 17/0 · measurement 131/0 · money-in-skill-prose 12/0 · next 431/0 · qa-level-once 11/0 · reference-size 15/0 · release 45/0 · remote-anchor 20/0 · reporting 23/0 · retro-tool-edit 50/0 · skill-size 27/0 · sprint-ledger 95/0 · sprint 231/0/0 skipped · transient-mutation 6/0` (passed/failed, each file's own tally line).
+Conventions resolved: `/Users/aaronferguson/AI/ai-building-conventions` (config.yml `conventions.path`). Copy under test: the repo copy; the installed 0.9.28 cache differs from it (pre-fix `outcome.schema.json` and `SKILL.md`). Dirty set at both captures: `?? .claude/backlog/runs/` only. Written through Bash, not the Write tool (Write was not attempted). Every mutation below was applied to a committed file, confirmed by a non-empty `git diff --stat`, and restored by its own path; each cycle ended on a green control run.
+
+| Row | How checked | Result |
+|---|---|---|
+| AC1 | guard `0152 AC1`; live `tools/sprint-ledger.sh estimate --ledger .claude/backlog/LEDGER.md --measurement MEASUREMENT.md --config .claude/backlog/config.yml --tickets 0 --develop-gates 0 --verify-sessions 0 --retro --queue` → `ESTIMATE  usd 6.75 source: MEASUREMENT.md per-skill table, recorded 2026-08-24`; `--queue` alone 4.24, `--retro` alone 2.50. Mutation M1b (delete both tail `plan.append` lines) → `FAIL 0152 AC1 -- tail estimate returned USD 0.00`, 94 passed 1 failed | ✅ literal AC holds and reds |
+| AC1 guard gap | Mutation M1a (delete only `plan.append(("queue", 1, 0))`) → 95 passed, 0 failed | ⚠️ queue pricing, the thing this ticket added, has no guard: `--retro` alone keeps the figure non-zero |
+| **FR1** | same live call on the **real** ledger → `ESTIMATE  tokens 0 source: LEDGER.md 1 recorded sprint(s) over 4 ticket(s)`; on an empty ledger → `tokens 6745030 source: MEASUREMENT.md`; with `--tickets 2 --develop-gates 1 --verify-sessions 1 --retro --queue` on the real ledger → `tokens 9556304 source: LEDGER.md …`, i.e. per-ticket history × 2 with the tail sessions dropped | ❌ a derived-looking zero for a run that dispatches two stages, the exact figure the Problem quotes — present whenever LEDGER.md holds token history, which it has since 35b114d |
+| AC2 | `queue: 6.36  # 4.24 x 1.5` present; MEASUREMENT.md queue row $21.20 / 5 sessions = 4.24. Mutation M2 (delete that line) → `FAIL 0152 AC2` and `FAIL 0152 AC3`, 93 passed 2 failed | ✅ |
+| AC3 | live `tail-cap --findings 72 --threshold 8 --base-cap 3.75` → `33.75`; `--findings 3 --threshold 8 --base-cap 6.36` → `6.36`. Mutation M3 (print base cap) → `FAIL 0152 AC3 -- scaled cap does not exceed base cap at 9x threshold: scaled=6.36 base=6.36`, 94 passed 1 failed | ✅ |
+| NFR Observability | the tokens line cites `LEDGER.md` for a figure that omits the tail sessions it is pricing | ❌ source clause present but misattributes; unguarded |
+| 🔍 probe | `tail-cap --findings 3 --threshold 0 --base-cap 6.36` → Python `ZeroDivisionError` traceback, exit 1 | ⚠️ parked in FINDINGS.md |
+| Always-on (CONVENTIONS_CORE.md) | no secrets, no external input beyond CLI args, no data egress | ✅ |
+
+Evidence set: `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh`, `.claude/backlog/config.yml`, `.claude/backlog/LEDGER.md`, `MEASUREMENT.md`. Intersection with the dirty set: empty.
+
 ## Notes & decisions
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** Two buffer entries from the same run, one row because both are the tail's cost model. The caps the user chose on that run are recorded above and not written into `config.yml` by this pass — setting a cap is the user's call.
 - **2026-09-13 — reopened for re-verification, by the user's request.** The verify session that closed this ticket (433a37e3) ran on claude-sonnet-4-6, returned `conventions_resolved: null` and a placeholder `session_id`, and ran per-ticket test files instead of `config.yml` `commands.unit`. Composed by hand under the backlog lock by a `queue` session, since no operation reopens a closed ticket (that path is 0161): row moved from `DONE.md` back to the top of `QUEUE.md`, `next: verify`, `status: ready`, `closed:` removed, and the acceptance criteria UNTICKED — a tick is evidence of the pass being distrusted, and `close` re-ticks what the new pass checks. The QA evidence above is kept as the record of that pass; the next `verify` writes its own beside it and does not rely on it.
+- **2026-09-13 — re-verification (session 33d2edfe) FAILED; sent back to `develop`.** FR1 is unmet on the repo's real data: with LEDGER.md holding token history, `estimate --tickets 0 --develop-gates 0 --verify-sessions 0 --retro --queue` prints `ESTIMATE  tokens 0 source: LEDGER.md 1 recorded sprint(s) over 4 ticket(s)`, and with tickets the tokens figure is the ledger's per-ticket mean × tickets with the tail sessions dropped. The constraint: on any run that dispatches `retro` or `queue`, **both** the tokens and USD figures include those sessions, whatever LEDGER.md holds, and each names the source it was actually derived from (FR1, NFR Observability). Separately, AC1's guard stays green when queue pricing alone is deleted (M1a, 95/0); a guard must red on that. AC2 and AC3 were cleared and redden under mutation — no work owed there.
