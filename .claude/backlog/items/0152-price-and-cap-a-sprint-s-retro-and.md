@@ -3,7 +3,7 @@ id: "0152"
 title: Price and cap a sprint's retro and queue tail
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -17,9 +17,13 @@ expects:
   - tests/sprint-ledger.test.sh
   - .claude/backlog/config.yml
   - skills/sprint/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "ae81"
+claimed_at: 2026-09-13T04:04:08Z
 touches:
+  - tools/sprint-ledger.sh
+  - tests/sprint-ledger.test.sh
+  - .claude/backlog/config.yml
+  - skills/sprint/SKILL.md
 ---
 
 ## Problem
