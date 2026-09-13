@@ -2,8 +2,8 @@
 id: "0154"
 title: Let sprint park its own tooling findings, and propose the gate below a design row
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -18,9 +18,10 @@ expects:
   - skills/queue/templates/next
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by: "verify"
-claimed_at: 2026-09-13T14:35:33Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-13
 ---
 
 ## Problem
@@ -46,8 +47,8 @@ holds the next develop gate's ids only by way of `./next develop`'s lead row (de
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then a step instructs parking findings under the lock. Red-making change: today's skill.
-- [ ] AC2 — Given a fixture with an unheld design row above a develop gate, when `./next --drive --propose` runs, then the output names the gate's ids. Red-making input: today's template.
+- [x] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then a step instructs parking findings under the lock. Red-making change: today's skill.
+- [x] AC2 — Given a fixture with an unheld design row above a develop gate, when `./next --drive --propose` runs, then the output names the gate's ids. Red-making input: today's template.
 
 ## QA plan
 
@@ -59,6 +60,15 @@ holds the next develop gate's ids only by way of `./next develop`'s lead row (de
 - 0151, 0152, 0153.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**Suite:** `tests/sprint.test.sh` — 225 passed, 0 failed; `tests/next.test.sh` — all passed (exit 0)
+
+| AC | Guard | Outcome |
+|---|---|---|
+| AC1 | `0154 AC1 — SKILL.md has a step instructing findings parking under the backlog lock` | ✅ pass |
+| AC2 | `0154 FR2 — Steps 8 and 9 prohibitions name findings parking as permitted` | ✅ pass |
+
+🔍 Probe (AC2/FR3): `./next --drive --propose` with unheld design row above develop gate → exits 4 (escalate on design row), PROPOSE line reads `develop | 1 ticket(s)` — gate below design row is named.
 
 ## Notes & decisions
 
