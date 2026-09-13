@@ -2057,6 +2057,21 @@ else
   bad "0134 AC9 premise — --drive --propose over a design row above a develop row did not escalate naming 0001 (rc $pr_rc): $(printf '%s' "$pr_out" | tr '\n' ' ' | cut -c1-200)"
 fi
 
+echo "0154 AC1 — SKILL.md has a step instructing findings parking under the backlog lock"
+if says "$SKILL" "Step 9" 'parks findings' || says "$SKILL" "Step 8" 'parks findings' || \
+   grep -q 'parks findings under the' "$SKILL" 2>/dev/null; then
+  ok "SKILL.md instructs the supervisor to park findings under the lock"
+else
+  bad "0154 AC1 — no instruction to park findings under the lock; sprint's own tooling discoveries are lost when the conversation ends"
+fi
+
+echo "0154 FR2 — Steps 8 and 9 prohibitions name findings parking as permitted"
+if section "$SKILL" "Step 8" | grep -qF 'findings'; then
+  ok "Step 8 names findings parking as permitted"
+else
+  bad "0154 FR2 — Step 8 prohibitions carry no findings parking exemption; the two sections read as contradicting"
+fi
+
 echo "0153 AC1 — Step 1 staleness rule does not key on a pid being alive"
 if section "$SKILL" "Step 1" | grep -qE 'pid.*alive|alive.*pid|pgrep|kill -0|\$\$.*alive|alive.*\$\$'; then
   bad "0153 AC1 — Step 1 still checks whether a pid is alive; a fresh-shell pid is always dead"

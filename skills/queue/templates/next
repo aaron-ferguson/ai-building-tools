@@ -1343,6 +1343,16 @@ if [ "${1:-}" = "--drive" ]; then
     fi
     case "$rnext" in
       design)
+        # FR3 (0154): when proposing, also surface the develop gate below this design row so a
+        # person knows what they are approving after they resolve it.
+        if [ "$PROPOSE" = 1 ]; then
+          dgate_pool="$(takeable_develop)"
+          if [ -n "$dgate_pool" ]; then
+            dgate_lead="$(printf '%s' "$dgate_pool" | awk '{ print $1 }')"
+            dgate="$(gate_from "$dgate_lead" "$dgate_pool")"
+            PROPOSE_STAGE="develop"; PROPOSE_IDS="$dgate"
+          fi
+        fi
         decide "$ESCALATE" "ESCALATE  $id is at next: design and outranks everything below it — a person decides
           $(design_question "$(item_for "$id")")" ;;
       queue)

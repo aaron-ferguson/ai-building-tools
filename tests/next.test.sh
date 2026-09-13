@@ -2532,6 +2532,25 @@ out="$(run_next --drive --started 0102 --started 0103)" && rc=0 || rc=$?
 assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
 assert_eq "the preference carries the whole batch"    "$(dispatch_line "$out")" 'DISPATCH  verify 0102 0103'
 
+# --- 0154 AC2 — --propose with unheld design row also prints the develop gate beneath it -------
+echo "0154 AC2 — --drive --propose with a design row above a develop gate names the gate ids"
+scaffold
+add_row 0001 'A design decision' design ready ''
+add_row 0002 'A develop ticket' develop ready ''
+add_ticket_expects 0001 design ready '[]' '' '
+  - design/spec.md'
+add_ticket_expects 0002 develop ready '[]' '' '
+  - src/feature.ts'
+seal
+out="$(run_next --drive --propose)" && d154_rc=0 || d154_rc=$?
+# The decision is still ESCALATE (exit 4): a design row still stops the run.
+assert_rc "exits 4 — design row still escalates" "$d154_rc" 4
+assert_contains "still escalates on the design row" "$out" 'ESCALATE  0001'
+# The NFR requires equality on the PROPOSE line, not containment.
+propose_line="$(printf '%s' "$out" | grep '^PROPOSE' || true)"
+assert_eq "PROPOSE line names the develop gate below the design row" \
+  "$propose_line" 'PROPOSE   develop | 1 ticket(s)'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

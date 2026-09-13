@@ -565,6 +565,8 @@ with the derivation beside it**, never a figure chosen here and never one rounde
   (the *Design alongside develop* section). Otherwise the loop is sequential by decision, and what it
   parallelises is *tickets*, through the gate.
 - **It never drives more than one backlog.**
+- **It never writes to the backlog except to park findings** — entries in `FINDINGS.md` for what
+  this run learned about its own tooling (Step 9). Every other backlog write belongs to a stage.
 
 ---
 
@@ -591,6 +593,14 @@ root. Three things it cannot say, because they are specific to a run rather than
   This is the only signal left that the run is learning anything.
 - **What the run designed.** Every ticket a design session this run moved to `next: develop`, named
   as available for the next sprint rather than as work this one did.
+
+**The supervisor parks findings about its own tooling under the backlog lock, before the hand-off
+line.** Every other stage parks what surprised it; this run is no different. An escalation about
+the supervisor's own behaviour (a misconfigured dispatch flag, a schema rejection, a probe that
+never came back) names a defect worth investigating, and that defect is lost when the conversation
+ends unless it is parked here. Take the lock, append to `FINDINGS.md`, release it — the same
+sequence every writer uses. Do not park findings discovered and already recorded by a stage session
+this run dispatched: those belong to the stage, and duplicating them inflates the next gate.
 
 **End on the hand-off line, the very last thing printed:**
 
