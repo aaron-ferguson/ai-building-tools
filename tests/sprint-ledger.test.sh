@@ -854,5 +854,70 @@ else
   fi
 fi
 
+# --- 0152 re-verification -- queue is priced on its own, and the tail survives a ledger history --
+# The first AC1 guard stayed green with queue pricing deleted, because --retro alone keeps the
+# figure non-zero (mutation M1a). And with LEDGER.md holding history the tail was dropped outright:
+# `tokens 0 source: LEDGER.md` for a run dispatching two stages. Figures are compared, never pinned,
+# so a re-recorded MEASUREMENT.md cannot turn these red.
+est_field() { printf '%s\n' "$1" | awk -v f="$2" '$1=="ESTIMATE" && $2==f {print $3; exit}'; }
+est_line()  { printf '%s\n' "$1" | awk -v f="$2" '$1=="ESTIMATE" && $2==f {print; exit}'; }
+gt() { python3 -c "import sys; sys.exit(0 if float('$1') > float('$2') else 1)" 2>/dev/null; }
+near() { python3 -c "import sys; sys.exit(0 if abs(float('$1') - float('$2')) <= $3 else 1)" 2>/dev/null; }
+
+echo "0152 FR1 -- --queue adds the queue session to a --retro estimate"
+R_ONLY="$("$TOOL" estimate --ledger "$EMPTY" --measurement "$MEAS" --config "$CONF" \
+  --tickets 0 --develop-gates 0 --verify-sessions 0 --retro 2>&1 || true)"
+RQ="$("$TOOL" estimate --ledger "$EMPTY" --measurement "$MEAS" --config "$CONF" \
+  --tickets 0 --develop-gates 0 --verify-sessions 0 --retro --queue 2>&1 || true)"
+for figure in usd tokens; do
+  if gt "$(est_field "$RQ" "$figure")" "$(est_field "$R_ONLY" "$figure")"; then
+    ok "$figure with --retro --queue exceeds --retro alone"
+  else
+    bad "0152 FR1 -- --queue added nothing to $figure: retro+queue=$(est_field "$RQ" "$figure") retro=$(est_field "$R_ONLY" "$figure")"
+  fi
+done
+
+echo "0152 FR1 -- a tail-only run on a ledger with history is still priced from MEASUREMENT.md"
+HIST_TAIL="$("$TOOL" estimate --ledger "$HIST" --measurement "$MEAS" --config "$CONF" \
+  --tickets 0 --develop-gates 0 --verify-sessions 0 --retro --queue 2>&1 || true)"
+for figure in usd tokens; do
+  if near "$(est_field "$HIST_TAIL" "$figure")" "$(est_field "$RQ" "$figure")" 1; then
+    ok "$figure for a tail-only run is the same whatever LEDGER.md holds"
+  else
+    bad "0152 FR1 -- tail-only $figure on a history ledger is $(est_field "$HIST_TAIL" "$figure"), on an empty one $(est_field "$RQ" "$figure")"
+  fi
+  case "$(est_line "$HIST_TAIL" "$figure")" in
+    *MEASUREMENT.md*) ok "and the tail-only $figure cites MEASUREMENT.md" ;;
+    *) bad "0152 NFR -- tail-only $figure does not cite the source it was derived from: $(est_line "$HIST_TAIL" "$figure")" ;;
+  esac
+done
+
+echo "0152 FR1 -- tickets plus a tail on a history ledger is the ledger's tickets plus the tail sessions"
+HIST_T2="$("$TOOL" estimate --ledger "$HIST" --measurement "$MEAS" --config "$CONF" \
+  --tickets 2 --develop-gates 1 --verify-sessions 1 2>&1 || true)"
+HIST_T2Q="$("$TOOL" estimate --ledger "$HIST" --measurement "$MEAS" --config "$CONF" \
+  --tickets 2 --develop-gates 1 --verify-sessions 1 --retro --queue 2>&1 || true)"
+for figure in usd tokens; do
+  WANT="$(python3 -c "print(float('$(est_field "$HIST_T2" "$figure")') + float('$(est_field "$RQ" "$figure")'))" 2>/dev/null || echo none)"
+  if near "$(est_field "$HIST_T2Q" "$figure")" "$WANT" 1; then
+    ok "$figure is the ledger's two tickets plus the tail sessions ($WANT)"
+  else
+    bad "0152 FR1 -- $figure with tickets and a tail is $(est_field "$HIST_T2Q" "$figure"), expected ledger + tail = $WANT"
+  fi
+  case "$(est_line "$HIST_T2Q" "$figure")" in
+    *LEDGER.md*MEASUREMENT.md*|*MEASUREMENT.md*LEDGER.md*) ok "and $figure names both sources it was derived from" ;;
+    *) bad "0152 NFR -- $figure mixes ledger and MEASUREMENT.md figures but does not name both: $(est_line "$HIST_T2Q" "$figure")" ;;
+  esac
+done
+
+echo "0152 -- tail-cap refuses a zero threshold rather than tracing back"
+ZT_OUT="$("$TOOL" tail-cap --findings 3 --threshold 0 --base-cap 6.36 2>&1)" && ZT_RC=0 || ZT_RC=$?
+case "$ZT_RC:$ZT_OUT" in
+  0:*) bad "0152 -- tail-cap accepted --threshold 0: $ZT_OUT" ;;
+  *Traceback*) bad "0152 -- tail-cap --threshold 0 crashed with a traceback instead of a message" ;;
+  *threshold*) ok "tail-cap --threshold 0 exits non-zero naming the threshold" ;;
+  *) bad "0152 -- tail-cap --threshold 0 failed without naming the threshold: $ZT_OUT" ;;
+esac
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

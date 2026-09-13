@@ -226,16 +226,25 @@ def estimate(opts):
 
     plan = [("develop", gates, tickets - gates),
             ("verify", verify_sessions, tickets - verify_sessions)]
-    if opts["retro"]:
-        plan.append(("retro", 1, 0))
+    tail = [("retro", 1, 0)] if opts["retro"] else []
     if opts["queue"]:
-        plan.append(("queue", 1, 0))
+        tail.append(("queue", 1, 0))
 
+    # The ledger's per-ticket mean prices tickets and nothing else, so the tail sessions are always
+    # added from MEASUREMENT.md. Replacing the whole figure with the ledger's printed a derived-looking
+    # `tokens 0` for a run dispatching retro and queue (0152). Each part that contributed is named.
+    tail_src = "%s for %s" % (meas_src, ", ".join(stage for stage, _, _ in tail))
     for figure in ("tokens", "usd"):
-        if figure in hist:
+        tail_total = prior_total(figure, stages, tail)
+        if figure not in hist:
+            emit(figure, prior_total(figure, stages, plan) + tail_total, meas_src)
+        elif not tail:
             emit(figure, hist[figure] * tickets, ledger_src)
+        elif tickets <= 0:
+            emit(figure, tail_total, tail_src)
         else:
-            emit(figure, prior_total(figure, stages, plan), meas_src)
+            emit(figure, hist[figure] * tickets + tail_total,
+                 "%s for %d ticket(s) + %s" % (ledger_src, tickets, tail_src))
 
     return "\n".join(lines)
 
@@ -586,6 +595,8 @@ if mode == "tail-cap":
     for k in tc_opts:
         if tc_opts[k] is None:
             die("tail-cap needs --%s" % k.replace("_", "-"))
+    if tc_opts["threshold"] <= 0:
+        die("tail-cap: --threshold must be a positive findings_threshold, got %d" % tc_opts["threshold"])
     multiplier = max(1, math.ceil(tc_opts["findings"] / tc_opts["threshold"]))
     print("%.2f" % (tc_opts["base_cap"] * multiplier))
     sys.exit(0)
