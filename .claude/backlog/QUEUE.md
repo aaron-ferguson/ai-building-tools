@@ -91,7 +91,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0155 | Make claim and next agree on what blocks a take | develop | ready |  |
 | 0156 | Let handoff record a blocker without leaving drift that stops a driver | develop | ready |  |
 | 0157 | Make release verify compare the install against the released commit | develop | ready |  |
-| 0153 | Give the sprint supervisor marker a liveness signal that outlives one tool call | verify | in-progress |  |
 | 0154 | Let sprint park its own tooling findings, and propose the gate below a design row | verify | in-progress |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads

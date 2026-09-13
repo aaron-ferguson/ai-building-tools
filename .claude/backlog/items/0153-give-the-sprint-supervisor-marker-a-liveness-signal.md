@@ -2,8 +2,8 @@
 id: "0153"
 title: Give the sprint supervisor marker a liveness signal that outlives one tool call
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -15,9 +15,10 @@ relates: ["0121"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "verify"
-claimed_at: 2026-09-13T14:35:33Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-13
 ---
 
 ## Problem
@@ -41,8 +42,8 @@ following the rule would take over a live run (`.claude/backlog/runs/.active/hel
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then Step 1's staleness rule does not key on a pid being alive. Red-making change: today's wording.
-- [ ] AC2 — Given the rule, when the suite runs, then Step 3's dispatch refreshes the signal the staleness rule reads. Red-making change: a rule naming a signal nothing refreshes.
+- [x] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then Step 1's staleness rule does not key on a pid being alive. Red-making change: today's wording.
+- [x] AC2 — Given the rule, when the suite runs, then Step 3's dispatch refreshes the signal the staleness rule reads. Red-making change: a rule naming a signal nothing refreshes.
 
 ## QA plan
 
@@ -54,6 +55,16 @@ following the rule would take over a live run (`.claude/backlog/runs/.active/hel
 - 0121's timestamp in the backlog lock's `held-by`, a different file.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**Suite:** `tests/sprint.test.sh` — 225 passed, 0 failed
+
+| AC | Guard | Outcome |
+|---|---|---|
+| AC1 | `0153 AC1 — Step 1 staleness rule does not key on a pid being alive` | ✅ pass |
+| AC2 | `0153 AC2 — Step 3 refreshes the liveness signal named by the staleness rule` | ✅ pass |
+| NFR | `0153 NFR — Step 1 says why a pid cannot serve, in one clause` | ✅ pass |
+
+🔍 Probe: Confirmed `held-by` file no longer referenced in staleness rule — timestamp-based signal used instead.
 
 ## Notes & decisions
 

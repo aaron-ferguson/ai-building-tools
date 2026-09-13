@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0153 | Give the sprint supervisor marker a liveness signal that outlives one tool call | bug | unit | 2026-09-13 | [items/0153-give-the-sprint-supervisor-marker-a-liveness-signal.md](items/0153-give-the-sprint-supervisor-marker-a-liveness-signal.md) |
 | 0152 | Price and cap a sprint's retro and queue tail | bug | unit | 2026-09-13 | [items/0152-price-and-cap-a-sprint-s-retro-and.md](items/0152-price-and-cap-a-sprint-s-retro-and.md) |
 | 0151 | Make sprint's stage dispatch accept its own outcome schema | bug | unit | 2026-09-13 | [items/0151-make-sprint-s-stage-dispatch-accept-its-own.md](items/0151-make-sprint-s-stage-dispatch-accept-its-own.md) |
 | 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | feature | verify | 2026-09-13 | [items/0134-dispatch-design-in-parallel-with-develop.md](items/0134-dispatch-design-in-parallel-with-develop.md) |
