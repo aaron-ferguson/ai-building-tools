@@ -11,7 +11,7 @@ created: 2026-09-10
 source: user
 parent: "0128"
 blocked_by: []
-relates: ["0135"]
+relates: ["0135", "0160"]
 expects:
   - skills/sprint/SKILL.md
   - skills/develop/SKILL.md
@@ -133,3 +133,5 @@ Three questions, any of which could produce a follow-on develop ticket:
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
 
 ## Notes & decisions
+
+- **2026-09-13 — model tiering, from the run-20260913T034946Z sweep.** FR3's dispatch mechanism now exists: sprint Step 3 passes `--model opus` (commit `a666012`), after every stage of that run silently ran on claude-sonnet-4-6. The same run is the one recorded instance of a cheaper model degrading a stage: its verify session returned `conventions_resolved: null` and a placeholder `session_id` and still closed four tickets (0160). A haiku or sonnet recommendation for any stage should weigh that, not only the price differential.

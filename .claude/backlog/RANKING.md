@@ -255,3 +255,28 @@ until `0150` ships and is installed. On the tiers alone it is Tier 3, *Blocking*
 Nothing else was compared against it, because `0134` was already row 1. `0134` keeps its rank as
 `blocked` rather than sinking. `0147` returns to its row at `verify`: its code stands and only a
 stale criterion was dropped, so its worth is unchanged.
+
+## 2026-09-13 — 0151–0154 reopened at the top; the run-20260913T034946Z sweep below them
+
+**0151–0154 are rows 1–4 by the user's instruction**, reopened for re-verification after a verify
+pass returned `conventions_resolved: null` and a placeholder `session_id`. In-flight work closes
+before new work starts, and these are already built.
+
+**0158 and 0159 come next, above 0110**, because they decide how every later sprint selects work, in
+every project that installs the plugin (tie-breaker 1). 0158 goes first. It is Tier 1: a driven gate
+silently takes rank-94 rows ahead of rank 2, and a person approving the proposal cannot see what was
+jumped. 0159 is a loud halt rather than a silent wrong answer, and it is Tier 3: every ready design
+row stops a sprint that could take it.
+
+**0160 then 0161.** 0160 is Tier 1, a verify pass closing tickets against no standard. It sits below
+0158/0159 only on the user's stated emphasis. 0161, the scripted reopen, sits directly under it.
+The two are related, but 0161 does not block 0160, since 0160's escalation can name tickets to
+re-verify whether or not a script exists yet.
+
+**0162 and 0163, the ledger's silently wrong figures, above 0110 on tier.** 0162 comes first because
+an unpriced zero enters every later estimate's per-ticket mean, while 0163's inflated bound is only
+ever read in a report.
+
+**0164 goes directly above 0137.** It is Tier 4 value (active vs elapsed time, interruption counts),
+below every defect row, and above the parallel-develop decision that is deliberately last in the
+sprint cluster. Tie-breaker 3 applies: it is specified precisely today.

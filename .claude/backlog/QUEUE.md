@@ -27,6 +27,12 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0152 | Price and cap a sprint's retro and queue tail | verify | ready |  |
 | 0153 | Give the sprint supervisor marker a liveness signal that outlives one tool call | verify | ready |  |
 | 0154 | Let sprint park its own tooling findings, and propose the gate below a design row | verify | ready |  |
+| 0158 | Make --drive select a gate by rank, and let a join decide only batching | develop | ready |  |
+| 0159 | Dispatch a ready design row instead of escalating it to a person | develop | ready |  |
+| 0160 | Refuse a verify pass that resolved no conventions, names another session, or skips the unit command | develop | ready |  |
+| 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
+| 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | develop | ready |  |
+| 0163 | Bound harvest-usage's --run figures to the supervisor's own session | develop | ready |  |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | develop | ready |  |
 | 0041 | Write release notes for what a work session delivered | develop | ready | 0128 |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
@@ -90,6 +96,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0123 | Give queue a rule for withdrawing a criterion, as it has for withdrawing an id | develop | ready |  |
 | 0124 | Split the stop-rather-than-guess refusal out of the conventions ladder that instances it | design | ready |  |
 | 0125 | Pin the citation enumeration to its decision record so widening one cannot leave the other stale | develop | ready |  |
+| 0164 | Record active and elapsed time and interruptions in the sprint ledger, and estimate them | develop | ready |  |
 | 0137 | Decide whether two develop sessions may run at once, and in what isolation | design | ready | 0128 |
 | 0149 | Audit sprint efficiency — suite-check dedup, per-agent overhead, and model tiering | design | ready | 0128 |
 | 0155 | Make claim and next agree on what blocks a take | develop | ready |  |
