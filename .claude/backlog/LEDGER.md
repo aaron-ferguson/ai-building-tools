@@ -89,3 +89,26 @@ NOTE Re-recorded after 75bec41 priced sonnet-4-6; the first record read USD 0.00
   sessions only; the supervisor's own spend is not in it. The 00000000 session is the placeholder
   id verify returned in place of 433a37e3, not a real session. Develop's 8.18 spans both legs of
   session 64921e84, stopped by a session limit and resumed.
+
+## sprint run-20260913T151122Z -- ended 2026-09-13T21:06:16Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 4 | not a per-ticket prior: 11 touched, 4 re-verified and 7 filed by queue | confirmed scope @ 2026-09-13T21:06:16Z |
+| wall_clock_min | no prior | unmeasured: 354 elapsed, includes a session-limit wait | tokens: LEDGER.md 1 recorded sprint(s) over 4 ticket(s); usd: MEASUREMENT.md per-skill table, recorded 2026-08-24; wall-clock: none |
+| tokens | 19112608 | 3226414 | tokens: LEDGER.md 1 recorded sprint(s) over 4 ticket(s); usd: MEASUREMENT.md per-skill table, recorded 2026-08-24; wall-clock: none |
+| usd | 34.87 | 8.45 | tokens: LEDGER.md 1 recorded sprint(s) over 4 ticket(s); usd: MEASUREMENT.md per-skill table, recorded 2026-08-24; wall-clock: none |
+
+RATIO verify_usd_per_ticket batched session 33d2edfe = 1.06
+  numerator USD 4.23 (harvest-usage.sh over 1 session id(s) @ 2026-09-13T21:06:16Z)
+  denominator 4 ticket(s) (run-20260913T151122Z.jsonl outcome events @ 2026-09-13T21:06:16Z)
+FINDINGS parked 4 (run-20260913T151122Z.jsonl outcome events @ 2026-09-13T21:06:16Z)
+NOTE A rerun, not a sprint: one queue session (restaged 0151-0154, filed 0158-0164) and one verify
+  session on claude-opus-5 (0151 pass; 0152, 0153, 0154 fail). Tickets is written as text, which
+  removes this whole block from the per-ticket priors: its 11 counts filed tickets, and a queue plus
+  verify run has no develop cost to divide. Uncorrected, it pulled a three-ticket estimate to 97 min
+  and USD 2.30. Wall-clock includes a session-limit stop of verify 33d2edfe, logged as limit_hit and
+  resumed. USD is the harvest over every turn in both transcripts (19 distinct assistant messages in
+  33d2edfe, no sidechain) and is a lower bound: the two verify legs self-reported 2.15 and 4.06
+  against 4.23 harvested. The supervisor carried run-20260913T034946Z in context
+  (supervisor_context), and its spend is not in these figures.
