@@ -3,7 +3,7 @@ id: "0153"
 title: Give the sprint supervisor marker a liveness signal that outlives one tool call
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -15,8 +15,8 @@ relates: ["0121"]
 expects:
   - skills/sprint/SKILL.md  # transient mutation only (M-target, M-notime), restored by path; no committed edit
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "ec4e"
+claimed_at: 2026-09-14T02:14:58Z
 touches:
 ---
 
