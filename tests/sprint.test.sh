@@ -2117,12 +2117,21 @@ HEARTBEAT="$(awk '
   inside && /^```/ { if (infence) { if (body ~ /\.active\/held-by/) printf "%s", body; body = "" } infence = !infence; next }
   inside && infence { body = body $0 "\n" }
 ' "$SKILL" 2>/dev/null)"
-if printf '%s' "$HEARTBEAT" | grep -qE '>[[:space:]]*\.claude/backlog/runs/\.active/held-by'; then
-  ok "a Step 3 code block writes .active/held-by"
+# Verification 2026-09-13 (7d814a75) kept this green with the write aimed at `held-by.beat`, a file
+# Step 1 never reads, and with a literal timestamp that never ages (M-target, M-notime). So the
+# redirect must END at the exact path, and that same line must stamp the time on every pass.
+HELD_BY_WRITE="$(printf '%s' "$HEARTBEAT" | grep -E '>[[:space:]]*\.claude/backlog/runs/\.active/held-by[[:space:]]*$' || true)"
+if [ -n "$HELD_BY_WRITE" ]; then
+  ok "a Step 3 code block writes exactly .claude/backlog/runs/.active/held-by, the file Step 1 reads"
 else
-  bad "0153 AC2 — no Step 3 code block writes .active/held-by; naming the marker in prose refreshes nothing"
+  bad "0153 AC2 — no Step 3 code block writes exactly .claude/backlog/runs/.active/held-by; a marker Step 1 never reads refreshes nothing"
 fi
-if printf '%s' "$HEARTBEAT" | awk '/while /{loop=1} loop && /held-by/{w=1} END{exit !w}'; then
+if printf '%s' "$HELD_BY_WRITE" | grep -qF '$(date -u +%Y-%m-%dT%H:%M:%SZ)'; then
+  ok "and the held-by write stamps the current UTC time on that same line, so each pass moves it"
+else
+  bad "0153 AC2 — the held-by write does not stamp \$(date -u +%Y-%m-%dT%H:%M:%SZ) itself; a literal or once-computed time never ages"
+fi
+if printf '%s' "$HEARTBEAT" | awk '/while /{loop=1} loop && />[[:space:]]*\.claude\/backlog\/runs\/\.active\/held-by[[:space:]]*$/{w=1} END{exit !w}'; then
   ok "and the write is inside a loop, so it repeats while the stage runs"
 else
   bad "0153 FR1 — the held-by write is not inside a loop; a refresh made once before the call goes stale during a long stage"
