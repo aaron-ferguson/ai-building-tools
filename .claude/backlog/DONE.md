@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0154 | Let sprint park its own tooling findings, and propose the gate below a design row | feature | unit | 2026-09-14 | [items/0154-let-sprint-park-its-own-tooling-findings-and.md](items/0154-let-sprint-park-its-own-tooling-findings-and.md) |
 | 0152 | Price and cap a sprint's retro and queue tail | bug | unit | 2026-09-14 | [items/0152-price-and-cap-a-sprint-s-retro-and.md](items/0152-price-and-cap-a-sprint-s-retro-and.md) |
 | 0151 | Make sprint's stage dispatch accept its own outcome schema | bug | unit | 2026-09-13 | [items/0151-make-sprint-s-stage-dispatch-accept-its-own.md](items/0151-make-sprint-s-stage-dispatch-accept-its-own.md) |
 | 0134 | Dispatch a sprint's design sessions alongside develop instead of stopping for them | feature | verify | 2026-09-13 | [items/0134-dispatch-design-in-parallel-with-develop.md](items/0134-dispatch-design-in-parallel-with-develop.md) |

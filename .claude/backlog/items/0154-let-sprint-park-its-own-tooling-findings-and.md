@@ -2,8 +2,8 @@
 id: "0154"
 title: Let sprint park its own tooling findings, and propose the gate below a design row
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -18,9 +18,10 @@ expects:
   - skills/queue/templates/next
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by: "3b77"
-claimed_at: 2026-09-14T01:00:11Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-14
 ---
 
 ## Problem
@@ -46,8 +47,8 @@ holds the next develop gate's ids only by way of `./next develop`'s lead row (de
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then a step instructs parking findings under the lock. Red-making change: today's skill.
-- [ ] AC2 — Given a fixture with an unheld design row above a develop gate, when `./next --drive --propose` runs, then the output names the gate's ids. Red-making input: today's template.
+- [x] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then a step instructs parking findings under the lock. Red-making change: today's skill.
+- [x] AC2 — Given a fixture with an unheld design row above a develop gate, when `./next --drive --propose` runs, then the output names the gate's ids. Red-making input: today's template.
 
 ## QA plan
 
@@ -87,6 +88,25 @@ Conventions resolved: `/Users/<name>/AI/ai-building-conventions` (config.yml `co
 | Always-on (CONVENTIONS_CORE.md) | no secrets/data; both `next` copies identical at HEAD (`diff` clean) | ✅ |
 
 Evidence set: `skills/sprint/SKILL.md`, `.claude/backlog/next`, `skills/queue/templates/next`, `tests/sprint.test.sh`, `tests/next.test.sh`, `tests/backlog-scripts-installed.test.sh`, `references/CONVENTIONS.md`. Intersection with the dirty set: empty.
+
+### Verification 2026-09-13 — session 7d814a75, token 3b77 — **PASS**
+
+**Suite — `config.yml` `commands.unit`, run per file so every file reports, at 41b7a64, every file exit 0.** Per-file tallies, pasted: `backlog-scripts-installed 37/0 · batching 39/0 · citations 46/0 · claim 98/0 · close-by 67/0 · close 246/0 · cost-by-category 29/0 · cross-cutting-change 21/0 · design-hold 34/0 · external-feedback 9/0 · falsifiable-acs 34/0 · findings-buffer 46/0 · findings-routing 41/0 · floor-probe 12/0 · graph-fields 36/0 · handoff 132/0 · item-ac-form 4/0 · last-line 17/0 · measurement 131/0 · money-in-skill-prose 12/0 · next 432/0 · qa-level-once 11/0 · reference-size 15/0 · release 45/0 · remote-anchor 20/0 · reporting 23/0 · retro-tool-edit 50/0 · skill-size 27/0 · sprint-ledger 106/0 · sprint 238/0/0 skipped · transient-mutation 6/0`. A second whole-suite run after this session's commits is reported in the session outcome.
+Conventions: `../ai-building-conventions` (`config.yml` `conventions.path`). Copy under test: the repo copy; the installed 0.9.28 cache's `skills/sprint/SKILL.md` and `skills/queue/templates/next` differ. Dirty set at Step 2: `?? .claude/backlog/runs/` only. Every mutation was applied to a committed file, confirmed by a non-empty `git diff --stat`, restored by path; controls `sprint 238 passed, 0 failed, 0 skipped`, `next 432 passed, 0 failed`, `backlog-scripts-installed 37 passed, 0 failed`. Item written through Bash; the Edit/Write tools were not tried.
+
+| Row | How checked | Result |
+|---|---|---|
+| AC1 | Step 9 *"The supervisor parks findings about its own tooling under the backlog lock"*. Mutation M-AC1 (`parks` → `records`) → `FAIL 0154 AC1` plus both FR1 guards, 235/3 | ✅ |
+| **FR1 — the re-verification's failure row (no routing)** | The parking paragraph now cites `references/CONVENTIONS.md`, *Routing a finding to the repo it is about*, on one line, and sends tooling findings to the `FINDINGS.md` at `tools.path` under that backlog's lock. Checked against CONVENTIONS.md lines 90–116: a skill or script finding → tools repo's `.claude/backlog/FINDINGS.md`; `tools.path` from `config.yml`; the cited section also covers the unresolved fallback. Mutation M-cite (citation → `as below:`) → `FAIL 0154 FR1 -- the parking paragraph does not route per references/CONVENTIONS.md`, 237/1; M-tools (`tools.path` removed) → `FAIL 0154 FR1 -- … does not send tooling findings to the tools repo at tools.path`, 237/1 | ✅ |
+| 🔍 FR1 inversion | M-invert (sentence reversed to "goes to this project's buffer, never the `FINDINGS.md` of the checkout `tools.path` resolves to", both strings kept) → 238/0 | ⚠️ a line grep cannot see a negation; published, not papered over. The cited section stays authoritative |
+| FR2 | Step 8 *"It never writes to the backlog except to park findings"*. Mutation M-FR2 (exemption removed) → `FAIL 0154 FR2`, 237/1 | ✅ |
+| AC2 | Live fixture, ids 9901 design / 9902 `src/a.ts` / 9903 `src/b.ts`, through **both** `.claude/backlog/next` and `skills/queue/templates/next`: `PROPOSE   develop \| 1 ticket(s)` / `TICKET    9902 \| size s \| Fixture develop 9902` / `ESCALATE  9901 …`, exit 4; without `--propose` no PROPOSE line, exit 4. Mutation M1 (delete the FR3 block from the template) → `FAIL — PROPOSE line names the develop gate below the design row` and `FAIL — the gate below the design row is ticket 0002 and only 0002`, next 430/2; `FAIL next has diverged`, backlog-scripts-installed 36/1 | ✅ |
+| AC2 id guard — the re-verification's ⚠️ row | Mutation M-id (template prints `TICKET    x%s`, count unchanged) → `FAIL — the gate below the design row is ticket 0002 and only 0002` plus four pre-existing TICKET-line cases, 427/5 | ✅ ids now asserted |
+| 🔍 probes | Overlapping rows (9902 and 9903 both `src/a.ts`) → `PROPOSE develop \| 2 ticket(s)`, both TICKET lines, `JOIN src/a.ts`, both copies; design row with nothing below → no PROPOSE, exit 4, both copies | ✅ |
+| NFR Testing | Whole-line equality on PROPOSE and on the TICKET lines (`assert_eq`) | ✅ |
+| Always-on (CONVENTIONS_CORE.md) | No secrets or data; `diff -q` on the two `next` copies: identical | ✅ |
+
+Evidence set: `skills/sprint/SKILL.md`, `.claude/backlog/next`, `skills/queue/templates/next`, `tests/sprint.test.sh`, `tests/next.test.sh`, `tests/backlog-scripts-installed.test.sh`, `references/CONVENTIONS.md`. Intersection with the dirty set (`.claude/backlog/runs/`): empty.
 
 ## Notes & decisions
 
