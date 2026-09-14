@@ -2,8 +2,8 @@
 id: "0153"
 title: Give the sprint supervisor marker a liveness signal that outlives one tool call
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -15,9 +15,10 @@ relates: ["0121"]
 expects:
   - skills/sprint/SKILL.md  # transient mutation only (M-target, M-notime), restored by path; no committed edit
   - tests/sprint.test.sh
-claimed_by: "ec4e"
-claimed_at: 2026-09-14T02:14:58Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-14
 ---
 
 ## Problem
@@ -41,8 +42,8 @@ following the rule would take over a live run (`.claude/backlog/runs/.active/hel
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then Step 1's staleness rule does not key on a pid being alive. Red-making change: today's wording.
-- [ ] AC2 — Given the rule, when the suite runs, then Step 3's dispatch refreshes the signal the staleness rule reads. Red-making change: a rule naming a signal nothing refreshes.
+- [x] AC1 — Given `skills/sprint/SKILL.md`, when the suite runs, then Step 1's staleness rule does not key on a pid being alive. Red-making change: today's wording.
+- [x] AC2 — Given the rule, when the suite runs, then Step 3's dispatch refreshes the signal the staleness rule reads. Red-making change: a rule naming a signal nothing refreshes.
 
 ## QA plan
 
@@ -115,6 +116,33 @@ Copy under test: the repo copy (`skills/sprint/SKILL.md`, `tests/sprint.test.sh`
 
 Evidence set: `skills/sprint/SKILL.md`, `tests/sprint.test.sh`. Intersection with the dirty set (`.claude/backlog/runs/`): empty.
 
+### Verification 2026-09-14 — session c8367270, token ec4e — **PASS**
+
+**Suite — `config.yml` `commands.unit`, run per file, at 298a47e, every file rc=0.** Per-file tallies, pasted: `backlog-scripts-installed 37/0 · batching 39/0 · citations 46/0 · claim 98/0 · close-by 67/0 · close 246/0 · cost-by-category 29/0 · cross-cutting-change 21/0 · design-hold 34/0 · external-feedback 9/0 · falsifiable-acs 34/0 · findings-buffer 46/0 · findings-routing 41/0 · floor-probe 12/0 · graph-fields 36/0 · handoff 132/0 · item-ac-form 4/0 · last-line 17/0 · measurement 131/0 · money-in-skill-prose 12/0 · next 432/0 · qa-level-once 11/0 · reference-size 15/0 · release 45/0 · remote-anchor 20/0 · reporting 23/0 · retro-tool-edit 50/0 · skill-size 27/0 · sprint-ledger 106/0 · sprint 238/0/0 · transient-mutation 6/0`.
+Copy under test: the repo copy. 9c53b39 changed only `tests/sprint.test.sh`; `skills/sprint/SKILL.md` is untouched, so there is no SKILL.md change to judge. Dirty set at Step 2 and at the last capture: `?? .claude/backlog/runs/` only. Each mutation was applied to committed `skills/sprint/SKILL.md`, confirmed by a non-empty `git diff --numstat`, run alone, and restored by path. Control run: `238 passed, 0 failed, 0 skipped`. Item written through Bash; the Edit/Write tools were not tried. Host memory pressure interrupted the session once (exit 137) between cycles; the tree was confirmed clean before resuming.
+
+| Row | How checked | Result |
+|---|---|---|
+| AC2 — guard runs the snippet, not its text | `tests/sprint.test.sh` 2114–2146 extracts the fenced Step 3 block that writes `.active/held-by`. It shortens only `sleep N`, swaps the `# … dispatch` comment for a 4 s stand-in that samples held-by, and runs the block under `sh` in a fixture dir. It asserts ≥2 distinct, ordered, well-formed `run-fixture-0153-beat <UTC>` samples, then no change after `kill` | ✅ executes |
+| AC2 — stability | `tests/sprint.test.sh` run 3× in a row: `238 passed, 0 failed, 0 skipped`, 17 s each, rc=0 all three | ✅ stable |
+| AC2 — no background leftovers | `ps` after each of the 3 runs and after every mutation: no `beat.sh`, stand-in, `run-fixture-0153-beat` or `sleep 1/2` process. A `sleep 60` present before and after belonged to a different Claude session's shell, not to the test | ✅ |
+| AC2 — M4 (heartbeat block → a sentence naming `.active/`) | 233 passed, 5 failed | ✅ red |
+| AC2 — M-target (`> …/held-by.beat`) | 236/2 (`FAIL 0153 AC2 … 4 bad samples: MISSING…`) | ✅ red |
+| AC2 — M-notime (`"2026-01-01T00:00:00Z" >`) | 236/2 (`1 distinct stamps`) | ✅ red |
+| AC2 — M-comment (write line commented out) | 236/2 | ✅ red |
+| AC2 — M-nocall (`beat & BEAT=$!` → `: & BEAT=$!`) | 236/2 | ✅ red |
+| AC2 — new M-append (`>` → `>>`, held-by accumulates so its first line ages) | 237/1 | ✅ red |
+| AC2 — new M-wrongid (`"$RUN_ID"` → `"$RUN_STAGE_UUID"`, unset) | 236/2 (`4 bad samples`) | ✅ red |
+| AC2 — new M-once (`sleep 60` → `break`) | 235/3 | ✅ red |
+| AC2 — new M-killfirst (`kill "$BEAT"` moved before the dispatch) | 235/3 | ✅ red |
+| AC2 — new M-nokill (`kill "$BEAT"` deleted) | 237/1, via `FAIL 0153 FR1 — … not backgrounded … and killed after it` only. The executed checks stay green because `kill -0 "$$"` ends the loop once `sh beat.sh` exits, which is the snippet's own safety net; no orphan observed | ✅ red (structural check, not the execution) |
+| AC1 | M-pidalive (line 100 → `marker whose pid is no longer alive, or older than …`) → `FAIL 0153 AC1 — Step 1 still checks whether a pid is alive`, 237/1 | ✅ red |
+| NFR Documentation | M-NFR (delete *"A pid cannot serve as a liveness signal here:"*) → `FAIL 0153 NFR`, 237/1 | ✅ red |
+| Step 1 reliance | Step 1 (SKILL.md 95–102) ages the `held-by` UTC timestamp against `lock_stale_seconds` (900); the snippet rewrites exactly that file with `$RUN_ID <UTC>` every 60 s, 15× inside the age | ✅ |
+| Always-on (CONVENTIONS_CORE.md) | test-only change; no secrets, no egress; fixture under `$FIX`, no processes left | ✅ |
+
+Evidence set: `skills/sprint/SKILL.md`, `tests/sprint.test.sh`, `.claude/backlog/config.yml`. Intersection with the dirty set (`.claude/backlog/runs/`): empty.
+
 ## Notes & decisions
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** One buffer entry, filed because it would let two supervisors drive one backlog.
@@ -128,3 +156,4 @@ Evidence set: `skills/sprint/SKILL.md`, `tests/sprint.test.sh`. Intersection wit
 - **2026-09-13 — verification (session 091e8968) FAILED; sent back to `develop`.** M-target (236/3) and M-notime (238/1) now go red, as the last verdict required, and AC1 and the NFR hold. AC2 is still unverified at its own altitude: its red-making change, *"a rule naming a signal nothing refreshes"*, passes the guard twice more. **M-comment** (the held-by write line commented out) → 239/0. **M-nocall** (`beat & BEAT=$!` → `: & BEAT=$!`, the function never started) → 239/0. This is the third round of shape-by-shape grep tightening, and each round has left a new shape uncaught. AC2's claim covers every way a block can fail to refresh, so a hand-picked list of shapes cannot settle it (verify Step 3, quantifier ACs). **The constraint:** *0153 AC2* must **execute** the Step 3 heartbeat block as extracted from `SKILL.md`, with only the `sleep` interval shortened and a stand-in in place of the dispatch comment, in a scratch directory. It then asserts that `.claude/backlog/runs/.active/held-by` there is rewritten at least twice with a UTC timestamp that advances. M-target, M-notime, M-comment and M-nocall must all go red against committed code. No `SKILL.md` change is owed.
 - **2026-09-14 — develop re-entry (session 4612f9bf), token 1e8a, 9c53b39.** No `SKILL.md` change. The snippet runs as written without an interval hook: the guard only shortens `sleep N` to `sleep 1` in the extracted copy, so none is needed. *0153 AC2* in `tests/sprint.test.sh` no longer greps the write line's text. The exact-path, per-pass-stamp and in-a-loop greps are gone. It **executes** the Step 3 block, extracted from `SKILL.md` with `sleep` shortened and the `# ... dispatch` comment swapped for a 4 s stand-in. The run happens under `sh` in a scratch dir, with `RUN_ID=run-fixture-0153-beat`. The stand-in samples `.claude/backlog/runs/.active/held-by` each second. The first assertion needs every sample to be the fixture id plus a UTC stamp, with at least two distinct stamps in ascending order. The second needs the file unchanged 2 s after the block's own `kill`. The FR1 interval/order/`kill -0`/Step 1 greps stay; they are not AC2's claim. **Mutations, run, each against committed `skills/sprint/SKILL.md`, confirmed by `git diff --stat`, restored by path:** M4 (block → one sentence naming `.active/`) → 233/5. M-target (`held-by.beat`) → 236/2, samples `MISSING`. M-notime (literal `2026-01-01T00:00:00Z`) → 236/2, 1 distinct stamp. M-comment (write line commented out) → 236/2. M-nocall (`: & BEAT=$!`) → 236/2. M-nokill (`while :` and the `kill` line deleted) → 235/3, including the stops-after-kill assertion; the orphaned loop was then killed by hand. Control 238/0. Whole suite `tests/*.test.sh`: every file 0 failed. The guard adds about 6 s to `sprint.test.sh`. It can only be as early-red as its stand-in: a shape that refreshes held-by but not within 1 s of `sleep 1` would red too, which is the intent.
 - Item file written through Bash, following the earlier notes; the Edit/Write tools were not tried.
+- **2026-09-14 — verification (session c8367270), token ec4e — PASS; closed.** The AC2 guard executes the Step 3 block; M4, M-target, M-notime, M-comment and M-nocall all redden, as do new M-append, M-wrongid, M-once, M-killfirst and M-nokill. The suite is stable over three runs and leaves no process behind. Observation: M-nokill reddens only the FR1 structural grep, since `kill -0 "$$"` stops the loop anyway; that is the snippet's intended backstop, not a gap in AC2. Item file written through Bash.
