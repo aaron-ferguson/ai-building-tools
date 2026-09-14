@@ -2,8 +2,8 @@
 id: "0153"
 title: Give the sprint supervisor marker a liveness signal that outlives one tool call
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -15,11 +15,9 @@ relates: ["0121"]
 expects:
   - skills/sprint/SKILL.md  # transient mutation only (M-target, M-notime), restored by path; no committed edit
   - tests/sprint.test.sh
-claimed_by: "1e8a"
-claimed_at: 2026-09-14T02:06:27Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/sprint/SKILL.md  # transient mutation only (M-target, M-notime), restored by path; no committed edit
-  - tests/sprint.test.sh
 ---
 
 ## Problem
@@ -128,3 +126,5 @@ Evidence set: `skills/sprint/SKILL.md`, `tests/sprint.test.sh`. Intersection wit
 - **2026-09-13 — develop re-entry (session eac85fd6), token 907d.** No `SKILL.md` change, per the verdict. `tests/sprint.test.sh` *0153 AC2* now takes the write line whose redirect ENDS at `.claude/backlog/runs/.active/held-by` (trailing whitespace allowed, nothing else), asserts that same line stamps `$(date -u +%Y-%m-%dT%H:%M:%SZ)`, and the loop check uses the same exact-path pattern instead of any `held-by`. A time computed once above the loop and written as a variable also reds, because the stamp must be on the write line itself. **Mutations, run, each against committed `skills/sprint/SKILL.md` at 3edbcef, confirmed by `git diff --stat`, restored by path:** M-target (`> .claude/backlog/runs/.active/held-by.beat`) → 3 FAIL, 236/3 (exact path, stamp, loop). M-notime (`"2026-01-01T00:00:00Z" > …/held-by`) → 1 FAIL, 238/1. Control 239/0; whole suite `tests/*.test.sh` every file 0 failed. **A mechanism that bit:** the first form captured the grep in `$(…)` without `|| true`, and `set -eu` (line 43) killed the script on the no-match path — M-target printed no FAIL and no tally at all, which is not a red. Fixed and re-run as above.
 - Item file written through Bash, following the 0152 note; the Edit/Write tools were not tried.
 - **2026-09-13 — verification (session 091e8968) FAILED; sent back to `develop`.** M-target (236/3) and M-notime (238/1) now go red, as the last verdict required, and AC1 and the NFR hold. AC2 is still unverified at its own altitude: its red-making change, *"a rule naming a signal nothing refreshes"*, passes the guard twice more. **M-comment** (the held-by write line commented out) → 239/0. **M-nocall** (`beat & BEAT=$!` → `: & BEAT=$!`, the function never started) → 239/0. This is the third round of shape-by-shape grep tightening, and each round has left a new shape uncaught. AC2's claim covers every way a block can fail to refresh, so a hand-picked list of shapes cannot settle it (verify Step 3, quantifier ACs). **The constraint:** *0153 AC2* must **execute** the Step 3 heartbeat block as extracted from `SKILL.md`, with only the `sleep` interval shortened and a stand-in in place of the dispatch comment, in a scratch directory. It then asserts that `.claude/backlog/runs/.active/held-by` there is rewritten at least twice with a UTC timestamp that advances. M-target, M-notime, M-comment and M-nocall must all go red against committed code. No `SKILL.md` change is owed.
+- **2026-09-14 — develop re-entry (session 4612f9bf), token 1e8a, 9c53b39.** No `SKILL.md` change. The snippet runs as written without an interval hook: the guard only shortens `sleep N` to `sleep 1` in the extracted copy, so none is needed. *0153 AC2* in `tests/sprint.test.sh` no longer greps the write line's text. The exact-path, per-pass-stamp and in-a-loop greps are gone. It **executes** the Step 3 block, extracted from `SKILL.md` with `sleep` shortened and the `# ... dispatch` comment swapped for a 4 s stand-in. The run happens under `sh` in a scratch dir, with `RUN_ID=run-fixture-0153-beat`. The stand-in samples `.claude/backlog/runs/.active/held-by` each second. The first assertion needs every sample to be the fixture id plus a UTC stamp, with at least two distinct stamps in ascending order. The second needs the file unchanged 2 s after the block's own `kill`. The FR1 interval/order/`kill -0`/Step 1 greps stay; they are not AC2's claim. **Mutations, run, each against committed `skills/sprint/SKILL.md`, confirmed by `git diff --stat`, restored by path:** M4 (block → one sentence naming `.active/`) → 233/5. M-target (`held-by.beat`) → 236/2, samples `MISSING`. M-notime (literal `2026-01-01T00:00:00Z`) → 236/2, 1 distinct stamp. M-comment (write line commented out) → 236/2. M-nocall (`: & BEAT=$!`) → 236/2. M-nokill (`while :` and the `kill` line deleted) → 235/3, including the stops-after-kill assertion; the orphaned loop was then killed by hand. Control 238/0. Whole suite `tests/*.test.sh`: every file 0 failed. The guard adds about 6 s to `sprint.test.sh`. It can only be as early-red as its stand-in: a shape that refreshes held-by but not within 1 s of `sleep 1` would red too, which is the intent.
+- Item file written through Bash, following the earlier notes; the Edit/Write tools were not tried.
