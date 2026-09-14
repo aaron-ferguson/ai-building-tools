@@ -3,7 +3,7 @@ id: "0154"
 title: Let sprint park its own tooling findings, and propose the gate below a design row
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -18,8 +18,8 @@ expects:
   - skills/queue/templates/next
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "3b77"
+claimed_at: 2026-09-14T01:00:11Z
 touches:
 ---
 
