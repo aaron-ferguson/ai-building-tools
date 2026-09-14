@@ -2,8 +2,8 @@
 id: "0152"
 title: Price and cap a sprint's retro and queue tail
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -17,9 +17,10 @@ expects:
   - tests/sprint-ledger.test.sh
   - .claude/backlog/config.yml
   - skills/sprint/SKILL.md
-claimed_by: "54a8"
-claimed_at: 2026-09-14T01:00:10Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-14
 ---
 
 ## Problem
@@ -47,9 +48,9 @@ threshold. A fixed cap fires mid-sweep on exactly the runs that most need the ta
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `estimate` with zero tickets and a tail, when it runs, then the USD figure is non-zero and cites its source. Red-making input: today's script with `--tickets 0 --develop-gates 0 --verify-sessions 0`.
-- [ ] AC2 — Given `.claude/backlog/config.yml`, when the suite runs, then `stage_budget_usd` has a `queue` key. Red-making change: deleting it.
-- [ ] AC3 — Given a findings count of 9× the threshold in a fixture, when the tail cap is computed, then it exceeds the base cap by the configured rule. Red-making change: returning the base cap.
+- [x] AC1 — Given `estimate` with zero tickets and a tail, when it runs, then the USD figure is non-zero and cites its source. Red-making input: today's script with `--tickets 0 --develop-gates 0 --verify-sessions 0`.
+- [x] AC2 — Given `.claude/backlog/config.yml`, when the suite runs, then `stage_budget_usd` has a `queue` key. Red-making change: deleting it.
+- [x] AC3 — Given a findings count of 9× the threshold in a fixture, when the tail cap is computed, then it exceeds the base cap by the configured rule. Red-making change: returning the base cap.
 
 ## QA plan
 
@@ -90,6 +91,27 @@ Conventions resolved: `/Users/<name>/AI/ai-building-conventions` (config.yml `co
 | Always-on (CONVENTIONS_CORE.md) | no secrets, no external input beyond CLI args, no data egress | ✅ |
 
 Evidence set: `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh`, `.claude/backlog/config.yml`, `.claude/backlog/LEDGER.md`, `MEASUREMENT.md`. Intersection with the dirty set: empty.
+
+### Verification 2026-09-13 — session 7d814a75, token 54a8 — **PASS**
+
+**Suite — `config.yml` `commands.unit`, run per file so every file reports, at 41b7a64, every file exit 0.** Per-file tallies, pasted: `backlog-scripts-installed 37/0 · batching 39/0 · citations 46/0 · claim 98/0 · close-by 67/0 · close 246/0 · cost-by-category 29/0 · cross-cutting-change 21/0 · design-hold 34/0 · external-feedback 9/0 · falsifiable-acs 34/0 · findings-buffer 46/0 · findings-routing 41/0 · floor-probe 12/0 · graph-fields 36/0 · handoff 132/0 · item-ac-form 4/0 · last-line 17/0 · measurement 131/0 · money-in-skill-prose 12/0 · next 432/0 · qa-level-once 11/0 · reference-size 15/0 · release 45/0 · remote-anchor 20/0 · reporting 23/0 · retro-tool-edit 50/0 · skill-size 27/0 · sprint-ledger 106/0 · sprint 238/0/0 skipped · transient-mutation 6/0`. A second whole-suite run after this session's commits is reported in the session outcome.
+Conventions: `../ai-building-conventions` (`config.yml` `conventions.path`). Copy under test: the repo copy (installed 0.9.28 cache differs in `skills/sprint/`; `tools/` is run from the repo). Dirty set at Step 2: `?? .claude/backlog/runs/` only. Every mutation was applied to a committed file, confirmed by a non-empty `git diff --stat`, restored by its own path; the cycle ended on a control run `106 passed, 0 failed` (config mutation: control `106 passed, 0 failed`). Item written through Bash; the Edit/Write tools were not tried.
+
+| Row | How checked | Result |
+|---|---|---|
+| AC1 | Live, real ledger: `estimate … --tickets 0 --develop-gates 0 --verify-sessions 0 --retro --queue` → `tokens 6745030 source: MEASUREMENT.md per-skill table, recorded 2026-08-24 for retro, queue` / `usd 6.75 source: MEASUREMENT.md …`. Mutation M1both2 (queue append → `pass`) → `FAIL 0152 FR1 -- --queue added nothing to usd` and `… tokens`, 104/2 | ✅ |
+| FR1 — the re-verification's failure row | Live, real ledger (2 recorded sprints): tail-only now `tokens 6745030` citing MEASUREMENT.md, not `tokens 0 source: LEDGER.md`; `--tickets 2 … --retro --queue` → `tokens 16301334 source: LEDGER.md … for 2 ticket(s) + MEASUREMENT.md … for retro, queue` = 9556304 (tickets alone) + 6745030 (tail), `usd 22.06` = 15.32 + 6.74. Mutation Mhist (`elif not tail:` → `elif True:`, the old ledger-replaces-everything branch) → 8 FAIL incl. `tail-only tokens on a history ledger is 0, on an empty one 6745030`, 98/8 | ✅ |
+| AC1 guard gap — the re-verification's M1a row | Mutation M1a (queue append → `pass`) → `FAIL 0152 FR1 -- --queue added nothing to usd: retro+queue=2.50 retro=2.50` and tokens, 104/2 | ✅ now reds |
+| NFR Observability — the re-verification's failure row | Msrc (composite source → ledger source only) → 2 `FAIL 0152 NFR -- … does not name both`, 104/2; Mtailsrc (tail-only source → ledger source) → 2 `FAIL 0152 NFR -- tail-only … does not cite the source`, 104/2 | ✅ |
+| AC2 | `queue: 6.36  # 4.24 x 1.5` in `stage_budget_usd`. Mutation M2 (delete that line) → `FAIL 0152 AC2 -- config.yml has no queue cap` and `FAIL 0152 AC3 -- no queue cap`, 104/2 | ✅ |
+| AC3 | Live `tail-cap --findings 72 --threshold 8 --base-cap 3.75` → `33.75`; `--base-cap 6.36` → `57.24`; `--findings 0` → base `3.75`. Mutation M3 (print base cap) → `FAIL 0152 AC3 -- scaled cap does not exceed base cap at 9x threshold: scaled=6.36 base=6.36`, 105/1 | ✅ |
+| Zero-threshold fix (develop's added guard) | Live `--threshold 0` → `tail-cap: --threshold must be a positive findings_threshold, got 0`, exit 1; `--threshold -2` same. Mutation Mthr (drop the check) → `FAIL 0152 -- tail-cap --threshold 0 crashed with a traceback`, 105/1 | ✅ |
+| 🔍 retro pricing | Mutation M1both (`tail = []` in place of the retro entry) → 106/0. Retro pricing predates this ticket (a3f5a7a, 0135); the guards compare retro+queue against retro alone, so a missing retro cancels | ⚠️ unguarded, not this ticket's code; parked in FINDINGS.md (46f8755) |
+| 🔍 malformed input | `tail-cap --findings abc` → Python `ValueError` traceback, exit 1 | ⚠️ parked (46f8755) |
+| 🔍 double count | develop's note that recorded sprints' actuals may already carry tail cost: already parked (d243976); built as the re-verification's constraint required | noted |
+| Always-on (CONVENTIONS_CORE.md) | CLI args only, no secrets, no egress; failures now named | ✅ |
+
+Evidence set: `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh`, `.claude/backlog/config.yml`, `.claude/backlog/LEDGER.md`, `MEASUREMENT.md`. Intersection with the dirty set (`.claude/backlog/runs/`): empty.
 
 ## Notes & decisions
 
