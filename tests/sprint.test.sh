@@ -2212,5 +2212,35 @@ else
   bad "run-20260913T034946Z — Step 5 has no supervisor_context marker; a rerun's inflated supervisor figures read as comparable"
 fi
 
+# The 2026-09-13 retro landed these from FINDINGS.md entries parked by run-20260913T151122Z and
+# run-20260913T222409Z. Presence greps, and honest about it: each proves the lesson is written in the
+# section a supervisor or verify session reads at that moment, never that a session obeyed it.
+VERIFY_SKILL="$ROOT/skills/verify/SKILL.md"
+guard_says() { # <file> <section> <phrase> <ok text> <bad text>
+  if says_ci "$1" "$2" "$3"; then ok "$4"; else bad "$5"; fi
+}
+echo "retro 2026-09-13 — lessons from the September sprint runs"
+guard_says "$SKILL" "Step 3" 'Bash heredoc' \
+  "Step 3 names Bash as the write channel for backlog item files" \
+  "retro 2026-09-13 — Step 3 names no write channel; an unattended stage's Write on .claude/backlog/items/*.md stalls on a sensitive-file prompt nobody answers"
+guard_says "$SKILL" "Step 3" 'outlive the supervisor' \
+  "Step 3 captures stage stdout where it outlives the supervisor" \
+  "retro 2026-09-13 — Step 3 does not place stage stdout beside the run log; a scratchpad capture was withdrawn mid-run"
+guard_says "$SKILL" "Step 3" 'repo-relative' \
+  "Step 3 tells a stage its evidence carries repo-relative paths" \
+  "retro 2026-09-13 — Step 3's dispatch prompt rule names no repo-relative paths; a verify copied an absolute home path into public QA evidence"
+guard_says "$SKILL" "Step 4" "wrapper's exit" \
+  "Step 4 does not route on a background wrapper's exit" \
+  "retro 2026-09-13 — Step 4 does not say a detached wrapper's exit is not the stage's; a finished stage escalates"
+guard_says "$SKILL" "Step 7" 'host kill' \
+  "Step 7 resumes a host kill that left a clean tree and a held claim" \
+  "retro 2026-09-13 — Step 7 has no host-kill case; a low-memory kill reads as a cap kill and halts the run"
+guard_says "$VERIFY_SKILL" "Step 5" 'execute the snippet' \
+  "verify Step 5 names execution as the constraint for a guarded executable snippet" \
+  "retro 2026-09-13 — verify Step 5 dictates grep shapes for an executable snippet; 0153 bounced three rounds"
+guard_says "$VERIFY_SKILL" "Step 7" 'repo-relative' \
+  "verify Step 7 writes QA evidence with repo-relative paths" \
+  "retro 2026-09-13 — verify Step 7 allows an absolute path into QA evidence; measurement.test.sh's privacy NFR reds after the suite already ran"
+
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]

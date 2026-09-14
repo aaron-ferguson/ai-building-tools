@@ -405,6 +405,9 @@ still fresh in a conversation about to end.
 say so"* offers `develop` two opposite products, and Step 2 there is told this section *is* the
 specification on a re-entry. Where the ACs settle which remedy is meant, say which and cite it; where
 they genuinely do not, the ticket owes a decision rather than a choice — hand it to `design`.
+**Where the guarded artifact is an executable snippet, the constraint is that the guard must execute
+the snippet**, named on the first FAIL. A send-back that dictates grep shapes invites the next shape:
+0153's prose guard bounced three rounds, each naming one more pattern to catch.
 
 - **Red** → `develop`, `ready`.
 - **A stale contract** — the ACs no longer describe reality, so neither pass nor fail is honest →
@@ -497,6 +500,11 @@ evidence that each criterion was actually checked is gone while the ticks that a
 Append the section if the item has none — older tickets predate it. **Before, not after**: `./close`
 and `./handoff` commit the item, so a table written afterwards needs a second commit, and after
 either of them the claim is gone (`CONCURRENCY.md`, *The release is the final act*).
+
+**Paths in the table are repo-relative**, the resolved conventions directory included, whatever the
+dispatch prompt asked you to report: a pass wrote an absolute home path into three items' public
+evidence after its own suite run, so the privacy guard redded where no session saw it. Run the suite
+again after the evidence commit.
 
 **In a batch, every ticket gets its own table under its own `## QA evidence` — never one table
 covering the batch.** A shared table cannot be read back against one ticket's criteria, which is

@@ -328,6 +328,15 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
   then prints *"Warning: no stdin data received in 3s"* **into the stream you are parsing as
   JSON** — so a perfectly good stage reads as one that failed the schema, and Step 4 escalates on
   it. Redirect stdin on every dispatch, the probe included.
+- **Capture stdout beside the run log**, as `.claude/backlog/runs/<run-id>.<session-id>.out`, which
+  must outlive the supervisor: run-20260913T222409Z captured into the supervising session's
+  scratchpad, the harness withdrew that directory mid-run, and the outcome survived only because the
+  file was already open.
+- **The stage prompt names the write channel and the path form.** Backlog files are written with a
+  Bash heredoc, so grant Bash: an unattended `queue` stage's Write tool refused every new
+  `.claude/backlog/items/*.md` as a sensitive file, and a prompt nobody can answer stalls the stage.
+  And evidence carries repo-relative paths — a verify asked to "report the path in
+  conventions_resolved" copied the absolute path into three items' public QA evidence.
 
 **Keep `.active/` fresh for the whole wait, not only before it.** Step 1's staleness check reads the
 timestamp in `.active/held-by` against `lock_stale_seconds` (900 s), and `config.yml` itself puts that
@@ -384,6 +393,11 @@ is the ordinary case, and all three route independently.
 further, and stop. Do not parse prose, infer a verdict from an exit code, or proceed on a partial
 object — an inferred verdict is indistinguishable from a real one afterwards, and it is the one
 failure that corrupts the backlog rather than merely halting.
+
+**Nor does a background wrapper's exit fail a stage.** In run-20260913T222409Z a detached dispatch
+reported exit -1 (its message: process exited while detached) after the supervisor's environment changed,
+while the stage completed and wrote a valid outcome. The captured outcome and the commits are the
+evidence; the wrapper's exit is the supervisor's plumbing, not the stage's result.
 
 **`conventions_resolved: null` is an escalation, not a pass.** The project makes conventions
 mandatory; a stage that resolved none built against no standard.
@@ -575,6 +589,13 @@ has left: its stage cap less what a harvest of that session id already shows spe
 outcome's `cost_usd` covers only the resumed leg, so the harvest and never the outcome is that
 session's cost. A resume that returns no valid outcome is Step 4's failure, and a stop that names no
 session limit is the cap kill below.
+
+**A host kill recovers the same way when it left a clean tree and a held claim.** In
+run-20260913T222409Z the host killed a background verify for low memory, and `--resume` on that
+session finished it with a valid PASS. The notice arrives only through the background-task wrapper,
+so check the tree and the claim before choosing: clean and held is this case, logged as
+`stage_killed` then `resumed`; dirty is the cap kill below. It recurs while memory stays tight, so
+dispatch one stage at a time until it does not.
 
 **A stage killed by `--max-budget-usd` is worse than a killed supervisor**, whose tree is at least
 clean: here the claim is held, the tree is dirty and the lock may be taken. That exit routes as an
