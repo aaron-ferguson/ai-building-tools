@@ -2117,24 +2117,39 @@ HEARTBEAT="$(awk '
   inside && /^```/ { if (infence) { if (body ~ /\.active\/held-by/) printf "%s", body; body = "" } infence = !infence; next }
   inside && infence { body = body $0 "\n" }
 ' "$SKILL" 2>/dev/null)"
-# Verification 2026-09-13 (7d814a75) kept this green with the write aimed at `held-by.beat`, a file
-# Step 1 never reads, and with a literal timestamp that never ages (M-target, M-notime). So the
-# redirect must END at the exact path, and that same line must stamp the time on every pass.
-HELD_BY_WRITE="$(printf '%s' "$HEARTBEAT" | grep -E '>[[:space:]]*\.claude/backlog/runs/\.active/held-by[[:space:]]*$' || true)"
-if [ -n "$HELD_BY_WRITE" ]; then
-  ok "a Step 3 code block writes exactly .claude/backlog/runs/.active/held-by, the file Step 1 reads"
+# Three rounds of grepping the heartbeat's TEXT each left a shape green that refreshes nothing: a
+# write aimed at `held-by.beat`, a literal timestamp, the write line commented out, the function
+# defined and never started (M-target, M-notime, M-comment, M-nocall). AC2 is a claim about every way
+# the block can fail to refresh, so the block is RUN rather than read: extracted as written, only the
+# `sleep` shortened and the dispatch comment replaced by a stand-in that samples held-by each second.
+# The samples must be the fixture run id with a UTC stamp, and the stamp must advance; after the
+# block's own `kill`, the file must stop changing.
+BEAT_DIR="$FIX/0153-heartbeat"
+BEAT_HELD="$BEAT_DIR/.claude/backlog/runs/.active/held-by"
+mkdir -p "$BEAT_DIR/.claude/backlog/runs/.active"
+cat > "$BEAT_DIR/standin" <<'STANDIN'
+for i in 1 2 3 4; do sleep 1; cat .claude/backlog/runs/.active/held-by >> samples 2>/dev/null || echo MISSING >> samples; done
+STANDIN
+printf '%s' "$HEARTBEAT" | awk -v standin="$BEAT_DIR/standin" '
+  /^#.*dispatch/ { while ((getline line < standin) > 0) print line; next }
+  { gsub(/sleep [0-9]+/, "sleep 1"); print }
+' > "$BEAT_DIR/beat.sh"
+: > "$BEAT_DIR/samples"
+(cd "$BEAT_DIR" && RUN_ID=run-fixture-0153-beat sh beat.sh >/dev/null 2>&1) || true
+BEAT_STAMPS="$(grep -E '^run-fixture-0153-beat [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$' "$BEAT_DIR/samples" | cut -d' ' -f2 | uniq || true)"
+BEAT_BAD="$(grep -cvE '^run-fixture-0153-beat [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$' "$BEAT_DIR/samples" || true)"
+BEAT_DISTINCT="$(printf '%s\n' "$BEAT_STAMPS" | grep -c . || true)"
+if [ "$BEAT_BAD" = 0 ] && [ "$BEAT_DISTINCT" -ge 2 ] && printf '%s\n' "$BEAT_STAMPS" | sort -c; then
+  ok "run as written, the Step 3 heartbeat rewrites .claude/backlog/runs/.active/held-by with an advancing UTC stamp ($BEAT_DISTINCT distinct) while the dispatch stands in"
 else
-  bad "0153 AC2 — no Step 3 code block writes exactly .claude/backlog/runs/.active/held-by; a marker Step 1 never reads refreshes nothing"
+  bad "0153 AC2 — run as written, the Step 3 heartbeat did not keep held-by advancing during the dispatch ($BEAT_DISTINCT distinct stamps, $BEAT_BAD bad samples); samples: $(tr '\n' '|' < "$BEAT_DIR/samples")"
 fi
-if printf '%s' "$HELD_BY_WRITE" | grep -qF '$(date -u +%Y-%m-%dT%H:%M:%SZ)'; then
-  ok "and the held-by write stamps the current UTC time on that same line, so each pass moves it"
+BEAT_AFTER="$(cat "$BEAT_HELD" 2>/dev/null || true)"
+sleep 2
+if [ "$BEAT_DISTINCT" -ge 2 ] && [ "$BEAT_AFTER" = "$(cat "$BEAT_HELD" 2>/dev/null || true)" ]; then
+  ok "and once the block kills it, held-by stops changing"
 else
-  bad "0153 AC2 — the held-by write does not stamp \$(date -u +%Y-%m-%dT%H:%M:%SZ) itself; a literal or once-computed time never ages"
-fi
-if printf '%s' "$HEARTBEAT" | awk '/while /{loop=1} loop && />[[:space:]]*\.claude\/backlog\/runs\/\.active\/held-by[[:space:]]*$/{w=1} END{exit !w}'; then
-  ok "and the write is inside a loop, so it repeats while the stage runs"
-else
-  bad "0153 FR1 — the held-by write is not inside a loop; a refresh made once before the call goes stale during a long stage"
+  bad "0153 AC2 — held-by was not refreshed during the dispatch, or kept changing after the block killed the heartbeat"
 fi
 BEAT_SLEEP="$(printf '%s' "$HEARTBEAT" | sed -n 's/.*sleep \([0-9][0-9]*\).*/\1/p' | head -1)"
 STALE_AGE="$(awk '/^lock_stale_seconds:/ { print $2 }' "$ROOT/.claude/backlog/config.yml")"
