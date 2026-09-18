@@ -24,14 +24,18 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0158 | Make --drive select a gate by rank, and let a join decide only batching | develop | ready |  |
+| 0168 | Defer the findings gate to the end of confirmed scope instead of stopping in-scope work | develop | ready |  |
 | 0159 | Dispatch a ready design row instead of escalating it to a person | develop | ready |  |
 | 0160 | Refuse a verify pass that resolved no conventions, names another session, or skips the unit command | develop | ready |  |
 | 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | develop | ready |  |
+| 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | develop | ready |  |
 | 0163 | Bound harvest-usage's --run figures to the supervisor's own session | develop | ready |  |
+| 0165 | Attribute the one-off sprint.test.sh failure and keep its FAIL line visible in a filtered run | develop | ready |  |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | develop | ready |  |
 | 0041 | Write release notes for what a work session delivered | develop | ready | 0128 |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
+| 0169 | Make a test file announce an abort instead of exiting silently under set -eu | develop | ready |  |
 | 0145 | Decide what an empty touches means to the scope report | design | ready |  |
 | 0146 | Decide when a required duplication earns a drift guard | design | ready |  |
 | 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | design | ready |  |
@@ -84,6 +88,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0109 | Give a human-reported source a resolvable form | develop | ready |  |
 | 0116 | Give queue Step 0 a resolution order instead of a scaffold instruction | design | ready |  |
 | 0117 | Stop the item-ID citation matcher reading file modes and clock times as citations | develop | ready |  |
+| 0171 | Stop the citation guard reading an italic-quoted CLI message as a rule name | develop | ready |  |
 | 0118 | Run the privacy guard where a sweep commits, not only where a suite runs | develop | ready |  |
 | 0119 | Make a collided self-mutating guard exit non-zero instead of silently printing no tally | develop | ready |  |
 | 0120 | Decide how a write no ticket can own appears to the file-scope check | design | ready |  |
@@ -93,6 +98,8 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0124 | Split the stop-rather-than-guess refusal out of the conventions ladder that instances it | design | ready |  |
 | 0125 | Pin the citation enumeration to its decision record so widening one cannot leave the other stale | develop | ready |  |
 | 0164 | Record active and elapsed time and interruptions in the sprint ledger, and estimate them | develop | ready |  |
+| 0167 | Refuse a malformed tail-cap argument by name instead of tracing back | develop | ready |  |
+| 0170 | Stop the marker heartbeat leaving an orphaned sleep child | develop | ready |  |
 | 0137 | Decide whether two develop sessions may run at once, and in what isolation | design | ready | 0128 |
 | 0149 | Audit sprint efficiency — suite-check dedup, per-agent overhead, and model tiering | design | ready | 0128 |
 | 0155 | Make claim and next agree on what blocks a take | develop | ready |  |
