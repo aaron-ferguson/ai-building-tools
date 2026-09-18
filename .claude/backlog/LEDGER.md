@@ -112,3 +112,39 @@ NOTE A rerun, not a sprint: one queue session (restaged 0151-0154, filed 0158-01
   33d2edfe, no sidechain) and is a lower bound: the two verify legs self-reported 2.15 and 4.06
   against 4.23 harvested. The supervisor carried run-20260913T034946Z in context
   (supervisor_context), and its spend is not in these figures.
+
+## sprint run-20260913T222409Z -- ended 2026-09-18T03:36:20Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 3 | 3 | confirmed scope @ 2026-09-18T03:36:20Z |
+| wall_clock_min | no prior | unmeasured: 6072 elapsed over several days, nearly all of it idle between turns | tokens: LEDGER.md run-20260913T034946Z over 4 tickets; usd: MEASUREMENT.md per-skill table, recorded 2026-08-24; wall-clock: none |
+| tokens | 14334456 | 11182501 | tokens: LEDGER.md run-20260913T034946Z over 4 tickets; usd: MEASUREMENT.md per-skill table, recorded 2026-08-24; wall-clock: none |
+| usd | 22.98 | 17.81 | tokens: LEDGER.md run-20260913T034946Z over 4 tickets; usd: MEASUREMENT.md per-skill table, recorded 2026-08-24; wall-clock: none |
+
+GATE develop 3 ticket(s) session b03e9ce0: predicted USD 14.11 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-18T03:36:20Z) observed USD 3.78 (harvest-usage.sh over 1 session id(s) @ 2026-09-18T03:36:20Z)
+GATE develop 1 ticket(s) session eac85fd6: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-18T03:36:20Z) observed USD 1.10 (harvest-usage.sh over 1 session id(s) @ 2026-09-18T03:36:20Z)
+GATE develop 1 ticket(s) session 4612f9bf: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-18T03:36:20Z) observed USD 1.24 (harvest-usage.sh over 1 session id(s) @ 2026-09-18T03:36:20Z)
+RATIO verify_usd_per_ticket batched session 7d814a75 = 1.05
+  numerator USD 3.15 (harvest-usage.sh over 1 session id(s) @ 2026-09-18T03:36:20Z)
+  denominator 3 ticket(s) (run-20260913T222409Z.jsonl outcome events @ 2026-09-18T03:36:20Z)
+RATIO verify_usd_per_ticket unbatched session 091e8968 = 1.00
+  numerator USD 1.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-18T03:36:20Z)
+  denominator 1 ticket(s) (run-20260913T222409Z.jsonl outcome events @ 2026-09-18T03:36:20Z)
+RATIO verify_usd_per_ticket unbatched session c8367270 = 1.75
+  numerator USD 1.75 (harvest-usage.sh over 1 session id(s) @ 2026-09-18T03:36:20Z)
+  denominator 1 ticket(s) (run-20260913T222409Z.jsonl outcome events @ 2026-09-18T03:36:20Z)
+FINDINGS parked 8 (run-20260913T222409Z.jsonl outcome events @ 2026-09-18T03:36:20Z)
+RETRO consumed 0 produced 0 (run-20260913T222409Z.jsonl outcome events @ 2026-09-18T03:36:20Z)
+NOTE Three tickets (0152, 0153, 0154), all passing verify, on claude-opus-5 throughout: tokens and
+  usd are a fair per-ticket prior and stay numeric. Wall-clock is written as text because the run
+  spans several days of a person's working session, nearly all idle between turns, and the ledger
+  cannot yet separate active time (0164). 0153 took four develop rounds and three verify rounds:
+  three shape-by-shape grep tightenings of one AC, then a guard that executes the snippet, which is
+  why the develop gates below are three rows rather than one. The verify rows split for the same
+  reason — 7d814a75 batched three tickets, 091e8968 and c8367270 re-verified 0153 alone, and
+  c8367270's 1.75 spans both legs of a host memory kill and its resume. The retro (e30dfa9d) and
+  the queue sweep (7bc65dbf) are in these figures; RETRO consumed/produced reads 0 because neither
+  tail stage returns per-ticket outcomes. Not in these figures: the supervisor's own spend, and the
+  supervisor finishing the blocked sweep by hand (0165-0171, 9d30104) after the sweep session was
+  refused every write under `.claude/`.
