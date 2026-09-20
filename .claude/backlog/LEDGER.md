@@ -148,3 +148,16 @@ NOTE Three tickets (0152, 0153, 0154), all passing verify, on claude-opus-5 thro
   tail stage returns per-ticket outcomes. Not in these figures: the supervisor's own spend, and the
   supervisor finishing the blocked sweep by hand (0165-0171, 9d30104) after the sweep session was
   refused every write under `.claude/`.
+
+## sprint run-20260920T222013Z -- ended 2026-09-20T23:20:16Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 4 | 4 | confirmed scope @ 2026-09-20T23:20:25Z |
+| wall_clock_min | no prior | 60 | LEDGER.md 3 recorded sprint(s) over 7 ticket(s) @ 2026-09-20T22:00:26Z |
+| tokens | 17311491 | 21199117 | LEDGER.md 3 recorded sprint(s) over 7 ticket(s) @ 2026-09-20T22:00:26Z |
+| usd | 23.75 | 15.21 | LEDGER.md 3 recorded sprint(s) over 7 ticket(s) @ 2026-09-20T22:00:26Z |
+
+GATE develop 4 ticket(s) session 39c7c2e3: predicted USD 18.14 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-20T23:20:25Z) observed USD 15.21 (harvest-usage.sh over 1 session id(s) @ 2026-09-20T23:20:25Z)
+GATE develop 4 ticket(s) session c2435e20: predicted USD 18.14 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-20T23:20:25Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-20T23:20:25Z)
+FINDINGS parked 3 (run-20260920T222013Z.jsonl outcome events @ 2026-09-20T23:20:25Z)
