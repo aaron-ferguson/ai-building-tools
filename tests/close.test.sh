@@ -86,6 +86,10 @@ touches:
 ## Notes & decisions
 
 - [ ] this box is not an AC and must stay unticked
+## QA evidence
+
+Conventions: ../conventions
+
 ITEM
 }
 
@@ -118,6 +122,10 @@ touches:
 
 - [ ] AC1 — first criterion
 - [ ] AC2 — second criterion
+## QA evidence
+
+Conventions: ../conventions
+
 ITEM
 }
 # An item whose acceptance criteria carry NO checkbox — the `- **AC1** —` form real tickets have
@@ -144,6 +152,10 @@ touches:
 
 - **AC1** — Given a criterion with no checkbox, when close runs, then it cannot be ticked
 - **AC2** — And neither can this one
+## QA evidence
+
+Conventions: ../conventions
+
 ITEM
 }
 
@@ -169,6 +181,10 @@ touches:
 ## Acceptance criteria
 
 ## Notes & decisions
+## QA evidence
+
+Conventions: ../conventions
+
 ITEM
 }
 
@@ -198,6 +214,10 @@ touches:
 1. AC1 — Given criteria written as a numbered list, when close runs, then none can be ticked
 2. AC2 — And neither can this one
 3. AC3 — Nor this one
+## QA evidence
+
+Conventions: ../conventions
+
 ITEM
 }
 
@@ -241,6 +261,10 @@ ${7:-}
 ## Notes & decisions
 
 - [ ] this box is not an AC and must stay unticked
+## QA evidence
+
+Conventions: ../conventions
+
 ITEM
 }
 
@@ -1254,6 +1278,76 @@ assert_contains "cites CONCURRENCY.md" "$out" 'CONCURRENCY.md'
 assert_contains "names the primary checkout to run from" "$out" "$(cd "$FIX" && pwd -P)"
 assert_eq "no commit lands on the worktree's HEAD" "$(git -C "$WT" rev-parse HEAD)" "$before_head"
 assert_eq "the worktree's backlog is byte-identical" "$(find "$WT/$BL" -type f | sort | xargs cksum)" "$before_sums"
+
+# --- 0160 — a verify close records the conventions it was made against --------------------------
+# A verify session closed four tickets while returning `conventions_resolved: null`, and nothing
+# stopped it: the skill says to stop if none resolve, but nothing RECORDS that they did, so `close`
+# had no fact to refuse on. A `Conventions: <path>` line in the QA evidence is the smallest record
+# it can demand. Restricted to `close_by: verify` — the light tier's evidence is its committed
+# guards, which `close` already checks for itself (0086).
+
+# An item at `next: verify` whose QA evidence section names no conventions.
+# mkitem_no_conventions <id> <next> <status> <token>
+mkitem_no_conventions() {
+  cat > "$FIX/$BL/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+type: chore
+next: $2
+status: $3
+qa_level: verify
+created: 2026-08-01
+blocked_by: []
+claimed_by: $4
+claimed_at: 2026-08-01T00:00:00Z
+touches:
+---
+
+## Acceptance criteria
+
+- [ ] AC1 — first criterion
+- [ ] AC2 — second criterion
+
+## QA evidence
+
+Ran the suite. All green.
+ITEM
+}
+
+echo "0160 AC3 — a verify close with no Conventions: line in its QA evidence is refused"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0001 | A fixture row | verify | in-progress | 0000 |'
+mkitem_no_conventions 0001 verify in-progress '"ab12"'
+commit_fixture
+queue_before="$(cat "$FIX/$BL/QUEUE.md")"
+done_before="$(cat "$FIX/$BL/DONE.md")"
+item_before="$(cat "$FIX/$BL/items/0001-fixture.md")"
+out="$(run_close 0001 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "refuses"                     "$rc" "$out"
+assert_contains   "names the line it wants"     "$out" 'Conventions:'
+assert_eq         "QUEUE.md is unchanged"       "$(cat "$FIX/$BL/QUEUE.md")" "$queue_before"
+assert_eq         "DONE.md is unchanged"        "$(cat "$FIX/$BL/DONE.md")" "$done_before"
+assert_eq         "the item is unchanged"       "$(cat "$FIX/$BL/items/0001-fixture.md")" "$item_before"
+assert_no_lock    "and the lock is released"
+
+echo "0160 AC4 — the same ticket closes once the line is there"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0001 | A fixture row | verify | in-progress | 0000 |'
+mkitem_no_conventions 0001 verify in-progress '"ab12"'
+printf 'Conventions: ../conventions\n' >> "$FIX/$BL/items/0001-fixture.md"
+commit_fixture
+out="$(run_close 0001 ab12)" && rc=0 || rc=$?
+assert_rc       "exits 0" "$rc" 0 "$out"
+assert_contains "the item is done" "$(cat "$FIX/$BL/items/0001-fixture.md")" 'status: done'
+
+echo "0160 AC4 — the light tier is not subject to the line"
+# `close_by: develop` earns its close on committed guards, which this script checks itself. Holding
+# it to a line written by a stage it does not have would refuse every light ticket outright.
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0001 | A light row | develop | in-progress | 0000 |'
+mkitem_light 0001 develop in-progress '"ab12"' 'close_by: develop' unit
+commit_fixture
+out="$(run_close 0001 ab12)" && rc=0 || rc=$?
+assert_rc       "exits 0 — no Conventions: line and none required" "$rc" 0 "$out"
+assert_contains "the light ticket is done" "$(cat "$FIX/$BL/items/0001-fixture.md")" 'status: done'
 
 # --- result -----------------------------------------------------------------------------------
 echo

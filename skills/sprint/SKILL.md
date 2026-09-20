@@ -414,6 +414,19 @@ evidence; the wrapper's exit is the supervisor's plumbing, not the stage's resul
 **`conventions_resolved: null` is an escalation, not a pass.** The project makes conventions
 mandatory; a stage that resolved none built against no standard.
 
+**An outcome whose `session_id` is not the dispatched one fails exactly as a malformed outcome
+does** — escalate, dispatch nothing further, stop. The UUID is pre-assigned at dispatch and logged
+in that stage's `dispatch` event, so the comparison is a lookup in your own run log. Without it a
+placeholder reads as valid: one pass returned `00000000-0000-4000-8000-000000000000` and every
+other field was well-formed, so nothing in the envelope was wrong-looking enough to stop on.
+
+**An outcome failing either of those two checks, having reported tickets as `closed`, `pass` or
+`next: done`, is an escalation that names those ids as closed on an untrusted pass and due for
+re-verification.** The closes are already committed inside the stage session — the supervisor reads
+the outcome afterwards, so it can detect this and never prevent it, and a closed ticket has no path
+back to verify on its own. Four were closed that way and a person reopened them by hand; naming the
+ids is what makes that possible without re-reading the run.
+
 **The detail pointer is the guarantee that the trim moved the detail rather than deleting it.**
 Everything the stage worked out — the diagnosis behind a bounce, the red that turned out to be
 another session's, the mechanism that surprised it, and a verify pass's per-AC evidence table — is

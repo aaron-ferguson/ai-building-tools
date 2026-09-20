@@ -2312,5 +2312,47 @@ else
   ok "no sprint line describes a next: design row as a person's call"
 fi
 
+# --- 0160 — a verify pass nobody can trust is refused before it closes ---------------------------
+# A verify session closed four tickets returning `conventions_resolved: null`, a placeholder
+# `session_id`, and per-ticket test files in place of config's `unit` command. Three gaps, each
+# independently sufficient; these are the two the supervisor owns, plus verify's own level row.
+echo "0160 AC1/AC2 — Step 4 checks the session id and names untrusted closes for re-verification"
+if says "$SKILL" "Step 4 — Read the outcome, and nothing else" 'not the dispatched'; then
+  ok "Step 4 compares the outcome's session_id with the dispatched one"
+else
+  bad "0160 AC1 — Step 4 does not compare session_id with the dispatched UUID; a placeholder reads as valid"
+fi
+if says "$SKILL" "Step 4 — Read the outcome, and nothing else" 're-verification'; then
+  ok "Step 4 names ids closed on an untrusted pass as due for re-verification"
+else
+  bad "0160 AC2 — Step 4 names no ids for re-verification; a closed ticket has no path back to verify"
+fi
+
+echo "0160 AC5 — verify's unit row runs the project's configured command"
+# Bound to the ROW, not to the file: `scoped to the change` is a phrase the skill may legitimately
+# use elsewhere, and `commands.unit` appears in its own right further up.
+unit_row="$(grep -F '| `unit` |' "$VERIFY_SKILL" | head -1)"
+if [ -z "$unit_row" ]; then
+  bad "0160 AC5 — verify's level table has no unit row to read"
+else
+  if printf '%s\n' "$unit_row" | grep -qF 'commands.unit'; then
+    ok "the unit row names config.yml's commands.unit"
+  else
+    bad "0160 AC5 — verify's unit row does not name commands.unit: $unit_row"
+  fi
+  if printf '%s\n' "$unit_row" | grep -qF 'scoped to the change'; then
+    bad "0160 AC5 — verify's unit row still says 'scoped to the change', which reads as permission to narrow"
+  else
+    ok "and no longer reads as permission to narrow"
+  fi
+fi
+
+echo "0160 FR3 — verify writes the resolved conventions into the QA evidence close depends on"
+if grep -qF 'Conventions: <resolved path>' "$VERIFY_SKILL"; then
+  ok "verify names the Conventions: line close refuses without"
+else
+  bad "0160 FR3 — verify does not tell a session to write 'Conventions: <resolved path>'; close's refusal has nothing to read"
+fi
+
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]

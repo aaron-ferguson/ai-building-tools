@@ -163,7 +163,7 @@ twice.
 |---|---|
 | `verify` | the scripted assertion the QA plan names, plus lint/typecheck if present. It must be *executed* and its output shown — read-and-eyeballed is not verified |
 | `review` | every line of the checklist `config.yml`'s `review: checklist:` names, plus lint/typecheck if present. **Not on the pyramid, so not cumulative** — nothing else is implied |
-| `unit` | lint, typecheck, unit suite scoped to the change |
+| `unit` | lint, typecheck, and `config.yml`'s `commands.unit` **as configured** — never a substitute set of files chosen to match the change |
 | `integration` | the above, plus the integration suite across the seams touched |
 | `e2e` | the above, plus the journeys the QA plan names |
 
@@ -500,6 +500,14 @@ evidence that each criterion was actually checked is gone while the ticks that a
 Append the section if the item has none — older tickets predate it. **Before, not after**: `./close`
 and `./handoff` commit the item, so a table written afterwards needs a second commit, and after
 either of them the claim is gone (`CONCURRENCY.md`, *The release is the final act*).
+
+**Write a line `Conventions: <resolved path>` into that section, from the resolution Step 1
+performed, and `./close` refuses a `close_by: verify` ticket without it.** A pass that resolved none
+checked the ticket against no standard, and its outcome reads exactly like a real one: four tickets
+closed that way, on a run returning `conventions_resolved: null`, and were reopened by hand. Nothing
+in the tree recorded that the resolution had happened, so nothing could refuse on it. **Record the
+command line that ran, verbatim, beside it** — a level is what the project configured, not what the
+session decided the change needed.
 
 **Paths in the table are repo-relative**, the resolved conventions directory included, whatever the
 dispatch prompt asked you to report: a pass wrote an absolute home path into three items' public

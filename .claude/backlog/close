@@ -477,6 +477,36 @@ if [ "$ac_bullets" -eq 0 ] && [ "$ac_content" -gt 0 ]; then
   exit 1
 fi
 
+# --- the sixth refusal: a verify close that records no conventions (0160) ----------------------
+# Counted BEFORE anything is written, like the two above, so the refusal leaves the tree as it
+# found it.
+#
+# WHY A REFUSAL HERE AND NOT ONLY A SUPERVISOR CHECK. A supervisor reads a stage's outcome only
+# after that stage has committed its closes, so it can detect this and cannot prevent it: four
+# tickets were closed on a pass returning `conventions_resolved: null`, and reopening them was done
+# by hand. `close` is the one mechanical point before the commit.
+#
+# WHY THE LINE AND NOT THE PATH. This checks that the line EXISTS, never what it names — resolving
+# the path is `verify` Step 1's job and a check here would duplicate it badly, against a repo layout
+# this script cannot see. What the line records is that the resolution HAPPENED, which is the fact
+# nothing else in the tree carried.
+#
+# `close_by: develop` is exempt: the light tier's evidence is its committed guards, checked by the
+# fifth refusal above, and it has no verify session to write this line.
+if [ "$close_by" = verify ]; then
+  if ! awk '
+    /^## / { in_qa = ($0 ~ /^## QA evidence/); next }
+    in_qa && /^[ \t]*Conventions:[ \t]*[^ \t]/ { found = 1 }
+    END { exit found ? 0 : 1 }
+  ' "$item"; then
+    echo "$ID has no 'Conventions: <path>' line in its '## QA evidence' section" >&2
+    echo "a verify pass that resolved no conventions checked this ticket against no standard, and" >&2
+    echo "the outcome of one reads exactly like the outcome of a real pass — four tickets closed" >&2
+    echo "that way and were reopened by hand. Write the path verify Step 1 resolved, then close" >&2
+    exit 1
+  fi
+fi
+
 # --- the fifth refusal: a light ticket whose criteria are not assertions (0086) ----------------
 # Counted BEFORE anything is written, like the fourth, so the refusal leaves the tree exactly as it
 # found it.
