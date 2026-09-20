@@ -1058,8 +1058,8 @@ if [ "${1:-}" = "--drive" ]; then
       if held_by "$sid" >/dev/null; then continue; fi
       if [ "$sstatus" = "waiting" ]; then printf '%s (waiting on a person)' "$sid"; return 0; fi
       case "$snext" in
-        design|queue)   printf '%s (next: %s — a person decides)' "$sid" "$snext"; return 0 ;;
-        develop|verify) continue ;;
+        queue)                 printf '%s (next: %s — a person decides)' "$sid" "$snext"; return 0 ;;
+        design|develop|verify) continue ;;
         *)              printf "%s (next: '%s' — no routing rule covers it)" "$sid" "$snext"; return 0 ;;
       esac
     done
@@ -1188,7 +1188,13 @@ if [ "${1:-}" = "--drive" ]; then
   }
 
   # Is any confirmed-scope id still something this walk could dispatch? (0168 FR2.) The predicate is
-  # `takeable_develop`'s, widened to `verify`, because a scope ticket is unfinished at either stage.
+  # `takeable_develop`'s, widened to every stage this walk dispatches, because a scope ticket is
+  # unfinished at any of them.
+  #
+  # `design` is in that set since 0159, and 0168 FR2 enumerates only develop and verify because it
+  # was written while a design row still escalated. Left at two, a scope ticket sitting at design
+  # reads as FINISHED scope and fires the tail in the middle of the run — the exact failure 0168
+  # exists to prevent, arriving through the stage 0159 made dispatchable.
   #
   # An id with no row answers NO, which is the common case and the right one: the ticket closed, so
   # that part of the scope is finished. A four-digit check at parse time is what keeps a TYPO out of
@@ -1197,7 +1203,7 @@ if [ "${1:-}" = "--drive" ]; then
     for sl_id in $SCOPE; do
       sl_row="$(row_for "$sl_id")"
       [ -n "$sl_row" ] || continue
-      case "$(field "$sl_row" "$NEXT")" in develop|verify) : ;; *) continue ;; esac
+      case "$(field "$sl_row" "$NEXT")" in design|develop|verify) : ;; *) continue ;; esac
       case "$(field "$sl_row" "$STATUS")" in in-progress|waiting) continue ;; esac
       if held_by "$sl_id" >/dev/null; then continue; fi
       if [ -n "$(open_blockers_of "$sl_id")" ]; then continue; fi
@@ -1390,8 +1396,14 @@ if [ "${1:-}" = "--drive" ]; then
           $(waiting_on "$(item_for "$lid")")"
         elif [ "$lstatus" = "in-progress" ]; then
           decide "$ESCALATE" "ESCALATE  $lid is still in-progress after $lstage completed — the claim was never released"
-        elif [ "$lnext" = "design" ]; then
-          decide "$ESCALATE" "ESCALATE  $lid is at next: design after $lstage — a person decides
+        elif [ "$lnext" = "design" ] && [ "$lstatus" = "ready" ] && [ "$lstage" != "design" ]; then
+          # 0159 FR2. Not an escalation and not a dispatch either: the rank walk below decides,
+          # because this row may not be the top one. A design row STILL at design after a completed
+          # design falls past this to the same-stage arm, which is a real loop.
+          printf 'NOTE      %s is at next: design after %s — design is autonomous work; carrying on to the rank walk\n' \
+            "$lid" "$lstage"
+        elif [ "$lnext" = "design" ] && [ "$lstage" != "design" ]; then
+          decide "$ESCALATE" "ESCALATE  $lid is at next: design / $lstatus after $lstage — a person decides
           $(design_question "$(item_for "$lid")")"
         elif [ "$lnext" = "queue" ]; then
           decide "$ESCALATE" "ESCALATE  $lid went back to next: queue after $lstage — the contract is stale, and respecifying it is a person's call"
@@ -1402,6 +1414,11 @@ if [ "${1:-}" = "--drive" ]; then
           decide "$ESCALATE" "ESCALATE  $lid bounced from verify back to next: develop — verify already decided whether the build or the contract was wrong, and re-developing blind spends a stage session rediscovering it"
         elif [ "$lnext" = "$lstage" ]; then
           decide "$ESCALATE" "ESCALATE  $lid is still at next: $lstage after a completed $lstage — same ticket, same stage, with an outcome in between"
+        elif [ "$lstage" = "design" ] && [ "$lstatus" = "ready" ]; then
+          # `--completed design:<id>` and the row has moved on — to develop, or anywhere the
+          # designer sent it. 0159 FR2: the rank walk decides, where this once fell through to
+          # *no routing rule covers it* and stopped a run on a stage that had just succeeded.
+          printf 'NOTE      %s is at next: %s after design — carrying on to the rank walk\n' "$lid" "$lnext"
         elif [ "$lstage" = "develop" ] && [ "$lnext" = "verify" ] && [ "$lstatus" = "ready" ]; then
           # The gate that was just developed, not the one row `--completed` names (0132 FR6).
           lbatch="$(verify_batch "$lid")"
@@ -1444,18 +1461,22 @@ if [ "${1:-}" = "--drive" ]; then
     fi
     case "$rnext" in
       design)
-        # FR3 (0154): when proposing, also surface the develop gate below this design row so a
-        # person knows what they are approving after they resolve it.
-        if [ "$PROPOSE" = 1 ]; then
-          dgate_pool="$(takeable_develop)"
-          if [ -n "$dgate_pool" ]; then
-            dgate_lead="$(printf '%s' "$dgate_pool" | awk '{ print $1 }')"
-            dgate="$(gate_contiguous "$dgate_lead" "$dgate_pool")"
-            PROPOSE_STAGE="develop"; PROPOSE_IDS="$dgate"
-          fi
+        # DESIGN IS AUTONOMOUS WORK (0159). `/design` settles the question and writes the answer, so
+        # a `ready` design row is a stage to dispatch, not a decision to hand back. Only `waiting`
+        # needs a person, and that is decided above this `case` for every stage at once.
+        #
+        # Everything else the walk would have stepped over — in-progress, an open blocker, a live
+        # claim — is stepped over above too, so a row reaching here is takeable by construction.
+        #
+        # The findings gate applies exactly as it does to a develop gate: a design dispatch is new
+        # work, and the gate exists to stop new work once the buffer crosses.
+        if [ "$rstatus" = "ready" ]; then
+          PROPOSE_STAGE="design"; PROPOSE_IDS="$id"
+          findings_gate gate
+          decide "$DISPATCH" "DISPATCH  design $id
+          $(design_question "$(item_for "$id")")"
         fi
-        decide "$ESCALATE" "ESCALATE  $id is at next: design and outranks everything below it — a person decides
-          $(design_question "$(item_for "$id")")" ;;
+        decide "$ESCALATE" "ESCALATE  $id is at next: design / $rstatus, which no routing rule covers" ;;
       queue)
         decide "$ESCALATE" "ESCALATE  $id is at next: queue — it has no acceptance criteria to build against, and specifying it is a person's call" ;;
       verify)

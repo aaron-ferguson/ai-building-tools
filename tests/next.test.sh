@@ -786,7 +786,11 @@ assert_rc           "exits 4 — escalate"                "$rc" 4
 assert_contains     "escalates"                         "$out" 'ESCALATE'
 assert_not_contains "does not print verify 0101 again"  "$out" 'DISPATCH'
 
-echo "0038 AC9 — a row at next: design escalates; a person decides"
+# REWRITTEN BY 0159, not deleted. This case pinned the old rule — a ready design row escalates —
+# and the rule it pins now is its opposite: design is autonomous work, so the row is dispatched and
+# only `status: waiting` reaches a person. The fixture is unchanged so the two readings sit over the
+# same input.
+echo "0038 AC9 / 0159 AC1 — a ready row at next: design is dispatched, not escalated"
 scaffold
 add_row 0101 'An undecided ticket' design ready 0091
 add_ticket 0101 design ready '[]' 0091 a/one.md
@@ -795,9 +799,10 @@ append_section 0101 '## Open design question
 Should the control live in the toolbar or the sidebar?'
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
-assert_rc       "exits 4 — escalate"          "$rc" 4
-assert_contains "escalates"                   "$out" 'ESCALATE'
-assert_contains "carries the design question" "$out" 'toolbar or the sidebar'
+assert_rc           "exits 0 — dispatch"          "$rc" 0 "$out"
+assert_contains     "dispatches the design stage" "$out" 'DISPATCH  design 0101'
+assert_contains     "carries the design question" "$out" 'toolbar or the sidebar'
+assert_not_contains "and asks nobody"             "$out" 'ESCALATE'
 
 # The rank walk's own `queue` arm, which is a different branch from the phase-A one above and
 # carries a different reason: there, verify sent a built ticket back and the contract is stale;
@@ -815,7 +820,9 @@ assert_contains     "escalates"          "$out" 'ESCALATE'
 assert_contains     "names the missing acceptance criteria" "$out" 'no acceptance criteria to build against'
 assert_not_contains "dispatches nothing" "$out" 'DISPATCH'
 
-echo "0038 AC9 — develop handed the ticket to design: escalate carrying the open design question"
+# REWRITTEN BY 0159 (AC4). Same fixture, opposite rule: develop handing a ticket to design opens a
+# design session rather than stopping the run.
+echo "0038 AC9 / 0159 AC4 — develop handed the ticket to design: dispatch design, carrying the question"
 scaffold
 add_row 0101 'Handed back by develop' design ready 0091
 add_ticket 0101 design ready '[]' 0091 a/one.md
@@ -824,8 +831,10 @@ append_section 0101 '## Open design question
 Is the threshold per project or per gate?'
 seal
 out="$(run_next --drive --completed develop:0101)" && rc=0 || rc=$?
-assert_rc       "exits 4 — escalate"     "$rc" 4
-assert_contains "carries the question"   "$out" 'per project or per gate'
+assert_rc           "exits 0 — dispatch"   "$rc" 0 "$out"
+assert_contains     "dispatches design"    "$out" 'DISPATCH  design 0101'
+assert_contains     "carries the question" "$out" 'per project or per gate'
+assert_not_contains "and escalates nothing" "$out" 'ESCALATE'
 
 echo "0038 AC9 — develop could not get the tree green and left it at develop/ready: escalate"
 scaffold
@@ -1107,11 +1116,12 @@ out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc       "exits 0 — dispatch"                 "$rc" 0
 assert_contains "dispatches the first gate"          "$out" 'DISPATCH  develop 0101'
 assert_contains "reports the depth"                  "$out" 'DEPTH     2'
-assert_contains "names what the run would halt on"   "$out" '0103'
-# The id alone does not pin `depth_stopper`'s design|queue arm: with that arm deleted the row
-# falls to the unknown-next arm, which prints the same id and a different reason. AC29 asks for
-# what stops it, so assert the reason (`testing-conventions.md`, pin a ladder arm by its wording).
-assert_contains "and why it halts there"             "$out" "0103 (next: design — a person decides)"
+# 0159 FR3: a READY design row is no longer where a run runs dry, because the run dispatches it.
+# The stopper walks past it to the end of the queue. The reason is asserted, not the id alone —
+# with the arm deleted the row falls to the unknown-next arm, which prints a different reason
+# (`testing-conventions.md`, pin a ladder arm by its wording).
+assert_contains     "runs dry past the ready design row" "$out" 'runs dry at the end of the queue'
+assert_not_contains "which is no longer a person's call" "$out" "0103 (next: design"
 
 # --- AC29 — the stopper's other arms, each pinned by its wording rather than by the id ---------
 echo "0038 AC29 — the depth line halts on a waiting row and says a person holds it"
@@ -1151,14 +1161,17 @@ assert_contains "runs dry at the end, not at a row" "$out" 'runs dry at the end 
 # `depth_stopper` steps over exactly what the rank walk steps over — in-progress and blocked.
 # Without these two cases either skip can be deleted and the line then halts on a row no person
 # is being asked anything about, naming it as the thing that stops the run.
+# 0159: the STOPPER here is a `next: queue` row, not a ready design row. A ready design row is
+# dispatched now, so it stops nothing — and this case's subject is the row above it being stepped
+# over, which the swap leaves untouched.
 echo "0038 AC29 — the depth line steps over an in-progress row rather than halting on it"
 scaffold
 add_row 0101 'A takeable row'    develop ready       0091
 add_row 0102 'Held by a session' design  in-progress 0092
-add_row 0103 'The real stopper'  design  ready       0093
+add_row 0103 'The real stopper'  queue   ready       0093
 add_ticket 0101 develop ready       '[]' 0091 a/one.md
 add_ticket_held 0102 design in-progress '[]' 0092 b/two.md '"tok9"'
-add_ticket 0103 design  ready       '[]' 0093 c/three.md
+add_ticket 0103 queue   ready       '[]' 0093 c/three.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc           "exits 0 — dispatch"                     "$rc" 0
@@ -1169,11 +1182,11 @@ echo "0038 AC29 — the depth line steps over a blocked row rather than halting 
 scaffold
 add_row 0101 'A takeable row'   develop ready   0091
 add_row 0102 'Still blocked'    design  blocked 0092
-add_row 0103 'The real stopper' design  ready   0093
+add_row 0103 'The real stopper' queue   ready   0093
 add_row 0090 'The open blocker' verify  ready   0090
 add_ticket 0101 develop ready   '[]'       0091 a/one.md
 add_ticket 0102 design  blocked '["0090"]' 0092 b/two.md
-add_ticket 0103 design  ready   '[]'       0093 c/three.md
+add_ticket 0103 queue   ready   '[]'       0093 c/three.md
 add_ticket 0090 verify  ready   '[]'       0090 d/four.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
@@ -2014,17 +2027,16 @@ assert_contains "proposes the retro as a stage with no ticket" "$out" 'PROPOSE  
 # is a scope a person would approve believing those tickets are about to be built.
 assert_not_contains "describes no ticket the retro will not touch" "$out" 'TICKET    0101'
 
+# 0159: the non-dispatching decision here is a `next: queue` row. A design row was the old example
+# and is now a dispatch, which would have measured the opposite of this case's subject.
 echo "0130 — --propose adds nothing to a decision that dispatches no stage"
 scaffold
-add_row 0105 'A design question' design ready ''
-add_ticket 0105 design ready '[]' '' a/one.md
-append_section 0105 '## Open design question
-
-Which of the two shapes does this take?'
+add_row 0105 'An unspecified ticket' queue ready ''
+add_ticket 0105 queue ready '[]' '' a/one.md
 seal
 out="$(run_next --drive --propose)" && rc=0 || rc=$?
-assert_rc       "exits 4 — escalate, unchanged"    "$rc" 4
-assert_contains "escalates on the design row"      "$out" 'ESCALATE  0105'
+assert_rc       "exits 4 — escalate, unchanged"    "$rc" 4 "$out"
+assert_contains "escalates on the unspecified row" "$out" 'ESCALATE  0105'
 # There is nothing to confirm: no stage would run. A proposal printed here is a scope a person
 # could approve that dispatches nothing, which is the one reading of a confirmation that misleads.
 assert_not_contains "proposes nothing"             "$out" 'PROPOSE'
@@ -2127,18 +2139,21 @@ assert_contains "and says which value it refused" "$out" '12'
 out="$(run_next --drive --started)" && rc=0 || rc=$?
 assert_rc       "a --started with no value is a usage error too" "$rc" 2 "$out"
 
+# 0159: the escalating row above the gate is now a `next: queue` row. A design row no longer
+# escalates, and this case is about the finish-before-start preference NOT preempting something a
+# person must answer — which a queue row states exactly as well.
 echo "0131 AC8 — the preference applies at the gate, so an escalation above it still stops the run"
 scaffold
-add_row 0105 'A design row'      design  ready ''
-add_row 0103 'A new develop row' develop ready ''
-add_row 0102 'A built ticket'    verify  ready ''
-add_ticket 0105 design  ready '[]' '' d/four.md
+add_row 0105 'An unspecified row' queue   ready ''
+add_row 0103 'A new develop row'  develop ready ''
+add_row 0102 'A built ticket'     verify  ready ''
+add_ticket 0105 queue   ready '[]' '' d/four.md
 add_ticket 0103 develop ready '[]' '' b/two.md
 add_ticket 0102 verify  ready '[]' '' a/one.md
 seal
 out="$(run_next --drive --started 0102)" && rc=0 || rc=$?
 assert_rc           "exits 4 — escalate"                  "$rc" 4 "$out"
-assert_contains     "escalates on the design row"         "$out" 'ESCALATE  0105'
+assert_contains     "escalates on the unspecified row"    "$out" 'ESCALATE  0105'
 assert_not_contains "the started verify row does not jump it" "$out" 'DISPATCH'
 
 echo "0131 AC9 — --completed stays singular"
@@ -2234,11 +2249,13 @@ out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc       "nothing takeable still exits 3" "$rc" 3 "$out"
 assert_contains "and still says so"              "$out" 'COMPLETE'
 scaffold
-add_row 0101 'An undecided ticket' design ready ''
-add_ticket 0101 design ready '[]' '' a/one.md
+# 0159: exit 4's example is a `next: queue` row. A ready design row is dispatched now, so it is no
+# longer an instance of this code — the CODE is what this case pins, and it is unchanged.
+add_row 0101 'An unspecified ticket' queue ready ''
+add_ticket 0101 queue ready '[]' '' a/one.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
-assert_rc "a design row still escalates with 4" "$rc" 4 "$out"
+assert_rc "a queue row still escalates with 4" "$rc" 4 "$out"
 scaffold
 set_threshold 2
 add_row 0101 'A takeable row' develop ready ''
@@ -2547,18 +2564,20 @@ add_ticket_expects 0002 develop ready '[]' '' '
   - src/feature.ts'
 seal
 out="$(run_next --drive --propose)" && d154_rc=0 || d154_rc=$?
-# The decision is still ESCALATE (exit 4): a design row still stops the run.
-assert_rc "exits 4 — design row still escalates" "$d154_rc" 4
-assert_contains "still escalates on the design row" "$out" 'ESCALATE  0001'
+# SUPERSEDED BY 0159, and rewritten rather than deleted. 0154 made `--propose` name the develop gate
+# BELOW a design row because the run was going to stop there. It no longer stops: the design row is
+# itself the dispatch, so the proposal describes that and the gate below waits its turn.
+assert_rc "exits 0 — the design row is dispatched" "$d154_rc" 0 "$out"
+assert_contains "dispatches the design row" "$out" 'DISPATCH  design 0001'
 # The NFR requires equality on the PROPOSE line, not containment.
 propose_line="$(printf '%s' "$out" | grep '^PROPOSE' || true)"
-assert_eq "PROPOSE line names the develop gate below the design row" \
-  "$propose_line" 'PROPOSE   develop | 1 ticket(s)'
+assert_eq "PROPOSE line names the design dispatch itself" \
+  "$propose_line" 'PROPOSE   design | 1 ticket(s)'
 # The count alone is satisfied by the wrong ticket: re-verification 2026-09-13 found the ids asserted
-# by nothing. The gate's TICKET lines, whole, by equality.
+# by nothing. The proposal's TICKET lines, whole, by equality.
 ticket_lines="$(printf '%s\n' "$out" | grep '^TICKET' || true)"
-assert_eq "the gate below the design row is ticket 0002 and only 0002" \
-  "$ticket_lines" 'TICKET    0002 | size s | A develop ticket'
+assert_eq "the proposed ticket is 0001 and only 0001" \
+  "$ticket_lines" 'TICKET    0001 | size s | A design decision'
 
 # --- 0158 — a join decides batching, never selection over rank ---------------------------------
 # `gate_from` admitted any joining row out of the whole takeable pool, however many takeable rows
@@ -2764,6 +2783,104 @@ seal
 out="$(run_next --drive --scope 12)" && rc=0 || rc=$?
 assert_rc       "exits 2 — usage"                    "$rc" 2 "$out"
 assert_contains "names the argument"                 "$out" '--scope'
+
+# --- 0159 — a ready design row is dispatched, not escalated ------------------------------------
+# `--drive` treated `next: design, status: ready` as a person's decision, so every driven sprint
+# halted at the first design row. Design is autonomous work — `/design` settles the question and
+# writes the answer — and `status: waiting` is the only person-held state left.
+# AC1 and AC4 are the two 0038 AC9 cases above, rewritten in place over their original fixtures.
+
+echo "0159 AC2 — a WAITING design row still escalates"
+# The line the whole ticket turns on. Without this case the change reads as "design never stops a
+# run", which is the over-correction: a designer waiting on an answer is a person's call.
+scaffold
+add_row 0101 'Waiting on an answer' design waiting ''
+add_ticket 0101 design waiting '[]' '' a/one.md
+append_section 0101 '## Waiting on
+
+Does legal accept the shorter retention window?'
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"          "$rc" 4 "$out"
+assert_contains     "carries the waiting question" "$out" 'shorter retention window'
+assert_not_contains "and dispatches no design"    "$out" 'DISPATCH  design'
+
+echo "0159 AC3 — a design row another session holds is stepped over, not dispatched"
+scaffold
+add_row 0101 'Held by a design session' design  in-progress ''
+add_row 0102 'A develop row below it'   develop ready       ''
+add_ticket_held 0101 design in-progress '[]' '' a/one.md '"tok9"'
+add_ticket      0102 develop ready      '[]' '' b/two.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 0 — dispatch"                "$rc" 0 "$out"
+assert_contains     "dispatches the row below it"       "$out" 'DISPATCH  develop 0102'
+assert_not_contains "and not the one already held"      "$out" 'DISPATCH  design'
+
+echo "0159 AC5 — a finished design that moved the row on carries on to the rank walk"
+# The `--completed design:<id>` path, which fell to *no routing rule covers it* and stopped a run
+# on the one stage that had just succeeded.
+scaffold
+add_row 0101 'Designed, now buildable' develop ready ''
+add_ticket 0101 develop ready '[]' '' a/one.md
+seal
+out="$(run_next --drive --completed design:0101)" && rc=0 || rc=$?
+assert_rc           "exits 0 — dispatch"        "$rc" 0 "$out"
+assert_contains     "dispatches the develop it unblocked" "$out" 'DISPATCH  develop 0101'
+assert_not_contains "and escalates nothing"     "$out" 'ESCALATE'
+
+echo "0159 FR2 — a row STILL at design after a completed design is a loop, and still escalates"
+# The other half of AC5, and the one that keeps the fail-loudly floor: design ran and moved
+# nothing, which is a run going round in circles rather than a stage to re-dispatch.
+scaffold
+add_row 0101 'Design ran and changed nothing' design ready ''
+add_ticket 0101 design ready '[]' '' a/one.md
+append_section 0101 '## Open design question
+
+Which of the two shapes does this take?'
+seal
+out="$(run_next --drive --completed design:0101)" && rc=0 || rc=$?
+assert_rc       "exits 4 — escalate"              "$rc" 4 "$out"
+assert_contains "names the same stage twice over" "$out" 'same ticket, same stage'
+
+echo "0159 AC6 — the depth line runs dry at a queue row, stepping past a ready design row"
+scaffold
+add_row 0101 'A takeable row'  develop ready ''
+add_row 0102 'A design row'    design  ready ''
+add_row 0103 'An unspecified row' queue ready ''
+add_ticket 0101 develop ready '[]' '' a/one.md
+add_ticket 0102 design  ready '[]' '' b/two.md
+add_ticket 0103 queue   ready '[]' '' c/three.md
+append_section 0102 '## Open design question
+
+Where does the control live?'
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_contains     "runs dry at the queue row"      "$out" 'runs dry at 0103 (next: queue'
+assert_not_contains "and not at the design row"      "$out" '0102 (next: design'
+
+echo "0159 AC8 — a design dispatch is gated by the findings buffer exactly as a develop gate is"
+# The gate is evaluated at the design arm too. Since 0168 a crossed gate DEFERS while confirmed
+# scope is still dispatchable, so the firing case runs at the end of a spent scope — `--scope 9999`
+# names an id with no row. The claim asserted is 0159's: the design arm does not skip the gate.
+scaffold
+set_threshold 2
+add_row 0101 'A design question' design ready ''
+add_ticket 0101 design ready '[]' '' a/one.md
+append_section 0101 '## Open design question
+
+Which of the two shapes does this take?'
+add_findings "$(printf -- '- 2026-01-02 — one entry.\n- 2026-01-03 — and a second, which reaches the threshold.')"
+seal
+out="$(run_next --drive --scope 9999)" && rc=0 || rc=$?
+assert_rc           "exits 5 — the findings gate"  "$rc" 5 "$out"
+assert_contains     "dispatches the tail"          "$out" 'retro, then queue'
+assert_not_contains "and no design session"        "$out" 'DISPATCH  design'
+# The deferral half, for the same fixture inside a live scope: the design row goes ahead.
+out="$(run_next --drive --scope 0101)" && rc=0 || rc=$?
+assert_rc       "exits 0 while the design row is in scope" "$rc" 0 "$out"
+assert_contains "dispatching it"                           "$out" 'DISPATCH  design 0101'
+assert_contains "and saying the gate is deferred"          "$out" 'deferred'
 
 # --- result -----------------------------------------------------------------------------------
 echo

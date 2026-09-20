@@ -104,10 +104,11 @@ remove the directory when the run ends.
 **3. Report the depth, in one line, from the read you make anyway.** `./next --drive` prints how
 many takeable gates deep the backlog is and where it runs dry. Say it before dispatching anything:
 
-> *"Nine develop gates takeable; runs dry at 0080, which is `next: design` and needs a person."*
+> *"Nine develop gates takeable; runs dry at 0080, which is `next: queue` and needs a person."*
 
-This is what stops the first run reading as broken when it halts on a design row. It costs nothing —
-the decision line and the depth line come from the same call.
+This is what stops the first run reading as broken when it halts. It costs nothing — the decision
+line and the depth line come from the same call. A `next: design` row is not where a run runs dry:
+design is autonomous work and `--drive` dispatches it.
 
 ---
 
@@ -152,8 +153,9 @@ The proposal states, all of it from that one call:
   and an admission.
 
 **Where a `next: design` row outside the scope outranks the gate, name it as where the run will
-stop.** `--propose` escalates on it in the same call. The run still halts there, reported as the
-scope's edge rather than dispatched for or refused. A design row a person takes into scope is
+stop.** `--drive` prints `DISPATCH  design` on it — the script routes on takeability and knows
+nothing of the confirmed scope — and refusing it is the supervisor's, not the script's. The run
+halts there, reported as the scope's edge rather than dispatched for or refused. A design row a person takes into scope is
 dispatched instead (the *Design alongside develop* section).
 
 **Where the confirmed scope is only part of a gate, name the rows left behind and what resuming them
@@ -253,20 +255,21 @@ re-pays no startup floor. Parallel develop fails the second fact, which is why `
 How file scope works when the prose files are the product is `0050`'s open question, not settled
 here.
 
-**Exit 4 on an in-scope design row is a dispatch, not a halt.** The confirmed scope names it; a
-design row outside the confirmed scope is never dispatched, and where one outranks the gate the run
-stops there, as the scope's edge the proposal names. For an in-scope row:
+**`DISPATCH  design <id>` on an in-scope row is a dispatch, not a halt.** Design is autonomous
+work, so `--drive` routes it rather than escalating. What the script cannot see is the confirmed
+scope, so a design row outside the confirmed scope is never dispatched, and where one outranks the
+gate the run stops there, as the scope's edge the proposal names. For an in-scope row:
 
 1. Dispatch `/design <id>` as its own process (Step 3), log its `dispatch` event, and add the id to
    the run's design set.
 2. **Wait until that row reads held** — the item's `claimed_by:` non-empty, or the session's outcome
    arrived first — with one backgrounded `until` loop, then re-call `--drive`. It steps over the held
-   row and names the develop gate below it. Re-calling before the claim lands returns exit 4 on the
-   same row, and acting on it starts a second session on one ticket: **never a second design session
+   row and names the develop gate below it. Re-calling before the claim lands names the same row
+   again, and acting on it starts a second session on one ticket: **never a second design session
    for an id the design-windows check lists**, open or closed.
-3. **A design finish is never reported through `--completed`.** `--completed design:<id>` reaches
-   `./next`'s *no routing rule covers* escalation and stops the run by another door. Log the outcome;
-   the next `--drive` call carries only the develop or verify stage that finished.
+3. **Report a design finish through `--completed design:<id>`**, like any other stage. `--drive`
+   carries on to the rank walk from there — and escalates only if the row is *still* at `next:
+   design`, which is a design session that changed nothing rather than a stage to re-dispatch.
 
 **A designed ticket feeds the next proposal and is not added to the running gate.** Where `--drive`
 later names a gate holding ids the confirmed scope does not, dispatch only the confirmed ids; none
@@ -631,9 +634,9 @@ with the derivation beside it**, never a figure chosen here and never one rounde
   own — `CONCURRENCY.md`, *Claim tokens*. A supervisor holding rows it is not working is the scope
   reservation *The working tree is shared too* forbids, and every `in-progress` row during a run
   should correspond to a stage process that is actually running.
-- **It never answers a design question, narrows a contract, or writes a ticket.** A `next: design`
-  row outside the confirmed scope, a stale FR and a ticket that needs splitting are all exit code
-  `4`: name what must be decided and stop. An in-scope design row is answered by the `design`
+- **It never answers a design question, narrows a contract, or writes a ticket.** A `waiting` row, a
+  `next: queue` row, a `next: design` row outside the confirmed scope, a stale FR and a ticket that
+  needs splitting are all escalations: name what must be decided and stop. An in-scope design row is answered by the `design`
   session it dispatches, never by the supervisor. Queuing new work and designing tickets are escalations, not automation.
 - **It never runs two stage sessions at once, except a design session alongside a develop session**
   (the *Design alongside develop* section). Otherwise the loop is sequential by decision, and what it
@@ -689,7 +692,7 @@ The ID slot is a dash: this session holds no row, so there is no ticket to hand 
 `next` slot names the command a person runs rather than a stage.
 
 Example: `- — RUN COMPLETE — next: restart, then /sprint` — the queue ran dry or the retro ended it.
-Example: `- — ESCALATED — next: /design 0080` — a person decides, and the run stopped there.
+Example: `- — ESCALATED — next: /queue 0080` — a person decides, and the run stopped there.
 Example: `- — DEGRADED — next: /develop 0039` — no CLI to dispatch with; the commands are named for a person.
 Example: `- — REFUSED — next: nothing, another supervisor holds this backlog`.
 

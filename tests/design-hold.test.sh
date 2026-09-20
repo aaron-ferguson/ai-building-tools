@@ -172,13 +172,16 @@ intro="$(awk '/^## Step 1/ { exit } { print }' "$SKILL")"
 assert_contains "names held by you"     "$intro" 'held by you'
 assert_contains "names held by another" "$intro" 'held by another'
 
-# --- AC2 — control: an unclaimed design row stops --drive --------------------------------------
+# --- AC2 — control: an unclaimed design row is acted on, not stepped past ----------------------
 # Without this case the next one could pass on a fixture `--drive` would have stepped past anyway.
-echo "AC2 control — an unclaimed design row is where --drive stops"
+# 0159 changed WHAT it does with an unheld design row — dispatch, where it used to escalate — and
+# not whether it acts on it, which is all this control establishes.
+echo "AC2 control — an unclaimed design row is what --drive acts on"
 scaffold
 out="$(backlog next --drive)" && rc=0 || rc=$?
-assert_rc           "exits 4 on the unheld design row" "$rc" 4 "$out"
-assert_not_contains "does not step over it"            "$out" 'stepping over it'
+assert_rc           "exits 0, dispatching the unheld design row" "$rc" 0 "$out"
+assert_contains     "names it"                                   "$out" "DISPATCH  design $DESIGN_ID"
+assert_not_contains "does not step over it"                      "$out" 'stepping over it'
 
 # --- AC2 — a claimed design row is stepped over ------------------------------------------------
 echo "AC2 — a claimed design row is stepped over and drive names the develop row"

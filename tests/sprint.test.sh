@@ -1829,11 +1829,14 @@ if says "$SKILL" "$DSEC" '/design <id>'; then
 else
   bad "0134 FR1 — the section names no /design dispatch"
 fi
-# AC1's second door: `--completed design:<id>` reaches ./next's no-routing-rule ESCALATE branch.
-if says "$SKILL" "$DSEC" 'never reported through `--completed`'; then
+# REWRITTEN BY 0159. `--completed design:<id>` reached ./next's no-routing-rule ESCALATE branch, so
+# 0134 forbade reporting a design finish that way; the route now exists, and the supervisor is told
+# to use it. The guard asserts the live rule, and its absence would leave a finished design session
+# unreported to the call that decides what happens next.
+if says "$SKILL" "$DSEC" 'Report a design finish through `--completed design:<id>`'; then
   ok "a design finish is never reported through --completed"
 else
-  bad "0134 AC1 — nothing stops a design finish being passed as --completed design:<id>, which escalates and stops the run by another door"
+  bad "0134 AC1 / 0159 FR5 — the section does not route a design finish through --completed design:<id>"
 fi
 if says "$SKILL" "Step 8" 'except a design session alongside a develop session'; then
   ok "Step 8 names design-beside-develop as the one exception to sequential stages"
@@ -2051,10 +2054,13 @@ fi
 PR="$FIX/propose-edge"
 mk_two_row_backlog "$PR"
 pr_rc=0; pr_out="$( cd "$PR" && .claude/backlog/next --drive --propose 2>&1 )" || pr_rc=$?
-if [ "$pr_rc" = 4 ] && printf '%s' "$pr_out" | grep -q '^ESCALATE  0001 is at next: design'; then
-  ok "premise — --drive --propose escalates on the design row, naming it, from the call the proposal already makes"
+# REWRITTEN BY 0159: the row is now DISPATCHED rather than escalated, and refusing it as out of
+# scope is the supervisor's job, not the script's. The premise is unchanged in substance — the one
+# --propose call already names that row, so reporting it as the scope's edge costs no second read.
+if [ "$pr_rc" = 0 ] && printf '%s' "$pr_out" | grep -q '^DISPATCH  design 0001'; then
+  ok "premise — --drive --propose names the design row, from the call the proposal already makes"
 else
-  bad "0134 AC9 premise — --drive --propose over a design row above a develop row did not escalate naming 0001 (rc $pr_rc): $(printf '%s' "$pr_out" | tr '\n' ' ' | cut -c1-200)"
+  bad "0134 AC9 premise — --drive --propose over a design row above a develop row did not name 0001 (rc $pr_rc): $(printf '%s' "$pr_out" | tr '\n' ' ' | cut -c1-200)"
 fi
 
 echo "0154 AC1 — SKILL.md has a step instructing findings parking under the backlog lock"
@@ -2278,6 +2284,32 @@ if printf '%s\n' "$drive_cmd" | grep -qF -- '--scope'; then
   ok "Step 2's --drive command passes --scope"
 else
   bad "Step 2's --drive command does not pass --scope — the gate cannot see confirmed scope"
+fi
+
+# --- 0159 AC7 — no sprint sentence describes a ready design row as an escalation -----------------
+# The script dispatches design now; prose left behind would have a supervisor halting a run the
+# script is routing. Presence and absence are asserted separately, because adding the new sentence
+# while leaving the old one is how one file comes to say both.
+echo "0159 AC7 — sprint reads a DISPATCH  design line, and no longer exit 4"
+if grep -qF 'DISPATCH  design' "$SKILL"; then
+  ok "sprint names the design dispatch line"
+else
+  bad "0159 AC7 — sprint does not name 'DISPATCH  design'; the section still reads as an escalation"
+fi
+if grep -qF 'Exit 4 on an in-scope design row' "$SKILL"; then
+  bad "0159 AC7 — sprint still calls an in-scope design row exit 4"
+else
+  ok "sprint no longer calls an in-scope design row exit 4"
+fi
+# SUBSTITUTED CHECK, recorded in 0159's notes. The criterion named the absence of `needs a person."*`,
+# which was written against the depth example when its row was `next: design`. That example now names
+# a `next: queue` row, which DOES need a person — so the check as specified reds a correct sentence.
+# What it was for is the pairing, so the pairing is what is asserted: no line says `next: design` and
+# `a person` together.
+if grep -F 'next: design' "$SKILL" | grep -q 'a person'; then
+  bad "0159 AC7 — a sprint line still pairs 'next: design' with a person's call: $(grep -F 'next: design' "$SKILL" | grep 'a person' | head -1)"
+else
+  ok "no sprint line describes a next: design row as a person's call"
 fi
 
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
