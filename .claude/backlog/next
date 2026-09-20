@@ -960,9 +960,28 @@ if [ "${1:-}" = "--drive" ]; then
   #  - **The pool is the takeable `develop` rows only**, so nothing blocked, held or at another
   #    stage can extend the scope.
   #
+  #  - **RANK CONTIGUITY, and it binds only the gates this walk FORMS** — `gate_contiguous` below,
+  #    which every new-gate site calls. `gate_from` itself is unbounded in rank and stays that way
+  #    for `verify_batch`, which recovers a membership already fixed rather than choosing one.
+  #
   # A gate can still grow long where a chain of rows really does share files pairwise; that group is
   # genuinely one file scope and cannot be split into sessions that run together. Making the
   # composition legible to a person is 0130's.
+  #
+  # Does $1 join the gate accumulating in `lparent`/`gscope`? Extends `gscope` and answers 0 when it
+  # does. Factored out so the two builders below cannot drift apart on what a join IS — the whole of
+  # 0158 is that they differ on rank and on nothing else.
+  gate_admits() {
+    ga_expects="$(fm_list "$(item_for "$1")" expects)"
+    if [ -n "$lparent" ] && [ "$(fm "$(item_for "$1")" parent)" = "$lparent" ]; then
+      gscope="$gscope $ga_expects"; return 0
+    fi
+    if paths_overlap "$gscope" "$ga_expects"; then
+      gscope="$gscope $ga_expects"; return 0
+    fi
+    return 1
+  }
+
   gate_from() {
     lead="$1"; pool="$2"
     lparent="$(fm "$(item_for "$lead")" parent)"
@@ -970,15 +989,42 @@ if [ "${1:-}" = "--drive" ]; then
     printf '%s' "$lead"
     for gid in $pool; do
       if [ "$gid" = "$lead" ]; then continue; fi
-      gexpects="$(fm_list "$(item_for "$gid")" expects)"
-      if [ -n "$lparent" ] && [ "$(fm "$(item_for "$gid")" parent)" = "$lparent" ]; then
-        gscope="$gscope $gexpects"
-        printf ' %s' "$gid"; continue
+      if gate_admits "$gid"; then printf ' %s' "$gid"; fi
+    done
+  }
+
+  # Would the rank walk step over $1 rather than stop at it? Exactly its three continue arms:
+  # in-progress, an open blocker, held by another session's claim. Everything else the walk either
+  # dispatches or halts on, so everything else ends a gate.
+  walk_steps_over() {
+    if [ "$(field "$(row_for "$1")" "$STATUS")" = "in-progress" ]; then return 0; fi
+    if [ -n "$(open_blockers_of "$1")" ]; then return 0; fi
+    if held_by "$1" >/dev/null; then return 0; fi
+    return 1
+  }
+
+  # `gate_from` bounded by rank (0158): a join decides BATCHING and never SELECTION. Walking down
+  # from the lead in rank order, a pool row that joins is admitted, a row the rank walk itself would
+  # step over is passed without stopping, and the FIRST other row ends the gate whatever its stage or
+  # status. Unbounded, a gate pulled rank-94 rows into a rank-1 session past 92 takeable rows.
+  #
+  # The stop set is the walk's own, not "any takeable develop row", so the gate can never jump
+  # anything the walk would not have jumped — and never less either.
+  gate_contiguous() {
+    lead="$1"; pool="$2"
+    lparent="$(fm "$(item_for "$lead")" parent)"
+    gscope="$(fm_list "$(item_for "$lead")" expects)"
+    printf '%s' "$lead"
+    past_lead=0
+    for cid in $(all_ids); do
+      if [ "$cid" = "$lead" ]; then past_lead=1; continue; fi
+      if [ "$past_lead" = 0 ]; then continue; fi
+      if contains_word "$cid" "$pool"; then
+        if gate_admits "$cid"; then printf ' %s' "$cid"; continue; fi
+        return 0
       fi
-      if paths_overlap "$gscope" "$gexpects"; then
-        gscope="$gscope $gexpects"
-        printf ' %s' "$gid"
-      fi
+      if walk_steps_over "$cid"; then continue; fi
+      return 0
     done
   }
 
@@ -1008,7 +1054,7 @@ if [ "${1:-}" = "--drive" ]; then
     remaining="$(takeable_develop)"
     gates=0
     while [ -n "$remaining" ]; do
-      taken="$(gate_from "$(printf '%s' "$remaining" | awk '{ print $1 }')" "$remaining")"
+      taken="$(gate_contiguous "$(printf '%s' "$remaining" | awk '{ print $1 }')" "$remaining")"
       gates=$((gates + 1))
       remaining="$(without "$remaining" "$taken" | awk '{ $1 = $1; print }')"
     done
@@ -1349,7 +1395,7 @@ if [ "${1:-}" = "--drive" ]; then
           dgate_pool="$(takeable_develop)"
           if [ -n "$dgate_pool" ]; then
             dgate_lead="$(printf '%s' "$dgate_pool" | awk '{ print $1 }')"
-            dgate="$(gate_from "$dgate_lead" "$dgate_pool")"
+            dgate="$(gate_contiguous "$dgate_lead" "$dgate_pool")"
             PROPOSE_STAGE="develop"; PROPOSE_IDS="$dgate"
           fi
         fi
@@ -1373,7 +1419,7 @@ if [ "${1:-}" = "--drive" ]; then
           PROPOSE_STAGE="verify"; PROPOSE_IDS="$svbatch"
           decide "$DISPATCH" "DISPATCH  verify $svbatch"
         fi
-        gate="$(gate_from "$id" "$(takeable_develop)")"
+        gate="$(gate_contiguous "$id" "$(takeable_develop)")"
         PROPOSE_STAGE="develop"; PROPOSE_IDS="$gate"
         findings_gate
         decide "$DISPATCH" "DISPATCH  develop $gate" ;;

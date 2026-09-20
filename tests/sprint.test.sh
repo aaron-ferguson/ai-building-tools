@@ -2242,5 +2242,22 @@ guard_says "$VERIFY_SKILL" "Step 7" 'repo-relative' \
   "verify Step 7 writes QA evidence with repo-relative paths" \
   "retro 2026-09-13 — verify Step 7 allows an absolute path into QA evidence; measurement.test.sh's privacy NFR reds after the suite already ran"
 
+# --- 0158 AC7 — a join decides batching, never selection ----------------------------------------
+# The script-side rule is pinned by tests/next.test.sh; this is the prose half. Both files are read
+# by a session deciding what goes into one gate, and prose that still reads as "a join selects" is
+# how the rule gets widened back the next time the walk is edited.
+DEVELOP_SKILL="$ROOT/skills/develop/SKILL.md"
+echo "0158 AC7 — develop and sprint each say a join never selects over rank"
+if grep -qF 'never selection' "$DEVELOP_SKILL"; then
+  ok "skills/develop/SKILL.md states that a join decides batching and never selection"
+else
+  bad "skills/develop/SKILL.md does not say 'never selection' — 0158 FR4's gate sentence is gone"
+fi
+if says "$SKILL" "The proposal — what a person confirms before any stage runs" 'never selection'; then
+  ok "sprint's proposal section states that a join decides batching and never selection"
+else
+  bad "sprint's proposal section does not say 'never selection' — 0158 FR4"
+fi
+
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]

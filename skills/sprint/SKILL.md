@@ -132,6 +132,8 @@ The proposal states, all of it from that one call:
   join through it. Ten rows joining through one `SKILL.md` is a grouping artefact, not a theme; a
   count alone reads as a large sprint and hides that. `--propose` ranks those joins by how much of
   the gate each explains, and names the parent slice too, which is the gate's other join mechanism.
+  A join decides batching and never selection: a gate extends only through rank-adjacent rows, so a
+  proposal never names a ticket ahead of a takeable row ranked above it (0158).
 - **An estimate in real-world time, tokens and dollars.** One call produces it:
 
   ```sh

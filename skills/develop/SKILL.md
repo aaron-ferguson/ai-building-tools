@@ -50,6 +50,9 @@ batches on a different condition — that the tickets were developed together in
 what a verify batch spends is the gate's independence, which no startup saving amortises. Do not
 carry this rule there.**
 
+**A join decides batching and never selection.** A gate extends only through rows adjacent in rank,
+so nothing a join reaches is ever worked ahead of a takeable row ranked above it (0158).
+
 **Another session may be working this same backlog.** Read `references/CONCURRENCY.md` at the plugin root
 (`../../references/CONCURRENCY.md` from this file) before touching any backlog file.
 

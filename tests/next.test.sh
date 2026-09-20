@@ -2556,6 +2556,102 @@ ticket_lines="$(printf '%s\n' "$out" | grep '^TICKET' || true)"
 assert_eq "the gate below the design row is ticket 0002 and only 0002" \
   "$ticket_lines" 'TICKET    0002 | size s | A develop ticket'
 
+# --- 0158 — a join decides batching, never selection over rank ---------------------------------
+# `gate_from` admitted any joining row out of the whole takeable pool, however many takeable rows
+# the rank walk had passed over to reach it, so a driven sprint took rank-94 work ahead of rank 2.
+# The gate is now rank-CONTIGUOUS: it extends down from the lead, stepping over exactly what the
+# rank walk itself steps over, and ending at the first other row that does not join.
+
+echo "0158 AC1 — a joining row below a non-joining one does not join"
+scaffold
+add_row 0101 'The lead'          develop ready ''
+add_row 0102 'Breaks the run'    develop ready ''
+add_row 0103 'Would have joined' develop ready ''
+add_ticket 0101 develop ready '[]' '' a/x.md
+add_ticket 0102 develop ready '[]' '' b/y.md
+add_ticket 0103 develop ready '[]' '' a/x.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
+assert_eq "the gate is the lead alone"                "$(dispatch_line "$out")" 'DISPATCH  develop 0101'
+
+echo "0158 AC2 — an adjacent joining row still batches"
+# The stop rule's negative: ending the gate at the lead whatever joins would pass AC1 and destroy
+# batching outright.
+scaffold
+add_row 0101 'The lead'   develop ready ''
+add_row 0102 'Adjacent'   develop ready ''
+add_row 0103 'Unrelated'  develop ready ''
+add_ticket 0101 develop ready '[]' '' a/x.md
+add_ticket 0102 develop ready '[]' '' a/x.md
+add_ticket 0103 develop ready '[]' '' b/y.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
+assert_eq "batches the adjacent pair"                 "$(dispatch_line "$out")" 'DISPATCH  develop 0101 0102'
+
+echo "0158 AC3 — a row the rank walk steps over does not end the gate"
+# Contiguity is defined against the WALK, not against the rows: 0102 has an open blocker, so the
+# walk would have stepped over it, and a gate that stopped there would be stricter than the walk.
+scaffold
+add_row 0101 'The lead'     develop ready ''
+add_row 0102 'Blocked'      develop blocked ''
+add_row 0103 'Joins'        develop ready ''
+add_row 0104 'The blocker'  develop ready ''
+add_ticket 0101 develop ready '[]'       '' a/x.md
+add_ticket 0102 develop blocked '["0104"]' '' b/y.md
+add_ticket 0103 develop ready '[]'       '' a/x.md
+add_ticket 0104 develop ready '[]'       '' d/w.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
+assert_eq "steps over the blocked row and keeps going" "$(dispatch_line "$out")" 'DISPATCH  develop 0101 0103'
+
+echo "0158 AC4 — a row at another stage ends the gate"
+# The pool is develop rows only, so a stop rule reading the pool alone cannot see 0102 at all and
+# would batch 0103 straight through it.
+scaffold
+add_row 0101 'The lead'        develop ready ''
+add_row 0102 'Somebody else'   verify  ready ''
+add_row 0103 'Would have joined' develop ready ''
+add_ticket 0101 develop ready '[]' '' a/x.md
+add_ticket 0102 verify  ready '[]' '' c/z.md
+add_ticket 0103 develop ready '[]' '' a/x.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
+assert_eq "the verify row ends the gate"              "$(dispatch_line "$out")" 'DISPATCH  develop 0101'
+
+echo "0158 AC5 — the depth line counts contiguous gates"
+# `depth_line` re-runs the same grouping, so a count left on the old rule contradicts the dispatch
+# line printed directly above it.
+scaffold
+add_row 0101 'The lead'          develop ready ''
+add_row 0102 'Breaks the run'    develop ready ''
+add_row 0103 'Would have joined' develop ready ''
+add_ticket 0101 develop ready '[]' '' a/x.md
+add_ticket 0102 develop ready '[]' '' b/y.md
+add_ticket 0103 develop ready '[]' '' a/x.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_contains "counts three gates" "$out" 'DEPTH     3 develop gate(s)'
+
+echo "0158 AC6 — verify_batch is not narrowed by contiguity"
+# FR3. A gate really developed as 0101 0103 verifies as one batch even though 0102 ranks between
+# them and was never part of it: `verify_batch` RECOVERS a membership already fixed, where the
+# develop arm FORMS one.
+scaffold
+add_row 0101 'Built here'      verify  ready ''
+add_row 0102 'Never started'   develop ready ''
+add_row 0103 'Built here too'  verify  ready ''
+add_ticket 0101 verify  ready '[]' '' a/x.md
+add_ticket 0102 develop ready '[]' '' b/y.md
+add_ticket 0103 verify  ready '[]' '' a/x.md
+seal
+out="$(run_next --drive --started 0101 --started 0103)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
+assert_eq "verifies the developed gate as one batch"  "$(dispatch_line "$out")" 'DISPATCH  verify 0101 0103'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
