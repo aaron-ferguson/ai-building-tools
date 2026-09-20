@@ -29,7 +29,6 @@ touches:
   - skills/queue/templates/close
   - .claude/backlog/close
   - tests/close.test.sh
-  - tests/close-by.test.sh
 ---
 
 ## Problem
@@ -130,3 +129,28 @@ Three gaps, each independently sufficient:
   committed guards.
 - **Relates 0149 (model tiering).** This pass is the one recorded instance of a cheaper model
   dropping the outcome contract on a verify stage.
+
+- **2026-09-20 (develop, eeb0) — THE LIVE SCRIPT NOW REFUSES WHAT THE INSTALLED SKILL DOES NOT YET
+  ASK FOR, and the three tickets this session handed to verify are the first to meet it.**
+  `.claude/backlog/close` is a committed file and takes effect immediately; `skills/verify/SKILL.md`
+  is resolved from `~/.claude/plugins/cache/` at session start, so until a release the next verify
+  session is told nothing about the `Conventions:` line and will meet the refusal with no instruction
+  explaining it. The refusal message names the line and the fix, which is what makes that recoverable
+  rather than a stop — but **this is the release-shaped half of the ticket and it is the author's
+  call** (`CLAUDE.md`, *the installed copy is what runs*; `tools/release`). Parked in `FINDINGS.md`
+  too, because it outlives this ticket.
+- **AC4's two halves are two cases, not one.** The positive (the line present closes) and the
+  exemption (`close_by: develop` is not subject to it) exercise different branches, and a single
+  case asserting "does not refuse" would pass on either one alone.
+- **The check is an `awk` over the `## QA evidence` section, not a file-wide grep.** A `Conventions:`
+  line anywhere else in the item — a notes paragraph quoting the rule, say — would satisfy a
+  file-wide grep while the evidence section stayed empty, which is the ticket's whole subject.
+- **`close.test.sh` needed six fixture helpers amended, not one**, and `close-by.test.sh` needed
+  none: every `close_by: verify` fixture had no `## QA evidence` section at all, which is why 79 of
+  256 cases redded at once. `close-by.test.sh` is dropped from `touches:` — it was in `expects:` and
+  the work never reached it.
+- **AC3's refusal is proved red-then-green by its own case** (the fixture closed before the refusal
+  existed, refuses after), so it needed no separate mutation. **Run, not reasoned.**
+- **The `unit`-row guard is bound to the ROW, not the file.** `commands.unit` appears elsewhere in
+  `skills/verify/SKILL.md` in its own right, so a file-wide presence grep would have been green with
+  the table row untouched — the same unfalsifiable shape caught on 0168 AC7 earlier in this session.
