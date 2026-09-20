@@ -3,7 +3,7 @@ id: "0168"
 title: Defer the findings gate to the end of confirmed scope instead of stopping in-scope work
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -19,9 +19,14 @@ expects:
   - tests/next.test.sh
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "8ec3"
+claimed_at: 2026-09-20T22:34:00Z
 touches:
+  - skills/queue/templates/next
+  - .claude/backlog/next
+  - tests/next.test.sh
+  - skills/sprint/SKILL.md
+  - tests/sprint.test.sh
 ---
 
 ## Problem
