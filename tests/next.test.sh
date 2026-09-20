@@ -699,7 +699,11 @@ add_tools_repo toolsrepo "$(printf -- '- 2026-09-05 — a tools entry.\n- 2026-0
 add_row 0101 'A ready ticket' develop ready ''
 add_ticket 0101 develop ready '[]' '' a/one.md
 seal
-out="$(run_next --drive)" && rc=0 || rc=$?
+# 0168: a crossed gate DEFERS while anything in the run's confirmed scope is still dispatchable, so
+# a case whose subject is the gate FIRING has to be run at the end of one. `--scope 9999`, naming an
+# id with no row, is exactly a confirmed ticket that has since closed — it spends the scope without
+# touching the fixture's own rows, so this case still measures what it was written to measure.
+out="$(run_next --drive --scope 9999)" && rc=0 || rc=$?
 assert_rc       "exits 5 — the findings gate, on 4 summed against 4" "$rc" 5
 assert_contains "dispatches retro"                                   "$out" 'retro'
 
@@ -990,7 +994,7 @@ add_row 0101 'A takeable row' develop ready 0091
 add_ticket 0101 develop ready '[]' 0091 a/one.md
 add_findings "$(printf -- '- 2026-01-02 — one entry.\n- **2026-01-03 — two entries.**')"
 seal
-out="$(run_next --drive)" && rc=0 || rc=$?
+out="$(run_next --drive --scope 9999)" && rc=0 || rc=$?
 assert_rc       "exits 5 — the findings gate" "$rc" 5
 assert_contains "dispatches retro"            "$out" 'retro'
 assert_contains "states the count"            "$out" '2'
@@ -2002,7 +2006,7 @@ add_row 0101 'Work the gate will not reach' develop ready ''
 add_ticket 0101 develop ready '[]' '' a/one.md
 add_findings "$(printf -- '- 2026-01-02 — one entry.\n- 2026-01-03 — and a second, which reaches the threshold.')"
 seal
-out="$(run_next --drive --propose)" && rc=0 || rc=$?
+out="$(run_next --drive --scope 9999 --propose)" && rc=0 || rc=$?
 assert_rc       "exits 5 — the findings gate"        "$rc" 5
 assert_contains "dispatches retro"                   "$out" 'DISPATCH  retro'
 assert_contains "proposes the retro as a stage with no ticket" "$out" 'PROPOSE   retro | no ticket of its own'
@@ -2241,7 +2245,7 @@ add_row 0101 'A takeable row' develop ready ''
 add_ticket 0101 develop ready '[]' '' a/one.md
 add_findings "$(printf -- '- 2026-01-02 - one entry.\n- 2026-01-03 - two entries.')"
 seal
-out="$(run_next --drive)" && rc=0 || rc=$?
+out="$(run_next --drive --scope 9999)" && rc=0 || rc=$?
 assert_rc "the findings gate still exits 5" "$rc" 5 "$out"
 
 echo "0142 AC4 — sprint's routing paragraph names every code --drive can emit"
@@ -2329,7 +2333,7 @@ out="$(run_next --findings)" && rc=0 || rc=$?
 assert_rc       "exits 0"                     "$rc" 0
 assert_contains "counts the two sprints"      "$out" '2 completed sprint'
 assert_contains "and says it is at the limit" "$out" 'at or over the limit'
-out="$(run_next --drive)" && rc=0 || rc=$?
+out="$(run_next --drive --scope 9999)" && rc=0 || rc=$?
 assert_rc       "spends the findings-gate code on age alone" "$rc" 5 "$out"
 assert_contains "names the sprints served"                   "$out" 'completed sprint'
 
@@ -2341,7 +2345,7 @@ set_findings_limits 2 2
 one_takeable_row
 add_findings "$(printf -- '- 2026-01-02 — one.\n- 2026-01-03 — two.')"
 seal
-out="$(run_next --drive)" && rc=0 || rc=$?
+out="$(run_next --drive --scope 9999)" && rc=0 || rc=$?
 assert_rc       "the count half still fires"       "$rc" 5 "$out"
 assert_contains "and names both tail stages"       "$out" 'retro, then queue'
 
@@ -2397,7 +2401,7 @@ add_ended_run r2 2026-01-04
 seal
 out="$(run_next --findings)" && rc=0 || rc=$?
 assert_contains "measures from 2026-01-02" "$out" '2026-01-02'
-out="$(run_next --drive)" && rc=0 || rc=$?
+out="$(run_next --drive --scope 9999)" && rc=0 || rc=$?
 assert_rc "and the gate is crossed" "$rc" 5 "$out"
 
 echo "0133 — a non-numeric findings_max_sprints fails loudly rather than defaulting"
@@ -2651,6 +2655,115 @@ seal
 out="$(run_next --drive --started 0101 --started 0103)" && rc=0 || rc=$?
 assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
 assert_eq "verifies the developed gate as one batch"  "$(dispatch_line "$out")" 'DISPATCH  verify 0101 0103'
+
+# --- 0168 — the tail runs at the END of confirmed scope, not in the middle of it ----------------
+# The gate fired wherever a develop gate formed, so a run with two tickets left to build spent
+# exit 5 and the supervisor started nothing further. The user's rule is that retro and queue run at
+# the very end of the working session whatever the count says. `--drive` could not honour it because
+# it could not SEE the confirmed scope: `--started` names what is already open, and a scope ticket
+# not yet started is invisible to it. Hence `--scope`, a separate input with a different lifetime.
+#
+# Fixture ids are 9901--9903 so no evidence below reads as a real backlog row.
+
+# Eight entries against a threshold of eight — crossed on the count, exactly at the limit.
+eight_findings() {
+  add_findings "$(printf -- '- 2026-01-0%s — entry %s.\n' 1 1; printf -- '- 2026-01-0%s — entry %s.\n' 2 2 3 3 4 4 5 5 6 6 7 7 8 8)"
+}
+
+echo "0168 AC1 — a crossed gate defers while confirmed scope is still dispatchable"
+scaffold
+set_threshold 8
+add_row 9901 'In scope'      develop ready ''
+add_row 9902 'Also in scope' develop ready ''
+add_ticket 9901 develop ready '[]' '' a/x.md
+add_ticket 9902 develop ready '[]' '' a/x.md
+eight_findings
+seal
+out="$(run_next --drive --scope 9901 --scope 9902)" && rc=0 || rc=$?
+assert_rc       "exits 0 — the dispatch goes ahead"  "$rc" 0 "$out"
+assert_contains "dispatches the in-scope work"       "$out" 'DISPATCH  develop 9901'
+assert_contains "and says the gate is deferred"      "$out" 'deferred'
+assert_not_contains "no tail is dispatched yet"      "$out" 'DISPATCH  retro'
+
+echo "0168 AC2 — the deferral is re-asserted on a later call in the same run"
+scaffold
+set_threshold 8
+add_row 9901 'In scope, now built' verify  ready ''
+add_row 9902 'Still to build'      develop ready ''
+add_ticket 9901 verify  ready '[]' '' a/x.md
+add_ticket 9902 develop ready '[]' '' a/x.md
+eight_findings
+seal
+out="$(run_next --drive --scope 9901 --scope 9902 --started 9901 --completed develop:9901)" && rc=0 || rc=$?
+assert_rc       "exits 0 — still dispatching"        "$rc" 0 "$out"
+assert_contains "dispatches the verify it just built" "$out" 'DISPATCH  verify 9901'
+
+echo "0168 AC3 — the deferral does not outlive the scope"
+# The other half of the rule, and the one that makes it a deferral rather than a repeal: with every
+# scope id closed, the gate decides ahead of the out-of-scope row below it.
+scaffold
+set_threshold 8
+add_row 9903 'Not in scope' develop ready ''
+add_ticket 9903 develop ready '[]' '' b/y.md
+eight_findings
+seal
+out="$(run_next --drive --scope 9901 --scope 9902)" && rc=0 || rc=$?
+assert_rc       "exits 5 — the findings gate"        "$rc" 5 "$out"
+assert_contains "dispatches the whole tail"          "$out" 'retro, then queue'
+assert_not_contains "and not the out-of-scope row"   "$out" 'DISPATCH  develop 9903'
+
+echo "0168 AC4 — the age limit defers on the same rule, and no longer"
+scaffold
+set_findings_limits 8 2
+add_row 9901 'In scope' develop ready ''
+add_ticket 9901 develop ready '[]' '' a/x.md
+add_findings "$(printf -- '- 2026-01-02 — one entry.')"
+add_ended_run r1 2026-01-03
+add_ended_run r2 2026-01-04
+seal
+out="$(run_next --drive --scope 9901)" && rc=0 || rc=$?
+assert_rc       "exits 0 while the scope row is dispatchable" "$rc" 0 "$out"
+assert_contains "and says so"                                 "$out" 'deferred'
+# The same fixture with the scope row gone: the age gate has to fire, or it is deferred forever.
+scaffold
+set_findings_limits 8 2
+add_findings "$(printf -- '- 2026-01-02 — one entry.')"
+add_ended_run r1 2026-01-03
+add_ended_run r2 2026-01-04
+seal
+out="$(run_next --drive --scope 9901)" && rc=0 || rc=$?
+assert_rc       "exits 5 once the scope is spent"    "$rc" 5 "$out"
+assert_contains "on the age limit"                   "$out" 'completed sprint'
+
+echo "0168 AC5 — with no --scope the gate waits for the end of the run"
+# FR4. A hand-driven run confirms no scope, and the rule is the user's either way: finish the work
+# that is takeable, then run the tail.
+scaffold
+set_threshold 8
+add_row 9901 'Takeable' develop ready ''
+add_ticket 9901 develop ready '[]' '' a/x.md
+eight_findings
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc       "exits 0 — the takeable row goes first" "$rc" 0 "$out"
+assert_contains "dispatching it"                        "$out" 'DISPATCH  develop 9901'
+# Nothing takeable: the gate decides here, ahead of COMPLETE, or the tail is never dispatched at all.
+scaffold
+set_threshold 8
+eight_findings
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 5 rather than 3"          "$rc" 5 "$out"
+assert_contains     "dispatching the tail"           "$out" 'retro, then queue'
+assert_not_contains "and not a run-complete line"    "$out" 'COMPLETE'
+
+echo "0168 AC6 — --scope takes a four-digit id"
+scaffold
+set_threshold 8
+seal
+out="$(run_next --drive --scope 12)" && rc=0 || rc=$?
+assert_rc       "exits 2 — usage"                    "$rc" 2 "$out"
+assert_contains "names the argument"                 "$out" '--scope'
 
 # --- result -----------------------------------------------------------------------------------
 echo

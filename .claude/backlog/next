@@ -285,7 +285,7 @@ findings_sources() {
 
 usage() {
   cat <<'USAGE'
-usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] [--completed <stage>[:<id>]] [--started <id>]… | --help]
+usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] [--completed <stage>[:<id>]] [--started <id>]… [--scope <id>]… | --help]
 
   ./next             counts by stage and by status, plus anything another session holds
   ./next <stage>     the first takeable row for that stage, and its size
@@ -309,6 +309,11 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] 
                      While one of them is still awaiting verify, no NEW develop gate is dispatched:
                      work that was started gets finished. --completed's id is unioned in, so a run
                      whose gates are all single tickets needs no --started at all.
+                     --scope <id> names a ticket in the run's CONFIRMED SCOPE — repeatable, and
+                     the whole scope on every call rather than what is left of it. While any of them
+                     is still dispatchable a crossed findings gate DEFERS: the dispatch goes ahead
+                     and one NOTE says so. The tail runs at the end of the scope, never in the
+                     middle of it. With no --scope the gate waits for the end of the run instead.
                      --propose describes the dispatch a person is being asked to approve — how many
                      tickets, which, a line of work each, and what holds the gate together — and is
                      for the ONE call a run makes before its first stage. Opt-in because every later
@@ -879,6 +884,7 @@ if [ "${1:-}" = "--drive" ]; then
   shift
   COMPLETED=""
   STARTED=""
+  SCOPE=""
   PROPOSE=0
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -904,6 +910,18 @@ if [ "${1:-}" = "--drive" ]; then
           *) echo "--started takes a four-digit id; got: $1" >&2; usage >&2; exit 2 ;;
         esac
         contains_word "$1" "$STARTED" || STARTED="$STARTED $1"
+        shift ;;
+      --scope)
+        shift
+        [ $# -gt 0 ] || { echo "--scope needs <id>" >&2; usage >&2; exit 2; }
+        # Four digits or a usage error, exactly as `--started` is (0168 FR1). A malformed id here
+        # is worse than one there: it matches no row, so the scope reads as already finished and
+        # the tail this flag exists to defer fires in the middle of the run instead.
+        case "$1" in
+          [0-9][0-9][0-9][0-9]) : ;;
+          *) echo "--scope takes a four-digit id; got: $1" >&2; usage >&2; exit 2 ;;
+        esac
+        contains_word "$1" "$SCOPE" || SCOPE="$SCOPE $1"
         shift ;;
       *) echo "unknown argument to --drive: $1" >&2; usage >&2; exit 2 ;;
     esac
@@ -1169,9 +1187,39 @@ if [ "${1:-}" = "--drive" ]; then
     exit "$1"
   }
 
-  # Checked where a NEW gate would be dispatched, and not before a verify: a ticket already built is
-  # finished rather than abandoned for a retro. Evaluating the gate once per run is 0039's.
+  # Is any confirmed-scope id still something this walk could dispatch? (0168 FR2.) The predicate is
+  # `takeable_develop`'s, widened to `verify`, because a scope ticket is unfinished at either stage.
+  #
+  # An id with no row answers NO, which is the common case and the right one: the ticket closed, so
+  # that part of the scope is finished. A four-digit check at parse time is what keeps a TYPO out of
+  # this answer, where it would read as finished scope and fire the tail mid-run.
+  scope_live() {
+    for sl_id in $SCOPE; do
+      sl_row="$(row_for "$sl_id")"
+      [ -n "$sl_row" ] || continue
+      case "$(field "$sl_row" "$NEXT")" in develop|verify) : ;; *) continue ;; esac
+      case "$(field "$sl_row" "$STATUS")" in in-progress|waiting) continue ;; esac
+      if held_by "$sl_id" >/dev/null; then continue; fi
+      if [ -n "$(open_blockers_of "$sl_id")" ]; then continue; fi
+      return 0
+    done
+    return 1
+  }
+
+  # $1 is the SITE: `gate` where a new gate would be dispatched, `complete` where the walk has run
+  # out of work. The site is what decides whether a crossed gate defers or fires (0168).
+  #
+  # WHY THE TAIL WAITS. The user's rule: retro and queue run at the very end of the working session,
+  # whatever the count says — finish the work, then sweep. Firing at the gate stopped a run with two
+  # in-scope tickets still unbuilt, and sprint Step 6 then started no further stage. So a crossed
+  # gate defers while confirmed scope remains, and decides the moment it does not.
+  #
+  # With NO `--scope` the run has confirmed no scope to be inside, and the rule still holds: the
+  # gate waits for the end of the run, which is the `complete` site. Deferral is never silent —
+  # one NOTE says the gate crossed — because a run that spends no tail and says nothing about why
+  # is indistinguishable from one whose buffer is empty.
   findings_gate() {
+    fg_site="$1"
     read_tools_buffer
     [ -f "$FINDINGS" ] || [ -n "$TOOLS_FINDINGS" ] || return 0
     # The same tally the `--findings` line prints (0060 FR10). A driver routing on one number while
@@ -1191,14 +1239,21 @@ if [ "${1:-}" = "--drive" ]; then
     # THE TAIL IS `retro` AND THEN `queue`. Naming only the retro is 0060's asymmetry arriving as a
     # dispatch: retro lands the lesson halves and only a queue sweep can take the work halves, so a
     # gate that dispatches one of the two leaves the buffer holding what it came to clear.
+    fg_reason=""
     if [ "$FCOUNT" -ge "$THRESHOLD" ]; then
-      PROPOSE_STAGE="retro"; PROPOSE_IDS=""
-      decide "$FINDINGS_GATE" "DISPATCH  retro, then queue — FINDINGS.md holds $FCOUNT entries against a threshold of $THRESHOLD$gsrc"
+      fg_reason="FINDINGS.md holds $FCOUNT entries against a threshold of $THRESHOLD$gsrc"
+    elif age_gate_crossed; then
+      fg_reason="FINDINGS.md holds $FCOUNT entries whose oldest ($FOLDEST) has survived $FAGE completed sprint(s) against a limit of $MAX_SPRINTS$gsrc"
     fi
-    if age_gate_crossed; then
-      PROPOSE_STAGE="retro"; PROPOSE_IDS=""
-      decide "$FINDINGS_GATE" "DISPATCH  retro, then queue — FINDINGS.md holds $FCOUNT entries whose oldest ($FOLDEST) has survived $FAGE completed sprint(s) against a limit of $MAX_SPRINTS$gsrc"
+    [ -n "$fg_reason" ] || return 0
+    if [ "$fg_site" = gate ]; then
+      if [ -z "$SCOPE" ] || scope_live; then
+        printf 'NOTE      the findings gate crossed and is deferred until confirmed scope is finished — %s\n' "$fg_reason"
+        return 0
+      fi
     fi
+    PROPOSE_STAGE="retro"; PROPOSE_IDS=""
+    decide "$FINDINGS_GATE" "DISPATCH  retro, then queue — $fg_reason"
   }
 
   # Every row this RUN started that is still sitting at `verify | ready`, in rank order.
@@ -1421,12 +1476,15 @@ if [ "${1:-}" = "--drive" ]; then
         fi
         gate="$(gate_contiguous "$id" "$(takeable_develop)")"
         PROPOSE_STAGE="develop"; PROPOSE_IDS="$gate"
-        findings_gate
+        findings_gate gate
         decide "$DISPATCH" "DISPATCH  develop $gate" ;;
       *)
         decide "$ESCALATE" "ESCALATE  $id is at next: '$rnext', which no routing rule covers — stopping rather than falling through to a default" ;;
     esac
   done
+  # 0168 FR3/FR4: the run is out of work, so the deferral is over — whether the scope finished or
+  # there was none to confirm. The gate decides here or it never runs at all.
+  findings_gate complete
   decide "$RUN_COMPLETE" "COMPLETE  nothing takeable at develop — every row is done, blocked, or held by another session"
 fi
 

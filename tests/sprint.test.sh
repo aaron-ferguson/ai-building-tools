@@ -2259,5 +2259,22 @@ else
   bad "sprint's proposal section does not say 'never selection' — 0158 FR4"
 fi
 
+# --- 0168 AC7 — the tail waits for the end of confirmed scope ------------------------------------
+# The script defers the gate; this is the half a supervisor reads. Step 6's old instruction was to
+# start no further stage session the moment the gate crossed, which is the behaviour the user's rule
+# reverses — prose left as it was would have a supervisor stopping a run the script is still
+# dispatching.
+echo "0168 AC7 — sprint no longer stops dispatch on a crossed gate, and passes the scope"
+if grep -qF 'start no further stage session' "$SKILL"; then
+  bad "sprint still says to start no further stage session — 0168 FR5's reversal is gone"
+else
+  ok "sprint does not tell a supervisor to stop dispatching on a crossed gate"
+fi
+if says "$SKILL" "Step 2 — The cycle" '--scope'; then
+  ok "Step 2's --drive command passes --scope"
+else
+  bad "Step 2's --drive command does not pass --scope — the gate cannot see confirmed scope"
+fi
+
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]

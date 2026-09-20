@@ -182,11 +182,18 @@ loses it is the first stage killing the supervisor that had not written it down 
 One call decides everything:
 
 ```sh
-.claude/backlog/next --drive --completed <stage>[:<id>] --started <id> --started <id>
+.claude/backlog/next --drive --completed <stage>[:<id>] --started <id> --started <id> \
+  --scope <id> --scope <id>
 ```
 
 `--completed` says which stage just finished on which ticket, and it is what tells a `verify` bounce
 from a fresh `develop` row. Give it at most once per call, and omit it on the first call of a run.
+
+**`--scope` is every id the person confirmed at Step 1, on every call** — the whole scope, not what
+is left of it, since the script decides what is finished by reading the rows. It is what holds the
+findings gate off until the work is done (Step 6), and it is a different fact from `--started`: a
+confirmed ticket nobody has opened yet is invisible to `--started` and is exactly what the gate must
+wait for.
 
 **`--started` is how the run keeps its promise that work it opens gets finished.** The property the
 supervisor relies on is that a ticket this run has already built does not sit unverified while the
@@ -465,9 +472,12 @@ tokens* — never a row to take over.
 
 ## Step 6 — The findings gate, and the end of the run
 
-**The gate stops dispatch and fires once per run.** When `./next --findings` crosses either limit,
-start no further stage session, let any running one finish, and dispatch the tail. Log the crossing
-as one line, naming which limit crossed.
+**The gate defers the tail to the end of confirmed scope, and fires once per run.** A crossed limit
+does not stop dispatch while any `--scope` ticket is still dispatchable: the run finishes the work it
+confirmed, and `--drive` prints one `NOTE` saying the gate crossed and is deferred. The user's rule
+is that retro and queue run at the very end of the working session whatever the count says. Once no
+scope ticket is left, exit `5` decides ahead of any further dispatch — dispatch the tail then, and
+log the crossing as one line naming which limit crossed.
 
 **Two limits, whichever comes first.** The count against `findings_threshold`, and the oldest
 unswept entry's age in **completed sprints** against `findings_max_sprints`. The second is not
