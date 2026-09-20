@@ -25,8 +25,9 @@ touches:
   - skills/queue/templates/next
   - .claude/backlog/next
   - tests/next.test.sh
-  - skills/sprint/SKILL.md
+  - skills/sprint/SKILL.md          # transient mutation: four guards proved red, restored same turn
   - tests/sprint.test.sh
+  - skills/develop/SKILL.md         # transient mutation only, for 0158 AC7's guard; no committed edit
 ---
 
 ## Problem
@@ -119,3 +120,24 @@ tail after a run that ends on `ESCALATE` with the gate crossed. The thresholds t
   flag rather than reusing `--started`, because a confirmed ticket not yet started must also hold
   the gate off; and with no `--scope` the gate waits for `COMPLETE`, applying the rule to hand-driven
   runs too.
+
+- **2026-09-20 (develop, 8ec3) — the gate now has a SITE argument rather than a second call site.**
+  `findings_gate gate` defers, `findings_gate complete` decides. Putting the deferral in the caller
+  instead would have meant the count and age branches each deciding in two places, which is how the
+  two limits drift apart.
+- **The two limits are now an `if`/`elif` over one `fg_reason` string**, where they were two
+  independent `if`s each calling `decide`. Behaviour is unchanged — the count already won, because
+  it exited first — but the deferral has one place to happen rather than two.
+- **Seven existing cases asserted exit 5 over a takeable develop row** (`0060 AC10`, `0038 AC11`,
+  `0130`'s retro proposal, `0142` compatibility, and three `0133` age cases). Each is about the gate
+  FIRING, so each now runs at the end of a spent scope — `--scope 9999`, an id with no row, which is
+  a confirmed ticket that has since closed. That leaves every fixture's own rows untouched, so the
+  cases still measure what they were written to measure. This is the contract change the QA plan
+  anticipated, not a regression.
+- **0133's `one_takeable_row` helper still earns its place**: with the gate uncrossed a takeable row
+  distinguishes exit 0 from exit 3, and with it crossed the amended cases distinguish 5 from 3.
+- **AC7's Step 2 guard was unfalsifiable as first written, and a mutation is what caught it.** Step 2
+  now also EXPLAINS `--scope` in prose, so a section-scoped grep passed on the explanation with the
+  flag deleted from the command it documents. Rebound to the command block (commit `13ac559`).
+  **Run, not reasoned** — for all four new prose guards across 0158 and 0168, each mutated, proved
+  red, restored, with a green control run after.
