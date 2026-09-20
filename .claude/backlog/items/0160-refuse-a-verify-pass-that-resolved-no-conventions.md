@@ -2,8 +2,8 @@
 id: "0160"
 title: Refuse a verify pass that resolved no conventions, names another session, or skips the unit command
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -20,15 +20,9 @@ expects:
   - .claude/backlog/close
   - tests/close.test.sh
   - tests/close-by.test.sh
-claimed_by: "eeb0"
-claimed_at: 2026-09-20T23:10:38Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/sprint/SKILL.md
-  - tests/sprint.test.sh
-  - skills/verify/SKILL.md
-  - skills/queue/templates/close
-  - .claude/backlog/close
-  - tests/close.test.sh
 ---
 
 ## Problem
