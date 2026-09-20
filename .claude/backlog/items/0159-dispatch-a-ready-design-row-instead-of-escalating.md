@@ -26,6 +26,7 @@ touches:
   - tests/next.test.sh
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
+  - tests/design-hold.test.sh       # not in expects:; its AC2 control pinned the old escalation
 ---
 
 ## Problem
@@ -143,3 +144,37 @@ Where it happens in `skills/queue/templates/next`:
   ticket, so this ticket rewrites that guard rather than re-specifying 0154.
 - **`findings_gate` on the design arm (FR1/AC8)** because a design dispatch is new work exactly as a
   develop gate is, and the gate exists to stop new work once the buffer crosses.
+
+- **2026-09-20 (develop, 1150) — this ticket exposed a defect in `0168`, which landed hours earlier
+  in the same session, and the fix is in this commit.** `scope_live` asks whether any confirmed-scope
+  id is still dispatchable, and 0168 FR2 enumerated `next: develop` and `next: verify` — correct when
+  it was written, because a design row escalated and so was never dispatchable. Once this ticket made
+  design dispatchable, a scope ticket sitting at `next: design` read as *finished scope* and fired the
+  findings tail in the middle of the run: exactly the failure 0168 exists to prevent, arriving through
+  the stage this one opened. `scope_live` now accepts `design|develop|verify`. **0168's own FR2 text
+  still names two stages and is now a stale enumeration** — this session holds 0159, not 0168, so it
+  is reported rather than edited (`CONCURRENCY.md`, *A stage writes only the ticket it holds*).
+- **AC8's exit code was pinned to pre-0168 behaviour.** The AC asks for exit 5 on a crossed buffer,
+  and since 0168 a crossed gate DEFERS at a dispatch site while confirmed scope is live. FR1's actual
+  requirement — the design arm runs `findings_gate` *exactly as the develop arm does* — is what was
+  built, and the case asserts both halves: exit 5 with the scope spent (`--scope 9999`), and a
+  deferred exit 0 with the design row itself in scope.
+- **AC7's second absence string could not be written as specified.** It asked that the file not
+  contain `needs a person."*`, which was written against the depth example while that example named a
+  `next: design` row. The example now names a `next: queue` row, which genuinely does need a person —
+  so the check as stated reds a correct sentence, the negative-assertion trap `testing-conventions.md`
+  names. Substituted: no line pairs `next: design` with `a person`, which is the claim the string was
+  standing in for. **The next QA pass reads the plan, not this note** — hence it is recorded here.
+- **Nine `next.test.sh` cases and four `sprint.test.sh` guards used a design row purely as a
+  convenient *this escalates* fixture**, their real subjects being elsewhere (stepping over an
+  in-progress row, `--propose` adding nothing to a non-dispatch, the finish-before-start preference,
+  exit-code compatibility). Each was swapped to a `next: queue` row, which states the same premise and
+  leaves each subject untouched. Only the four cases whose subject *is* the design routing were
+  rewritten as reversals.
+- **The `--completed design:<id>` reversal is narrower than it looks.** A row still at `next: design`
+  after a completed design falls past the new NOTE arms to the pre-existing same-stage escalation,
+  because both new arms require `lstage != design`. That is a design session that changed nothing —
+  a loop — and keeping it loud is what stops the router re-dispatching design forever. Case added
+  under `0159 FR2`.
+- **All prose guards here are RUN, not reasoned**: the four rewritten 0134 guards each failed before
+  the prose was changed to match, which is the mutation in reverse and evidence of the same kind.
