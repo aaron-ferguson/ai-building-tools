@@ -2,8 +2,8 @@
 id: "0168"
 title: Defer the findings gate to the end of confirmed scope instead of stopping in-scope work
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -19,15 +19,9 @@ expects:
   - tests/next.test.sh
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "8ec3"
-claimed_at: 2026-09-20T22:34:00Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next
-  - .claude/backlog/next
-  - tests/next.test.sh
-  - skills/sprint/SKILL.md          # transient mutation: four guards proved red, restored same turn
-  - tests/sprint.test.sh
-  - skills/develop/SKILL.md         # transient mutation only, for 0158 AC7's guard; no committed edit
 ---
 
 ## Problem
