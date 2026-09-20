@@ -3,7 +3,7 @@ id: "0159"
 title: Dispatch a ready design row instead of escalating it to a person
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -18,9 +18,14 @@ expects:
   - tests/next.test.sh
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "1150"
+claimed_at: 2026-09-20T22:51:04Z
 touches:
+  - skills/queue/templates/next
+  - .claude/backlog/next
+  - tests/next.test.sh
+  - skills/sprint/SKILL.md
+  - tests/sprint.test.sh
 ---
 
 ## Problem
