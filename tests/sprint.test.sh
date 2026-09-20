@@ -2270,7 +2270,11 @@ if grep -qF 'start no further stage session' "$SKILL"; then
 else
   ok "sprint does not tell a supervisor to stop dispatching on a crossed gate"
 fi
-if says "$SKILL" "Step 2 — The cycle" '--scope'; then
+# Bound to the COMMAND, not to Step 2. The section also EXPLAINS `--scope` in prose, so a
+# section-scoped grep is satisfied by the explanation and stays green with the flag deleted from the
+# command it documents — which is what a mutation of this guard showed it doing.
+drive_cmd="$(awk '/^\.claude\/backlog\/next --drive/ { c = 1 } c { print; if ($0 !~ /\\$/) exit }' "$SKILL" | tr '\n' ' ')"
+if printf '%s\n' "$drive_cmd" | grep -qF -- '--scope'; then
   ok "Step 2's --drive command passes --scope"
 else
   bad "Step 2's --drive command does not pass --scope — the gate cannot see confirmed scope"
