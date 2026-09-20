@@ -26,7 +26,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0158 | Make --drive select a gate by rank, and let a join decide only batching | verify | ready |  |
 | 0168 | Defer the findings gate to the end of confirmed scope instead of stopping in-scope work | verify | ready |  |
 | 0159 | Dispatch a ready design row instead of escalating it to a person | verify | ready |  |
-| 0160 | Refuse a verify pass that resolved no conventions, names another session, or skips the unit command | develop | ready |  |
+| 0160 | Refuse a verify pass that resolved no conventions, names another session, or skips the unit command | develop | in-progress |  |
 | 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | develop | ready |  |
 | 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | develop | ready |  |
