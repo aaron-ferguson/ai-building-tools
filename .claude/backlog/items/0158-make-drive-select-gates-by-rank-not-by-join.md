@@ -25,7 +25,7 @@ touches:
   - skills/queue/templates/next
   - .claude/backlog/next
   - tests/next.test.sh
-  - tests/batching.test.sh
+  - tests/sprint.test.sh
   - skills/develop/SKILL.md
   - skills/sprint/SKILL.md
 ---
@@ -125,3 +125,24 @@ one session; it may never promote a row over a takeable row ranked above it.
   itself would not have jumped, including a waiting or design row below the lead.
 - **AC6 exists because `verify_batch` calls `gate_from`** to recover a developed gate's membership.
   Applying contiguity there would split a verify batch around rows that were never part of it.
+
+- **2026-09-20 (develop, b040) — `gate_from` is kept and a second builder added, rather than a flag
+  on one function.** `verify_batch` (FR3) needs the unbounded join and every new-gate site needs the
+  bounded one, so the difference is a different question, not a parameter. The join test itself is
+  factored into `gate_admits`, shared by both, so the two can only ever differ on rank.
+- **The stop set is `walk_steps_over`, mirroring the rank walk's three `continue` arms** —
+  in-progress, an open blocker, held. Written as its own function so a future arm added to the walk
+  has one obvious place to be mirrored; nothing asserts the two stay in step, which is a real gap
+  and the cheapest guard for it would be a fixture per arm (AC3 covers the blocker arm only).
+- **`tests/batching.test.sh` was in `expects:` and is not in `touches:`.** FR4's sentences went in as
+  their own paragraph beside develop's gate paragraph rather than inside it, so that file's window
+  extraction is untouched — its window ends on the paragraph's blank line, and growing the guarded
+  paragraph would have moved every assertion scoped to it.
+- **No existing gate case needed amending** (the QA plan asked which). All 443 `next.test.sh` cases
+  were green on the new rule unchanged: 0136 AC1's chain and 0130's six-row propose fixture are both
+  already rank-contiguous, so contiguity was invisible to them.
+- **AC3's fixture needed `blocked` in the Status column, not `ready`.** An open `blocked_by` over a
+  `ready` column is drift, and `--drive` routes drift to exit 4 ahead of any dispatch — so the first
+  draft of that case measured the drift reporter rather than the gate.
+- **AC7's two guards are pinned by uniqueness, checked not mutated**: `grep -cF 'never selection'`
+  is 1 in each file, so deleting either sentence reds. Reasoned, not run.
