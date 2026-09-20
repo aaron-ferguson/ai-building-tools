@@ -3,7 +3,7 @@ id: "0158"
 title: Make --drive select a gate by rank, and let a join decide only batching
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -19,9 +19,15 @@ expects:
   - tests/batching.test.sh
   - skills/develop/SKILL.md
   - skills/sprint/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "b040"
+claimed_at: 2026-09-20T22:23:44Z
 touches:
+  - skills/queue/templates/next
+  - .claude/backlog/next
+  - tests/next.test.sh
+  - tests/batching.test.sh
+  - skills/develop/SKILL.md
+  - skills/sprint/SKILL.md
 ---
 
 ## Problem
