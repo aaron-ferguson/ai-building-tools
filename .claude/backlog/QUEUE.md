@@ -23,7 +23,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0159 | Dispatch a ready design row instead of escalating it to a person | verify | in-progress |  |
 | 0160 | Refuse a verify pass that resolved no conventions, names another session, or skips the unit command | verify | ready |  |
 | 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | develop | ready |  |

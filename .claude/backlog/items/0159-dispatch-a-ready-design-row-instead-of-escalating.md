@@ -2,8 +2,8 @@
 id: "0159"
 title: Dispatch a ready design row instead of escalating it to a person
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -18,9 +18,10 @@ expects:
   - tests/next.test.sh
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "6351"
-claimed_at: 2026-09-21T04:00:54Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-21
 ---
 
 ## Problem
@@ -86,27 +87,27 @@ Where it happens in `skills/queue/templates/next`:
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture `0101 design ready` with an `## Open design question`, when `next --drive`
+- [x] AC1 — Given a fixture `0101 design ready` with an `## Open design question`, when `next --drive`
   runs, then it exits 0 and prints `DISPATCH  design 0101`. Red: today's template exits 4 with
   `ESCALATE`.
-- [ ] AC2 — Given `0101 design waiting` with a `## Waiting on` section, when `next --drive` runs, then
+- [x] AC2 — Given `0101 design waiting` with a `## Waiting on` section, when `next --drive` runs, then
   it exits 4 and prints the waiting question. Red: a design arm that dispatches regardless of status.
-- [ ] AC3 — Given `0101 design ready` held by a claim and `0102 develop ready`, when `next --drive`
+- [x] AC3 — Given `0101 design ready` held by a claim and `0102 develop ready`, when `next --drive`
   runs, then it prints `DISPATCH  develop 0102` and no `DISPATCH  design`. Red: the design arm
   dispatching a held row.
-- [ ] AC4 — Given `0101` now `next: design, status: ready` and `0102 develop ready` below it, when
+- [x] AC4 — Given `0101` now `next: design, status: ready` and `0102 develop ready` below it, when
   `next --drive --completed develop:0101` runs, then it exits 0, prints no `ESCALATE`, and prints
   `DISPATCH  design 0101`. Red: today's `after develop — a person decides` escalation.
-- [ ] AC5 — Given `0101` now `next: develop, status: ready`, when `next --drive --completed
+- [x] AC5 — Given `0101` now `next: develop, status: ready`, when `next --drive --completed
   design:0101` runs, then it exits 0 and prints `DISPATCH  develop 0101`. Red: today's *no routing
   rule covers* escalation.
-- [ ] AC6 — Given `0101 develop ready`, `0102 design ready`, `0103 queue ready`, when `next --drive`
+- [x] AC6 — Given `0101 develop ready`, `0102 design ready`, `0103 queue ready`, when `next --drive`
   runs, then the depth line contains `runs dry at 0103 (next: queue` and not `0102 (next: design`.
   Red: today's `depth_stopper` stops at 0102.
-- [ ] AC7 — Given `skills/sprint/SKILL.md`, when `tests/sprint.test.sh` runs, then the file contains
+- [x] AC7 — Given `skills/sprint/SKILL.md`, when `tests/sprint.test.sh` runs, then the file contains
   `DISPATCH  design` and contains neither `Exit 4 on an in-scope design row` nor `needs a person."*`.
   Red: the sections left as they are.
-- [ ] AC8 — Given `0101 design ready` and a `FINDINGS.md` holding at least `findings_threshold`
+- [x] AC8 — Given `0101 design ready` and a `FINDINGS.md` holding at least `findings_threshold`
   entries, when `next --drive` runs, then it exits 5 and dispatches no design. Red: a design arm that
   skips `findings_gate`.
 
@@ -126,6 +127,68 @@ Where it happens in `skills/queue/templates/next`:
   when a person is needed.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**Verdict: PASS** — verify session 2026-09-20/21, token 6351.
+
+Conventions: `../ai-building-conventions` (`config.yml` `conventions.path`; `CONVENTIONS_CORE.md`
+plus `documentation-conventions.md`, `testing-conventions.md`).
+Level `unit`, run as `config.yml`'s `commands.unit` in the reporting form that file prescribes:
+`for t in tests/*.test.sh; do "$t" || true; done` — 31 files, every tally `0 failed`
+(`tests/next.test.sh` 485 passed, `tests/sprint.test.sh` 257 passed).
+Copy executed: the repo copy `skills/queue/templates/next`, which is also what the fixtures below
+ran; `cmp` reports it identical to `.claude/backlog/next`.
+
+| Criterion | How it was checked | Result |
+|---|---|---|
+| AC1 | Fresh fixture `0101 design ready` with an `## Open design question`; `./next --drive` → exit 0, `DISPATCH  design 0101` with the question carried beneath it | pass |
+| AC2 | `0101 design waiting` with a `## Waiting on`; `--drive` → exit 4, `ESCALATE  0101 is waiting on a person`, the question printed | pass |
+| AC3 | `0101` held (row and item both `in-progress`, item carrying a token) above `0102 develop ready`; `--drive` → `NOTE  0101 is in-progress — another session holds it; stepping over it`, then `DISPATCH  develop 0102`, no `DISPATCH  design` | pass |
+| AC4 | `0101 design ready`, `0102 develop ready`, `--drive --completed develop:0101` → exit 0, `NOTE  0101 is at next: design after develop — design is autonomous work`, `DISPATCH  design 0101`, no `ESCALATE` | pass |
+| AC5 | `0101 develop ready`, `--drive --completed design:0101` → exit 0, `NOTE  0101 is at next: develop after design`, `DISPATCH  develop 0101` | pass |
+| AC6 | `0101 develop ready`, `0102 design ready`, `0103 queue ready` → depth line reads `runs dry at 0103 (next: queue — a person decides)`; `0102` is not named | pass |
+| AC7 | Three guards in `tests/sprint.test.sh`; see the deviation below | pass, as substituted |
+| AC8 | 8 findings against a threshold of 8 with `0101 design ready`: `--drive --scope 9999` (scope spent) → exit 5, `DISPATCH  retro, then queue`; `--drive --scope 0101` → exit 0 with `NOTE … deferred` and `DISPATCH  design 0101`. Both halves of FR1's *exactly as the develop arm does* | pass |
+| NFR Documentation | No sprint line pairs `next: design` with `a person` (guard below); Step 1's depth example names a `next: queue` row. Checked against `documentation-conventions.md` | pass |
+
+**AC7's second absence string could not be satisfied as written, and this pass confirms the
+substitution rather than inheriting it.** The criterion asks that `skills/sprint/SKILL.md` contain
+neither `Exit 4 on an in-scope design row` (absent — checked) nor `needs a person."*`. The second
+string is still present, at line 107, inside *"runs dry at 0080, which is `next: queue` and needs
+a person."* — a `next: queue` row, which genuinely does need a person and which FR5 explicitly
+allows. The AC's literal text therefore reds a correct sentence. What is asserted instead is the
+pairing the string stood for: no line contains both `next: design` and `a person`. FR5's four
+bullets — the depth example, the *Design alongside develop* section, Step 8's escalation bullet,
+Step 9's example — were each read and each hold. Recorded here because the substitution is a
+narrowing of the written contract, not a finding about the code.
+
+**Mutations run** (committed tree, mutated, red confirmed, restored by path, control green):
+
+1. The rank walk's `design)` ready-arm replaced by the old escalation. AC1 → exit 4 `ESCALATE  0101
+   is at next: design and outranks everything below it — a person decides`; AC4 → exit 4; AC8a →
+   exit 4 rather than 5, the gate never reached. `tests/next.test.sh` 468 passed, 17 failed, the
+   reds naming the design dispatch, the design question, the deferred gate and the `--propose` line.
+2. The completed-stage `design after <stage>` NOTE arm disabled → AC4 printed `ESCALATE  0101 is at
+   next: design / ready after develop — a person decides`, exit 4.
+3. The `<stage> after design` NOTE arm disabled → AC5 stopped routing, exit 1.
+4. `depth_stopper`'s `design|develop|verify) continue` split so `design` stops → AC6's depth line
+   read `runs dry at 0102 (next: design — a person decides)`, today's behaviour.
+5. The waiting check and the design arm's `rstatus = ready` test both disabled → AC2's waiting row
+   printed `DISPATCH  design 0101`, which is FR4's failure exactly.
+6. `DISPATCH  design` reworded in `skills/sprint/SKILL.md` → 256 passed, 1 failed. A line pairing
+   `next: design` with `a person` added → 256 passed, 1 failed, the guard quoting the added line.
+   Restored; control `tests/sprint.test.sh` 257 passed, 0 failed.
+
+**Probes** (`🔍`):
+- A design row whose QUEUE row reads `ready` over an `in-progress` item routes to `DRIFT` and exit 4
+  ahead of any dispatch — the first AC3 fixture was built that way and measured the drift reporter
+  instead of the design arm. The same trap 0158's build notes record for its AC3.
+- The design dispatch carries the item's design-question line as a second, indented line; a design
+  row with no `## Open design question` prints an empty continuation line rather than a complaint.
+  Noted, not a red: nothing in FR1 or the ACs asks for a refusal there.
+
+Dirty set at Step 2 and at verdict: `.claude/backlog/runs/` (untracked). Intersection with this
+run's evidence set (`skills/queue/templates/next`, `skills/sprint/SKILL.md`, `tests/next.test.sh`,
+`tests/sprint.test.sh`) is empty — not advisory.
 
 ## Notes & decisions
 

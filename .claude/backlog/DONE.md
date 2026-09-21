@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0159 | Dispatch a ready design row instead of escalating it to a person | bug | unit | 2026-09-21 | [items/0159-dispatch-a-ready-design-row-instead-of-escalating.md](items/0159-dispatch-a-ready-design-row-instead-of-escalating.md) |
 | 0168 | Defer the findings gate to the end of confirmed scope instead of stopping in-scope work | bug | unit | 2026-09-21 | [items/0168-defer-the-findings-gate-to-the-end-of-scope.md](items/0168-defer-the-findings-gate-to-the-end-of-scope.md) |
 | 0158 | Make --drive select a gate by rank, and let a join decide only batching | bug | unit | 2026-09-21 | [items/0158-make-drive-select-gates-by-rank-not-by-join.md](items/0158-make-drive-select-gates-by-rank-not-by-join.md) |
 | 0153 | Give the sprint supervisor marker a liveness signal that outlives one tool call | bug | unit | 2026-09-14 | [items/0153-give-the-sprint-supervisor-marker-a-liveness-signal.md](items/0153-give-the-sprint-supervisor-marker-a-liveness-signal.md) |
