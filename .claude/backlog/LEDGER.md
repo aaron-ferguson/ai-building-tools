@@ -161,3 +161,28 @@ NOTE Three tickets (0152, 0153, 0154), all passing verify, on claude-opus-5 thro
 GATE develop 4 ticket(s) session 39c7c2e3: predicted USD 18.14 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-20T23:20:25Z) observed USD 15.21 (harvest-usage.sh over 1 session id(s) @ 2026-09-20T23:20:25Z)
 GATE develop 4 ticket(s) session c2435e20: predicted USD 18.14 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-20T23:20:25Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-20T23:20:25Z)
 FINDINGS parked 3 (run-20260920T222013Z.jsonl outcome events @ 2026-09-20T23:20:25Z)
+
+### run-20260920T222013Z — completion of the block above
+
+The block above was written when the run escalated after `develop`, and records only that leg. The
+run then resumed across a date boundary and ran to a full tail. **Read the two together; do not
+count them as two sprints.** One `sprint_ended` event exists, deliberately — see FINDINGS
+2026-09-21 on what identifies a sprint across a suspension.
+
+| Figure | Estimate | Actual (whole run) |
+|---|---|---|
+| tickets closed | 4 | 4 |
+| wall_clock_min | no prior | see note — elapsed spans an overnight suspension and is not active time |
+| usd | 23.75 | 36.81 |
+
+Per stage, harvested by session id: develop 15.21 · verify 15.04 (one session, three resumes) ·
+retro 3.47 (cap 7.50) · queue 3.09 (cap 12.72). Tail caps scaled x2 on a buffer of 9 against a
+threshold of 8.
+
+Cost per closed ticket: **USD 9.20** all stages, **USD 7.56** counting develop and verify only.
+Neither includes the supervisor's own spend, which is attributed to no ticket.
+
+Estimate was low by 55%, and the whole of the gap is interruption: the verify session was cut three
+times (account session limit, the background wrapper's 600s ceiling, host sleep twice) and re-paid
+its context floor on each resume. The estimate model has no term for this. Findings buffer 2 -> 9
+-> 1 across the run.
