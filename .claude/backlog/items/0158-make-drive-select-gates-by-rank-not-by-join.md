@@ -2,8 +2,8 @@
 id: "0158"
 title: Make --drive select a gate by rank, and let a join decide only batching
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -19,9 +19,10 @@ expects:
   - tests/batching.test.sh
   - skills/develop/SKILL.md
   - skills/sprint/SKILL.md
-claimed_by: "6640"
-claimed_at: 2026-09-21T02:04:58Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-21
 ---
 
 ## Problem
@@ -68,26 +69,26 @@ one session; it may never promote a row over a takeable row ranked above it.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture queue `0101 develop ready expects a/x.md`, `0102 develop ready expects
+- [x] AC1 — Given a fixture queue `0101 develop ready expects a/x.md`, `0102 develop ready expects
   b/y.md`, `0103 develop ready expects a/x.md`, when `next --drive` runs, then it prints
   `DISPATCH  develop 0101` and that line does not contain `0103`. Red: today's template prints
   `DISPATCH  develop 0101 0103`.
-- [ ] AC2 — Given `0101 a/x.md`, `0102 a/x.md`, `0103 b/y.md`, all develop ready, when `next --drive`
+- [x] AC2 — Given `0101 a/x.md`, `0102 a/x.md`, `0103 b/y.md`, all develop ready, when `next --drive`
   runs, then it prints `DISPATCH  develop 0101 0102`. Red: a stop rule that ends the gate at the
   lead regardless of join.
-- [ ] AC3 — Given `0101 a/x.md` ready, `0102 b/y.md` develop ready with `blocked_by: ["0104"]` open,
+- [x] AC3 — Given `0101 a/x.md` ready, `0102 b/y.md` develop ready with `blocked_by: ["0104"]` open,
   `0103 a/x.md` ready, when `next --drive` runs, then it prints `DISPATCH  develop 0101 0103`. Red: a
   stop rule that ends the gate at a row the rank walk steps over.
-- [ ] AC4 — Given `0101 develop a/x.md`, `0102 verify ready c/z.md` not built by this run, `0103
+- [x] AC4 — Given `0101 develop a/x.md`, `0102 verify ready c/z.md` not built by this run, `0103
   develop a/x.md`, when `next --drive` runs, then the dispatch line is `DISPATCH  develop 0101` with
   no `0103`. Red: a stop rule that only considers develop rows.
-- [ ] AC5 — Given the AC1 fixture, when `next --drive` runs, then it prints `DEPTH     3 develop
+- [x] AC5 — Given the AC1 fixture, when `next --drive` runs, then it prints `DEPTH     3 develop
   gate(s)`. Red: today's template prints `DEPTH     2`.
-- [ ] AC6 — Given a gate developed as `0101 0103` with `0102 develop ready` ranked between them, both
+- [x] AC6 — Given a gate developed as `0101 0103` with `0102 develop ready` ranked between them, both
   now `next: verify, status: ready`, when `next --drive` runs with the started-set form the 0132
   cases use, then it prints `DISPATCH  verify 0101 0103`. Red: FR1's rule applied inside
   `verify_batch`.
-- [ ] AC7 — Given `skills/develop/SKILL.md` and `skills/sprint/SKILL.md`, when `tests/sprint.test.sh`
+- [x] AC7 — Given `skills/develop/SKILL.md` and `skills/sprint/SKILL.md`, when `tests/sprint.test.sh`
   runs, then each contains the phrase `never selection` on one line. Red: either sentence removed.
 
 ## QA plan
@@ -107,6 +108,49 @@ one session; it may never promote a row over a takeable row ranked above it.
 - Theme subsets a supervisor offers at proposal time.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**Verdict: PASS** — verify session 2026-09-20, token 6640.
+
+Conventions: `../ai-building-conventions` (`config.yml` `conventions.path`; `CONVENTIONS_CORE.md`
+plus `documentation-conventions.md`, `testing-conventions.md`).
+Level `unit`, run as `config.yml`'s `commands.unit` in the reporting form that file prescribes:
+`for t in tests/*.test.sh; do "$t" || true; done` — 31 files, every tally `0 failed`
+(`tests/next.test.sh` 485 passed, `tests/sprint.test.sh` 257 passed,
+`tests/batching.test.sh` 39 passed, `tests/backlog-scripts-installed.test.sh` 37 passed).
+Copy executed: the repo copy `skills/queue/templates/next` (the harness and this session's
+fixtures both run the template; `.claude/backlog/next` is held byte-equal by
+`tests/backlog-scripts-installed.test.sh`).
+
+| Criterion | How it was checked | Result |
+|---|---|---|
+| AC1 | Fresh fixture backlog (`0101 a/x.md`, `0102 b/y.md`, `0103 a/x.md`, all develop/ready) driven through `./next --drive`: `DISPATCH  develop 0101`, no `0103` | pass |
+| AC2 | Fixture `0101 a/x.md`, `0102 a/x.md`, `0103 b/y.md`: `DISPATCH  develop 0101 0102` | pass |
+| AC3 | Fixture with `0102` carrying an open `blocked_by: ["0104"]` and column `blocked`: `DISPATCH  develop 0101 0103` — the walk's step-over arm passed, not stopped | pass |
+| AC4 | Fixture with `0102` at `verify ready` between the two joined develop rows: `DISPATCH  develop 0101` | pass |
+| AC5 | AC1 fixture: `DEPTH     3 develop gate(s) takeable` | pass |
+| AC6 | Fixture `0101`/`0103` at `verify ready` with `0102 develop ready` between, `--drive --started 0101 --started 0103 --completed develop:0101`: `DISPATCH  verify 0101 0103` — `verify_batch` not narrowed | pass |
+| AC7 | `grep -n 'never selection'` hits `skills/develop/SKILL.md:53` and `skills/sprint/SKILL.md:136`; both guards in `tests/sprint.test.sh` | pass |
+| NFR Documentation | The comment block above `gate_contiguous` (`skills/queue/templates/next`) states the contiguity bound and why the stop set is the walk's own, beside the two bounds named above `gate_from`. Checked against `documentation-conventions.md`; **unguarded by construction** — prose only, as the row itself declares | pass, unguarded |
+
+**Mutations run** (committed tree, mutated, red confirmed, restored by path, control green):
+
+1. `gate_contiguous`'s two `return 0` stops → `continue` (contiguity removed). AC1 fixture then
+   printed `DISPATCH  develop 0101 0103` at `DEPTH     2`, AC4's fixture `DISPATCH  develop 0101
+   0103`; `tests/next.test.sh` 482 passed, 3 failed — *the gate is the lead alone*, *the verify row
+   ends the gate*, *counts three gates*. AC6 stayed green, which is FR3's point. Restored; control
+   run reproduced AC1–AC6 exactly.
+2. AC7's sentence reworded in both files (`A join decides batching and never selection` → `A join
+   decides how rows batch together`). `tests/sprint.test.sh` 255 passed, 2 failed — both 0158 FR4
+   guards. Restored; control 257 passed, 0 failed. **The build note recorded these two as
+   "reasoned, not run"; they are now run.**
+
+AC2 and AC3 do not redden under mutation 1 (they assert the gate still forms and still steps over
+a passed row, which an unbounded builder also satisfies) — they are the complementary direction and
+are pinned by their own fixtures above.
+
+Dirty set at Step 2 and at verdict: `.claude/backlog/runs/` (untracked). Intersection with this
+run's evidence set (`skills/queue/templates/next`, `skills/develop/SKILL.md`,
+`skills/sprint/SKILL.md`, `tests/next.test.sh`, `tests/sprint.test.sh`) is empty — not advisory.
 
 ## Notes & decisions
 

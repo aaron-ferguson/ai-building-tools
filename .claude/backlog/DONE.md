@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0158 | Make --drive select a gate by rank, and let a join decide only batching | bug | unit | 2026-09-21 | [items/0158-make-drive-select-gates-by-rank-not-by-join.md](items/0158-make-drive-select-gates-by-rank-not-by-join.md) |
 | 0153 | Give the sprint supervisor marker a liveness signal that outlives one tool call | bug | unit | 2026-09-14 | [items/0153-give-the-sprint-supervisor-marker-a-liveness-signal.md](items/0153-give-the-sprint-supervisor-marker-a-liveness-signal.md) |
 | 0154 | Let sprint park its own tooling findings, and propose the gate below a design row | feature | unit | 2026-09-14 | [items/0154-let-sprint-park-its-own-tooling-findings-and.md](items/0154-let-sprint-park-its-own-tooling-findings-and.md) |
 | 0152 | Price and cap a sprint's retro and queue tail | bug | unit | 2026-09-14 | [items/0152-price-and-cap-a-sprint-s-retro-and.md](items/0152-price-and-cap-a-sprint-s-retro-and.md) |
