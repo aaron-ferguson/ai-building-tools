@@ -2,8 +2,8 @@
 id: "0160"
 title: Refuse a verify pass that resolved no conventions, names another session, or skips the unit command
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -20,9 +20,10 @@ expects:
   - .claude/backlog/close
   - tests/close.test.sh
   - tests/close-by.test.sh
-claimed_by: "7e9e"
-claimed_at: 2026-09-21T14:24:49Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-21
 ---
 
 ## Problem
@@ -77,20 +78,20 @@ Three gaps, each independently sufficient:
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/SKILL.md`, when `tests/sprint.test.sh` runs, then Step 4 contains a
+- [x] AC1 — Given `skills/sprint/SKILL.md`, when `tests/sprint.test.sh` runs, then Step 4 contains a
   sentence comparing the outcome's `session_id` with the dispatched one (asserted by the phrase `not
   the dispatched`). Red: the sentence absent, as today.
-- [ ] AC2 — Given `skills/sprint/SKILL.md`, when `tests/sprint.test.sh` runs, then Step 4's section
+- [x] AC2 — Given `skills/sprint/SKILL.md`, when `tests/sprint.test.sh` runs, then Step 4's section
   contains `re-verification`. Red: absent, as today.
-- [ ] AC3 — Given a fixture `close_by: verify` ticket with every AC line in checkbox form and a `## QA
+- [x] AC3 — Given a fixture `close_by: verify` ticket with every AC line in checkbox form and a `## QA
   evidence` section with no `Conventions: ` line, when `./close <id> <token>` runs, then it exits
   non-zero, the output names `Conventions:`, and `QUEUE.md`, `DONE.md` and the item are unchanged.
   Red: today's `close`, which closes it.
-- [ ] AC4 — Given the AC3 fixture with `Conventions: ../conventions` added, when `./close` runs, then
+- [x] AC4 — Given the AC3 fixture with `Conventions: ../conventions` added, when `./close` runs, then
   it closes. Given the AC3 fixture as `close_by: develop` with committed-guard ACs, `./close` does
   not refuse on the missing line. Red: a refusal applied to both tiers, or one that also refuses
   when the line is present.
-- [ ] AC5 — Given `skills/verify/SKILL.md`, when the suite runs, then a guard asserts the `unit` row
+- [x] AC5 — Given `skills/verify/SKILL.md`, when the suite runs, then a guard asserts the `unit` row
   of the level table contains `commands.unit` and does not contain `scoped to the change`. Red:
   today's row.
 
@@ -110,6 +111,58 @@ Three gaps, each independently sufficient:
 - Validating that the `Conventions:` path resolves: `close` checks the line exists, not what it names.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**Verdict: PASS** — verify session 2026-09-21, token 7e9e.
+
+Conventions: `../ai-building-conventions` (`config.yml` `conventions.path`; `CONVENTIONS_CORE.md`
+plus `documentation-conventions.md`, `testing-conventions.md`).
+Level `unit`, run as `config.yml`'s `commands.unit` in the reporting form that file prescribes:
+`for t in tests/*.test.sh; do "$t" || true; done` — 31 files, every tally `0 failed`
+(`tests/close.test.sh` 256 passed, `tests/close-by.test.sh` 67 passed,
+`tests/sprint.test.sh` 257 passed, `tests/backlog-scripts-installed.test.sh` 37 passed).
+Copy executed: the repo copy `skills/queue/templates/close`, which the fixtures below ran; `cmp`
+reports it identical to `.claude/backlog/close`. **This session met the refusal for real** — every
+ticket it closed carried the `Conventions:` line its own evidence records.
+
+| Criterion | How it was checked | Result |
+|---|---|---|
+| AC1 | `tests/sprint.test.sh` guard on Step 4; `skills/sprint/SKILL.md:417` reads *An outcome whose `session_id` is not the dispatched one fails exactly as a malformed outcome* | pass |
+| AC2 | Same suite; Step 4 names ids closed on an untrusted pass as due for `re-verification` (`skills/sprint/SKILL.md:425`) | pass |
+| AC3 | Fresh fixture repo, `close_by: verify` ticket at `next: verify, status: in-progress`, one checkbox AC, a `## QA evidence` section with no `Conventions:` line. `./close 9905 ab12` → exit 1, output names `Conventions:` and the four tickets reopened by hand; `QUEUE.md`, `DONE.md` and the item all byte-identical afterwards (md5 compared before and after) | pass |
+| AC4 | Same fixture with `Conventions: ../conventions` added → `closed 9905`, exit 0, item `status: done`. The `close_by: develop` fixture with no `Conventions:` line and a committed guard cited in its AC → `closed 9905`, exit 0, `status: done` | pass |
+| AC5 | `tests/sprint.test.sh` guards bound to the `unit` ROW of `skills/verify/SKILL.md`'s level table, which reads *lint, typecheck, and `config.yml`'s `commands.unit` **as configured** — never a substitute set of files chosen to match the change* | pass |
+| FR3 | `skills/verify/SKILL.md` Step 7 instructs the `Conventions: <resolved path>` line and says `close` refuses without it; guarded by `0160 FR3` in `tests/sprint.test.sh` | pass |
+| NFR Documentation | The `unit` row and `config.yml`'s `commands.unit` now say the same thing; AC5 is its check. Read against `documentation-conventions.md` | pass |
+
+**Mutations run** (committed tree, mutated, red confirmed, restored by path, control green):
+
+1. `close`'s sixth refusal disabled (`[ "$close_by" = verify ]` → `= never`). The AC3 fixture then
+   printed `closed 9905` at exit 0 and all three files changed — today's-`close` behaviour, exactly
+   the red AC3 names.
+2. Three prose edits in one pass: Step 4's sentence reworded to *differs from the one logged at
+   dispatch*; `re-verification` → `a second QA pass`; the `unit` row replaced by *lint, typecheck,
+   and the unit suite scoped to the change*. `tests/sprint.test.sh` 253 passed, 4 failed — one red
+   per assertion, AC1, AC2 and both halves of AC5. Restored; controls `tests/sprint.test.sh` 257,
+   `tests/close.test.sh` 256, `tests/close-by.test.sh` 67,
+   `tests/backlog-scripts-installed.test.sh` 37, all 0 failed.
+
+**Probes** (`🔍`):
+- A `close_by: develop` ticket with no committed guard cited in its AC is refused by the *fifth*
+  refusal, not this ticket's sixth — so the light tier's exemption is real rather than an untested
+  branch: two different refusals fire on two different fixtures.
+- The refusal is computed before anything is written; the md5 comparison above is the evidence,
+  not the script's own claim.
+- **The build note's justification for binding the AC5 guard to the row is not true of the file as
+  it now stands**: `grep -c 'commands.unit' skills/verify/SKILL.md` is 1, so a file-wide presence
+  grep would have reddened too. The row binding is still the right shape and nothing rests on the
+  note; recorded because the next pass should not cite that reasoning as observed.
+- The refusal's `awk` is scoped to the `## QA evidence` section, so a `Conventions:` line in
+  *Notes & decisions* does not satisfy it — the shape the ticket's notes name.
+
+Dirty set at Step 2 and at verdict: `.claude/backlog/runs/` (untracked). Intersection with this
+run's evidence set (`skills/queue/templates/close`, `.claude/backlog/close`,
+`skills/sprint/SKILL.md`, `skills/verify/SKILL.md`, `tests/close.test.sh`,
+`tests/close-by.test.sh`, `tests/sprint.test.sh`) is empty — not advisory.
 
 ## Notes & decisions
 
