@@ -347,6 +347,14 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
 - **The stage prompt names the write channel and the path form.** Backlog files are written with a
   Bash heredoc, so grant Bash: an unattended `queue` stage's Write tool refused every new
   `.claude/backlog/items/*.md` as a sensitive file, and a prompt nobody can answer stalls the stage.
+  **Naming the channel is the whole fix, and no permission setting substitutes for it** — three
+  dispatched probes on 2026-09-17: a `Write(.claude/backlog/**)` allow rule is rejected as a shape,
+  on the ground that only `Edit(path)` rules are matched against files; an `Edit(.claude/backlog/**)` rule parses
+  and the write is still refused, and `--permission-mode acceptEdits` is refused identically. Nor
+  does the *supervisor* leaving auto mode reach the stage: `claude -p` runs as its own process with
+  no channel to anyone's terminal, so no mode on this side can answer a nested prompt. Do not
+  re-probe these; the remaining routes widen authority far past one directory and are the user's
+  call, never a supervisor's.
   And evidence carries repo-relative paths — a verify asked to "report the path in
   conventions_resolved" copied the absolute path into three items' public QA evidence.
 

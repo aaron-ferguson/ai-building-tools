@@ -274,6 +274,16 @@ only in `DONE.md` requires already knowing to look. Four FRs across two tickets 
 each naming files that still existed, with prose that stayed internally consistent while becoming
 false — one would have deleted a sibling's acceptance criterion outright.
 
+**The same grep runs in the other direction, and only that direction catches a sibling you staled
+yourself.** Everything above asks whether someone else's change staled *your* FR. A ticket that
+*widens* a mechanism — a new dispatchable stage, a new arm, a new permitted value — makes stale every
+earlier FR that enumerated it, including one built ninety minutes ago in this same session, which is in
+the tree and in no `DONE.md`. So when an FR widens an enumeration, grep the widened symbol for sibling
+item numbers **before** closing, and report what you staled; you may not edit another ticket's FR text,
+and saying nothing leaves it reading as current. `0159` made `next: design` dispatchable and by doing
+so falsified `0168` FR2's two-stage enumeration, written and built the same session; it surfaced only
+as a red in `0159`'s own new case, because `0168`'s suite had no design row to fail on.
+
 **Grep your own id as well as the symbols, and do it first.** A sibling ticket may have already
 built your FR and cited you by number while doing it: `0075` FR3 asked that the version bump derive
 from the remote, and `tools/release` had done exactly that since `0084`, in a comment reading *"the
