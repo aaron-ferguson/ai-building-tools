@@ -2,8 +2,8 @@
 id: "0168"
 title: Defer the findings gate to the end of confirmed scope instead of stopping in-scope work
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -19,9 +19,10 @@ expects:
   - tests/next.test.sh
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "8b1d"
-claimed_at: 2026-09-21T02:08:44Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-21
 ---
 
 ## Problem
@@ -71,26 +72,26 @@ a scope ticket not yet started is invisible to it.
 
 Fixture ids are `9901`--`9903` so no evidence reads as a real row.
 
-- [ ] AC1 — Given a fixture backlog with 8 findings against a threshold of 8 and rows `9901`, `9902`
+- [x] AC1 — Given a fixture backlog with 8 findings against a threshold of 8 and rows `9901`, `9902`
   at `develop | ready`, when `--drive --scope 9901 --scope 9902` runs, then it exits 0 with
   `DISPATCH  develop` naming `9901`, and prints a `NOTE` containing `deferred`. Red: today's gate
   placement (exit 5).
-- [ ] AC2 — Given the AC1 fixture after `9901` has moved to `verify | ready`, when `--drive --scope
+- [x] AC2 — Given the AC1 fixture after `9901` has moved to `verify | ready`, when `--drive --scope
   9901 --scope 9902 --started 9901 --completed develop:9901` runs, then it exits 0 dispatching
   `verify 9901` — re-asserting the deferral on a later call. Red: the gate evaluated before the
   started-verify dispatch.
-- [ ] AC3 — Given the fixture with `9901` and `9902` closed and `9903` at `develop | ready` outside
+- [x] AC3 — Given the fixture with `9901` and `9902` closed and `9903` at `develop | ready` outside
   scope, when `--drive --scope 9901 --scope 9902` runs, then it exits 5 naming `retro, then queue`.
   Red: a deferral that outlives scope (exit 0, `DISPATCH  develop 9903`).
-- [ ] AC4 — Given a fixture crossing only `findings_max_sprints` with `9901` in scope and
+- [x] AC4 — Given a fixture crossing only `findings_max_sprints` with `9901` in scope and
   dispatchable, then exit 0; with `9901` closed, exit 5. Red: the age limit left undeferred, or
   deferred forever.
-- [ ] AC5 — Given no `--scope`, 8 findings of 8 and one `develop | ready` row, then exit 0; with no
+- [x] AC5 — Given no `--scope`, 8 findings of 8 and one `develop | ready` row, then exit 0; with no
   takeable row, exit 5 rather than 3. Red: today's behaviour (5 then 3).
-- [ ] AC6 — `--drive --scope 12` exits 2. Red: the id accepted.
-- [ ] AC7 — `skills/sprint/SKILL.md` no longer contains `start no further stage session`, and Step 2's
+- [x] AC6 — `--drive --scope 12` exits 2. Red: the id accepted.
+- [x] AC7 — `skills/sprint/SKILL.md` no longer contains `start no further stage session`, and Step 2's
   `--drive` command contains `--scope`, asserted in `tests/sprint.test.sh`. Red: either restored.
-- [ ] AC8 — `.claude/backlog/next` is byte-equal to `skills/queue/templates/next`
+- [x] AC8 — `.claude/backlog/next` is byte-equal to `skills/queue/templates/next`
   (`tests/backlog-scripts-installed.test.sh`). Red: the copy not refreshed.
 
 ## QA plan
@@ -106,6 +107,68 @@ Which row a gate selects — `0158`, which edits the same walk; whichever lands 
 tail after a run that ends on `ESCALATE` with the gate crossed. The thresholds themselves.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**Verdict: PASS** — verify session 2026-09-20, token 8b1d.
+
+Conventions: `../ai-building-conventions` (`config.yml` `conventions.path`; `CONVENTIONS_CORE.md`
+plus `api-conventions.md`, `observability-conventions.md`, `testing-conventions.md`).
+Level `unit`, run as `config.yml`'s `commands.unit` in the reporting form that file prescribes:
+`for t in tests/*.test.sh; do "$t" || true; done` — 31 files, every tally `0 failed`
+(`tests/next.test.sh` 485 passed, `tests/sprint.test.sh` 257 passed,
+`tests/backlog-scripts-installed.test.sh` 37 passed).
+Copy executed: the repo copy `skills/queue/templates/next`; `cmp` against `.claude/backlog/next`
+reports them identical.
+
+| Criterion | How it was checked | Result |
+|---|---|---|
+| AC1 | Fresh fixture: 8 findings / `findings_threshold: 8`, `9901`+`9902` at `develop ready`. `./next --drive --scope 9901 --scope 9902` → `NOTE … deferred until confirmed scope is finished`, `DISPATCH  develop 9901`, exit 0 | pass |
+| AC2 | Same fixture with `9901` moved to `verify ready`; `--drive --scope 9901 --scope 9902 --started 9901 --completed develop:9901` → `DISPATCH  verify 9901`, exit 0 | pass |
+| AC3 | `9901`/`9902` in `DONE.md`, `9903` at `develop ready` outside scope; `--drive --scope 9901 --scope 9902` → exit 5, `DISPATCH  retro, then queue` | pass |
+| AC4 | `findings_threshold: 8`/`findings_max_sprints: 2`, one finding dated 2026-01-02 and two `sprint_ended` run logs. With `9901` dispatchable: exit 0 + `deferred` NOTE naming `completed sprint(s)`. With `9901` absent: exit 5 on the same age reason | pass |
+| AC5 | No `--scope`, 8 of 8: with one `develop ready` row exit 0 and the dispatch; with no takeable row exit 5 (not 3) | pass |
+| AC6 | `./next --drive --scope 12` → `--scope takes a four-digit id; got: 12`, usage, exit 2 | pass |
+| AC7 | `tests/sprint.test.sh` guards; `grep -n -- '--scope' skills/sprint/SKILL.md` shows it inside Step 2's command block (line 188) and Step 6 reading *does not stop dispatch while any `--scope` ticket is still dispatchable* | pass |
+| AC8 | `cmp skills/queue/templates/next .claude/backlog/next` — identical; `tests/backlog-scripts-installed.test.sh` 37 passed | pass |
+| NFR API contract | Exit codes observed across the fixtures above are the documented set and no more: 0 dispatch, 2 usage, 5 gate. `--help` documents `--scope` as additive | pass |
+| NFR Observability | AC1/AC4 both print the `NOTE`; no fixture deferred silently at a gate site | pass |
+
+**Mutations run** (committed tree, mutated, red confirmed, restored by path, control green):
+
+1. `findings_gate`'s `if [ "$fg_site" = gate ]` → `if false` (deferral removed). AC1, AC4a and AC5a
+   fixtures all exited 5 — pre-0168 behaviour; `tests/next.test.sh` 474 passed, 11 failed.
+2. `scope_live` forced to `return 0` (scope never spends). AC3's fixture then printed
+   `NOTE … deferred` and `DISPATCH  develop 9903` at exit 0 — the AC's named red exactly.
+3. `--scope`'s four-digit arm replaced by an accept. AC6's fixture then exited 5 instead of 2.
+4. `findings_gate complete` inserted ahead of the completed-stage verify dispatch. AC2's fixture
+   exited 5; `tests/next.test.sh` 483 passed, 2 failed. **Two earlier insertion points — the rank
+   walk's `verify)` arm and its `started_verify` block — left AC2 green**, because with
+   `--completed develop:9901` the dispatch never reaches the walk. AC2 is falsifiable only at the
+   completed-stage site; recorded so the next pass does not repeat the two dead mutations.
+5. `--scope` deleted from Step 2's command block, and *start no further stage session* reinserted
+   into Step 6 — one AC7 guard red each (256 passed, 1 failed, twice).
+6. A comment line appended to `.claude/backlog/next` — `tests/backlog-scripts-installed.test.sh`
+   36 passed, 1 failed. All restored; control runs 485 / 257 / 37, 0 failed.
+
+**Probes** (`🔍`, none of them ACs):
+- A `--scope` row sitting at `next: design, status: ready` holds the gate off and dispatches
+  `design 9901` — the `scope_live` fix 0159 landed. **FR2's text still enumerates only
+  `next: develop` and `next: verify` and is a stale enumeration**; the code accepts
+  `design|develop|verify`, which is the superset FR2's *purpose* requires and is already parked in
+  `FINDINGS.md` by the 0159 session (commit `de0580d`). Every AC passes against the wider rule, so
+  this closes rather than returning to `queue`.
+- `--scope 9901 --scope 9901` (same id twice) → no change, exit 0.
+- `--drive --scope` with no value → `--scope needs <id>`, usage, exit 2.
+- `--drive --scope 9999` (four digits, no row) → exit 5: a confirmed ticket that has since closed,
+  which is the documented reading and the form the amended suite cases use.
+- The deferral NOTE reads *deferred until confirmed scope is finished* on the no-`--scope` path
+  (AC5a), where no scope was confirmed; behaviour is FR4's and correct, the wording is not.
+  Parked in `FINDINGS.md`.
+- The reason line prints `holds 1 entries` — cosmetic, and it predates this ticket (0133's line).
+
+Dirty set at Step 2 and at verdict: `.claude/backlog/runs/` (untracked). Intersection with this
+run's evidence set (`skills/queue/templates/next`, `.claude/backlog/next`,
+`skills/sprint/SKILL.md`, `tests/next.test.sh`, `tests/sprint.test.sh`,
+`tests/backlog-scripts-installed.test.sh`) is empty — not advisory.
 
 ## Notes & decisions
 
