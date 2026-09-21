@@ -23,7 +23,9 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
+| 0176 | Give an unattended stage a backlog write channel it can fall back to | develop | ready |  |
 | 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
+| 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | develop | ready |  |
 | 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | develop | ready |  |
 | 0163 | Bound harvest-usage's --run figures to the supervisor's own session | develop | ready |  |

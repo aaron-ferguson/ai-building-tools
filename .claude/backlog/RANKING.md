@@ -280,3 +280,27 @@ ever read in a report.
 **0164 goes directly above 0137.** It is Tier 4 value (active vs elapsed time, interruption counts),
 below every defect row, and above the parallel-develop decision that is deliberately last in the
 sprint cluster. Tie-breaker 3 applies: it is specified precisely today.
+
+## 2026-09-21 — the findings sweep of 2026-09-21
+
+Two entries, two rows, both about an **unattended** stage meeting an instruction written for an
+attended one. Neither got a recency bonus; both were placed on tier.
+
+**0176 goes to row 1, above 0161.** It is the tier table's *bleeding* case rather than a workflow
+gap: a refused write does not merely stall the stage, it strands `.claude/backlog/.lock/`, and a
+stranded lock blocks every claim and close in the repository until a person clears it — the same
+failure mode `0038`/`0039`/`0040` were promoted for, and the reason `config.yml` carries
+`lock_stale_seconds` at all. It also wins tie-breaker 1 outright: it fires on every dispatched
+sweep in every project running this plugin, while 0161 adds one missing operation to this one.
+0161 was not moved to make room and keeps its argument.
+
+**0177 goes directly under 0161 and above 0162.** Tier 2, compounding: every dispatched retro from
+now on drops its convention-level lessons on the floor whenever the conventions repo is behind, and
+the lessons that go missing are exactly the ones worth the most — rungs 4 and 5 of Step 3's ladder.
+It beats the ledger rows (0162, 0166, 0163, 0165) on the **regret operator**, flagged here as that
+rule requires: a lost lesson is unrecoverable and a mis-reported cost figure is recomputable from
+the same run logs. It sits below 0176 because 0176 strands a lock and 0177 reports and stops.
+
+Both were routed to `develop` rather than `design`. 0176's fallback form was observed working in the
+same session that was refused, and 0177's shape is already settled one step away, by Step 5's
+*Nobody to ask* clause in the same file — unfamiliar is not undecided.
