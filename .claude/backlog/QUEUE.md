@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0168 | Defer the findings gate to the end of confirmed scope instead of stopping in-scope work | verify | ready |  |
+| 0168 | Defer the findings gate to the end of confirmed scope instead of stopping in-scope work | verify | in-progress |  |
 | 0159 | Dispatch a ready design row instead of escalating it to a person | verify | ready |  |
 | 0160 | Refuse a verify pass that resolved no conventions, names another session, or skips the unit command | verify | ready |  |
 | 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
