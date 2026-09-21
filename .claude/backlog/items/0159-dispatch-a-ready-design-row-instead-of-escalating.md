@@ -3,7 +3,7 @@ id: "0159"
 title: Dispatch a ready design row instead of escalating it to a person
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -18,8 +18,8 @@ expects:
   - tests/next.test.sh
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "6351"
+claimed_at: 2026-09-21T04:00:54Z
 touches:
 ---
 
