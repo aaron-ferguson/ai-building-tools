@@ -66,3 +66,9 @@ different shape, so it is related rather than absorbed.
 - 2026-09-17 — filed from `FINDINGS.md` by the sprint supervisor rather than a `queue` session, for
   the reason recorded in `0168`. The sweep's review list ranked it directly below `0117` and related
   it to `0117` rather than absorbing it, because the matcher is a different one.
+- **2026-09-21 (retro).** Reproduced outside a fixture: a retro edit to `skills/sprint/SKILL.md`
+  quoted a CLI refusal message in italics inside a sentence, and `tests/citations.test.sh` failed
+  with *cites …, which is not a rule in CONCURRENCY.md*. The guard was right to be loud and wrong
+  about what it saw; the edit was reworded to drop the italics, which is an author working around a
+  guard rather than the guard improving the text. Quoting a tool's own message is a normal thing for
+  these skills to do, so the defect costs an edit every time it recurs.

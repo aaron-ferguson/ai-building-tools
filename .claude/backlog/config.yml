@@ -18,7 +18,7 @@ conventions:
 # to 104 and so queued up a reissue those five citations would have silently followed. The
 # 2026-09-07 retro set this to 111 and left 0104 unissued. Item 0105 then repointed the five at
 # b9a5ee0, which resolves permanently, and gave the withdrawal path the rules it never had.
-next_id: 172
+next_id: 176
 
 # How many FINDINGS.md entries before a driver runs a retro instead of the next ticket. Read by
 # `./next --findings` and gated on by `./next --drive` (exit 5). Left at retro's stated cadence
@@ -115,6 +115,16 @@ routing:
 # green. A verify session trusting the first failure reports BLOCKED or FAIL on someone else's
 # red, and the masking is an alphabetical accident that will not repeat reliably. To attribute a
 # red, run the files individually instead: for t in tests/*.test.sh; do "$t" || true; done
+#
+# A MUTATION RERUN OF tests/next.test.sh REDIRECTS, IT DOES NOT PIPE. That file is 485 cases,
+# each scaffolding a git repo, and on a loaded host it runs past a 600s tool timeout. The
+# natural form is the worst one: `tests/next.test.sh 2>&1 | grep -E 'FAIL|passed,' | head`
+# cannot flush through `head`, so a run cut short delivers NOTHING — not a partial tally, not
+# the reds already printed — and a slow run is indistinguishable from a hung one. Redirect
+# instead (`tests/next.test.sh > /tmp/out.txt 2>&1`) and poll the file: progress shows line by
+# line and survives the timeout. `verify` Step 3 asks for a mutation per cited check and this
+# repo's ACs cite that suite constantly, so this recurs on every router ticket (verify
+# 0158/0159).
 commands:
   unit: for t in tests/*.test.sh; do "$t" || exit 1; done
   integration:

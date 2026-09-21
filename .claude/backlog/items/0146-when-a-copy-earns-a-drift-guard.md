@@ -72,3 +72,12 @@ Constraints the decision may not break: a backlog script sources nothing and tha
   question as when a copy earns a guard rather than how to avoid copying. Routed to `design` because
   every part of it is a trigger to be chosen, not a defect to be fixed.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Evidence for this decision from four sessions: the suites copy `skills/queue/templates/<script>` into fixtures, so mutating `.claude/backlog/<script>` reddens nothing and reads as an unfalsifiable guard (verify 0146 next, develop 0133, verify 0144 close). A comment now sits at each `*_SRC=` line and `CLAUDE.md` scopes *installed copy is what runs* to skills; the equality guard between the copies is still this ticket's question (`backlog-scripts-installed` catches drift only once both are committed).
+- **2026-09-21 (retro pass 2026-09-21, absorbed from FINDINGS.md).** A fifth required duplication,
+  and the purest case of the "divergence would be silent" trigger the question above names:
+  `gate_contiguous` in `skills/queue/templates/next` ends a gate at anything the rank walk would not
+  step over, and `walk_steps_over` reproduces that walk's three `continue` arms — in-progress, an
+  open blocker, held — by hand. A fourth arm added to the walk leaves the gate **silently stricter
+  than the walk it is defined against**, and only the blocker arm has a fixture (`0158` AC3). It
+  also constrains the *shape* half of the question: this copy is control flow rather than a block of
+  text, so neither a byte-for-byte nor a normalised comparison can express it — a derivation, or a
+  case per arm, is what it would take (develop `0158`, claim b040).
