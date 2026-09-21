@@ -3,7 +3,7 @@ id: "0158"
 title: Make --drive select a gate by rank, and let a join decide only batching
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -19,8 +19,8 @@ expects:
   - tests/batching.test.sh
   - skills/develop/SKILL.md
   - skills/sprint/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "6640"
+claimed_at: 2026-09-21T02:04:58Z
 touches:
 ---
 
