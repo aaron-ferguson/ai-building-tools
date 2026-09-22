@@ -2,8 +2,8 @@
 id: "0165"
 title: Attribute the one-off sprint.test.sh failure and keep its FAIL line visible in a filtered run
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,9 +15,10 @@ blocked_by: []
 relates: ["0153", "0169", "0170"]
 expects:
   - tests/sprint.test.sh
-claimed_by: "7ad7"
-claimed_at: 2026-09-22T14:41:24Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-22
 ---
 
 ## Problem
@@ -59,12 +60,12 @@ lines above it, so a pass reading the tail sees the count and not the case.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `tests/sprint.test.sh` with one case forced to fail (a `bad` call injected into a
+- [x] AC1 — Given `tests/sprint.test.sh` with one case forced to fail (a `bad` call injected into a
   named case), when it runs and only its last 5 lines are read, then those lines contain that
   case's `FAIL` text. Red: remove the re-print, so the FAIL line sits far above the tally.
-- [ ] AC2 — Given no forced failure, when it runs, then no re-print block appears and the tally is
+- [x] AC2 — Given no forced failure, when it runs, then no re-print block appears and the tally is
   unchanged in shape (`N passed, 0 failed, M skipped`). Red: a re-print block printed unconditionally.
-- [ ] AC3 — Given FR2 reproduced a failure, when the condition *Notes & decisions* names is forced
+- [x] AC3 — Given FR2 reproduced a failure, when the condition *Notes & decisions* names is forced
   deterministically (for example a delay or a concurrent write injected at the named point), then
   the fixed case passes; red: revert the case's fix under the same forced condition. Given FR2
   reproduced nothing, *Notes & decisions* carries the run count, the two loads, and the zero.
@@ -81,6 +82,35 @@ Re-printing FAIL lines in any other test file, and any file's abort behaviour un
 `0169`. The heartbeat's orphaned `sleep` — `0170`.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+Conventions: `../ai-building-conventions`
+Level: `unit` — command run verbatim: `for t in tests/*.test.sh; do "$t" || true; done`
+(`config.yml`'s reporting form of `commands.unit`.)
+
+Baseline, clean tree at `70bb402`: 31 test files, every one `0 failed`.
+`tests/sprint.test.sh`: `268 passed, 0 failed, 0 skipped`, **41.3 s** wall (`time`), against the
+~4 s this file cost before — the cost the author reviewed and accepted, re-measured here rather
+than quoted.
+
+| AC / NFR | How it was checked | Result |
+|---|---|---|
+| AC1 | The `0165 AC1` case in `tests/sprint.test.sh`: a copy of the file with `bad "INJECTED-0165 …"` injected, run, and read through `tail -5`. Mutation, exactly as the AC words it — the four-line re-print block deleted from `tests/sprint.test.sh`. | PASS — `FAIL 0165 AC1 — the forced FAIL line is not in the last 5 lines…`, `267 passed, 1 failed`. Restored by path; control run green. |
+| AC2 | The `0165 AC2` cases. Mutation, exactly as the AC words it — `if [ "$FAIL" != 0 ]` → `if true`, so the block prints unconditionally. | PASS — `FAIL 0165 AC2 — a green run prints the re-print block anyway…`, `267 passed, 1 failed`. The sibling *tally keeps its shape* case stayed green under the same mutation, which is correct: the shape did not move. Restored; control green. |
+| AC3 | FR2's reproduced condition forced deterministically: a loop creating and deleting 300 files in the real `.claude/backlog/runs/` with no sleep, live throughout. **With the FR3 prune in place: 3 runs, 3 × `268 passed, 0 failed`, rc=0, zero `cp: … No such file or directory` lines.** Prune reverted (the `.claude)` case arm deleted, so `.claude` is copied wholesale): **3 runs, 3 × rc=1, 17 / 18 / 21 race lines each, no tally and no FAIL line at all.** | PASS — the fix is load-bearing under the exact condition, and the failure mode is an **abort**, not a counted failure. Restored by path; control run green, `268 passed, 0 failed`, with the churn stopped and every fixture file removed. |
+| FR2 / FR4 records | *Notes & decisions* read against the FR: 85 runs under the two required loads (35 + 50), both loads named, phase-1 signature quoted, phase-2 zero recorded, and the original 2026-09-13 one-off explicitly left unattributed with no guess made. | PASS |
+| NFR Testing — a failing case is attributable from a filtered read | The row names AC1, which is a real executing guard and was reddened above. | PASS — guarded, not merely true. |
+
+Observed while running, not asserted by any case: FR1's re-print block did the job it was built for
+**inside this verify session**. Every one of the eight mutation runs taken for `0176` and `0165` was
+attributed straight off the last lines — `--- 2 FAIL lines, re-printed ---` naming both the intended
+red and `0165 AC2`'s "the clean copy was not green" — with no scrolling.
+
+Evidence set: `tests/sprint.test.sh`, and the whole of `tests/`. Dirty set at Step 2: untracked
+`.claude/backlog/runs/` (the live supervisor's run logs) and `.claude/backlog/FINDINGS.md`,
+committed at `5ff9dbb` before any evidence was taken. Intersection: **empty** — `tests/sprint.test.sh`
+prunes `runs/` from its fixture, which is FR3 itself, and the only run that enumerated the directory
+was AC3's deliberately-reverted arm, whose every error line names a `0165v-*.tmp` fixture file this
+session created and removed rather than anything the supervisor wrote.
 
 ## Notes & decisions
 
