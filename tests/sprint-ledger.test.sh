@@ -919,5 +919,107 @@ case "$ZT_RC:$ZT_OUT" in
   *) bad "0152 -- tail-cap --threshold 0 failed without naming the threshold: $ZT_OUT" ;;
 esac
 
+# --- 0162 — an unpriced harvest is never recorded as a measured zero ----------------------------
+#
+# harvest() parsed only the TOTAL row, and a turn on a model with no published rate contributes
+# nothing to it -- so an all-unpriced harvest reads as USD 0.00 over 0 tokens, which is
+# indistinguishable from a measured zero and then feeds the per-ticket mean of every later
+# estimate. run-20260913T034946Z recorded exactly that for two sessions that committed real work.
+echo "0162 AC1 — an all-unpriced harvest records 'unpriced', not 0.00"
+
+# Same two run sessions, same token counts, on a model id RATES does not carry.
+mkdir -p "$FIX/store-unpriced"
+mk_unpriced() { # <session-id> <skill> <output-tokens>
+  printf '{"type":"user","timestamp":"2026-09-06T09:02:00.000Z","message":{"role":"user","content":"<command-name>/ai-building-tools:%s</command-name>"}}\n' "$2"
+  printf '{"type":"assistant","timestamp":"2026-09-06T09:03:00.000Z","message":{"id":"msg_unpriced_%s","model":"claude-no-such-model-0","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":%s}}\n' "$2" "$(u "$3")"
+}
+mk_unpriced "$SID_DEV" develop 400000 > "$FIX/store-unpriced/$SID_DEV.jsonl"
+mk_unpriced "$SID_VER" verify  240000 > "$FIX/store-unpriced/$SID_VER.jsonl"
+
+UP_LEDGER="$FIX/unpriced-ledger.md"
+cp "$EMPTY" "$UP_LEDGER"
+UP_OUT="$("$TOOL" record --ledger "$UP_LEDGER" --run "$RUNLOG" --transcripts "$FIX/store-unpriced" \
+       --measurement "$MEAS" --config "$CONF" --estimate-tickets 3 --estimate-wall no-prior \
+       --estimate-tokens 1200000 --estimate-usd 20.00 \
+       --estimate-source "$EST_SOURCE" 2>&1 || true)"
+UP_USD="$(grep -E '^\|[[:space:]]*usd[[:space:]]*\|' "$UP_LEDGER" || true)"
+UP_TOK="$(grep -E '^\|[[:space:]]*tokens[[:space:]]*\|' "$UP_LEDGER" || true)"
+
+case "$UP_USD" in
+  *unpriced*) ok "the usd row's Actual reads unpriced" ;;
+  "") bad "0162 AC1 — no usd row was recorded at all; got: $(printf '%s' "$UP_OUT" | tr '\n' ' ' | cut -c1-200)" ;;
+  *) bad "0162 AC1 — the usd Actual is not 'unpriced': $UP_USD" ;;
+esac
+# Anchored on the ACTUAL cell, not the line: the estimate column legitimately carries 20.00, so a
+# whole-line search for a figure would pass on a row whose actual still read 0.00.
+UP_USD_ACTUAL="$(printf '%s\n' "$UP_USD" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$4); print $4}')"
+case "$UP_USD_ACTUAL" in
+  *0.00*) bad "0162 AC1 — the usd Actual still reads a measured 0.00: $UP_USD" ;;
+  *) ok "and carries no 0.00 in the Actual column" ;;
+esac
+case "$UP_TOK" in
+  *unpriced*) ok "the tokens row's Actual reads unpriced too" ;;
+  *) bad "0162 AC1 — the tokens Actual is not 'unpriced': $UP_TOK" ;;
+esac
+# The SOURCE cell, and matched on "unpriced: 2" rather than on a bare 2 — the estimate column
+# holds 20.00, so a whole-row search for the digit passes with nothing implemented at all.
+UP_USD_SRC="$(printf '%s\n' "$UP_USD" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$5); print $5}')"
+case "$UP_USD_SRC" in
+  *"unpriced: 2"*) ok "and its source cell names the 2 turns that went unpriced" ;;
+  *) bad "0162 FR2 — the usd row's source cell does not name the unpriced turn count: $UP_USD_SRC" ;;
+esac
+
+echo "0162 AC2 — a partly-priced harvest keeps its figures and says so"
+mkdir -p "$FIX/store-partial"
+# One priced turn (USD 10.00) and one unpriced, in the two sessions the run names.
+mk_session  "$SID_DEV" develop 400000 > "$FIX/store-partial/$SID_DEV.jsonl"
+mk_unpriced "$SID_VER" verify  240000 > "$FIX/store-partial/$SID_VER.jsonl"
+PA_LEDGER="$FIX/partial-ledger.md"
+cp "$EMPTY" "$PA_LEDGER"
+PA_OUT="$("$TOOL" record --ledger "$PA_LEDGER" --run "$RUNLOG" --transcripts "$FIX/store-partial" \
+       --measurement "$MEAS" --config "$CONF" --estimate-tickets 3 --estimate-wall no-prior \
+       --estimate-tokens 1200000 --estimate-usd 20.00 \
+       --estimate-source "$EST_SOURCE" 2>&1 || true)"
+PA_USD="$(grep -E '^\|[[:space:]]*usd[[:space:]]*\|' "$PA_LEDGER" || true)"
+case "$PA_USD" in
+  *"10.00"*) ok "the priced turn's USD 10.00 is still recorded" ;;
+  "") bad "0162 AC2 — no usd row recorded; got: $(printf '%s' "$PA_OUT" | tr '\n' ' ' | cut -c1-200)" ;;
+  *) bad "0162 AC2 — the priced figure was lost: $PA_USD" ;;
+esac
+case "$PA_USD" in
+  *"partial: 1 unpriced turn(s)"*) ok "and the row is labelled 'partial: 1 unpriced turn(s)'" ;;
+  *) bad "0162 AC2/FR3 — the partial label is missing: $PA_USD" ;;
+esac
+
+echo "0162 AC3 — the estimate skips an unpriced block rather than reading it as zero"
+# Two recorded sprints: 3 tickets whose usd was never priced, and 2 tickets costing USD 10.00.
+# The per-ticket mean must be 10.00/2, never 10.00/5 -- the latter is the unpriced block silently
+# voting zero, which is the whole harm this ticket exists to stop.
+AC3_LEDGER="$FIX/ac3-ledger.md"
+cat > "$AC3_LEDGER" <<'MD'
+# Sprint ledger
+
+## sprint r-one -- ended 2026-09-01T00:00:00Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 3 | 3 | fixture |
+| usd | 9.00 | unpriced | fixture |
+
+## sprint r-two -- ended 2026-09-02T00:00:00Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 2 | 2 | fixture |
+| usd | 9.00 | 10.00 | fixture |
+MD
+AC3_OUT="$("$TOOL" estimate --ledger "$AC3_LEDGER" --measurement "$MEAS" --config "$CONF" \
+           --tickets 1 --develop-gates 1 --verify-sessions 1 2>&1 || true)"
+case "$AC3_OUT" in
+  *"5.00"*) ok "the usd estimate is 5.00 — 10.00 over the 2 tickets that were actually priced" ;;
+  *"2.00"*) bad "0162 AC3 — the estimate is 2.00: the unpriced block was counted as a zero over 5 tickets" ;;
+  *) bad "0162 AC3 — expected a 5.00 usd estimate; got: $(printf '%s' "$AC3_OUT" | tr '\n' ' ' | cut -c1-240)" ;;
+esac
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

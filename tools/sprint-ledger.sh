@@ -388,10 +388,17 @@ def concurrency(window, develop_windows):
 
 
 def harvest(transcripts, session_ids):
-    """(usd, context tokens) over exactly these sessions. Shelling out rather than reimporting the
-    pricing: two copies of the rate table is the divergence a single source exists to prevent."""
+    """What one harvest measured over exactly these sessions, as
+    {usd, ctx, turns, unpriced}. Shelling out rather than reimporting the pricing: two copies of
+    the rate table is the divergence a single source exists to prevent.
+
+    0162: `unpriced` is read as well as the TOTAL row, and it is the reason this returns a mapping
+    rather than a pair. A turn on a model with no published rate contributes to NEITHER the cost
+    nor the turns column, so an all-unpriced harvest is a TOTAL row of zeros that reads exactly
+    like a measured zero -- and then feeds the per-ticket mean of every later estimate. The caller
+    cannot tell the two apart without the count, and the count is on its own line."""
     if not session_ids:
-        return 0.0, 0
+        return {"usd": 0.0, "ctx": 0, "turns": 0, "unpriced": 0}
     cmd = [HARVEST, transcripts]
     for sid in session_ids:
         cmd += ["--session", sid]
@@ -409,11 +416,17 @@ def harvest(transcripts, session_ids):
         die("%s failed (exit %d) over %s: %s"
             % (os.path.basename(HARVEST), proc.returncode, transcripts,
                (proc.stderr or "").strip() or "no stderr"))
+    unpriced = 0
     for line in proc.stdout.splitlines():
-        m = re.match(r"^TOTAL\s*\|\s*\d+\s*\|\s*\d+\s*\|\s*([\d.]+)\s*\|\s*[\d.]+\s*\|\s*(\d+)",
-                     line)
+        u = re.match(r"^UNPRICED turns on a model with no published rate:\s*(\d+)", line)
+        if u:
+            unpriced = int(u.group(1))
+    for line in proc.stdout.splitlines():
+        m = re.match(
+            r"^TOTAL\s*\|\s*\d+\s*\|\s*(\d+)\s*\|\s*([\d.]+)\s*\|\s*[\d.]+\s*\|\s*(\d+)", line)
         if m:
-            return float(m.group(1)), int(m.group(2))
+            return {"usd": float(m.group(2)), "ctx": int(m.group(3)),
+                    "turns": int(m.group(1)), "unpriced": unpriced}
     # The output is quoted, not just counted: "printed no parsable TOTAL line" is unactionable on
     # its own, and a format change is the likeliest cause. Newlines collapse so the whole refusal
     # stays one line, and it is truncated because harvest output is unbounded.
@@ -436,7 +449,21 @@ def record(opts):
     run_ids = [sid for _stage, sid, _t in sessions]
     all_tickets = sorted({t for _s, _i, ts in sessions for t in ts})
 
-    usd, ctx = harvest(opts["transcripts"], run_ids)
+    h = harvest(opts["transcripts"], run_ids)
+    usd, ctx = h["usd"], h["ctx"]
+    # 0162 FR2/FR3. Nothing priced and turns that could not be priced: the figures were not
+    # measured, so they are labelled rather than written as the zeros they would otherwise be
+    # (FR4's reader skips a cell it cannot parse as a number, which is what makes the label safe).
+    # Some priced and some not: keep what was measured and say what it is missing. Neither branch
+    # is reached when unpriced is 0, which leaves the EMPTY STORE case -- a real directory holding
+    # none of the run's sessions -- recording its measured zero exactly as before (FR5).
+    unpriced_note = ""
+    if h["unpriced"] and h["turns"] == 0:
+        usd, ctx = "unpriced", "unpriced"
+        unpriced_note = ("unpriced: %d turn(s) on a model with no published rate"
+                         % h["unpriced"])
+    elif h["unpriced"]:
+        unpriced_note = "partial: %d unpriced turn(s)" % h["unpriced"]
     wall = wall_clock_minutes(events)
     run_id = next((e.get("run") or e.get("run_id") for e in events
                    if e.get("run") or e.get("run_id")), "unnamed")
@@ -469,6 +496,10 @@ def record(opts):
     out.append("|---|---|---|---|")
     for figure in FIGURES:
         src = "confirmed scope @ %s" % stamp if figure == "tickets" else opts["estimate_source"]
+        # The label rides on the rows it is about -- usd and tokens are the two the harvest
+        # produces -- so a reader of one row never has to find it somewhere else in the block.
+        if unpriced_note and figure in ("usd", "tokens"):
+            src = "%s — %s" % (src, unpriced_note)
         out.append("| %s | %s | %s | %s |"
                    % (figure, cell(figure, est[figure]), cell(figure, actual[figure]), src))
     out.append("")
@@ -480,7 +511,7 @@ def record(opts):
             continue
         n = len(tickets)
         predicted = base.get("develop", 0.0) + extra.get("develop", 0.0) * (n - 1)
-        observed, _ = harvest(opts["transcripts"], [sid])
+        observed = harvest(opts["transcripts"], [sid])["usd"]
         out.append("GATE develop %d ticket(s) session %s: predicted USD %.2f (%s @ %s) "
                    "observed USD %.2f (%s @ %s)"
                    % (n, sid.split("-")[0], predicted, conf_src, stamp, observed,
@@ -492,7 +523,7 @@ def record(opts):
         if stage != "verify" or not tickets:
             continue
         n = len(tickets)
-        observed, _ = harvest(opts["transcripts"], [sid])
+        observed = harvest(opts["transcripts"], [sid])["usd"]
         out.append("RATIO verify_usd_per_ticket %s session %s = %.2f"
                    % ("batched" if n > 1 else "unbatched", sid.split("-")[0], observed / n))
         out.append("  numerator USD %.2f (%s @ %s)" % (observed, harvest_src % 1, stamp))
@@ -511,7 +542,7 @@ def record(opts):
         design_windows = windows_of(events, "design")
         develop_windows = list(windows_of(events, "develop").values())
         for sid, tickets in design:
-            observed, _ = harvest(opts["transcripts"], [sid])
+            observed = harvest(opts["transcripts"], [sid])["usd"]
             for tid in tickets:
                 out.append("DESIGN %s session %s %s: predicted %s (%s @ %s) "
                            "observed USD %.2f (%s @ %s)"
