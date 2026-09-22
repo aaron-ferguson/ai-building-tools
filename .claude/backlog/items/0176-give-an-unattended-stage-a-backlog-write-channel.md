@@ -3,7 +3,7 @@ id: "0176"
 title: Give an unattended stage a backlog write channel it can fall back to
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -15,8 +15,8 @@ relates: ["0172", "0154"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "8c2e"
+claimed_at: 2026-09-22T14:34:49Z
 touches:
 ---
 
