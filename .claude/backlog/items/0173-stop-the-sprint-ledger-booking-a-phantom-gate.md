@@ -2,8 +2,8 @@
 id: "0173"
 title: Stop the sprint ledger booking a phantom gate from a stage's self-reported session id
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -16,12 +16,9 @@ expects:
   - tools/sprint-ledger.sh
   - tests/sprint-ledger.test.sh
   - skills/sprint/outcome.schema.json
-claimed_by: "f0e0"
-claimed_at: 2026-09-22T07:22:20Z
+claimed_by:
+claimed_at:
 touches:
-  - tools/sprint-ledger.sh
-  - tests/sprint-ledger.test.sh
-  - skills/sprint/outcome.schema.json
 ---
 
 ## Problem
