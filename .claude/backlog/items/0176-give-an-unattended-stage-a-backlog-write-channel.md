@@ -60,6 +60,12 @@ back to when the named one is refused.
   and the instruction that satisfies it reach a session together).
 - FR4 — `tests/sprint.test.sh` carries a guard asserting FR1's fallback in Step 3, written in the
   file's existing `guard_says` idiom, beside the `Bash heredoc` guard it already has.
+- FR5 — The same bullet covers a refused **lock release**, not only a refused write. `rm -rf
+  .claude/backlog/.lock` was refused as a sensitive file (`FINDINGS.md`, 2026-09-21) and
+  `python3 -c 'shutil.rmtree(...)'` cleared it; the FR1 fallback does not reach it, because copying a
+  file into place says nothing about removing a directory. The bullet names the release form and
+  rules that a refused release is never taken at face value — a stage that stops politely there
+  leaves the lock held and blocks every claim and close in the repository.
 
 ## Non-functional requirements
 
@@ -74,6 +80,8 @@ back to when the named one is refused.
 - [ ] AC2 — Given the same file, when `tests/sprint.test.sh` runs, then the existing `Bash heredoc` guard still passes — reddened by rewrapping the paragraph so the phrase straddles a line break.
 - [ ] AC3 — Given the same file, when `tests/sprint.test.sh` runs, then a guard asserts the bullet still rules the three permission routes out of re-probing — reddened by removing that ruling while adding the fallback.
 - [ ] AC4 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it is green — reddened by leaving `skills/sprint/SKILL.md` over its size budget after the addition.
+- [ ] AC5 — Given `skills/sprint/SKILL.md` Step 3, when `tests/sprint.test.sh` runs, then a guard asserts Step 3 names the fallback form for a refused lock release (`shutil.rmtree`) — reddened by replacing that form with a generic phrase.
+- [ ] AC6 — Given the same file, when `tests/sprint.test.sh` runs, then a guard asserts Step 3 rules that a stage never leaves the lock held on a refused release — reddened by softening that clause.
 
 ## QA plan
 
@@ -134,3 +142,30 @@ back to when the named one is refused.
   exists to prevent, reached by a live stage denied its release rather than by a dying one. It is
   outside every FR here, which all name the write channel, so it is not built: widening a contract
   is the author's call. `python3 -c 'shutil.rmtree(...)'` is what cleared it in that session.
+- **2026-09-22 (develop, db06) — prerequisite repair, no ticket of its own.**
+  `tests/item-ac-form.test.sh` AC1 was red on `.claude/backlog/items/0178-*.md` before this session
+  started, blocking `verify` on a ticket nobody held. Repaired on the author's decision (`da524ce`):
+  the detector now **scans from the stage at which acceptance criteria are required** — `criteria_required()`
+  exempts `next: queue` and `next: design` only, so everything from `develop` onward is still scanned
+  and `0178` comes under the guard in full the moment it advances. `0178` itself was not edited
+  (`CONCURRENCY.md`, *A stage writes only the ticket it holds*). The floor is a new failure mode for
+  the guard, so a new AC3 block feeds it a `next: develop` fixture with non-checkbox criteria and
+  asserts it is still reported; mutating the floor to also exempt `develop` reds exactly that case
+  (**run, not reasoned**), as does the mirror for `verify`. Parked in `FINDINGS.md` because the
+  repair landed with no row — a queue sweep decides whether it needs one.
+- **2026-09-22 (develop, db06) — reopened by the author at `next: verify` and widened to FR5.**
+  The scope flag the previous session (dd41) left for the author is now the author's decision, so
+  the ticket came back to `develop` and FR5/AC5/AC6 were added. Both new guards mutation-checked
+  individually against the committed file, each reddening exactly one case with a green control
+  afterwards (**run, not reasoned**); the accompanying `0165 AC2` FAIL under each mutation is that
+  guard correctly reporting the file was not clean, not a second defect.
+- **2026-09-22 (develop, db06) — two refusals observed live in this session, both beyond the
+  Problem section's evidence, both now in Step 3.** (1) `mkdir .claude/backlog/.lock` — the lock
+  **acquisition** — was refused as a sensitive file, where `FINDINGS.md` had only recorded the
+  release; `os.makedirs` cleared it, mirroring `shutil.rmtree`. So the refusal covers the lock
+  directory in both directions, and Step 3 says so. (2) A compound call (`mkdir … && date … > …`)
+  was refused naming `mkdir` and `date`, neither a sensitive-file write, which confirms the
+  2026-09-22 finding that the refusal keys on compound structure; splitting the call is cheaper
+  than the copy fallback and Step 3 now says to try it first. That third sentence is beyond FR5's
+  letter and is flagged here rather than left silent: it is the same bullet's subject and was
+  observed in the same session, but a reviewer may reasonably want it on its own row.
