@@ -54,6 +54,27 @@ offenders() {
   ' "$1"
 }
 
+# True when an item has reached the stage at which acceptance criteria exist to be ticked.
+# `develop` Step 1: an item at `next: design` has no acceptance criteria BY DEFINITION, and one at
+# `next: queue` has not been specified at all — so neither is a thing to read criteria out of, and a
+# `## Acceptance criteria` section on one holds the FR notes `design` will turn into criteria. This
+# is a stage FLOOR, not an exemption for `design`: everything from `develop` onward is scanned,
+# which is the whole set `close` can be asked to tick, and an item comes under the guard in full the
+# moment it advances past design. Anything else — including an empty `next:` on an item still open —
+# scans, because the floor must never be the reason a real defect goes unreported.
+criteria_required() {
+  case "$(awk -F': *' '/^next:/ { print $2; exit }' "$1")" in
+    queue|design) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+# The stage floor and the form detector composed — what AC1 actually runs, so AC3 can check it.
+scanned_offenders() {
+  criteria_required "$1" || return 0
+  offenders "$1"
+}
+
 # --- AC1 — every OPEN item is in the checkbox form ---------------------------------------------
 # A `done` item is exempt, and 0035 is why the exemption exists rather than being a convenience.
 # 0035 is the original victim — `close` ticked zero of its eight `- **AC1** —` criteria, closed
@@ -65,20 +86,22 @@ offenders() {
 echo "AC1 — every open item's criteria are checkboxes close can tick"
 checked=0
 skipped=0
+prespec=0
 for item in "$ITEMS"/*.md; do
   [ -f "$item" ] || continue
   case "$(awk -F': *' '/^status:/ { print $2; exit }' "$item")" in
     done) skipped=$((skipped + 1)); continue ;;
   esac
+  criteria_required "$item" || { prespec=$((prespec + 1)); continue; }
   checked=$((checked + 1))
-  bad_lines="$(offenders "$item")"
+  bad_lines="$(scanned_offenders "$item")"
   if [ -n "$bad_lines" ]; then
     bad "$(basename "$item") — non-checkbox criteria close would read as an empty section:"
     printf '%s\n' "$bad_lines"
   fi
 done
 [ "$checked" -gt 0 ] || { echo "  FAIL no open items matched the glob — this guard checked nothing" >&2; exit 2; }
-ok "$checked open items scanned ($skipped closed, exempt)"
+ok "$checked open items at develop or later scanned ($skipped closed, $prespec not yet specified)"
 
 # --- AC2 — the guard can red -------------------------------------------------------------------
 # A filter that matches nothing is green precisely when its subject has gone missing
@@ -126,6 +149,50 @@ if [ -z "$(offenders "$FIX/good.md")" ]; then
 else
   bad "a correct item was reported — the guard would red on every clean ticket"
 fi
+
+# --- AC3 — the scan starts at the stage where criteria are required ----------------------------
+# The filter is a stage FLOOR, not an exemption for one stage: everything from `develop` onward is
+# scanned, because that is the whole set `close` can be asked to tick. An item still at `design` or
+# `queue` has no acceptance criteria by definition (`develop` Step 1), so reading criteria out of it
+# reports the specification that has not been written yet. The first two cases below are what stops
+# the floor swallowing the guard — they are the mutation check, written as cases so they run on
+# every invocation rather than once by hand.
+echo "AC3 — the scan starts at develop, and the floor does not swallow the guard"
+
+# An item in the shape the guard exists to catch, at whichever stage $2 names.
+staged_fixture() {
+  cat > "$1" <<FIXTURE
+---
+id: "0000"
+next: $2
+status: ready
+---
+
+## Acceptance criteria
+
+- FR1 — a bullet with no box, which \`close\` would read as an empty section
+
+## Notes & decisions
+FIXTURE
+}
+
+for stage in develop verify; do
+  staged_fixture "$FIX/at-$stage.md" "$stage"
+  if [ -n "$(scanned_offenders "$FIX/at-$stage.md")" ]; then
+    ok "an item at $stage with non-checkbox criteria is still reported"
+  else
+    bad "an item at $stage was NOT reported — the stage floor has swallowed the guard"
+  fi
+done
+
+for stage in design queue; do
+  staged_fixture "$FIX/at-$stage.md" "$stage"
+  if [ -z "$(scanned_offenders "$FIX/at-$stage.md")" ]; then
+    ok "an item at $stage is not read for criteria it cannot have yet"
+  else
+    bad "an item at $stage was reported — the guard is reading an unwritten specification"
+  fi
+done
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]
