@@ -2,7 +2,7 @@
 id: "0176"
 title: Give an unattended stage a backlog write channel it can fall back to
 type: bug
-next: verify
+next: develop
 status: ready
 qa_level: unit
 close_by: verify
