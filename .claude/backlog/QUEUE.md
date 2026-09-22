@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | verify | ready |  |
+| 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | verify | in-progress |  |
 | 0173 | Stop the sprint ledger booking a phantom gate from a stage's self-reported session id | verify | ready |  |
 | 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | design | ready |  |
 | 0174 | Say the findings gate is deferred until the run is out of work when no scope was confirmed | develop | ready |  |
