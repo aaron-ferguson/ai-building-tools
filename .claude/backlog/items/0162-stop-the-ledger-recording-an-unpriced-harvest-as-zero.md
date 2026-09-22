@@ -2,8 +2,8 @@
 id: "0162"
 title: Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -16,9 +16,10 @@ expects:
   - tools/sprint-ledger.sh
   - tests/sprint-ledger.test.sh
   - tools/harvest-usage.sh
-claimed_by: "326e"
-claimed_at: 2026-09-22T14:51:09Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-22
 ---
 
 ## Problem
@@ -58,14 +59,14 @@ reads it. The next model id without a rate reproduces the zero.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture transcript directory whose run sessions carry only turns on a model id
+- [x] AC1 — Given a fixture transcript directory whose run sessions carry only turns on a model id
   absent from `RATES`, when `sprint-ledger.sh record` runs over it, then the appended block's `usd`
   and `tokens` rows read `unpriced` in the Actual column and contain no `0.00`. Red: today's script,
   which writes `0.00`.
-- [ ] AC2 — Given a fixture with one priced and one unpriced turn, when `record` runs, then the `usd`
+- [x] AC2 — Given a fixture with one priced and one unpriced turn, when `record` runs, then the `usd`
   Actual is the priced turn's cost and its row contains `partial: 1 unpriced turn(s)`. Red: FR3's
   label omitted.
-- [ ] AC3 — Given a `LEDGER.md` fixture with two sprint blocks, one `usd` Actual `unpriced` over 3
+- [x] AC3 — Given a `LEDGER.md` fixture with two sprint blocks, one `usd` Actual `unpriced` over 3
   tickets and one `10.00` over 2 tickets, when `estimate --tickets 1` runs, then the `usd` estimate
   is `5.00` (10.00 / 2), not `2.00` (10.00 / 5). Red: FR4 omitted.
 
@@ -81,6 +82,27 @@ reads it. The next model id without a rate reproduces the zero.
 - The `--run` bound's session scope — 0163.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+Conventions: `../ai-building-conventions`
+Level: `unit` — command run verbatim: `for t in tests/*.test.sh; do "$t" || true; done`
+(`config.yml`'s reporting form of `commands.unit`.)
+
+Baseline, clean tree: 31 test files, every one `0 failed`. `tests/sprint-ledger.test.sh`
+`129 passed, 0 failed`.
+
+| AC / NFR | How it was checked | Result |
+|---|---|---|
+| AC1 | `tests/sprint-ledger.test.sh:928` — a fixture store whose two run sessions carry only turns on `claude-no-such-model-0`. Mutation, the AC's stated red (today's script): `unpriced = int(u.group(1))` → `unpriced = 0`, so `harvest()` never reads the `UNPRICED` line. | PASS — three cases red, and the output shows the defect verbatim: `the usd Actual still reads a measured 0.00: \| usd \| 20.00 \| 0.00 \|` and `the tokens Actual is not 'unpriced'`. `124 passed, 5 failed`. Restored by path; control `129 passed, 0 failed`. |
+| AC2 / FR3 | Fixture with one priced turn (USD 10.00) and one unpriced. Same mutation. | PASS — `FAIL 0162 AC2/FR3 — the partial label is missing: \| usd \| 20.00 \| 10.00 \|`. The priced figure survives; only the label is lost, which is FR3's exact claim. Restored; control green. |
+| AC3 / FR4 | `LEDGER.md` fixture, one `unpriced` block over 3 tickets and one `10.00` over 2. Mutation, the AC's stated red: `except ValueError: pass` → `except ValueError: current[figure] = 0.0` in `read_ledger`. | PASS — `FAIL 0162 AC3 — the estimate is 2.00: the unpriced block was counted as a zero over 5 tickets`. Restored; control green. Three `0166` cases also reddened under this mutation — expected, since the same parse decides whether a non-numeric `tickets` cell is excluded, and not a second defect. |
+| FR2's "source cell names N" — **develop's claim that its own guard first passed for the wrong reason, re-checked rather than accepted** | The guard now extracts field 5 with `awk` and matches `unpriced: 2`. Under the AC1 mutation, with `20.00` sitting in the estimate column the whole time, it reddened: `FAIL 0162 FR2 — the usd row's source cell does not name the unpriced turn count: MEASUREMENT.md per-skill table…`. | PASS — the rewrite is load-bearing. A whole-row `*2*` match would have passed on that string; this one does not. Same for the `0.00` assertion, anchored on field 4. |
+| FR5 — the empty-store case keeps its behaviour | `git show 3081565 -- tests/sprint-ledger.test.sh` shows a single hunk at `@@ -919,5 +919,107 @@` — append-only. The `AC1/FR8 — an empty store is a measured zero` case at line 452 is untouched and green. | PASS |
+| NFR Observability — a figure that was not measured is never rendered as a measured one | The row names AC1, a real executing guard, reddened above in three places with the measured `0.00` visible in the failure output. | PASS — guarded. |
+
+Evidence set: `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh`, `tools/harvest-usage.sh`,
+and the whole of `tests/`. Dirty set at Step 2: untracked `.claude/backlog/runs/` and
+`.claude/backlog/FINDINGS.md`, committed at `5ff9dbb` before any evidence was taken.
+Intersection: **empty** — every case above drives `mktemp` fixtures and reads no repository path.
 
 ## Notes & decisions
 

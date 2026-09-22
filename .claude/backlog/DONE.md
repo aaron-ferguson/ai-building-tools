@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | bug | unit | 2026-09-22 | [items/0162-stop-the-ledger-recording-an-unpriced-harvest-as-zero.md](items/0162-stop-the-ledger-recording-an-unpriced-harvest-as-zero.md) |
 | 0163 | Bound harvest-usage's --run figures to the supervisor's own session | bug | unit | 2026-09-22 | [items/0163-bound-the-harvest-run-figures-to-the-supervisor-session.md](items/0163-bound-the-harvest-run-figures-to-the-supervisor-session.md) |
 | 0165 | Attribute the one-off sprint.test.sh failure and keep its FAIL line visible in a filtered run | bug | unit | 2026-09-22 | [items/0165-attribute-the-one-off-sprint-test-failure.md](items/0165-attribute-the-one-off-sprint-test-failure.md) |
 | 0176 | Give an unattended stage a backlog write channel it can fall back to | bug | unit | 2026-09-22 | [items/0176-give-an-unattended-stage-a-backlog-write-channel.md](items/0176-give-an-unattended-stage-a-backlog-write-channel.md) |
