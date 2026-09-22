@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0176 | Give an unattended stage a backlog write channel it can fall back to | develop | ready |  |
+| 0176 | Give an unattended stage a backlog write channel it can fall back to | develop | in-progress |  |
 | 0165 | Attribute the one-off sprint.test.sh failure and keep its FAIL line visible in a filtered run | develop | ready |  |
 | 0163 | Bound harvest-usage's --run figures to the supervisor's own session | develop | ready |  |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | develop | ready |  |
