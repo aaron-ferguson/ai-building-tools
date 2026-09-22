@@ -53,8 +53,12 @@ VERIFY="$ROOT/skills/verify/SKILL.md"
 PASS=0
 FAIL=0
 SKIP=0
+# 0165 FR1 — every FAIL line is kept for re-printing above the tally. See the block at the foot of
+# this file for why a variable rather than a temp file.
+FAILED_LINES=""
 ok()   { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
-bad()  { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
+bad()  { FAIL=$((FAIL+1)); FAILED_LINES="$FAILED_LINES  FAIL $1
+"; printf '  FAIL %s\n' "$1"; }
 skip() { SKIP=$((SKIP+1)); printf '  SKIP %s\n' "$1"; }
 
 FIX=""
@@ -75,7 +79,11 @@ valid() {
     0) return 0 ;;
     1) return 1 ;;
     *) printf '  HARNESS the validator could not run against %s: %s\n' "$1" "$(why "$1")" >&2
+       # Counted as a failure, so it is re-printed as one too (0165 FR1) -- otherwise the tally
+       # reports a failure the re-print block cannot name, which is the exact defect 0165 is about.
        FAIL=$((FAIL+1))
+       FAILED_LINES="$FAILED_LINES  HARNESS the validator could not run against $1
+"
        return 0 ;;   # never report a harness failure as a refusal
   esac
 }
@@ -2373,5 +2381,88 @@ else
   bad "0160 FR3 — verify does not tell a session to write 'Conventions: <resolved path>'; close's refusal has nothing to read"
 fi
 
+# --- 0165 AC1/AC2 — a failing case is attributable from the last lines of a filtered read --------
+#
+# The property under test is THIS FILE'S OWN OUTPUT, so these two cases run a copy of it. Two
+# things the copy needs, and both are load-bearing:
+#
+#   A ROOT that resolves to the real repo.  ROOT is "$0's parent's parent", so a copy dropped in a
+#   bare temp directory resolves ROOT to the temp directory and every case fails for the wrong
+#   reason. The copy therefore goes in <fixture>/tests/ beside symlinks to every top-level entry of
+#   the real repo -- read-only, and nothing here writes through them.
+#
+#   SPRINT_TEST_CHILD, which stops the copy reaching this block.  Without it each generation spawns
+#   another and the file does not terminate.
+#
+# The copy is NOT placed in the real tests/ directory: the project's suite is the glob
+# `for t in tests/*.test.sh`, so a second .test.sh file there would be picked up by every later run.
+if [ -n "${SPRINT_TEST_CHILD:-}" ]; then
+  : # a child copy asserts nothing about its own children
+else
+  echo "0165 AC1/AC2 — a FAIL line survives a read that keeps only the tally"
+
+  CHILDROOT="$FIX/childrepo"
+  mkdir -p "$CHILDROOT/tests"
+  # COPIED, not symlinked, and `.git` aside that is the whole repo (~5 MB, well under a second).
+  # Two fixture-shaped failures came out of the symlinked version, both of which said nothing about
+  # the property under test: dotted entries are easy to miss from a glob, so `.claude-plugin/` was
+  # absent and took four cases with it; and FR13's `grep -rl "$ROOT/skills"` finds nothing when that
+  # argument is a symlink, because BSD grep does not descend into one. A real tree has neither
+  # problem, and no guard here behaves differently because of how the fixture was built.
+  for entry in "$ROOT"/* "$ROOT"/.[!.]*; do
+    [ -e "$entry" ] || continue
+    case "$(basename "$entry")" in tests|.git) continue ;; esac
+    cp -R "$entry" "$CHILDROOT/$(basename "$entry")"
+  done
+  CHILD="$CHILDROOT/tests/child.test.sh"
+
+  # AC1 — one case forced to fail, read through `tail -5` the way a filtering pass reads it.
+  # The `bad` call is injected immediately after the helper definitions, so it runs as an ordinary
+  # case rather than as anything this block special-cases.
+  awk '{ print } /^skip\(\) \{/ { print "bad \"INJECTED-0165 forced failure fixture\"" }' \
+    "$0" > "$CHILD"
+  chmod +x "$CHILD"
+  if ! grep -qF 'INJECTED-0165' "$CHILD"; then
+    bad "0165 AC1 — the injection did not apply; the case below would pass against an unmodified copy"
+  else
+    # SPRINT_SKIP_PROBE, because AC22's nested `claude -p` dispatch is the parent's job: the child
+    # exists to produce OUTPUT SHAPE, and running the probe in it would triple a paid CLI call (~9 s
+    # each) for no added signal. It skips loudly, as AC22's own design requires.
+    SPRINT_TEST_CHILD=1 SPRINT_SKIP_PROBE=1 "$CHILD" > "$FIX/injected.out" 2>&1 || true
+    if tail -5 "$FIX/injected.out" | grep -qF 'INJECTED-0165'; then
+      ok "a forced failure names its case within the last 5 lines of the run"
+    else
+      bad "0165 AC1 — the forced FAIL line is not in the last 5 lines; a pass filtering to the tally cannot attribute the failure, which is how a real red gets waved off as the flake"
+    fi
+  fi
+
+  # AC2 — no forced failure: no re-print block, and the tally's shape is unchanged.
+  cp "$0" "$CHILD"
+  chmod +x "$CHILD"
+  SPRINT_TEST_CHILD=1 SPRINT_SKIP_PROBE=1 "$CHILD" > "$FIX/clean.out" 2>&1 || true
+  if grep -qF 'FAIL lines, re-printed' "$FIX/clean.out"; then
+    bad "0165 AC2 — a green run prints the re-print block anyway; it must appear only when something failed"
+  else
+    ok "a green run prints no re-print block"
+  fi
+  if tail -1 "$FIX/clean.out" | grep -qE '^[0-9]+ passed, 0 failed, [0-9]+ skipped$'; then
+    ok "and its tally line keeps its shape, which every tally-reading loop depends on"
+  else
+    bad "0165 AC2 — the tally line changed shape: $(tail -1 "$FIX/clean.out")"
+  fi
+fi
+
+# 0165 FR1 — every FAIL line again, immediately above the tally.
+#
+# A pass that filters this file to its tally sees "1 failed" with the FAIL line hundreds of lines
+# above it, and the failure is unattributable -- which is how a real red gets waved off as "the
+# flake" (0165's Problem: a control run printed `231 passed, 1 failed` and nothing recorded which
+# case it was). Accumulated in a SHELL VARIABLE rather than a temp file deliberately: it shares
+# scope with PASS/FAIL/SKIP, so the re-print and the tally can never disagree about what failed.
+# A subshell loses both together, never one of them.
+if [ "$FAIL" != 0 ]; then
+  printf '\n--- %s FAIL lines, re-printed ---\n' "$FAIL"
+  printf '%s' "$FAILED_LINES"
+fi
 printf '\n%s passed, %s failed, %s skipped\n' "$PASS" "$FAIL" "$SKIP"
 [ "$FAIL" = 0 ]
