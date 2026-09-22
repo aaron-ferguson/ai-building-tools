@@ -2,8 +2,8 @@
 id: "0162"
 title: Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -16,12 +16,9 @@ expects:
   - tools/sprint-ledger.sh
   - tests/sprint-ledger.test.sh
   - tools/harvest-usage.sh
-claimed_by: "0fd3"
-claimed_at: 2026-09-22T04:51:07Z
+claimed_by:
+claimed_at:
 touches:
-  - tools/sprint-ledger.sh
-  - tests/sprint-ledger.test.sh
-  - tools/harvest-usage.sh
 ---
 
 ## Problem
