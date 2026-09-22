@@ -2,8 +2,8 @@
 id: "0163"
 title: Bound harvest-usage's --run figures to the supervisor's own session
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -17,9 +17,10 @@ expects:
   - tests/measurement.test.sh
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "6aab"
-claimed_at: 2026-09-22T14:48:21Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-22
 ---
 
 ## Problem
@@ -59,14 +60,14 @@ commit `a666012` (`supervisor_context` on `scope_confirmed`).
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture directory with two session transcripts and a run log recording one
+- [x] AC1 — Given a fixture directory with two session transcripts and a run log recording one
   dispatch, where session `aaaa…` has 3 turns, session `bbbb…` has 50, and `scope_confirmed` names
   `supervisor_session` `aaaa…`: when `harvest-usage.sh <dir> --run <log>` runs, then it prints
   `RUN BOUND over 1 cycles and 3 turns`. Red: today's script prints 53 turns.
-- [ ] AC2 — Given the same fixture with no `supervisor_session` and no `--session`, when it runs, then
+- [x] AC2 — Given the same fixture with no `supervisor_session` and no `--session`, when it runs, then
   the output contains `no supervisor session named` and no `RUN BOUND` line. Red: today's
   whole-directory bound.
-- [ ] AC3 — Given `skills/sprint/SKILL.md`, when `tests/sprint.test.sh` runs, then Step 5 contains
+- [x] AC3 — Given `skills/sprint/SKILL.md`, when `tests/sprint.test.sh` runs, then Step 5 contains
   `supervisor_session` and `CLAUDE_CODE_SESSION_ID`. Red: either absent.
 
 ## QA plan
@@ -82,6 +83,43 @@ commit `a666012` (`supervisor_context` on `scope_confirmed`).
 - Retro-fitting `supervisor_session` into existing run logs.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+Conventions: `../ai-building-conventions`
+Level: `unit` — command run verbatim: `for t in tests/*.test.sh; do "$t" || true; done`
+(`config.yml`'s reporting form of `commands.unit`.)
+
+Baseline, clean tree: 31 test files, every one `0 failed`. `tests/measurement.test.sh`
+`135 passed, 0 failed`; `tests/sprint.test.sh` `268 passed, 0 failed, 0 skipped`.
+
+| AC / NFR | How it was checked | Result |
+|---|---|---|
+| AC1 | `tests/measurement.test.sh:1163` — a fixture store of two transcripts (`aaaa…` 3 turns, `bbbb…` 50) and a run log whose `scope_confirmed` names `aaaa…`. Mutation, exactly the AC's stated red: `report_run_bound`'s supervisor lookup deleted and the narrowing made conditional, i.e. the pre-0163 whole-directory bound restored. | PASS — `FAIL 0163 AC1 — the bound still spans the whole transcript directory (53 turns)…`, `132 passed, 3 failed`. Restored by path; control `135 passed, 0 failed`. |
+| AC2 | Same fixture with `scope_confirmed` naming no session and no `--session`. Same mutation. | PASS — two cases red: `expected 'no supervisor session named'` and `a bound was printed anyway, over the whole directory`. Both are the AC's stated red. Restored; control green. |
+| AC3 | `tests/sprint.test.sh:2227`. Mutation: `supervisor_session` → `sup_sess_X` and `CLAUDE_CODE_SESSION_ID` → `CC_SESSION_X` throughout `skills/sprint/SKILL.md`. | PASS — both cases red: `Step 5 names no supervisor_session…` and `Step 5 does not name CLAUDE_CODE_SESSION_ID as the source…`. Restored; control green. |
+| FR4 — Step 9 and the `--run` usage comment match FR2–FR3 | Read both: `skills/sprint/SKILL.md:711-719` states the bound is over the `supervisor_session` the log names, that no flag is needed, that a log naming none prints `no supervisor session named` and reports no bound, and that `--session` still overrides. `tools/harvest-usage.sh:35-44` says the same. | PASS — **unguarded**: no case asserts the usage comment, so it can go stale silently. |
+| NFR Observability — a bound is either over the supervisor's session or not printed | The row names AC2, which is a real executing guard and was reddened above, twice. | PASS — guarded. |
+
+Copy executed: the **repo** copy of `skills/sprint/SKILL.md` is the subject and is what the guards
+read. Worth recording beside the verdict: the installed plugin at `0.9.31` — the version this
+session resolved from — contains no `supervisor_session` at all (`grep -c` → 0 for every cached
+version `0.9.25`–`0.9.31`), so the supervisor driving this very sprint had no instruction to write
+the field, and its run log does not carry it. That is why the real-surface run above exercises FR3's
+refusal rather than AC1's bound, and it is the ticket working rather than failing.
+
+Evidence set: `tools/harvest-usage.sh`, `tests/measurement.test.sh`, `skills/sprint/SKILL.md`,
+`tests/sprint.test.sh`, and the whole of `tests/`. Dirty set at Step 2: untracked
+`.claude/backlog/runs/` and `.claude/backlog/FINDINGS.md`, committed at `5ff9dbb` before any
+evidence was taken. Intersection: **empty** — every criterion above is discharged by a fixture case
+that reads no repository path, and the one thing this session ran against a file under
+`.claude/backlog/runs/` is the observation below, which no criterion rests on.
+
+**Observation, outside the evidence set.** Run for interest, not as an AC check:
+`tools/harvest-usage.sh ~/.claude/projects/<this repo> --run .claude/backlog/runs/run-20260922T031109Z.jsonl`
+— this sprint's own run log, which names no `supervisor_session` because the supervisor driving it
+is running the installed `0.9.31` copy, where the field does not exist. Last line:
+`RUN LOG …: no supervisor session named; no bound reported`, with no `RUN BOUND` anywhere. FR3's
+refusal behaving on live input rather than a fixture. The pre-fix behaviour here would have been a
+bound over 575,474,789 tokens of whole-store history printed under one run's heading.
 
 ## Notes & decisions
 

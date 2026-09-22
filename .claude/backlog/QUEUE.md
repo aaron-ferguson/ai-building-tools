@@ -23,7 +23,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0163 | Bound harvest-usage's --run figures to the supervisor's own session | verify | in-progress |  |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | verify | ready |  |
 | 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | verify | ready |  |
 | 0173 | Stop the sprint ledger booking a phantom gate from a stage's self-reported session id | verify | ready |  |
