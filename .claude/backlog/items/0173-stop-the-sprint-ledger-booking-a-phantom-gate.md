@@ -77,3 +77,32 @@ at all.
 
 - **2026-09-21 (retro)** — Filed from a park on `run-20260920T222013Z`. Kept separate from `0162`
   because the zero has a different cause: no turns rather than no rate.
+
+- **2026-09-22 (develop, f0e0) — the mismatch is intermittent, confirmed live in this session.**
+  This develop gate was dispatched with a pre-assigned `--session-id`, and
+  `CLAUDE_CODE_SESSION_ID` inside the stage read back **the same** UUID
+  (`540d0cb1-…`, run-20260922T031109Z). So the pre-assignment does hold, usually — which is exactly
+  why the defect is dangerous rather than obvious: a ledger that trusts the echoed id is right most
+  of the time and silently books a phantom the once it is not. Nothing in a passing run would
+  reveal it.
+- **2026-09-22 (develop, f0e0) — the fix is in what creates a session row, not in the harvest.**
+  `sessions_of` built a row from **any** event carrying `session_id`, so an outcome naming a
+  foreign id produced a second row that then behaved like a real gate all the way through: it
+  carried the outcome's ticket list, passed the `stage == "develop"` test, and got its own GATE
+  line. Rows now come from `dispatch` events alone, and the outcome loop matches on the dispatch id
+  or does nothing. FR3 then needs no separate mechanism: a phantom that is never a row is never
+  harvested, so there is no `0.00` to label.
+- **2026-09-22 (develop, f0e0) — AC1 and AC3 mutation-checked against the committed file** by
+  deleting the `if e.get("event") != "dispatch"` guard, which is precisely the criteria's
+  *"reddened by restoring the outcome-keyed harvest"*: 2 failures, naming the two GATE lines and
+  the USD 0.00 booking, then restored and re-run green. AC2 and the Documentation NFR were red
+  before the implementation existed. **Run, not reasoned.**
+- **2026-09-22 (develop, f0e0) — a guard of mine pinned a presentation order and failed correct
+  output.** AC2's first form asserted `*<dispatched>*<returned>*` in one `case` pattern; the
+  implementation prints the returned id first, so a line naming both ids failed for saying them in
+  the other order. Rewritten to grep each id independently. Which id leads is a presentation
+  choice, and a criterion about *naming both* should not be able to fail on it.
+- **2026-09-22 (develop, f0e0) — the silent case is guarded too.** A `MISMATCH` line is emitted only
+  when an outcome names an id no dispatch assigned; the 0166 fixture, whose ids all agree, is
+  asserted to produce none. Without that, every run would grow the line and it would stop meaning
+  anything.
