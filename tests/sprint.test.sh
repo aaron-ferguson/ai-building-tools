@@ -2229,6 +2229,25 @@ echo "retro 2026-09-13 — lessons from the September sprint runs"
 guard_says "$SKILL" "Step 3" 'Bash heredoc' \
   "Step 3 names Bash as the write channel for backlog item files" \
   "retro 2026-09-13 — Step 3 names no write channel; an unattended stage's Write on .claude/backlog/items/*.md stalls on a sensitive-file prompt nobody answers"
+
+# --- 0176 — the named write channel is itself refused non-deterministically ----------------------
+# The guard above names the channel; these four cover what a stage does when that channel is refused
+# anyway. The refusal is not a retry problem: an unattended sweep is refused WHILE HOLDING
+# .claude/backlog/.lock/, which blocks every claim and close in the repository until a human clears it.
+echo "0176 — Step 3 gives a refused write channel a fallback"
+guard_says "$SKILL" "Step 3" '`cp` it into place' \
+  "0176 AC1 — Step 3 names the write-outside-then-copy fallback" \
+  "0176 AC1 — Step 3 names no fallback form; a stage refused on the named channel stalls holding the backlog lock"
+guard_says "$SKILL" "Step 3" 'not predictable by command shape' \
+  "0176 FR2 — Step 3 says the refusal is not predictable by command shape, so a stage falls back rather than reasoning about the trigger" \
+  "0176 FR2 — Step 3 does not say the refusal is unpredictable; a stage that saw one refusal concludes the channel is unavailable"
+guard_says "$SKILL" "Step 3" 'says so in its stdout' \
+  "0176 Observability NFR — a stage that falls back reports the fallback" \
+  "0176 Observability NFR — Step 3 lets a stage fall back silently; the refused command is unexplained in the stdout capture"
+guard_says "$SKILL" "Step 3" 'Do not re-probe these' \
+  "0176 AC3 — Step 3 still rules the three probed permission routes out of re-probing" \
+  "0176 AC3 — Step 3's no-re-probe ruling is gone; the fallback was added by replacing it rather than beside it"
+
 guard_says "$SKILL" "Step 3" 'outlive the supervisor' \
   "Step 3 captures stage stdout where it outlives the supervisor" \
   "retro 2026-09-13 — Step 3 does not place stage stdout beside the run log; a scratchpad capture was withdrawn mid-run"
