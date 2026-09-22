@@ -304,3 +304,53 @@ the same run logs. It sits below 0176 because 0176 strands a lock and 0177 repor
 Both were routed to `develop` rather than `design`. 0176's fallback form was observed working in the
 same session that was refused, and 0177's shape is already settled one step away, by Step 5's
 *Nobody to ask* clause in the same file — unfamiliar is not undecided.
+
+## 2026-09-21 - the top of the queue regrouped by file scope, and 0178 placed
+
+**This section supersedes the two placement sentences immediately above it** - *"0176 goes to row 1,
+above 0161"* survives, *"0177 goes directly under 0161 and above 0162"* does not. 0161 and 0177 keep
+their arguments and their tier; what moved is where the file-scope grouping puts them.
+
+**Why regroup at all.** A dispatch unit is a gate, and today a gate extends only through
+rank-adjacent joining rows (`0158`). So two rows that share a file but sit either side of an
+unrelated row are worked in two sessions, each paying its own startup floor. The rows at the top of
+this queue cluster hard by file - six of them are sprint tooling - and the clustering was invisible
+in the order. Aaron's instruction was to make them rank-adjacent, changing relative priority no more
+than the grouping requires and changing no ticket content.
+
+**The one gate this produces, and the join that holds each row in it.** Lead 0176
+(`skills/sprint/SKILL.md`, `tests/sprint.test.sh`), then:
+
+| Row | Joins on | Artefact or theme |
+|---|---|---|
+| 0165 | `tests/sprint.test.sh` | theme - it *is* a failure in that suite |
+| 0163 | `skills/sprint/SKILL.md`, `tests/sprint.test.sh`; brings `tools/harvest-usage.sh` into scope | theme, and the bridge to the ledger rows |
+| 0162 | `tools/harvest-usage.sh`; brings `tools/sprint-ledger.sh` into scope | theme - an unpriced harvest is a harvest-and-ledger defect |
+| 0166 | `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh` | theme. It also names `skills/sprint/SKILL.md`, which would have admitted it on the artefact alone; the ledger join is the real one |
+| 0173 | `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh` | theme |
+
+**Six rows in one gate is at the edge of legible** and it is worth saying which join is load-bearing,
+because `skills/sprint/SKILL.md` appears in four of these `expects:` lists and would have chained all
+six on its own. It did not have to: every row above joins on the tool or the suite it actually
+changes, so this gate is a theme - the sprint's measurement chain - rather than the
+ten-rows-through-one-`SKILL.md` grouping artefact the proposal section warns about.
+
+**0161 and 0177 sink to ranks 9 and 10, and this is the whole priority cost of the regroup.** Neither
+joins the gate above (0161 is the `reopen` script and its own suite; 0177 is `skills/retro/SKILL.md`
+and `tests/remote-anchor.test.sh`), so with 0176 leading, the rows that join it must be adjacent to
+it and these two must go below. Their order relative to each other is unchanged. **0161 and 0174 are
+a theme and not a join**: both are backlog scripts, they share no path, and each is a gate of one -
+so nothing is bought by adjacency there and nothing is lost by 0178 sitting between them.
+
+**0178 slots at rank 7, below 0173 and above 0174.** It is the gate model itself - what a driven
+sprint selects - so its blast radius is every sprint in every project running this plugin
+(tie-breaker 1), which is why it is not lower. It sits below the six above it because each of those
+is Tier 1 output that is silently wrong (a measured USD 0.00, a phantom gate, a figure scoped to the
+wrong session) while 0178 costs session floors, which is Tier 2 at worst. Above 0174 on the regret
+operator, flagged as that rule requires: both edit `.claude/backlog/next`, and skipping 0178 leaves
+every future sprint batching on the wrong rule, where skipping 0174 leaves one report line unclear.
+
+**The position is also free.** 0178 is `next: design`, and a design row ends a gate under today's
+contiguity rule - but 0173 and 0174 share no path, so the gate above already ended there. Placed one
+row lower it would have split 0174 from nothing; placed one row higher it would have cut the
+six-row gate in half.

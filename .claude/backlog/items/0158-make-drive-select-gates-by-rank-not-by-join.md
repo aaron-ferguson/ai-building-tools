@@ -184,3 +184,11 @@ run's evidence set (`skills/queue/templates/next`, `skills/develop/SKILL.md`,
   draft of that case measured the drift reporter rather than the gate.
 - **AC7's two guards are pinned by uniqueness, checked not mutated**: `grep -cF 'never selection'`
   is 1 in each file, so deleting either sentence reds. Reasoned, not run.
+
+- **2026-09-21 (queue) - FR1, FR2 and FR4 of this item are SUPERSEDED by 0178; FR3 stands.** The
+  user corrected the model the day this closed: rank adjacency should prioritise rows into a gate,
+  not limit which rows may join one, so a joining row below the first non-joining row is admissible
+  after all. What survives here is the finding - selection must never follow a join, the lead is
+  always the topmost takeable row - and what is replaced is the mechanism, contiguity. 0178 carries
+  the open question of what bounds a gate instead, since contiguity was also doing that job and the
+  correction names only the other one. Read the two together; do not implement this item's FR1.

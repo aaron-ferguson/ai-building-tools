@@ -24,14 +24,15 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0176 | Give an unattended stage a backlog write channel it can fall back to | develop | ready |  |
-| 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
-| 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
+| 0165 | Attribute the one-off sprint.test.sh failure and keep its FAIL line visible in a filtered run | develop | ready |  |
+| 0163 | Bound harvest-usage's --run figures to the supervisor's own session | develop | ready |  |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | develop | ready |  |
 | 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | develop | ready |  |
-| 0163 | Bound harvest-usage's --run figures to the supervisor's own session | develop | ready |  |
-| 0165 | Attribute the one-off sprint.test.sh failure and keep its FAIL line visible in a filtered run | develop | ready |  |
-| 0174 | Say the findings gate is deferred until the run is out of work when no scope was confirmed | develop | ready |  |
 | 0173 | Stop the sprint ledger booking a phantom gate from a stage's self-reported session id | develop | ready |  |
+| 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | design | ready |  |
+| 0174 | Say the findings gate is deferred until the run is out of work when no scope was confirmed | develop | ready |  |
+| 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
+| 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
 | 0175 | Decide what identifies a sprint across a suspension, and which mechanisms key off it | design | ready |  |
 | 0172 | Decide how a script refusal and the skill that must satisfy it reach a session together | design | ready |  |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | develop | ready |  |
