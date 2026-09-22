@@ -2,8 +2,8 @@
 id: "0166"
 title: Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -17,12 +17,9 @@ expects:
   - tools/sprint-ledger.sh
   - tests/sprint-ledger.test.sh
   - skills/sprint/SKILL.md
-claimed_by: "183a"
-claimed_at: 2026-09-22T04:57:34Z
+claimed_by:
+claimed_at:
 touches:
-  - tools/sprint-ledger.sh
-  - tests/sprint-ledger.test.sh
-  - skills/sprint/SKILL.md
 ---
 
 ## Problem
