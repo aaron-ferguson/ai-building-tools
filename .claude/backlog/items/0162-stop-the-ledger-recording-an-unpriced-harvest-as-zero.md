@@ -93,3 +93,29 @@ reads it. The next model id without a rate reproduces the zero.
   contract.
 - **Label, not refuse.** A refusal would leave the sprint's other figures unrecorded; the label keeps
   them and marks the one that was not measured.
+
+- **2026-09-21 (develop, 0fd3) — FR4 was already implemented, and deliberately.** `read_ledger`
+  wraps `float(actual)` in `try/except ValueError: pass`, and the comment above it already reads
+  *"a figure whose actual is not a number is simply absent, which is how a sprint that could not
+  measure something stays a legitimate row rather than poisoning the mean"*. So an `unpriced` cell
+  was always going to be skipped rather than read as zero, and **no code was written for FR4**.
+  AC3 was green before any change. That is not a criterion to wave through: it was
+  mutation-checked — `except ValueError: current[figure] = 0.0` takes the estimate to `2.00` and
+  reds AC3 with its own message, then the file was restored and re-run green. **Run, not reasoned.**
+  Worth knowing at capture time: the label half of this ticket was the whole of the work, and the
+  reader half was already safe by design.
+- **2026-09-21 (develop, 0fd3) — an unpriced turn is invisible in both TOTAL columns, which is why
+  `harvest()` now returns a mapping.** `harvest_session` in `harvest-usage.sh` `continue`s on a turn
+  it cannot price, so it contributes to neither `cost` nor `turns`. An all-unpriced harvest is
+  therefore a TOTAL row of zeros, textually identical to the empty-store case FR5 protects. The
+  three states are only separable with the count in hand: `unpriced == 0` is measured (FR5),
+  `unpriced > 0 and turns == 0` priced nothing (FR2), `unpriced > 0 and turns > 0` is partial (FR3).
+  The pair `(usd, ctx)` could not carry that, so the return is `{usd, ctx, turns, unpriced}` and the
+  three GATE/RATIO/DESIGN call sites now read `["usd"]`.
+- **2026-09-21 (develop, 0fd3) — a guard of mine passed for the wrong reason and was rewritten
+  before the implementation existed.** FR2's "its source cell names N" was first asserted as
+  `case "$UP_USD" in *2*)`, over the whole row — which matched the `20.00` in the **estimate**
+  column and passed against a completely unimplemented feature. It now extracts field 5 with `awk`
+  and matches `unpriced: 2`. The neighbouring `0.00` assertion had the same hazard from the other
+  side and is anchored on field 4 for the same reason. Both were caught only because the red run
+  was read case by case rather than by its tally, which is `0165`'s point arriving one ticket later.
