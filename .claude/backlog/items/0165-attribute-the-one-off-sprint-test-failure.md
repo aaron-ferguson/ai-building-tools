@@ -3,7 +3,7 @@ id: "0165"
 title: Attribute the one-off sprint.test.sh failure and keep its FAIL line visible in a filtered run
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,9 +15,10 @@ blocked_by: []
 relates: ["0153", "0169", "0170"]
 expects:
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "d98d"
+claimed_at: 2026-09-22T03:21:48Z
 touches:
+  - tests/sprint.test.sh
 ---
 
 ## Problem
