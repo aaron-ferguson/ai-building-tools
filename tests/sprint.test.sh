@@ -2276,6 +2276,20 @@ guard_says "$SKILL" "Step 3" 'Do not re-probe these' \
   "0176 AC3 — Step 3 still rules the three probed permission routes out of re-probing" \
   "0176 AC3 — Step 3's no-re-probe ruling is gone; the fallback was added by replacing it rather than beside it"
 
+# --- 0176 FR5 — the refusal reaches the lock RELEASE, not only the write -------------------------
+# Observed 2026-09-21 (`FINDINGS.md`): `rm -rf .claude/backlog/.lock` was refused as a sensitive
+# file, and `python3 -c 'shutil.rmtree(...)'` cleared it. A stage taking that refusal at face value
+# leaves the lock HELD — which is the stranding failure this ticket exists to prevent, reached by a
+# live stage denied its own release rather than by a dying one. The write fallback above does not
+# reach it: `cp`-ing a file into place says nothing about removing a directory.
+echo "0176 — Step 3's fallback covers a refused lock release"
+guard_says "$SKILL" "Step 3" 'shutil.rmtree' \
+  "0176 AC5 — Step 3 names the fallback form for a refused lock release" \
+  "0176 AC5 — Step 3 names no release fallback; a stage refused on rm -rf .claude/backlog/.lock leaves it held"
+guard_says "$SKILL" "Step 3" 'never leave the lock held' \
+  "0176 AC6 — Step 3 rules that a refused release is never taken at face value" \
+  "0176 AC6 — Step 3 does not forbid accepting a refused release; a stage stops politely and blocks every claim and close in the repository"
+
 guard_says "$SKILL" "Step 3" 'outlive the supervisor' \
   "Step 3 captures stage stdout where it outlives the supervisor" \
   "retro 2026-09-13 — Step 3 does not place stage stdout beside the run log; a scratchpad capture was withdrawn mid-run"
