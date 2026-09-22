@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0165 | Attribute the one-off sprint.test.sh failure and keep its FAIL line visible in a filtered run | verify | ready |  |
+| 0165 | Attribute the one-off sprint.test.sh failure and keep its FAIL line visible in a filtered run | verify | in-progress |  |
 | 0163 | Bound harvest-usage's --run figures to the supervisor's own session | verify | ready |  |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | verify | ready |  |
 | 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | verify | ready |  |
