@@ -106,3 +106,39 @@ second rebases on the other. Bounding `harvest-usage --run` — `0163`. Rewritin
   develop`: the ledger format is the contract and the right split is discoverable from the code.
   Chosen, not asked: pre-split blocks stay in the means with a labelled count rather than being
   dropped, because dropping them leaves most estimates with no history at all.
+
+- **2026-09-22 (develop, 183a) — AC5 discharged against the exact mutation the ticket names.**
+  `tail = [("retro", 1, 0)] if opts["retro"] else []` replaced by `tail = []` previously left the
+  suite at *106 passed, 0 failed*; it now reds **2** cases, each naming the cause —
+  `--retro did not raise the tokens estimate (15992754 -> 15992754)` and the same for `usd` at
+  `15.32 -> 15.32`. The file was restored by path and re-run green. **Run, not reasoned.** The
+  reason 0152's guards could not catch it: they compared retro+queue against retro alone, so a
+  missing retro subtracted from both sides and cancelled. FR5's guard compares `--retro` against
+  **no tail flag at all**, which has nothing to cancel against.
+- **2026-09-22 (develop, 183a) — AC2 was green before a line was written, for the wrong reason, and
+  is now green for the right one.** Before the change `read_ledger` ignored any row not in
+  `FIGURES`, so the fixture's `tail_usd` row was invisible and the mean came to 10.00/2 by accident
+  rather than by rule. Mutation-checked rather than accepted: folding the tail back in —
+  `sum(s[figure] + s.get("tail_" + figure, 0) for s in have)` — takes the estimate to **14.75** and
+  reds AC2 with its own message. Restored and re-run green. **Run, not reasoned.**
+- **2026-09-22 (develop, 183a) — an absent tail row and a zero tail row must not collapse, which
+  decided a design point no FR states.** The tail rows are written **even when no tail ran**, as a
+  measured `0.00`. If they were omitted in that case, "this block predates the tail split" (FR3)
+  and "this sprint ran no retro or queue" would be the same observation, and FR3's
+  `N predate the tail split` count becomes unknowable. Absence therefore means exactly one thing:
+  recorded before FR1 existed.
+- **2026-09-22 (develop, 183a) — `tail_tokens`/`tail_usd` are deliberately NOT in `FIGURES`.**
+  `record` refuses a missing `--estimate-<figure>` flag (FR8, 0135), so adding them there would
+  make every `record` invocation refuse for want of an `--estimate-tail-usd` that nothing supplies.
+  They are actuals with no estimate behind them, so their Estimate cell reads `no prior` and they
+  live in `LEDGER_FIGURES`, which is what `read_ledger` accepts.
+- **2026-09-22 (develop, 183a) — 0162's unpriced labelling was factored into `labelled()` rather
+  than copied.** This ticket gave the tail its own harvest, and an unpriced tail is as silent a
+  zero as an unpriced gate; two copies of that branch is the duplicated *knowledge*
+  `CONVENTIONS_CORE.md` requires fixing on sight. 0162 landed first, so this ticket rebased on it
+  as its *Out of scope* section directed.
+- **2026-09-22 (develop, 183a) — `skills/sprint/SKILL.md` was declared in `touches:` and not
+  edited.** No FR here reaches it: FR1–FR5 are all script and guard. The ledger block gained two
+  rows, which a supervisor reads rather than writes, and the skill states no row list to go stale.
+  Flagged rather than silently widened — if the author wants the new rows described in Step 9, that
+  is a separate row.
