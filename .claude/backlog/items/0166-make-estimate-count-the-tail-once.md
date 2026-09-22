@@ -2,8 +2,8 @@
 id: "0166"
 title: Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -17,9 +17,10 @@ expects:
   - tools/sprint-ledger.sh
   - tests/sprint-ledger.test.sh
   - skills/sprint/SKILL.md
-claimed_by: "bcb7"
-claimed_at: 2026-09-22T14:52:19Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-22
 ---
 
 ## Problem
@@ -67,18 +68,18 @@ only blocks carrying `tickets`.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture run log with one develop, one verify, one retro and one queue session of
+- [x] AC1 — Given a fixture run log with one develop, one verify, one retro and one queue session of
   known, distinct usage, when `record` runs, then the block's `usd` actual is the develop+verify sum
   and `tail_usd` is the retro+queue sum. Red: summing every session id into `usd`, as today.
-- [ ] AC2 — Given a `LEDGER.md` fixture with one block of `tickets 2`, `usd 10.00`, `tail_usd 6.00`,
+- [x] AC2 — Given a `LEDGER.md` fixture with one block of `tickets 2`, `usd 10.00`, `tail_usd 6.00`,
   when `estimate --tickets 1 --retro --queue` runs, then `usd` equals 5.00 plus the fixture
   MEASUREMENT retro and queue means. Red: a mean read over `usd + tail_usd` (8.00 plus the same).
-- [ ] AC3 — Given a `LEDGER.md` fixture with two blocks, one carrying `tickets 2` and one carrying no
+- [x] AC3 — Given a `LEDGER.md` fixture with two blocks, one carrying `tickets 2` and one carrying no
   `tickets` figure, when `estimate` runs, then the label reads `1 recorded sprint(s) over 2
   ticket(s)` and names one excluded block. Red: today's `len(sprints)`, printing `2 recorded sprint(s)`.
-- [ ] AC4 — Given a pre-split block (no `tail_*` figures) among the used blocks, the label contains
+- [x] AC4 — Given a pre-split block (no `tail_*` figures) among the used blocks, the label contains
   `1 predate the tail split`. Red: the clause dropped.
-- [ ] AC5 — Given the mutation `tail = []` in place of the retro entry in `estimate`, when
+- [x] AC5 — Given the mutation `tail = []` in place of the retro entry in `estimate`, when
   `tests/sprint-ledger.test.sh` runs, then it reports at least one failure. Red: the FR5 guard absent
   (today: 106 passed, 0 failed under that mutation).
 
@@ -95,6 +96,28 @@ second rebases on the other. Bounding `harvest-usage --run` — `0163`. Rewritin
 `LEDGER.md` blocks to split their tail cost.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+Conventions: `../ai-building-conventions`
+Level: `unit` — command run verbatim: `for t in tests/*.test.sh; do "$t" || true; done`
+(`config.yml`'s reporting form of `commands.unit`.)
+
+Baseline, clean tree: 31 test files, every one `0 failed`. `tests/sprint-ledger.test.sh`
+`129 passed, 0 failed`.
+
+| AC / NFR | How it was checked | Result |
+|---|---|---|
+| AC1 / FR1 | `tests/sprint-ledger.test.sh:1029` — a run log with one develop, one verify, one retro and one queue session of distinct known usage. Mutation, the AC's stated red: `core_ids` widened back to every session id. | PASS — `FAIL 0166 AC1 — the usd actual is 20.80: the retro and queue sessions are still summed into it…` and `expected a tokens actual of 300000; got '360000'`. `127 passed, 2 failed`. Restored by path; control `129 passed, 0 failed`. |
+| AC2 / FR2 | `tests/sprint-ledger.test.sh:1093`, a block of `tickets 2` / `usd 10.00` / `tail_usd 6.00`. Mutation, the AC's stated red: `sum(s[figure] + s.get("tail_" + figure, 0) …)`. | PASS — `FAIL 0166 AC2 — the estimate is 14.75: tail_usd was folded into the per-ticket mean and then the tail was added again`. **14.75 is the figure `develop` recorded; re-run here rather than taken from its table.** Restored; control green. |
+| AC3 / FR4 | `tests/sprint-ledger.test.sh:1123`, two blocks, one with no `tickets` figure. Mutation, the AC's stated red: `len(used)` → `len(sprints)` and the `excluded` clause deleted. | PASS — two cases red: `the label still says '2 recorded sprint(s)'…` and `the label names no excluded block`. Restored; control green. |
+| AC4 / FR3 | Same fixture, a pre-split block among the used blocks. Mutation: `if predate:` → `if False:`. | PASS — `FAIL 0166 AC4 — the label has no 'N predate the tail split' clause`. The sibling FR3 case (the pre-split block still cited in the estimate rather than dropped) stayed green, which is correct. Restored; control green. |
+| AC5 / FR5 | **The ticket's own point, and the one claim worth distrusting most.** Mutation, verbatim from the AC: `tail = [("retro", 1, 0)] if opts["retro"] else []` → `tail = []`. Before this ticket that left the suite at *106 passed, 0 failed*. | PASS — now `127 passed, 2 failed`: `--retro did not raise the tokens estimate (15992754 -> 15992754)` and `--retro did not raise the usd estimate (15.32 -> 15.32)`. Both figures match `develop`'s record; **run, not read off its table.** Restored; control green. |
+| NFR Observability — no session's cost enters an estimate twice, and a source label never names history the figure did not use | The row names AC2 and AC3, both real executing guards, both reddened above. | PASS — guarded. |
+| `skills/sprint/SKILL.md` declared in `touches:` and not edited | Checked against the FRs: FR1–FR5 are all script and guard, and the skill states no ledger row list that the two new rows could make stale. `develop` flagged this rather than widening silently. | Correct as built. The two new rows are undescribed in Step 9 — a separate row if the author wants them named there. |
+
+Evidence set: `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh`, and the whole of `tests/`.
+Dirty set at Step 2: untracked `.claude/backlog/runs/` and `.claude/backlog/FINDINGS.md`, committed
+at `5ff9dbb` before any evidence was taken. Intersection: **empty** — every case above drives
+`mktemp` fixtures and reads no repository path.
 
 ## Notes & decisions
 
