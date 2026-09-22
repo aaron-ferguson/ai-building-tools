@@ -2409,9 +2409,33 @@ else
   # absent and took four cases with it; and FR13's `grep -rl "$ROOT/skills"` finds nothing when that
   # argument is a symlink, because BSD grep does not descend into one. A real tree has neither
   # problem, and no guard here behaves differently because of how the fixture was built.
+  #
+  # `.claude/backlog/runs/` IS PRUNED, and that is 0165 FR3 rather than tidiness. Any live sprint
+  # writes there continuously, and `cp -R` exits non-zero when a file it has already enumerated is
+  # deleted before it is read -- which under `set -eu` kills this whole file, printing no tally and
+  # no FAIL line at all. Measured, with a loop writing there: 6 aborts in 32 runs. Nothing in this
+  # file reads runs/, so the directory is skipped rather than raced. Anything else added under
+  # .claude/backlog/ that a sprint writes belongs in the same prune list.
+  copy_into() { # <destination-dir> <source-entry>... — copy each entry, keeping its basename.
+    dest="$1"; shift
+    mkdir -p "$dest"
+    for src in "$@"; do
+      [ -e "$src" ] || continue
+      cp -R "$src" "$dest/$(basename "$src")"
+    done
+  }
   for entry in "$ROOT"/* "$ROOT"/.[!.]*; do
     [ -e "$entry" ] || continue
-    case "$(basename "$entry")" in tests|.git) continue ;; esac
+    case "$(basename "$entry")" in
+      tests|.git) continue ;;
+      .claude)
+        copy_into "$CHILDROOT/.claude" "$ROOT"/.claude/settings*.json
+        for sub in "$ROOT"/.claude/backlog/*; do
+          case "$(basename "$sub")" in runs) continue ;; esac
+          copy_into "$CHILDROOT/.claude/backlog" "$sub"
+        done
+        continue ;;
+    esac
     cp -R "$entry" "$CHILDROOT/$(basename "$entry")"
   done
   CHILD="$CHILDROOT/tests/child.test.sh"
@@ -2440,15 +2464,24 @@ else
   cp "$0" "$CHILD"
   chmod +x "$CHILD"
   SPRINT_TEST_CHILD=1 SPRINT_SKIP_PROBE=1 "$CHILD" > "$FIX/clean.out" 2>&1 || true
-  if grep -qF 'FAIL lines, re-printed' "$FIX/clean.out"; then
-    bad "0165 AC2 — a green run prints the re-print block anyway; it must appear only when something failed"
-  else
-    ok "a green run prints no re-print block"
-  fi
-  if tail -1 "$FIX/clean.out" | grep -qE '^[0-9]+ passed, 0 failed, [0-9]+ skipped$'; then
+  # The clean copy is only a witness for "green implies no block" WHEN IT IS GREEN, and it is a copy
+  # of the working tree -- so any unrelated red anywhere in this file would otherwise surface here as
+  # a confusing 0165 failure. Say which of the two happened rather than folding them together.
+  CLEAN_TALLY="$(tail -1 "$FIX/clean.out")"
+  case "$CLEAN_TALLY" in
+    *' 0 failed, '*)
+      if grep -qF 'FAIL lines, re-printed' "$FIX/clean.out"; then
+        bad "0165 AC2 — a green run prints the re-print block anyway; it must appear only when something failed"
+      else
+        ok "a green run prints no re-print block"
+      fi ;;
+    *)
+      bad "0165 AC2 — the clean copy was not green ($CLEAN_TALLY), so 'a green run prints no block' went untested; this file is red for a reason named above, not by 0165" ;;
+  esac
+  if printf '%s\n' "$CLEAN_TALLY" | grep -qE '^[0-9]+ passed, [0-9]+ failed, [0-9]+ skipped$'; then
     ok "and its tally line keeps its shape, which every tally-reading loop depends on"
   else
-    bad "0165 AC2 — the tally line changed shape: $(tail -1 "$FIX/clean.out")"
+    bad "0165 AC2 — the tally line changed shape: $CLEAN_TALLY"
   fi
 fi
 
