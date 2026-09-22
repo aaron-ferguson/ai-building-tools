@@ -28,7 +28,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0163 | Bound harvest-usage's --run figures to the supervisor's own session | verify | ready |  |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | verify | ready |  |
 | 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | verify | ready |  |
-| 0173 | Stop the sprint ledger booking a phantom gate from a stage's self-reported session id | develop | ready |  |
+| 0173 | Stop the sprint ledger booking a phantom gate from a stage's self-reported session id | develop | in-progress |  |
 | 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | design | ready |  |
 | 0174 | Say the findings gate is deferred until the run is out of work when no scope was confirmed | develop | ready |  |
 | 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
