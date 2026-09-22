@@ -186,3 +186,14 @@ Estimate was low by 55%, and the whole of the gap is interruption: the verify se
 times (account session limit, the background wrapper's 600s ceiling, host sleep twice) and re-paid
 its context floor on each resume. The estimate model has no term for this. Findings buffer 2 -> 9
 -> 1 across the run.
+
+## sprint run-20260922T022312Z -- ended 2026-09-22T02:44:42Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 1 | 1 | confirmed scope @ 2026-09-22T02:44:51Z |
+| wall_clock_min | 15 | 9 | LEDGER.md 4 recorded sprint(s) over 11 ticket(s) @ 2026-09-22T02:23:48Z — superseded before dispatch: user redirected the run to a queue session |
+| tokens | 4681293 | 3032114 | LEDGER.md 4 recorded sprint(s) over 11 ticket(s) @ 2026-09-22T02:23:48Z — superseded before dispatch: user redirected the run to a queue session |
+| usd | 7.80 | 3.40 | LEDGER.md 4 recorded sprint(s) over 11 ticket(s) @ 2026-09-22T02:23:48Z — superseded before dispatch: user redirected the run to a queue session |
+
+FINDINGS parked 1 (run-20260922T022312Z.jsonl outcome events @ 2026-09-22T02:44:51Z)
