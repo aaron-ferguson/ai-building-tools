@@ -88,3 +88,41 @@ Re-printing FAIL lines in any other test file, and any file's abort behaviour un
 - 2026-09-17 (queue sweep after retro e30dfa9d) — filed from `FINDINGS.md`. `next: develop`: no
   surface and no open decision; the investigation is bounded (FR2) and both of its outcomes have a
   criterion. Size `m` for the 50-run loop.
+
+- **2026-09-21 (develop, d98d) — FR2's result, and the distinction FR3/FR4 turn on.** The loop ran
+  in two phases, both with the two required loads live: two CPU-bound spinners, and a loop creating
+  and removing files in the real repo's `.claude/backlog/runs/` every 50 ms. Every run's full output
+  was kept (session-local scratch: `/tmp/0165-runs/`, `/tmp/0165-runs2/`; the harness is
+  `/tmp/0165-fr2.sh`. None of it survives the machine, so the counts below are the durable record).
+  - **Phase 1**, against the FR1-only file (`8fc4fbb`), stopped at **35 runs**: **6 failed**, all
+    with one signature — `cp: …/.claude/backlog/runs/0165-load-<N>.tmp: No such file or directory`,
+    aborting the file under `set -eu`. **Zero `FAIL` lines across all 35 runs**: an abort produces
+    no tally and no counted failure at all.
+  - **Phase 2**, against the FR3 fix (`cf2afce`), ran the full **50 runs: 50 green, 0 `FAIL` lines,
+    0 aborts.**
+- **2026-09-21 (develop, d98d) — what was reproduced is NOT the failure in the Problem section, and
+  FR3 and FR4 therefore both apply.** The parked one-off printed `231 passed, 1 failed` — a
+  *counted* failure with a `FAIL` line that filtering discarded. What phase 1 reproduced is an
+  *abort*: no tally, no `FAIL` line, exit 1. Different mode, and self-inflicted — the condition the
+  Problem section suspected ("any case reading the real repo rather than `$FIX` while a sprint
+  writes `.claude/backlog/runs/`") was made true by *this ticket's own* fixture, which copies the
+  repo. So: **FR3 is discharged against the failure this session created and measured**, and
+  **FR4's null result stands for the original 2026-09-13 one-off, which 85 runs under load did not
+  reproduce and which remains unattributed.** No guess was made at its cause.
+- **2026-09-21 (develop, d98d) — AC3, run under a deterministically forced condition** (a writer
+  churning 300 files in `.claude/backlog/runs/` with no sleep, harness `/tmp/0165-ac3.sh`):
+  with the prune in place **0 of 4 runs failed**; with only the prune reverted — the `.claude` case
+  arm deleted, so `.claude` is copied wholesale again — **4 of 4 failed**; the file was restored and
+  a control run with the churn stopped was green. **Run, not reasoned.**
+- **2026-09-21 (develop, d98d) — FR1 paid for itself inside the session that wrote it.** Two rounds
+  of fixture-shaped failures were diagnosed straight off the re-print block rather than by scrolling
+  for FAIL lines: five cases from a missing `.claude-plugin/`, and FR13's `grep -rl` returning
+  nothing because BSD `grep -r` does not descend into a symlinked argument. Both are recorded in
+  comments beside the fixture builder, since both are traps the next editor of it would hit.
+- **2026-09-21 (develop, d98d) — cost this change imposes, flagged for the author.**
+  `tests/sprint.test.sh` went from **~4 s to ~45 s**, because AC1 and AC2 each run a full copy of the
+  file (~20 s each) against a copied repo root. Every whole-suite run pays it. Two reductions are
+  already taken: the repo is copied once per run rather than per child, and both children set
+  `SPRINT_SKIP_PROBE=1` so AC22's paid `claude -p` dispatch (~9 s) is not run three times per suite —
+  it skips loudly, which is that case's own designed behaviour. What is left is inherent to AC1's
+  shape: it asks that the real file, with a case forced to fail, actually be run.
