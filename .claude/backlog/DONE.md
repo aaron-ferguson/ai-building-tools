@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0173 | Stop the sprint ledger booking a phantom gate from a stage's self-reported session id | bug | unit | 2026-09-22 | [items/0173-stop-the-sprint-ledger-booking-a-phantom-gate.md](items/0173-stop-the-sprint-ledger-booking-a-phantom-gate.md) |
 | 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | bug | unit | 2026-09-22 | [items/0166-make-estimate-count-the-tail-once.md](items/0166-make-estimate-count-the-tail-once.md) |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | bug | unit | 2026-09-22 | [items/0162-stop-the-ledger-recording-an-unpriced-harvest-as-zero.md](items/0162-stop-the-ledger-recording-an-unpriced-harvest-as-zero.md) |
 | 0163 | Bound harvest-usage's --run figures to the supervisor's own session | bug | unit | 2026-09-22 | [items/0163-bound-the-harvest-run-figures-to-the-supervisor-session.md](items/0163-bound-the-harvest-run-figures-to-the-supervisor-session.md) |

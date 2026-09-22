@@ -2,8 +2,8 @@
 id: "0173"
 title: Stop the sprint ledger booking a phantom gate from a stage's self-reported session id
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -16,9 +16,10 @@ expects:
   - tools/sprint-ledger.sh
   - tests/sprint-ledger.test.sh
   - skills/sprint/outcome.schema.json
-claimed_by: "f056"
-claimed_at: 2026-09-22T14:53:59Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-22
 ---
 
 ## Problem
@@ -56,9 +57,9 @@ at all.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a run log whose dispatch event and outcome object carry different session ids, when `record` runs, then exactly one GATE line is written for that gate — reddened by restoring the outcome-keyed harvest.
-- [ ] AC2 — Given that same fixture, when `record` runs, then the mismatch is reported naming both ids — reddened by deleting the report line.
-- [ ] AC3 — Given an outcome session id with no turns in the store, when `record` runs, then no `0.00` actual is written for it — reddened by re-pointing the harvest at the absent id.
+- [x] AC1 — Given a run log whose dispatch event and outcome object carry different session ids, when `record` runs, then exactly one GATE line is written for that gate — reddened by restoring the outcome-keyed harvest.
+- [x] AC2 — Given that same fixture, when `record` runs, then the mismatch is reported naming both ids — reddened by deleting the report line.
+- [x] AC3 — Given an outcome session id with no turns in the store, when `record` runs, then no `0.00` actual is written for it — reddened by re-pointing the harvest at the absent id.
 
 ## QA plan
 
@@ -69,6 +70,38 @@ at all.
 
 - Removing `session_id` from the outcome schema, which would break every stage that fills it.
 - The elapsed/active split, which is `0164`.
+
+## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+Conventions: `../ai-building-conventions`
+Level: `unit` — command run verbatim: `for t in tests/*.test.sh; do "$t" || true; done`
+(`config.yml`'s reporting form of `commands.unit`.)
+
+Baseline, clean tree: 31 test files, every one `0 failed`. `tests/sprint-ledger.test.sh`
+`129 passed, 0 failed`.
+
+| AC / NFR | How it was checked | Result |
+|---|---|---|
+| AC1 / FR1 | `tests/sprint-ledger.test.sh:1195` — a run log whose dispatch and outcome carry different session ids. Mutation, verbatim from the AC ("reddened by restoring the outcome-keyed harvest"): the `if e.get("event") != "dispatch": continue` guard deleted from `sessions_of`. | PASS — `FAIL 0173 AC1 — 2 GATE lines for one gate: the outcome's self-reported id booked a phantom beside the dispatched session`. `127 passed, 2 failed`. Restored by path; control `129 passed, 0 failed`. |
+| AC3 / FR3 | Same fixture, same mutation. | PASS — the phantom's booking is visible in the failure output: `a GATE line was booked at observed USD 0.00 for a session with no transcript: GATE develop 2 ticket(s) session aaaaaaaa … observed USD 0.00`. Restored; control green. |
+| AC2 / FR2 | Same fixture. Mutation, verbatim from the AC ("reddened by deleting the report line"): the whole `for stage, dispatched_sid, returned_sid in session_mismatches(events)` block removed. | PASS — `FAIL 0173 AC2 — no MISMATCH line: the outcome named a session the dispatch did not, and the ledger says nothing about it`, one case, `128 passed, 1 failed`. Restored; control green. **A first attempt at this mutation edited the format string and left its arity broken**, which crashed `record` and reddened AC1 as well; that run was discarded and redone, because a red from a traceback is not evidence about the guard. |
+| FR2's silent case — **`develop` claims this is guarded; confirmed, not accepted** | Mutation: `if not isinstance(sid, str) or sid in known:` → `if not isinstance(sid, str):`, so every agreeing outcome reports a mismatch. | PASS — `FAIL 0173 FR2 — a run whose ids all agree still reports a mismatch: MISMATCH develop outcome returned session aaaaaaaa but was dispatched as aaaaaaaa`. Two further guards caught the same line (`AC5` and `0134 privacy`, the aggregate-figures character set), which is the new output line being covered by the privacy gate as well. Restored; control green. |
+| NFR Observability — the mismatch is reported by both ids, never inferred from a zero | The row names a fixture outcome carrying a foreign session id producing a named mismatch line; reddened by removing the report. That is the AC2 mutation above. | PASS — guarded. The line names both ids independently rather than in a fixed order, which is `develop`'s own correction to a guard that had pinned presentation order. |
+| NFR Documentation — the schema says `session_id` is echoed and is not the ledger's source of truth | `tests/sprint-ledger.test.sh:1251`. **First mutation replaced `echoed` and the guard stayed green** — the guarded clause is `Echoed, never authoritative`, capitalised, so the substitution applied without reaching it. Redone against the real clause: `Echoed, never authoritative: the ledger takes its source of truth from the dispatch event, because` → `The id the stage ran under, because`. | PASS — `FAIL 0173 Documentation NFR — outcome.schema.json does not say session_id is echoed rather than authoritative`. Schema re-parsed as valid JSON under the mutation, so the red is the wording and not a broken file. Restored; control green. |
+| Newly reachable path (Step 4) | `record` now emits a `MISMATCH` line that did not exist before. Checked what it carries: 8-character id prefixes via `sid.split("-")[0]`, never a full UUID, and the line is inside the `0134` privacy character-set guard — which reddened on it under the FR2 mutation above, so it is covered rather than merely acceptable. | PASS |
+
+Noted, not a defect against any criterion: the `FINDINGS.md` entry of 2026-09-22 argues that the
+supervisor's own Step 4 trust check is a **second** consumer of the self-reported id, so a
+dispatched-id-only rule would cover both while this ticket's fix covers the ledger alone. Every FR
+here names `record`, and *Out of scope* does not exclude it either way, so it is a widening for the
+author rather than a red.
+
+Evidence set: `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh`,
+`skills/sprint/outcome.schema.json`, and the whole of `tests/`. Dirty set at Step 2: untracked
+`.claude/backlog/runs/` and `.claude/backlog/FINDINGS.md`, committed at `5ff9dbb` before any
+evidence was taken. Intersection: **empty** — every case above drives `mktemp` fixtures and reads no
+repository path. `FINDINGS.md` was appended to again by the supervisor mid-pass, after the last
+evidence run for this ticket and outside its evidence set; it was left alone rather than tidied.
 
 ## Notes & decisions
 
