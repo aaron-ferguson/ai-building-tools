@@ -2,8 +2,8 @@
 id: "0176"
 title: Give an unattended stage a backlog write channel it can fall back to
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -15,9 +15,10 @@ relates: ["0172", "0154"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "8c2e"
-claimed_at: 2026-09-22T14:34:49Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-22
 ---
 
 ## Problem
@@ -74,12 +75,12 @@ back to when the named one is refused.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/SKILL.md` Step 3, when `tests/sprint.test.sh` runs, then a guard asserts Step 3 names the write-outside-then-copy fallback — reddened by deleting that sentence from Step 3.
-- [ ] AC2 — Given the same file, when `tests/sprint.test.sh` runs, then the existing `Bash heredoc` guard still passes — reddened by rewrapping the paragraph so the phrase straddles a line break.
-- [ ] AC3 — Given the same file, when `tests/sprint.test.sh` runs, then a guard asserts the bullet still rules the three permission routes out of re-probing — reddened by removing that ruling while adding the fallback.
-- [ ] AC4 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it is green — reddened by leaving `skills/sprint/SKILL.md` over its size budget after the addition.
-- [ ] AC5 — Given `skills/sprint/SKILL.md` Step 3, when `tests/sprint.test.sh` runs, then a guard asserts Step 3 names the fallback form for a refused lock release (`shutil.rmtree`) — reddened by replacing that form with a generic phrase.
-- [ ] AC6 — Given the same file, when `tests/sprint.test.sh` runs, then a guard asserts Step 3 rules that a stage never leaves the lock held on a refused release — reddened by softening that clause.
+- [x] AC1 — Given `skills/sprint/SKILL.md` Step 3, when `tests/sprint.test.sh` runs, then a guard asserts Step 3 names the write-outside-then-copy fallback — reddened by deleting that sentence from Step 3.
+- [x] AC2 — Given the same file, when `tests/sprint.test.sh` runs, then the existing `Bash heredoc` guard still passes — reddened by rewrapping the paragraph so the phrase straddles a line break.
+- [x] AC3 — Given the same file, when `tests/sprint.test.sh` runs, then a guard asserts the bullet still rules the three permission routes out of re-probing — reddened by removing that ruling while adding the fallback.
+- [x] AC4 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it is green — reddened by leaving `skills/sprint/SKILL.md` over its size budget after the addition.
+- [x] AC5 — Given `skills/sprint/SKILL.md` Step 3, when `tests/sprint.test.sh` runs, then a guard asserts Step 3 names the fallback form for a refused lock release (`shutil.rmtree`) — reddened by replacing that form with a generic phrase.
+- [x] AC6 — Given the same file, when `tests/sprint.test.sh` runs, then a guard asserts Step 3 rules that a stage never leaves the lock held on a refused release — reddened by softening that clause.
 
 ## QA plan
 
@@ -94,6 +95,38 @@ back to when the named one is refused.
   past one directory and are the user's call (`sprint` Step 3).
 - Changing any permission setting, or the harness's sensitive-file classifier.
 - `0172`'s question, which is about a refusal and its instruction binding at different times.
+
+## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+Conventions: `../ai-building-conventions`
+Level: `unit` — command run verbatim: `for t in tests/*.test.sh; do "$t" || true; done`
+(`config.yml`'s reporting form of `commands.unit`; the configured `|| exit 1` form is a release
+gate and masks everything after the first red.)
+
+Baseline, clean tree at `f6fd4ec`: 31 test files, every one `0 failed`.
+`tests/sprint.test.sh`: `268 passed, 0 failed, 0 skipped`.
+
+| AC / NFR | How it was checked | Result |
+|---|---|---|
+| AC1 | `tests/sprint.test.sh` guard `0176 AC1` over `skills/sprint/SKILL.md` Step 3. Mutation: `` `cp` it into place `` → `move it across`. | PASS — reddened exactly one case: `FAIL 0176 AC1 — Step 3 names no fallback form…`; `266 passed, 2 failed` (the second is `0165 AC2` correctly reporting the tree was not clean). Restored by path, control green. |
+| AC2 | The existing `Bash heredoc` guard. **The AC's stated reddening is impossible** — `section()` pipes through `tr '\n' ' '`, so a `says_ci` phrase is wrap-proof; confirmed by reading `tests/sprint.test.sh:112-118`. Substituted mutation carrying the same claim: `Bash heredoc` → `shell redirect`. | PASS — `FAIL retro 2026-09-13 — Step 3 names no write channel…`; `266 passed, 2 failed`. Restored, control green. `develop`'s note on this is confirmed, not accepted. |
+| AC3 | Guard `0176 AC3`. Mutation: `Do not re-probe these` → `You may re-probe these`. | PASS — `FAIL 0176 AC3 — Step 3's no-re-probe ruling is gone…`. Restored, control green. |
+| AC4 | Whole suite, reporting form, clean tree. | PASS — 31 files, all `0 failed`. `tests/skill-size.test.sh` 27/0; `tests/citations.test.sh` 46/0. |
+| AC5 | Guard `0176 AC5`. Mutation: `python3 -c 'import shutil; shutil.rmtree(".claude/backlog/.lock")'` → `another tool`. | PASS — `FAIL 0176 AC5 — Step 3 names no release fallback…`; `265 passed, 3 failed`. Restored, control green. |
+| AC6 | Guard `0176 AC6`. Mutation: `must never leave the lock held` → `should try to clear it`. | PASS — `FAIL 0176 AC6 — Step 3 does not forbid accepting a refused release…`. Restored, control green. |
+| NFR Documentation — stated once, not restated in the stage skills | `grep -rln 'cp` it into place\|shutil.rmtree' skills/` → `skills/sprint/SKILL.md` only. | **HOLDS BUT UNGUARDED.** The row names `tests/citations.test.sh`, which resolves *citation targets* (CONCURRENCY rule names, conventions filenames) and carries no duplication check at all — it cannot red on a restatement. True today, pinned by nothing. |
+| NFR Observability — a falling-back stage says so | Guard `0176 Observability NFR`. Mutation: `and **says so in its stdout**,` → `and moves on,`. | PASS — `FAIL 0176 Observability NFR — Step 3 lets a stage fall back silently…`. Restored, control green. |
+
+Copy executed: the **repo** copy is the authority and is what the guards read. `skills/sprint/SKILL.md`
+in the checkout is the subject; the installed plugin at `~/.claude/plugins/cache/` is not this
+change and did not run it (`CLAUDE.md`, *the installed copy is what runs*).
+
+Evidence set: `skills/sprint/SKILL.md`, `tests/sprint.test.sh`, `tests/citations.test.sh`,
+`tests/skill-size.test.sh`, and the whole of `tests/`. Dirty set at Step 2:
+`.claude/backlog/FINDINGS.md` (an uncommitted append by the supervisor, committed at `5ff9dbb`
+before any evidence was taken, no bytes changed) and untracked `.claude/backlog/runs/` (the live
+supervisor's run logs, which `tests/sprint.test.sh` prunes from its fixture by FR3 of `0165` and
+which no guard reads). Intersection: **empty**.
 
 ## Notes & decisions
 

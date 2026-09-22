@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0176 | Give an unattended stage a backlog write channel it can fall back to | bug | unit | 2026-09-22 | [items/0176-give-an-unattended-stage-a-backlog-write-channel.md](items/0176-give-an-unattended-stage-a-backlog-write-channel.md) |
 | 0160 | Refuse a verify pass that resolved no conventions, names another session, or skips the unit command | bug | unit | 2026-09-21 | [items/0160-refuse-a-verify-pass-that-resolved-no-conventions.md](items/0160-refuse-a-verify-pass-that-resolved-no-conventions.md) |
 | 0159 | Dispatch a ready design row instead of escalating it to a person | bug | unit | 2026-09-21 | [items/0159-dispatch-a-ready-design-row-instead-of-escalating.md](items/0159-dispatch-a-ready-design-row-instead-of-escalating.md) |
 | 0168 | Defer the findings gate to the end of confirmed scope instead of stopping in-scope work | bug | unit | 2026-09-21 | [items/0168-defer-the-findings-gate-to-the-end-of-scope.md](items/0168-defer-the-findings-gate-to-the-end-of-scope.md) |
