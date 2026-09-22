@@ -95,3 +95,36 @@ commit `a666012` (`supervisor_context` on `scope_confirmed`).
   session id. A bound that depends on a person remembering a flag goes back to spanning the directory
   the first time they forget. `CLAUDE_CODE_SESSION_ID` was observed set in a Claude Code Bash
   environment on 2026-09-13.
+
+- **2026-09-21 (develop, 7101)** — **The QA plan's "wherever the existing
+  `--run` cases live" resolved to nowhere.** It asks that AC1–AC2 go where the existing `--run`
+  cases are, and directs the claiming session to confirm that on claim and record it:
+  `tests/measurement.test.sh` had **no `--run` coverage at all** — no `RUN BOUND`, no `--run`, no
+  `no bound` string anywhere in the file. The `--run` path was exercised only by AC13 in
+  `tests/sprint.test.sh`. AC1–AC2 are therefore **new** cases in `measurement.test.sh`, placed
+  there because that is where `harvest-usage.sh`'s arithmetic is fixture-tested and where the
+  ticket's `expects:` put them, and a third case was added beside them pinning FR2's
+  `--session`-takes-precedence rule, which no criterion covers but the implementation now depends on.
+- **2026-09-21 (develop, 7101)** — **`CLAUDE_CODE_SESSION_ID` re-probed rather than trusted.** The item's
+  note dates the observation to 2026-09-13; a claim about a tool's interface ages like a quoted
+  figure, so it was re-run in this session's own Bash environment and is set
+  (a v4 UUID). FR1's premise holds as written.
+- **2026-09-21 (develop, 7101)** — **This change falsified AC13's fixture, and rewriting it was part of
+  the work rather than collateral.** AC13 (0039) builds a run log with `run_started`, three
+  `dispatch` and two `outcome` events, and asserts a floor of 20000, growth of 1500 and 2.0 turns
+  per cycle. FR3 makes a log that names no `supervisor_session` report **no bound at all**, so all
+  three assertions lost their input and went red on a correct implementation. The fixture now emits
+  a `scope_confirmed` event naming `supervisor_session: "run"` — the stem of its own
+  `transcripts/run.jsonl`, which is what `harvest-usage.sh` derives a session id from. No assertion
+  of AC13's was weakened: the dispatch-versus-outcome count case is untouched and the three figures
+  are unchanged.
+- **2026-09-21 (develop, 7101)** — **`tools/sprint-ledger.sh` is unaffected, checked rather than assumed.**
+  It shells out to `harvest-usage.sh` in `harvest()` with `--session` arguments only and never
+  passes `--run`, so the new refusal path cannot reach it. Its own `record --run` flag is a
+  different parser's flag of the same name.
+- **2026-09-21 (develop, 7101)** — **A limit of 0165 AC1, seen while this ticket was mid-build and worth
+  knowing before it is read as a defect.** `0165` AC1 asserts a forced FAIL line appears within the
+  last 5 lines of a run. While `sprint.test.sh` was legitimately red with four other failures, the
+  injected line was pushed out of that window and AC1 reddened — correctly, in the sense that five
+  failures cannot fit in five lines. AC1 presumes an otherwise-green file, which is the state the
+  gate requires anyway. It self-resolved the moment AC13's fixture was repaired.
