@@ -345,21 +345,52 @@ def ticket_ids(entry):
 
 
 def sessions_of(events):
-    """[(stage, session_id, [ticket ids])] in dispatch order, one per stage session."""
+    """[(stage, session_id, [ticket ids])] in dispatch order, one per stage session.
+
+    0173: a session exists because it was DISPATCHED, never because an outcome claimed one. The
+    supervisor pre-assigns --session-id so the transcript path is a dispatch-time fact, and a stage
+    that returns a different id is naming a session with no transcript -- built from any event
+    carrying the field, that phantom became a second row, a second GATE line and a harvest of
+    USD 0.00 beside the real one (run-20260920T222013Z). Over-counting sessions is the direction
+    that corrupts a per-session mean."""
     out, seen = [], set()
     for e in events:
+        if e.get("event") != "dispatch":
+            continue
         sid = e.get("session_id")
         if not isinstance(sid, str) or sid in seen:
             continue
         seen.add(sid)
         out.append([e.get("stage"), sid, ticket_ids(e)])
     # An outcome names the tickets a dispatch may only have predicted; the later, truer list wins.
+    # Matched on the DISPATCH id alone: an outcome naming anything else is reported by
+    # session_mismatches() and updates nothing.
     by_sid = {row[1]: row for row in out}
     for e in outcomes_of(events):
         ids = ticket_ids(e)
         row = by_sid.get(e.get("session_id"))
         if row and ids:
             row[2] = ids
+    return out
+
+
+def session_mismatches(events):
+    """[(stage, dispatched id, returned id)] where a stage's outcome named a session its dispatch
+    did not. Reported rather than dropped: a phantom silently discarded and a run that never had
+    one look identical, and the disagreement is a real fact about the run (0173 FR2)."""
+    dispatched = {}
+    for e in events:
+        if e.get("event") == "dispatch" and isinstance(e.get("session_id"), str):
+            dispatched.setdefault(e.get("stage"), []).append(e["session_id"])
+    known = {sid for ids in dispatched.values() for sid in ids}
+    out = []
+    for e in outcomes_of(events):
+        sid = e.get("session_id")
+        if not isinstance(sid, str) or sid in known:
+            continue
+        stage = e.get("stage")
+        for_stage = dispatched.get(stage) or ["none"]
+        out.append((stage, for_stage[0], sid))
     return out
 
 
@@ -557,6 +588,13 @@ def record(opts):
                    "observed USD %.2f (%s @ %s)"
                    % (n, sid.split("-")[0], predicted, conf_src, stamp, observed,
                       harvest_src % 1, stamp))
+
+    # 0173 FR2 -- every outcome that named a session its dispatch did not. Emitted only when there
+    # is one, so the line means something wherever it appears rather than decorating every run.
+    for stage, dispatched_sid, returned_sid in session_mismatches(events):
+        out.append("MISMATCH %s outcome returned session %s but was dispatched as %s; "
+                   "the dispatch id is authoritative and no gate was booked for the returned id"
+                   % (stage, returned_sid.split("-")[0], dispatched_sid.split("-")[0]))
 
     # FR7 -- verify cost per ticket, batched against unbatched. Written as three lines because both
     # sides of a ratio carry their own source and stamp; one line cannot hold four facts honestly.

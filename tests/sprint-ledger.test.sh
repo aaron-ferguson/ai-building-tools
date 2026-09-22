@@ -1185,5 +1185,75 @@ for fig in tokens usd; do
   fi
 done
 
+# --- 0173 — a stage's self-reported session id never books a gate -------------------------------
+#
+# The supervisor pre-assigns --session-id at dispatch precisely so the transcript path is a
+# dispatch-time fact, but a stage's outcome object can come back naming a DIFFERENT id, for which
+# no transcript exists. `record` keyed its harvest off both, so run-20260920T222013Z got two GATE
+# lines for one gate: the real one at USD 15.21 and a phantom at USD 0.00. The phantom over-counts
+# sessions, which is the direction that corrupts a per-session mean.
+echo "0173 AC1/AC2/AC3 — a mismatched outcome id books no second gate"
+SID_PHANTOM="ffffffff-0000-0000-0000-000000000000"
+MISLOG="$FIX/r-mismatch.jsonl"
+cat > "$MISLOG" <<JSON
+{"ts":"2026-09-20T09:00:00Z","run":"r-mismatch","event":"run_started"}
+{"ts":"2026-09-20T09:01:00Z","run":"r-mismatch","event":"scope_confirmed","tickets":["0301","0302"]}
+{"ts":"2026-09-20T09:02:00Z","run":"r-mismatch","event":"dispatch","stage":"develop","session_id":"$SID_DEV","tickets":["0301","0302"]}
+{"ts":"2026-09-20T10:00:00Z","run":"r-mismatch","event":"outcome","stage":"develop","session_id":"$SID_PHANTOM","tickets":[{"id":"0301"},{"id":"0302"}]}
+{"ts":"2026-09-20T10:05:00Z","run":"r-mismatch","event":"sprint_ended"}
+JSON
+# Only the DISPATCHED session has a transcript. The phantom id has none, which is the whole point:
+# harvesting it yields USD 0.00 with no turns to say so.
+mkdir -p "$FIX/store-mismatch"
+mk_priced "$SID_DEV" develop 200000 400000 > "$FIX/store-mismatch/$SID_DEV.jsonl"
+
+MIS_LEDGER="$FIX/mismatch-ledger.md"
+cp "$EMPTY" "$MIS_LEDGER"
+MIS_OUT="$("$TOOL" record --ledger "$MIS_LEDGER" --run "$MISLOG" --transcripts "$FIX/store-mismatch" \
+       --measurement "$MEAS" --config "$CONF" --estimate-tickets 2 --estimate-wall no-prior \
+       --estimate-tokens 1200000 --estimate-usd 20.00 \
+       --estimate-source "$EST_SOURCE" 2>&1 || true)"
+GATES="$(grep -c '^GATE develop' "$MIS_LEDGER" || true)"
+case "$GATES" in
+  1) ok "AC1 — exactly one GATE line for the one gate that was dispatched" ;;
+  2) bad "0173 AC1 — 2 GATE lines for one gate: the outcome's self-reported id booked a phantom beside the dispatched session" ;;
+  *) bad "0173 AC1 — expected 1 GATE develop line, found $GATES; record said: $(printf '%s' "$MIS_OUT" | tr '\n' ' ' | cut -c1-200)" ;;
+esac
+# AC3 — and the one that exists is the REAL one, not the phantom harvested to nothing.
+if grep -q '^GATE develop.*observed USD 0\.00' "$MIS_LEDGER"; then
+  bad "0173 AC3 — a GATE line was booked at observed USD 0.00 for a session with no transcript: $(grep '^GATE develop' "$MIS_LEDGER" | tr '\n' ' ' | cut -c1-200)"
+else
+  ok "AC3 — no gate is booked at USD 0.00 for a session id with no turns in the store"
+fi
+# AC2 — the mismatch is REPORTED, by both ids. Silence here is the failure mode: a dropped phantom
+# and a phantom that never existed look identical, and the dispatch/outcome disagreement is a real
+# fact about the run that someone has to be able to see.
+MIS_LINE="$(grep '^MISMATCH' "$MIS_LEDGER" || true)"
+if [ -z "$MIS_LINE" ]; then
+  bad "0173 AC2 — no MISMATCH line: the outcome named a session the dispatch did not, and the ledger says nothing about it"
+else
+  # Each id checked on its own: which one is printed first is a presentation choice, and a guard
+  # that pins the order fails a correct line for saying the same thing the other way round.
+  if printf '%s' "$MIS_LINE" | grep -qF "$(printf '%s' "$SID_DEV" | cut -c1-8)" \
+     && printf '%s' "$MIS_LINE" | grep -qF "$(printf '%s' "$SID_PHANTOM" | cut -c1-8)"; then
+    ok "AC2 — the mismatch is reported naming both the dispatched and the returned id"
+  else
+    bad "0173 AC2 — the MISMATCH line does not name both ids: $MIS_LINE"
+  fi
+fi
+# The agreeing case must stay silent, or every run grows a MISMATCH line and the signal is worthless.
+if grep -q '^MISMATCH' "$TAIL_LEDGER"; then
+  bad "0173 FR2 — a run whose ids all agree still reports a mismatch: $(grep '^MISMATCH' "$TAIL_LEDGER" | head -1)"
+else
+  ok "and a run whose dispatch and outcome ids agree reports no mismatch at all"
+fi
+
+echo "0173 Documentation NFR — the schema says session_id is echoed, not authoritative"
+if grep -qiE 'echo(ed)?[^"]*(not|never)[^"]*(authoritative|source of truth)|(not|never)[^"]*(authoritative|source of truth)' "$ROOT/skills/sprint/outcome.schema.json"; then
+  ok "outcome.schema.json says the echoed id is not the ledger's source of truth"
+else
+  bad "0173 Documentation NFR — outcome.schema.json does not say session_id is echoed rather than authoritative; a stage reading it still thinks the field decides where its transcript is"
+fi
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
