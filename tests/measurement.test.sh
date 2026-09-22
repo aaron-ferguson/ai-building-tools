@@ -1160,5 +1160,72 @@ $verdict_detail" ;;
     bad "Privacy & data NFR — the internal-name check returned a verdict this file does not handle ($verdict), so the tracked set's state is unknown" ;;
 esac
 
+# --- 0163 AC1/AC2 — a --run bound is over the SUPERVISOR's session, or it is not printed ---------
+#
+# `--run` narrowed only when an explicit `--session` was given, so Step 9's flagless invocation
+# computed floor, growth and turns over every transcript in the directory: run-20260913T034946Z
+# reported 4,249 turns for one run. The figures were not merely wide, they were a different
+# quantity -- the whole store's history, printed under a heading naming one run log.
+echo "0163 AC1/AC2 — the --run bound is bounded by the supervisor's own session"
+
+RUNFIX="$(mktemp -d)"
+mkdir -p "$RUNFIX/store"
+# Two sessions in one store: the supervisor's, with 3 turns, and an unrelated one with 50. Every
+# turn carries a distinct message id, because a turn is a message and not a line.
+usage_line() { # <message-id>
+  printf '{"type":"assistant","timestamp":"2026-09-13T01:00:00.000Z","message":{"id":"%s","model":"claude-opus-5","content":[{"type":"text","text":"x"}],"usage":{"input_tokens":1000,"cache_read_input_tokens":0,"cache_creation_input_tokens":0,"cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0},"output_tokens":10}}}\n' "$1"
+}
+n=0
+while [ "$n" -lt 3 ]; do n=$((n+1)); usage_line "msg_sup_$n"; done \
+  > "$RUNFIX/store/aaaaaaaa-0000-0000-0000-000000000000.jsonl"
+n=0
+while [ "$n" -lt 50 ]; do n=$((n+1)); usage_line "msg_other_$n"; done \
+  > "$RUNFIX/store/bbbbbbbb-0000-0000-0000-000000000000.jsonl"
+
+DISPATCH='{"ts":"2026-09-13T01:00:00Z","run_id":"run-fixture","event":"dispatch","stage":"develop","tickets":["9001"]}'
+{
+  printf '{"ts":"2026-09-13T00:59:00Z","run_id":"run-fixture","event":"scope_confirmed","supervisor_session":"aaaaaaaa-0000-0000-0000-000000000000"}\n'
+  printf '%s\n' "$DISPATCH"
+} > "$RUNFIX/named.jsonl"
+{
+  printf '{"ts":"2026-09-13T00:59:00Z","run_id":"run-fixture","event":"scope_confirmed"}\n'
+  printf '%s\n' "$DISPATCH"
+} > "$RUNFIX/unnamed.jsonl"
+
+NAMED_OUT="$("$HARVEST" "$RUNFIX/store" --run "$RUNFIX/named.jsonl" 2>&1 || true)"
+case "$NAMED_OUT" in
+  *"RUN BOUND over 1 cycles and 3 turns"*)
+    ok "AC1 — the bound counts the supervisor's 3 turns, not the store's 53" ;;
+  *"53 turns"*)
+    bad "0163 AC1 — the bound still spans the whole transcript directory (53 turns); supervisor_session in the run log is not being read" ;;
+  *)
+    bad "0163 AC1 — expected 'RUN BOUND over 1 cycles and 3 turns'; got: $(echo "$NAMED_OUT" | tr '\n' ' ' | cut -c1-200)" ;;
+esac
+
+UNNAMED_OUT="$("$HARVEST" "$RUNFIX/store" --run "$RUNFIX/unnamed.jsonl" 2>&1 || true)"
+case "$UNNAMED_OUT" in
+  *"no supervisor session named"*)
+    ok "AC2 — a log naming no supervisor session says so" ;;
+  *)
+    bad "0163 AC2 — expected 'no supervisor session named'; got: $(echo "$UNNAMED_OUT" | tr '\n' ' ' | cut -c1-200)" ;;
+esac
+case "$UNNAMED_OUT" in
+  *"RUN BOUND"*)
+    bad "0163 AC2 — a bound was printed anyway, over the whole directory; an unbounded figure under a run heading is the defect, not a fallback" ;;
+  *)
+    ok "and reports no bound at all rather than an unbounded one" ;;
+esac
+
+# An explicit --session still wins, so the flag remains the escape hatch for a log that predates
+# this field (Out of scope: retro-fitting supervisor_session into existing run logs).
+OVERRIDE_OUT="$("$HARVEST" "$RUNFIX/store" --run "$RUNFIX/named.jsonl" --session bbbbbbbb 2>&1 || true)"
+case "$OVERRIDE_OUT" in
+  *"RUN BOUND over 1 cycles and 50 turns"*)
+    ok "FR2 — an explicit --session takes precedence over the log's supervisor_session" ;;
+  *)
+    bad "0163 FR2 — --session no longer overrides the log: $(echo "$OVERRIDE_OUT" | tr '\n' ' ' | cut -c1-200)" ;;
+esac
+rm -rf "$RUNFIX"
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]

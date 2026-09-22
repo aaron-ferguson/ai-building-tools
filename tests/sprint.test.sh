@@ -962,6 +962,11 @@ with open(f"{root}/transcripts/run.jsonl", "w") as fh:
 
 events = [
     {"event": "run_started",  "run_id": "r1", "at": "2026-09-06T00:00:00Z"},
+    # 0163: the bound is computed over the session scope_confirmed names, so the fixture has to
+    # name one -- "run" is the stem of transcripts/run.jsonl above. Without it the script now
+    # correctly reports no bound at all, and every figure asserted below has nothing to read.
+    {"event": "scope_confirmed", "run_id": "r1", "supervisor_session": "run",
+     "at": "2026-09-06T00:00:30Z"},
     {"event": "dispatch", "run_id": "r1", "stage": "develop", "at": "2026-09-06T00:01:00Z"},
     {"event": "outcome",  "run_id": "r1", "stage": "develop", "at": "2026-09-06T01:00:00Z"},
     {"event": "dispatch", "run_id": "r1", "stage": "verify",  "at": "2026-09-06T02:00:00Z"},
@@ -2218,6 +2223,21 @@ case "$S7" in
   *limit_hit*resumed*) ok "Step 7 logs limit_hit and resumed events, so the wait is separable from the work" ;;
   *) bad "run-20260913T034946Z — Step 7 logs no limit_hit/resumed events; wall-clock counts the wait as work (646 min recorded)" ;;
 esac
+
+# --- 0163 AC3 — the run log names the session the bound is computed over ------------------------
+# Without the id in the log, `harvest-usage.sh --run` has nothing to narrow by and reports the whole
+# transcript directory under a heading naming one run: 4,249 turns for run-20260913T034946Z.
+echo "0163 AC3 — Step 5's scope_confirmed carries the supervisor's own session id"
+if section "$SKILL" "Step 5" | grep -qF 'supervisor_session'; then
+  ok "Step 5 records supervisor_session on scope_confirmed"
+else
+  bad "0163 AC3 — Step 5 names no supervisor_session; --run has nothing to bound by and spans the whole store"
+fi
+if section "$SKILL" "Step 5" | grep -qF 'CLAUDE_CODE_SESSION_ID'; then
+  ok "and says where the id comes from, so it is not left to the supervisor to invent"
+else
+  bad "0163 AC3 — Step 5 does not name CLAUDE_CODE_SESSION_ID as the source of supervisor_session"
+fi
 
 echo "run-20260913T034946Z — Step 5 marks a rerun supervised from a conversation that drove an earlier run"
 if section "$SKILL" "Step 5" | grep -qF 'supervisor_context'; then

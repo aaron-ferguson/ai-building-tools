@@ -461,6 +461,15 @@ and its `outcome` carry `stage` and its ticket id in `tickets`, which is what th
 design window by. The supervising conversation is what dies; a decision that reached only
 the transcript is unrecoverable.
 
+**`scope_confirmed` also carries `supervisor_session`, the supervising process's own
+`CLAUDE_CODE_SESSION_ID`** — read it in the same Bash call that writes the event. Step 9's bound is
+computed over that one session's transcript, and with no id in the log it has nothing to narrow by:
+`--run` then spanned the whole transcript directory and reported **4,249 turns for a single run**,
+which is not a wide figure but a different quantity wearing the run's name. The id belongs in the
+log rather than in a flag on the harvest, because the log is where every other session id is already
+pinned, and a bound that depends on someone remembering a flag goes back to spanning the directory
+the first time they forget.
+
 **A run supervised from a conversation that already drove an earlier run says so.** Its
 `scope_confirmed` event carries `supervisor_context`, naming that earlier run id or `fresh`: the
 supervisor's floor, growth and turns then include the earlier run and everything discussed since,
@@ -693,7 +702,10 @@ root. Three things it cannot say, because they are specific to a run rather than
   **growth** as an absolute number, and **turns per cycle** against the budget in the section
   above. A ratio of supervisor to stage spend cannot go red — a longer run improves it while the
   supervisor gets steadily worse — which is why none of the three is one. All three land in the
-  run log.
+  run log. **The bound is computed over the `supervisor_session` the log names** (Step 5), so no
+  flag is needed here; where the log names none it prints `no supervisor session named` and reports
+  no bound at all, and an explicit `--session <prefix>` still overrides it for a log written before
+  that field existed.
 - **What the run learned.** Every cycle's findings-parked count, and the pointers worth opening.
   This is the only signal left that the run is learning anything.
 - **What the run designed.** Every ticket a design session this run moved to `next: develop`, named

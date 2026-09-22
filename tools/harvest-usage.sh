@@ -35,7 +35,11 @@
 #   --run              a supervised run's log (.claude/backlog/runs/<id>.jsonl). Adds the three
 #                      figures a supervisor is bounded by (0039 AC13): the per-turn FLOOR, the
 #                      per-cycle GROWTH as an absolute number, and TURNS per cycle against a
-#                      budget. A RATIO of supervisor to stage spend is deliberately not among
+#                      budget. All three are computed over the ONE session the log's
+#                      scope_confirmed names in supervisor_session (0163); where it names none and
+#                      no --session is given, no bound is reported, because a figure over the whole
+#                      store under a heading naming one run is a different quantity wearing that
+#                      run's name. An explicit --session takes precedence, for a log predating it. A RATIO of supervisor to stage spend is deliberately not among
 #                      them -- it cannot go red, because a longer run improves it while the
 #                      supervisor gets steadily worse.
 #   --budget           turns-per-cycle budget to judge against (default DEFAULT_TURN_BUDGET).
@@ -292,6 +296,25 @@ def cycles_in(path):
     return n
 
 
+def supervisor_session_in(path):
+    """The supervising session's id, from the run log's scope_confirmed event, or None.
+
+    0163: the id comes from the LOG rather than a flag because the log is where the ledger already
+    pins every other session id, and a bound that depends on someone remembering a flag goes back
+    to spanning the whole directory the first time they forget."""
+    for line in open(path, errors="replace"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("event") == "scope_confirmed" and d.get("supervisor_session"):
+            return d["supervisor_session"]
+    return None
+
+
 def report_run_bound(directory, opts):
     """FR7's three figures for one supervised run. Prints nothing and returns False when the log
     names no dispatch -- a floor divided by zero cycles is not a bound, and printing a placeholder
@@ -301,14 +324,25 @@ def report_run_bound(directory, opts):
         print("RUN LOG %s does not exist; no bound reported" % log)
         return False
     cycles = cycles_in(log)
+    # 0163: an explicit --session still wins, so the flag remains the escape hatch for a log
+    # written before scope_confirmed carried the id. Otherwise the log names the session, and where
+    # it names none there is NO BOUND TO REPORT -- a figure over the whole store, printed under a
+    # heading naming one run, is a different quantity wearing the run's name. That is how
+    # run-20260913T034946Z came to report 4,249 turns for a single run.
+    sessions = opts["session"] or []
+    if not sessions:
+        supervisor = supervisor_session_in(log)
+        if not supervisor:
+            print("RUN LOG %s: no supervisor session named; no bound reported" % log)
+            return False
+        sessions = [supervisor]
     contexts = []
     for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
         # The same narrowing the per-skill table gets. Without it a --run bound computed over a
         # shared store reads its FLOOR off whichever session sorts first, which is very often not
         # one of the run's at all.
         sid = os.path.basename(path).split("-")[0]
-        if opts["session"] and not any(sid.startswith(x) or x.startswith(sid)
-                                       for x in opts["session"]):
+        if not any(sid.startswith(x) or x.startswith(sid) for x in sessions):
             continue
         contexts.extend(turn_contexts(path, opts))
     if not contexts:
