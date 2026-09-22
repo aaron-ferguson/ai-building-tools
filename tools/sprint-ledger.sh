@@ -69,6 +69,14 @@ HERE = sys.argv[1]
 HARVEST = os.path.join(HERE, "harvest-usage.sh")
 
 FIGURES = ["tickets", "wall_clock_min", "tokens", "usd"]
+# 0166: retro and queue are priced from MEASUREMENT.md by `estimate` on top of the ledger's
+# per-ticket mean, so a `record` that summed them INTO that mean made every later estimate pay for
+# them twice. They are recorded as figures of their own instead. Not in FIGURES: these are actuals
+# with no estimate flag behind them, and adding them there would make `record` refuse for want of
+# an --estimate-tail-usd nobody supplies.
+TAIL_STAGES = ("retro", "queue")
+TAIL_FIGURES = ["tail_tokens", "tail_usd"]
+LEDGER_FIGURES = FIGURES + TAIL_FIGURES
 NO_PRIOR = "no prior"
 # How much of a failed harvest's own output a refusal quotes back. Bounded because harvest
 # output is unbounded, and wide enough to carry a changed header line, which is the likeliest
@@ -172,7 +180,7 @@ def read_ledger(path):
         if not m:
             continue
         figure, _est, actual = m.group(1), m.group(2).strip(), m.group(3).strip()
-        if figure not in FIGURES:
+        if figure not in LEDGER_FIGURES:
             continue
         try:
             current[figure] = float(actual)
@@ -200,8 +208,21 @@ def estimate(opts):
             denom = sum(s["tickets"] for s in have)
             if have and denom > 0:
                 hist[figure] = sum(s[figure] for s in have) / denom
+    # 0166 FR4: the label describes the blocks the MEANS USED, never every block read. `len(sprints)`
+    # counted any block with one numeric figure, so a block the means dropped for having no ticket
+    # count was still advertised as history the figure rested on.
+    used = [s for s in sprints if "tickets" in s]
+    excluded = len(sprints) - len(used)
     ledger_src = "LEDGER.md %d recorded sprint(s) over %d ticket(s)" % (
-        len(sprints), int(total_tickets))
+        len(used), int(total_tickets))
+    if excluded:
+        ledger_src += ", %d excluded (no ticket count)" % excluded
+    # FR3: a block recorded before the tail split still counts -- dropping pre-split history would
+    # leave most estimates with none at all -- but its mean still has whatever tail that sprint ran
+    # buried inside it, so the count is named rather than silently carried.
+    predate = sum(1 for s in used if not any(f in s for f in TAIL_FIGURES))
+    if predate:
+        ledger_src += ", %d predate the tail split" % predate
 
     lines = []
 
@@ -435,6 +456,26 @@ def harvest(transcripts, session_ids):
         % (os.path.basename(HARVEST), transcripts, shown[:HARVEST_QUOTE_CHARS] or "empty"))
 
 
+def labelled(h):
+    """(usd, context tokens, note) for one harvest, with 0162's unpriced label already applied.
+
+    Nothing priced and turns that could not be priced: the figures were not measured, so they are
+    labelled rather than written as the zeros they would otherwise be -- read_ledger skips a cell
+    it cannot parse as a number, which is what makes the label safe. Some priced and some not: keep
+    what was measured and say what it is missing. Neither branch is reached when unpriced is 0,
+    which leaves the EMPTY STORE case -- a real directory holding none of these sessions --
+    recording its measured zero exactly as before (0162 FR5).
+
+    One function rather than two copies because 0166 gave the tail its own harvest, and an
+    unpriced tail is as silent a zero as an unpriced gate."""
+    if h["unpriced"] and h["turns"] == 0:
+        return ("unpriced", "unpriced",
+                "unpriced: %d turn(s) on a model with no published rate" % h["unpriced"])
+    if h["unpriced"]:
+        return h["usd"], h["ctx"], "partial: %d unpriced turn(s)" % h["unpriced"]
+    return h["usd"], h["ctx"], ""
+
+
 # --- record -------------------------------------------------------------------------------------
 def record(opts):
     events = read_run(opts["run"])
@@ -449,21 +490,11 @@ def record(opts):
     run_ids = [sid for _stage, sid, _t in sessions]
     all_tickets = sorted({t for _s, _i, ts in sessions for t in ts})
 
-    h = harvest(opts["transcripts"], run_ids)
-    usd, ctx = h["usd"], h["ctx"]
-    # 0162 FR2/FR3. Nothing priced and turns that could not be priced: the figures were not
-    # measured, so they are labelled rather than written as the zeros they would otherwise be
-    # (FR4's reader skips a cell it cannot parse as a number, which is what makes the label safe).
-    # Some priced and some not: keep what was measured and say what it is missing. Neither branch
-    # is reached when unpriced is 0, which leaves the EMPTY STORE case -- a real directory holding
-    # none of the run's sessions -- recording its measured zero exactly as before (FR5).
-    unpriced_note = ""
-    if h["unpriced"] and h["turns"] == 0:
-        usd, ctx = "unpriced", "unpriced"
-        unpriced_note = ("unpriced: %d turn(s) on a model with no published rate"
-                         % h["unpriced"])
-    elif h["unpriced"]:
-        unpriced_note = "partial: %d unpriced turn(s)" % h["unpriced"]
+    # 0166 FR1: the tail is harvested apart from the gates, so neither figure contains the other.
+    core_ids = [sid for stage, sid, _t in sessions if stage not in TAIL_STAGES]
+    tail_ids = [sid for stage, sid, _t in sessions if stage in TAIL_STAGES]
+    usd, ctx, unpriced_note = labelled(harvest(opts["transcripts"], core_ids))
+    tail_usd, tail_ctx, tail_note = labelled(harvest(opts["transcripts"], tail_ids))
     wall = wall_clock_minutes(events)
     run_id = next((e.get("run") or e.get("run_id") for e in events
                    if e.get("run") or e.get("run_id")), "unnamed")
@@ -502,6 +533,16 @@ def record(opts):
             src = "%s — %s" % (src, unpriced_note)
         out.append("| %s | %s | %s | %s |"
                    % (figure, cell(figure, est[figure]), cell(figure, actual[figure]), src))
+    # 0166 FR1. Written even when no tail ran, because a recorded 0.00 is a measured zero and an
+    # ABSENT row is what tells a later reader the block predates the split -- the two must not
+    # collapse into one another, or FR3's "N predate the tail split" is unknowable.
+    tail_src = "harvest-usage.sh over %d session id(s) @ %s" % (len(tail_ids), stamp)
+    if tail_note:
+        tail_src = "%s — %s" % (tail_src, tail_note)
+    for figure, value in (("tail_tokens", tail_ctx), ("tail_usd", tail_usd)):
+        out.append("| %s | %s | %s | %s |"
+                   % (figure, NO_PRIOR, cell("usd" if figure == "tail_usd" else figure, value),
+                      tail_src))
     out.append("")
 
     # FR6 -- the linear gate model, made falsifiable. Predicted and observed sit on one line

@@ -1021,5 +1021,169 @@ case "$AC3_OUT" in
   *) bad "0162 AC3 — expected a 5.00 usd estimate; got: $(printf '%s' "$AC3_OUT" | tr '\n' ' ' | cut -c1-240)" ;;
 esac
 
+# --- 0166 — tail cost is recorded apart, counted once, and never overstated in a label ----------
+#
+# `estimate` adds retro and queue from MEASUREMENT.md on top of the ledger's per-ticket mean, but
+# `record` summed EVERY session in the run log into that mean, tail included -- so a sprint that ran
+# a tail paid for it twice in the next estimate, and the arithmetic stayed plausible throughout.
+echo "0166 AC1 — record splits tail sessions out of the usd and tokens actuals"
+
+# Four sessions of known, distinct usage. Priced at the Opus 5 rates: in 5.00, out 25.00 per million.
+#   develop in 200,000 -> 1.00  out 400,000 -> 10.00  = 11.00, context 200,000
+#   verify  in 100,000 -> 0.50  out 240,000 ->  6.00  =  6.50, context 100,000
+#   retro   in  40,000 -> 0.20  out  80,000 ->  2.00  =  2.20, context  40,000
+#   queue   in  20,000 -> 0.10  out  40,000 ->  1.00  =  1.10, context  20,000
+# core = 17.50 over 300,000 | tail = 3.30 over 60,000. Today's script records 20.80 over 360,000.
+SID_RET="dddddddd-0000-0000-0000-000000000000"
+SID_QUE="eeeeeeee-0000-0000-0000-000000000000"
+TAILLOG="$FIX/r-tail.jsonl"
+cat > "$TAILLOG" <<JSON
+{"ts":"2026-09-07T09:00:00Z","run":"r-tail","event":"run_started"}
+{"ts":"2026-09-07T09:01:00Z","run":"r-tail","event":"scope_confirmed","tickets":["0201","0202"]}
+{"ts":"2026-09-07T09:02:00Z","run":"r-tail","event":"dispatch","stage":"develop","session_id":"$SID_DEV","tickets":["0201","0202"]}
+{"ts":"2026-09-07T10:00:00Z","run":"r-tail","event":"outcome","stage":"develop","session_id":"$SID_DEV","tickets":[{"id":"0201"},{"id":"0202"}]}
+{"ts":"2026-09-07T10:05:00Z","run":"r-tail","event":"dispatch","stage":"verify","session_id":"$SID_VER","tickets":["0201","0202"]}
+{"ts":"2026-09-07T11:00:00Z","run":"r-tail","event":"outcome","stage":"verify","session_id":"$SID_VER","tickets":[{"id":"0201"},{"id":"0202"}]}
+{"ts":"2026-09-07T11:05:00Z","run":"r-tail","event":"dispatch","stage":"retro","session_id":"$SID_RET","tickets":[]}
+{"ts":"2026-09-07T11:30:00Z","run":"r-tail","event":"outcome","stage":"retro","session_id":"$SID_RET","tickets":[]}
+{"ts":"2026-09-07T11:35:00Z","run":"r-tail","event":"dispatch","stage":"queue","session_id":"$SID_QUE","tickets":[]}
+{"ts":"2026-09-07T12:00:00Z","run":"r-tail","event":"outcome","stage":"queue","session_id":"$SID_QUE","tickets":[]}
+{"ts":"2026-09-07T12:05:00Z","run":"r-tail","event":"sprint_ended"}
+JSON
+
+mkdir -p "$FIX/store-tail"
+mk_priced() { # <session-id> <skill> <input-tokens> <output-tokens>
+  printf '{"type":"user","timestamp":"2026-09-07T09:02:00.000Z","message":{"role":"user","content":"<command-name>/ai-building-tools:%s</command-name>"}}\n' "$2"
+  printf '{"type":"assistant","timestamp":"2026-09-07T09:03:00.000Z","message":{"id":"msg_tail_%s","model":"claude-opus-5","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":{"input_tokens":%s,"cache_read_input_tokens":0,"cache_creation_input_tokens":0,"output_tokens":%s}}}\n' "$2" "$3" "$4"
+}
+mk_priced "$SID_DEV" develop 200000 400000 > "$FIX/store-tail/$SID_DEV.jsonl"
+mk_priced "$SID_VER" verify  100000 240000 > "$FIX/store-tail/$SID_VER.jsonl"
+mk_priced "$SID_RET" retro    40000  80000 > "$FIX/store-tail/$SID_RET.jsonl"
+mk_priced "$SID_QUE" queue    20000  40000 > "$FIX/store-tail/$SID_QUE.jsonl"
+
+TAIL_LEDGER="$FIX/tail-ledger.md"
+cp "$EMPTY" "$TAIL_LEDGER"
+TAIL_REC="$("$TOOL" record --ledger "$TAIL_LEDGER" --run "$TAILLOG" --transcripts "$FIX/store-tail" \
+       --measurement "$MEAS" --config "$CONF" --estimate-tickets 2 --estimate-wall no-prior \
+       --estimate-tokens 1200000 --estimate-usd 20.00 \
+       --estimate-source "$EST_SOURCE" 2>&1 || true)"
+cell_of() { # <figure> — the Actual column of that row
+  grep -E "^\|[[:space:]]*$1[[:space:]]*\|" "$TAIL_LEDGER" \
+    | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$4); print $4}'
+}
+case "$(cell_of usd)" in
+  "17.50") ok "the usd actual is 17.50 — develop plus verify, without the tail" ;;
+  "20.80") bad "0166 AC1 — the usd actual is 20.80: the retro and queue sessions are still summed into it, and the next estimate pays for them twice" ;;
+  *) bad "0166 AC1 — expected a usd actual of 17.50; got '$(cell_of usd)'. record said: $(printf '%s' "$TAIL_REC" | tr '\n' ' ' | cut -c1-200)" ;;
+esac
+case "$(cell_of tail_usd)" in
+  "3.30") ok "and tail_usd is 3.30 — the retro and queue sessions, recorded apart" ;;
+  "") bad "0166 AC1/FR1 — there is no tail_usd row at all" ;;
+  *) bad "0166 AC1 — expected a tail_usd of 3.30; got '$(cell_of tail_usd)'" ;;
+esac
+case "$(cell_of tokens)" in
+  "300000") ok "the tokens actual is 300,000 — core context only" ;;
+  *) bad "0166 AC1 — expected a tokens actual of 300000; got '$(cell_of tokens)'" ;;
+esac
+case "$(cell_of tail_tokens)" in
+  "60000") ok "and tail_tokens is 60,000" ;;
+  *) bad "0166 AC1/FR1 — expected a tail_tokens of 60000; got '$(cell_of tail_tokens)'" ;;
+esac
+
+echo "0166 AC2 — the estimate's per-ticket mean is read over usd alone, never usd + tail_usd"
+SPLIT_LEDGER="$FIX/split-ledger.md"
+cat > "$SPLIT_LEDGER" <<'MD'
+# Sprint ledger
+
+## sprint r-split -- ended 2026-09-08T00:00:00Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 2 | 2 | fixture |
+| usd | 9.00 | 10.00 | fixture |
+| tail_usd | 0.00 | 6.00 | fixture |
+MD
+usd_of() { printf '%s\n' "$1" | awk '$1=="ESTIMATE" && $2=="usd" {print $3}'; }
+# The tail means come from the real MEASUREMENT.md, so they are READ from the tool rather than
+# hardcoded: --tickets 0 prices the tail and nothing else, which is exactly the T in 5.00 + T.
+TAIL_ONLY="$(usd_of "$("$TOOL" estimate --ledger "$EMPTY" --measurement "$MEAS" --config "$CONF" \
+             --tickets 0 --develop-gates 0 --verify-sessions 0 --retro --queue 2>&1 || true)")"
+SPLIT_EST="$(usd_of "$("$TOOL" estimate --ledger "$SPLIT_LEDGER" --measurement "$MEAS" --config "$CONF" \
+             --tickets 1 --develop-gates 1 --verify-sessions 1 --retro --queue 2>&1 || true)")"
+WANT="$(awk -v t="$TAIL_ONLY" 'BEGIN{printf "%.2f", 5.00 + t}')"
+WRONG="$(awk -v t="$TAIL_ONLY" 'BEGIN{printf "%.2f", 8.00 + t}')"
+if [ -n "$TAIL_ONLY" ] && [ "$SPLIT_EST" = "$WANT" ]; then
+  ok "the usd estimate is $WANT — 10.00 over 2 tickets, plus the tail priced once"
+elif [ "$SPLIT_EST" = "$WRONG" ]; then
+  bad "0166 AC2 — the estimate is $WRONG: tail_usd was folded into the per-ticket mean and then the tail was added again"
+else
+  bad "0166 AC2 — expected a usd estimate of $WANT (tail-only $TAIL_ONLY); got '$SPLIT_EST'"
+fi
+
+echo "0166 AC3/AC4 — the source label counts only the blocks the means used"
+LABEL_LEDGER="$FIX/label-ledger.md"
+cat > "$LABEL_LEDGER" <<'MD'
+# Sprint ledger
+
+## sprint r-used -- ended 2026-09-09T00:00:00Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 2 | 2 | fixture |
+| usd | 9.00 | 10.00 | fixture |
+
+## sprint r-noticket -- ended 2026-09-10T00:00:00Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 2 | not measured | fixture |
+| usd | 9.00 | 40.00 | fixture |
+MD
+LABEL_OUT="$("$TOOL" estimate --ledger "$LABEL_LEDGER" --measurement "$MEAS" --config "$CONF" \
+             --tickets 1 --develop-gates 1 --verify-sessions 1 2>&1 || true)"
+case "$LABEL_OUT" in
+  *"1 recorded sprint(s) over 2 ticket(s)"*)
+    ok "AC3 — the label names the 1 sprint the mean was actually computed over" ;;
+  *"2 recorded sprint(s)"*)
+    bad "0166 AC3 — the label still says '2 recorded sprint(s)': it counts a block the means excluded for having no ticket count" ;;
+  *) bad "0166 AC3 — expected '1 recorded sprint(s) over 2 ticket(s)'; got: $(printf '%s' "$LABEL_OUT" | tr '\n' ' ' | cut -c1-240)" ;;
+esac
+case "$LABEL_OUT" in
+  *excluded*) ok "and says a block was excluded, so the missing history is visible rather than silent" ;;
+  *) bad "0166 AC3/FR4 — the label names no excluded block: $(printf '%s' "$LABEL_OUT" | tr '\n' ' ' | cut -c1-240)" ;;
+esac
+# AC4 — both used blocks above predate the tail split (neither carries a tail_* figure), so the
+# label has to say so: a mean over pre-split blocks still double-counts whatever tail they ran.
+case "$LABEL_OUT" in
+  *"1 predate the tail split"*)
+    ok "AC4 — and names the 1 used block recorded before the tail split" ;;
+  *) bad "0166 AC4 — the label has no 'N predate the tail split' clause: $(printf '%s' "$LABEL_OUT" | tr '\n' ' ' | cut -c1-240)" ;;
+esac
+# FR3 — the pre-split block still CONTRIBUTES; labelling it is not dropping it.
+case "$LABEL_OUT" in
+  *"ESTIMATE  usd"*"LEDGER.md"*) ok "FR3 — and the pre-split block still feeds the mean rather than being discarded" ;;
+  *) bad "0166 FR3 — the usd estimate no longer cites LEDGER.md, so the pre-split block was dropped instead of labelled: $(printf '%s' "$LABEL_OUT" | tr '\n' ' ' | cut -c1-240)" ;;
+esac
+
+echo "0166 FR5 — a retro that stops being priced reds on its own"
+# 0152's guards compared retro+queue against retro alone, so a missing retro cancelled on both
+# sides and `tail = []` passed 106 of 106. This compares --retro against NO tail flag, per figure,
+# which nothing can cancel.
+NOTAIL_OUT="$("$TOOL" estimate --ledger "$EMPTY" --measurement "$MEAS" --config "$CONF" \
+              --tickets 2 --develop-gates 1 --verify-sessions 1 2>&1 || true)"
+RETRO_OUT="$("$TOOL" estimate --ledger "$EMPTY" --measurement "$MEAS" --config "$CONF" \
+             --tickets 2 --develop-gates 1 --verify-sessions 1 --retro 2>&1 || true)"
+for fig in tokens usd; do
+  n="$(printf '%s\n' "$NOTAIL_OUT" | awk -v f="$fig" '$1=="ESTIMATE" && $2==f {print $3}')"
+  r="$(printf '%s\n' "$RETRO_OUT"  | awk -v f="$fig" '$1=="ESTIMATE" && $2==f {print $3}')"
+  if [ -z "$n" ] || [ -z "$r" ]; then
+    bad "0166 FR5 — no $fig estimate to compare (with-retro '$r', without '$n')"
+  elif awk -v a="$r" -v b="$n" 'BEGIN{exit !(a > b)}'; then
+    ok "--retro raises the $fig estimate ($n -> $r), so a retro that stops being priced reds here"
+  else
+    bad "0166 FR5 — --retro did not raise the $fig estimate ($n -> $r); the retro session is not being priced at all"
+  fi
+done
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
