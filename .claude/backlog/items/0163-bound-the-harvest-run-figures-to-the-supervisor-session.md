@@ -3,7 +3,7 @@ id: "0163"
 title: Bound harvest-usage's --run figures to the supervisor's own session
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -17,9 +17,13 @@ expects:
   - tests/measurement.test.sh
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "7101"
+claimed_at: 2026-09-22T04:42:08Z
 touches:
+  - tools/harvest-usage.sh
+  - tests/measurement.test.sh
+  - skills/sprint/SKILL.md
+  - tests/sprint.test.sh
 ---
 
 ## Problem

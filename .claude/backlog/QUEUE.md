@@ -25,7 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0176 | Give an unattended stage a backlog write channel it can fall back to | verify | ready |  |
 | 0165 | Attribute the one-off sprint.test.sh failure and keep its FAIL line visible in a filtered run | verify | ready |  |
-| 0163 | Bound harvest-usage's --run figures to the supervisor's own session | develop | ready |  |
+| 0163 | Bound harvest-usage's --run figures to the supervisor's own session | develop | in-progress |  |
 | 0162 | Stop the sprint ledger recording an unpriced harvest as a measured USD 0.00 | develop | ready |  |
 | 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | develop | ready |  |
 | 0173 | Stop the sprint ledger booking a phantom gate from a stage's self-reported session id | develop | ready |  |
