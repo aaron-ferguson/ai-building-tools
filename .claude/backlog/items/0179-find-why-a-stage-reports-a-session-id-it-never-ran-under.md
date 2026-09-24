@@ -2,8 +2,8 @@
 id: "0179"
 title: Find why a stage reports a session id it never ran under, and stop anything trusting one
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -17,9 +17,10 @@ expects:
   - skills/sprint/outcome.schema.json
   - tests/sprint.test.sh
   - tests/sprint-ledger.test.sh
-claimed_by: "1565"
-claimed_at: 2026-09-24T13:20:58Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-24
 ---
 
 ## Problem
@@ -104,24 +105,24 @@ a new run, and nothing — Step 4, the run log, the ledger — reads one.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/outcome.schema.json`, when its `required` array and `properties`
+- [x] AC1 — Given `skills/sprint/outcome.schema.json`, when its `required` array and `properties`
   keys are read, then neither contains `session_id`, and `additionalProperties` is still `false`.
-- [ ] AC2 — Given the Step 1 probe command in `skills/sprint/SKILL.md`, when its prompt text is
+- [x] AC2 — Given the Step 1 probe command in `skills/sprint/SKILL.md`, when its prompt text is
   read, then it names no `session_id`, and a test asserts that (red on today's file).
-- [ ] AC3 — Given `skills/sprint/SKILL.md` Step 4, when it is grepped, then no sentence tells the
+- [x] AC3 — Given `skills/sprint/SKILL.md` Step 4, when it is grepped, then no sentence tells the
   supervisor to compare an outcome's `session_id` with the dispatched one, and the untrusted-pass
   paragraph names its two triggers as the malformed outcome and `conventions_resolved: null`.
-- [ ] AC4 — Given Step 5 of `skills/sprint/SKILL.md`, when the `outcome` event is described, then
+- [x] AC4 — Given Step 5 of `skills/sprint/SKILL.md`, when the `outcome` event is described, then
   it says the event's `session_id` is the dispatched UUID written by the supervisor, not read from
   the stage's stdout, and a test guards that phrase on one line.
-- [ ] AC5 — Given `tests/sprint.test.sh`'s `0160 AC1` guard and `tests/sprint-ledger.test.sh`'s
+- [x] AC5 — Given `tests/sprint.test.sh`'s `0160 AC1` guard and `tests/sprint-ledger.test.sh`'s
   `0173 Documentation NFR` guard, when this change lands, then each is replaced by a guard for the
   new rule (AC1/AC3), with a comment naming 0179 as what superseded it, and each new guard is shown
   red against the pre-change file before it goes green.
-- [ ] AC6 — Given `tests/sprint-ledger.test.sh`'s existing `0173` cases for a phantom id and for
+- [x] AC6 — Given `tests/sprint-ledger.test.sh`'s existing `0173` cases for a phantom id and for
   `session_mismatches`, when this change lands, then they pass with their fixtures unchanged — a
   historical log carrying a bad id is still reported and still books no phantom session.
-- [ ] AC7 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
+- [x] AC7 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
   then it is green, including `tests/item-ac-form.test.sh`.
 
 ## QA plan
@@ -184,3 +185,37 @@ handoff rather than treating the checkout as proof.
   - **Not yet live:** a dispatch `cat`s the installed schema, so real runs still require the field
     until `tools/release`. This very session was dispatched under 0.9.32's schema and still had to
     report a `session_id` (it read `CLAUDE_CODE_SESSION_ID` to do so).
+
+## QA evidence
+
+2026-09-24 — verify (token 1565), against `11c503c` at HEAD `931a0d8`. **PASS.**
+
+Conventions: ../ai-building-conventions
+
+Level `unit`, `commands.unit` as configured: `for t in tests/*.test.sh; do "$t" || exit 1; done` —
+run in its reporting form `for t in tests/*.test.sh; do printf '%s: ' "$t"; "$t" 2>&1 | tail -1; done`
+per config.yml's note, so every file reports. 31 files, every tally `0 failed`
+(`tests/sprint.test.sh: 272 passed, 0 failed, 0 skipped` — live AC22 probe executed;
+`tests/sprint-ledger.test.sh: 129 passed, 0 failed`; `tests/item-ac-form.test.sh: 8 passed, 0 failed`).
+No lint/typecheck configured. Tree at Step 2: `?? .claude/backlog/runs/` only; same at verdict;
+intersection with the evidence set empty, so not advisory.
+
+Each mutation was applied to the committed file, its diff confirmed non-empty, run, then restored by
+that path alone. Sprint mutation runs used `SPRINT_SKIP_PROBE=1`. Control after restore:
+`tests/sprint.test.sh` 271 passed, 0 failed, 1 skipped; `tests/sprint-ledger.test.sh` 129 passed, 0 failed.
+
+| Check | How verified | Result |
+|---|---|---|
+| AC1 schema has no `session_id`, `additionalProperties: false` | `0179 AC1` guards in `tests/sprint.test.sh` (shape + an envelope carrying the fabricated id is refused) and `tests/sprint-ledger.test.sh`. Mutation M1: schema from `11c503c^` → all three red (`264 passed, 7 failed` / `128 passed, 1 failed`). M1b: `additionalProperties: true` → all three red | PASS |
+| AC2 probe prompt names no `session_id` | `0179 AC2` guard reads the `# step-1-probe` fence. M2: clause re-inserted → `FAIL 0179 AC2 — the Step 1 probe prompt still names session_id` | PASS |
+| AC3 Step 4 compares no id; untrusted-pass names two triggers | M3a: comparison sentence re-inserted in Step 4 → `FAIL 0179 AC3 — Step 4 still reads a session_id`. M3b: opening reverted to "either of those two checks" → `FAIL 0179 AC3 — the untrusted-pass paragraph does not name its two triggers` | PASS |
+| AC4 Step 5 outcome event id from dispatch, one line | `skills/sprint/SKILL.md:469`. M4: "never read from" → "read from" → `FAIL 0179 AC4` | PASS |
+| AC5 superseded guards replaced, comment naming 0179, red pre-change | Comments present in both test files (diff of `11c503c`). M5: whole SKILL.md from `11c503c^` → AC2, AC3 ×2, AC4 red (`265 passed, 6 failed`); M1 covers the ledger guard pre-change | PASS |
+| AC6 `0173` ledger cases pass, fixtures unchanged | `11c503c` touches `tests/sprint-ledger.test.sh` in one hunk (the NFR guard at ~1251), none of the `0173` cases at 1195–1250; `tools/` untouched. Cases pass (129/0). Mutation: `session_mismatches` returns `[]` → `FAIL 0173 AC2 — no MISMATCH line` | PASS |
+| AC7 whole suite green | the 31-file run above | PASS |
+| Consumers audit (FR2) | grep `session_id` over `skills/`, `references/`: only `SKILL.md:469` and `:499`, both the supervisor's own log | PASS |
+| Always-on (CONVENTIONS_CORE) | Prose, schema and tests only; no secrets, no company material, repo-relative paths | PASS |
+
+Not live yet: the installed `0.9.32` `skills/sprint/outcome.schema.json` differs from the repo copy
+(`diff -q`). This session was dispatched under the old schema. The repo copy is what was verified;
+real dispatches pick it up only after `tools/release`.
