@@ -6,7 +6,7 @@ next: design
 status: in-progress
 qa_level: unit
 close_by: verify
-size: l
+size: m
 created: 2026-09-23
 source: retro
 parent:
@@ -15,12 +15,12 @@ relates: ["0160", "0161", "0173"]
 expects:
   - skills/sprint/SKILL.md
   - skills/sprint/outcome.schema.json
-  - tools/sprint-ledger.sh
-  - .claude/backlog/close
-  - skills/queue/templates/close
+  - tests/sprint.test.sh
+  - tests/sprint-ledger.test.sh
 claimed_by: "b6b5"
 claimed_at: 2026-09-24T13:04:51Z
 touches:
+  - .claude/backlog/items/0179-find-why-a-stage-reports-a-session-id-it-never-ran-under.md
 ---
 
 ## Problem
@@ -45,40 +45,120 @@ getting worse.** Three occurrences, all under `sprint`:
 A placeholder announces itself; a plausible fabrication does not, so **eyeballing an envelope is no
 longer a control** — only comparison with the dispatched value distinguishes them.
 
-**The existing rows cover three different halves and leave the middle empty.** `0160` (done)
-*detects* it at `sprint` Step 4, and its own Problem concedes *"Detection comes after the damage"*.
-`0161` (ready) *recovers*: a scripted path from closed back to verify. `0173` (done) immunises
-*one consumer*, the ledger. **Nobody owns root cause or prevention.** The author asked on
-2026-09-22 for this to be worked in the next sprint.
-
 **The damage window is structural.** The stage commits, releases its claim and closes before the
-supervisor reads the envelope, so prevention cannot live in Step 4 — it lives in the stage or in
-`close`.
+supervisor reads the envelope, so prevention cannot live in Step 4.
 
 **The hard case is the 2026-09-22 verify gate.** Every independent signal says that work was sound:
 suite green under `commands.unit`, all six items carry the `Conventions:` line `close` demands, QA
-evidence per-AC and specific about which mutation reddened what, `conventions_resolved` non-null. The
-id was the **only** bad field. A rule that treats a bad id as proof the pass was worthless reopens six
-correctly-verified tickets.
+evidence per-AC, `conventions_resolved` non-null. The id was the **only** bad field.
 
-## Requirements for design to carry through
+## Outcome
 
-- **FR1 — Root cause.** Establish why a stage emits an id it did not run under. Candidates to
-  test, not assume: the stage cannot read its own id (is `CLAUDE_CODE_SESSION_ID` set in a
-  `claude -p --session-id` child, and does the stage prompt tell it to read it?), or the schema's
-  description invites it to compose one. The answer decides whether FR3 is needed at all.
-- **FR2 — Audit, not another point fix.** Enumerate every consumer of the self-reported
-  `session_id` (ledger — fixed by `0173`; `sprint` Step 4's trust check; run log; anything else) and
-  adopt one rule: **nothing reads the id a stage reports when the dispatcher already knows it.**
-- **FR3 — Prevention at the write that does the damage.** Decide whether `close` should refuse
-  unless the QA evidence carries the dispatcher's `CLAUDE_CODE_SESSION_ID` — a value the harness
-  sets, not the stage's self-report.
-- **FR4 — What a supervisor may conclude.** When the id is the only unreliable field in an
-  otherwise well-evidenced envelope, say what the supervisor does: accept with a flag, re-verify a
-  sample, or reopen via `0161`. Written so it does not reopen sound work by reflex.
+The stage outcome no longer asks a stage for a value it was never given. The supervisor takes each
+stage's session id from its own `dispatch` event, so a fabricated or placeholder id cannot occur in
+a new run, and nothing — Step 4, the run log, the ledger — reads one.
+
+## Non-goals
+
+- A `close` refusal keyed on `CLAUDE_CODE_SESSION_ID` (FR3 — rejected, see Notes & decisions).
+- Reopening the six tickets the 2026-09-22 verify gate closed. They stand.
+- Changing `tools/sprint-ledger.sh`. `sessions_of` already takes its sessions from dispatch events
+  (`0173`), and `session_mismatches` stays to report the historical logs that do carry a bad id.
+- The recovery path from closed back to verify — that is `0161`.
+
+## Requirements
+
+- **FR1 — The root cause, as found (2026-09-24).** The stage is never told its id. The dispatch
+  prompt (`skills/sprint/SKILL.md` Step 3) carries the skill and its arguments only, while
+  `outcome.schema.json` makes `session_id` required, pattern-constrained, and describes it as *"the
+  UUID the supervisor pre-assigned at dispatch, echoed back"* — a value the stage has nothing to
+  echo. A model forced to fill a required UUID field it has no source for composes one: a
+  placeholder, or a plausible fabrication. The harness *does* set `CLAUDE_CODE_SESSION_ID` in the
+  stage's shell (observed in this design session: set, and equal to the `--session-id` in the
+  `.out` filename and the transcript name), but no instruction tells the stage to read it, and
+  neither bad transcript ever ran it: in `e0cf784f…`'s message bodies the dispatched id appears
+  exactly once, as a filename in an `ls` of `runs/`, and in `dda30e75…`'s not at all.
+- **FR2 — One rule: nothing reads the id a stage reports, because the stage reports none.** Remove
+  `session_id` from `skills/sprint/outcome.schema.json` (`required` and `properties`). Every place
+  the supervisor needs a session id takes it from the dispatch it made itself.
+  Audit of consumers (2026-09-24), each with its disposition:
+  - `skills/sprint/SKILL.md` Step 1 probe prompt (the `aaaaaaaa-…` literal) — drop the
+    `session_id` clause, or the probe asks for a property the schema now forbids.
+  - Step 4's comparison paragraph (*"An outcome whose `session_id` is not the dispatched one…"*)
+    — delete it; there is nothing to compare. The following paragraph's *"either of those two
+    checks"* becomes the malformed-outcome and `conventions_resolved: null` checks, named.
+  - Step 5's `outcome` event — its `session_id` is **written by the supervisor from the dispatch**
+    it is answering, never copied out of stdout. `tools/sprint-ledger.sh` `outcomes_of` filters on
+    that field being a string, so an outcome event without it drops out of the ledger.
+  - `tools/sprint-ledger.sh` `sessions_of` / `session_mismatches` — unchanged (see Non-goals).
+  - `tools/floor-probe.sh:178` reads `session_id` from CLI transcript JSON, not from an outcome —
+    not a consumer, unchanged.
+  - Tests: `tests/sprint.test.sh` fixtures (lines ~195, ~232), the probe assertion (~908) and the
+    `0160 AC1` guard (~2382); `tests/sprint-ledger.test.sh`'s `0173 Documentation NFR` guard
+    (~1251). Each asserts the field exists or is compared, and is replaced, not deleted silently.
+- **FR3 — No `close` refusal.** Decided against; reasons in Notes & decisions.
+- **FR4 — What a supervisor concludes from an id alone.** Nothing that moves a ticket. In a new run
+  the case is unreachable. In an old run log, a mismatched id beside a schema-valid envelope with
+  `conventions_resolved` non-null is a flag the ledger reports (`session_mismatches`) and the
+  closes stand; the triggers for naming tickets as closed on an untrusted pass are the malformed
+  envelope and `conventions_resolved: null`, and `0161` is the path back for those.
+
+## Acceptance criteria
+
+- [ ] AC1 — Given `skills/sprint/outcome.schema.json`, when its `required` array and `properties`
+  keys are read, then neither contains `session_id`, and `additionalProperties` is still `false`.
+- [ ] AC2 — Given the Step 1 probe command in `skills/sprint/SKILL.md`, when its prompt text is
+  read, then it names no `session_id`, and a test asserts that (red on today's file).
+- [ ] AC3 — Given `skills/sprint/SKILL.md` Step 4, when it is grepped, then no sentence tells the
+  supervisor to compare an outcome's `session_id` with the dispatched one, and the untrusted-pass
+  paragraph names its two triggers as the malformed outcome and `conventions_resolved: null`.
+- [ ] AC4 — Given Step 5 of `skills/sprint/SKILL.md`, when the `outcome` event is described, then
+  it says the event's `session_id` is the dispatched UUID written by the supervisor, not read from
+  the stage's stdout, and a test guards that phrase on one line.
+- [ ] AC5 — Given `tests/sprint.test.sh`'s `0160 AC1` guard and `tests/sprint-ledger.test.sh`'s
+  `0173 Documentation NFR` guard, when this change lands, then each is replaced by a guard for the
+  new rule (AC1/AC3), with a comment naming 0179 as what superseded it, and each new guard is shown
+  red against the pre-change file before it goes green.
+- [ ] AC6 — Given `tests/sprint-ledger.test.sh`'s existing `0173` cases for a phantom id and for
+  `session_mismatches`, when this change lands, then they pass with their fixtures unchanged — a
+  historical log carrying a bad id is still reported and still books no phantom session.
+- [ ] AC7 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
+  then it is green, including `tests/item-ac-form.test.sh`.
+
+## QA plan
+
+Unit. AC1–AC5 by the guards themselves, each shown red on the pre-change file (per
+`testing-conventions.md`, a guard that cannot fail is not a guard). AC6 by the `0173` ledger cases,
+which use fixtures rather than `runs/` (untracked, so not every checkout has the real log). The change reaches real dispatches only after a
+release (`tools/release`), because the supervisor `cat`s the installed schema — say so in the
+handoff rather than treating the checkout as proof.
 
 ## Notes & decisions
 
 - 2026-09-23 — filed by retro (session edf44941-de11-48ca-92b8-093a50099f9b) from two FINDINGS
   entries, both parked by the sprint supervisor for run-20260922T031109Z. Ranked first on the
   author's request.
+- 2026-09-24 — **design: remove `session_id` from the outcome schema; the supervisor already has
+  it.** Root cause per FR1: the schema demands a value the dispatch never supplies. This settles
+  FR1 and makes FR3 unnecessary, as the ticket anticipated.
+  - **Rejected — tell the stage to read `CLAUDE_CODE_SESSION_ID` and echo it.** It would make the
+    field correct, but its only content would be a copy of what the dispatcher wrote in its own run
+    log, and a stage that skips the Bash call still fabricates. What echoing proves — that the
+    envelope came from the dispatched process — is already proven by capturing that process's
+    stdout into `runs/<run-id>.<session-id>.out`.
+  - **Rejected — put the id in the dispatch prompt.** Same objection: the value is known to the one
+    party that needs it; routing it through a model is where it got corrupted.
+  - **Rejected — FR3, `close` refuses unless QA evidence carries `CLAUDE_CODE_SESSION_ID`.** `close`
+    runs in the stage's own shell, where the harness always sets that variable (observed), so the
+    refusal could never fire: a guard that cannot fail. The failure that did real damage on
+    2026-09-13 was `conventions_resolved: null` with a substituted test command, and `close`'s
+    `Conventions:` requirement already covers that.
+  - **Trade-off accepted:** the mismatch check is gone as a canary. It had no unique catch: of three
+    occurrences, one coincided with `conventions_resolved: null` (caught independently), and two
+    accompanied work every other signal says was sound.
+  - **Existing requirements, accounted:** FR1 answered; FR2 confirmed and made concrete as an audit
+    with dispositions; FR3 replaced by a recorded rejection; FR4 changed from "accept, sample or
+    reopen" to "no ticket moves on an id alone". AC1–AC7 are new — the ticket arrived with none.
+  - **Superseded guards:** this intentionally retires `0160` AC1's Step 4 comparison and `0173`'s
+    schema-description Documentation NFR. `0173`'s ledger behaviour stays.
+  - `size` lowered from `l` to `m`: no script changes, one schema field, prose and test edits.
