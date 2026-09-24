@@ -215,3 +215,5 @@ RATIO verify_usd_per_ticket batched session e0cf784f = 1.84
   numerator USD 11.02 (harvest-usage.sh over 1 session id(s) @ 2026-09-24T00:00:58Z)
   denominator 6 ticket(s) (run-20260922T031109Z.jsonl outcome events @ 2026-09-24T00:00:58Z)
 FINDINGS parked 2 (run-20260922T031109Z.jsonl outcome events @ 2026-09-24T00:00:58Z)
+
+**CORRECTION to run-20260922T031109Z, added 2026-09-23 after the tail completed.** The `tail_tokens` and `tail_usd` figures above (808361 / 1.22) were recorded when the retro had run one leg, and they are NOT the tail's cost. The retro was then resumed twice and the queue sweep ran, and both later legs ran `claude-opus-5-5`, for which `harvest-usage.sh` has no rate. The queue session is absent from the harvest entirely and 50 of the retro's 91 turns are unpriced, so **the true tail cost cannot be computed from the transcripts** and must not be read as 1.22. Do not use this run's tail figures as a prior. Stage self-reports, for what they are worth: retro 1.22 + 2.48 + 3.60, queue 1.26. Parked as a finding 2026-09-23; see also 0162, which is why the gap was visible rather than silent.
