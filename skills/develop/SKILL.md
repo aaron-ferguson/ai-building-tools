@@ -460,6 +460,13 @@ report. If the tree is too entangled to judge, run it in a throwaway worktree (`
 remove it in the same turn.
 It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the backlog*).
 
+**A red no ticket owns is never fixed under the claim you hold**, however small the fix. `da524ce`
+repaired one under `0176`'s claim: an unrelated test file sat in `0176`'s diff for verify to
+explain, and nothing in the backlog recorded that the defect had existed. Park a `FINDINGS.md` entry
+saying the red still needs a row (`CONCURRENCY.md`, *A stage may record what still needs filing*),
+name it in the outcome's `escalation` when a supervisor dispatched you, and carry on if your own ACs
+can still be attributed. A red your dispatch prompt lists as `baseline_red` is not yours.
+
 **An *untracked* file is the cheap case and needs no worktree at all.** `git status` settles it in one
 call: a file git has never seen is definitionally neither your change nor the tree's baseline, so it is
 another session mid-TDD. Nine failures once came from an untracked test file another window was still

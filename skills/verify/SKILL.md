@@ -117,7 +117,7 @@ though the whole of it failed. That masking is an alphabetical accident: verifyi
 alphabetically-first of seventeen guards was red from another session's in-flight work, the run
 stopped there, and the guard the verdict actually rested on never executed. Attribution is what a
 batch owes and a single pass does not, and it has to exist *before* a verdict, not after one is
-doubted. Where `config.yml` records the reporting form of its own command, use that form here and
+doubted. Where `config.yml` records the reporting form as `commands.unit_by_file`, use that form here and
 leave the configured one alone — the fail-fast line is often a release gate too, and it is right
 for that.
 

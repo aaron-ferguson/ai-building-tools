@@ -114,7 +114,8 @@ routing:
 # tests/release.test.sh, the guard that verdict actually rested on, never executed. Sixteen were
 # green. A verify session trusting the first failure reports BLOCKED or FAIL on someone else's
 # red, and the masking is an alphabetical accident that will not repeat reliably. To attribute a
-# red, run the files individually instead: for t in tests/*.test.sh; do "$t" || true; done
+# red, run the files individually instead — that form is `unit_by_file` below, read by verify's
+# attribution and sprint's baseline check (0180).
 #
 # A MUTATION RERUN OF tests/next.test.sh REDIRECTS, IT DOES NOT PIPE. That file is 485 cases,
 # each scaffolding a git repo, and on a loaded host it runs past a 600s tool timeout. The
@@ -127,6 +128,7 @@ routing:
 # 0158/0159).
 commands:
   unit: for t in tests/*.test.sh; do "$t" || exit 1; done
+  unit_by_file: for t in tests/*.test.sh; do "$t" || true; done
   integration:
   e2e:
   lint:

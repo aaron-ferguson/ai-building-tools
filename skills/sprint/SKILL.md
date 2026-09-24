@@ -54,9 +54,9 @@ return will not deliver.
 
 ---
 
-## Step 1 — Three checks before anything is dispatched
+## Step 1 — Four checks before anything is dispatched
 
-All three happen before the first stage process, and the first two can end the run.
+All four happen before the first stage process, and the first two can end the run.
 
 **1. Probe the CLI, by actually dispatching.** `command -v claude` is not the check: an
 unauthenticated CLI and a nested session that may not spawn one both look like a present binary,
@@ -110,12 +110,22 @@ This is what stops the first run reading as broken when it halts. It costs nothi
 line and the depth line come from the same call. A `next: design` row is not where a run runs dry:
 design is autonomous work and `--drive` dispatches it.
 
+**4. Run the baseline: the unit suite at `HEAD`, in a throwaway worktree.** `git worktree add
+--detach` it, removed in the same turn, never the shared working tree — an untracked file another
+window is still writing reds that tree without being the baseline, and stages build on what is
+committed. Run `commands.unit_by_file` from `config.yml`; where it is unset, run `commands.unit` and
+say its tally may be a lower bound, because a fail-fast command stops at its first red. Redirect the
+output to a file and poll it, never pipe it: a timed-out pipe delivers nothing (`config.yml`). Report
+the tally — each red file and case, or `green` — on the depth line, and the proposal quotes it.
+run-20260922T031109Z confirmed a six-ticket gate over a red nobody had looked for, and every new red
+that run met had to be separated from the old one by hand.
+
 ---
 
 ## The proposal — what a person confirms before any stage runs
 
-**Dispatch no stage session until a person has confirmed the scope.** The three checks above still
-happen first — the probe, the marker, the depth read — and what is gated is the first *stage*:
+**Dispatch no stage session until a person has confirmed the scope.** The four checks above still
+happen first — the probe, the marker, the depth read, the baseline — and what is gated is the first *stage*:
 `--drive`'s exit 0 is a decision, not permission. The gate behind it is a **conflict** unit, and
 presenting a conflict unit as a plan is how a person approves thirteen tickets meaning to approve
 four.
@@ -166,6 +176,24 @@ tickets nobody chose — and it is a decision a person can only make if they are
 **Three answers, and two of them are not yes.** Confirm it · **amend** it, where the rule above says
 what the amendment leaves behind · or **decline**, which ends the run with no stage session and
 releases the marker: remove `.claude/backlog/runs/.active`, exactly as the end of a run does.
+
+**A red baseline blocks the proposal. It does not end the run** — ending it sends a person to fix
+the red by hand, which is how `da524ce` landed under `0176`'s claim with no row. The proposal then
+leads with the red: each red file and case, and who owns it, from `git log -1 -- <path>` and the
+in-progress rows. It offers four answers instead of three:
+
+- **repair first** — recommended, and the default the proposal states;
+- **waive** — go ahead over the red. The waiver is recorded in `scope_confirmed` as
+  `baseline_red`, the case list and the `HEAD` SHA, and every dispatch prompt quotes it (Step 3);
+- **amend** or **decline**, as above.
+
+**A red no open ticket owns gets a row, never an out-of-scope repair.** On repair first, dispatch
+one `queue` session whose prompt gives the red cases, the introducing commit, and "rank first"; it
+mints a `type: bug` row whose `relates:` names the ticket that introduced the red. That row runs as
+its own gate to `next: done`, and the supervisor then runs the baseline again; nothing else in the
+confirmed scope is dispatched until it is green. **A red whose introducing commit belongs to an open
+ticket is owned**: the proposal names that ticket, the run mints no row, and the choices left are
+waive or decline.
 
 **That estimate is written to the ledger before the first dispatch, and it is what makes it an
 estimate at all.** Keep the four figures and the source line the call printed; they are the
@@ -346,6 +374,9 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
   must outlive the supervisor: run-20260913T222409Z captured into the supervising session's
   scratchpad, the harness withdrew that directory mid-run, and the outcome survived only because the
   file was already open.
+- **In a run whose baseline red was waived, every stage prompt quotes it** as "baseline red at
+  <sha>, not yours", with the `baseline_red` case list from `scope_confirmed`. Without it each stage
+  re-separates the old red from its own by hand, which is the cost the waiver exists to remove.
 - **The stage prompt names the write channel and the path form.** Backlog files are written with a
   Bash heredoc, so grant Bash: an unattended `queue` stage's Write tool refused every new
   `.claude/backlog/items/*.md` as a sensitive file, and a prompt nobody can answer stalls the stage.
@@ -685,6 +716,8 @@ with the derivation beside it**, never a figure chosen here and never one rounde
   `next: queue` row, a `next: design` row outside the confirmed scope, a stale FR and a ticket that
   needs splitting are all escalations: name what must be decided and stop. An in-scope design row is answered by the `design`
   session it dispatches, never by the supervisor. Queuing new work and designing tickets are escalations, not automation.
+  The one exception is the proposal's repair first: the person choosing it has answered that
+  escalation, so the `queue` session minting the repair row is dispatched rather than escalated.
 - **It never runs two stage sessions at once, except a design session alongside a develop session**
   (the *Design alongside develop* section). Otherwise the loop is sequential by decision, and what it
   parallelises is *tickets*, through the gate.

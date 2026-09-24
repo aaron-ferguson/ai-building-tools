@@ -2462,6 +2462,126 @@ else
   bad "0160 FR3 — verify does not tell a session to write 'Conventions: <resolved path>'; close's refusal has nothing to read"
 fi
 
+# --- 0180 — a red baseline blocks the proposal, and a red no ticket owns gets a row --------------
+# run-20260922T031109Z dispatched a six-ticket gate over a red nobody had noticed, and the repair
+# then landed off the books as da524ce under 0176's claim. Presence greps, one phrase per case and
+# each scoped to the section a session reads at that moment, so removing any one phrase reds
+# exactly one line (AC1's "removing any one of them turns it red").
+PROPOSAL="The proposal — what a person confirms before any stage runs"
+CONFIG="$ROOT/.claude/backlog/config.yml"
+echo "0180 AC1 — Step 1 runs the unit suite at HEAD in a throwaway worktree, before the proposal"
+guard_says "$SKILL" "Step 1" 'the baseline' \
+  "0180 AC1 — Step 1 names the baseline check" \
+  "0180 AC1 — Step 1 names no baseline check; a run can confirm a gate over a red it never looked at"
+guard_says "$SKILL" "Step 1" 'at `HEAD`' \
+  "0180 AC1 — the baseline runs at HEAD" \
+  "0180 AC1 — the baseline names no commit; an untracked file another window is writing reads as the baseline"
+guard_says "$SKILL" "Step 1" 'git worktree add --detach' \
+  "0180 AC1 — the baseline runs in a throwaway worktree, never the shared tree" \
+  "0180 AC1 — the baseline runs on the shared working tree"
+guard_says "$SKILL" "Step 1" 'removed in the same turn' \
+  "0180 AC1 — and the worktree is removed in the same turn" \
+  "0180 AC1 — the baseline worktree is never removed"
+guard_says "$SKILL" "Step 1" 'commands.unit_by_file' \
+  "0180 AC1 — the baseline prefers commands.unit_by_file" \
+  "0180 AC1 — the baseline names no per-file command; a fail-fast run stops at the first red file"
+guard_says "$SKILL" "Step 1" 'lower bound' \
+  "0180 FR1 — a fail-fast fallback's tally is labelled a lower bound" \
+  "0180 FR1 — a fail-fast tally is presented as the whole count"
+guard_says "$SKILL" "Step 1" 'on the depth line' \
+  "0180 AC1 — the tally is reported on the depth line" \
+  "0180 AC1 — the tally is not reported on the depth line"
+guard_says "$SKILL" "Step 1" 'never pipe it' \
+  "0180 FR1 — the baseline's output is redirected to a file, not piped" \
+  "0180 FR1 — nothing stops the baseline being piped; a timed-out pipe delivers nothing"
+
+echo "0180 AC2 — a red baseline blocks the proposal, offers four answers, and records a waiver"
+guard_says "$SKILL" "$PROPOSAL" 'blocks the proposal' \
+  "0180 AC2 — a red baseline blocks the proposal" \
+  "0180 AC2 — nothing says a red baseline blocks the proposal"
+guard_says "$SKILL" "$PROPOSAL" 'does not end the run' \
+  "0180 AC2 — and does not end the run" \
+  "0180 AC2 — nothing says the red leaves the run alive; ending it sends the fix off the books"
+guard_says "$SKILL" "$PROPOSAL" 'repair first' \
+  "0180 AC2 — repair first is offered" \
+  "0180 AC2 — repair first is not offered"
+guard_says "$SKILL" "$PROPOSAL" 'repair first** — recommended' \
+  "0180 AC2 — and is the recommended default" \
+  "0180 AC2 — repair first is offered but not recommended"
+guard_says "$SKILL" "$PROPOSAL" '**waive**' \
+  "0180 AC2 — waive is offered" \
+  "0180 AC2 — waive is not offered"
+guard_says "$SKILL" "$PROPOSAL" '`baseline_red`' \
+  "0180 AC2 — a waiver is recorded as baseline_red" \
+  "0180 AC2 — a waiver is not recorded as baseline_red; a new red cannot be told from the old"
+guard_says "$SKILL" "$PROPOSAL" 'in `scope_confirmed`' \
+  "0180 AC2 — in the scope_confirmed event" \
+  "0180 AC2 — the waiver is not written into scope_confirmed"
+guard_says "$SKILL" "$PROPOSAL" 'git log -1 -- <path>' \
+  "0180 FR2 — each red's owner is found with git log" \
+  "0180 FR2 — the proposal lists the reds with no owner"
+
+echo "0180 AC3 — every dispatch in a waived run says the baseline red is not the stage's own"
+guard_says "$SKILL" "Step 3" 'baseline red at <sha>, not yours' \
+  "0180 AC3 — Step 3's dispatch prompt quotes the waived list" \
+  "0180 AC3 — Step 3 does not carry the waived list; each stage re-separates the old red from its own"
+
+echo "0180 AC4 — repair first mints a row through queue, runs it alone, and re-checks"
+guard_says "$SKILL" "$PROPOSAL" 'one `queue` session' \
+  "0180 AC4 — repair first dispatches one queue session" \
+  "0180 AC4 — repair first names no queue dispatch; the row has no writer"
+guard_says "$SKILL" "$PROPOSAL" 'rank first' \
+  "0180 AC4 — and its prompt says rank first" \
+  "0180 AC4 — the repair row is not ranked first"
+guard_says "$SKILL" "$PROPOSAL" 'as its own gate' \
+  "0180 AC4 — the repair row runs as its own gate" \
+  "0180 AC4 — the repair row can batch with confirmed scope"
+guard_says "$SKILL" "$PROPOSAL" 'runs the baseline again' \
+  "0180 AC4 — and the baseline is re-run before any other dispatch" \
+  "0180 AC4 — nothing re-checks the baseline after the repair"
+guard_says "$SKILL" "Step 8" 'one exception' \
+  "0180 AC4 — the never-writes-a-ticket rule names repair first as its one exception" \
+  "0180 AC4 — Step 8 still forbids the queue dispatch repair first needs"
+
+echo "0180 AC5 — a red an open ticket owns names that ticket and mints no row"
+guard_says "$SKILL" "$PROPOSAL" 'belongs to an open ticket' \
+  "0180 AC5 — the owned case is stated" \
+  "0180 AC5 — nothing separates a red an open ticket owns"
+guard_says "$SKILL" "$PROPOSAL" 'mints no row' \
+  "0180 AC5 — and mints no row for it" \
+  "0180 AC5 — an owned red can be minted a duplicate row"
+
+echo "0180 AC6 — develop never fixes a red no ticket owns under the claim it holds"
+guard_says "$DEVELOP_SKILL" "Step 5" 'never fixed under the claim you hold' \
+  "0180 AC6 — develop Step 5 forbids fixing an unowned red under the held claim" \
+  "0180 AC6 — develop Step 5 lets an unowned red be fixed under the held claim"
+guard_says "$DEVELOP_SKILL" "Step 5" 'da524ce' \
+  "0180 AC6 — and cites da524ce" \
+  "0180 AC6 — the rule names no failure"
+guard_says "$DEVELOP_SKILL" "Step 5" 'still needs a row' \
+  "0180 AC6 — the red goes to a FINDINGS.md 'still needs a row' entry" \
+  "0180 AC6 — the red has no durable record"
+guard_says "$DEVELOP_SKILL" "Step 5" '`escalation`' \
+  "0180 AC6 — and to the outcome's escalation" \
+  "0180 AC6 — the supervisor is never told"
+
+echo "0180 AC7 — config.yml carries the per-file form beside the unchanged fail-fast one"
+if grep -qF 'unit_by_file: for t in tests/*.test.sh; do "$t" || true; done' "$CONFIG"; then
+  ok "0180 AC7 — commands.unit_by_file holds the per-file form"
+else
+  bad "0180 AC7 — commands.unit_by_file is missing or not the per-file form"
+fi
+if grep -qF 'unit: for t in tests/*.test.sh; do "$t" || exit 1; done' "$CONFIG"; then
+  ok "0180 AC7 — commands.unit keeps its fail-fast form for the release gate"
+else
+  bad "0180 AC7 — commands.unit changed; tools/release's gate reads it"
+fi
+if grep -qF 'commands.unit_by_file' "$VERIFY_SKILL"; then
+  ok "0180 AC7 — verify names the key where it spoke of 'the reporting form'"
+else
+  bad "0180 AC7 — verify still describes the reporting form without naming its key"
+fi
+
 # --- 0165 AC1/AC2 — a failing case is attributable from the last lines of a filtered read --------
 #
 # The property under test is THIS FILE'S OWN OUTPUT, so these two cases run a copy of it. Two
