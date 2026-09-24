@@ -354,3 +354,5 @@ every future sprint batching on the wrong rule, where skipping 0174 leaves one r
 contiguity rule - but 0173 and 0174 share no path, so the gate above already ended there. Placed one
 row lower it would have split 0174 from nothing; placed one row higher it would have cut the
 six-row gate in half.
+
+**0179 and 0180 lead, on the author's word and on the baseline.** 0179 (session-id root cause and prevention) is first because the author asked on 2026-09-22 for it to be worked in the next sprint. 0180 (a red baseline) is second because the next sprint's proposal is only honest if its baseline is known green. 0181, 0182 and 0183 sit directly below the row each most relates to — 0063, 0172 and 0089 — so a design session answering one sees the other.

@@ -23,15 +23,19 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
+| 0179 | Find why a stage reports a session id it never ran under, and stop anything trusting one | design | ready |  |
+| 0180 | Decide what a sprint does on a red baseline, and which stage may fix a red no ticket owns | design | ready |  |
 | 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | design | ready |  |
 | 0174 | Say the findings gate is deferred until the run is out of work when no scope was confirmed | develop | ready |  |
 | 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
 | 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
 | 0175 | Decide what identifies a sprint across a suspension, and which mechanisms key off it | design | ready |  |
 | 0172 | Decide how a script refusal and the skill that must satisfy it reach a session together | design | ready |  |
+| 0182 | Name the write mechanism that works for each backlog file, the lock included, where every stage reads it | design | ready |  |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | develop | ready |  |
 | 0041 | Write release notes for what a work session delivered | develop | ready | 0128 |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
+| 0183 | Decide what checks that an NFR row's named guard can actually red on that requirement | design | ready |  |
 | 0169 | Make a test file announce an abort instead of exiting silently under set -eu | develop | ready |  |
 | 0145 | Decide what an empty touches means to the scope report | design | ready |  |
 | 0146 | Decide when a required duplication earns a drift guard | design | ready |  |
@@ -60,6 +64,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0066 | Fix the three places the backlog scripts answer the wrong question | develop | ready |  |
 | 0141 | Make a drift line say a frontmatter key is absent instead of printing an empty value | develop | ready |  |
 | 0063 | Give the prose guards a matcher that survives a rewrap | develop | ready |  |
+| 0181 | Decide whether stage outcomes carry a registered code that guards match instead of English | design | ready |  |
 | 0112 | Hoist the line-wrap hazard to the session editing prose, not only the one writing a guard | develop | ready |  |
 | 0096 | Make the frontmatter path lists checkable to read and safe to edit | develop | ready |  |
 | 0095 | Hoist the shell short-circuit hazard where a guard author will read it | develop | ready |  |
