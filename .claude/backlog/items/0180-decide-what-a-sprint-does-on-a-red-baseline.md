@@ -2,8 +2,8 @@
 id: "0180"
 title: Decide what a sprint does on a red baseline, and which stage may fix a red no ticket owns
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -16,14 +16,9 @@ expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
   - skills/develop/SKILL.md
-claimed_by: "30db"
-claimed_at: 2026-09-24T13:35:56Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/sprint/SKILL.md  # also mutated transiently to prove the new guards red
-  - tests/sprint.test.sh
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - .claude/backlog/config.yml
 ---
 
 ## Problem
