@@ -3,7 +3,7 @@ id: "0179"
 title: Find why a stage reports a session id it never ran under, and stop anything trusting one
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -17,8 +17,8 @@ expects:
   - skills/sprint/outcome.schema.json
   - tests/sprint.test.sh
   - tests/sprint-ledger.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "1565"
+claimed_at: 2026-09-24T13:20:58Z
 touches:
 ---
 

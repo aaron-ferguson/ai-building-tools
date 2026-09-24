@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0179 | Find why a stage reports a session id it never ran under, and stop anything trusting one | verify | ready |  |
+| 0179 | Find why a stage reports a session id it never ran under, and stop anything trusting one | verify | in-progress |  |
 | 0180 | Decide what a sprint does on a red baseline, and which stage may fix a red no ticket owns | develop | ready |  |
 | 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
 | 0184 | Make the sprint supervisor commit the finding it parks, in the same turn | develop | ready |  |
