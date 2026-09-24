@@ -2517,6 +2517,11 @@ guard_says "$SKILL" "$PROPOSAL" '`baseline_red`' \
 guard_says "$SKILL" "$PROPOSAL" 'in `scope_confirmed`' \
   "0180 AC2 — in the scope_confirmed event" \
   "0180 AC2 — the waiver is not written into scope_confirmed"
+# The whole bullet, not `**decline**`: the three-answer list above already offers decline, so a
+# guard on the word alone stays green with the red-baseline list's third bullet deleted (verify, 1b52).
+guard_says "$SKILL" "$PROPOSAL" '**amend** or **decline**, as above' \
+  "0180 AC2 — the red-baseline list also offers amend and decline" \
+  "0180 AC2 — the red-baseline list drops amend and decline; the person is left repair or waive"
 guard_says "$SKILL" "$PROPOSAL" 'git log -1 -- <path>' \
   "0180 FR2 — each red's owner is found with git log" \
   "0180 FR2 — the proposal lists the reds with no owner"
@@ -2550,6 +2555,9 @@ guard_says "$SKILL" "$PROPOSAL" 'belongs to an open ticket' \
 guard_says "$SKILL" "$PROPOSAL" 'mints no row' \
   "0180 AC5 — and mints no row for it" \
   "0180 AC5 — an owned red can be minted a duplicate row"
+guard_says "$SKILL" "$PROPOSAL" 'the proposal names that ticket' \
+  "0180 AC5 — and the proposal names the owning ticket" \
+  "0180 AC5 — an owned red is not attributed; the person cannot tell whose red they would waive"
 
 echo "0180 AC6 — develop never fixes a red no ticket owns under the claim it holds"
 guard_says "$DEVELOP_SKILL" "Step 5" 'never fixed under the claim you hold' \
