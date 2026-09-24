@@ -3,7 +3,7 @@ id: "0185"
 title: Decide whether the sprint's run logs are committed, and what may appear in them if they are
 type: bug
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -17,8 +17,8 @@ expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
   - tests/measurement.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "974f"
+claimed_at: 2026-09-24T13:36:24Z
 touches:
 ---
 
