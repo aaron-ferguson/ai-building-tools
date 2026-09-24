@@ -2,8 +2,8 @@
 id: "0178"
 title: Let a join reach below rank adjacency, and bound the gate by something other than rank
 type: bug
-next: design
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -23,10 +23,9 @@ expects:
   - skills/queue/templates/config.yml
   - .claude/backlog/config.yml
   - .claude/backlog/items/0158-make-drive-select-gates-by-rank-not-by-join.md
-claimed_by: "64bd"
-claimed_at: 2026-09-24T14:30:30Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/items/0178-let-a-join-reach-below-rank-adjacency.md
 ---
 
 ## Problem
