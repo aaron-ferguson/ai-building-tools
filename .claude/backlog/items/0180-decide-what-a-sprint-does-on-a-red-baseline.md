@@ -19,9 +19,11 @@ expects:
 claimed_by: "30db"
 claimed_at: 2026-09-24T13:35:56Z
 touches:
-  - skills/sprint/SKILL.md
+  - skills/sprint/SKILL.md  # also mutated transiently to prove the new guards red
   - tests/sprint.test.sh
   - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - .claude/backlog/config.yml
 ---
 
 ## Problem
