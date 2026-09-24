@@ -126,3 +126,4 @@ other transition.
 - **Why the ACs are unticked.** A tick is evidence from the pass being distrusted, and `close`
   re-ticks what the new pass checks. It is the same argument as `queue`'s re-specify rule.
 - **Why the rank is an argument.** Rank is a `queue` judgement, never a script default.
+- 2026-09-23 — Rank raised to row 3, under 0179 and 0180 (`RANKING.md`, 2026-09-23). The failure it recovers from recurred on 2026-09-22: a verify pass closed six tickets on an envelope whose session id was the all-zero placeholder, and the author decided by hand whether to accept them. 0179 FR4 names this operation as one of its outcomes. Contract unchanged.

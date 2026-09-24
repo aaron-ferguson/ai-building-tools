@@ -356,3 +356,30 @@ row lower it would have split 0174 from nothing; placed one row higher it would 
 six-row gate in half.
 
 **0179 and 0180 lead, on the author's word and on the baseline.** 0179 (session-id root cause and prevention) is first because the author asked on 2026-09-22 for it to be worked in the next sprint. 0180 (a red baseline) is second because the next sprint's proposal is only honest if its baseline is known green. 0181, 0182 and 0183 sit directly below the row each most relates to — 0063, 0172 and 0089 — so a design session answering one sees the other.
+
+## 2026-09-23 - 0161 rises to row 3; 0184 and 0185 placed under it
+
+**0179 and 0180 keep rows 1 and 2**, for the reasons the section above gives. Nothing here demotes
+either.
+
+**0161 rises from rank 9 to row 3, directly under 0180.** Three reasons, in the order they decide it.
+It is **Tier 1**: a verify pass closing tickets on an untrustworthy envelope leaves closed rows nobody
+can vouch for, and this has now happened twice (0151-0154 on 2026-09-13, reopened by hand in `ecc6a60`;
+six tickets on 2026-09-22, accepted by hand). Each recovery is a by-hand write under a by-hand lock,
+the shape `CONCURRENCY.md` records as leaking. It is **close to a prerequisite of 0179**: 0179 FR4
+names *reopen via 0161* as one of the outcomes a supervisor may choose, so a design answer reached
+before 0161 exists names an operation nobody can run. And it is **specified and takeable** at
+`next: develop`, where both rows above it are design. It does not go above 0179, whose place is the
+author's word, and it does not go above 0180, whose answer decides whether the next sprint's baseline
+is honest. The regroup section's *"0161 and 0177 sink to ranks 9 and 10"* is superseded for 0161 only;
+0177 keeps its place relative to 0174.
+
+**0184 goes directly under 0161.** Tier 2, compounding: every sprint whose supervisor parks a finding
+dispatches its next stage onto a dirty `FINDINGS.md`, and `tests/findings-buffer.test.sh` reads that
+file, so the dirt reaches the next gate's evidence. Twice (`5ff9dbb`; the 2026-09-23 retro). It is
+`s` and certain (tie-breaker 4). Below 0161 on tier.
+
+**0185 goes directly under 0184 and above 0178.** Its question is the other half of the same
+finding, and both name `skills/sprint/SKILL.md` and `tests/sprint.test.sh`. Above 0178 on the
+**regret operator**, flagged: an untracked `runs/` means no sprint stage ever starts on a clean tree,
+where skipping 0178 costs session floors, which the regroup section already calls Tier 2 at worst.

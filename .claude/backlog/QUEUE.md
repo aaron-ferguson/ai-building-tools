@@ -25,9 +25,11 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0179 | Find why a stage reports a session id it never ran under, and stop anything trusting one | design | ready |  |
 | 0180 | Decide what a sprint does on a red baseline, and which stage may fix a red no ticket owns | design | ready |  |
+| 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
+| 0184 | Make the sprint supervisor commit the finding it parks, in the same turn | develop | ready |  |
+| 0185 | Decide whether the sprint's run logs are committed, and what may appear in them if they are | design | ready |  |
 | 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | design | ready |  |
 | 0174 | Say the findings gate is deferred until the run is out of work when no scope was confirmed | develop | ready |  |
-| 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
 | 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
 | 0175 | Decide what identifies a sprint across a suspension, and which mechanisms key off it | design | ready |  |
 | 0172 | Decide how a script refusal and the skill that must satisfy it reach a session together | design | ready |  |

@@ -53,4 +53,3 @@ which entries, what is expired unprocessed, and why a sweeper removes only what 
 normal state of this file is empty, and **if it has grown, that is itself the finding**.
 
 ---
-- 2026-09-23 — **The sprint supervisor parked a finding without committing it, and `.claude/backlog/runs/` is untracked, so this retro was dispatched onto a dirty tree it did not make.** At dispatch `git status` showed `M .claude/backlog/FINDINGS.md` (the supervisor's park for run-20260922T031109Z) and `?? .claude/backlog/runs/`. retro Step 6 requires a park be committed in the same turn by pathspec, since uncommitted it is one `git stash` from gone; the supervisor's did not, so the stage that drains the buffer ends up committing the supervisor's line on its behalf. Nothing I found says whether `runs/` is meant to be tracked. (`skills/sprint/SKILL.md`, its park step; retro session edf44941-de11-48ca-92b8-093a50099f9b)
