@@ -254,6 +254,13 @@ applied. Where the guard under test mutates its own copy, an external mutation c
 internal cases and the run exits **with no tally**; that missing tally is the tell, and it reads as a
 broken harness rather than as the red it is.
 
+**A non-empty diff is not evidence the break landed when the guard matches case-insensitively.** A
+mutation replacing the literal `echoed` changed the file, left the guard's actual target —
+`Echoed, never authoritative`, capitalised, matched by a `grep -qiE` — standing, and the suite stayed
+green with no error anywhere (`tests/sprint-ledger.test.sh`, 2026-09-22). That reads exactly like a
+guard that holds, and the rule below would then publish an unguarded row. **Mutate the phrase the
+guard's own pattern would match**, read off the guard, rather than a phrase you remember being nearby.
+
 **A mutation that does not redden is a result to publish, not a gap to paper over.** When nothing
 catches a change, the tempting move is to invent an assertion narrow enough to make it load-bearing — a
 threshold chosen precisely so the thing under test becomes necessary. That manufactures a guard for a

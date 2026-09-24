@@ -37,7 +37,7 @@ moment, so a genuine holder will be gone. Still held, then read `held-by`:
 Always release with `rm -rf` in the turn you took it, including on the path where you decide *not* to
 make the change. A script releases on its failure paths via a `trap`.
 
-**Three things bite a by-hand lock, and all three fail silently.**
+**Four things bite a by-hand lock, and all four fail silently.**
 
 - **Resolve `$BACKLOG` to an absolute path.** A `trap 'rm -rf "$BACKLOG/.lock"' EXIT` resolves against
   the shell's cwd *at trap time*, so a sequence that `cd`s to the repo root — the natural shape, since
@@ -53,6 +53,12 @@ make the change. A script releases on its failure paths via a `trap`.
 - **A busy-lock report should say when the holder is you.** It prints the token and timestamp, which
   diagnoses the leak above only if the reader remembers minting that token. Compare it against the token
   you hold and say so.
+- **The snippet is `sh`, and an agent's Bash tool runs zsh.** Under `set -eu` zsh treats an unmatched
+  glob as a fatal error rather than a false test, so a routine guard like `[ -e items/0176-*.md ]`
+  kills the sequence *after* the `mkdir` and before the explicit `rm -rf` — the exact form the bullet
+  above prescribes, stranding the lock and blocking every claim and close until a person clears it
+  (2026-09-21). `sed -i` differs the same way and warns nobody. Pipe the sequence into `/bin/sh -s`,
+  which is what cleared it, rather than pasting it into the tool's own shell.
 
 ### A scope overlap — rule: *The working tree is shared too*
 

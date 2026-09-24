@@ -799,6 +799,17 @@ a multi-ticket gate, against single-ticket sessions on comparable tickets. Until
 develop-side batching rule rests on the capture-side figure and on `0017`'s precedent, which is what
 that ticket already says it rests on.
 
+## What a slow guard file costs a verify gate, not a run
+
+**Price a guard's runtime per gate, because `verify` runs it once per mutation.** `0165` made
+`tests/sprint.test.sh` execute the real file, and the author accepted ~4 s → ~45 s as "every
+whole-suite run pays it". Measured 2026-09-22 at **41.3 s** wall, the six-ticket verify gate for
+0176/0165/0163/0162/0166/0173 ran it **ten times** — four mutations for `0176`, two for `0165`, one
+for `0163`, three control runs — so **~7 minutes** of one gate went on one file, against ~40 s
+before. The multiplier is how many tickets in the gate cite the file, plus their mutations, never
+one. The tradeoff still held; the figure it was decided on was the wrong one. Take this figure,
+not the per-run cost, before giving another file a self-executing guard.
+
 ## The kill criterion this also settles
 
 `0016`'s FR5 carried one: drop the approval-gate reorder if an isolated batch retro measures under
