@@ -165,3 +165,26 @@ handoff rather than treating the checkout as proof.
   - **Superseded guards:** this intentionally retires `0160` AC1's Step 4 comparison and `0173`'s
     schema-description Documentation NFR. `0173`'s ledger behaviour stays.
   - `size` lowered from `l` to `m`: no script changes, one schema field, prose and test edits.
+- 2026-09-24 — **develop (token fb1a), `11c503c`.** Built as designed; no FR stale (`grep -rn 0179`
+  found nothing but this ticket's own lifecycle commits).
+  - Schema: `session_id` gone from `required` and `properties`; `additionalProperties: false` kept,
+    so an envelope that still sends one is **refused** — a new case asserts that with the fabricated
+    id from run-20260922T031109Z.
+  - SKILL.md: probe prompt drops the clause (AC2); Step 4's comparison paragraph deleted and the
+    untrusted-pass paragraph now opens *"A malformed outcome, or one returning
+    `conventions_resolved: null`"* (AC3); Step 5 carries the AC4 sentence on one line, deliberately
+    over-width so the line-based guard can match it; Step 3's `--session-id` bullet says why the
+    schema asks for no id.
+  - Tests: `0160 AC1` → `0179 AC3` (and AC2/AC4 guards beside it) in `tests/sprint.test.sh`;
+    `0173 Documentation NFR` → `0179 AC1` in `tests/sprint-ledger.test.sh`, each with a comment naming
+    0179. The two fixtures and both missing-field loops dropped `session_id`, and the AC22 probe
+    test's own prompt was changed to match the skill's.
+  - **Red-before-green, run:** all new guards were red on the pre-change files (9 fails in
+    `sprint.test.sh`, 1 in `sprint-ledger.test.sh`). **Mutation, run:** `additionalProperties: true`
+    on the committed schema reds all three AC1 guards; restored by `git checkout`.
+  - AC6 **run**: the `0173` phantom-id and `session_mismatches` cases pass with fixtures unchanged
+    (129/0). AC7 **run**: whole suite green; the AC22 live probe executed (0 skipped) and returned a
+    schema-valid outcome against the *new* schema.
+  - **Not yet live:** a dispatch `cat`s the installed schema, so real runs still require the field
+    until `tools/release`. This very session was dispatched under 0.9.32's schema and still had to
+    report a `session_id` (it read `CLAUDE_CODE_SESSION_ID` to do so).
