@@ -197,3 +197,21 @@ its context floor on each resume. The estimate model has no term for this. Findi
 | usd | 7.80 | 3.40 | LEDGER.md 4 recorded sprint(s) over 11 ticket(s) @ 2026-09-22T02:23:48Z — superseded before dispatch: user redirected the run to a queue session |
 
 FINDINGS parked 1 (run-20260922T022312Z.jsonl outcome events @ 2026-09-22T02:44:51Z)
+
+## sprint run-20260922T031109Z -- ended 2026-09-24T00:00:58Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 6 | 6 | confirmed scope @ 2026-09-24T00:00:58Z |
+| wall_clock_min | 83 | 2689 | LEDGER.md 5 recorded sprint(s) over 12 ticket(s) @ 2026-09-22T03:11:22Z |
+| tokens | 27263170 | 48376083 | LEDGER.md 5 recorded sprint(s) over 12 ticket(s) @ 2026-09-22T03:11:22Z — partial: 2 unpriced turn(s) |
+| usd | 43.52 | 36.62 | LEDGER.md 5 recorded sprint(s) over 12 ticket(s) @ 2026-09-22T03:11:22Z — partial: 2 unpriced turn(s) |
+| tail_tokens | no prior | 808361 | harvest-usage.sh over 1 session id(s) @ 2026-09-24T00:00:58Z — partial: 18 unpriced turn(s) |
+| tail_usd | no prior | 1.22 | harvest-usage.sh over 1 session id(s) @ 2026-09-24T00:00:58Z — partial: 18 unpriced turn(s) |
+
+GATE develop 6 ticket(s) session 540d0cb1: predicted USD 26.20 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-24T00:00:58Z) observed USD 22.18 (harvest-usage.sh over 1 session id(s) @ 2026-09-24T00:00:58Z)
+GATE develop 1 ticket(s) session dda30e75: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-24T00:00:58Z) observed USD 3.42 (harvest-usage.sh over 1 session id(s) @ 2026-09-24T00:00:58Z)
+RATIO verify_usd_per_ticket batched session e0cf784f = 1.84
+  numerator USD 11.02 (harvest-usage.sh over 1 session id(s) @ 2026-09-24T00:00:58Z)
+  denominator 6 ticket(s) (run-20260922T031109Z.jsonl outcome events @ 2026-09-24T00:00:58Z)
+FINDINGS parked 2 (run-20260922T031109Z.jsonl outcome events @ 2026-09-24T00:00:58Z)
