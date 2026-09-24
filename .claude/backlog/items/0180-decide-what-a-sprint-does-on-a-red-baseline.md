@@ -193,6 +193,20 @@ the defect existed.
     and stays as it is. This is guard work only.
   - The mechanism was cleared: the prose for all eight ACs is present and says what the ACs say.
     The failure is in the guards alone.
+- 2026-09-24 — develop (token 9c22), re-entry on verify 1b52's FAIL. Guard work only; the prose
+  is unchanged. Two presence cases were added to `tests/sprint.test.sh` in da2c1c7, each scoped to
+  the proposal section:
+  - **AC2** asserts the whole bullet `**amend** or **decline**, as above`, not `**decline**` alone.
+    The three-answer list earlier in the section already offers decline, so a guard on the word
+    alone would stay green (verify's point).
+  - **AC5** asserts `the proposal names that ticket`.
+  - **Mutation (run).** In a throwaway worktree at da2c1c7, each clause was replaced with `ZZMUT`
+    (checked to occur exactly once first), and `tests/sprint.test.sh` was run whole. Each mutation
+    turned its own named case red and no other 0180 case. The 0165 self-copy case also went red,
+    as expected, so each run read 303 passed, 2 failed. The control run was 305 passed, 0 failed.
+    The worktree was removed in the same turn.
+  - **Whole suite (run).** The per-file form ran on the working tree at da2c1c7. All 31 files
+    reported `0 failed`, and `tests/sprint.test.sh` read 305 passed, 0 failed.
 
 ## QA evidence
 
