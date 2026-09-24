@@ -463,7 +463,7 @@ It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the b
 **A red no ticket owns is never fixed under the claim you hold**, however small the fix. `da524ce`
 repaired one under `0176`'s claim: an unrelated test file sat in `0176`'s diff for verify to
 explain, and nothing in the backlog recorded that the defect had existed. Park a `FINDINGS.md` entry
-saying the red still needs a row (`CONCURRENCY.md`, *A stage may record what still needs filing*),
+saying the red still needs a row (`CONCURRENCY.md`, *A stage writes only the ticket it holds*),
 name it in the outcome's `escalation` when a supervisor dispatched you, and carry on if your own ACs
 can still be attributed. A red your dispatch prompt lists as `baseline_red` is not yours.
 
