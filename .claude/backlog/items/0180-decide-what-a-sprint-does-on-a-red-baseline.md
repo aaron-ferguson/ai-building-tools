@@ -140,3 +140,41 @@ the defect existed.
 - **Size.** `tests/skill-size.test.sh` already carries a recorded exemption for
   `skills/sprint/SKILL.md` (0040). The build has to fit inside that file's current budget or
   re-argue the exemption. It must not raise the cap silently.
+- 2026-09-24 — develop (token 30db). Built in 8878ba3. What each AC rests on:
+  - AC1–AC7 are 31 new presence cases in `tests/sprint.test.sh` (block `0180`), one phrase per case,
+    each scoped to its section with `section`/`says_ci`: Step 1, the proposal section, Step 3 and
+    Step 8 of `skills/sprint/SKILL.md`; Step 5 of `skills/develop/SKILL.md`. AC7 greps
+    `config.yml` and `skills/verify/SKILL.md` whole-file, since each phrase occurs once there.
+  - Proven red first: before the prose existed, all 30 cases asserting new text failed; the one
+    that passed asserts `commands.unit` is unchanged, which is correct.
+  - Mutation sweep (run, not reasoned): each guarded phrase was replaced in a throwaway worktree
+    at 8878ba3, and the whole `tests/sprint.test.sh` was run once per mutation. The results are
+    below under *Sweep result*.
+  - AC8: the whole suite was run per file (`unit_by_file` form). The result is below.
+- **Size, not raised silently.** `skills/sprint/SKILL.md` went from 49,675 to 52,288 bytes (+2,613),
+  and `skills/develop/SKILL.md` from 47,203 to 47,787. Both files already carry recorded exemptions,
+  and `tests/skill-size.test.sh` puts no upper bound on a recorded file, so there was no cap to
+  fit inside. The exemption itself was not re-argued here. Its reason still cites "~2,100 bytes
+  over", which was already about 29k stale before this ticket, so that is parked in `FINDINGS.md`
+  (a9ba508) for a retro or queue decision rather than decided under this claim.
+- **An enumeration this widened.** Step 1's "three checks" became four, and the proposal's
+  answers went from three to four when the baseline is red. A grep for sibling ids found one stale
+  comment: `tests/sprint.test.sh`, 0130's AC1 block ("AFTER the three checks"). It is a comment,
+  not an assertion, and it belongs to 0130, so it was left alone and is reported here.
+- **A design-note claim checked against the source.** The Step 3 dispatch prompt is written by
+  the supervisor, and that is where the `baseline_red` line now lives. The design note said so, and
+  it holds: Step 3 already carries prompt-content bullets such as the write channel.
+- **Sweep result (run).** 31 of 31 mutations turned their own named case red. In each one, the
+  guarded phrase was replaced by `ZZMUTATEDZZ` in a worktree at 8878ba3, and the whole
+  `tests/sprint.test.sh` was run. Two of the phrases ("as its own gate" and "belongs to an open
+  ticket") wrap across a line in the raw file, so a literal replace missed them on the first pass.
+  They were re-run with a whitespace-tolerant replace and went red too. That the guard matches
+  across line breaks is the `section` flattening at work. The worktree was removed in the same turn.
+- **AC8 (run).** The first whole-suite run (31 files, per-file form) had exactly one red, and it
+  was mine. `tests/citations.test.sh` failed because develop's new paragraph cited the bold bullet
+  "A stage may record what still needs filing". A citation must name a CONCURRENCY.md *heading*,
+  and that bullet sits under *A stage writes only the ticket it holds*. Fixed in c537d1a, after which
+  `tests/citations.test.sh` ran 46 passed, 0 failed, and the other 30 files were green on that run.
+  FR4's own citation of the bullet cannot be written as a resolvable citation in skill prose.
+- Review checklist: the change is prose plus presence guards. There is no code path, secret or
+  input boundary. Each new rule states its failure in one clause (da524ce, run-20260922T031109Z).
