@@ -3,7 +3,7 @@ id: "0178"
 title: Let a join reach below rank adjacency, and bound the gate by something other than rank
 type: bug
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: l
@@ -20,8 +20,8 @@ expects:
   - skills/develop/SKILL.md
   - tests/sprint.test.sh
   - tests/batching.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "64bd"
+claimed_at: 2026-09-24T14:30:30Z
 touches:
 ---
 
