@@ -3,7 +3,7 @@ id: "0179"
 title: Find why a stage reports a session id it never ran under, and stop anything trusting one
 type: bug
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: l
@@ -18,8 +18,8 @@ expects:
   - tools/sprint-ledger.sh
   - .claude/backlog/close
   - skills/queue/templates/close
-claimed_by:
-claimed_at:
+claimed_by: "b6b5"
+claimed_at: 2026-09-24T13:04:51Z
 touches:
 ---
 
