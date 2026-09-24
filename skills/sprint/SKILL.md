@@ -71,7 +71,7 @@ fails, so the key must stay absent.
 claude -p \
   --json-schema "$(cat <plugin root>/skills/sprint/outcome.schema.json)" \
   --max-budget-usd 0.25 \
-  'Return a minimal valid stage outcome: stage "retro", session_id "aaaaaaaa-0000-4000-8000-000000000001", empty arrays for commits and tickets, 0 for cost_usd and findings_parked, null for conventions_resolved and escalation.' \
+  'Return a minimal valid stage outcome: stage "retro", empty arrays for commits and tickets, 0 for cost_usd and findings_parked, null for conventions_resolved and escalation.' \
   < /dev/null
 ```
 
@@ -331,7 +331,9 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
   is not valid JSON"*. `"$(cat …)"` is the form that works, and it keeps FR13's actual requirement:
   the shape is declared in **one file**, supplied by the invoker, so no stage skill describes it.
 - **`--session-id` is pre-assigned here, not read back afterwards.** That makes the transcript path
-  a dispatch-time fact in the run log rather than something a dead supervisor has to hunt for.
+  a dispatch-time fact in the run log rather than something a dead supervisor has to hunt for. The
+  outcome schema asks the stage for no id: it was never told one, so it composed a placeholder or a
+  plausible fabrication with no transcript behind it, three times in two runs (0179).
 - **`--add-dir`** reaches the conventions repo. Without it the narrow scoping below blocks the very
   files `config.yml` points the stage at, and the stage stops — correctly, and confusingly.
 - **`--setting-sources`** is stated rather than inherited, so a stage's settings are a property of
@@ -440,15 +442,9 @@ evidence; the wrapper's exit is the supervisor's plumbing, not the stage's resul
 **`conventions_resolved: null` is an escalation, not a pass.** The project makes conventions
 mandatory; a stage that resolved none built against no standard.
 
-**An outcome whose `session_id` is not the dispatched one fails exactly as a malformed outcome
-does** — escalate, dispatch nothing further, stop. The UUID is pre-assigned at dispatch and logged
-in that stage's `dispatch` event, so the comparison is a lookup in your own run log. Without it a
-placeholder reads as valid: one pass returned `00000000-0000-4000-8000-000000000000` and every
-other field was well-formed, so nothing in the envelope was wrong-looking enough to stop on.
-
-**An outcome failing either of those two checks, having reported tickets as `closed`, `pass` or
-`next: done`, is an escalation that names those ids as closed on an untrusted pass and due for
-re-verification.** The closes are already committed inside the stage session — the supervisor reads
+**A malformed outcome, or one returning `conventions_resolved: null`, having reported tickets as
+`closed`, `pass` or `next: done`, is an escalation that names those ids as closed on an untrusted
+pass and due for re-verification.** The closes are already committed inside the stage session — the supervisor reads
 the outcome afterwards, so it can detect this and never prevent it, and a closed ticket has no path
 back to verify on its own. Four were closed that way and a person reopened them by hand; naming the
 ids is what makes that possible without re-reading the run.
@@ -469,8 +465,11 @@ and a pointer worth opening gets named.
 The confirmed scope as one `scope_confirmed` event, then every stage started, every outcome, every
 gate decision and every escalation, each with a UTC timestamp and the run id. A design `dispatch`
 and its `outcome` carry `stage` and its ticket id in `tickets`, which is what the ledger pairs a
-design window by. The supervising conversation is what dies; a decision that reached only
-the transcript is unrecoverable.
+design window by.
+**The `outcome` event's `session_id` is the dispatched UUID, written by the supervisor, never read from the stage's stdout.**
+It is copied from the `dispatch` event the outcome answers, because the stage returns no id; the
+ledger drops an outcome event without one. The supervising conversation is what dies; a decision
+that reached only the transcript is unrecoverable.
 
 **`scope_confirmed` also carries `supervisor_session`, the supervising process's own
 `CLAUDE_CODE_SESSION_ID`** — read it in the same Bash call that writes the event. Step 9's bound is

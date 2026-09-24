@@ -5,7 +5,6 @@
   "additionalProperties": false,
   "required": [
     "stage",
-    "session_id",
     "commits",
     "cost_usd",
     "findings_parked",
@@ -17,11 +16,6 @@
     "stage": {
       "description": "Which skill ran. Not a `next:` value — `retro` and `prototype` are stages that hold no row.",
       "enum": ["queue", "design", "prototype", "develop", "verify", "retro"]
-    },
-    "session_id": {
-      "description": "The UUID the supervisor pre-assigned at dispatch, echoed back. Pre-assigned rather than reported so the transcript path is a dispatch-time fact in the run log, findable when the supervisor is dead. Echoed, never authoritative: the ledger takes its source of truth from the dispatch event, because a stage that returns some other id is naming a session with no transcript, which once booked a phantom gate at USD 0.00 beside the real one.",
-      "type": "string",
-      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
     },
     "commits": {
       "description": "Every commit SHA this session landed, in order. Empty is legitimate: a stage can correctly conclude there was nothing to write.",

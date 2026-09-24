@@ -192,7 +192,6 @@ echo "AC2 — a gate of three tickets with three different verdicts validates, a
 cat > "$FIX/gate-of-three.json" <<'JSON'
 {
   "stage": "develop",
-  "session_id": "6f1b0c22-0000-4000-8000-000000000001",
   "commits": ["1111111", "2222222"],
   "cost_usd": 1.42,
   "findings_parked": 2,
@@ -229,7 +228,6 @@ echo "AC2/AC3 — a SINGULAR object does not validate"
 cat > "$FIX/singular.json" <<'JSON'
 {
   "stage": "develop",
-  "session_id": "6f1b0c22-0000-4000-8000-000000000002",
   "commits": ["1111111"],
   "cost_usd": 0.51,
   "findings_parked": 0,
@@ -278,6 +276,29 @@ else
   ok "a stray field on a complete ticket entry is refused"
 fi
 
+# --- 0179 AC1 — the stage is never asked for its session id ------------------------------------
+# The schema demanded a UUID the dispatch never supplied, so a stage composed one: a placeholder, or
+# a plausible fabrication with no transcript behind it. The supervisor takes the id from its own
+# dispatch; the envelope carries none, and one that tries is refused like any stray field.
+echo "0179 AC1 — the outcome schema carries no session_id, and still pins additionalProperties"
+schema_shape="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("required" if "session_id" in d["required"] else "", "properties" if "session_id" in d["properties"] else "", d.get("additionalProperties"))' "$SCHEMA" 2>/dev/null || echo unreadable)"
+if [ "$schema_shape" = "  False" ]; then
+  ok "session_id is in neither required nor properties, and additionalProperties is false"
+else
+  bad "0179 AC1 — the schema still asks a stage for session_id, or no longer pins additionalProperties: [$schema_shape]"
+fi
+python3 - "$FIX/gate-of-three.json" "$FIX" <<'INNER'
+import json, sys
+doc = json.load(open(sys.argv[1]))
+doc["session_id"] = "4f1d8a26-7c3b-4e59-9a10-2b6d5e83c714"   # the fabricated id run-20260922T031109Z returned
+json.dump(doc, open(f"{sys.argv[2]}/carries-session-id.json", "w"))
+INNER
+if valid "$FIX/carries-session-id.json"; then
+  bad "0179 AC1 — an envelope carrying a session_id validated; a stage can still hand the supervisor an id"
+else
+  ok "an envelope carrying a session_id is refused"
+fi
+
 echo "AC3 — a partial object is refused rather than proceeded on"
 
 python3 - "$FIX/gate-of-three.json" "$FIX" <<'PY'
@@ -285,7 +306,7 @@ import json, sys
 doc = json.load(open(sys.argv[1]))
 out = sys.argv[2]
 # One file per dropped envelope field, so the failure message names which field went missing.
-for field in ("stage", "session_id", "commits", "cost_usd", "findings_parked",
+for field in ("stage", "commits", "cost_usd", "findings_parked",
               "conventions_resolved", "escalation", "tickets"):
     partial = {k: v for k, v in doc.items() if k != field}
     json.dump(partial, open(f"{out}/missing-{field}.json", "w"))
@@ -296,7 +317,7 @@ for field in ("id", "verdict", "next", "status", "detail"):
     json.dump(partial, open(f"{out}/ticket-missing-{field}.json", "w"))
 PY
 
-for field in stage session_id commits cost_usd findings_parked conventions_resolved escalation tickets; do
+for field in stage commits cost_usd findings_parked conventions_resolved escalation tickets; do
   if valid "$FIX/missing-$field.json"; then
     bad "AC3 — an envelope missing '$field' validated; the supervisor would proceed on a partial object"
   else
@@ -905,7 +926,7 @@ else
   # "Warning: no stdin data received in 3s" INTO the output being parsed, so a supervisor reading
   # stdout as JSON gets a warning line first and concludes the stage failed the schema.
   got="$(claude -p --json-schema "$(cat "$SCHEMA")" --max-budget-usd 0.25 \
-          'Return a minimal valid stage outcome: stage "retro", session_id "aaaaaaaa-0000-4000-8000-000000000001", empty arrays for commits and tickets, 0 for cost_usd and findings_parked, null for conventions_resolved and escalation.' \
+          'Return a minimal valid stage outcome: stage "retro", empty arrays for commits and tickets, 0 for cost_usd and findings_parked, null for conventions_resolved and escalation.' \
           < /dev/null 2>/dev/null || true)"
   printf '%s' "$got" > "$FIX/probe-got.json"
   if valid "$FIX/probe-got.json"; then
@@ -2377,11 +2398,37 @@ fi
 # A verify session closed four tickets returning `conventions_resolved: null`, a placeholder
 # `session_id`, and per-ticket test files in place of config's `unit` command. Three gaps, each
 # independently sufficient; these are the two the supervisor owns, plus verify's own level row.
-echo "0160 AC1/AC2 — Step 4 checks the session id and names untrusted closes for re-verification"
-if says "$SKILL" "Step 4 — Read the outcome, and nothing else" 'not the dispatched'; then
-  ok "Step 4 compares the outcome's session_id with the dispatched one"
+# 0179 superseded 0160 AC1's session-id comparison: the outcome carries no id to compare, so the
+# guard now asserts the comparison is gone and the untrusted-pass paragraph names the two triggers
+# that remain.
+echo "0160 AC2 / 0179 AC3 — Step 4 compares no session id and names untrusted closes for re-verification"
+if says "$SKILL" "Step 4 — Read the outcome, and nothing else" 'not the dispatched' \
+   || says "$SKILL" "Step 4 — Read the outcome, and nothing else" 'session_id'; then
+  bad "0179 AC3 — Step 4 still reads a session_id out of the outcome; the stage is never given one to report"
 else
-  bad "0160 AC1 — Step 4 does not compare session_id with the dispatched UUID; a placeholder reads as valid"
+  ok "Step 4 reads no session_id from the outcome"
+fi
+if says "$SKILL" "Step 4 — Read the outcome, and nothing else" 'A malformed outcome, or one returning `conventions_resolved: null`, having reported'; then
+  ok "the untrusted-pass paragraph names the malformed outcome and conventions_resolved: null as its triggers"
+else
+  bad "0179 AC3 — the untrusted-pass paragraph does not name its two triggers (malformed outcome, conventions_resolved: null)"
+fi
+echo "0179 AC2 — the Step 1 probe asks the model for no session_id"
+# The probe runs against the real schema, which now refuses the property; a prompt still asking for
+# it would have the model return an envelope the probe then rejects, and the host reads as broken.
+probe_text="$(awk '/^```/ { if (infence) { if (body ~ /step-1-probe/) print body; infence = 0; body = "" } else { infence = 1 }; next } infence { body = body "\n" $0 }' "$SKILL")"
+if [ -z "$probe_text" ]; then
+  bad "0179 AC2 — no step-1-probe block found in the skill to read"
+elif printf '%s' "$probe_text" | grep -q 'session_id'; then
+  bad "0179 AC2 — the Step 1 probe prompt still names session_id: $(printf '%s' "$probe_text" | grep 'session_id' | head -1)"
+else
+  ok "the Step 1 probe prompt names no session_id"
+fi
+echo "0179 AC4 — Step 5's outcome event takes its session_id from the dispatch, never from stdout"
+if grep -F 'dispatched UUID, written by the supervisor' "$SKILL" | grep -qF "never read from the stage's stdout"; then
+  ok "the outcome event's session_id is written by the supervisor from its dispatch"
+else
+  bad "0179 AC4 — Step 5 does not say, on one line, that the outcome event's session_id is the dispatched UUID written by the supervisor and never read from stdout"
 fi
 if says "$SKILL" "Step 4 — Read the outcome, and nothing else" 're-verification'; then
   ok "Step 4 names ids closed on an untrusted pass as due for re-verification"

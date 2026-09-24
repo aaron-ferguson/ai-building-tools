@@ -1248,11 +1248,14 @@ else
   ok "and a run whose dispatch and outcome ids agree reports no mismatch at all"
 fi
 
-echo "0173 Documentation NFR — the schema says session_id is echoed, not authoritative"
-if grep -qiE 'echo(ed)?[^"]*(not|never)[^"]*(authoritative|source of truth)|(not|never)[^"]*(authoritative|source of truth)' "$ROOT/skills/sprint/outcome.schema.json"; then
-  ok "outcome.schema.json says the echoed id is not the ledger's source of truth"
+# 0179 superseded 0173's Documentation NFR, which asserted the schema called the echoed id "not
+# authoritative". The schema no longer carries the field at all: a stage was never given an id to
+# echo, so it composed one. The ledger's own behaviour above is unchanged and still reads dispatches.
+echo "0179 AC1 — the outcome schema asks a stage for no session_id"
+if python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if "session_id" not in d["required"] and "session_id" not in d["properties"] and d.get("additionalProperties") is False else 1)' "$ROOT/skills/sprint/outcome.schema.json" 2>/dev/null; then
+  ok "outcome.schema.json carries no session_id, so the ledger's ids can only come from dispatch events"
 else
-  bad "0173 Documentation NFR — outcome.schema.json does not say session_id is echoed rather than authoritative; a stage reading it still thinks the field decides where its transcript is"
+  bad "0179 AC1 — outcome.schema.json still asks a stage for session_id (or no longer pins additionalProperties); a stage with no id to report composes one"
 fi
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
