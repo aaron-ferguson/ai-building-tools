@@ -187,8 +187,8 @@ in-progress rows. It offers four answers instead of three:
   `baseline_red`, the case list and the `HEAD` SHA, and every dispatch prompt quotes it (Step 3);
 - **amend** or **decline**, as above.
 
-**A red no open ticket owns gets a row, never an out-of-scope repair.** On repair first, dispatch
-one `queue` session whose prompt gives the red cases, the introducing commit, and "rank first"; it
+**A red no open ticket owns gets a row, never an out-of-scope repair.** On the answer repair first,
+dispatch one `queue` session whose prompt gives the red cases, the introducing commit, and "rank first"; it
 mints a `type: bug` row whose `relates:` names the ticket that introduced the red. That row runs as
 its own gate to `next: done`, and the supervisor then runs the baseline again; nothing else in the
 confirmed scope is dispatched until it is green. **A red whose introducing commit belongs to an open
@@ -376,7 +376,7 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
   file was already open.
 - **In a run whose baseline red was waived, every stage prompt quotes it** as "baseline red at
   <sha>, not yours", with the `baseline_red` case list from `scope_confirmed`. Without it each stage
-  re-separates the old red from its own by hand, which is the cost the waiver exists to remove.
+  re-separates a waived red from its own by hand, which is the cost the waiver exists to remove.
 - **The stage prompt names the write channel and the path form.** Backlog files are written with a
   Bash heredoc, so grant Bash: an unattended `queue` stage's Write tool refused every new
   `.claude/backlog/items/*.md` as a sensitive file, and a prompt nobody can answer stalls the stage.

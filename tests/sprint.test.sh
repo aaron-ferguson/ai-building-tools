@@ -2560,6 +2560,11 @@ guard_says "$SKILL" "Step 3" 'whose baseline red was waived' \
 guard_says "$SKILL" "Step 3" 'every stage prompt quotes it' \
   "0180 AC3 — every stage prompt carries it" \
   "0180 AC3 — nothing says which prompts carry the waived list"
+# Round 6: a Given row is the AC's whole Given clause, verbatim. `whose baseline red was waived`
+# restates it; this is the AC's own words.
+guard_says "$SKILL" "Step 3" 'a waived red' \
+  "0180 AC3 — Step 3 names the AC's Given, a waived red" \
+  "0180 AC3 — Step 3 never says a waived red; the AC's Given is only restated"
 
 echo "0180 AC4 — repair first mints a row through queue, runs it alone, and re-checks"
 guard_says "$SKILL" "$PROPOSAL" 'one `queue` session' \
@@ -2592,6 +2597,11 @@ guard_says "$SKILL" "Step 8" 'one exception' \
 guard_says "$SKILL" "$PROPOSAL" 'a red no open ticket owns' \
   "0180 AC4 — the mint is scoped to a red no open ticket owns" \
   "0180 AC4 — the mint names no condition; an owned red could be minted a row"
+# Round 6: the Given's second conjunct, verbatim. `On repair first` passed round 5 only because
+# `repair first` survives elsewhere in the section.
+guard_says "$SKILL" "$PROPOSAL" 'the answer repair first' \
+  "0180 AC4 — the mint is scoped to the answer repair first" \
+  "0180 AC4 — the mint names no answer; it could follow waive"
 guard_says "$SKILL" "Step 8" 'or writes a ticket' \
   "0180 AC4 — Step 8 states the never-writes-a-ticket rule the exception belongs to" \
   "0180 AC4 — Step 8's exception has no rule to be an exception to"
@@ -2603,6 +2613,11 @@ echo "0180 AC5 — a red an open ticket owns names that ticket and mints no row"
 guard_says "$SKILL" "$PROPOSAL" 'belongs to an open ticket' \
   "0180 AC5 — the owned case is stated" \
   "0180 AC5 — nothing separates a red an open ticket owns"
+# Round 6 (verify 3d48): the whole Given clause. The guard above leaves `introducing commit` free
+# to go, and without it the sentence no longer says what makes the red owned.
+guard_says "$SKILL" "$PROPOSAL" 'a red whose introducing commit belongs to an open ticket' \
+  "0180 AC5 — ownership is decided by the introducing commit" \
+  "0180 AC5 — the owned case does not say what makes the red owned"
 guard_says "$SKILL" "$PROPOSAL" 'mints no row' \
   "0180 AC5 — and mints no row for it" \
   "0180 AC5 — an owned red can be minted a duplicate row"
