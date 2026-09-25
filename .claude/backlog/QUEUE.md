@@ -107,6 +107,11 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0155 | Make claim and next agree on what blocks a take | develop | ready |  |
 | 0156 | Let handoff record a blocker without leaving drift that stops a driver | develop | ready |  |
 | 0157 | Make release verify compare the install against the released commit | develop | ready |  |
+| 0188 | Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop | design | ready |  |
+| 0186 | Never drop a session from the harvest because its model has no published rate | develop | ready |  |
+| 0187 | Decide whether a sprint dispatch pins a concrete model or records the one that answered | design | ready |  |
+| 0189 | Make the citations guard resolve the conventions path from a worktree outside the checkout's parent | develop | ready |  |
+| 0190 | Re-argue the sprint skill's size exemption against its current size, or relocate | design | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
