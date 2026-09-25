@@ -23,16 +23,21 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
+| 0186 | Never drop a session from the harvest because its model has no published rate | develop | ready |  |
 | 0161 | Give a closed ticket a scripted path back to verify | develop | ready |  |
 | 0184 | Make the sprint supervisor commit the finding it parks, in the same turn | develop | ready |  |
 | 0185 | Decide whether the sprint's run logs are committed, and what may appear in them if they are | develop | ready |  |
+| 0187 | Decide whether a sprint dispatch pins a concrete model or records the one that answered | design | ready |  |
+| 0188 | Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop | design | ready |  |
 | 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | develop | ready |  |
 | 0174 | Say the findings gate is deferred until the run is out of work when no scope was confirmed | develop | ready |  |
 | 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
 | 0175 | Decide what identifies a sprint across a suspension, and which mechanisms key off it | design | ready |  |
 | 0172 | Decide how a script refusal and the skill that must satisfy it reach a session together | design | ready |  |
 | 0182 | Name the write mechanism that works for each backlog file, the lock included, where every stage reads it | design | ready |  |
+| 0190 | Re-argue the sprint skill's size exemption against its current size, or relocate | design | ready |  |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | develop | ready |  |
+| 0189 | Make the citations guard resolve the conventions path from a worktree outside the checkout's parent | develop | ready |  |
 | 0041 | Write release notes for what a work session delivered | develop | ready | 0128 |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
 | 0183 | Decide what checks that an NFR row's named guard can actually red on that requirement | design | ready |  |
@@ -107,11 +112,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0155 | Make claim and next agree on what blocks a take | develop | ready |  |
 | 0156 | Let handoff record a blocker without leaving drift that stops a driver | develop | ready |  |
 | 0157 | Make release verify compare the install against the released commit | develop | ready |  |
-| 0188 | Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop | design | ready |  |
-| 0186 | Never drop a session from the harvest because its model has no published rate | develop | ready |  |
-| 0187 | Decide whether a sprint dispatch pins a concrete model or records the one that answered | design | ready |  |
-| 0189 | Make the citations guard resolve the conventions path from a worktree outside the checkout's parent | develop | ready |  |
-| 0190 | Re-argue the sprint skill's size exemption against its current size, or relocate | design | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in

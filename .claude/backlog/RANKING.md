@@ -383,3 +383,33 @@ file, so the dirt reaches the next gate's evidence. Twice (`5ff9dbb`; the 2026-0
 finding, and both name `skills/sprint/SKILL.md` and `tests/sprint.test.sh`. Above 0178 on the
 **regret operator**, flagged: an untracked `runs/` means no sprint stage ever starts on a clean tree,
 where skipping 0178 costs session floors, which the regroup section already calls Tier 2 at worst.
+
+## 2026-09-25 - the retro's five rows, 0186-0190, placed
+
+**0186 goes to row 1, above 0161.** Tier 1: output that is silently wrong, and the damage accrues. Every
+dispatched session now running on a model the harvest's `RATES` does not list is dropped from the
+harvest and from the ledger. Run-20260922T031109Z's figure cannot be recovered, and each further run
+loses another. 0161 is not a prerequisite of it, so no override holds 0161 above it. 0161 keeps its
+argument and moves down one.
+
+**0187 goes directly under 0185, and 0188 directly under 0187, both above 0178.** Both are Tier 2 and
+reach every project running the sprint skill. Both name `skills/sprint/SKILL.md` and
+`tests/sprint.test.sh`, like 0184 and 0185, so adjacency keeps the file-scope grouping. 0187 is above
+0188 on tie-breaker 4, because it is `s` and 0188 is `m`. Blast radius, what each unblocks and knowledge
+freshness do not separate them. 0188 is above 0178 because it records a rule the user stated on
+2026-09-24 that the shipped skill contradicts. 0178 costs session floors, which the regroup section
+calls Tier 2 at worst. The two also share `next --propose`, so a design session answering one should
+see the other.
+
+**0190 goes directly under 0182 and above 0110.** It is Tier 2, because the sprint skill's context rent
+is paid on every supervisor turn and each ticket that grows it passes against a stale reason. It sits
+below the design rows 0175, 0172 and 0182 on tie-breaker 2, because those decide mechanisms that rows
+above them cite. It sits above 0110 on tie-breaker 3, because the size measurements from 0180 are
+fresh.
+
+**0189 goes directly under 0110 and above 0041.** It is Tier 2 with a blast radius of one project: a
+false red in a temp-directory worktree baseline, which *repair first* would turn into a phantom row. It
+sits below every all-projects Tier 2 row above it on tie-breaker 1. It sits above 0041 on tier, because
+release notes are Tier 4 value.
+
+The regret operator was not needed for any of the five.
