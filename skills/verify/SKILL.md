@@ -236,6 +236,18 @@ still muted" rests naturally on a storage module's round-trip test, and deleting
 layer up leaves 945 unit tests green while the AC is broken end to end. Ask what the AC claims, then
 break that, wherever it lives.
 
+**Before any clause mutation, enumerate every AC into a clause table** — one row each for
+the Given condition and each qualifier that scopes it,
+each predicate (the action), and each object or destination the AC names.
+Record the table in QA evidence. Without it each round divides the ACs its own way: 0180 went four
+rounds — guard phrases, then predicates and objects, then qualifiers — each hand-back listing only
+what that round found. **The gap test:** a clause mutation that stays green is a gap only if the
+phrase the AC names no longer occurs anywhere in that section after the mutation.
+Where the phrase survives elsewhere in the section, the outcome holds, and that is not a gap.
+**A FAIL hand-back lists every gap under that test across all ACs, never a sample.**
+A re-entry verify reuses the prior table — `develop`'s in the build notes, or the last round's.
+A phrase the table omitted is reported as a table omission; verify never chooses a new way of dividing the sentences.
+
 **Never trust a mutation you did not run.** A ticket arrives with a mutation table in its build notes —
 "render only the active panel → reddens *travels as one unit*" — and such a table reads as discharged
 evidence, which makes it the cheapest thing in a handoff to accept on faith. It is a *claim about* the

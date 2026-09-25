@@ -1,7 +1,8 @@
 #!/bin/sh
 #
 # Prose guard for the falsifiability rules in skills/queue/SKILL.md, skills/verify/SKILL.md and
-# skills/queue/templates/item.md (0052).
+# skills/queue/templates/item.md (0052), and for the clause table verify Step 3 shares with
+# skills/develop/SKILL.md's mutation sweep.
 #
 # WHY THIS EXISTS:
 #
@@ -210,6 +211,33 @@ says "AC1 — the preamble requires it"               "$IN" 'Each row names how 
 says "AC1 — and refuses a row that cannot"          "$IN" 'is not a commitment and does not ship'
 says "AC4/FR4 — the permitted prose form is named"  "$IN" 'prose only — no artifact yet'
 says "AC4/FR4 — an empty cell is the other state"   "$IN" 'An empty cell is an unanswered row'
+
+# ---------------------------------------------------------------------------
+# The clause table (direct task, 2026-09-25). Step 3 said "mutate at the altitude the AC is written
+# at" and never defined one clause, so 0180 went four verify rounds, each dividing the ACs its own
+# way and handing back only what that division found. Both stages now share one table and one gap
+# test; each half is asserted in its own step, so one stage cannot keep the rule while the other drops it.
+# ---------------------------------------------------------------------------
+
+echo "Clause table — verify Step 3 fixes what one AC clause is before mutating"
+says "the table comes before any clause mutation"   "$VW" 'Before any clause mutation, enumerate every AC into a clause table'
+says "it lists conditions and their qualifiers"     "$VW" 'the Given condition and each qualifier that scopes it'
+says "it lists predicates and objects"              "$VW" 'each predicate (the action), and each object or destination the AC names'
+says "the table is recorded in QA evidence"         "$VW" 'Record the table in QA evidence'
+says "the gap test: the phrase is gone from the section" "$VW" 'no longer occurs anywhere in that section after the mutation'
+says "a surviving phrase is not a gap"              "$VW" 'the outcome holds, and that is not a gap'
+says "a FAIL lists every gap, never a sample"       "$VW" 'every gap under that test across all ACs, never a sample'
+says "a re-entry reuses the prior table"            "$VW" 'A re-entry verify reuses the prior table'
+says "an omitted phrase is a table omission"        "$VW" 'reported as a table omission'
+says "and the sentences are not re-divided"         "$VW" 'never chooses a new way of dividing the sentences'
+
+DEVELOP="$ROOT/skills/develop/SKILL.md"
+DS="$(window "$DEVELOP" '## Step 5 — Leave the tree green' '^### Then stop')"
+
+echo "Clause table — develop's mutation sweep uses the same table and gap test"
+says "the sweep enumerates from the AC text"        "$DS" 'enumerates from the AC text, never from the guard block'
+says "it uses verify's clause table and gap test"   "$DS" 'the clause table and gap test'
+says "the table goes into the build notes"          "$DS" 'Write the table into the build notes'
 
 # ---------------------------------------------------------------------------
 # The cases below prove the guard can fail. A guard only ever seen passing is indistinguishable

@@ -507,6 +507,13 @@ adopts every fragile check it brushes against stops being the ticket that was ra
 sentinel line it prints last and wait on it with an `until grep -q`, planned before the run is
 backgrounded rather than after.
 
+**A mutation sweep enumerates from the AC text, never from the guard block**: a sweep over the guard's
+own phrases covers only what the guard already covers (0180 reported "31 of 31", truly, with two
+unguarded AC clauses). Use the clause table and gap test `verify` Step 3 defines — a row for each
+Given condition and qualifier scoping it, each predicate, each object or destination the AC names;
+a green mutation is a gap only if the AC's phrase no longer occurs anywhere in that section.
+Write the table into the build notes under *Notes & decisions*, so verify checks against it.
+
 **If you mutation-check your own guards here, mutate only what is committed.** `git checkout -- <path>`
 restores that file to `HEAD` rather than to the state you found it in, so reverting a mutation over a
 fix you have not committed **deletes the fix** — silently, with no error, and the run that follows
