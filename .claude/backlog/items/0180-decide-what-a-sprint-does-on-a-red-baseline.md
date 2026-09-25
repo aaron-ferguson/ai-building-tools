@@ -204,32 +204,58 @@ the defect existed.
     The worktree was removed in the same turn.
   - **Whole suite (run).** The per-file form ran on the working tree at da2c1c7. All 31 files
     reported `0 failed`, and `tests/sprint.test.sh` read 305 passed, 0 failed.
+- 2026-09-25 — verify (token eb65): **FAIL on AC3, AC4 and AC6. AC1, AC2, AC5, AC7 and AC8 pass.**
+  This pass enumerated mutations from the **AC text, clause by clause**, as well as from the guard
+  block. All 36 guard mutations turned their own case red. Six clause mutations left
+  `tests/sprint.test.sh` at `305 passed, 0 failed, 0 skipped`. Each clause below was replaced with
+  ZZMUT in a worktree at 9f0cf0c, using whole-file, case-insensitive, whitespace-tolerant matching:
+  - **AC3, "carries the `baseline_red` list".** Step 3 of `skills/sprint/SKILL.md`: replacing
+    `with the `baseline_red` case list from `scope_confirmed`` stays green. So does replacing just
+    `` `baseline_red` case list ``. The only Step 3 guard is `baseline red at <sha>, not yours`.
+    That covers the SHA, not the list.
+  - **AC4, "to mint a row".** Proposal section: removing both `gets a row, never` and
+    `it mints a `type: bug` row whose `relates:` names the ticket that introduced the red` stays
+    green.
+  - **AC4, "runs that row alone to `next: done`".** Replacing `to `next: done`` stays green.
+    `as its own gate` guards "alone" and nothing else.
+  - **AC4, "re-runs the baseline before any other dispatch".** Replacing
+    `nothing else in the confirmed scope is dispatched until it is green` stays green.
+    `runs the baseline again` guards the re-run, not the ordering.
+  - **AC6, "routes the red to a `FINDINGS.md` … entry".** Step 5 of `skills/develop/SKILL.md`:
+    replacing `` `FINDINGS.md` `` (both occurrences) stays green. `still needs a row` guards the
+    wording of the entry, not where it goes.
+  - **The constraint for develop.** Add one presence case per clause above: five cases, each scoped
+    to the section it lives in (Step 3; the proposal section ×3; develop Step 5). Prove each by
+    removing only that clause, which must turn only that case red. The prose is correct and stays
+    as it is. This is guard work only, and the mechanism was cleared.
+  - **The list is exhaustive.** This pass walked every clause of AC1–AC8 against a guard. The
+    clauses listed above are the only unguarded ones, so a re-entry that covers them should not
+    produce a fourth round. Rounds 1 and 2 each fixed only the clauses the previous verify named,
+    because the send-back listed only those.
+  - Not ACs, recorded for completeness: FR4's `A red your dispatch prompt lists as `baseline_red`
+    is not yours.` (develop Step 5) is also unguarded. No AC names it.
 
 ## QA evidence
 
 Conventions: ../ai-building-conventions
 Level: `qa_level: unit`. The command run was `commands.unit_by_file`, verbatim:
-`for t in tests/*.test.sh; do "$t" || true; done`. It is the reporting form of `commands.unit`,
-used so that every file reports. HEAD at Step 2 was 6e39cc8, and the dirty set was
-`?? .claude/backlog/runs/`.
+`for t in tests/*.test.sh; do "$t" || true; done`. It ran in a worktree at 9f0cf0c. The Step 2
+dirty set was `?? .claude/backlog/runs/`.
 
 | Check | How | Result |
 |---|---|---|
-| AC1 | 8 cases in `tests/sprint.test.sh`, 0180 block. Each guarded phrase in `skills/sprint/SKILL.md` Step 1 was replaced in a worktree at 6e39cc8 (case-insensitive and whitespace-tolerant, matching `says_ci`). | PASS. 8/8 mutations turned their named case red. |
-| AC2 | 8 cases on the proposal section, mutated the same way. The unguarded clause was also mutated. | **FAIL.** 8/8 guarded phrases turn red. Removing amend/decline from the red-baseline list leaves 303 passed, 0 failed. |
-| AC3 | Case `baseline red at <sha>, not yours`, Step 3. | PASS. The mutation turns it red. |
-| AC4 | 5 cases: proposal section ×4 and Step 8 `one exception`. | PASS. 5/5 turn red. |
-| AC5 | 2 cases: `belongs to an open ticket` and `mints no row`. The unguarded clause was also mutated. | **FAIL.** 2/2 turn red. Removing "the proposal names that ticket" leaves 303 passed, 0 failed. |
-| AC6 | 4 cases on `skills/develop/SKILL.md` Step 5. | PASS. 4/4 turn red. |
-| AC7 | 3 cases on `.claude/backlog/config.yml` and `skills/verify/SKILL.md`. | PASS. 3/3 turn red. `commands.unit` is unchanged (read). |
-| AC8 | The whole suite, per file, at 6e39cc8. | PASS. 31 files and every tally reads `0 failed`: `tests/sprint.test.sh` 303 passed, 0 failed, 0 skipped; `tests/skill-size.test.sh` 50 passed, 0 failed; `tests/citations.test.sh` 46 passed, 0 failed. |
-| Sweep control | Unmutated `tests/sprint.test.sh` in the worktree, after all mutations. | 303 passed, 0 failed, 0 skipped |
-| Mutation side-effect | Each mutation also turns the 0165 self-copy case red, because that case re-runs this file. That is expected. | 2 failed per mutation: the named case plus the 0165 case. |
-| NFRs | The ticket has no NFR table. Always-on pass from `CONVENTIONS_CORE.md`: the change is prose and presence guards, with no secrets, company material or absolute paths. What it newly makes reachable is one automated `queue` dispatch, and only after a person picks repair first. The text bounds it to one session. | PASS. |
+| AC1 | 8 guard mutations in `skills/sprint/SKILL.md` Step 1, plus the clause mutation `the unit suite at `HEAD``. | PASS. 9/9 red. |
+| AC2 | 9 guard mutations in the proposal section, including `**amend** or **decline**, as above`. | PASS. 9/9 red. |
+| AC3 | Guard mutation `baseline red at <sha>, not yours`: red. Clause mutation of the `baseline_red` case list: green. | **FAIL.** The list clause is unguarded: `305 passed, 0 failed, 0 skipped`. |
+| AC4 | 5 guard mutations: red. 3 clause mutations (mint a row; `to next: done`; nothing else dispatched until green): all green. | **FAIL.** 3 unguarded clauses, each `305 passed, 0 failed, 0 skipped`. |
+| AC5 | 3 guard mutations, including `the proposal names that ticket`. | PASS. 3/3 red. |
+| AC6 | 4 guard mutations in `skills/develop/SKILL.md` Step 5: red. Clause mutation of `` `FINDINGS.md` ``: green. | **FAIL.** The destination clause is unguarded: `305 passed, 0 failed, 0 skipped`. |
+| AC7 | 3 guard mutations (`.claude/backlog/config.yml` ×2, `skills/verify/SKILL.md`). `commands.unit` read unchanged. | PASS. 3/3 red. |
+| AC8 | The whole suite, per file, at 9f0cf0c. | PASS. 31 files. 30 read `0 failed` in the temp worktree, including `tests/sprint.test.sh` `305 passed, 0 failed, 0 skipped` and `tests/skill-size.test.sh` `27 passed, 0 failed`. `tests/citations.test.sh` read `45 passed, 1 failed` there, with `FAIL no conventions directory resolved from config.yml`. That red comes from the worktree's location, not the change: at the same SHA the file reads `46 passed, 0 failed` both in the checkout and in a sibling worktree. Parked in FINDINGS. |
+| Sweep controls | Unmutated `tests/sprint.test.sh`, before and after each sweep. | `305 passed, 0 failed, 0 skipped` (×3) |
+| NFRs | There is no NFR table. Always-on pass from `CONVENTIONS_CORE.md`: prose and presence guards only, with no secrets, company material or absolute paths. The newly reachable path is one `queue` dispatch, taken only after a person picks repair first. | PASS |
 
 Evidence set: `skills/sprint/SKILL.md`, `skills/develop/SKILL.md`, `skills/verify/SKILL.md`,
-`.claude/backlog/config.yml`, `tests/sprint.test.sh`, `tests/skill-size.test.sh`, and `tests/*.test.sh`
-(AC8). The dirty set was `.claude/backlog/runs/`, which is untracked, so the intersection is
-empty. HEAD moved mid-pass to e9f5533 (0178's claim, design and hand-off, plus a FINDINGS line).
-None of those commits touched the evidence set. The copy that executed was the repo copy. The
-change is skill prose, and the guards read the repo files.
+`.claude/backlog/config.yml`, `tests/sprint.test.sh`, `tests/citations.test.sh`, `tests/*.test.sh`.
+The dirty set at Step 2 and at the verdict was `.claude/backlog/runs/` (untracked). The intersection
+is empty. The repo copy executed: the guards read the repo files.
