@@ -217,3 +217,50 @@ RATIO verify_usd_per_ticket batched session e0cf784f = 1.84
 FINDINGS parked 2 (run-20260922T031109Z.jsonl outcome events @ 2026-09-24T00:00:58Z)
 
 **CORRECTION to run-20260922T031109Z, added 2026-09-23 after the tail completed.** The `tail_tokens` and `tail_usd` figures above (808361 / 1.22) were recorded when the retro had run one leg, and they are NOT the tail's cost. The retro was then resumed twice and the queue sweep ran, and both later legs ran `claude-opus-5-5`, for which `harvest-usage.sh` has no rate. The queue session is absent from the harvest entirely and 50 of the retro's 91 turns are unpriced, so **the true tail cost cannot be computed from the transcripts** and must not be read as 1.22. Do not use this run's tail figures as a prior. Stage self-reports, for what they are worth: retro 1.22 + 2.48 + 3.60, queue 1.26. Parked as a finding 2026-09-23; see also 0162, which is why the gap was visible rather than silent.
+
+## sprint run-20260924T050130Z -- ended 2026-09-25T19:46:56Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 6 | 9 | confirmed scope @ 2026-09-25T19:46:56Z |
+| wall_clock_min | 1504 | 2323 | LEDGER.md 5 recorded sprint(s) over 18 ticket(s), 1 excluded (no ticket count), 4 predate the tail split |
+| tokens | 34300808 | unpriced | LEDGER.md 5 recorded sprint(s) over 18 ticket(s), 1 excluded (no ticket count), 4 predate the tail split — unpriced: 492 turn(s) on a model with no published rate |
+| usd | 40.56 | unpriced | LEDGER.md 5 recorded sprint(s) over 18 ticket(s), 1 excluded (no ticket count), 4 predate the tail split — unpriced: 492 turn(s) on a model with no published rate |
+| tail_tokens | no prior | unpriced | harvest-usage.sh over 3 session id(s) @ 2026-09-25T19:46:56Z — unpriced: 70 turn(s) on a model with no published rate |
+| tail_usd | no prior | unpriced | harvest-usage.sh over 3 session id(s) @ 2026-09-25T19:46:56Z — unpriced: 70 turn(s) on a model with no published rate |
+NOTE (supervisor, hand-corrected): the harvest priced none of this run's 492 turns (claude-opus-5-5 has no rate, 0186), and `record` wrote each per-session figure as 0.00; those are rewritten above as unpriced, not measured zeros. Stage-reported spend, the sum of the outcome events' cost_usd in run-20260924T050130Z.jsonl, is USD 23.75, excluding the supervisor and the two direct sessions (98eec368, 5a1f13d6), which report no cost.
+
+GATE develop 1 ticket(s) session bb35f8a5: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+GATE develop 1 ticket(s) session c402c22c: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+GATE develop 1 ticket(s) session 0c9f365a: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+GATE develop 1 ticket(s) session bc985dbd: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+GATE develop 1 ticket(s) session c21b3775: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+GATE develop 1 ticket(s) session 20a3a642: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+RATIO verify_usd_per_ticket unbatched session d3e047e6 = unpriced
+  numerator unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+  denominator 1 ticket(s) (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
+RATIO verify_usd_per_ticket unbatched session 1d3fb920 = unpriced
+  numerator unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+  denominator 1 ticket(s) (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
+RATIO verify_usd_per_ticket unbatched session 5821ec05 = unpriced
+  numerator unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+  denominator 1 ticket(s) (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
+RATIO verify_usd_per_ticket unbatched session 8eed6ca8 = unpriced
+  numerator unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+  denominator 1 ticket(s) (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
+RATIO verify_usd_per_ticket unbatched session 57da099b = unpriced
+  numerator unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+  denominator 1 ticket(s) (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
+RATIO verify_usd_per_ticket unbatched session 722b5bbe = unpriced
+  numerator unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+  denominator 1 ticket(s) (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
+RATIO verify_usd_per_ticket unbatched session fa3ec517 = unpriced
+  numerator unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+  denominator 1 ticket(s) (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
+DESIGN 0179 session d22459cb sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+DESIGN 0179 session 3177df94 sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+DESIGN 0180 session ee449922 sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+DESIGN 0185 session 4476cbc5 concurrent: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+DESIGN 0178 session a5c9a0fa sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
+FINDINGS parked 6 (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
+RETRO consumed 0 produced 0 (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
