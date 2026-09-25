@@ -2,8 +2,8 @@
 id: "0180"
 title: Decide what a sprint does on a red baseline, and which stage may fix a red no ticket owns
 type: bug
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -16,8 +16,8 @@ expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
   - skills/develop/SKILL.md
-claimed_by: "3d48"
-claimed_at: 2026-09-25T18:37:33Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -378,29 +378,54 @@ the defect existed.
   - FR4's `baseline_red` sentence in develop Step 5 is still unguarded. No AC names it (eb65), so
     it is not a row in the table.
 
+- 2026-09-25 — verify (token 3d48), round 5: **FAIL on AC5 alone, from a table omission. AC1–AC4 and AC6–AC8 pass.**
+  This pass reused develop 9849's clause table and re-ran every row itself in a sibling worktree
+  at f655dc3. It did not divide the sentences a new way. Method: every occurrence of the row's
+  phrase inside its section became ZZMUT (case-insensitive, whitespace-tolerant). The diff was
+  checked non-empty, with `left=0` occurrences. Then `tests/sprint.test.sh` ran with
+  `SPRINT_TEST_CHILD=1 SPRINT_SKIP_PROBE=1`.
+  - **The table as written: 49 of 50 rows red.** The 50th is `AC4 Given: the answer repair first`
+    (`On repair first`). It stays at `320 passed, 0 failed, 1 skipped`, but `repair first` still
+    occurs in the section, so under the gap test it is not a gap. Develop's result reproduces.
+    The notes say "51 rows", but the table has 50. That is a count drift, not a missing row.
+  - **Table omission, and a gap: AC5 "whose introducing commit belongs to an open ticket".** The
+    table's AC5 Given row pins `belongs to an open ticket` only. The qualifier in front of it,
+    `introducing commit`, has no row. Replacing both occurrences of `introducing commit` in the
+    proposal section of `skills/sprint/SKILL.md` (replaced=2, left=0) leaves the file at
+    `320 passed, 0 failed, 1 skipped`. After the mutation the owned-red sentence reads "A red
+    whose ZZMUT belongs to an open ticket is owned", so it no longer says what makes the red owned.
+  - **Table omission, not a gap: AC1 predicate "runs" (the unit suite).** Replacing
+    `Run the baseline:` in Step 1 stays green, but `run` (`Run `commands.unit_by_file``) and
+    `unit suite` both survive in the section.
+  - No other AC phrase lacks a row. The When clauses ("when Step 1 is read", "when a stage dispatch
+    is read", "its red-attribution section") are locators, not clauses.
+  - **The constraint for develop.** Add one presence case, scoped to the proposal section through
+    `guard_says`, asserting `whose introducing commit belongs to an open ticket`. Prove it by
+    replacing `introducing commit` in the proposal section alone: that case must turn red, and no
+    other 0180 case. The prose is correct and stays as it is. This is guard work only, and the
+    mechanism was cleared. The exhaustive list under the gap test is that one clause.
+
 ## QA evidence
 
 Conventions: ../ai-building-conventions
 Level: `qa_level: unit`. The command run was `commands.unit_by_file`, verbatim:
-`for t in tests/*.test.sh; do "$t" || true; done`. It ran in a sibling worktree at 2cb26e4. The
+`for t in tests/*.test.sh; do "$t" || true; done`. It ran in a sibling worktree at f655dc3. The
 Step 2 dirty set was `?? .claude/backlog/runs/`. The repo copy executed, because the guards read
-the repo files.
+the repo files. The mutation sweep ran in a second sibling worktree at f655dc3, and both worktrees
+were removed before the verdict.
 
 | Check | How | Result |
 |---|---|---|
-| AC1 | 8 guard mutations in Step 1, all red. 5 clause mutations: `the baseline` (red); `the unit suite`, `in a throwaway worktree`, the fallback clause, `Report the tally` (green, but the qualifier survives in the section). | PASS |
-| AC2 | 9 guard mutations in the proposal section, all red. Clause mutations `A red baseline` and `The waiver is recorded`: green, but the qualifier survives. | PASS |
-| AC3 | 2 guard mutations in Step 3, both red (`<sha>`, and the case list). Two separate clause mutations of the bullet's subject: green, but the quoted line and the list are guarded. | PASS |
-| AC4 | 8 guard mutations, all red. Clause mutation `the supervisor then runs`: red. **Clause mutation `A red no open ticket owns gets`: green, and the qualifier is gone from the section.** | **FAIL.** `310 passed, 0 failed, 0 skipped` |
-| AC5 | 3 guard mutations, all red. Clause mutations: `ticket is owned` red; `introducing commit` green, but it survives twice. | PASS |
-| AC6 | 5 guard mutations in develop Step 5, all red. **Clause mutation `A red no ticket owns` (the rule's subject): green, and the qualifier is gone from the section.** `the outcome's`: green, and `escalation` is guarded. | **FAIL.** `310 passed, 0 failed, 0 skipped` |
-| AC7 | 3 guard mutations (`.claude/backlog/config.yml` ×2, `skills/verify/SKILL.md`), all red. `commands.unit` read unchanged. Clause mutation `the reporting form`: green, and the key is still named. | PASS |
-| AC8 | The whole suite, per file, at 2cb26e4. | PASS. 31 files, and every tally reads `0 failed`: `tests/sprint.test.sh` `310 passed, 0 failed, 0 skipped`, `tests/skill-size.test.sh` `27 passed, 0 failed`, `tests/citations.test.sh` `46 passed, 0 failed` |
-| Sweep control | Unmutated `tests/sprint.test.sh` after the 57-mutation sweep. The mutation worktree read clean afterwards. | `310 passed, 0 failed, 0 skipped` |
-| NFRs | There is no NFR table. Always-on pass from `CONVENTIONS_CORE.md`: prose and presence guards only, with no secrets, company material or absolute paths. The newly reachable path is one `queue` dispatch, taken only after a person picks repair first. | PASS |
-
-Every mutated guard run read `308 passed, 2 failed`, or 307/3 where a phrase feeds two cases: its
-own 0180 case plus the expected 0165 self-copy case.
+| AC1 | 9 table rows in Step 1, all red (`319 passed, 1 failed, 1 skipped` each). Omitted row "runs": green, but `run` and `unit suite` survive in the section. | PASS |
+| AC2 | 10 table rows in the proposal section, all red. | PASS |
+| AC3 | 5 table rows in Step 3, all red. | PASS |
+| AC4 | 11 of 12 table rows red. `On repair first` is green, but `repair first` survives in the section, so it is not a gap. | PASS |
+| AC5 | 3 table rows, all red. **Omitted row `introducing commit` (both occurrences in the proposal section, left=0): green, and the phrase is gone from the section.** | **FAIL.** `320 passed, 0 failed, 1 skipped` |
+| AC6 | 7 table rows in develop Step 5, all red. | PASS |
+| AC7 | 4 table rows (`.claude/backlog/config.yml` ×2, `skills/verify/SKILL.md` ×2), all red. | PASS |
+| AC8 | The whole suite, per file, at f655dc3. | PASS. 31 files, and every tally reads `0 failed`: `tests/sprint.test.sh` `324 passed, 0 failed, 0 skipped`, `tests/skill-size.test.sh` `27 passed, 0 failed`, `tests/citations.test.sh` `46 passed, 0 failed` |
+| Sweep control | Unmutated `tests/sprint.test.sh` (child mode, probe skipped) before and after the 52-mutation sweep. The mutation worktree read clean afterwards. | `320 passed, 0 failed, 1 skipped` both times |
+| NFRs | There is no NFR table. Always-on pass from `CONVENTIONS_CORE.md`: prose and presence guards only, with no secrets, company material or absolute paths. | PASS |
 
 Evidence set: `skills/sprint/SKILL.md`, `skills/develop/SKILL.md`, `skills/verify/SKILL.md`,
 `.claude/backlog/config.yml`, `tests/sprint.test.sh`, `tests/*.test.sh`. The dirty set at Step 2
