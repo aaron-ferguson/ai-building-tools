@@ -2530,6 +2530,10 @@ echo "0180 AC3 — every dispatch in a waived run says the baseline red is not t
 guard_says "$SKILL" "Step 3" 'baseline red at <sha>, not yours' \
   "0180 AC3 — Step 3's dispatch prompt quotes the waived list" \
   "0180 AC3 — Step 3 does not carry the waived list; each stage re-separates the old red from its own"
+# The SHA guard above leaves the list itself free to go: deleting it stayed green (verify, eb65).
+guard_says "$SKILL" "Step 3" 'with the `baseline_red` case list from `scope_confirmed`' \
+  "0180 AC3 — and quotes the baseline_red case list itself" \
+  "0180 AC3 — the prompt carries the SHA but not the case list; a stage cannot tell which reds were waived"
 
 echo "0180 AC4 — repair first mints a row through queue, runs it alone, and re-checks"
 guard_says "$SKILL" "$PROPOSAL" 'one `queue` session' \
@@ -2538,12 +2542,22 @@ guard_says "$SKILL" "$PROPOSAL" 'one `queue` session' \
 guard_says "$SKILL" "$PROPOSAL" 'rank first' \
   "0180 AC4 — and its prompt says rank first" \
   "0180 AC4 — the repair row is not ranked first"
+# Three clauses verify eb65 found unguarded: each of these stayed green with only its clause deleted.
+guard_says "$SKILL" "$PROPOSAL" 'mints a `type: bug` row' \
+  "0180 AC4 — the queue session mints a row" \
+  "0180 AC4 — the queue session is dispatched but mints nothing; the repair has no row"
 guard_says "$SKILL" "$PROPOSAL" 'as its own gate' \
   "0180 AC4 — the repair row runs as its own gate" \
   "0180 AC4 — the repair row can batch with confirmed scope"
+guard_says "$SKILL" "$PROPOSAL" 'to `next: done`' \
+  "0180 AC4 — and runs to next: done" \
+  "0180 AC4 — the repair row's gate has no end; scope can resume with the fix unverified"
 guard_says "$SKILL" "$PROPOSAL" 'runs the baseline again' \
-  "0180 AC4 — and the baseline is re-run before any other dispatch" \
+  "0180 AC4 — and the baseline is re-run" \
   "0180 AC4 — nothing re-checks the baseline after the repair"
+guard_says "$SKILL" "$PROPOSAL" 'nothing else in the confirmed scope is dispatched until it is green' \
+  "0180 AC4 — nothing else is dispatched until the re-run is green" \
+  "0180 AC4 — the re-run is not a gate; confirmed scope can dispatch over a still-red baseline"
 guard_says "$SKILL" "Step 8" 'one exception' \
   "0180 AC4 — the never-writes-a-ticket rule names repair first as its one exception" \
   "0180 AC4 — Step 8 still forbids the queue dispatch repair first needs"
@@ -2569,6 +2583,10 @@ guard_says "$DEVELOP_SKILL" "Step 5" 'da524ce' \
 guard_says "$DEVELOP_SKILL" "Step 5" 'still needs a row' \
   "0180 AC6 — the red goes to a FINDINGS.md 'still needs a row' entry" \
   "0180 AC6 — the red has no durable record"
+# The phrase above guards the entry's wording, not where it goes (verify, eb65).
+guard_says "$DEVELOP_SKILL" "Step 5" 'Park a `FINDINGS.md` entry' \
+  "0180 AC6 — and that entry is parked in FINDINGS.md" \
+  "0180 AC6 — the 'still needs a row' entry names no destination"
 guard_says "$DEVELOP_SKILL" "Step 5" '`escalation`' \
   "0180 AC6 — and to the outcome's escalation" \
   "0180 AC6 — the supervisor is never told"
