@@ -231,6 +231,16 @@ says "a re-entry reuses the prior table"            "$VW" 'A re-entry verify reu
 says "an omitted phrase is a table omission"        "$VW" 'reported as a table omission'
 says "and the sentences are not re-divided"         "$VW" 'never chooses a new way of dividing the sentences'
 
+# 0180 round 5 (FINDINGS 2026-09-25, tokens 9849 and 3d48): the gap test read as "the concept" in one
+# round and "the words" in the next, disagreeing on 11 of 51 rows; and a Given row pinned only the
+# predicate half, so deleting its qualifier stayed green. Both readings are now closed in the text.
+echo "Clause table — the gap test is verbatim, and a Given row is the whole clause"
+says "the gap test matches the AC's own words"      "$VW" "the AC's own words, verbatim, matched case-insensitively and whitespace-tolerantly"
+says "a restated concept does not stand in"         "$VW" 'a different phrase stating the same concept does not stand in for them'
+says "a Given row is the whole Given clause"        "$VW" 'A Given row is the whole Given clause, verbatim'
+says "its guard asserts all of it"                  "$VW" 'qualifier and predicate together, never the predicate half'
+says "0180 AC5 is the worked example"               "$VW" 'whose introducing commit belongs to an open ticket'
+
 DEVELOP="$ROOT/skills/develop/SKILL.md"
 DS="$(window "$DEVELOP" '## Step 5 — Leave the tree green' '^### Then stop')"
 
@@ -238,6 +248,8 @@ echo "Clause table — develop's mutation sweep uses the same table and gap test
 says "the sweep enumerates from the AC text"        "$DS" 'enumerates from the AC text, never from the guard block'
 says "it uses verify's clause table and gap test"   "$DS" 'the clause table and gap test'
 says "the table goes into the build notes"          "$DS" 'Write the table into the build notes'
+says "the gap test is verbatim"                     "$DS" "the AC's own words, verbatim"
+says "a Given row is the whole Given clause"        "$DS" 'A Given row is the whole Given clause, verbatim'
 
 # ---------------------------------------------------------------------------
 # The cases below prove the guard can fail. A guard only ever seen passing is indistinguishable

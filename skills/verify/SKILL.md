@@ -239,10 +239,15 @@ break that, wherever it lives.
 **Before any clause mutation, enumerate every AC into a clause table** — one row each for
 the Given condition and each qualifier that scopes it,
 each predicate (the action), and each object or destination the AC names.
+A Given row is the whole Given clause, verbatim, and its guard asserts all of it,
+qualifier and predicate together, never the predicate half: 0180's AC5 row is
+"whose introducing commit belongs to an open ticket", not "belongs to an open ticket".
 Record the table in QA evidence. Without it each round divides the ACs its own way: 0180 went four
 rounds — guard phrases, then predicates and objects, then qualifiers — each hand-back listing only
 what that round found. **The gap test:** a clause mutation that stays green is a gap only if the
-phrase the AC names no longer occurs anywhere in that section after the mutation.
+phrase the AC names no longer occurs anywhere in that section after the mutation —
+the AC's own words, verbatim, matched case-insensitively and whitespace-tolerantly;
+a different phrase stating the same concept does not stand in for them.
 Where the phrase survives elsewhere in the section, the outcome holds, and that is not a gap.
 **A FAIL hand-back lists every gap under that test across all ACs, never a sample.**
 A re-entry verify reuses the prior table — `develop`'s in the build notes, or the last round's.

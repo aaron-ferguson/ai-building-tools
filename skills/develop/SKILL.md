@@ -511,7 +511,9 @@ backgrounded rather than after.
 own phrases covers only what the guard already covers (0180 reported "31 of 31", truly, with two
 unguarded AC clauses). Use the clause table and gap test `verify` Step 3 defines — a row for each
 Given condition and qualifier scoping it, each predicate, each object or destination the AC names;
-a green mutation is a gap only if the AC's phrase no longer occurs anywhere in that section.
+a green mutation is a gap only if the AC's phrase no longer occurs anywhere in that section —
+the AC's own words, verbatim, never a restatement. A Given row is the whole Given clause, verbatim,
+qualifier included, and its guard asserts all of it.
 Write the table into the build notes under *Notes & decisions*, so verify checks against it.
 
 **If you mutation-check your own guards here, mutate only what is committed.** `git checkout -- <path>`
