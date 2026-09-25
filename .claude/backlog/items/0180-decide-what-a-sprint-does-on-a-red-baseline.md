@@ -21,7 +21,6 @@ claimed_at: 2026-09-25T19:01:48Z
 touches:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-  - skills/develop/SKILL.md
 ---
 
 ## Problem
@@ -341,13 +340,14 @@ the defect existed.
   | AC2 predicate: waiver is recorded | proposal | `The waiver is recorded` | **gap** | red |
   | AC2 object: baseline_red | proposal | `` `baseline_red` `` | red | red |
   | AC2 destination: scope_confirmed | proposal | ``in `scope_confirmed` `` | red | red |
-  | AC3 Given: a waived red | sprint Step 3 | `baseline red was waived` | **gap** | red |
+  | AC3 qualifier: whose baseline red was waived (round 6: was the Given row, but restates it) | sprint Step 3 | `baseline red was waived` | **gap** | red |
+  | AC3 Given: a waived red (round 6, verbatim) | sprint Step 3 | `a waived red` | not in the table | red (62b4b3d) |
   | AC3 predicate: the prompt carries | sprint Step 3 | `every stage prompt quotes it` | **gap** | red |
   | AC3 object: the list | sprint Step 3 | `` `baseline_red` case list `` | red | red |
   | AC3 object: the SHA | sprint Step 3 | `baseline red at <sha>` | red | red |
   | AC3 qualifier: not the stage's own | sprint Step 3 | `not yours` | red | red |
   | AC4 Given: a red no open ticket owns | proposal | `a red no open ticket owns` | **gap** (391b) | red |
-  | AC4 Given: the answer repair first | proposal | `On repair first` | green, survives: not a gap | same |
+  | AC4 Given: the answer repair first (round 6, verbatim; was `On repair first`, which the prose no longer says) | proposal | `the answer repair first` | green, survives: not a gap (under the old reading) | red (62b4b3d) |
   | AC4 predicate: dispatches one queue session | proposal | ``one `queue` session`` | red | red |
   | AC4 predicate: mint a row | proposal | ``mints a `type: bug` row`` | red | red |
   | AC4 qualifier: ranked first | proposal | `rank first` | red | red |
@@ -358,7 +358,9 @@ the defect existed.
   | AC4 object: the never-writes-a-ticket rule | sprint Step 8 | `writes a ticket` | **gap** | red |
   | AC4 predicate: its one exception | sprint Step 8 | `one exception` | red | red |
   | AC4 object: the exception is repair first | sprint Step 8 | `repair first` | **gap** | red |
-  | AC5 Given: belongs to an open ticket | proposal | `belongs to an open ticket` | red | red |
+  | AC5 Given: a red whose introducing commit belongs to an open ticket (round 6, the whole clause) | proposal | `a red whose introducing commit belongs to an open ticket` | not in the table | red (62b4b3d) |
+  | AC5 qualifier: introducing commit (verify 3d48) | proposal | `introducing commit` | not in the table | red (62b4b3d) |
+  | AC5 part of Given: belongs to an open ticket | proposal | `belongs to an open ticket` | red | red |
   | AC5 predicate: names that ticket | proposal | `the proposal names that ticket` | red | red |
   | AC5 predicate: mints no row | proposal | `mints no row` | red | red |
   | AC6 Given: a red no ticket owns | develop Step 5 | `a red no ticket owns` | **gap** (391b) | red |
@@ -407,6 +409,50 @@ the defect existed.
     replacing `introducing commit` in the proposal section alone: that case must turn red, and no
     other 0180 case. The prose is correct and stays as it is. This is guard work only, and the
     mechanism was cleared. The exhaustive list under the gap test is that one clause.
+
+- 2026-09-25 — develop (token bb92), re-entry on verify 3d48's FAIL, round 6. The table above is
+  corrected in place. Rows marked *round 6* were added or rewritten in this pass. The count is now 53
+  rows: 50 as verify counted them, then AC3 +1 and AC5 +2.
+  - **Rule applied.** develop Step 5, as of the a3b1a3e skill: the gap test is verbatim, and a Given
+    row is the whole Given clause, qualifier included, with a guard that asserts all of it.
+    Every Given clause in AC1–AC8 was re-checked against it:
+    - AC1 `skills/sprint/SKILL.md`, AC6 `skills/develop/SKILL.md`, AC7 `.claude/backlog/config.yml`
+      and AC8 "the change" name a file or the diff, not a condition. Each is the file its cases read,
+      so it has no prose phrase to mutate. These are locators, not rows, as verify 3d48 ruled for the
+      When clauses.
+    - AC2 "a red baseline": verbatim and already guarded. No change.
+    - AC3 "a waived red": **failed the rule.** The row pinned `baseline red was waived`, which
+      restates the Given. The AC's own words appeared nowhere in Step 3, so no guard could assert
+      them. The prose `re-separates the old red` is now `re-separates a waived red`, and a guard was
+      added. The old row stays as a qualifier row, still guarded.
+    - AC4 "a red no open ticket owns and the answer repair first": two conjuncts, one row each.
+      "a red no open ticket owns" was already verbatim and guarded. **"the answer repair first"
+      failed the rule**: the row pinned `On repair first`, and round 5 passed it only because
+      `repair first` survives elsewhere in the section. The prose `On repair first, dispatch` is now
+      `On the answer repair first, dispatch`, and a guard was added.
+    - AC5 "a red whose introducing commit belongs to an open ticket": **verify 3d48's omission.**
+      The row pinned only `belongs to an open ticket`. A guard now asserts the whole clause.
+  - **Two prose edits, not guard work only.** Verify 3d48 said the prose stays, but that was about
+    AC5. Under the verbatim rule, a Given the prose only paraphrases cannot be guarded until the
+    prose uses the AC's words. Both edits are rewordings with the same meaning. They are in 62b4b3d
+    beside the three new cases in `tests/sprint.test.sh`.
+  - **Given-row sweep (run).** A sibling worktree at 62b4b3d. Each phrase was replaced with ZZMUT
+    inside its section only (case-insensitive, whitespace-tolerant), then
+    `SPRINT_TEST_CHILD=1 SPRINT_SKIP_PROBE=1 tests/sprint.test.sh` ran. Control:
+    `323 passed, 0 failed, 1 skipped`, before and after. Every row is red:
+    - `a waived red` (1, left=0): only the new AC3 case fails.
+    - `baseline red was waived`: only its own AC3 case fails.
+    - `a red baseline`: only its own AC2 case fails.
+    - `a red no open ticket owns`: only its own AC4 case fails.
+    - `the answer repair first`: only the new AC4 case fails.
+    - `introducing commit` (2, left=0): only the new AC5 case fails. This is verify 3d48's proof.
+    - The whole AC5 clause, and `belongs to an open ticket`: both AC5 Given cases fail.
+    The worktree was removed in the same turn.
+  - **The other rows are reasoned, not rerun.** Their phrases are untouched in 62b4b3d. The one row
+    whose phrase went, `On repair first`, is replaced above.
+  - **Whole suite (run).** The per-file form ran on the working tree before 62b4b3d was committed,
+    with the same bytes. All 31 files read `0 failed`: `tests/sprint.test.sh`
+    `327 passed, 0 failed, 0 skipped`, and `tests/skill-size.test.sh` `27 passed, 0 failed`.
 
 ## QA evidence
 
