@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0180 | Decide what a sprint does on a red baseline, and which stage may fix a red no ticket owns | bug | unit | 2026-09-25 | [items/0180-decide-what-a-sprint-does-on-a-red-baseline.md](items/0180-decide-what-a-sprint-does-on-a-red-baseline.md) |
 | 0179 | Find why a stage reports a session id it never ran under, and stop anything trusting one | bug | unit | 2026-09-24 | [items/0179-find-why-a-stage-reports-a-session-id-it-never-ran-under.md](items/0179-find-why-a-stage-reports-a-session-id-it-never-ran-under.md) |
 | 0173 | Stop the sprint ledger booking a phantom gate from a stage's self-reported session id | bug | unit | 2026-09-22 | [items/0173-stop-the-sprint-ledger-booking-a-phantom-gate.md](items/0173-stop-the-sprint-ledger-booking-a-phantom-gate.md) |
 | 0166 | Make sprint-ledger estimate count tail sessions once, guard each tail stage, and label only the history it used | bug | unit | 2026-09-22 | [items/0166-make-estimate-count-the-tail-once.md](items/0166-make-estimate-count-the-tail-once.md) |

@@ -2,8 +2,8 @@
 id: "0180"
 title: Decide what a sprint does on a red baseline, and which stage may fix a red no ticket owns
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -16,9 +16,10 @@ expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
   - skills/develop/SKILL.md
-claimed_by: "605b"
-claimed_at: 2026-09-25T19:11:04Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-25
 ---
 
 ## Problem
@@ -83,14 +84,14 @@ the defect existed.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/SKILL.md`, when Step 1 is read, then it names a baseline check that runs the unit suite at `HEAD` in a throwaway worktree, prefers `commands.unit_by_file`, and reports the tally on the depth line; `tests/sprint.test.sh` asserts each phrase, and removing any one of them turns it red.
-- [ ] AC2 — Given a red baseline, when the proposal section is read, then it says the red blocks the proposal rather than ending the run, lists repair first (recommended), waive, amend and decline, and says a waiver is recorded as `baseline_red` in `scope_confirmed`; guarded in `tests/sprint.test.sh`.
-- [ ] AC3 — Given a waived red, when a stage dispatch is read in `skills/sprint/SKILL.md`, then the prompt carries the `baseline_red` list and SHA as not the stage's own; guarded in `tests/sprint.test.sh`.
-- [ ] AC4 — Given a red no open ticket owns and the answer repair first, when the sprint text is read, then it dispatches one `queue` session to mint a row ranked first, runs that row alone to `next: done`, and re-runs the baseline before any other dispatch; and the *never writes a ticket* rule names this as its one exception; guarded in `tests/sprint.test.sh`.
-- [ ] AC5 — Given a red whose introducing commit belongs to an open ticket, when the proposal section is read, then it names that ticket and mints no row; guarded in `tests/sprint.test.sh`.
-- [ ] AC6 — Given `skills/develop/SKILL.md`, when its red-attribution section is read, then it forbids fixing a red no ticket owns under the held claim, cites `da524ce`, and routes the red to a `FINDINGS.md` "still needs a row" entry and the outcome's `escalation`; guarded by a new case in `tests/sprint.test.sh` or the develop guard that already covers that section.
-- [ ] AC7 — Given `.claude/backlog/config.yml`, when read, then `commands.unit_by_file` holds the per-file form and `commands.unit` is unchanged (the release gate keeps its fail-fast form); and `skills/verify/SKILL.md` names the key where it now says "the reporting form".
-- [ ] AC8 — Given the change, when `for t in tests/*.test.sh; do "$t" || true; done` runs, then every file is green, including `tests/skill-size.test.sh` against `skills/sprint/SKILL.md` and `skills/develop/SKILL.md`.
+- [x] AC1 — Given `skills/sprint/SKILL.md`, when Step 1 is read, then it names a baseline check that runs the unit suite at `HEAD` in a throwaway worktree, prefers `commands.unit_by_file`, and reports the tally on the depth line; `tests/sprint.test.sh` asserts each phrase, and removing any one of them turns it red.
+- [x] AC2 — Given a red baseline, when the proposal section is read, then it says the red blocks the proposal rather than ending the run, lists repair first (recommended), waive, amend and decline, and says a waiver is recorded as `baseline_red` in `scope_confirmed`; guarded in `tests/sprint.test.sh`.
+- [x] AC3 — Given a waived red, when a stage dispatch is read in `skills/sprint/SKILL.md`, then the prompt carries the `baseline_red` list and SHA as not the stage's own; guarded in `tests/sprint.test.sh`.
+- [x] AC4 — Given a red no open ticket owns and the answer repair first, when the sprint text is read, then it dispatches one `queue` session to mint a row ranked first, runs that row alone to `next: done`, and re-runs the baseline before any other dispatch; and the *never writes a ticket* rule names this as its one exception; guarded in `tests/sprint.test.sh`.
+- [x] AC5 — Given a red whose introducing commit belongs to an open ticket, when the proposal section is read, then it names that ticket and mints no row; guarded in `tests/sprint.test.sh`.
+- [x] AC6 — Given `skills/develop/SKILL.md`, when its red-attribution section is read, then it forbids fixing a red no ticket owns under the held claim, cites `da524ce`, and routes the red to a `FINDINGS.md` "still needs a row" entry and the outcome's `escalation`; guarded by a new case in `tests/sprint.test.sh` or the develop guard that already covers that section.
+- [x] AC7 — Given `.claude/backlog/config.yml`, when read, then `commands.unit_by_file` holds the per-file form and `commands.unit` is unchanged (the release gate keeps its fail-fast form); and `skills/verify/SKILL.md` names the key where it now says "the reporting form".
+- [x] AC8 — Given the change, when `for t in tests/*.test.sh; do "$t" || true; done` runs, then every file is green, including `tests/skill-size.test.sh` against `skills/sprint/SKILL.md` and `skills/develop/SKILL.md`.
 
 ## Notes & decisions
 
@@ -452,28 +453,49 @@ the defect existed.
     with the same bytes. All 31 files read `0 failed`: `tests/sprint.test.sh`
     `327 passed, 0 failed, 0 skipped`, and `tests/skill-size.test.sh` `27 passed, 0 failed`.
 
+- 2026-09-25 — verify (token 605b), round 6: **PASS on AC1–AC8.** This pass reused develop bb92's
+  53-row clause table and did not divide the sentences a new way. It re-ran every row itself in four
+  sibling worktrees at fdb0ca6 (62b4b3d's bytes). For each row, every occurrence of the phrase inside
+  its section became ZZMUT (case-insensitive, whitespace-tolerant; the AC7 rows are whole-file). The
+  diff was checked non-empty with `left=0`. Then
+  `SPRINT_TEST_CHILD=1 SPRINT_SKIP_PROBE=1 tests/sprint.test.sh` ran. **53 of 53 rows went red.**
+  - Round 5's one exception now reds: `the answer repair first` gives 322 passed, 1 failed.
+  - Verify 3d48's omission reds: `introducing commit` (replaced=2, left=0) gives 322 passed, 1 failed.
+  - **Given rows, checked verbatim.** AC2 `a red baseline`, AC3 `a waived red`, AC5
+    `a red whose introducing commit belongs to an open ticket`, and AC6's subject
+    `a red no ticket owns`: each occurs verbatim in its section, and each is guarded and red.
+    AC4's Given is a conjunction, and the table has one verbatim row per conjunct
+    (`a red no open ticket owns`, `the answer repair first`). Both are red. The joined sentence does
+    not occur verbatim, and this pass recorded that without re-dividing it. AC1, AC6, AC7 and AC8
+    name a file or the diff, so they are locators.
+  - **Table omissions: none found.** 3d48's "runs" row (AC1) is still a non-gap: `unit suite`
+    survives, and that row is red.
+
 ## QA evidence
 
 Conventions: ../ai-building-conventions
 Level: `qa_level: unit`. The command run was `commands.unit_by_file`, verbatim:
-`for t in tests/*.test.sh; do "$t" || true; done`. It ran in a sibling worktree at f655dc3. The
-Step 2 dirty set was `?? .claude/backlog/runs/`. The repo copy executed, because the guards read
-the repo files. The mutation sweep ran in a second sibling worktree at f655dc3, and both worktrees
-were removed before the verdict.
+`for t in tests/*.test.sh; do "$t" || true; done`. It ran in a sibling worktree at fdb0ca6 (the
+claim commit, with 62b4b3d's bytes under test). The Step 2 dirty set was `?? .claude/backlog/runs/`.
+The repo copy executed, because the guards read the repo files. The mutation sweep ran in four more
+sibling worktrees at fdb0ca6, one table slice each. All five worktrees were removed before the
+verdict.
 
 | Check | How | Result |
 |---|---|---|
-| AC1 | 9 table rows in Step 1, all red (`319 passed, 1 failed, 1 skipped` each). Omitted row "runs": green, but `run` and `unit suite` survive in the section. | PASS |
-| AC2 | 10 table rows in the proposal section, all red. | PASS |
-| AC3 | 5 table rows in Step 3, all red. | PASS |
-| AC4 | 11 of 12 table rows red. `On repair first` is green, but `repair first` survives in the section, so it is not a gap. | PASS |
-| AC5 | 3 table rows, all red. **Omitted row `introducing commit` (both occurrences in the proposal section, left=0): green, and the phrase is gone from the section.** | **FAIL.** `320 passed, 0 failed, 1 skipped` |
-| AC6 | 7 table rows in develop Step 5, all red. | PASS |
-| AC7 | 4 table rows (`.claude/backlog/config.yml` ×2, `skills/verify/SKILL.md` ×2), all red. | PASS |
-| AC8 | The whole suite, per file, at f655dc3. | PASS. 31 files, and every tally reads `0 failed`: `tests/sprint.test.sh` `324 passed, 0 failed, 0 skipped`, `tests/skill-size.test.sh` `27 passed, 0 failed`, `tests/citations.test.sh` `46 passed, 0 failed` |
-| Sweep control | Unmutated `tests/sprint.test.sh` (child mode, probe skipped) before and after the 52-mutation sweep. The mutation worktree read clean afterwards. | `320 passed, 0 failed, 1 skipped` both times |
+| AC1 | 9 table rows in sprint Step 1, each mutated. | PASS. All red, each `322 passed, 1 failed, 1 skipped` |
+| AC2 | 10 table rows in the proposal section. | PASS. All red. `repair first` (replaced=2) gives `320 passed, 3 failed` |
+| AC3 | 6 table rows in sprint Step 3, including the verbatim Given `a waived red`. | PASS. All red |
+| AC4 | 12 rows: 9 in the proposal section, including both Given conjuncts, and 3 in Step 8. | PASS. All red. `the answer repair first` gives `322 passed, 1 failed, 1 skipped` |
+| AC5 | 5 rows, including the whole Given and `introducing commit` (replaced=2, left=0). | PASS. All red |
+| AC6 | 7 table rows in develop Step 5. | PASS. All red |
+| AC7 | 4 rows (`.claude/backlog/config.yml` ×2, `skills/verify/SKILL.md` ×2). | PASS. All red |
+| AC8 | The whole suite, per file, at fdb0ca6. | PASS. 31 files, and every tally reads `0 failed`: `tests/sprint.test.sh` `327 passed, 0 failed, 0 skipped`, `tests/skill-size.test.sh` `27 passed, 0 failed`, `tests/citations.test.sh` `46 passed, 0 failed` |
+| Sweep control | Unmutated `tests/sprint.test.sh` (child mode, probe skipped), before and after each worker's slice. Each worktree read clean afterwards. | `323 passed, 0 failed, 1 skipped` all 8 times |
+| Table omissions | Every AC phrase was walked against the table. | None. AC4's conjunctive Given has one verbatim row per conjunct |
 | NFRs | There is no NFR table. Always-on pass from `CONVENTIONS_CORE.md`: prose and presence guards only, with no secrets, company material or absolute paths. | PASS |
 
 Evidence set: `skills/sprint/SKILL.md`, `skills/develop/SKILL.md`, `skills/verify/SKILL.md`,
 `.claude/backlog/config.yml`, `tests/sprint.test.sh`, `tests/*.test.sh`. The dirty set at Step 2
-and at the verdict was `.claude/backlog/runs/` (untracked). The intersection is empty.
+and at the verdict was `?? .claude/backlog/runs/` (untracked). The intersection is empty, so the
+verdict is not advisory.
