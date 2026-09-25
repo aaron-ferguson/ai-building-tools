@@ -11,8 +11,8 @@ created: 2026-08-23
 parent: "0009"
 blocked_by: []
 relates: ["0005"]
-claimed_by: "1b2e"
-claimed_at: 2026-08-23T14:57:10Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
