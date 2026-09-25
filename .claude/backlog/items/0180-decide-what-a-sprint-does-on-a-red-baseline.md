@@ -2,8 +2,8 @@
 id: "0180"
 title: Decide what a sprint does on a red baseline, and which stage may fix a red no ticket owns
 type: bug
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -16,8 +16,8 @@ expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
   - skills/develop/SKILL.md
-claimed_by: "eb65"
-claimed_at: 2026-09-25T12:53:14Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
