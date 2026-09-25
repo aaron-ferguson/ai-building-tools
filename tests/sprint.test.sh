@@ -2494,6 +2494,20 @@ guard_says "$SKILL" "Step 1" 'on the depth line' \
 guard_says "$SKILL" "Step 1" 'never pipe it' \
   "0180 FR1 — the baseline's output is redirected to a file, not piped" \
   "0180 FR1 — nothing stops the baseline being piped; a timed-out pipe delivers nothing"
+# Round 5's clause table (develop 9849): each phrase below stayed green with only itself deleted,
+# and was then absent from its section — the gap test verify Step 3 defines.
+guard_says "$SKILL" "Step 1" 'the unit suite' \
+  "0180 AC1 — the baseline runs the unit suite" \
+  "0180 AC1 — the baseline names no suite; a worktree with nothing run in it reads as green"
+guard_says "$SKILL" "Step 1" 'in a throwaway worktree' \
+  "0180 AC1 — the worktree is named throwaway" \
+  "0180 AC1 — the baseline's worktree is not called throwaway; it can be read as one to keep"
+guard_says "$SKILL" "Step 1" 'where it is unset, run `commands.unit`' \
+  "0180 AC1 — commands.unit is only the fallback, so unit_by_file is preferred" \
+  "0180 AC1 — nothing orders the two commands; the fail-fast one can be run where the per-file one is set"
+guard_says "$SKILL" "Step 1" 'report the tally' \
+  "0180 AC1 — the baseline reports its tally" \
+  "0180 AC1 — the baseline names no tally to report"
 
 echo "0180 AC2 — a red baseline blocks the proposal, offers four answers, and records a waiver"
 guard_says "$SKILL" "$PROPOSAL" 'blocks the proposal' \
@@ -2522,6 +2536,12 @@ guard_says "$SKILL" "$PROPOSAL" 'in `scope_confirmed`' \
 guard_says "$SKILL" "$PROPOSAL" '**amend** or **decline**, as above' \
   "0180 AC2 — the red-baseline list also offers amend and decline" \
   "0180 AC2 — the red-baseline list drops amend and decline; the person is left repair or waive"
+guard_says "$SKILL" "$PROPOSAL" 'a red baseline' \
+  "0180 AC2 — the rule is scoped to a red baseline" \
+  "0180 AC2 — the blocking rule names no condition; nothing says it is the red baseline that blocks"
+guard_says "$SKILL" "$PROPOSAL" 'the waiver is recorded' \
+  "0180 AC2 — the waiver is recorded" \
+  "0180 AC2 — baseline_red is named but nothing says the waiver is written down"
 guard_says "$SKILL" "$PROPOSAL" 'git log -1 -- <path>' \
   "0180 FR2 — each red's owner is found with git log" \
   "0180 FR2 — the proposal lists the reds with no owner"
@@ -2534,6 +2554,12 @@ guard_says "$SKILL" "Step 3" 'baseline red at <sha>, not yours' \
 guard_says "$SKILL" "Step 3" 'with the `baseline_red` case list from `scope_confirmed`' \
   "0180 AC3 — and quotes the baseline_red case list itself" \
   "0180 AC3 — the prompt carries the SHA but not the case list; a stage cannot tell which reds were waived"
+guard_says "$SKILL" "Step 3" 'whose baseline red was waived' \
+  "0180 AC3 — the quote is scoped to a run whose red was waived" \
+  "0180 AC3 — the quote names no condition; every run's prompts could carry a baseline_red line"
+guard_says "$SKILL" "Step 3" 'every stage prompt quotes it' \
+  "0180 AC3 — every stage prompt carries it" \
+  "0180 AC3 — nothing says which prompts carry the waived list"
 
 echo "0180 AC4 — repair first mints a row through queue, runs it alone, and re-checks"
 guard_says "$SKILL" "$PROPOSAL" 'one `queue` session' \
@@ -2561,6 +2587,17 @@ guard_says "$SKILL" "$PROPOSAL" 'nothing else in the confirmed scope is dispatch
 guard_says "$SKILL" "Step 8" 'one exception' \
   "0180 AC4 — the never-writes-a-ticket rule names repair first as its one exception" \
   "0180 AC4 — Step 8 still forbids the queue dispatch repair first needs"
+# Round 5's clause table: the unowned Given (verify 391b), and the Step 8 rule and what its
+# exception is, each green with only itself deleted.
+guard_says "$SKILL" "$PROPOSAL" 'a red no open ticket owns' \
+  "0180 AC4 — the mint is scoped to a red no open ticket owns" \
+  "0180 AC4 — the mint names no condition; an owned red could be minted a row"
+guard_says "$SKILL" "Step 8" 'or writes a ticket' \
+  "0180 AC4 — Step 8 states the never-writes-a-ticket rule the exception belongs to" \
+  "0180 AC4 — Step 8's exception has no rule to be an exception to"
+guard_says "$SKILL" "Step 8" "the proposal's repair first" \
+  "0180 AC4 — and the exception is the proposal's repair first" \
+  "0180 AC4 — Step 8's exception does not say it is repair first"
 
 echo "0180 AC5 — a red an open ticket owns names that ticket and mints no row"
 guard_says "$SKILL" "$PROPOSAL" 'belongs to an open ticket' \
@@ -2590,6 +2627,13 @@ guard_says "$DEVELOP_SKILL" "Step 5" 'Park a `FINDINGS.md` entry' \
 guard_says "$DEVELOP_SKILL" "Step 5" '`escalation`' \
   "0180 AC6 — and to the outcome's escalation" \
   "0180 AC6 — the supervisor is never told"
+# Round 5's clause table: the rule's subject (verify 391b) and whose escalation it is.
+guard_says "$DEVELOP_SKILL" "Step 5" 'a red no ticket owns is never fixed' \
+  "0180 AC6 — the rule is scoped to a red no ticket owns" \
+  "0180 AC6 — the rule names no subject; it no longer says which red may not be fixed"
+guard_says "$DEVELOP_SKILL" "Step 5" "the outcome's \`escalation\`" \
+  "0180 AC6 — the escalation is the outcome's field" \
+  "0180 AC6 — escalation is named but not as the outcome's field"
 
 echo "0180 AC7 — config.yml carries the per-file form beside the unchanged fail-fast one"
 if grep -qF 'unit_by_file: for t in tests/*.test.sh; do "$t" || true; done' "$CONFIG"; then
@@ -2606,6 +2650,12 @@ if grep -qF 'commands.unit_by_file' "$VERIFY_SKILL"; then
   ok "0180 AC7 — verify names the key where it spoke of 'the reporting form'"
 else
   bad "0180 AC7 — verify still describes the reporting form without naming its key"
+fi
+# The key alone can move out of the reporting-form sentence and stay green (round 5's clause table).
+if grep -qF 'the reporting form as `commands.unit_by_file`' "$VERIFY_SKILL"; then
+  ok "0180 AC7 — and names it where it speaks of the reporting form"
+else
+  bad "0180 AC7 — verify names the key but not where it says 'the reporting form'"
 fi
 
 # --- 0165 AC1/AC2 — a failing case is attributable from the last lines of a filtered read --------
