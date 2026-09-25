@@ -505,7 +505,7 @@ adopts every fragile check it brushes against stops being the ticket that was ra
 **A guard whose claim is a quantifier is proved by a sweep, not by named mutations**
 (`testing-conventions.md`), and a sweep of that size is a long-running job: give the script a
 sentinel line it prints last and wait on it with an `until grep -q`, planned before the run is
-backgrounded rather than after.
+backgrounded rather than after. Driven, wait inside the turn, never by ending it (`verify` Step 3).
 
 **A mutation sweep enumerates from the AC text, never from the guard block**: a sweep over the guard's
 own phrases covers only what the guard already covers (0180 reported "31 of 31", truly, with two
@@ -514,6 +514,9 @@ Given condition and qualifier scoping it, each predicate, each object or destina
 a green mutation is a gap only if the AC's phrase no longer occurs anywhere in that section —
 the AC's own words, verbatim, never a restatement. A Given row is the whole Given clause, verbatim,
 qualifier included, and its guard asserts all of it.
+Where the prose only paraphrases a Given, no guard can assert the AC's words, so reword the prose
+to them in the same round — expected even on a "guard work only" hand-back (0180, 62b4b3d); under
+the gap test a paraphrase is a gap, not a pass.
 Write the table into the build notes under *Notes & decisions*, so verify checks against it.
 
 **If you mutation-check your own guards here, mutate only what is committed.** `git checkout -- <path>`

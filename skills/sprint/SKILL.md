@@ -473,6 +473,11 @@ reported exit -1 (its message: process exited while detached) after the supervis
 while the stage completed and wrote a valid outcome. The captured outcome and the commits are the
 evidence; the wrapper's exit is the supervisor's plumbing, not the stage's result.
 
+**An outcome can be stale.** A stage that ends its turn to wait on background work is forced to
+answer early and may keep working: 0180's verify returned `blocked` and then closed the ticket.
+`--drive` reads the rows, so routing survives it; the report does not. Where a ticket's `next:` or
+`status:` in the outcome disagrees with its row, the row wins and the report names both.
+
 **`conventions_resolved: null` is an escalation, not a pass.** The project makes conventions
 mandatory; a stage that resolved none built against no standard.
 

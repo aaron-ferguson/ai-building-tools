@@ -292,6 +292,9 @@ Enumerate the space mechanically instead. A sweep of that size outruns the tool'
 so it has to print a sentinel line last and be waited on with an `until grep -q` over its output
 file, which means **planning the sentinel before you start it** rather than discovering the need
 once it is already running in the background.
+**In a driven `claude -p` session, wait inside the turn, never by ending it**: an ended turn is the
+session's end, and the harness then forces the outcome while the sweep still runs — 0180 returned
+`blocked` and closed the ticket afterwards, so the supervisor read a verdict its history contradicts.
 
 **Then ask what the mutation changed: the AC's named outcome, or only the message.** If the outcome
 the AC names still holds against deliberately broken code, **the AC is unverified** and that is the

@@ -48,7 +48,9 @@ and *Lock every write to the backlog directory*). A pass that spends first and c
 reasoning over one ticket, and in a sprint it is a second design session dispatched onto the same row.
 
 Then read its **Open design question** section. That is the contract — answer *that*, not a broader topic
-you find more interesting.
+you find more interesting. **A row with no such section** — 0180 arrived with its open decisions
+filed as undecided FRs — takes those FRs as the question; name them in the decision, so the answer
+is checkable against something written.
 
 Ad-hoc: take the question as asked. An ad-hoc question takes no claim — there is no row to hold.
 
