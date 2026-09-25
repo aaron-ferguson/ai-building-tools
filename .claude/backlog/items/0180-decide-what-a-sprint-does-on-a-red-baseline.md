@@ -302,6 +302,85 @@ the defect existed.
     - AC7 "the reporting form": the key is still named in that sentence.
     Nothing else in AC1–AC8 is unguarded under that test.
 
+- 2026-09-25 — develop (token 9849), re-entry on verify 391b's FAIL, round 5. Guard work only; the
+  prose is unchanged. Per develop Step 5 / verify Step 3, this pass built a **clause table over all
+  of AC1–AC8**, not only 391b's two gaps. Each row was mutated in a sibling worktree: every
+  occurrence of the prose phrase inside that section only (case-insensitive, whitespace-tolerant)
+  became ZZMUT. Then `tests/sprint.test.sh` ran with `SPRINT_TEST_CHILD=1 SPRINT_SKIP_PROBE=1`, so
+  the 0165 self-copy and the paid probe were out of the tally. Gap test: green, and the phrase is
+  absent from the section afterwards. **Run, not reasoned** — both sweeps below were executed.
+  - **The gap test was applied to the phrase verbatim.** 391b let a row pass where a *different*
+    phrase in the section said the same thing, e.g. "`commands.unit_by_file` still named" for "unit
+    suite". Under the verbatim reading, 11 more rows were gaps, besides 391b's two. Parked in
+    `FINDINGS.md` as an ambiguity in the gap test.
+  - Sweep 1 at 74638be (the claim commit; tests unchanged since 2cb26e4): 51 rows, control `306 passed, 0 failed, 1 skipped`
+    before and after. 13 gaps (marked **gap** below), all now guarded in ca4c530 (14 new cases:
+    the 13, plus Step 8's rule `or writes a ticket` split from its exception).
+  - Sweep 2 at ca4c530: every row red except AC4.given-answer, which is not a gap (`repair first`
+    survives in the section). Control `320 passed, 0 failed, 1 skipped` before and after. The
+    worktree read clean, and it was removed in the same turn.
+
+  | Row | Section | Phrase mutated | Sweep 1 (pre) | Sweep 2 (ca4c530) |
+  |---|---|---|---|---|
+  | AC1 predicate: baseline check | sprint Step 1 | `the baseline` | red | red |
+  | AC1 object: unit suite | sprint Step 1 | `unit suite` | **gap** | red |
+  | AC1 qualifier: at HEAD | sprint Step 1 | ``at `HEAD` `` | red | red |
+  | AC1 qualifier: throwaway worktree | sprint Step 1 | `throwaway worktree` | **gap** | red |
+  | AC1 qualifier: detached worktree | sprint Step 1 | `git worktree add --detach` | red | red |
+  | AC1 object: unit_by_file | sprint Step 1 | `commands.unit_by_file` | red | red |
+  | AC1 qualifier: prefers | sprint Step 1 | `where it is unset` | **gap** | red |
+  | AC1 predicate: reports the tally | sprint Step 1 | `the tally` | **gap** | red |
+  | AC1 destination: depth line | sprint Step 1 | `on the depth line` | red | red |
+  | AC2 Given: a red baseline | proposal | `a red baseline` | **gap** | red |
+  | AC2 predicate: blocks the proposal | proposal | `blocks the proposal` | red | red |
+  | AC2 qualifier: not ending the run | proposal | `does not end the run` | red | red |
+  | AC2 object: repair first | proposal | `repair first` | red | red |
+  | AC2 qualifier: recommended | proposal | `— recommended` | red | red |
+  | AC2 object: waive | proposal | `**waive**` | red | red |
+  | AC2 object: amend and decline | proposal | `**amend** or **decline**, as above` | red | red |
+  | AC2 predicate: waiver is recorded | proposal | `The waiver is recorded` | **gap** | red |
+  | AC2 object: baseline_red | proposal | `` `baseline_red` `` | red | red |
+  | AC2 destination: scope_confirmed | proposal | ``in `scope_confirmed` `` | red | red |
+  | AC3 Given: a waived red | sprint Step 3 | `baseline red was waived` | **gap** | red |
+  | AC3 predicate: the prompt carries | sprint Step 3 | `every stage prompt quotes it` | **gap** | red |
+  | AC3 object: the list | sprint Step 3 | `` `baseline_red` case list `` | red | red |
+  | AC3 object: the SHA | sprint Step 3 | `baseline red at <sha>` | red | red |
+  | AC3 qualifier: not the stage's own | sprint Step 3 | `not yours` | red | red |
+  | AC4 Given: a red no open ticket owns | proposal | `a red no open ticket owns` | **gap** (391b) | red |
+  | AC4 Given: the answer repair first | proposal | `On repair first` | green, survives: not a gap | same |
+  | AC4 predicate: dispatches one queue session | proposal | ``one `queue` session`` | red | red |
+  | AC4 predicate: mint a row | proposal | ``mints a `type: bug` row`` | red | red |
+  | AC4 qualifier: ranked first | proposal | `rank first` | red | red |
+  | AC4 qualifier: alone | proposal | `as its own gate` | red | red |
+  | AC4 destination: next: done | proposal | ``to `next: done` `` | red | red |
+  | AC4 predicate: re-runs the baseline | proposal | `runs the baseline again` | red | red |
+  | AC4 qualifier: before any other dispatch | proposal | `nothing else in the confirmed scope is dispatched until it is green` | red | red |
+  | AC4 object: the never-writes-a-ticket rule | sprint Step 8 | `writes a ticket` | **gap** | red |
+  | AC4 predicate: its one exception | sprint Step 8 | `one exception` | red | red |
+  | AC4 object: the exception is repair first | sprint Step 8 | `repair first` | **gap** | red |
+  | AC5 Given: belongs to an open ticket | proposal | `belongs to an open ticket` | red | red |
+  | AC5 predicate: names that ticket | proposal | `the proposal names that ticket` | red | red |
+  | AC5 predicate: mints no row | proposal | `mints no row` | red | red |
+  | AC6 Given: a red no ticket owns | develop Step 5 | `a red no ticket owns` | **gap** (391b) | red |
+  | AC6 predicate: forbids fixing under the held claim | develop Step 5 | `never fixed under the claim you hold` | red | red |
+  | AC6 object: da524ce | develop Step 5 | `da524ce` | red | red |
+  | AC6 destination: FINDINGS.md | develop Step 5 | `` `FINDINGS.md` entry `` | red | red |
+  | AC6 object: still needs a row | develop Step 5 | `still needs a row` | red | red |
+  | AC6 qualifier: the outcome's | develop Step 5 | `the outcome's` | **gap** | red |
+  | AC6 destination: escalation | develop Step 5 | `` `escalation` `` | red | red |
+  | AC7 object: unit_by_file per-file form | config.yml | `do "$t" \|\| true; done` | red | red |
+  | AC7 qualifier: commands.unit unchanged | config.yml | `do "$t" \|\| exit 1; done` | red | red |
+  | AC7 object: verify names the key | skills/verify/SKILL.md | `` `commands.unit_by_file` `` | red | red |
+  | AC7 qualifier: where it says the reporting form | skills/verify/SKILL.md | `the reporting form` | **gap** | red |
+
+  AC1's meta clause ("removing any one of them turns it red") is what these sweeps are. AC8 is a
+  suite run, not a phrase, and is not in the table.
+  - **Whole suite (run).** The per-file form ran on the working tree at ca4c530. All 31 files read
+    `0 failed`. `tests/sprint.test.sh` read `324 passed, 0 failed, 0 skipped`, and
+    `tests/skill-size.test.sh` read `27 passed, 0 failed`.
+  - FR4's `baseline_red` sentence in develop Step 5 is still unguarded. No AC names it (eb65), so
+    it is not a row in the table.
+
 ## QA evidence
 
 Conventions: ../ai-building-conventions
