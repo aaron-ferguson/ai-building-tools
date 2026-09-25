@@ -517,7 +517,7 @@ echo "AC19 — a dispatch is capped and scoped"
 # rule the day it lands.
 dispatch_blocks() {
   awk '
-    /^```/ { if (infence) { if (body ~ /claude -p/ && body ~ /'"'"'\/(develop|verify|queue|design|prototype|retro)/) print NR
+    /^```/ { if (infence) { if (body ~ /claude -p/ && body ~ /'"'"'\/(ai-building-tools:)?(develop|verify|queue|design|prototype|retro)/) print NR
                             infence = 0; body = "" }
              else { infence = 1 } ; next }
     infence { body = body "\n" $0 }
@@ -564,7 +564,7 @@ fi
 
 for want in -\-max-budget-usd -\-allowed-tools -\-add-dir -\-session-id -\-setting-sources; do
   missing_flag="$(awk -v want="$want" '
-    /^```/ { if (infence) { if (body ~ /claude -p/ && body ~ /'"'"'\/(develop|verify|queue|design|prototype|retro)/ && index(body, want) == 0) print ++n
+    /^```/ { if (infence) { if (body ~ /claude -p/ && body ~ /'"'"'\/(ai-building-tools:)?(develop|verify|queue|design|prototype|retro)/ && index(body, want) == 0) print ++n
                             infence = 0; body = "" }
              else { infence = 1 } ; next }
     infence { body = body "\n" $0 }
@@ -1858,10 +1858,19 @@ if says "$SKILL" "$DSEC" 'a dispatch, not a halt'; then
 else
   bad "0134 AC1 — the section does not say exit 4 on an in-scope design row is a dispatch rather than a halt"
 fi
-if says "$SKILL" "$DSEC" '/design <id>'; then
+if says "$SKILL" "$DSEC" '/ai-building-tools:design <id>'; then
   ok "and names the command the design session is dispatched with"
 else
-  bad "0134 FR1 — the section names no /design dispatch"
+  bad "0134 FR1 — the section names no /ai-building-tools:design dispatch"
+fi
+# A bare stage name is taken by a host command of the same name: `/design 0179` reached the host's
+# built-in `/design` in run-20260924T050130Z and the stage did nothing. The supervisor copies the
+# skill's examples, so no example may dispatch a stage by its bare name.
+bare=$(grep -nE "['\`]/(queue|design|prototype|develop|verify|retro) (<id>|[0-9]{4})" "$SKILL" || true)
+if [ -z "$bare" ]; then
+  ok "no dispatch example names a stage without its plugin qualifier"
+else
+  bad "a dispatch example names a bare stage, which a host command can take: $bare"
 fi
 # REWRITTEN BY 0159. `--completed design:<id>` reached ./next's no-routing-rule ESCALATE branch, so
 # 0134 forbade reporting a design finish that way; the route now exists, and the supervisor is told

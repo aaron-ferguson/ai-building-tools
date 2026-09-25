@@ -288,7 +288,7 @@ work, so `--drive` routes it rather than escalating. What the script cannot see 
 scope, so a design row outside the confirmed scope is never dispatched, and where one outranks the
 gate the run stops there, as the scope's edge the proposal names. For an in-scope row:
 
-1. Dispatch `/design <id>` as its own process (Step 3), log its `dispatch` event, and add the id to
+1. Dispatch `/ai-building-tools:design <id>` as its own process (Step 3), log its `dispatch` event, and add the id to
    the run's design set.
 2. **Wait until that row reads held** — the item's `claimed_by:` non-empty, or the session's outcome
    arrived first — with one backgrounded `until` loop, then re-call `--drive`. It steps over the held
@@ -344,7 +344,7 @@ claude -p \
   --setting-sources user,project \
   --allowed-tools '<the tools that stage needs>' \
   --max-budget-usd <cap> \
-  '/develop 0039 0086' \
+  '/ai-building-tools:develop 0039 0086' \
   < /dev/null
 ```
 
@@ -355,6 +355,9 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
   run-20260913T034946Z's stages ran on claude-sonnet-4-6, and its verify closed four tickets with
   `conventions_resolved: null`. A stage may plan on Opus and hand mechanical implementation to
   Haiku where quality holds; the supervisor never downgrades a stage's model for cost.
+- **The prompt names the stage plugin-qualified, `/ai-building-tools:<stage>`, never bare.** A
+  host command of the same name takes a bare one: design 0179, dispatched bare, reached the host's own
+  command and the stage escalated having done nothing (run-20260924T050130Z).
 - **`--json-schema` takes inline JSON, not a path.** Passing the filename fails with *"--json-schema
   is not valid JSON"*. `"$(cat …)"` is the form that works, and it keeps FR13's actual requirement:
   the shape is declared in **one file**, supplied by the invoker, so no stage skill describes it.
