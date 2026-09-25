@@ -237,6 +237,29 @@ the defect existed.
     because the send-back listed only those.
   - Not ACs, recorded for completeness: FR4's `A red your dispatch prompt lists as `baseline_red`
     is not yours.` (develop Step 5) is also unguarded. No AC names it.
+- 2026-09-25 — develop (token 3d16), re-entry on verify eb65's FAIL. Guard work only, with the
+  prose unchanged. In 6282974, five presence cases were added to `tests/sprint.test.sh`, one for
+  each clause verify listed. Each case is scoped to the section the clause lives in, and each
+  phrase was checked to occur exactly once in its flattened section:
+  - **AC3** (Step 3): `with the `baseline_red` case list from `scope_confirmed``.
+  - **AC4** (the proposal section): `mints a `type: bug` row`; `to `next: done``;
+    `nothing else in the confirmed scope is dispatched until it is green`. The existing
+    `runs the baseline again` case was relabelled to "and the baseline is re-run", because the
+    ordering half of its old label now belongs to the new case.
+  - **AC6** (develop Step 5): `Park a `FINDINGS.md` entry`.
+  - **Mutation (run).** The sweep ran in a throwaway worktree at 6282974. Each clause was replaced
+    with `ZZMUT` using a case-insensitive, whitespace-tolerant match that first had to find exactly
+    one occurrence in the whole file. The AC4 mint mutation removed the whole
+    `mints a `type: bug` row whose `relates:` names the ticket that introduced the red`. Each of
+    the five runs read `308 passed, 2 failed`: that clause's own new case, plus the expected 0165
+    AC2 self-copy case. No other 0180 case went red. The control ran before and after the sweep,
+    and both runs read `310 passed, 0 failed, 0 skipped`. The worktree was removed in the same
+    turn.
+  - **Not guarded, and deliberately so:** FR4's `A red your dispatch prompt lists as
+    `baseline_red` is not yours.` No AC names it (verify eb65), and a guard on it would widen the
+    contract this re-entry was scoped to.
+  - **Whole suite (run).** The per-file form ran on the working tree at 6282974. All 31 files read
+    `0 failed`, and `tests/sprint.test.sh` read `310 passed, 0 failed, 0 skipped`.
 
 ## QA evidence
 
