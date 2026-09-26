@@ -2978,6 +2978,74 @@ assert_rc       "exits 0 while the design row is in scope" "$rc" 0 "$out"
 assert_contains "dispatching it"                           "$out" 'DISPATCH  design 0101'
 assert_contains "and saying the gate is deferred"          "$out" 'deferred'
 
+# --- sprint size — --propose extends a short gate down the rank to a sprint of three to five ------
+#
+# 2026-09-25, a person's correction: --propose named a one-ticket gate, the supervisor proposed that
+# one ticket, and a one-ticket sprint is slower and dearer than /develop by hand. A gate is the
+# BATCHING unit and the first dispatch; it is not the scope. So the proposal keeps the gate as the
+# first dispatch and extends the SPRINT down the rank, naming the design rows in the way so the run
+# does not stop on them. Asserted here against the real script, because the prose rule in
+# skills/sprint/SKILL.md was already there and the script still proposed one ticket.
+
+# 0101 leads a gate of one; 0103 is a design row ranked inside the sprint; 0107 is the sixth
+# develop row, past the target, and must be named nowhere.
+sprint_fixture() {
+  scaffold
+  add_row 0101 'The head, a gate of one'     develop ready ''
+  add_row 0102 'Second develop row'           develop ready ''
+  add_row 0103 'A design row inside the run'  design  ready ''
+  add_row 0104 'Third develop row'            develop ready ''
+  add_row 0105 'Fourth develop row'           develop ready ''
+  add_row 0106 'Fifth develop row'            develop ready ''
+  add_row 0107 'Sixth develop row, past five' develop ready ''
+  add_ticket 0101 develop ready '[]' '' own/one.md
+  add_ticket 0102 develop ready '[]' '' own/two.md
+  add_ticket 0103 design  ready '[]' '' own/three.md
+  add_ticket 0104 develop ready '[]' '' own/four.md
+  add_ticket 0105 develop ready '[]' '' own/five.md
+  add_ticket 0106 develop ready '[]' '' own/six.md
+  add_ticket 0107 develop ready '[]' '' own/seven.md
+}
+
+echo "sprint size — a one-ticket gate is proposed as the first dispatch of a five-ticket sprint"
+sprint_fixture
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_rc       "exits 0 — still a dispatch decision"          "$rc" 0
+assert_contains "the decision is still the gate alone"          "$out" 'DISPATCH  develop 0101'
+assert_contains "the gate is still stated as the gate"          "$out" 'PROPOSE   develop | 1 ticket(s)'
+assert_contains "the sprint is stated at the target size"       "$out" 'SPRINT    5 develop ticket(s)'
+assert_contains "names the next develop row"                    "$out" 'SPRINT    0102 | develop | size s | Second develop row'
+assert_contains "names the fifth develop ticket"                "$out" 'SPRINT    0106 | develop | size s | Fifth develop row'
+assert_contains "takes the design row in the way into scope"    "$out" 'SPRINT    0103 | design | size s | A design row inside the run'
+assert_not_contains "stops at the target"                       "$out" '0107'
+
+echo "sprint size — a queue holding fewer than three says why the sprint is short"
+scaffold
+add_row 0101 'The head'        develop ready ''
+add_row 0102 'The only other'  develop ready ''
+add_ticket 0101 develop ready '[]' '' own/one.md
+add_ticket 0102 develop ready '[]' '' own/two.md
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_rc       "exits 0"                                        "$rc" 0
+assert_contains "states the short sprint and the reason"         "$out" 'SHORT     2 develop ticket(s), under the minimum of 3 — the queue holds no further takeable develop row'
+assert_contains "and still names what it has"                    "$out" 'SPRINT    0102 | develop'
+
+echo "sprint size — a gate already at the target is not extended"
+propose_fixture
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_contains     "the gate of five is the sprint"             "$out" 'PROPOSE   develop | 5 ticket(s)'
+assert_not_contains "no row past the gate is added"              "$out" 'SPRINT    0109'
+assert_not_contains "and nothing is reported short"              "$out" 'SHORT'
+
+echo "sprint size — the extension is part of the opt-in proposal, never of a routine cycle"
+sprint_fixture
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_not_contains "no SPRINT line without --propose"           "$out" 'SPRINT'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

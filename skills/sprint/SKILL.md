@@ -173,10 +173,12 @@ halts there, reported as the scope's edge rather than dispatched for or refused.
 dispatched instead (the *Design alongside develop* section).
 
 **A sprint carries at least three tickets, and about five is the target.** `--propose` names one
-gate, and **a gate is the batching unit, which is not the scope**: where the gate is shorter, extend
-the proposal down the rank order, taking the design rows in the way into scope so the run does not
-end on them. Propose fewer only for a stated reason, such as the queue running dry or a person
-needed. A ticket's develop and verify floors are paid in whichever sprint runs it, so extra tickets
+gate, and **a gate is the batching unit, which is not the scope**: where the gate is shorter,
+`--propose` extends it down the rank order in whole gates and prints the sprint as `SPRINT` lines,
+design rows in the way included, so the run does not end on them. Confirm those as the scope. A
+`SHORT` line is the script saying the queue could not reach three; propose fewer otherwise only for
+a stated reason, such as a person needed. A ticket's develop and verify floors are paid in
+whichever sprint runs it, so extra tickets
 are not extra cost. Splitting them across sprints adds a supervisor floor, a tail and a run a person
 has to start, and a one-ticket sprint is slower and dearer than `/develop` by hand
 (2026-09-25, a person's correction).

@@ -1101,6 +1101,14 @@ if [ "${1:-}" = "--drive" ]; then
   # and never by how verbose its tickets are.
   PROPOSE_JOIN_CAP=5
 
+  # A sprint's size, in develop tickets. A gate is the BATCHING unit and the first dispatch; it is
+  # not the scope. A ticket's develop and verify floors are paid in whichever sprint runs it, so a
+  # short sprint saves nothing and adds a supervisor floor, a tail and a run a person has to start:
+  # a one-ticket sprint is slower and dearer than /develop by hand (2026-09-25, a person's
+  # correction, after --propose offered a gate of one and the supervisor proposed exactly that).
+  SPRINT_MIN_TICKETS=3
+  SPRINT_TARGET_TICKETS=5
+
   # `pb_` prefixes because sh has no locals, and this script's own `held_by` records why that
   # matters: `paths_shared` loops over a bare `pa`, so a future call to it from inside this block
   # would corrupt the loop it was called from, silently.
@@ -1175,11 +1183,66 @@ if [ "${1:-}" = "--drive" ]; then
     '
   }
 
+  # A takeable `next: design` row: ready, unheld, unblocked. Named in a sprint proposal because a
+  # design row ranked inside the sprint ends the run on it unless it is taken into scope.
+  takeable_design() {
+    td_row="$(row_for "$1")"
+    [ "$(field "$td_row" "$NEXT")" = "design" ] || return 1
+    [ "$(field "$td_row" "$STATUS")" = "ready" ] || return 1
+    if held_by "$1" >/dev/null; then return 1; fi
+    [ -z "$(open_blockers_of "$1")" ]
+  }
+
+  # The sprint beyond a develop gate shorter than the target: whole further gates in rank order,
+  # the same walk `depth_line` makes, until the develop count reaches SPRINT_TARGET_TICKETS or the
+  # takeable rows run out; then every takeable design row ranked inside that span. Whole gates,
+  # because splitting one re-pays the floor batching exists to share. The gate itself stays the
+  # decision line: this states the scope a person confirms, never a second dispatch.
+  # `ps_` prefixes because sh has no locals and `gate_from` loops over `gid`.
+  propose_sprint() {
+    [ "$PROPOSE_STAGE" = develop ] || return 0
+    ps_n=0
+    for ps_id in $PROPOSE_IDS; do ps_n=$((ps_n + 1)); done
+    [ "$ps_n" -lt "$SPRINT_TARGET_TICKETS" ] || return 0
+    ps_ids="$PROPOSE_IDS"
+    ps_remaining="$(without "$(takeable_develop)" "$PROPOSE_IDS" | awk '{ $1 = $1; print }')"
+    while [ "$ps_n" -lt "$SPRINT_TARGET_TICKETS" ] && [ -n "$ps_remaining" ]; do
+      ps_taken="$(gate_from "$(printf '%s' "$ps_remaining" | awk '{ print $1 }')" "$ps_remaining" "$GATE_MAX_ROWS")"
+      for ps_id in $ps_taken; do ps_n=$((ps_n + 1)); done
+      ps_ids="$ps_ids $ps_taken"
+      ps_remaining="$(without "$ps_remaining" "$ps_taken" | awk '{ $1 = $1; print }')"
+    done
+    printf 'SPRINT    %s develop ticket(s) — the gate above is the first dispatch, not the scope; a sprint carries at least %s and targets %s\n' \
+      "$ps_n" "$SPRINT_MIN_TICKETS" "$SPRINT_TARGET_TICKETS"
+    # Rank order, stopping at the lowest-ranked develop ticket taken: a design row below it is the
+    # next sprint's, not this one's.
+    ps_left="$ps_ids"
+    for ps_id in $(all_ids); do
+      [ -n "$(printf '%s' "$ps_left" | tr -d ' ')" ] || break
+      if contains_word "$ps_id" "$ps_left"; then
+        ps_left="$(without "$ps_left" "$ps_id")"
+        contains_word "$ps_id" "$PROPOSE_IDS" && continue
+        ps_stage=develop
+      elif takeable_design "$ps_id"; then
+        ps_stage=design
+      else
+        continue
+      fi
+      printf 'SPRINT    %s | %s | size %s | %s\n' "$ps_id" "$ps_stage" \
+        "$(fm "$(item_for "$ps_id")" size)" "$(field "$(row_for "$ps_id")" "$TITLE")"
+    done
+    if [ "$ps_n" -lt "$SPRINT_MIN_TICKETS" ]; then
+      printf 'SHORT     %s develop ticket(s), under the minimum of %s — the queue holds no further takeable develop row\n' \
+        "$ps_n" "$SPRINT_MIN_TICKETS"
+    fi
+  }
+
   # $1 the exit code, $2 the decision. The depth line goes out with every decision, never on its own
   # invocation — that second read is the cost FR17 exists to avoid.
   decide() {
     depth_line
     propose_block
+    [ "$PROPOSE" != 1 ] || propose_sprint
     printf '%s\n' "$2"
     exit "$1"
   }
