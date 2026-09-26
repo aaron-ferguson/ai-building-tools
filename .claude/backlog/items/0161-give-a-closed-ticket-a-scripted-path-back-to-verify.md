@@ -2,8 +2,8 @@
 id: "0161"
 title: Give a closed ticket a scripted path back to verify
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: m
@@ -20,22 +20,9 @@ expects:
   - skills/queue/SKILL.md
   - references/CONCURRENCY.md
   - tests/citations.test.sh
-claimed_by: "31d3"
-claimed_at: 2026-09-26T04:39:19Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/reopen  # new
-  - .claude/backlog/reopen  # new, installed copy
-  - tests/reopen.test.sh  # new
-  - tests/backlog-scripts-installed.test.sh
-  - skills/queue/SKILL.md
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md  # heading citation 'The four scripts'
-  - skills/verify/SKILL.md  # heading citation
-  - skills/queue/templates/close  # heading citation in header comment
-  - skills/queue/templates/handoff  # heading citation in header comment
-  - .claude/backlog/close  # installed copy
-  - .claude/backlog/handoff  # installed copy
-  - tests/handoff.test.sh  # asserts the heading
 ---
 
 ## Problem

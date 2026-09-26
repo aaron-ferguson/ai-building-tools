@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0161 | Give a closed ticket a scripted path back to verify | develop | in-progress |  |
+| 0161 | Give a closed ticket a scripted path back to verify | verify | ready |  |
 | 0184 | Make the sprint supervisor commit the finding it parks, in the same turn | develop | ready |  |
 | 0185 | Decide whether the sprint's run logs are committed, and what may appear in them if they are | develop | ready |  |
 | 0187 | Decide whether a sprint dispatch pins a concrete model or records the one that answered | design | ready |  |
