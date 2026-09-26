@@ -119,3 +119,46 @@ skill or `.gitignore` before the change, then the full suite (AC5).
   confirmed as vacuous (nothing committed, nothing screened), so `tests/measurement.test.sh` left
   `expects:`; FR5 added. ACs authored — the ticket arrived with none. Observed 2026-09-24: 8 local
   `.jsonl` logs, 9 `sprint_ended` events between them; they stay in place and become ignored.
+- 2026-09-25 — Built (session 04ad, `b79b8a2`). **The Problem's first bullet was stale at claim:**
+  `e830d00` (2026-09-25, no ticket) had already widened the root `.gitignore` line to
+  `.claude/backlog/runs/` whole but left the old comment ("never the run logs beside it"), so FR2
+  here was only the comment. AC3's check-ignore case was therefore green before this build; the
+  mutations below are what show it can red.
+  What landed: Step 1's marker block gains
+  `[ -f .claude/backlog/runs/.gitignore ] || printf '*\n' > .claude/backlog/runs/.gitignore` between
+  `mkdir -p` and the marker (FR5); Step 5 gains the bolded "`runs/` is machine-local and never
+  committed — logs, captures and hand-written files alike — and `LEDGER.md` is the committed record",
+  plus "the captures are unfiltered stage output" (FR1, FR3); the "One fact crosses runs" paragraph
+  now says "counted in completed sprints on this machine … a fresh clone starts at zero completed
+  sprints, so its age half fires later, never earlier" (FR4); the `.gitignore` comment is rewritten (FR2).
+  **Mechanism worth knowing:** `tests/sprint.test.sh`'s 0165 case re-runs the whole file in a copy
+  with no `.git`, so any guard there that asks git a question reds the 0165 child on a correct tree
+  (`check-ignore` fails) or passes vacuously (`ls-files` answers empty). AC3's two git cases
+  therefore skip loudly when `ROOT` is not a work tree; in this checkout they run.
+  **Clause table and sweep (all RUN against committed `b79b8a2`, restored by `git checkout`; M3d in
+  a throwaway worktree so the shared index was never touched; control 337/0/1, the 1 being the
+  probe skipped by `SPRINT_SKIP_PROBE`):**
+  | AC clause | Mutation | Result |
+  |---|---|---|
+  | AC1 Given "`skills/sprint/SKILL.md` Step 5" | sentence moved into Step 4 | red (AC1) |
+  | AC1 "`runs/` is machine-local and never committed" | sentence deleted | red (AC1) |
+  | AC1 "logs, captures and hand-written files alike" | "and hand-written files alike" dropped | red (AC1) |
+  | AC1 "`LEDGER.md` is the committed record" | clause dropped | red (AC1) |
+  | FR3 "captures … unfiltered stage output" | "unfiltered" dropped | red (AC1) |
+  | AC2 "`runs/.gitignore` exists containing `*`" | the `.gitignore` line removed from the block | red (AC2 ×2) |
+  | AC2 containing `*` | contents written as `x` | red (AC2 ×2) |
+  | AC2 "a `.jsonl` … does not appear in `git status --porcelain`" | (same two mutations) | red |
+  | AC2 "running the block a second time leaves the file unchanged" | `[ -f … ] \|\|` guard removed | red (AC2) |
+  | AC3 "`git check-ignore -q …run-X.jsonl` exits 0" | root line narrowed back to `runs/.active/` | red (AC3 ×2) |
+  | AC3 "`git ls-files .claude/backlog/runs` is empty" | a file force-added under `runs/` (worktree) | red (AC3) |
+  | AC3 "no longer carries … the comment calling the rest 'the run logs beside it'" | phrase restored | red (AC3) |
+  | FR2 comment says why | "machine-local" dropped from the comment | red (FR2) |
+  | AC4 "per machine" | "on this machine" dropped | red (AC4) |
+  | AC4 "a fresh clone starts at zero completed sprints" | reworded | red (AC4) |
+  | AC4 "fires later, never earlier" | "fires earlier" | red (AC4) |
+  Not run: moving AC4's sentence out of its paragraph (the extraction is the same shape as 0184's,
+  whose move-out mutation was run and red). AC5: whole suite green at `b79b8a2`, every
+  `tests/*.test.sh` reporting 0 failed; every guarded skill phrase is matched on `section()`'s
+  flattened text, and the `.gitignore` greps are single words.
+  Out of scope, untouched: the local files already under `runs/` (the new root line ignores them).
+
