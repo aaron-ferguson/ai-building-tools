@@ -81,3 +81,31 @@ Each AC's guard is proved red against the current script first.
 
 - 2026-09-25 — filed by retro from the 2026-09-23 supervisor finding (run-20260922T031109Z tail).
   0162 is credited as the fix that made this visible.
+- 2026-09-25 — built (develop, fd62), commits 637462a and the guard follow-up.
+  - Shape: an unpriced-only session's `--sessions` row prints `unpriced` in COST USD and `-` in
+    USD/TURN and both context cells (unpriced turns' tokens were never accumulated, so an integer
+    there would be a false 0), then `| <skills> | unpriced turns: N`. A partly-priced session keeps
+    its figures and gains the same suffix. The header reads
+    `HARVEST of N sessions, unpriced models: <ids>` — comma and colon because the privacy guard's
+    character set (`tests/measurement.test.sh`) admits no parentheses.
+  - Model ids come from transcripts and land in a public output, so an id not matching
+    `^[A-Za-z0-9.-]{1,64}$` prints as `unrecognised-model-id`; guarded by its own case.
+  - FR2 reading: "transcripts it read" is taken as transcripts contributing at least one turn in
+    the window. A transcript with no usage-bearing turn (or wholly outside `--since/--until`) is
+    still skipped, as before; the ACs do not reach that case.
+  - FR3: no rate added for `claude-opus-5-5` (none cited). The TOTAL row still reads 0.00 on an
+    all-unpriced harvest — 0162's ledger labels that case, and the ledger's TOTAL regex is
+    unaffected because TOTAL's SESSNS stays an integer.
+  - AC3's guard is a golden of the pre-0186 script's output over the FR3 store, captured at e830d00.
+  - Clause table and mutations (all RUN, against committed code, restored from HEAD):
+
+    | AC clause | Guard | Mutation | Result |
+    |---|---|---|---|
+    | AC1 Given a fixture run of two transcripts, one on `claude-opus-5` and one entirely on an unlisted model id | `store-0186` fixture | — | — |
+    | AC1 prints `HARVEST of 2 sessions` | header case | M1 restore `if not per_skill:` | red |
+    | AC1 and a row for each | row grep | M1 | red |
+    | AC2 row carries its unpriced turn count | `unpriced turns: 1` | M3 drop the label | red |
+    | AC2 and no dollar figure | two-decimal grep | M4 print `0.00` | red |
+    | AC2 header names the unlisted model id | header case | M2 skip model list | red |
+    | AC3 Given a fixture whose turns are all on listed models, output unchanged | golden diff | M5 suffix always | red |
+    | (privacy) unshaped id not echoed | placeholder case | M6 no sanitising | red |

@@ -53,3 +53,4 @@ which entries, what is expired unprocessed, and why a sweeper removes only what 
 normal state of this file is empty, and **if it has grown, that is itself the finding**.
 
 ---
+- 2026-09-25 — `tools/harvest-usage.sh`: after 0186 a wholly unpriced session has a SESSION row, but the per-SKILL table still lists only priced turns, so a skill whose every turn is unpriced (the `queue` sweep of run-20260922T031109Z) still has no skill row and its turns show only in the global UNPRICED line. 0186's FRs scope the fix to session rows and the header; the skill table needs its own row if wanted. (develop 0186, fd62)
