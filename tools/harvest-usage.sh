@@ -77,6 +77,10 @@ RATES = {
 # Transcripts record some models with a snapshot date (claude-haiku-4-5-20251001) where the table
 # keys the bare id, so every such turn went unpriced until the suffix was stripped for the lookup.
 DATE_SUFFIX = re.compile(r'-\d{8}$')
+# A model id is read from the transcript and printed in a public output, so it is printed only when
+# it has the shape of a model id; anything else is named by this placeholder instead (0186).
+MODEL_ID_SHAPE = re.compile(r'^[A-Za-z0-9.-]{1,64}$')
+UNSHAPED_MODEL_ID = "unrecognised-model-id"
 # The turns-per-cycle budget skills/sprint/SKILL.md states. Two files carry this number and
 # tests/sprint.test.sh reads BOTH and compares them, rather than restating it a third time.
 DEFAULT_TURN_BUDGET = 3
@@ -191,6 +195,7 @@ def harvest_session(path, opts):
     current = "unmarked"
     seen = set()
     unpriced = 0
+    unpriced_models, unpriced_skills = set(), set()
     for line in open(path, errors="replace"):
         line = line.strip()
         if not line:
@@ -224,6 +229,8 @@ def harvest_session(path, opts):
         cost = cost_of(usage, msg.get("model"))
         if cost is None:
             unpriced += 1
+            unpriced_models.add(printable_model(msg.get("model")))
+            unpriced_skills.add(current)
             continue
         total_cost, output_cost = cost
         row = per_skill.setdefault(current, blank())
@@ -236,12 +243,16 @@ def harvest_session(path, opts):
         row["write"] += usage.get("cache_creation_input_tokens", 0) or 0
         if day:
             row["days"].add(day)
-    return per_skill, unpriced
+    return per_skill, unpriced, unpriced_models, unpriced_skills
+
+
+def printable_model(model):
+    return model if model and MODEL_ID_SHAPE.match(model) else UNSHAPED_MODEL_ID
 
 
 def blank():
     return {"turns": 0, "cost": 0.0, "outcost": 0.0, "ctx": 0, "out": 0, "read": 0, "write": 0,
-            "days": set(), "sessions": 0}
+            "days": set(), "sessions": 0, "unpriced": 0}
 
 
 def add_into(dst, src):
@@ -372,11 +383,25 @@ def row(name, r):
         r["ctx"], r["ctx"] // turns)
 
 
+def session_row(sid, skills, r):
+    """One session's row. A session with no priced turn prints no dollar figure at all: USD 0.00
+    there would be a measured zero for a session that really spent money (0186)."""
+    if r["turns"] == 0:
+        line = "%-10s| %6d | %7d | %10s | %8s | %12s | %10s" % (
+            sid[:10], r["sessions"], 0, "unpriced", "-", "-", "-")
+    else:
+        line = row(sid, r)
+    line += " | " + skills
+    if r["unpriced"]:
+        line += " | unpriced turns: %d" % r["unpriced"]
+    return line
+
+
 directory = sys.argv[1]
 opts = parse_args(sys.argv[2:])
 
 totals, by_skill, session_rows = blank(), {}, []
-unpriced_total = 0
+unpriced_total, unpriced_models = 0, set()
 for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
     sid = os.path.basename(path).split("-")[0]
     # --session NARROWS first, --exclude then subtracts. Two filters rather than one because they
@@ -387,9 +412,12 @@ for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
         continue
     if any(sid.startswith(x) or x.startswith(sid) for x in opts["exclude"]):
         continue
-    per_skill, unpriced = harvest_session(path, opts)
+    per_skill, unpriced, models, unpriced_skills = harvest_session(path, opts)
     unpriced_total += unpriced
-    if not per_skill:
+    unpriced_models |= models
+    # A session with no priced turn is still a session: dropping it made a five-transcript run
+    # harvest as four, and its unpriced turns reached no row (0186).
+    if not per_skill and not unpriced:
         continue
     merged = blank()
     for name, r in per_skill.items():
@@ -400,9 +428,13 @@ for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
     add_into(totals, merged)
     totals["sessions"] += 1
     merged["sessions"] = 1
-    session_rows.append((sid, "/".join(sorted(per_skill)), merged))
+    merged["unpriced"] = unpriced
+    session_rows.append((sid, "/".join(sorted(set(per_skill) | unpriced_skills)), merged))
 
-print("HARVEST of %d sessions" % totals["sessions"])
+header = "HARVEST of %d sessions" % totals["sessions"]
+if unpriced_models:
+    header += ", unpriced models: " + " ".join(sorted(unpriced_models))
+print(header)
 print("RANGE %s to %s" % (min(totals["days"]) if totals["days"] else "none",
                           max(totals["days"]) if totals["days"] else "none"))
 print("RATES per million: opus 5 in 5.00 out 25.00, cache read 0.1x in, write 1.25x in at 5m and 2.0x at 1h")
@@ -434,7 +466,7 @@ if opts["sessions"]:
     print("%-10s| %6s | %7s | %10s | %8s | %12s | %10s"
           % ("SESSION", "SESSNS", "TURNS", "COST USD", "USD/TURN", "CONTEXT TOK", "CTX/TURN"))
     for sid, skills, r in sorted(session_rows, key=lambda x: -x[2]["cost"]):
-        print(row(sid, r) + " | " + skills)
+        print(session_row(sid, skills, r))
 
 if opts["run"]:
     report_run_bound(directory, opts)

@@ -1258,5 +1258,83 @@ else
   bad "0179 AC1 — outcome.schema.json still asks a stage for session_id (or no longer pins additionalProperties); a stage with no id to report composes one"
 fi
 
+# --- 0186 — a session with no priced turn still gets a row ------------------------------------
+#
+# 0162's UNPRICED line counted the turns, but a session whose EVERY turn ran on an unlisted model
+# was dropped from the harvest entirely: run-20260922T031109Z's queue sweep ran all 42 turns on a
+# model RATES did not list, and the harvest printed "HARVEST of 4 sessions" from five transcripts.
+echo "0186 AC1 — a run of two transcripts, one wholly unpriced, harvests as two sessions"
+mkdir -p "$FIX/store-0186"
+mk_session  "$SID_DEV" develop 400000 > "$FIX/store-0186/$SID_DEV.jsonl"
+mk_unpriced "$SID_VER" verify  240000 > "$FIX/store-0186/$SID_VER.jsonl"
+H186="$("$HARVEST" "$FIX/store-0186" --sessions 2>&1 || true)"
+H186_HEAD="$(printf '%s\n' "$H186" | head -1)"
+case "$H186_HEAD" in
+  "HARVEST of 2 sessions"*) ok "the header reads HARVEST of 2 sessions" ;;
+  *) bad "0186 AC1 — two transcripts read, header is: $H186_HEAD" ;;
+esac
+H186_DEV="$(printf '%s\n' "$H186" | grep '^aaaaaaaa ' || true)"
+H186_VER="$(printf '%s\n' "$H186" | grep '^bbbbbbbb ' || true)"
+if [ -n "$H186_DEV" ] && [ -n "$H186_VER" ]; then
+  ok "and prints a session row for each transcript"
+else
+  bad "0186 AC1 — a session row is missing; priced: '$H186_DEV', unpriced: '$H186_VER'"
+fi
+
+echo "0186 AC2 — the unpriced session's row carries its unpriced turn count and no dollar figure"
+case "$H186_VER" in
+  *"unpriced turns: 1"*) ok "the unpriced session's row carries 'unpriced turns: 1'" ;;
+  *) bad "0186 AC2 — the unpriced session's row does not carry its unpriced turn count: $H186_VER" ;;
+esac
+# A dollar figure is any number with two decimals; the token columns are integers, so this cannot
+# be satisfied by a row that merely has numbers in it. USD 0.00 is the case it exists to catch.
+if [ -z "$H186_VER" ]; then
+  bad "0186 AC2 — there is no unpriced session row to be free of a dollar figure"
+elif printf '%s' "$H186_VER" | grep -qE '[0-9]+\.[0-9]{2}'; then
+  bad "0186 AC2 — the unpriced session's row carries a dollar figure: $H186_VER"
+else
+  ok "and carries no dollar figure"
+fi
+case "$H186_HEAD" in
+  *claude-no-such-model-0*) ok "the header names the unlisted model id" ;;
+  *) bad "0186 AC2 — the header does not name the unlisted model id: $H186_HEAD" ;;
+esac
+# The privacy guard's character set (tests/measurement.test.sh) holds for the new header and row.
+if printf '%s\n' "$H186" | grep -vq '^[A-Za-z0-9 .,$%|:/-]*$'; then
+  bad "0186 privacy — a line leaves the aggregate-figures character set: $(printf '%s\n' "$H186" | grep -v '^[A-Za-z0-9 .,$%|:/-]*$' | head -1)"
+else
+  ok "and every line stays inside the aggregate-figures character set"
+fi
+
+echo "0186 AC3 — an all-priced harvest is byte-for-byte what it was before 0186"
+# Golden output of the pre-0186 script over the FR3 store above, captured at e830d00.
+cat > "$FIX/golden-0186.txt" <<'GOLDEN'
+HARVEST of 3 sessions
+RANGE 2026-09-06 to 2026-09-06
+RATES per million: opus 5 in 5.00 out 25.00, cache read 0.1x in, write 1.25x in at 5m and 2.0x at 1h
+
+SKILL     | SESSNS |   TURNS |   COST USD | USD/TURN |  CONTEXT TOK |   CTX/TURN
+queue     |      1 |       1 |      20.00 |  20.0000 |            0 |          0
+develop   |      1 |       1 |      10.00 |  10.0000 |            0 |          0
+verify    |      1 |       1 |       6.00 |   6.0000 |            0 |          0
+TOTAL     |      3 |       3 |      36.00 |  12.0000 |            0 |          0
+
+SKILL     |     READ TOK |    WRITE TOK |   OUTPUT TOK | READ PCT |  OUT PCT
+queue     |            0 |            0 |       800000 |     0.0% |   100.0%
+develop   |            0 |            0 |       400000 |     0.0% |   100.0%
+verify    |            0 |            0 |       240000 |     0.0% |   100.0%
+TOTAL     |            0 |            0 |      1440000 |     0.0% |   100.0%
+
+SESSION   | SESSNS |   TURNS |   COST USD | USD/TURN |  CONTEXT TOK |   CTX/TURN
+cccccccc  |      1 |       1 |      20.00 |  20.0000 |            0 |          0 | queue
+aaaaaaaa  |      1 |       1 |      10.00 |  10.0000 |            0 |          0 | develop
+bbbbbbbb  |      1 |       1 |       6.00 |   6.0000 |            0 |          0 | verify
+GOLDEN
+if "$HARVEST" "$FIX/store" --sessions 2>&1 | diff -q - "$FIX/golden-0186.txt" >/dev/null; then
+  ok "the all-priced output matches the pre-0186 golden exactly"
+else
+  bad "0186 AC3 — the all-priced output changed: $("$HARVEST" "$FIX/store" --sessions 2>&1 | diff - "$FIX/golden-0186.txt" | head -4 | tr '\n' ' ')"
+fi
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
