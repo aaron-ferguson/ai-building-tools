@@ -93,14 +93,14 @@ Each of these is a plausible-looking change away, and the header no longer carri
 
 **Use `./claim` and `./close` rather than hand-editing either**; the commit inside the lock is the
 point in both cases, and `CONCURRENCY.md`'s *A claim must be durable the moment it is made* and
-*The four scripts* are why.
+*The five scripts* are why.
 
 ---
 
 ## Step 0 — Locate or create the backlog
 
 Find `.claude/backlog/` at the project root. If it doesn't exist, scaffold it by copying every template
-above (`chmod +x` `next`, `claim` and `close`), creating `items/`, and filling `config.yml` from what the repo
+above (`chmod +x` `next`, `claim`, `close`, `handoff` and `reopen`), creating `items/`, and filling `config.yml` from what the repo
 actually uses — read `package.json` scripts (or `Makefile`, `pyproject.toml`) for the real
 test/lint/typecheck commands rather than guessing. Leave `tracker:`, `cost_tracking:` and
 `external_feedback:` out unless the project's `CLAUDE.md` profile wires one in or the user asks
@@ -143,6 +143,7 @@ report the missing wiring and stop. A backlog whose tickets cite no standard can
 | a ticket sits at `next: queue` — bare `/queue`, or an ID | **Re-specify** it (Step 2), then **skip Step 3**: it already has a rank and keeps it |
 | "add an FR to X", "this ticket also needs Y" | **Amend** an already-specified ticket (Step 2) |
 | "drop X", "we're not doing X after all" | **Withdraw** it — see below. The work goes; the id never does |
+| "re-verify X", "that close can't be trusted" — a `done` ticket | `./reopen <id> <top\|above:<row-id>> "<reason>"`. You pass the rank and the reason; it moves the row back from `DONE.md`, sets `next: verify`, unticks the ACs, keeps `## QA evidence`, re-blocks dependents and commits. Never by hand (`ecc6a60` did, and is what it replaces) |
 
 Adding is the default when the intent is ambiguous — but only where there is something to capture. A
 bare invocation with nothing new to record is the **re-specify** case, not an Add: `next: queue` is the

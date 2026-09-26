@@ -361,7 +361,7 @@ earlier pass mutated the right behaviour and saw it go red.
 ```
 
 It does the whole sequence below under the lock and **commits it**, which is the step a session under
-load forgets (`CONCURRENCY.md`, *The four scripts*). It refuses rather than guessing on four grounds:
+load forgets (`CONCURRENCY.md`, *The five scripts*). It refuses rather than guessing on four grounds:
 a table shape it cannot read, a row not at `next: verify`, a token that is not the one holding the
 claim — you pass the token because ownership is memory and no script can check memory — and **an
 acceptance-criteria list it cannot tick**. That last one is yours to fix before you can close:

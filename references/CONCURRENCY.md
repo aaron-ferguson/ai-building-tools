@@ -68,7 +68,7 @@ The lock and `QUEUE.md` live in the working tree, so every checkout has its own 
 **A second checkout — a linked `git worktree` or a second clone — may read and run tests, and
 must never claim, close or hand off**: a write there is invisible to every other session, and from a
 worktree it is lost outright — `./claim` once exited 0 and committed onto a detached worktree `HEAD` that no branch
-reached after the worktree was removed. `claim`, `close` and `handoff` refuse from a linked worktree
+reached after the worktree was removed. `claim`, `close`, `handoff` and `reopen` refuse from a linked worktree
 before taking the lock. **A second clone is caught by nothing but this rule**: nothing inside a clone
 tells it from the primary.
 
@@ -234,7 +234,7 @@ rule here. **No lock can see this**: the lock guards a two-second edit, and the 
 *order*. Afterwards the git record cannot tell it from a clean sequential hand-off. So either the
 hand-off is the stage's last write, or what remains folds into the same commit.
 
-## The four scripts
+## The five scripts
 
 Each encodes a rule above that is otherwise a matter of remembering. **`./claim <id> [token]`**,
 **`./handoff <id> <token> <stage> [status]`** and **`./close <id> <token>`** do the whole claim,
@@ -242,14 +242,17 @@ hand-off and close under the lock and **commit** — the commit is the point, an
 forget it. `handoff` and `close` are *given* their token, not minting one — ownership is memory.
 `handoff` takes its destination stage as an argument rather than inferring it, because `verify`
 hands off three different ways, and it reads every field back before writing either file: **all
-five land or nothing does**, a no-op being the failure it exists to stop. **`./next`** only reads;
-`--help` lists its modes. All four refuse rather than guess.
+five land or nothing does**, a no-op being the failure it exists to stop. **`./reopen <id>
+<top|above:<row-id>> <reason>`** is `close` in reverse: a `done` ticket back to `verify | ready`,
+ACs unticked, `## QA evidence` kept, dependents re-blocked, one commit. It takes no token — a done
+ticket has no holder — and the rank and the reason are arguments, because both are `queue`
+judgements. **`./next`** only reads; `--help` lists its modes. All five refuse rather than guess.
 
 **Prose inside these scripts' single-quoted `awk` programs takes no apostrophe.** One closes the
 quoting around the whole program, and nothing errors at the edit: a comment reading `projects'
 spellings` took `close.test.sh` to 20 failures of 63, reporting an empty reconcile list and naming
 nothing about quotes. Write `"\047"` where the character is needed. The guard is two checks over
-both copies of all four, before they are compared (`tests/backlog-scripts-installed.test.sh`):
+both copies of all five, before they are compared (`tests/backlog-scripts-installed.test.sh`):
 `sh -n`, and a scan asserting that no quote closes an embedded program from inside a comment — a
 multi-line region must close at the start of a line, and a region closing on its own opening line
 must not do so after a `#`. `sh -n` alone is not enough — where the shell happens to re-pair the

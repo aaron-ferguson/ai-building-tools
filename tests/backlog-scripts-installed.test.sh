@@ -25,7 +25,7 @@ set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 BACKLOG="$ROOT/.claude/backlog"
 TEMPLATES="$ROOT/skills/queue/templates"
-SCRIPTS="next claim close handoff"
+SCRIPTS="next claim close handoff reopen"
 
 [ -d "$BACKLOG" ]   || { echo "no backlog at $BACKLOG" >&2; exit 2; }
 [ -d "$TEMPLATES" ] || { echo "no templates at $TEMPLATES" >&2; exit 2; }
@@ -36,7 +36,7 @@ FAIL=0
 ok()  { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
 bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
 
-echo "AC1 — all four are installed and executable"
+echo "AC1 — all five are installed and executable"
 for s in $SCRIPTS; do
   if [ -f "$BACKLOG/$s" ]; then ok "$s exists"; else bad "$s missing from .claude/backlog/"; fi
   if [ -x "$BACKLOG/$s" ]; then ok "$s is executable"; else bad "$s is not executable (chmod +x)"; fi
@@ -93,7 +93,7 @@ echo "AC8 — no apostrophe closes an embedded awk program early, template and i
 # `awk '{ print }  # a note'` (fine; a real awk comment), and nothing available at the close
 # tells them apart without lookahead. Reporting both was chosen over missing the first, because
 # AC2 is the whole ticket and the convention in references/CONCURRENCY.md already asks that these
-# programs carry no prose comments. Neither shape exists in the four scripts today. A future
+# programs carry no prose comments. Neither shape exists in the five scripts today. A future
 # legitimate trailing awk comment trips this: move it above the assignment, where it belongs.
 early_close() {
   awk '
@@ -166,7 +166,7 @@ for s in $SCRIPTS; do
       opened="$(printf '%s' "$hit" | cut -f1)"
       at="$(printf '%s' "$hit" | cut -f2)"
       text="$(printf '%s' "$hit" | cut -f3)"
-      bad "$s has a quote defect, not a divergence — the awk program opened at $label:$opened is closed early by a quote on line $at: $text — prose inside these single-quoted programs takes no apostrophe (references/CONCURRENCY.md, 'The four scripts')"
+      bad "$s has a quote defect, not a divergence — the awk program opened at $label:$opened is closed early by a quote on line $at: $text — prose inside these single-quoted programs takes no apostrophe (references/CONCURRENCY.md, 'The five scripts')"
     fi
   done
 done
@@ -218,14 +218,14 @@ fi
 echo "AC4 — the apostrophe convention is stated where the scripts are documented"
 # Anchored to the section body, not the whole file: the hazard is explained in comments inside the
 # scripts themselves, so a file-wide grep would pass on prose that is not the stated rule (0077).
-SECTION="$(awk '/^## The four scripts/{f=1;next} f&&/^## /{exit} f' "$ROOT/references/CONCURRENCY.md")"
+SECTION="$(awk '/^## The five scripts/{f=1;next} f&&/^## /{exit} f' "$ROOT/references/CONCURRENCY.md")"
 if [ -z "$SECTION" ]; then
-  bad "references/CONCURRENCY.md has no 'The four scripts' section to state the rule in"
+  bad "references/CONCURRENCY.md has no 'The five scripts' section to state the rule in"
 else
   if printf '%s' "$SECTION" | grep -qF 'takes no apostrophe'; then
-    ok "the four-scripts section states the rule"
+    ok "the five-scripts section states the rule"
   else
-    bad "references/CONCURRENCY.md, 'The four scripts', does not forbid apostrophes in embedded awk prose"
+    bad "references/CONCURRENCY.md, 'The five scripts', does not forbid apostrophes in embedded awk prose"
   fi
   if printf '%s' "$SECTION" | grep -qF 'quoting around the whole program'; then
     ok "and gives the quoting as its reason"

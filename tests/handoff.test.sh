@@ -494,7 +494,7 @@ if [ "$(head -n 1 "$HANDOFF_SRC")" = "#!/bin/sh" ]; then ok "declares #!/bin/sh"
 # that it has been told about the fourth script, since a guard that lists three cannot see a
 # fourth diverge.
 assert_contains "the install guard covers handoff" \
-  "$(cat "$ROOT/tests/backlog-scripts-installed.test.sh")" 'SCRIPTS="next claim close handoff"'
+  "$(cat "$ROOT/tests/backlog-scripts-installed.test.sh")" 'SCRIPTS="next claim close handoff'
 
 # --- AC6 — develop and verify name the script and keep the fallback -----------------------------
 echo "AC6 — both stages name ./handoff as the supported path, and keep the by-hand fallback"
@@ -516,8 +516,8 @@ assert_contains "it says a lock cannot see this" "$CON" 'No lock can see this'
 assert_contains "develop states the ordering" "$DEV" 'release is the final act'
 assert_contains "verify states the ordering" "$VER" 'release is the final act'
 
-echo "AC7 — the section that enumerates the scripts counts four"
-assert_contains "CONCURRENCY.md heads it 'The four scripts'" "$CON" '## The four scripts'
+echo "AC7 — the section that enumerates the scripts counts five"
+assert_contains "CONCURRENCY.md heads it 'The five scripts'" "$CON" '## The five scripts'
 assert_contains "and describes handoff there" "$CON" './handoff <id> <token> <stage>'
 
 # --- 0106 FR3 — the hand-off reports declared scope against what the commits changed -----------

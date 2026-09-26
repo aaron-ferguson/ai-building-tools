@@ -1,0 +1,389 @@
+#!/bin/sh
+#
+# Reopen a closed backlog row for another verify pass: lock → re-read → move the row from DONE.md
+# back into QUEUE.md → reset the item → re-block its dependents → commit → unlock, as one step.
+#
+# **What this replaces is commit ecc6a60**: the by-hand composition a `queue` session wrote on
+# 2026-09-13 to reopen four tickets closed by a verify pass the user did not trust (0160). It was
+# one locked shell call doing six edits across three files — the shape references/CONCURRENCY.md
+# and CONCURRENCY-INCIDENTS.md record as leaking silently, because a dropped step is invisible in
+# the commit afterwards. This script is that composition, made one invocation (0161).
+#
+# Usage:  .claude/backlog/reopen <id> <top|above:<row-id>> <reason>
+#
+# **The rank is an argument, never a default.** Where the row goes back is a `queue` judgement, so
+# the caller passes it: `top`, or `above:<row-id>` for directly above a row already in QUEUE.md.
+# **The reason is required** and lands as a dated line in `## Notes & decisions` — a reopened ticket
+# that does not say why reads, to the verify pass that picks it up, like one that was never closed.
+#
+# **The destination is always `verify`.** A reopen distrusts a verdict, not a contract; a contract
+# that needs changing is a re-specify (`next: queue`), which this script does not do.
+#
+# What it does to the item, and why each:
+#   - `next: verify`, `status: ready`, and `closed:` removed — the ticket is due at a stage again;
+#   - `claimed_by:`, `claimed_at:` and `touches:` cleared — closed items do carry stale tokens, and
+#     a ready ticket that kept one reads as held to every other window;
+#   - every `- [x]` under `## Acceptance criteria` unticked — a tick is evidence from the pass being
+#     distrusted, and `close` re-ticks what the new pass checks (`queue`'s re-specify rule);
+#   - `## QA evidence` left byte-for-byte — it is the history of the pass being distrusted;
+#   - a dated line carrying the reason appended to `## Notes & decisions`.
+#
+# **Dependents are reconciled as `close` does it, in reverse.** Closing is the only event that
+# frees a row naming this ticket in `blocked_by`, so reopening is the only event that re-blocks
+# one. An unheld dependent at `ready` — or `waiting`, which `close` restores from its `## Waiting
+# on` section when this ticket closes again — becomes `blocked`, row and item, in the same commit.
+# A HELD dependent makes the whole reopen refuse: its session is building against this ticket
+# being done, and writing its row is the one thing a stage without its claim may never do
+# (CONCURRENCY.md, 'A stage writes only the ticket it holds'). A `done` dependent is history.
+#
+# **It refuses rather than guesses**, changing nothing and leaving no lock: an item that is not
+# `status: done`; no DONE.md row for it, or a QUEUE.md row already there; QUEUE.md, DONE.md or the
+# item uncommitted; an empty reason; a position it cannot resolve; a held dependent; a busy lock.
+#
+# **Columns are resolved by header name, never by position** — the defect 0022 found in `claim`.
+#
+# See references/CONCURRENCY.md — 'The five scripts' and 'Lock every write to the backlog directory'.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+QUEUE="$DIR/QUEUE.md"
+DONE="$DIR/DONE.md"
+LOCK="$DIR/.lock"
+
+# The generic trailer, for `handoff`'s reason: the script cannot know which model is driving it.
+COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+
+ID="${1:-}"
+POSITION="${2:-}"
+REASON="${3:-}"
+
+[ -n "$ID" ] && [ -n "$POSITION" ] && [ $# -ge 3 ] || {
+  echo "usage: reopen <id> <top|above:<row-id>> <reason>" >&2
+  echo "  position  where the row goes back in QUEUE.md — a queue judgement, so never defaulted" >&2
+  echo "  reason    why the close is distrusted; appended, dated, to '## Notes & decisions'" >&2
+  exit 2
+}
+[ -n "$(printf '%s' "$REASON" | tr -d ' \t\n')" ] || {
+  echo "refusing to reopen $ID: the reason is empty" >&2
+  echo "a reopened ticket that does not say why reads like one that was never closed" >&2
+  exit 1
+}
+case "$POSITION" in
+  top) ABOVE="" ;;
+  above:?*) ABOVE="${POSITION#above:}" ;;
+  *) echo "'$POSITION' is not a position — expected 'top' or 'above:<row-id>'" >&2; exit 1 ;;
+esac
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+[ -f "$DONE" ]  || { echo "no DONE.md at $DONE" >&2; exit 1; }
+
+item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
+[ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
+item_rel="items/$(basename "$item")"
+
+# --- the linked-worktree refusal (0083) --------------------------------------------------------
+# The lock, QUEUE.md and DONE.md live in the working tree, so a linked worktree's copies are ones
+# no other session reads (CONCURRENCY.md, 'A second checkout never writes the backlog').
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 &&
+   [ "$(git -C "$DIR" rev-parse --path-format=absolute --git-dir)" != \
+     "$(git -C "$DIR" rev-parse --path-format=absolute --git-common-dir)" ]; then
+  echo "refusing to reopen $ID: this is a linked worktree, whose lock and QUEUE.md no other session reads" >&2
+  echo "run it from the primary checkout: $(git -C "$DIR" worktree list --porcelain | sed -n '1s/^worktree //p')" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# Anything already dirty in a file this commit names would ride along on it, and a pathspec limits
+# a commit to paths, never to authorship —
+# CONCURRENCY.md, 'A pathspec is necessary but not sufficient'.
+# Before the lock, so "no lock was taken" is true by construction. Pathspecs are relative to $DIR
+# for `close`'s reason: an absolute one through a symlinked path diffs every row.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 &&
+   ! git -C "$DIR" diff --quiet -- QUEUE.md DONE.md "$item_rel"; then
+  echo "refusing to reopen $ID: QUEUE.md, DONE.md or $item_rel hold uncommitted changes this commit would carry" >&2
+  git -C "$DIR" diff --name-only -- QUEUE.md DONE.md "$item_rel" | sed 's/^/  /' >&2
+  echo "commit them by pathspec if they are yours; if they are another session's, leave them alone and wait" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# --- lock --------------------------------------------------------------------------------------
+mkdir "$LOCK" 2>/dev/null || {
+  echo "backlog is locked by: $(cat "$LOCK/held-by" 2>/dev/null || echo unknown)" >&2
+  exit 1
+}
+printf 'reopen %s\n%s\n' "$ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK/held-by"
+# Release however we leave. Set only AFTER the mkdir succeeded: a lock this script did not create
+# is another session's, and removing it on the way out of a refusal is the worst thing it could do.
+trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+# --- tables, by column name --------------------------------------------------------------------
+header_of() {
+  awk -F'|' '/^\|/ {
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
+  }' "$1"
+}
+column_in() {
+  printf '%s' "$1" | awk -F'|' -v want="$2" '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
+  }'
+}
+read_cell() { printf '%s' "$1" | awk -F'|' -v c="$2" '{ v = $c; gsub(/^ +| +$/, "", v); print v }'; }
+row_in() {
+  awk -F'|' -v id="$2" -v c="$3" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$1"
+}
+
+QHEAD="$(header_of "$QUEUE")"
+DHEAD="$(header_of "$DONE")"
+[ -n "$QHEAD" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
+[ -n "$DHEAD" ] || { echo "no table header in $DONE — expected a row with an 'ID' cell" >&2; exit 1; }
+
+missing=""
+for want in ID Next Status; do
+  [ -n "$(column_in "$QHEAD" "$want")" ] || missing="$missing QUEUE.md:$want"
+done
+[ -n "$(column_in "$DHEAD" ID)" ] || missing="$missing DONE.md:ID"
+[ -z "$missing" ] || {
+  echo "a table is missing the column(s):$missing — a shape this script cannot read is an error" >&2
+  exit 1
+}
+Q_ID="$(column_in "$QHEAD" ID)"
+Q_STATUS="$(column_in "$QHEAD" Status)"
+D_ID="$(column_in "$DHEAD" ID)"
+D_TITLE="$(column_in "$DHEAD" Title)"
+
+# --- frontmatter readers -----------------------------------------------------------------------
+# YAML's comment rule, as awk source text; `close`, `handoff` and `next` carry this same block and
+# the scripts are separate files by install contract. `"\047"` is an apostrophe.
+DECOMMENT='
+function decomment(s,   i, ch, quote, out, start) {
+  sub(/^[ \t]+/, "", s)
+  start = 1
+  ch = substr(s, 1, 1)
+  if (ch == "\"" || ch == "\047") { quote = ch; start = 2 }
+  for (i = start; i <= length(s); i++) {
+    ch = substr(s, i, 1)
+    if (quote != "" && ch == quote) { quote = ""; continue }
+    if (quote != "")                { out = out ch; continue }
+    if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
+    out = out ch
+  }
+  sub(/[ \t]+$/, "", out)
+  return out
+}
+'
+
+fm_value() {
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && index($0, key ":") == 1 {
+      print decomment(substr($0, length(key) + 2)); exit
+    }
+  ' "$1"
+}
+
+# Both list forms, inline and block — `close`'s parser, so the two answer "what blocks this?" alike.
+fm_list() {
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && $0 ~ "^" key ":" {
+      rest = $0; sub("^" key ": *", "", rest)
+      rest = decomment(rest)
+      if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
+      inside = 1; next
+    }
+    inside && /^[ \t]*#/ { next }
+    inside && /^  *- / {
+      sub(/^ *- */, "")
+      entry = decomment($0)
+      if (entry != "") printf "%s ", entry
+      next
+    }
+    inside { exit }
+  ' "$1"
+}
+
+# --- re-read everything under the lock ---------------------------------------------------------
+item_status="$(fm_value "$item" status)"
+[ "$item_status" = "done" ] || {
+  echo "refusing to reopen $ID: the item reads status: $item_status, and only a done ticket can be reopened" >&2
+  exit 1
+}
+done_row="$(row_in "$DONE" "$ID" "$D_ID")"
+[ -n "$done_row" ] || {
+  echo "refusing to reopen $ID: DONE.md holds no row for it — there is no close to undo" >&2
+  exit 1
+}
+[ -z "$(row_in "$QUEUE" "$ID" "$Q_ID")" ] || {
+  echo "refusing to reopen $ID: QUEUE.md already holds a row for it" >&2
+  echo "a ticket with a live row is not closed, whatever its item says — reconcile that first" >&2
+  exit 1
+}
+if [ -n "$ABOVE" ] && [ -z "$(row_in "$QUEUE" "$ABOVE" "$Q_ID")" ]; then
+  echo "refusing to reopen $ID: above:$ABOVE names no row in QUEUE.md" >&2
+  exit 1
+fi
+
+# --- dependents: decide everything before writing anything --------------------------------------
+REBLOCK=""
+HELD=""
+for dep in "$DIR"/items/*.md; do
+  [ -f "$dep" ] && [ "$dep" != "$item" ] || continue
+  names_this=no
+  for b in $(fm_list "$dep" blocked_by); do
+    if [ "$b" = "$ID" ]; then names_this=yes; break; fi
+  done
+  [ "$names_this" = yes ] || continue
+  dep_status="$(fm_value "$dep" status)"
+  # A done dependent is history: it names its blockers for ever, and some carry a stale token.
+  [ "$dep_status" != "done" ] || continue
+  if [ -n "$(fm_value "$dep" claimed_by)" ]; then
+    HELD="$HELD $(fm_value "$dep" id)"
+    continue
+  fi
+  case "$dep_status" in
+    ready|waiting) REBLOCK="$REBLOCK $dep" ;;
+  esac
+done
+[ -z "$HELD" ] || {
+  echo "refusing to reopen $ID: held by another session and blocked on it:$HELD" >&2
+  echo "that session is building against $ID being done; reopen once it has handed off or closed" >&2
+  exit 1
+}
+
+# --- build every file aside, then move them into place -----------------------------------------
+TODAY="$(date -u +%Y-%m-%d)"
+title="$(read_cell "$done_row" "${D_TITLE:-0}")"
+[ -n "$D_TITLE" ] && [ -n "$title" ] || title="$(fm_value "$item" title)"
+parent="$(fm_value "$item" parent)"
+
+item_tmp="$(mktemp)"
+queue_tmp="$(mktemp)"
+done_tmp="$(mktemp)"
+trap 'rm -f "$item_tmp" "$queue_tmp" "$done_tmp"; rm -rf "$LOCK"' EXIT INT TERM
+
+note="- $TODAY — **Reopened to verify** by \`./reopen\`: $REASON"
+awk -v note="$note" '
+  NR == 1 && /^---$/ { fm = 1; print; next }
+  fm && /^---$/ { fm = 0; print; next }
+  fm {
+    if ($0 ~ /^next:/)       { print "next: verify"; next }
+    if ($0 ~ /^status:/)     { print "status: ready"; next }
+    if ($0 ~ /^closed:/)     { next }
+    if ($0 ~ /^claimed_by:/) { print "claimed_by:"; next }
+    if ($0 ~ /^claimed_at:/) { print "claimed_at:"; next }
+    if ($0 ~ /^touches:/)    { print "touches:"; skiplist = 1; next }
+    if (skiplist && $0 ~ /^[ \t]*- /) { next }
+    skiplist = 0
+    print; next
+  }
+  { line[++n] = $0 }
+  END {
+    # The note goes after the LAST non-blank line of the notes section, so it is that section`s
+    # last line whether the section ends the file or another heading follows it.
+    for (i = 1; i <= n; i++) {
+      if (line[i] ~ /^## /) insec = (line[i] ~ /^## Notes & decisions/)
+      if (insec && line[i] !~ /^[ \t]*$/) at = i
+      if (line[i] ~ /^## Notes & decisions/) found = 1
+    }
+    for (i = 1; i <= n; i++) {
+      l = line[i]
+      if (l ~ /^## /) in_ac = (l ~ /^## Acceptance criteria/)
+      if (in_ac) sub(/^- \[[xX]\]/, "- [ ]", l)
+      print l
+      if (i == at) print note
+    }
+    if (!found) { print ""; print "## Notes & decisions"; print ""; print note }
+  }
+' "$item" > "$item_tmp"
+
+# QUEUE.md: a row built by that table's own column names, inserted at the given position.
+new_row="$(printf '%s' "$QHEAD" | awk -F'|' -v id="$ID" -v title="$title" -v parent="$parent" -v q="$QUEUE" '
+  {
+    out = "|"
+    for (i = 2; i < NF; i++) {
+      v = $i; gsub(/^ +| +$/, "", v)
+      if      (v == "ID")     val = id
+      else if (v == "Title")  val = title
+      else if (v == "Next")   val = "verify"
+      else if (v == "Status") val = "ready"
+      else if (v == "Parent") val = parent
+      else                  { val = ""; blank = blank (blank ? ", " : "") v }
+      out = out " " val " |"
+    }
+    if (blank != "") printf "note: %s: left blank (no value this script can author): %s\n", q, blank > "/dev/stderr"
+    print out
+  }')"
+
+awk -F'|' -v hdr="$QHEAD" -v above="$ABOVE" -v idc="$Q_ID" -v row="$new_row" '
+  $0 == hdr && !seen { seen = 1; print; hdr_at = NR; next }
+  above == "" && hdr_at && NR == hdr_at + 1 { print; print row; next }
+  above != "" && /^\|/ { v = $idc; gsub(/^ +| +$/, "", v); if (v == above) print row }
+  { print }
+' "$QUEUE" > "$queue_tmp"
+
+awk -F'|' -v id="$ID" -v c="$D_ID" '
+  /^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) next }
+  { print }
+' "$DONE" > "$done_tmp"
+
+# --- read the result back before anything moves (handoff's 0087 lesson) ------------------------
+unapplied=""
+[ "$(fm_value "$item_tmp" next)"   = "verify" ] || unapplied="$unapplied next"
+[ "$(fm_value "$item_tmp" status)" = "ready" ]  || unapplied="$unapplied status"
+! grep -q '^closed:' "$item_tmp"                || unapplied="$unapplied closed"
+[ "$(awk -F'|' -v c="$Q_ID" -v id="$ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) n++ } END { print n + 0 }' "$queue_tmp")" = 1 ] \
+                                                || unapplied="$unapplied QUEUE.row"
+[ -z "$(row_in "$done_tmp" "$ID" "$D_ID")" ]    || unapplied="$unapplied DONE.row"
+[ -z "$unapplied" ] || {
+  echo "$ID: the reopen did not apply to:$unapplied — nothing has been written" >&2
+  exit 1
+}
+
+mv "$item_tmp" "$item"
+mv "$queue_tmp" "$QUEUE"
+mv "$done_tmp" "$DONE"
+trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+REBLOCKED=""
+REBLOCKED_PATHS=""
+for dep in $REBLOCK; do
+  dep_id="$(fm_value "$dep" id)"
+  tmp="$(mktemp)"
+  awk '
+    NR == 1 && /^---$/ { fm = 1; print; next }
+    fm && /^---$/      { fm = 0; print; next }
+    fm && /^status:/   { print "status: blocked"; next }
+    { print }
+  ' "$dep" > "$tmp"
+  mv "$tmp" "$dep"
+  tmp="$(mktemp)"
+  awk -F'|' -v OFS='|' -v id="$dep_id" -v idc="$Q_ID" -v c="$Q_STATUS" '
+    /^\|/ { v = $idc; gsub(/^ +| +$/, "", v); if (v == id) $c = " blocked " }
+    { print }
+  ' "$QUEUE" > "$tmp"
+  mv "$tmp" "$QUEUE"
+  REBLOCKED="$REBLOCKED $dep_id"
+  REBLOCKED_PATHS="$REBLOCKED_PATHS $dep"
+done
+
+# --- commit, by pathspec, in the same breath as the edits --------------------------------------
+git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
+  echo "not a git repository ($DIR) — QUEUE.md, DONE.md and the item are edited but uncommitted" >&2
+  exit 1
+}
+# Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
+n=0
+# shellcheck disable=SC2086
+until git -C "$DIR" commit -q -m "Reopen $ID to verify" -m "$COAUTHOR" -- "$QUEUE" "$DONE" "$item" $REBLOCKED_PATHS 2>/dev/null; do
+  n=$((n + 1))
+  [ "$n" -lt 30 ] || {
+    echo "could not commit the reopen (git busy) — the files are edited but uncommitted" >&2
+    exit 1
+  }
+done
+
+echo "reopened $ID — $title: next verify, status ready, at $POSITION"
+[ -z "$REBLOCKED" ] || echo "reconciled (blocked again on $ID):$REBLOCKED"
