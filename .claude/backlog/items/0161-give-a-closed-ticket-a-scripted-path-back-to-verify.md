@@ -23,13 +23,19 @@ expects:
 claimed_by: "31d3"
 claimed_at: 2026-09-26T04:39:19Z
 touches:
-  - skills/queue/templates/reopen
-  - .claude/backlog/reopen
-  - tests/reopen.test.sh
+  - skills/queue/templates/reopen  # new
+  - .claude/backlog/reopen  # new, installed copy
+  - tests/reopen.test.sh  # new
   - tests/backlog-scripts-installed.test.sh
   - skills/queue/SKILL.md
   - references/CONCURRENCY.md
-  - tests/citations.test.sh
+  - references/CONCURRENCY-INCIDENTS.md  # heading citation 'The four scripts'
+  - skills/verify/SKILL.md  # heading citation
+  - skills/queue/templates/close  # heading citation in header comment
+  - skills/queue/templates/handoff  # heading citation in header comment
+  - .claude/backlog/close  # installed copy
+  - .claude/backlog/handoff  # installed copy
+  - tests/handoff.test.sh  # asserts the heading
 ---
 
 ## Problem
