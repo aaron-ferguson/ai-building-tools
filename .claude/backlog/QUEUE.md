@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0187 | Decide whether a sprint dispatch pins a concrete model or records the one that answered | design | in-progress |  |
+| 0187 | Decide whether a sprint dispatch pins a concrete model or records the one that answered | develop | ready |  |
 | 0188 | Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop | design | in-progress |  |
 | 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | develop | in-progress |  |
 | 0174 | Say the findings gate is deferred until the run is out of work when no scope was confirmed | develop | ready |  |
