@@ -159,3 +159,52 @@ skill or `.gitignore` before the change, then the full suite (AC5).
   flattened text, and the `.gitignore` greps are single words.
   Out of scope, untouched: the local files already under `runs/` (the new root line ignores them).
 
+
+## QA evidence
+
+Verify session 9608, 2026-09-26, at `d049244` (build `b79b8a2`). **PASS.**
+Conventions: ../ai-building-conventions
+Command (qa_level `unit`, reporting form): `for t in tests/*.test.sh; do "$t" || true; done` — config's
+`commands.unit_by_file`; lint and typecheck are not configured.
+Dirty set at Step 2: empty. Fresh capture after the last mutation: empty. Intersection with the
+evidence set: empty — not advisory. Copy executed: the repo copy of `skills/sprint/SKILL.md` is what
+the guards read; the installed plugin (0.9.35) is not the subject.
+
+Control, pasted per file: every one of the 32 `tests/*.test.sh` reported 0 failed; `tests/sprint.test.sh`
+`338 passed, 0 failed, 0 skipped`.
+
+**Clause table and mutations — every row re-run by this session** (`SPRINT_SKIP_PROBE=1
+tests/sprint.test.sh`, restored by path with `git checkout -- <file>`, `git diff --stat` non-empty each
+time; M3d in a throwaway detached worktree, removed afterwards). Each mutation also reddens
+`0165 AC2`, which re-runs the file in a clean copy and so inherits the same red — expected, not a finding.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | Given `skills/sprint/SKILL.md` Step 5 | bold sentence moved to just before `## Step 4` | red — 0185 AC1 |
+| AC1 | "`runs/` is machine-local" | "machine-local and" dropped | red — 0185 AC1 |
+| AC1 | "never committed" | "and never committed" dropped | red — 0185 AC1 |
+| AC1 | "logs, captures and hand-written files alike" | ", captures and hand-written files alike" → ", captures alike" | red — 0185 AC1 |
+| AC1 | "`LEDGER.md` is the committed record" | clause dropped | red — 0185 AC1 |
+| AC1 | a guard goes red when removed | whole sentence deleted | red — 0185 AC1 |
+| AC1/FR3 | captures unfiltered stage output | "unfiltered" dropped | red — 0185 AC1 |
+| AC2 | `runs/.gitignore` exists | the `.gitignore` line removed from the marker block | red — 0185 AC2 ×2 |
+| AC2 | containing `*` | contents `x` | red — 0185 AC2 ×2 |
+| AC2 | `.jsonl` absent from `git status --porcelain` | contents `.active` (ignores only the marker) | red — 0185 AC2 ×2 |
+| AC2 | second run leaves the file unchanged | `[ -f … ] \|\|` guard removed | red — 0185 AC2 |
+| AC2 | existing AC18 marker guards stay green | — | control 338/0 |
+| AC3 | `git check-ignore -q …/run-X.jsonl` exits 0 | root line narrowed to `.claude/backlog/runs/.active/` | red — 0185 AC3 ×2 |
+| AC3 | `git ls-files .claude/backlog/runs` empty | `run-F.jsonl` force-added (worktree) | red — 0185 AC3 (336/1/1) |
+| AC3 | no "the run logs beside it" comment | phrase restored into the comment | red — 0185 AC3 |
+| FR2 | comment says why | "machine-local" dropped from the comment | red — 0185 FR2 |
+| AC4 | Given the "One fact crosses runs" paragraph | sentence moved out to its own paragraph | red — 0185 AC4 |
+| AC4 | count is per machine | "on this machine" dropped | red — 0185 AC4 |
+| AC4 | fresh clone starts at zero completed sprints | reworded "has no history" | red — 0185 AC4 |
+| AC4 | fires later, never earlier | → "fires earlier" | red — 0185 AC4 |
+| AC4 | existing `One fact crosses runs` guard stays green | — | control 338/0 |
+| AC5 | full suite green | — | 32 files, 0 failed (above) |
+| AC5 | no guarded phrase straddles a line break | skill phrases matched on `section()`'s flattened text; `.gitignore` greps are single tokens (`machine-local`, `LEDGER.md`, `the run logs beside it` on one line) | read |
+
+**NFR — Privacy** (`data-privacy-conventions.md`): `git ls-files .claude/backlog/runs` empty in this
+checkout; guarded by AC3's case, shown red above. Always-on (`CONVENTIONS_CORE.md`): no secrets, no
+company material, tests added with the change. Nothing newly reachable: the marker block only adds a
+file inside the directory it already creates.
