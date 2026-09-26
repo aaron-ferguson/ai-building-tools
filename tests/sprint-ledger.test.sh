@@ -1306,6 +1306,18 @@ else
   ok "and every line stays inside the aggregate-figures character set"
 fi
 
+# The model id is transcript input printed into a public output: one not shaped like a model id is
+# replaced by a placeholder rather than echoed, so prose cannot ride out through the header.
+mkdir -p "$FIX/store-0186-shape"
+mk_unpriced "$SID_VER" verify 240000 | sed 's/claude-no-such-model-0/SENTINELPROSE says hi/' \
+  > "$FIX/store-0186-shape/$SID_VER.jsonl"
+H186_SHAPE="$("$HARVEST" "$FIX/store-0186-shape" 2>&1 | head -1)"
+case "$H186_SHAPE" in
+  *SENTINELPROSE*) bad "0186 privacy — an unshaped model id was echoed into the header: $H186_SHAPE" ;;
+  *unrecognised-model-id*) ok "an unshaped model id is named by a placeholder, never echoed" ;;
+  *) bad "0186 privacy — an unshaped model id is not named at all: $H186_SHAPE" ;;
+esac
+
 echo "0186 AC3 — an all-priced harvest is byte-for-byte what it was before 0186"
 # Golden output of the pre-0186 script over the FR3 store above, captured at e830d00.
 cat > "$FIX/golden-0186.txt" <<'GOLDEN'
