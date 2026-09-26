@@ -3,7 +3,7 @@ id: "0161"
 title: Give a closed ticket a scripted path back to verify
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -20,8 +20,8 @@ expects:
   - skills/queue/SKILL.md
   - references/CONCURRENCY.md
   - tests/citations.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "4cdc"
+claimed_at: 2026-09-26T04:55:54Z
 touches:
 ---
 
