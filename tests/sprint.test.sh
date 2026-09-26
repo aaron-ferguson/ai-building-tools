@@ -2356,6 +2356,50 @@ else
   bad "sprint's proposal section does not say 'never selection' — 0158 FR4"
 fi
 
+# --- 0178 AC12 — a gate is bounded by gate_max_rows, not by rank adjacency -----------------------
+# 0178 superseded 0158's contiguity bound. The 'never selection' guards above stay, because that
+# sentence is still true — selection is the lead. What changed is the sentence after it, and a site
+# left asserting adjacency beside a site asserting the cap is two rules standing at once. Each
+# phrase is matched within ONE line, deliberately unflattened: the AC asks that the cap and its
+# citation sit together, and a flattened section would pass them paragraphs apart.
+# The lines of the `## <heading>` section in $1, unflattened.
+section_lines() {
+  awk -v want="$2" '
+    index($0, "## " want) == 1 { inside = 1; next }
+    /^## / { inside = 0 }
+    inside
+  ' "$1"
+}
+cap_cited_on_one_line() { grep -F 'gate_max_rows' | grep -qF '0178'; }
+
+echo "0178 AC12 — each gate paragraph names gate_max_rows and 0178 on one line"
+if section_lines "$SKILL" "The proposal — what a person confirms before any stage runs" | cap_cited_on_one_line; then
+  ok "sprint's proposal section cites the cap and 0178 together"
+else
+  bad "sprint's proposal section has no line naming gate_max_rows with 0178"
+fi
+if awk '/^\*\*The dispatch unit is a gate/ { inside = 1 } inside && /^$/ { exit } inside' "$SKILL" \
+  | cap_cited_on_one_line; then
+  ok "sprint's 'dispatch unit is a gate' paragraph cites the cap and 0178 together"
+else
+  bad "sprint's 'dispatch unit is a gate' paragraph has no line naming gate_max_rows with 0178"
+fi
+if awk '/^\*\*A join decides batching and never selection/ { inside = 1 } inside && /^$/ { exit } inside' \
+  "$DEVELOP_SKILL" | cap_cited_on_one_line; then
+  ok "develop's gate definition cites the cap and 0178 together"
+else
+  bad "develop's gate definition has no line naming gate_max_rows with 0178"
+fi
+for skill_file in "$SKILL" "$DEVELOP_SKILL"; do
+  for old in 'rank-adjacent' 'adjacent in rank' 'RANK CONTIGUITY'; do
+    if grep -qF -- "$old" "$skill_file"; then
+      bad "${skill_file#"$ROOT"/} still says '$old' — 0158's superseded bound"
+    else
+      ok "${skill_file#"$ROOT"/} no longer says '$old'"
+    fi
+  done
+done
+
 # --- 0168 AC7 — the tail waits for the end of confirmed scope ------------------------------------
 # The script defers the gate; this is the half a supervisor reads. Step 6's old instruction was to
 # start no further stage session the moment the gate crossed, which is the behaviour the user's rule

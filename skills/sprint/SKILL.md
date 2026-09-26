@@ -147,8 +147,8 @@ The proposal states, all of it from that one call:
   join through it. Ten rows joining through one `SKILL.md` is a grouping artefact, not a theme; a
   count alone reads as a large sprint and hides that. `--propose` ranks those joins by how much of
   the gate each explains, and names the parent slice too, which is the gate's other join mechanism.
-  A join decides batching and never selection: a gate extends only through rank-adjacent rows, so a
-  proposal never names a ticket ahead of a takeable row ranked above it (0158).
+  A join decides batching and never selection: rank picks the lead, and a gate holds at most
+  `gate_max_rows` rows, joiners nearest the lead in rank first however far down they sit (0178).
 - **An estimate in real-world time, tokens and dollars.** One call produces it:
 
   ```sh
@@ -260,8 +260,8 @@ by-hand mode names. A `3` therefore means the queue is consistent AND spent; bef
 meant only the second, and a drifted backlog read to a driver as a finished one.
 
 **The dispatch unit is a gate, not a row.** `--drive` prints the whole gate — the topmost takeable
-row plus every other takeable row sharing its `expects:` scope or its parent slice — and all of it
-goes to **one** stage session. That is the saving the suite is built on: a stage pays for the
+row plus every other takeable row sharing its `expects:` scope or its parent slice, capped at
+`gate_max_rows` rows nearest in rank (0178) — and all of it goes to **one** stage session. That is the saving the suite is built on: a stage pays for the
 conventions, the project's `CLAUDE.md`, the concurrency protocol and its orientation before it
 writes a line, and those are shared across tickets touching the same files. Splitting a gate across
 sessions re-pays that per ticket while every test still passes.
