@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0161 | Give a closed ticket a scripted path back to verify | feature | unit | 2026-09-26 | [items/0161-give-a-closed-ticket-a-scripted-path-back-to-verify.md](items/0161-give-a-closed-ticket-a-scripted-path-back-to-verify.md) |
 | 0186 | Never drop a session from the harvest because its model has no published rate | bug | unit | 2026-09-26 | [items/0186-never-drop-an-unpriced-session-from-the-harvest.md](items/0186-never-drop-an-unpriced-session-from-the-harvest.md) |
 | 0180 | Decide what a sprint does on a red baseline, and which stage may fix a red no ticket owns | bug | unit | 2026-09-25 | [items/0180-decide-what-a-sprint-does-on-a-red-baseline.md](items/0180-decide-what-a-sprint-does-on-a-red-baseline.md) |
 | 0179 | Find why a stage reports a session id it never ran under, and stop anything trusting one | bug | unit | 2026-09-24 | [items/0179-find-why-a-stage-reports-a-session-id-it-never-ran-under.md](items/0179-find-why-a-stage-reports-a-session-id-it-never-ran-under.md) |

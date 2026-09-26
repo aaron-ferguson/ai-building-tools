@@ -2,8 +2,8 @@
 id: "0161"
 title: Give a closed ticket a scripted path back to verify
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -20,9 +20,10 @@ expects:
   - skills/queue/SKILL.md
   - references/CONCURRENCY.md
   - tests/citations.test.sh
-claimed_by: "4cdc"
-claimed_at: 2026-09-26T04:55:54Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-26
 ---
 
 ## Problem
@@ -76,7 +77,7 @@ other transition.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture backlog where `0101` is `status: done` with two ticked ACs, a `## QA
+- [x] AC1 — Given a fixture backlog where `0101` is `status: done` with two ticked ACs, a `## QA
   evidence` body and a `DONE.md` row, when `./reopen 0101 top "fixture reason"` runs, then:
   - it exits 0;
   - the first table row of `QUEUE.md` is `0101` with `verify | ready`, and `DONE.md` has no `0101`
@@ -88,17 +89,17 @@ other transition.
   - `git show --name-only HEAD` lists exactly those three files.
 
   Red: each clause fails against a script missing that step.
-- [ ] AC2 — Given the AC1 fixture with `QUEUE.md` rows `0102`, `0103`, when `./reopen 0101 above:0103
+- [x] AC2 — Given the AC1 fixture with `QUEUE.md` rows `0102`, `0103`, when `./reopen 0101 above:0103
   "r"` runs, then `0101` sits directly above `0103`. Red: a script that ignores the position.
-- [ ] AC3 — Given `0101` at `status: ready`, when `./reopen 0101 top "r"` runs, then it exits non-zero
+- [x] AC3 — Given `0101` at `status: ready`, when `./reopen 0101 top "r"` runs, then it exits non-zero
   and `git status --porcelain` over the backlog is empty. Red: the FR2 status guard removed.
-- [ ] AC4 — Given `0102` unheld, `status: ready`, `blocked_by: ["0101"]`, when `./reopen 0101 top "r"`
+- [x] AC4 — Given `0102` unheld, `status: ready`, `blocked_by: ["0101"]`, when `./reopen 0101 top "r"`
   runs, then `0102`'s row and item read `blocked` and `./next --drift` prints `no drift`. Red: FR3
   omitted.
-- [ ] AC5 — Given `.lock/` already present, when `./reopen 0101 top "r"` runs, then it exits non-zero
+- [x] AC5 — Given `.lock/` already present, when `./reopen 0101 top "r"` runs, then it exits non-zero
   and changes nothing. After both a successful and a refused run, no `.lock/` remains that the
   script created. Red: a failure path that returns without releasing the lock.
-- [ ] AC6 — Given `skills/queue/SKILL.md`, when the suite runs, then Step 1's table contains
+- [x] AC6 — Given `skills/queue/SKILL.md`, when the suite runs, then Step 1's table contains
   `./reopen`. Red: the row absent.
 
 ## QA plan
