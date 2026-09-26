@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0185 | Decide whether the sprint's run logs are committed, and what may appear in them if they are | develop | in-progress |  |
+| 0185 | Decide whether the sprint's run logs are committed, and what may appear in them if they are | verify | ready |  |
 | 0187 | Decide whether a sprint dispatch pins a concrete model or records the one that answered | design | ready |  |
 | 0188 | Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop | design | ready |  |
 | 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | develop | ready |  |
