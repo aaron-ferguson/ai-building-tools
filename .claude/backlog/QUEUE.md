@@ -25,7 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0187 | Decide whether a sprint dispatch pins a concrete model or records the one that answered | design | in-progress |  |
 | 0188 | Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop | design | in-progress |  |
-| 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | develop | ready |  |
+| 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | develop | in-progress |  |
 | 0174 | Say the findings gate is deferred until the run is out of work when no scope was confirmed | develop | ready |  |
 | 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
 | 0175 | Decide what identifies a sprint across a suspension, and which mechanisms key off it | design | ready |  |
