@@ -115,6 +115,44 @@ other transition.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
 
+**Verdict: PASS** — verify, token 4cdc, 2026-09-25. Level `unit` (frontmatter; QA plan agrees).
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || exit 1; done` (run per file as `commands.unit_by_file` for attribution) — 32 files, every tally `N passed, 0 failed`; `tests/reopen.test.sh` → `reopen: 78 passed, 0 failed`. No lint/typecheck configured.
+Copy executed: the repo copy (`skills/queue/templates/reopen`, which the test runs), `cmp`-identical to `.claude/backlog/reopen`; the plugin cache was not what ran.
+Tree: `git status --porcelain` empty at Step 2 and after the last check; intersection empty, not advisory.
+
+Each mutation was applied to the committed template (or the named file), the diff was confirmed non-empty, the test was run, and the file was restored by path. The control run after the sweep: `reopen: 78 passed, 0 failed`.
+
+| AC / row | Clause | Mutation (mine, re-run) | Result |
+|---|---|---|---|
+| AC1 | it exits 0 | `exit 3` before success line | red (5) |
+| AC1 | first table row of `QUEUE.md` is `0101` | `top` insert drops the row | red (22) |
+| AC1 | …with `verify \| ready` | row `Next` → develop / `Status` → waiting | red (3) / red (3) |
+| AC1 | `DONE.md` has no `0101` row | DONE deletion matches nothing | red (24) |
+| AC1 | item reads `next: verify` / `status: ready` / no `closed:` | each rewrite line removed | red (24) each |
+| AC1 | no `- [x]` under `## Acceptance criteria` | untick removed | red (2) |
+| AC1 | `## QA evidence` body unchanged | untick applied file-wide | red (1) |
+| AC1 | last line of `## Notes & decisions` contains `fixture reason` | note never printed | red (2) |
+| AC1 | `git show --name-only HEAD` lists exactly those three files | `DONE.md` dropped from pathspec | red (3) |
+| AC2 | `0101` directly above `0103` | `above:` insert prints blank | red (2) |
+| AC3 | `status: ready` → non-zero, backlog porcelain empty | status guard → `true` | red (3) |
+| AC4 | `0102`'s row and item read `blocked`, `no drift` | re-block skipped / row only / item only | red (6) / red (3) / red (3) |
+| AC5 | `.lock/` present → non-zero, changes nothing | `mkdir -p` | red (4) |
+| AC5 | no `.lock/` remains after a refused run | first EXIT trap removed | red (11) |
+| AC5 | no `.lock/` remains after a successful run | post-`mv` trap → `trap ''` | red (3) |
+| AC6 | Step 1's table contains `./reopen` | `skills/queue/SKILL.md` row's command → `./rerun` | red (1) |
+| FR2 | dirty / empty reason / no DONE row | each guard → `true`/`false` | red (6 / 4 / 3) |
+| FR2 | `above:` names no row / QUEUE row present | guard removed | red (1 / 1): message only — the read-back refuses anyway, and the outcome holds |
+| FR3 | held dependent refuses, naming it | HELD refusal → `true` | red (3) |
+| FR1 | installed byte-identical | line appended to `.claude/backlog/reopen` | `backlog-scripts-installed` red (1) |
+| FR4 | heading count and citations moved together | `## The five scripts` → `four` | `citations` red (6 lines), `backlog-scripts-installed` red (1); no `four scripts` left in skills/references/tests/scripts |
+| FR5 | script list includes `reopen` | `reopen` removed from `SCRIPTS=` | **green (37/0), unguarded**: holds today; no AC asked for a guard, parked in FINDINGS.md |
+| NFR Documentation | header names `ecc6a60` | `ecc6a60` → `XXXXXXX` in header | red (1); checked against `documentation-conventions.md` |
+
+Always-on (`CONVENTIONS_CORE.md`): commits by pathspec with trailer; the script refuses loudly before writing; there is no security, UI or privacy surface. Newly reachable: a write path from `done` back to `verify`. It refuses on a held dependent, a dirty file, a linked worktree and a busy lock, and each refusal is guarded above.
+Unrelated: `tests/handoff.test.sh` prints `grep: invalid option` from a b680b855 case — not 0161's, parked in FINDINGS.md.
+
 ## Notes & decisions
 
 - **2026-09-13 — filed by a `queue` sweep of FINDINGS.md** (run-20260913T034946Z). Routed to
