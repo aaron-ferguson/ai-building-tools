@@ -3,7 +3,7 @@ id: "0186"
 title: Never drop a session from the harvest because its model has no published rate
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -15,8 +15,8 @@ relates: ["0162", "0164", "0187"]
 expects:
   - tools/harvest-usage.sh
   - tests/sprint-ledger.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "1bee"
+claimed_at: 2026-09-26T04:34:02Z
 touches:
 ---
 
