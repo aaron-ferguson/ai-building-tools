@@ -2,8 +2,8 @@
 id: "0184"
 title: Make the sprint supervisor commit the finding it parks, in the same turn
 type: bug
-next: develop
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: develop
 size: s
@@ -15,11 +15,10 @@ relates: ["0154", "0185"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "66d1"
-claimed_at: 2026-09-26T05:10:13Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/sprint/SKILL.md
-  - tests/sprint.test.sh
+closed: 2026-09-26
 ---
 
 ## Problem
