@@ -778,8 +778,10 @@ never came back) names a defect worth investigating, and that defect is lost whe
 ends unless it is parked here. Route it by subject per `references/CONVENTIONS.md`, *Routing a finding to the repo it is about*:
 a finding about the supervisor, its scripts or this skill is about the tools repo, so it goes to
 the `FINDINGS.md` of the checkout `tools.path` resolves to, never this project's buffer unless the
-two are the same repo. Take that backlog's lock, append, release it — the same sequence every writer
-uses. Do not park findings discovered and already recorded by a stage session
+two are the same repo. Take that backlog's lock, append, commit the append by pathspec
+(`git commit -- <that FINDINGS.md>`), and only then release the lock, in the same turn — the
+sequence every writer uses (`CONCURRENCY.md`, *Lock every write to the backlog directory*).
+Uncommitted, the next stage dispatched onto the tree inherits a dirty buffer it did not write. Do not park findings discovered and already recorded by a stage session
 this run dispatched: those belong to the stage, and duplicating them inflates the next gate.
 
 **End on the hand-off line, the very last thing printed:**

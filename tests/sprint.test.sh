@@ -2799,6 +2799,31 @@ else
   bad "scope size — the proposal section does not require at least three tickets, or does not say a one-ticket gate is not the scope and why"
 fi
 
+echo "0184 — the supervisor commits its park by pathspec before it releases the lock"
+# 0184: Step 9 said "Take that backlog's lock, append, release it" and never said commit, so the
+# supervisor's park sat uncommitted and the next stage dispatched onto the tree inherited a dirty
+# FINDINGS.md it did not write (twice: 5ff9dbb, and a retro that committed the line for it).
+# SCOPED TO THE PARK PARAGRAPH, not the section: Step 9's ledger sentence already says "Commit it",
+# so a section-wide match stays green with the park's commit clause deleted. ORDER is asserted by
+# position, because a match on the words alone stays green with the commit moved after the release.
+PARK="$(section "$SKILL" "Step 9 — Report" | awk '{
+  s = index($0, "The supervisor parks findings"); if (s == 0) exit
+  rest = substr($0, s); e = index(rest, "End on the hand-off line")
+  print (e ? substr(rest, 1, e - 1) : rest) }')"
+COMMIT_AT="$(printf '%s' "$PARK" | awk '{ print index($0, "commit the append by pathspec (`git commit -- <that FINDINGS.md>`)") }')"
+RELEASE_AT="$(printf '%s' "$PARK" | awk '{ print index($0, "only then release the lock") }')"
+if [ -z "$PARK" ]; then
+  bad "0184 AC1 — Step 9 has no paragraph opening 'The supervisor parks findings'; the guard has nothing to read"
+elif [ "${COMMIT_AT:-0}" = 0 ]; then
+  bad "0184 AC1 — Step 9's park paragraph does not say to commit the append by pathspec (git commit -- <that FINDINGS.md>)"
+elif ! printf '%s' "$PARK" | grep -qF 'in the same turn'; then
+  bad "0184 AC1 — Step 9's park paragraph does not put the commit in the same turn as the append"
+elif [ "${RELEASE_AT:-0}" = 0 ] || [ "$COMMIT_AT" -gt "$RELEASE_AT" ]; then
+  bad "0184 AC2 — Step 9's park paragraph does not put the commit before 'only then release the lock'"
+else
+  ok "Step 9's park paragraph commits the append by pathspec, in the same turn, before releasing the lock"
+fi
+
 # 0165 FR1 — every FAIL line again, immediately above the tally.
 #
 # A pass that filters this file to its tally sees "1 failed" with the FAIL line hundreds of lines
