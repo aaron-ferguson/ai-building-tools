@@ -2,8 +2,8 @@
 id: "0188"
 title: Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop
 type: feature
-next: design
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -17,10 +17,9 @@ expects:
   - skills/queue/templates/next
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by: "a16a"
-claimed_at: 2026-09-26T06:22:53Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/items/0188-keep-design-ahead-of-develop-in-a-sprint.md
 ---
 
 ## Problem
