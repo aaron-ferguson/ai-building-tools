@@ -264,3 +264,34 @@ DESIGN 0185 session 4476cbc5 concurrent: predicted USD 2.32 (MEASUREMENT.md per-
 DESIGN 0178 session a5c9a0fa sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-25T19:46:56Z) observed unpriced (harvest-usage.sh over 1 session id(s) @ 2026-09-25T19:46:56Z)
 FINDINGS parked 6 (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
 RETRO consumed 0 produced 0 (run-20260924T050130Z.jsonl outcome events @ 2026-09-25T19:46:56Z)
+
+## sprint run-20260925T203345Z -- ended 2026-09-26T13:51:15Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 5 | 7 | confirmed scope @ 2026-09-26T13:51:15Z |
+| wall_clock_min | 1270 | 566 | LEDGER.md 6 recorded sprint(s) over 27 ticket(s), 1 excluded (no ticket count), 5 predate the tail split |
+| tokens | 28584006 | unpriced | LEDGER.md 6 recorded sprint(s) over 27 ticket(s), 1 excluded (no ticket count), 5 predate the tail split — unpriced: 301 turn(s) on a model with no published rate |
+| usd | 33.80 | unpriced | LEDGER.md 6 recorded sprint(s) over 27 ticket(s), 1 excluded (no ticket count), 5 predate the tail split — unpriced: 301 turn(s) on a model with no published rate |
+| tail_tokens | no prior | 0 | harvest-usage.sh over 0 session id(s) @ 2026-09-26T13:51:15Z |
+| tail_usd | no prior | 0.00 | harvest-usage.sh over 0 session id(s) @ 2026-09-26T13:51:15Z |
+
+GATE develop 1 ticket(s) session 7afba036: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-26T13:51:15Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
+GATE develop 1 ticket(s) session fa2fc40c: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-26T13:51:15Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
+GATE develop 2 ticket(s) session 96a22e87: predicted USD 10.08 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-26T13:51:15Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
+GATE develop 1 ticket(s) session 89ee7d04: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-09-26T13:51:15Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
+RATIO verify_usd_per_ticket unbatched session 1f47886d = 0.00
+  numerator USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
+  denominator 1 ticket(s) (run-20260925T203345Z.jsonl outcome events @ 2026-09-26T13:51:15Z)
+RATIO verify_usd_per_ticket unbatched session 0208c94b = 0.00
+  numerator USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
+  denominator 1 ticket(s) (run-20260925T203345Z.jsonl outcome events @ 2026-09-26T13:51:15Z)
+RATIO verify_usd_per_ticket unbatched session e38994b6 = 0.00
+  numerator USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
+  denominator 1 ticket(s) (run-20260925T203345Z.jsonl outcome events @ 2026-09-26T13:51:15Z)
+RATIO verify_usd_per_ticket unbatched session 9c168ec0 = 0.00
+  numerator USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
+  denominator 1 ticket(s) (run-20260925T203345Z.jsonl outcome events @ 2026-09-26T13:51:15Z)
+DESIGN 0187 session 6c7d50e2 concurrent: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-26T13:51:15Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
+DESIGN 0188 session ee037d50 concurrent: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-26T13:51:15Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
+FINDINGS parked 6 (run-20260925T203345Z.jsonl outcome events @ 2026-09-26T13:51:15Z)
