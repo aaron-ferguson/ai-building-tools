@@ -168,6 +168,15 @@ nothing of the confirmed scope — and refusing it is the supervisor's, not the 
 halts there, reported as the scope's edge rather than dispatched for or refused. A design row a person takes into scope is
 dispatched instead (the *Design alongside develop* section).
 
+**A sprint carries at least three tickets, and about five is the target.** `--propose` names one
+gate, and **a gate is the batching unit, which is not the scope**: where the gate is shorter, extend
+the proposal down the rank order, taking the design rows in the way into scope so the run does not
+end on them. Propose fewer only for a stated reason, such as the queue running dry or a person
+needed. A ticket's develop and verify floors are paid in whichever sprint runs it, so extra tickets
+are not extra cost. Splitting them across sprints adds a supervisor floor, a tail and a run a person
+has to start, and a one-ticket sprint is slower and dearer than `/develop` by hand
+(2026-09-25, a person's correction).
+
 **Where the confirmed scope is only part of a gate, name the rows left behind and what resuming them
 costs.** They were un-takeable while the rest is in progress anyway, so the real price is one
 additional session floor later, at the develop mean. That is usually a fine price for not doing nine
