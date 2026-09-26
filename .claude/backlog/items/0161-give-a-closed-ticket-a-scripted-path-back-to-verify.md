@@ -140,3 +140,55 @@ other transition.
   re-ticks what the new pass checks. It is the same argument as `queue`'s re-specify rule.
 - **Why the rank is an argument.** Rank is a `queue` judgement, never a script default.
 - 2026-09-23 — Rank raised to row 3, under 0179 and 0180 (`RANKING.md`, 2026-09-23). The failure it recovers from recurred on 2026-09-22: a verify pass closed six tickets on an envelope whose session id was the all-zero placeholder, and the author decided by hand whether to accept them. 0179 FR4 names this operation as one of its outcomes. Contract unchanged.
+- **2026-09-25 — build notes (develop, token 31d3).** Built in `65c8f2d`: `skills/queue/templates/reopen`,
+  installed byte-identical at `.claude/backlog/reopen`, guarded by `tests/reopen.test.sh` (78 cases).
+  - **FR4's heading count did change**: `## The four scripts` is now `## The five scripts`, and every
+    citation moved in the same commit — `close`/`handoff` header comments (template and installed),
+    `skills/verify/SKILL.md`, `skills/queue/SKILL.md`, `references/CONCURRENCY-INCIDENTS.md` (two),
+    `tests/backlog-scripts-installed.test.sh` and `tests/handoff.test.sh` AC7. `handoff.test.sh`
+    also pinned the literal `SCRIPTS="next claim close handoff"`; it now asserts the prefix, so it
+    still proves `handoff` is listed without reddening on every new script.
+  - Two further script enumerations went stale with this and were widened: queue Step 0's
+    `chmod +x` list (it already omitted `handoff`) and CONCURRENCY.md's list of the scripts that
+    refuse from a linked worktree (`reopen` does too).
+  - **Beyond FR3's literal text, deliberately:** a `waiting` dependent is re-blocked as well as a
+    `ready` one. `./next --drift` class 2 reports any non-`blocked` row with an open blocker, so
+    leaving it `waiting` fails AC4's own `no drift`; and `close` restores `waiting` from the
+    dependent's `## Waiting on` section when this ticket closes again, so nothing is lost. A `done`
+    dependent is skipped entirely (history, and some carry stale tokens that would otherwise read as
+    held and make every reopen refuse).
+  - **Also beyond the FRs:** the reopened item's `claimed_by:`/`claimed_at:`/`touches:` are cleared
+    (closed items in this backlog do carry stale tokens, and a `ready` ticket keeping one reads as
+    held — `./next --drift` class 6); the item file is included in the dirty-tree refusal, since the
+    commit names it by pathspec; and a position that is neither `top` nor `above:<id>` is refused.
+  - `reopen` takes no token: a done ticket has no holder, so there is nothing to prove ownership of.
+  - **Clause table and mutation sweep — run, not reasoned.** Each row mutated the committed template,
+    ran `tests/reopen.test.sh`, restored from HEAD; control run after: 78 passed, 0 failed.
+
+    | AC clause | Mutation | Result |
+    |---|---|---|
+    | AC1 it exits 0 | `exit 3` before the success line | red (5) |
+    | AC1 first table row is `0101` with `verify \| ready` | `top` insert never matches | red (22) |
+    | AC1 `DONE.md` has no `0101` row | DONE deletion removed | red (24) |
+    | AC1 `next: verify` | next line printed unchanged | red (24) |
+    | AC1 `status: ready` | status line printed unchanged | red (24) |
+    | AC1 no `closed:` line | `closed:` kept | red (24) |
+    | AC1 no `- [x]` under `## Acceptance criteria` | untick removed | red (2) |
+    | AC1 `## QA evidence` body unchanged | untick applied file-wide | red (1) |
+    | AC1 last line of Notes contains the reason | note never printed | red (2) |
+    | AC1 `git show --name-only HEAD` exactly three files | DONE.md dropped from the pathspec | red (3) |
+    | AC2 `0101` directly above `0103` | `above:` insert never matches | red (2) |
+    | AC3 not `status: done` → non-zero, porcelain empty | status guard removed | red (3) |
+    | AC4 dependent row and item read `blocked`, `no drift` | re-block skipped | red (6) |
+    | AC5 `.lock/` present → non-zero, unchanged | `mkdir -p` (lock never busy) | red (4) |
+    | AC5 no `.lock/` remains after a refused run | EXIT trap removed | red (11) |
+    | FR2 no DONE row / QUEUE row present / dirty / empty reason / `above:` names no row | each guard removed, one at a time | red (3 / 1 / 6 / 4 / 1) |
+    | FR3 held dependent refuses, naming it | HELD refusal removed | red (3) |
+    | FR3 done dependent is history | done-skip removed | red (1) |
+    | AC6 Step 1's table contains `./reopen` | the row absent (the state before this build) | red (1) |
+
+  - Whole suite (`tests/*.test.sh`, 32 files) green in the checkout after the build. The supervisor's
+    baseline red in `citations.test.sh` (0189, worktree-only) did not arise here.
+  - Review checklist: header comment names `ecc6a60` (NFR), columns by name, refusals before the
+    lock where no re-read is needed and under it otherwise, lock trap set only after `mkdir`
+    succeeds, all three files built aside and read back before any is moved (handoff's 0087 lesson).
