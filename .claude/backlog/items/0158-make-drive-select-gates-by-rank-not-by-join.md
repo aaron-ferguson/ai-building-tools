@@ -192,3 +192,9 @@ run's evidence set (`skills/queue/templates/next`, `skills/develop/SKILL.md`,
   always the topmost takeable row - and what is replaced is the mechanism, contiguity. 0178 carries
   the open question of what bounds a gate instead, since contiguity was also doing that job and the
   correction names only the other one. Read the two together; do not implement this item's FR1.
+- **2026-09-26 — `0178` supersedes this item's FR1, FR2 and FR4, and keeps FR3.** A new develop
+  gate is now bounded by `gate_max_rows` (default 5, `config.yml`), admitted nearest-in-rank first,
+  instead of by rank contiguity; `gate_contiguous` and `walk_steps_over` are gone. FR3 stands:
+  `verify_batch` still recovers membership with `gate_from`, unbounded. The finding stands too — the
+  lead is the topmost takeable row and a join decides batching and never selection. This item's
+  AC1, AC4 and AC5 cases in `tests/next.test.sh` were amended in place as `0178` AC2, AC3 and AC4.
