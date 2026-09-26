@@ -228,3 +228,41 @@ re-pointed to this item — never left asserting the old membership beside a new
     FR5 written; FR6 added for the config key. `0158` FR2's third site, the `design`-row proposal
     arm, no longer forms a gate since `0159` (re-read 2026-09-24), so FR5 names two sites, not three.
     The draft ACs are carried through as AC1–AC6 and AC12; AC7–AC11, AC13, AC14 are new.
+- **2026-09-26 — built by `develop` [3072].** Commits `13753f5` (config key, both copies),
+  `a560171` (`next` + `tests/next.test.sh`), `d9271ed` (skill prose + `tests/sprint.test.sh`),
+  `2b2e3e2` (the `0158` note, AC13), `a40f18c` (leading-zero cap accepted).
+  - **Mechanism.** `gate_from` takes an optional third argument, the row cap; both new-gate sites
+    (the rank walk's `develop` arm and `depth_line`) pass `$GATE_MAX_ROWS`, and `verify_batch` passes
+    none. So FR3's "differ on the row cap alone" is literal: one function. The cap check runs before
+    each pool row is tested, so a full gate stops the pass and its scope never widens (AC9).
+    `gate_contiguous` and `walk_steps_over` are deleted. `read_gate_max_rows` mirrors
+    `read_threshold`, and it is called beside it in `--drive`'s preamble only, the one mode that forms gates.
+  - **One sibling case falsified, not exposed:** `0130` AC2's JOIN-line cap case built an 8-row gate
+    to get eight shared files. At the default cap of 5 the gate stops first. The fixture now writes
+    `gate_max_rows: 8`, with a comment saying why. Its assertions are unchanged.
+  - **`0158` cases amended in place** as this item's AC2 (was `0158` AC1), AC3 (was AC4) and AC4 (was
+    AC5, 3 → 2 gates). `0158` AC2, AC3 and AC6 are carried unchanged under `0178` AC5/AC6 headings.
+    The `0158` AC7 `never selection` guards in `tests/sprint.test.sh` are kept, per FR4.
+  - **FR4's sprint *dispatch unit is a gate* paragraph asserted no contiguity** (it said "every other
+    takeable row sharing its scope", with no rank bound). It got the cap sentence anyway, since FR4
+    and AC12 name it, and that makes it true now where before it overstated.
+  - **AC12 clause table and mutation sweep: all run, none reasoned** (`/tmp` script, each mutation
+    applied to the committed file, run through the real guard file, then restored from HEAD). Control
+    run green before and after.
+
+    | AC12 clause | Mutation | Guard | Result |
+    |---|---|---|---|
+    | sprint proposal: `gate_max_rows` + `0178` on one line | drop `(0178)` | sprint.test.sh | red |
+    | sprint dispatch paragraph: same | `(0178)` → `(0158)` | sprint.test.sh | red |
+    | develop gate definition: same | drop `` `gate_max_rows` `` | sprint.test.sh | red |
+    | "on one line" | move `(0178)` onto the next line | sprint.test.sh | red |
+    | template comment: same | drop `(0178)` from the ROW CAP line | next.test.sh | red |
+    | none still contains `rank-adjacent` | insert it in sprint | sprint.test.sh | red |
+    | none still contains `adjacent in rank` | insert it in develop | sprint.test.sh | red |
+    | none still contains `RANK CONTIGUITY` | insert it in the next comment | next.test.sh | red |
+    | `A join decides batching and never selection` still in both skills | drop `never selection` in develop | sprint.test.sh (`0158` AC7 guard) | red |
+
+  - **AC10's "0" case** is rejected by an `-lt 1` test, not by pattern: a first pass using `0*` also
+    rejected `05`, which is a whole number of at least 1 and stricter than FR6. That was caught in review.
+  - Whole suite green after the last commit: 32 of 32 files, including `backlog-scripts-installed`
+    (the two `next` copies are byte-identical), `batching`, `citations` and `skill-size`.
