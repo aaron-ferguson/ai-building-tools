@@ -318,6 +318,11 @@ set_threshold() {
   printf 'project: Fixture\nfindings_threshold: %s\n' "$1" > "$FIX/.claude/backlog/config.yml"
 }
 
+# $1 the develop gate's row cap (0178), written verbatim so a case can supply a non-number.
+set_gate_max_rows() {
+  printf 'project: Fixture\ngate_max_rows: %s\n' "$1" > "$FIX/.claude/backlog/config.yml"
+}
+
 # One `| a | b | c |` row, cells verbatim, for a table whose columns are not the canonical five.
 add_row_cells() { printf '| %s |\n' "$1" >> "$FIX/.claude/backlog/QUEUE.md"; }
 
@@ -1951,7 +1956,11 @@ echo "0130 AC2 — the JOIN lines are capped, and the tail is counted rather tha
 # back where the bare count left them. So the block is capped at the files that actually explain
 # the gate — and the remainder is COUNTED, never silently dropped, because a proposal that quietly
 # stops listing is a proposal whose numbers cannot be reconciled against the gate.
+#
+# The cap is raised to 8 because this case needs an 8-row gate to have 8 shared files to cap; at
+# the default gate_max_rows of 5 (0178) the gate itself would stop at 5 rows first.
 scaffold
+set_gate_max_rows 8
 i=1
 while [ "$i" -le 8 ]; do
   add_row "010$i" "Row $i" develop ready ''
@@ -2579,28 +2588,41 @@ ticket_lines="$(printf '%s\n' "$out" | grep '^TICKET' || true)"
 assert_eq "the proposed ticket is 0001 and only 0001" \
   "$ticket_lines" 'TICKET    0001 | size s | A design decision'
 
-# --- 0158 — a join decides batching, never selection over rank ---------------------------------
-# `gate_from` admitted any joining row out of the whole takeable pool, however many takeable rows
-# the rank walk had passed over to reach it, so a driven sprint took rank-94 work ahead of rank 2.
-# The gate is now rank-CONTIGUOUS: it extends down from the lead, stepping over exactly what the
-# rank walk itself steps over, and ending at the first other row that does not join.
+# --- 0178 — a join reaches below rank adjacency; the gate is bounded by a row cap --------------
+# `0158` bounded a new gate by rank contiguity: the gate ended at the first pool row that did not
+# join. The user's correction (2026-09-21): rank PRIORITISES rows into a gate, it does not LIMIT
+# which rows may join one. So rank still picks the lead (FR1), a joiner is admissible however many
+# non-joining rows separate it from the lead (FR2), and what bounds the gate is `gate_max_rows`,
+# admitted nearest-in-rank first (FR5, FR6). These cases amend 0158's in place; 0158 AC2, AC3 and
+# AC6 carry through unchanged as 0178 AC5 and AC6.
 
-echo "0158 AC1 — a joining row below a non-joining one does not join"
+echo "0178 AC1 — the topmost takeable row leads and nothing unrelated joins it"
+scaffold
+add_row 0101 'The lead'   develop ready ''
+add_row 0102 'Unrelated'  develop ready ''
+add_row 0103 'Unrelated'  develop ready ''
+add_ticket 0101 develop ready '[]' '' a/x.md
+add_ticket 0102 develop ready '[]' '' b/y.md
+add_ticket 0103 develop ready '[]' '' c/z.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
+assert_eq "the gate is the lead alone"                "$(dispatch_line "$out")" 'DISPATCH  develop 0101'
+
+echo "0178 AC2 — a joining row below a non-joining one joins (0158 AC1 inverted)"
 scaffold
 add_row 0101 'The lead'          develop ready ''
-add_row 0102 'Breaks the run'    develop ready ''
-add_row 0103 'Would have joined' develop ready ''
+add_row 0102 'Does not join'     develop ready ''
+add_row 0103 'Joins from below'  develop ready ''
 add_ticket 0101 develop ready '[]' '' a/x.md
 add_ticket 0102 develop ready '[]' '' b/y.md
 add_ticket 0103 develop ready '[]' '' a/x.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
-assert_eq "the gate is the lead alone"                "$(dispatch_line "$out")" 'DISPATCH  develop 0101'
+assert_eq "the joiner below the gap is admitted"      "$(dispatch_line "$out")" 'DISPATCH  develop 0101 0103'
 
-echo "0158 AC2 — an adjacent joining row still batches"
-# The stop rule's negative: ending the gate at the lead whatever joins would pass AC1 and destroy
-# batching outright.
+echo "0178 AC5 — an adjacent joining row still batches (0158 AC2, unchanged)"
 scaffold
 add_row 0101 'The lead'   develop ready ''
 add_row 0102 'Adjacent'   develop ready ''
@@ -2613,9 +2635,7 @@ out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
 assert_eq "batches the adjacent pair"                 "$(dispatch_line "$out")" 'DISPATCH  develop 0101 0102'
 
-echo "0158 AC3 — a row the rank walk steps over does not end the gate"
-# Contiguity is defined against the WALK, not against the rows: 0102 has an open blocker, so the
-# walk would have stepped over it, and a gate that stopped there would be stricter than the walk.
+echo "0178 AC5 — a row the rank walk steps over does not end the gate (0158 AC3, unchanged)"
 scaffold
 add_row 0101 'The lead'     develop ready ''
 add_row 0102 'Blocked'      develop blocked ''
@@ -2630,36 +2650,34 @@ out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
 assert_eq "steps over the blocked row and keeps going" "$(dispatch_line "$out")" 'DISPATCH  develop 0101 0103'
 
-echo "0158 AC4 — a row at another stage ends the gate"
-# The pool is develop rows only, so a stop rule reading the pool alone cannot see 0102 at all and
-# would batch 0103 straight through it.
+echo "0178 AC3 — a row at another stage does not end the gate (0158 AC4 inverted)"
 scaffold
-add_row 0101 'The lead'        develop ready ''
-add_row 0102 'Somebody else'   verify  ready ''
-add_row 0103 'Would have joined' develop ready ''
+add_row 0101 'The lead'          develop ready ''
+add_row 0102 'Somebody else'     verify  ready ''
+add_row 0103 'Joins from below'  develop ready ''
 add_ticket 0101 develop ready '[]' '' a/x.md
 add_ticket 0102 verify  ready '[]' '' c/z.md
 add_ticket 0103 develop ready '[]' '' a/x.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
 assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
-assert_eq "the verify row ends the gate"              "$(dispatch_line "$out")" 'DISPATCH  develop 0101'
+assert_eq "the verify row between does not stop it"   "$(dispatch_line "$out")" 'DISPATCH  develop 0101 0103'
 
-echo "0158 AC5 — the depth line counts contiguous gates"
+echo "0178 AC4 — the depth line counts the same gates the dispatch forms (0158 AC5 amended)"
 # `depth_line` re-runs the same grouping, so a count left on the old rule contradicts the dispatch
-# line printed directly above it.
+# line printed directly above it: 0101+0103 are one gate, 0102 another.
 scaffold
 add_row 0101 'The lead'          develop ready ''
-add_row 0102 'Breaks the run'    develop ready ''
-add_row 0103 'Would have joined' develop ready ''
+add_row 0102 'Does not join'     develop ready ''
+add_row 0103 'Joins from below'  develop ready ''
 add_ticket 0101 develop ready '[]' '' a/x.md
 add_ticket 0102 develop ready '[]' '' b/y.md
 add_ticket 0103 develop ready '[]' '' a/x.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
-assert_contains "counts three gates" "$out" 'DEPTH     3 develop gate(s)'
+assert_contains "counts two gates" "$out" 'DEPTH     2 develop gate(s)'
 
-echo "0158 AC6 — verify_batch is not narrowed by contiguity"
+echo "0178 AC6 — verify_batch is unbounded in rank (0158 AC6, unchanged)"
 # FR3. A gate really developed as 0101 0103 verifies as one batch even though 0102 ranks between
 # them and was never part of it: `verify_batch` RECOVERS a membership already fixed, where the
 # develop arm FORMS one.
@@ -2674,6 +2692,84 @@ seal
 out="$(run_next --drive --started 0101 --started 0103)" && rc=0 || rc=$?
 assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
 assert_eq "verifies the developed gate as one batch"  "$(dispatch_line "$out")" 'DISPATCH  verify 0101 0103'
+
+echo "0178 AC7 — with no gate_max_rows key the cap defaults to 5, and it counts the lead"
+scaffold
+for n in 1 2 3 4 5 6 7; do add_row "010$n" "Row $n" develop ready ''; done
+for n in 1 2 3 4 5 6 7; do add_ticket "010$n" develop ready '[]' '' a/x.md; done
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
+assert_eq "the first five in rank make the gate"      "$(dispatch_line "$out")" 'DISPATCH  develop 0101 0102 0103 0104 0105'
+assert_contains "the two left over are a second gate" "$out" 'DEPTH     2 develop gate(s)'
+
+echo "0178 AC8 — past the cap, the joiner nearest the lead in rank is the one admitted"
+scaffold
+set_gate_max_rows 2
+add_row 0101 'The lead'        develop ready ''
+add_row 0102 'Does not join'   develop ready ''
+add_row 0103 'Nearer joiner'   develop ready ''
+add_row 0104 'Farther joiner'  develop ready ''
+add_ticket 0101 develop ready '[]' '' a/x.md
+add_ticket 0102 develop ready '[]' '' b/y.md
+add_ticket 0103 develop ready '[]' '' a/x.md
+add_ticket 0104 develop ready '[]' '' a/x.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
+assert_eq "0103 gets in and 0104 waits"               "$(dispatch_line "$out")" 'DISPATCH  develop 0101 0103'
+
+echo "0178 AC9 — the pass stops at the cap, so a capped-out scope admits nothing further"
+# 0103 joins only through b/y.md, which 0102 brought in. Were the pass to keep testing after the
+# cap it would still widen the scope; stopping is what keeps a full gate from reaching further.
+scaffold
+set_gate_max_rows 2
+add_row 0101 'The lead'          develop ready ''
+add_row 0102 'Brings b/y.md'     develop ready ''
+add_row 0103 'Joins through it'  develop ready ''
+add_ticket 0101 develop ready '[]' '' a/x.md
+add_ticket_expects 0102 develop ready '[]' '' "
+  - a/x.md
+  - b/y.md"
+add_ticket 0103 develop ready '[]' '' b/y.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                        "$rc" 0 "$out"
+assert_eq "the gate is full at two"                   "$(dispatch_line "$out")" 'DISPATCH  develop 0101 0102'
+
+for bad_cap in x 0; do
+  echo "0178 AC10 — gate_max_rows: $bad_cap fails loudly rather than defaulting"
+  scaffold
+  set_gate_max_rows "$bad_cap"
+  add_row 0101 'The lead' develop ready ''
+  add_ticket 0101 develop ready '[]' '' a/x.md
+  seal
+  out="$(run_next --drive)" && rc=0 || rc=$?
+  if [ "$rc" -ne 0 ]; then ok "exits non-zero ($rc)"; else bad "exits 0 on gate_max_rows: $bad_cap"; fi
+  assert_contains "names the key"                     "$out" 'gate_max_rows'
+  assert_contains "names the offending value"         "$out" ": $bad_cap"
+  assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+done
+
+echo "0178 AC11 — both config.yml copies carry the cap at its default"
+for cfg in "$ROOT/skills/queue/templates/config.yml" "$ROOT/.claude/backlog/config.yml"; do
+  if grep -q '^gate_max_rows: 5' "$cfg"; then ok "${cfg#"$ROOT"/} has gate_max_rows: 5"
+  else bad "${cfg#"$ROOT"/} has no '^gate_max_rows: 5' line"; fi
+done
+
+echo "0178 AC12 — the comment above the gate builder states the new rule, not the old"
+# The template's comment is FR4's fourth site; the two skills are guarded in tests/sprint.test.sh.
+# Every phrase within one line, because grep is line-based.
+NEXT_TEMPLATE="$ROOT/skills/queue/templates/next"
+if grep '^ *#' "$NEXT_TEMPLATE" | grep -F 'gate_max_rows' | grep -qF '0178'; then
+  ok "a comment line in next names gate_max_rows and 0178 together"
+else
+  bad "no comment line in next names gate_max_rows and 0178 together"
+fi
+for old in 'rank-adjacent' 'adjacent in rank' 'RANK CONTIGUITY'; do
+  if grep -qF -- "$old" "$NEXT_TEMPLATE"; then bad "next still says '$old'"
+  else ok "next no longer says '$old'"; fi
+done
 
 # --- 0168 — the tail runs at the END of confirmed scope, not in the middle of it ----------------
 # The gate fired wherever a develop gate formed, so a run with two tickets left to build spent
