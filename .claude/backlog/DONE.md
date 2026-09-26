@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0178 | Let a join reach below rank adjacency, and bound the gate by something other than rank | bug | unit | 2026-09-26 | [items/0178-let-a-join-reach-below-rank-adjacency.md](items/0178-let-a-join-reach-below-rank-adjacency.md) |
 | 0185 | Decide whether the sprint's run logs are committed, and what may appear in them if they are | bug | unit | 2026-09-26 | [items/0185-decide-whether-the-sprint-run-logs-are-committed.md](items/0185-decide-whether-the-sprint-run-logs-are-committed.md) |
 | 0184 | Make the sprint supervisor commit the finding it parks, in the same turn | bug | unit | 2026-09-26 | [items/0184-make-the-supervisor-commit-the-finding-it-parks.md](items/0184-make-the-supervisor-commit-the-finding-it-parks.md) |
 | 0161 | Give a closed ticket a scripted path back to verify | feature | unit | 2026-09-26 | [items/0161-give-a-closed-ticket-a-scripted-path-back-to-verify.md](items/0161-give-a-closed-ticket-a-scripted-path-back-to-verify.md) |

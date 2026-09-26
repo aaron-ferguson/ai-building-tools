@@ -2,8 +2,8 @@
 id: "0178"
 title: Let a join reach below rank adjacency, and bound the gate by something other than rank
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: l
@@ -23,9 +23,10 @@ expects:
   - skills/queue/templates/config.yml
   - .claude/backlog/config.yml
   - .claude/backlog/items/0158-make-drive-select-gates-by-rank-not-by-join.md
-claimed_by: "9135"
-claimed_at: 2026-09-26T06:48:27Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-26
 ---
 
 ## Problem
@@ -122,20 +123,20 @@ All fixtures in `tests/next.test.sh`, driven with `run_next --drive`, every row 
 it says otherwise. Where a case amends a `0158` case, that case is edited in place and its heading
 re-pointed to this item — never left asserting the old membership beside a new one.
 
-- [ ] AC1 — Given `0101 a/x.md`, `0102 b/y.md`, `0103 c/z.md`, when `next --drive` runs, then it prints `DISPATCH  develop 0101` — the topmost takeable row leads and nothing joins it (FR1).
-- [ ] AC2 — Given `0158` AC1's fixture (`0101 a/x.md`, `0102 b/y.md`, `0103 a/x.md`), when `next --drive` runs, then it prints `DISPATCH  develop 0101 0103` (FR2; `0158` AC1 inverted).
-- [ ] AC3 — Given `0158` AC4's fixture (`0102` a `verify ready` row on `c/z.md` between two develop rows on `a/x.md`), when `next --drive` runs, then it prints `DISPATCH  develop 0101 0103` (FR2; `0158` AC4 inverted).
-- [ ] AC4 — Given `0158` AC5's fixture, when `next --drive` runs, then the output contains `DEPTH     2 develop gate(s)` (FR2, FR5; `0158` AC5 amended from 3).
-- [ ] AC5 — Given `0158` AC2's and AC3's fixtures, when `next --drive` runs, then they still print `DISPATCH  develop 0101 0102` and `DISPATCH  develop 0101 0103` respectively — unchanged, kept as the regression guard that batching survives.
-- [ ] AC6 — Given `0158` AC6's fixture (verify rows `0101`, `0103` started this run, develop `0102` between), when `next --drive --started 0101 --started 0103` runs, then it prints `DISPATCH  verify 0101 0103`, unchanged (FR3).
-- [ ] AC7 — Given seven rows `0101`–`0107` all on `a/x.md` and no `gate_max_rows` key in `config.yml`, when `next --drive` runs, then it prints `DISPATCH  develop 0101 0102 0103 0104 0105` and the output contains `DEPTH     2 develop gate(s)` (FR5, FR6 default).
-- [ ] AC8 — Given `gate_max_rows: 2` and `0101 a/x.md`, `0102 b/y.md`, `0103 a/x.md`, `0104 a/x.md`, when `next --drive` runs, then it prints `DISPATCH  develop 0101 0103` — the joiner nearest the lead in rank is admitted and `0104` waits (FR5).
-- [ ] AC9 — Given `gate_max_rows: 2` and `0101 a/x.md`, `0102 a/x.md b/y.md`, `0103 b/y.md`, when `next --drive` runs, then it prints `DISPATCH  develop 0101 0102` — the pass stops at the cap, so a row joining only through a capped-out scope does not get in (FR5).
-- [ ] AC10 — Given `gate_max_rows: x`, and separately `gate_max_rows: 0`, when `next --drive` runs, then each exits non-zero with stderr naming `gate_max_rows` and the offending value, and prints no `DISPATCH` line (FR6).
-- [ ] AC11 — Given `skills/queue/templates/config.yml` and `.claude/backlog/config.yml`, when grepped, then each has a line matching `^gate_max_rows: 5` (FR6).
-- [ ] AC12 — Given the four prose sites in FR4, when grepped, then each carries `gate_max_rows` and `0178` on one line within its gate paragraph or comment, and none still contains `rank-adjacent`, `adjacent in rank` or `RANK CONTIGUITY`; `A join decides batching and never selection` is still present in both skills. Guards in `tests/sprint.test.sh` (skills) and `tests/next.test.sh` (template comment), each phrase matched within one line (FR4).
-- [ ] AC13 — Given `.claude/backlog/items/0158-make-drive-select-gates-by-rank-not-by-join.md`, when read, then its *Notes & decisions* has a dated line stating `0178` supersedes its FR1, FR2 and FR4 and keeps FR3 (FR4).
-- [ ] AC14 — Given the whole change, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it is green, including `tests/backlog-scripts-installed.test.sh` (the two `next` copies byte-identical), `tests/batching.test.sh` and `tests/citations.test.sh`.
+- [x] AC1 — Given `0101 a/x.md`, `0102 b/y.md`, `0103 c/z.md`, when `next --drive` runs, then it prints `DISPATCH  develop 0101` — the topmost takeable row leads and nothing joins it (FR1).
+- [x] AC2 — Given `0158` AC1's fixture (`0101 a/x.md`, `0102 b/y.md`, `0103 a/x.md`), when `next --drive` runs, then it prints `DISPATCH  develop 0101 0103` (FR2; `0158` AC1 inverted).
+- [x] AC3 — Given `0158` AC4's fixture (`0102` a `verify ready` row on `c/z.md` between two develop rows on `a/x.md`), when `next --drive` runs, then it prints `DISPATCH  develop 0101 0103` (FR2; `0158` AC4 inverted).
+- [x] AC4 — Given `0158` AC5's fixture, when `next --drive` runs, then the output contains `DEPTH     2 develop gate(s)` (FR2, FR5; `0158` AC5 amended from 3).
+- [x] AC5 — Given `0158` AC2's and AC3's fixtures, when `next --drive` runs, then they still print `DISPATCH  develop 0101 0102` and `DISPATCH  develop 0101 0103` respectively — unchanged, kept as the regression guard that batching survives.
+- [x] AC6 — Given `0158` AC6's fixture (verify rows `0101`, `0103` started this run, develop `0102` between), when `next --drive --started 0101 --started 0103` runs, then it prints `DISPATCH  verify 0101 0103`, unchanged (FR3).
+- [x] AC7 — Given seven rows `0101`–`0107` all on `a/x.md` and no `gate_max_rows` key in `config.yml`, when `next --drive` runs, then it prints `DISPATCH  develop 0101 0102 0103 0104 0105` and the output contains `DEPTH     2 develop gate(s)` (FR5, FR6 default).
+- [x] AC8 — Given `gate_max_rows: 2` and `0101 a/x.md`, `0102 b/y.md`, `0103 a/x.md`, `0104 a/x.md`, when `next --drive` runs, then it prints `DISPATCH  develop 0101 0103` — the joiner nearest the lead in rank is admitted and `0104` waits (FR5).
+- [x] AC9 — Given `gate_max_rows: 2` and `0101 a/x.md`, `0102 a/x.md b/y.md`, `0103 b/y.md`, when `next --drive` runs, then it prints `DISPATCH  develop 0101 0102` — the pass stops at the cap, so a row joining only through a capped-out scope does not get in (FR5).
+- [x] AC10 — Given `gate_max_rows: x`, and separately `gate_max_rows: 0`, when `next --drive` runs, then each exits non-zero with stderr naming `gate_max_rows` and the offending value, and prints no `DISPATCH` line (FR6).
+- [x] AC11 — Given `skills/queue/templates/config.yml` and `.claude/backlog/config.yml`, when grepped, then each has a line matching `^gate_max_rows: 5` (FR6).
+- [x] AC12 — Given the four prose sites in FR4, when grepped, then each carries `gate_max_rows` and `0178` on one line within its gate paragraph or comment, and none still contains `rank-adjacent`, `adjacent in rank` or `RANK CONTIGUITY`; `A join decides batching and never selection` is still present in both skills. Guards in `tests/sprint.test.sh` (skills) and `tests/next.test.sh` (template comment), each phrase matched within one line (FR4).
+- [x] AC13 — Given `.claude/backlog/items/0158-make-drive-select-gates-by-rank-not-by-join.md`, when read, then its *Notes & decisions* has a dated line stating `0178` supersedes its FR1, FR2 and FR4 and keeps FR3 (FR4).
+- [x] AC14 — Given the whole change, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it is green, including `tests/backlog-scripts-installed.test.sh` (the two `next` copies byte-identical), `tests/batching.test.sh` and `tests/citations.test.sh`.
 
 ## QA plan
 
@@ -163,6 +164,59 @@ re-pointed to this item — never left asserting the old membership beside a new
   2026-09-21 in the same sweep as this capture, and it is a re-rank rather than a requirement here.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**2026-09-26 — verify [9135]: PASS.** Level `unit` (frontmatter; QA plan agrees).
+Conventions: `../ai-building-conventions` (from `config.yml` `conventions.path`, resolved at the repo root).
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`, so every file reports), each file's last line captured.
+Result, pasted: all 32 files `0 failed` — including `backlog-scripts-installed 45 passed, 0 failed`, `batching 39 passed, 0 failed`,
+`citations 46 passed, 0 failed`, `next 508 passed, 0 failed`, `sprint 347 passed, 0 failed, 0 skipped`.
+Copy executed: the repo's `skills/queue/templates/next` (what `tests/next.test.sh` copies into each fixture); `cmp` shows it byte-identical to `.claude/backlog/next`.
+Tree: `git status --porcelain` was empty at Step 2 and again at the final capture, so the dirty set was empty and the intersection with the evidence set was empty. Not advisory.
+
+Mutations ran in a detached worktree at `50027ca`, against a 34-case slice of `tests/next.test.sh` (its helpers plus the 0178 section, lines 2591–2772) and against the full `tests/sprint.test.sh`. Each diff was non-empty and was restored from HEAD by path. Control runs after both sweeps: slice `34 passed, 0 failed`, sprint `347 passed, 0 failed, 0 skipped`.
+One mutation of mine (M2, a pool-row membership test inside a loop over the pool) was a no-op on output and stayed green, and it is not cited. M2b replaced it.
+
+**Clause table** (each AC split into Given / predicate / object; the phrases are verbatim):
+
+| AC | Clause | Mutation that broke it | Result |
+|---|---|---|---|
+| AC1 | Given unrelated rows / "the topmost takeable row leads" / "nothing joins it" | M10 `gate_admits` always joins | red: "the gate is the lead alone" |
+| AC2 | Given `0158` AC1's fixture, non-joiner between / "joins" / `DISPATCH  develop 0101 0103` | M1 a non-joining pool row ends the gate (contiguity restored) | red: "the joiner below the gap is admitted" |
+| AC3 | Given a `verify ready` row between / "joins" / `0101 0103` | M2b any non-pool row ends the gate | red: "the verify row between does not stop it" |
+| AC4 | Given `0158` AC5 fixture / "depth line" / `DEPTH     2 develop gate(s)` | M11 `depth_line` forms gates ignoring joins; also M1 | red: "counts two gates" |
+| AC5 | adjacent pair still batches / `0101 0102` | M13 nothing joins | red: "batches the adjacent pair" |
+| AC5 | a stepped-over blocked row does not end the gate / `0101 0103` | M2b; M13 | red: "steps over the blocked row and keeps going" |
+| AC6 | verify rows started this run / "unchanged (FR3)" / `DISPATCH  verify 0101 0103` | M12 cap of 1 passed to `verify_batch`'s `gate_from` | red: "verifies the developed gate as one batch" |
+| AC7 | "no `gate_max_rows` key" → default 5 | M3 default 5→6 | red: "the first five in rank make the gate" |
+| AC7 | the cap "counts the lead" | M4 `gsize=1`→`0` | red (same case, plus AC8, AC9) |
+| AC7 | `DEPTH     2 develop gate(s)` | M6 cap check removed; M11 | red: "the two left over are a second gate" |
+| AC8 | "the joiner nearest the lead in rank is admitted", `0104` waits | M5 pool walked in reverse rank | red: "0103 gets in and 0104 waits" |
+| AC9 | "the pass stops at the cap" / capped-out scope admits nothing | M6 cap check removed | red: "the gate is full at two" |
+| AC10 | `gate_max_rows: x` → non-zero exit, no `DISPATCH` | M7 non-number pattern removed; M9 read failure ignored | red: "exits 0 on gate_max_rows: x", "dispatches nothing" |
+| AC10 | `gate_max_rows: 0` → same | M8 `-lt 1` check removed; M9 | red: "exits 0 on gate_max_rows: 0", "names the offending value" |
+| AC10 | message on **stderr**, naming key and value | checked by hand: `.claude/backlog/next --drive` in the worktree with each bad value, stdout and stderr split | rc=1, stdout empty, stderr `gate_max_rows in .claude/backlog/config.yml is not a whole number of at least 1: x` (and `: 0`) |
+| AC11 | `skills/queue/templates/config.yml` `^gate_max_rows: 5` | M14 →6 | red |
+| AC11 | `.claude/backlog/config.yml` `^gate_max_rows: 5` | M15 →6 | red |
+| AC12 | sprint proposal: `gate_max_rows` + `0178` on one line | S1 drop `(0178)` | red |
+| AC12 | sprint *dispatch unit is a gate*: same | S2 `(0178)`→`(0158)` | red |
+| AC12 | develop gate definition: same | S3 drop `` `gate_max_rows` `` | red |
+| AC12 | "on one line" | S4 move `(0178)` to the next line | red |
+| AC12 | template comment: same | M16 drop `(0178)` | red |
+| AC12 | none contains `rank-adjacent` / `adjacent in rank` / `RANK CONTIGUITY` | S5 (sprint), S6 (develop), M17 (next comment) | red, each |
+| AC12 | `A join decides batching and never selection` still in both skills | S7 (develop), S8 (sprint) | red, each |
+| AC13 | dated line in 0158's *Notes & decisions*: 0178 supersedes FR1, FR2, FR4 and keeps FR3 | **no guard, as the NFR row declares; read** | present: "2026-09-26 — `0178` supersedes this item's FR1, FR2 and FR4, and keeps FR3." **Unguarded.** |
+| AC14 | whole suite green | the run above | 32/32 files at `0 failed` |
+
+The sprint.test.sh reds in S1–S8 also carry `0165 AC2 — the clean copy was not green`. That is the file's own self-check reporting the same red, not a second defect.
+
+| NFR | Checked | Result |
+|---|---|---|
+| Documentation | AC12 and AC13 above | holds. The 0158 note is prose, unguarded, as the row declares |
+| Dependencies | both `next` copies stay POSIX `sh`, with no new tool; `backlog-scripts-installed` green; `cmp` identical | holds, guarded |
+| Explicit over implicit | `GATE_MAX_ROWS_DEFAULT=5` is a named constant; M3 reddens AC7 | holds, guarded |
+| Fail loudly | M7, M8 and M9 each redden AC10; stderr confirmed by hand | holds, guarded |
+
+Always-on pass (`CONVENTIONS_CORE.md`): the diff adds no secret, log field, egress, auth or UI surface. Nothing is newly reachable beyond the larger gate membership, which the cap bounds. No privacy or security row applies.
 
 ## Notes & decisions
 
