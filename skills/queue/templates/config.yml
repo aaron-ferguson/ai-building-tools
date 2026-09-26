@@ -39,6 +39,14 @@ next_id: 1
 # inflated because every ticket surfaces a tooling defect.
 findings_threshold: 8
 
+# The most rows one new develop gate may hold, lead included (0178). Rank orders admission — the
+# joiners nearest the lead in rank get in, the rest wait for a later gate. 5 is the largest develop
+# batch with a measured saving (2026-08-22, five tickets in one session; see skills/develop); no run
+# has recorded a larger one, and an eleven-ticket run is cited as needing guardrails rather than as a
+# saving. Raise it when a measurement shows develop cost per ticket still falling above 5. 1 means no
+# batching; 0 or a non-number stops `./next --drive` rather than defaulting.
+gate_max_rows: 5
+
 # The gate's SECOND limit: how many COMPLETED SPRINTS the oldest unswept finding may survive before
 # the tail runs whatever the count says. Either limit crossed dispatches the tail (0133 FR2), and
 # this is the half that covers retro's "or weekly if the buffer fills slower" — a project parking
