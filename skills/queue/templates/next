@@ -71,8 +71,11 @@ read_gate_max_rows() {
   }' "$CONFIG")"
   [ -n "$raw" ] || return 0
   case "$raw" in
-    *[!0-9]*|0*) echo "gate_max_rows in $CONFIG is not a whole number of at least 1: $raw" >&2; return 1 ;;
+    *[!0-9]*) echo "gate_max_rows in $CONFIG is not a whole number of at least 1: $raw" >&2; return 1 ;;
   esac
+  if [ "$raw" -lt 1 ]; then
+    echo "gate_max_rows in $CONFIG is not a whole number of at least 1: $raw" >&2; return 1
+  fi
   GATE_MAX_ROWS="$raw"
 }
 
