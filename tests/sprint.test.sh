@@ -2824,6 +2824,101 @@ else
   ok "Step 9's park paragraph commits the append by pathspec, in the same turn, before releasing the lock"
 fi
 
+echo "0185 — runs/ is machine-local: never committed, and ignored by the marker block that creates it"
+# 0185 (decided 2026-09-24): runs/ is ignored WHOLE. Its captures are unfiltered stage output and
+# this repo is public, so the decision is a publication one; the ledger is the committed record.
+# AC1 -- stated where the run log is first described, not only in this repo's .gitignore, because
+# the plugin drives projects whose .gitignore this repo cannot edit.
+if says "$SKILL" "Step 5 — The run log" '`runs/` is machine-local and never committed — logs, captures and hand-written files alike — and `LEDGER.md` is the committed record' && \
+   says "$SKILL" "Step 5 — The run log" 'the captures are unfiltered stage output'; then
+  ok "Step 5 says runs/ is machine-local and never committed, why the captures are not, and that the ledger is the committed record"
+else
+  bad "0185 AC1 — Step 5 does not state that runs/ is machine-local and never committed (logs, captures and hand-written files alike), with LEDGER.md the committed record and the captures unfiltered stage output"
+fi
+
+# AC2 -- the fenced block Step 1 actually tells the supervisor to run, EXTRACTED and EXECUTED, not
+# grepped: an echo that writes the wrong contents or clobbers on a second run reads fine as prose.
+marker_block() {
+  awk '
+    /^```/ { if (infence) { if (body ~ /mkdir \.claude\/backlog\/runs\/\.active/) { printf "%s", body; exit }
+                            infence = 0; body = "" }
+             else { infence = 1 } ; next }
+    infence { body = body $0 "\n" }
+  ' "$1" 2>/dev/null || true
+}
+MB="$(marker_block "$SKILL")"
+REPO185="$FIX/repo185"
+mkdir -p "$REPO185/.claude/backlog"
+git -C "$REPO185" init -q
+if [ -z "$MB" ]; then
+  bad "0185 AC2 — no fenced block in the skill takes the .active marker; nothing to run"
+elif [ -e "$REPO185/.claude/backlog/runs" ]; then
+  bad "0185 AC2 — the fixture is wrong: runs/ exists before the block runs, so this case proves nothing"
+else
+  (cd "$REPO185" && printf '%s' "$MB" | sh) >/dev/null 2>&1 || true
+  RIGN="$REPO185/.claude/backlog/runs/.gitignore"
+  if [ -f "$RIGN" ] && [ "$(cat "$RIGN")" = '*' ]; then
+    ok "the marker block writes runs/.gitignore containing *"
+  else
+    bad "0185 AC2 — after Step 1's marker block, runs/.gitignore is missing or does not contain exactly *"
+  fi
+  printf '{}\n' > "$REPO185/.claude/backlog/runs/run-X.jsonl"
+  if [ -z "$(git -C "$REPO185" status --porcelain)" ]; then
+    ok "a run log written into runs/ afterwards is invisible to git status"
+  else
+    bad "0185 AC2 — git status shows runs/ content after the marker block: $(git -C "$REPO185" status --porcelain | tr '\n' ' ')"
+  fi
+  printf 'hand-edited\n' > "$RIGN"
+  rm -rf "$REPO185/.claude/backlog/runs/.active"
+  (cd "$REPO185" && printf '%s' "$MB" | sh) >/dev/null 2>&1 || true
+  if [ "$(cat "$RIGN" 2>/dev/null)" = 'hand-edited' ]; then
+    ok "running the block a second time leaves an existing runs/.gitignore unchanged"
+  else
+    bad "0185 AC2 — a second run of the marker block rewrote runs/.gitignore; it is not idempotent"
+  fi
+fi
+
+# AC3 -- this repo. The root line is asserted as well as check-ignore, because a machine that has
+# run a sprint also carries runs/.gitignore, which would keep check-ignore green with the root line gone.
+# The two git cases need a work tree, and 0165's child copy (and any tarball install) has none: there
+# check-ignore fails on a correct .gitignore and ls-files answers empty for the wrong reason, so they
+# SKIP LOUDLY rather than red or pass vacuously.
+if [ "$(git -C "$ROOT" rev-parse --is-inside-work-tree 2>/dev/null)" != true ]; then
+  skip "0185 AC3 — $ROOT is not a git work tree, so what git ignores and tracks here cannot be asked"
+else
+  if git -C "$ROOT" check-ignore -q .claude/backlog/runs/run-X.jsonl && \
+     grep -qx '\.claude/backlog/runs/' "$ROOT/.gitignore"; then
+    ok "this repo ignores .claude/backlog/runs/ whole"
+  else
+    bad "0185 AC3 — .claude/backlog/runs/ is not ignored whole by this repo's .gitignore"
+  fi
+  if [ -z "$(git -C "$ROOT" ls-files .claude/backlog/runs)" ]; then
+    ok "nothing under runs/ is tracked"
+  else
+    bad "0185 AC3 — files under .claude/backlog/runs are tracked: $(git -C "$ROOT" ls-files .claude/backlog/runs | tr '\n' ' ')"
+  fi
+fi
+if grep -qx '\.claude/backlog/runs/\.active/' "$ROOT/.gitignore" || grep -qF 'the run logs beside it' "$ROOT/.gitignore"; then
+  bad "0185 AC3 — .gitignore still carries the .active/-only line or the comment implying the run logs are for commit"
+elif grep -qF 'machine-local' "$ROOT/.gitignore" && grep -qF 'LEDGER.md' "$ROOT/.gitignore"; then
+  ok ".gitignore's comment says runs/ is machine-local and the ledger is the committed record"
+else
+  bad "0185 FR2 — .gitignore's comment on runs/ does not say why: machine-local provenance, LEDGER.md the committed record"
+fi
+
+# AC4 -- scoped to the "One fact crosses runs" paragraph, which is where findings_max_sprints is named.
+CROSS="$(section "$SKILL" "Step 5 — The run log" | awk '{
+  s = index($0, "One fact crosses runs"); if (s == 0) exit
+  rest = substr($0, s); e = index(rest, "A supervisor killed mid-cycle")
+  print (e ? substr(rest, 1, e - 1) : rest) }')"
+if printf '%s' "$CROSS" | grep -qF 'completed sprints on this machine' && \
+   printf '%s' "$CROSS" | grep -qF 'a fresh clone starts at zero completed sprints' && \
+   printf '%s' "$CROSS" | grep -qF 'fires later, never earlier'; then
+  ok "findings_max_sprints is stated per machine, a fresh clone at zero, the age half firing later, never earlier"
+else
+  bad "0185 AC4 — Step 5's 'One fact crosses runs' paragraph does not say the count is per machine, that a fresh clone starts at zero completed sprints, and that the age half fires later, never earlier"
+fi
+
 # 0165 FR1 — every FAIL line again, immediately above the tally.
 #
 # A pass that filters this file to its tally sees "1 failed" with the FAIL line hundreds of lines

@@ -2,8 +2,9 @@
 *.log
 .claude/backlog/.lock/
 .claude/backlog/claims/
-# The single-instance marker, never the run logs beside it. Committed, a marker makes every clone
-# of this repo report that a supervisor is already driving the backlog.
+# Sprint run logs, stage captures and the single-instance marker: machine-local provenance, never
+# committed (0185). The captures are unfiltered stage output and this repo is public; LEDGER.md is
+# the committed record. A committed marker would make every clone report a supervisor driving it.
 .claude/backlog/runs/
 
 # Machine-local list of internal organisation and client names (0143). NEVER COMMITTED:

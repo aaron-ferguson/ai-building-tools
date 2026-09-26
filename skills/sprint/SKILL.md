@@ -84,8 +84,12 @@ directory because `mkdir` is atomic:
 
 ```sh
 mkdir -p .claude/backlog/runs                       # the parent, which a fresh backlog lacks
+[ -f .claude/backlog/runs/.gitignore ] || printf '*\n' > .claude/backlog/runs/.gitignore
 mkdir .claude/backlog/runs/.active 2>/dev/null || echo busy
 ```
+
+The `.gitignore` line makes `runs/` ignore itself in every project this drives, with no edit to
+that project's own root `.gitignore` (Step 5, *`runs/` is machine-local*).
 
 **The `-p` line is not tidiness.** Without it, a backlog that has never been driven has no `runs/`,
 the second `mkdir` fails on the missing parent, and `|| echo busy` reports *another supervisor holds
@@ -539,6 +543,9 @@ after a crash or after the planned ending — derives what to do next from `./ne
 `./next --findings` alone. The backlog *is* the state. Delete the log between two sessions and the
 next action does not change at all; what is lost is the record, not the position.
 
+**`runs/` is machine-local and never committed — logs, captures and hand-written files alike — and `LEDGER.md` is the committed record.**
+Nothing under it is ever screened for publication, because nothing under it is published: the captures are unfiltered stage output.
+
 **`.claude/backlog/LEDGER.md` is the opposite, and the two are not interchangeable.** The log is
 per-run, uncommitted and deletable; the ledger is one committed row per sprint pairing what the run
 was estimated to cost with what it did, and deleting it sends every future estimate back to being a
@@ -553,7 +560,8 @@ completed, never what to do next.
 
 **One fact crosses runs, and it is named here because it is the exception.** `findings_max_sprints`
 counts `sprint_ended` events across the whole of `runs/`, so the *history* of completed runs is an
-input to the findings gate (`./next`, `sprints_since`). Everything above still holds for the
+input to the findings gate (`./next`, `sprints_since`) — counted in completed sprints on this machine,
+since `runs/` is never committed: a fresh clone starts at zero completed sprints, so its age half fires later, never earlier. Everything above still holds for the
 supervisor: it reads no log to place itself, and deleting the history moves no ticket. What deleting
 it does move is the age half of the findings gate, which resets — the count half is untouched, and
 the direction of the error is a tail that fires later rather than one that fires on nothing. The
