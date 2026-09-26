@@ -71,7 +71,7 @@ section. The proposal section has no rule about where the queue will stand after
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a queue ranked `0001 design ready`, `0002 develop ready` with no shared file or parent, when `./next --drive --propose` runs, then the block reads `PROPOSE   develop | 1 ticket(s)` with `TICKET    0002`, it prints `DESIGN    0001 | heads the next sprint`, and the decision line is still `DISPATCH  design 0001` (design goes first).
+- [ ] AC1 — Given a queue ranked `0001 design ready`, `0002 develop ready` with no shared file or parent, when `./next --drive --propose` runs, then the block reads `PROPOSE   develop | 1 ticket(s)` with `TICKET    0002`, it prints `DESIGN    0001 | heads the next sprint`, and the decision line is still `DISPATCH  design 0001` (design goes first). With one develop row in the queue the block also prints `SHORT     1 develop ticket(s), under the minimum of 3`: `PROPOSE   develop | 1 ticket(s)` states the first gate, never the sprint's scope, which the `SPRINT` lines state (amended 2026-09-26, see Notes & decisions).
 - [ ] AC2 — Given a queue with no takeable `develop` row, when `--drive --propose` runs, then it proposes the top design row exactly as today (`PROPOSE   design`).
 - [ ] AC3 — Given a `waiting` or `next: queue` row ranked above the first develop row, when `--drive --propose` runs, then it still exits 4 on that row; only `design ready` rows are passed on the way to the head.
 - [ ] AC4 — Given `0002 develop`, `0003 design ready`, `0004 develop`, all naming `a.md` in `expects:`, when `--drive --propose` runs, then the gate is `0002 0004` and the block prints `DESIGN    0003 | related to this gate`; a joining design row no longer ends the proposed gate.
@@ -157,3 +157,5 @@ Unit: `tests/next.test.sh` fixtures for `--propose` over a queue headed by a des
     and where it is enforced. FR5 is added (scope-aware stepping, design first). The ACs are
     authored new, since the ticket had none. Size m → l: the change spans the plan, the scope-aware
     walk, a new exit code and the skill rewrite. `expects:` is unchanged and still accurate.
+
+- 2026-09-26 — **AC1 amended by the sprint-size rule.** `./next --drive --propose` now extends a develop gate shorter than five down the rank in whole gates and prints the sprint as `SPRINT` lines, with `SHORT` under three (`SPRINT_MIN_TICKETS`/`SPRINT_TARGET_TICKETS` in `skills/queue/templates/next`; guards in `tests/next.test.sh`). A person's correction on run-20260925T203345Z: a one-ticket sprint is slower and dearer than `/develop` by hand. Build this ticket's plan-from-a-develop-head on top of that extension, not beside it: the develop head is the first gate, and the extension, including design rows in the span, is what a person confirms.
