@@ -61,9 +61,9 @@ sentence in Step 9 with no commit instruction beside it.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/SKILL.md` Step 9, when `tests/sprint.test.sh` runs, then a guard (`0184 AC1`) asserts the supervisor-park paragraph says to commit the park by pathspec — reddened by deleting that clause from Step 9.
-- [ ] AC2 — Given the same file, when `tests/sprint.test.sh` runs, then the same guard asserts the commit comes before the lock is released — reddened by moving the commit clause after the release clause (a guard matching only the word `commit` anywhere in Step 9 stays green under that move and does not satisfy this AC).
-- [ ] AC3 — Given the whole suite, when `commands.unit` runs on a clean tree, then it is green — reddened by leaving `skills/sprint/SKILL.md` over its size budget in `tests/skill-size.test.sh` after the addition.
+- [x] AC1 — Given `skills/sprint/SKILL.md` Step 9, when `tests/sprint.test.sh` runs, then a guard (`0184 AC1`) asserts the supervisor-park paragraph says to commit the park by pathspec — reddened by deleting that clause from Step 9.
+- [x] AC2 — Given the same file, when `tests/sprint.test.sh` runs, then the same guard asserts the commit comes before the lock is released — reddened by moving the commit clause after the release clause (a guard matching only the word `commit` anywhere in Step 9 stays green under that move and does not satisfy this AC).
+- [x] AC3 — Given the whole suite, when `commands.unit` runs on a clean tree, then it is green — reddened by leaving `skills/sprint/SKILL.md` over its size budget in `tests/skill-size.test.sh` after the addition.
 
 ## QA plan
 
@@ -84,3 +84,19 @@ green on the ledger sentence. `section()` collapses newlines, so the phrase is w
   surface and no open decision; the fix is one clause and one guard. `close_by: develop` because
   every AC is discharged by a committed assertion in `tests/sprint.test.sh` or the suite itself.
   The entry's second half — whether `runs/` is meant to be tracked — is a decision and went to `0185`.
+- 2026-09-25 — Built (session 66d1, `fa79656`). Step 9's park now reads "append, commit the append
+  by pathspec (`git commit -- <that FINDINGS.md>`), and only then release the lock, in the same turn",
+  citing `CONCURRENCY.md`, *Lock every write to the backlog directory*. Guard `0184` in
+  `tests/sprint.test.sh` cuts Step 9 from "The supervisor parks findings" to "End on the hand-off
+  line", so the ledger's **Commit it** cannot satisfy it, and compares positions for the order.
+  **Clause table and sweep (all RUN against the committed file, restored by `git checkout`, control
+  330/0/0):**
+  | AC clause | Mutation | Result |
+  |---|---|---|
+  | AC1 Given "`skills/sprint/SKILL.md` Step 9" | commit clause moved out of Step 9 into Step 8 | red (AC1) |
+  | AC1 "commit the park by pathspec" | commit clause deleted | red (AC1) |
+  | FR1 "in the same turn" | phrase deleted | red (AC1) |
+  | AC2 "commit comes before the lock is released" | commit clause moved after "only then release the lock" | red (AC2) |
+  | AC3 "reddened by leaving … over its size budget" | sprint SKILL.md padded +5000 bytes | **green — unreachable**: `tests/skill-size.test.sh` has no upper bound for a file with a recorded justification, and sprint has one (0040), so no size can red it. AC3 is discharged by the whole suite running green instead. |
+  Whole suite green at `fa79656` (every `tests/*.test.sh` reports 0 failed).
+
