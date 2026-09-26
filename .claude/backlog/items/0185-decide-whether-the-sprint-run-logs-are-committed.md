@@ -2,8 +2,8 @@
 id: "0185"
 title: Decide whether the sprint's run logs are committed, and what may appear in them if they are
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -16,9 +16,10 @@ expects:
   - .gitignore
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "9608"
-claimed_at: 2026-09-26T05:38:58Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-09-26
 ---
 
 ## Problem
@@ -70,11 +71,11 @@ unfiltered stage output, so committing `runs/` wholesale is a publication decisi
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/SKILL.md` Step 5, when it describes the run log, then one line states `runs/` is machine-local and never committed — logs, captures and hand-written files alike — and that `LEDGER.md` is the committed record; a guard in `tests/sprint.test.sh` asserts the phrase and goes red when it is removed.
-- [ ] AC2 — Given a fresh git repository fixture with no `runs/`, when `tests/sprint.test.sh` extracts Step 1's marker fenced block from the skill and runs it, then `.claude/backlog/runs/.gitignore` exists containing `*`, a `.jsonl` file written into `runs/` afterwards does not appear in `git status --porcelain`, and running the block a second time leaves the file unchanged; the existing AC18 marker guards stay green.
-- [ ] AC3 — Given this repo, when the guard runs, then `git check-ignore -q .claude/backlog/runs/run-X.jsonl` exits 0, `git ls-files .claude/backlog/runs` is empty, and `.gitignore` no longer carries the `.active/`-only line or the comment calling the rest "the run logs beside it".
-- [ ] AC4 — Given Step 5's "One fact crosses runs" paragraph, when it names `findings_max_sprints`, then it states the count is per machine and that a fresh clone starts at zero completed sprints, so the age half fires later, never earlier; the existing `One fact crosses runs` guard stays green.
-- [ ] AC5 — Given the full suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it is green, with no guarded phrase straddling a line break.
+- [x] AC1 — Given `skills/sprint/SKILL.md` Step 5, when it describes the run log, then one line states `runs/` is machine-local and never committed — logs, captures and hand-written files alike — and that `LEDGER.md` is the committed record; a guard in `tests/sprint.test.sh` asserts the phrase and goes red when it is removed.
+- [x] AC2 — Given a fresh git repository fixture with no `runs/`, when `tests/sprint.test.sh` extracts Step 1's marker fenced block from the skill and runs it, then `.claude/backlog/runs/.gitignore` exists containing `*`, a `.jsonl` file written into `runs/` afterwards does not appear in `git status --porcelain`, and running the block a second time leaves the file unchanged; the existing AC18 marker guards stay green.
+- [x] AC3 — Given this repo, when the guard runs, then `git check-ignore -q .claude/backlog/runs/run-X.jsonl` exits 0, `git ls-files .claude/backlog/runs` is empty, and `.gitignore` no longer carries the `.active/`-only line or the comment calling the rest "the run logs beside it".
+- [x] AC4 — Given Step 5's "One fact crosses runs" paragraph, when it names `findings_max_sprints`, then it states the count is per machine and that a fresh clone starts at zero completed sprints, so the age half fires later, never earlier; the existing `One fact crosses runs` guard stays green.
+- [x] AC5 — Given the full suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it is green, with no guarded phrase straddling a line break.
 
 ## QA plan
 

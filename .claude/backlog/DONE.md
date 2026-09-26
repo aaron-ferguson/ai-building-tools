@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0185 | Decide whether the sprint's run logs are committed, and what may appear in them if they are | bug | unit | 2026-09-26 | [items/0185-decide-whether-the-sprint-run-logs-are-committed.md](items/0185-decide-whether-the-sprint-run-logs-are-committed.md) |
 | 0184 | Make the sprint supervisor commit the finding it parks, in the same turn | bug | unit | 2026-09-26 | [items/0184-make-the-supervisor-commit-the-finding-it-parks.md](items/0184-make-the-supervisor-commit-the-finding-it-parks.md) |
 | 0161 | Give a closed ticket a scripted path back to verify | feature | unit | 2026-09-26 | [items/0161-give-a-closed-ticket-a-scripted-path-back-to-verify.md](items/0161-give-a-closed-ticket-a-scripted-path-back-to-verify.md) |
 | 0186 | Never drop a session from the harvest because its model has no published rate | bug | unit | 2026-09-26 | [items/0186-never-drop-an-unpriced-session-from-the-harvest.md](items/0186-never-drop-an-unpriced-session-from-the-harvest.md) |
