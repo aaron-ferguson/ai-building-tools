@@ -2,8 +2,8 @@
 id: "0187"
 title: Decide whether a sprint dispatch pins a concrete model or records the one that answered
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -15,11 +15,9 @@ relates: ["0149", "0186"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "5c42"
-claimed_at: 2026-10-04T23:33:50Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/sprint/SKILL.md
-  - tests/sprint.test.sh
 ---
 
 ## Problem
@@ -130,3 +128,30 @@ the guard reds. Run `tests/item-ac-form.test.sh` and the whole suite before hand
     rule; FR2 names the fields). Added FR3 (resolution from the probe transcript, fail-closed),
     FR4 (no committed id) and FR5 (Opus floor unchanged). ACs authored: AC1–AC8. AC8 changes an
     existing guard (`--model opus` on the dispatch block becomes the probe's) rather than adding one.
+- 2026-10-04 — **built** (develop 5c42, commit `be39714`). Step 1's `step-1-probe` gains
+  `--model opus` and `--session-id "$RUN_PROBE_UUID"`, followed by a `# resolve-run-model` block that
+  reads `message.model` from the probe transcript (excluding `<synthetic>`, the CLI's own error turns)
+  and exits non-zero unless exactly one model answered. Step 3 dispatches `--model "$RUN_MODEL"`, with
+  two new bullets (the run-20260922T031109Z rule, and `--resume` passing the resolved id); Step 7's
+  session-limit resume names `--model "$RUN_MODEL"` too. Step 5 says `scope_confirmed` and every
+  `dispatch` carry `model`, with a `# model-per-session` read that fails on a dispatch carrying none.
+  - **AC8 guard rewritten**, not deleted: the run-20260913T034946Z case now asserts `--model opus` on
+    the probe block (via a new `nth_block` helper over `probe_blocks`), the "thinking work" half kept.
+  - **A sibling guard this change falsified:** 0130 AC1's ordering case anchored on the file's first
+    `--session-id`, assuming it was the stage dispatch's. The probe now carries one, so the anchor was
+    re-aimed at `--session-id "$RUN_STAGE_UUID"`, with a comment saying why.
+  - **AC5 and FR3 are executed, not grepped**: both fenced blocks are extracted by their first-line
+    marker (`marked_block`) and run over authored fixtures (`fixture-session-*`, `fixture-model-*`,
+    a fake `$HOME` for the transcript glob).
+  - **Mutation table (run, 2026-10-04, 19 mutations of committed `be39714`, control 360/0 after):**
+    every AC clause reds — dispatch back to `--model opus` (AC1), alias-moved phrase (AC1),
+    run id dropped from Step 3 (AC1), probe `--model opus` removed (AC2/AC8), probe `--session-id`
+    removed (AC2), "not its stdout" (AC2), "a resumed leg cannot re-resolve the alias" (AC3),
+    "passes the run's resolved id" (AC3), the 50/29 figure (AC3), both Step 5 field sentences (AC4),
+    the read swallowing a missing model and dropping the session id (AC5), both AC6 phrases, the
+    resolver accepting two models (AC6), a literal `claude-opus-5` in the dispatch block (AC7),
+    "thinking work" (AC8). Each red counts 2: the target plus 0165 AC2's clean-copy cascade.
+    **One green, reasoned and run as equivalent:** `len(models) != 1` → `> 1` still fails a
+    no-model transcript, because `models.pop()` on an empty set raises; fail-closed either way.
+  - **Staled by this change (sibling notes, not edited):** 0149's 2026-09-13 note and 0160's
+    out-of-scope line both say the dispatch passes `--model opus`; it now passes the resolved id.
