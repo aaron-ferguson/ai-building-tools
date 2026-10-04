@@ -1446,11 +1446,12 @@ fi
 
 # AC1 is an ORDERING claim, and the order is the whole criterion: a proposal described after the
 # dispatch step satisfies every word of FR1 and none of its point. Anchored to the STAGE dispatch's
-# own `--session-id` line rather than to a step heading — Step 1's probe is also a `claude -p`, and
-# an ordinal anchor is re-aimed rather than broken when a step is inserted ahead of it
+# own `--session-id "$RUN_STAGE_UUID"` line rather than to a step heading — Step 1's probe is also a
+# `claude -p`, and since 0187 it pre-assigns a `--session-id` of its own, so the bare flag would anchor
+# on the probe. An ordinal anchor is re-aimed rather than broken when a step is inserted ahead of it
 # (testing-conventions.md). The marker line is what an edit moving the dispatch must also move.
 prop_at="$(grep -n "^## $PROPSEC" "$SKILL" | head -1 | cut -d: -f1)"
-stage_at="$(grep -n '\-\-session-id' "$SKILL" | head -1 | cut -d: -f1)"
+stage_at="$(grep -n '\-\-session-id "\$RUN_STAGE_UUID"' "$SKILL" | head -1 | cut -d: -f1)"
 marker_at="$(grep -n 'mkdir .claude/backlog/runs/.active' "$SKILL" | head -1 | cut -d: -f1)"
 if [ -n "$prop_at" ] && [ -n "$stage_at" ] && [ "$prop_at" -lt "$stage_at" ]; then
   ok "the proposal is stated before the stage dispatch (line $prop_at before $stage_at)"
@@ -2225,16 +2226,141 @@ fi
 
 # run-20260913T034946Z: the dispatch named no model, so every stage ran on whatever the CLI
 # defaulted to (claude-sonnet-4-6) and a verify closed four tickets with conventions_resolved null.
-echo "run-20260913T034946Z — Step 3 dispatches every stage on Opus, and says why"
-if section "$SKILL" "Step 3" | grep -qF -- '--model opus'; then
-  ok "Step 3's dispatch passes --model opus"
+#
+# 0187 AC8 moved the alias from the dispatch to the probe: the floor is now that the run's model is
+# RESOLVED from `opus`, so the assertion is on the probe block, and the dispatch carries the id.
+echo "run-20260913T034946Z — the run resolves its model from opus at the probe, and Step 3 says why"
+nth_block() { # <file> <closing-fence line> — the body of the fenced block that closes there
+  awk -v end="$2" '{ l[NR] = $0 } /^```/ && NR < end { s = NR } NR == end { for (i = s + 1; i < end; i++) print l[i]; exit }' "$1"
+}
+PROBE_BODY="$(for n in $(probe_blocks "$SKILL"); do nth_block "$SKILL" "$n"; done)"
+if printf '%s\n' "$PROBE_BODY" | grep -qE -- '--model opus( |$)'; then
+  ok "the step-1-probe passes --model opus, so the run's id is resolved from the Opus alias"
 else
-  bad "run-20260913T034946Z — Step 3's dispatch names no model; stages run on the CLI default, which was claude-sonnet-4-6"
+  bad "run-20260913T034946Z — the probe resolves no model from opus; stages run on the CLI default, which was claude-sonnet-4-6"
 fi
 if section "$SKILL" "Step 3" | grep -qF 'thinking work'; then
   ok "Step 3 says stages are thinking work, so the model is not downgraded as tidying"
 else
   bad "run-20260913T034946Z — Step 3 carries no reason for --model opus; it will be dropped or downgraded for cost"
+fi
+
+# --- 0187 — the alias is resolved once per run and the concrete id is dispatched -----------------
+# run-20260922T031109Z: `opus` resolved to claude-opus-5 for the gates and claude-opus-5-5 for the
+# queue sweep, and the retro's resumed legs split 50/29 between them. Nothing in the log said which.
+echo "0187 — a run pins the model its probe resolved, and its log names it per session"
+DISPATCH_BODY="$(for n in $(dispatch_blocks "$SKILL"); do nth_block "$SKILL" "$n"; done)"
+if printf '%s\n' "$DISPATCH_BODY" | grep -qF -- '--model "$RUN_MODEL"' && \
+   ! printf '%s\n' "$DISPATCH_BODY" | grep -qE -- '--model opus( |$)'; then
+  ok "0187 AC1 — Step 3's dispatch passes --model \"\$RUN_MODEL\", not --model opus"
+else
+  bad "0187 AC1 — Step 3's dispatch block does not pass --model \"\$RUN_MODEL\" in place of --model opus"
+fi
+if says "$SKILL" "Step 3" 'run-20260922T031109Z' && says "$SKILL" "Step 3" 'the alias moved between dispatches of one run'; then
+  ok "0187 AC1 — Step 3 names run-20260922T031109Z and says the alias moved between dispatches of one run"
+else
+  bad "0187 AC1 — Step 3 does not name run-20260922T031109Z and say the alias moved between dispatches of one run"
+fi
+if printf '%s\n' "$PROBE_BODY" | grep -qF -- '--session-id'; then
+  ok "0187 AC2 — the step-1-probe pre-assigns --session-id, so its transcript can be found"
+else
+  bad "0187 AC2 — the step-1-probe carries no --session-id; nothing locates the transcript the model is read from"
+fi
+if says "$SKILL" "Step 1" "the resolved id is read from the probe's transcript, not its stdout"; then
+  ok "0187 AC2 — Step 1 says the resolved id is read from the probe's transcript, not its stdout"
+else
+  bad "0187 AC2 — Step 1 does not say the resolved id is read from the probe's transcript, not its stdout"
+fi
+if says "$SKILL" "Step 3" "passes the run's resolved id" && \
+   says "$SKILL" "Step 3" 'a resumed leg cannot re-resolve the alias' && \
+   says "$SKILL" "Step 3" '50 turns of `claude-opus-5-5` beside 29 of `claude-opus-5`'; then
+  ok "0187 AC3 — Step 3 says a --resume passes the run's resolved id, citing the 50/29 retro split"
+else
+  bad "0187 AC3 — Step 3 does not say a --resume passes the run's resolved id so a resumed leg cannot re-resolve the alias (50 turns of claude-opus-5-5 beside 29 of claude-opus-5)"
+fi
+if says "$SKILL" "Step 5" '`scope_confirmed` also carries `model`' && \
+   says "$SKILL" "Step 5" 'every `dispatch` event carries the `model` it passed'; then
+  ok "0187 AC4 — Step 5 says scope_confirmed carries model and every dispatch event carries model"
+else
+  bad "0187 AC4 — Step 5 does not say scope_confirmed carries model and every dispatch event carries the model it passed"
+fi
+if says "$SKILL" "Step 1" 'names no model, or more than one' && says "$SKILL" "Step 1" 'stops the run before the first stage'; then
+  ok "0187 AC6 — Step 1 says a probe transcript naming no model, or more than one, stops the run before the first stage"
+else
+  bad "0187 AC6 — Step 1 does not say a probe naming no model, or more than one, stops the run before the first stage"
+fi
+if printf '%s\n%s\n' "$DISPATCH_BODY" "$PROBE_BODY" | grep -qF 'claude-opus-'; then
+  bad "0187 AC7 — a dispatch or probe block carries a literal claude-opus- id; the pinned id must come from the run"
+else
+  ok "0187 AC7 — no dispatch or probe block carries a literal claude-opus- id"
+fi
+
+# AC5 and FR3 -- the two reads the skill hands the supervisor, EXTRACTED and EXECUTED over authored
+# fixtures: a read that prints the wrong field, or reports one model where the log names none,
+# reads perfectly well as prose.
+marked_block() { # <file> <marker> — the body of the fenced block whose first line is that marker
+  awk -v m="$2" '
+    /^```/ { if (infence) { if (first == m) { printf "%s", body; exit }
+                            infence = 0; body = ""; first = "" }
+             else { infence = 1; first = "" } ; next }
+    infence { if (first == "") first = $0; body = body $0 "\n" }
+  ' "$1" 2>/dev/null || true
+}
+MPS="$(marked_block "$SKILL" '# model-per-session')"
+LOG187="$FIX/run-fixture187.jsonl"
+cat > "$LOG187" <<'EOF'
+{"event":"scope_confirmed","run":"run-FIXTURE187","model":"fixture-model-alpha"}
+{"event":"dispatch","run":"run-FIXTURE187","stage":"develop","session_id":"fixture-session-aaaa","tickets":["FIXTURE-A"],"model":"fixture-model-alpha"}
+{"event":"outcome","run":"run-FIXTURE187","stage":"develop","session_id":"fixture-session-aaaa"}
+{"event":"dispatch","run":"run-FIXTURE187","stage":"verify","session_id":"fixture-session-bbbb","tickets":["FIXTURE-A"],"model":"fixture-model-beta"}
+EOF
+if [ -z "$MPS" ]; then
+  bad "0187 AC5 — Step 5 carries no '# model-per-session' block; there is no read to run"
+else
+  rc187=0; out187="$(printf '%s' "$MPS" | RUN_LOG="$LOG187" sh 2>&1)" || rc187=$?
+  if [ "$rc187" = 0 ] && \
+     printf '%s\n' "$out187" | grep -q 'fixture-session-aaaa.*fixture-model-alpha' && \
+     printf '%s\n' "$out187" | grep -q 'fixture-session-bbbb.*fixture-model-beta' && \
+     [ "$(printf '%s\n' "$out187" | grep -c 'fixture-session-')" = 2 ]; then
+    ok "0187 AC5 — the model-per-session read prints two distinct models, one per session id"
+  else
+    bad "0187 AC5 — the model-per-session read over a two-model log printed (rc $rc187): $out187"
+  fi
+  grep -v '"event":"scope_confirmed"' "$LOG187" | sed 's/,"model":"[^"]*"//' > "$LOG187.stripped"
+  rc187=0; out187="$(printf '%s' "$MPS" | RUN_LOG="$LOG187.stripped" sh 2>&1)" || rc187=$?
+  if [ "$rc187" != 0 ] && ! printf '%s\n' "$out187" | grep -q 'fixture-model-'; then
+    ok "0187 AC5 — with the model fields removed the read fails rather than reporting one model"
+  else
+    bad "0187 AC5 — with the model fields removed the read exited $rc187 and printed: $out187"
+  fi
+fi
+
+RRM="$(marked_block "$SKILL" '# resolve-run-model')"
+H187="$FIX/home187"
+mkdir -p "$H187/.claude/projects/fixture-project"
+probe187() { # <transcript lines…> — writes the probe transcript, runs the block, prints rc:output
+  printf '%s\n' "$@" > "$H187/.claude/projects/fixture-project/fixture-probe-uuid.jsonl"
+  r=0; o="$(printf '%s' "$RRM" | HOME="$H187" RUN_PROBE_UUID=fixture-probe-uuid sh 2>&1)" || r=$?
+  printf '%s:%s' "$r" "$o"
+}
+if [ -z "$RRM" ]; then
+  bad "0187 FR3 — Step 1 carries no '# resolve-run-model' block; nothing reads the id from the transcript"
+else
+  A='{"type":"assistant","message":{"role":"assistant","model":"fixture-model-alpha"}}'
+  B='{"type":"assistant","message":{"role":"assistant","model":"fixture-model-beta"}}'
+  U='{"type":"user","message":{"role":"user","content":"x"}}'
+  case "$(probe187 "$U" "$A" "$A")" in
+    0:fixture-model-alpha) ok "0187 FR3 — a probe transcript naming one model resolves to that id" ;;
+    *) bad "0187 FR3 — a one-model probe transcript did not resolve to its id: $(probe187 "$U" "$A" "$A")" ;;
+  esac
+  case "$(probe187 "$A" "$B")" in
+    0:*) bad "0187 AC6 — a probe transcript naming two models resolved anyway: $(probe187 "$A" "$B")" ;;
+    *) ok "0187 AC6 — a probe transcript naming two models fails the resolution" ;;
+  esac
+  case "$(probe187 "$U")" in
+    0:*) bad "0187 AC6 — a probe transcript naming no model resolved anyway: $(probe187 "$U")" ;;
+    *) ok "0187 AC6 — a probe transcript naming no model fails the resolution" ;;
+  esac
 fi
 
 # The same run: an account session limit stopped develop mid-gate, and `claude -p --resume` on the

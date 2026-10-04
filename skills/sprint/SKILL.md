@@ -69,6 +69,8 @@ fails, so the key must stay absent.
 ```sh
 # step-1-probe
 claude -p \
+  --model opus \
+  --session-id "$RUN_PROBE_UUID" \
   --json-schema "$(cat <plugin root>/skills/sprint/outcome.schema.json)" \
   --max-budget-usd 0.25 \
   'Return a minimal valid stage outcome: stage "retro", empty arrays for commits and tickets, 0 for cost_usd and findings_parked, null for conventions_resolved and escalation.' \
@@ -78,6 +80,32 @@ claude -p \
 A schema-valid outcome comes back, or this host cannot drive a loop. **Where it cannot, say so plainly
 and fall back to naming the commands for a person to run** — today's behaviour, which is a working
 answer. What is forbidden is appearing to drive a loop you are not driving.
+
+**The probe also resolves the run's model, once.** It runs on the `opus` alias with a pre-assigned
+session id, and the resolved id is read from the probe's transcript, not its stdout — the outcome
+carries no model field, and each assistant turn of the transcript carries `message.model`:
+
+```sh
+# resolve-run-model
+python3 - "$RUN_PROBE_UUID" <<'PY'
+import glob, json, os, sys
+paths = glob.glob(os.path.expanduser("~/.claude/projects/*/" + sys.argv[1] + ".jsonl"))
+models = set()
+for path in paths:
+    for line in open(path):
+        msg = json.loads(line).get("message")
+        # "<synthetic>" marks a turn the CLI wrote itself, such as an API error; no model answered it.
+        if isinstance(msg, dict) and msg.get("role") == "assistant" and msg.get("model") not in (None, "<synthetic>"):
+            models.add(msg["model"])
+if len(models) != 1:
+    sys.exit("probe %s names %d models %s; stop the run" % (sys.argv[1], len(models), sorted(models)))
+print(models.pop())
+PY
+```
+
+What it prints is `$RUN_MODEL` for the whole run (Step 3), logged on `scope_confirmed` (Step 5). A
+probe whose transcript names no model, or more than one, stops the run before the first stage, as any
+other failed probe does — there is then no single id to pin.
 
 **2. Refuse to be the second supervisor.** One supervisor per backlog, and the marker is a
 directory because `mkdir` is atomic:
@@ -352,7 +380,7 @@ for tid in sorted(state):
 
 ```sh
 claude -p \
-  --model opus \
+  --model "$RUN_MODEL" \
   --session-id "$RUN_STAGE_UUID" \
   --json-schema "$(cat <plugin root>/skills/sprint/outcome.schema.json)" \
   --add-dir ../ai-building-conventions \
@@ -365,11 +393,19 @@ claude -p \
 
 Every flag earns its place, and two of them are load-bearing in a way that is not obvious:
 
-- **`--model opus` is stated on every dispatch, because every stage is thinking work** — queue,
-  design, develop, verify and retro alike. Left out, a stage runs on whatever the CLI defaults to:
-  run-20260913T034946Z's stages ran on claude-sonnet-4-6, and its verify closed four tickets with
-  `conventions_resolved: null`. A stage may plan on Opus and hand mechanical implementation to
-  Haiku where quality holds; the supervisor never downgrades a stage's model for cost.
+- **A model is stated on every dispatch, resolved from `opus`, because every stage is thinking
+  work** — queue, design, develop, verify and retro alike. Left out, a stage runs on whatever the
+  CLI defaults to: run-20260913T034946Z's stages ran on claude-sonnet-4-6, and its verify closed four
+  tickets with `conventions_resolved: null`. A stage may plan on Opus and hand mechanical
+  implementation to Haiku where quality holds; the supervisor never downgrades a stage's model for cost.
+- **`--model "$RUN_MODEL"` is the concrete id the Step 1 probe resolved, never the alias.** The
+  alias is resolved server-side, and in run-20260922T031109Z the alias moved between dispatches of one
+  run: the gates ran `claude-opus-5`, the queue sweep all 42 turns `claude-opus-5-5`, and every
+  per-session cost comparison assumes one model. The id lives in the run log only — no committed file
+  carries one to dispatch on — so `opus` stays the single statement of which model is current.
+- **A `--resume` of the run passes the run's resolved id too** (Step 7), so a resumed leg cannot
+  re-resolve the alias: the retro legs of run-20260922T031109Z ran 50 turns of `claude-opus-5-5`
+  beside 29 of `claude-opus-5`.
 - **The prompt names the stage plugin-qualified, `/ai-building-tools:<stage>`, never bare.** A
   host command of the same name takes a bare one: design 0179, dispatched bare, reached the host's own
   command and the stage escalated having done nothing (run-20260924T050130Z).
@@ -533,6 +569,29 @@ which is not a wide figure but a different quantity wearing the run's name. The 
 log rather than in a flag on the harvest, because the log is where every other session id is already
 pinned, and a bound that depends on someone remembering a flag goes back to spanning the directory
 the first time they forget.
+
+**`scope_confirmed` also carries `model`, the id Step 1 resolved, and every `dispatch` event carries the `model` it passed.**
+A captured stdout carries no model, so without these a session's model is recoverable only by
+re-reading its transcript, and a cost comparison cannot tell whether two sessions ran on one model.
+The read, which fails on a dispatch that carries none rather than reporting one model:
+
+```sh
+# model-per-session
+python3 - "$RUN_LOG" <<'PY'
+import json, sys
+missing = []
+for line in open(sys.argv[1]):
+    event = json.loads(line)
+    if event.get("event") != "dispatch":
+        continue
+    if not event.get("model"):
+        missing.append(str(event.get("session_id")))
+        continue
+    print(event.get("session_id"), event.get("stage"), event["model"])
+if missing:
+    sys.exit("dispatch events with no model: " + ", ".join(missing))
+PY
+```
 
 **A run supervised from a conversation that already drove an earlier run says so.** Its
 `scope_confirmed` event carries `supervisor_context`, naming that earlier run id or `fresh`: the
@@ -704,7 +763,7 @@ claim, the dirty tree and possibly the lock exactly as a cap kill does. The diff
 the work is local and unpushed and no other session starts while one waits, so the same session
 picks it back up. Log a `limit_hit` event carrying the reset time the message names, wait for the
 reset or for the person to say tokens are back, then log `resumed` and dispatch
-`claude -p --resume <session-id>` with the same schema, model and flags, capped at what that session
+`claude -p --resume <session-id>` with the same schema, flags and `--model "$RUN_MODEL"`, capped at what that session
 has left: its stage cap less what a harvest of that session id already shows spent. The resumed
 outcome's `cost_usd` covers only the resumed leg, so the harvest and never the outcome is that
 session's cost. A resume that returns no valid outcome is Step 4's failure, and a stop that names no
