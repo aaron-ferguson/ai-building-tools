@@ -3,7 +3,7 @@ id: "0188"
 title: Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: l
@@ -17,9 +17,13 @@ expects:
   - skills/queue/templates/next
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "3d93"
+claimed_at: 2026-10-04T23:58:20Z
 touches:
+  - skills/sprint/SKILL.md
+  - skills/queue/templates/next
+  - tests/sprint.test.sh
+  - tests/next.test.sh
 ---
 
 ## Problem
