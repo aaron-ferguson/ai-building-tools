@@ -20,11 +20,16 @@
 #
 # Usage:
 #   tools/harvest-usage.sh <transcript-dir> [--since YYYY-MM-DD] [--until YYYY-MM-DD]
-#                          [--sessions] [--exclude <session-id-prefix>]
+#                          [--sessions] [--by-session] [--exclude <session-id-prefix>]
 #                          [--session <session-id-prefix>]...
 #
 #   --since / --until  keep turns whose UTC timestamp date falls in the range, inclusive
 #   --sessions         one row per session as well as the per-skill table
+#   --by-session       one row per session as a CONTEXT WINDOW (0041 FR11): skill, turns, elapsed
+#                      minutes, context tokens and USD. Elapsed is first-to-last priced turn in the
+#                      transcript, so it excludes process start-up and the wait before the first
+#                      turn -- an undercount, and labelled as one. tools/sprint-ledger.sh reads
+#                      this table for a run; on its own it attributes no run and no closed ticket.
 #   --exclude          drop a session by id prefix, repeatable; for the in-flight session that
 #                      produced the harvest, whose own cost is not yet complete
 #   --session          keep ONLY these sessions, by id prefix, repeatable. A date window is not a
@@ -50,7 +55,7 @@
 set -eu
 
 if [ $# -lt 1 ]; then
-  echo "usage: $0 <transcript-dir> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--sessions] [--session <prefix>] [--exclude <prefix>] [--run <run-log.jsonl> [--budget N]]" >&2
+  echo "usage: $0 <transcript-dir> [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--sessions] [--by-session] [--session <prefix>] [--exclude <prefix>] [--run <run-log.jsonl> [--budget N]]" >&2
   exit 2
 fi
 
@@ -58,7 +63,7 @@ DIR="$1"; shift
 [ -d "$DIR" ] || { echo "no such transcript directory: $DIR" >&2; exit 2; }
 
 exec python3 - "$DIR" "$@" <<'PY'
-import json, os, re, sys, glob
+import datetime, json, os, re, sys, glob
 
 # Per-million-token list rates, and the cache multipliers that apply to the input rate.
 # Source: the claude-api skill's model table (cached 2026-06-24) and shared/prompt-caching.md,
@@ -164,13 +169,16 @@ def marker_skill(message):
 
 
 def parse_args(argv):
-    opts = {"since": None, "until": None, "sessions": False, "exclude": [], "session": [],
+    opts = {"since": None, "until": None, "sessions": False, "by_session": False,
+            "exclude": [], "session": [],
             "run": None, "budget": DEFAULT_TURN_BUDGET}
     i = 0
     while i < len(argv):
         a = argv[i]
         if a == "--sessions":
             opts["sessions"] = True
+        elif a == "--by-session":
+            opts["by_session"] = True
         elif a in ("--since", "--until", "--exclude", "--session", "--run", "--budget"):
             i += 1
             if i >= len(argv):
@@ -243,7 +251,20 @@ def harvest_session(path, opts):
         row["write"] += usage.get("cache_creation_input_tokens", 0) or 0
         if day:
             row["days"].add(day)
+        stamp = d.get("timestamp") or ""
+        if stamp:
+            row["first"] = min(row["first"] or stamp, stamp)
+            row["last"] = max(row["last"] or stamp, stamp)
     return per_skill, unpriced, unpriced_models, unpriced_skills
+
+
+def elapsed_minutes(first, last):
+    """Minutes between two transcript timestamps, `2026-09-20T10:01:00.000Z` shaped."""
+    if not first or not last:
+        return 0.0
+    def parse(stamp):
+        return datetime.datetime.strptime(stamp[:19], "%Y-%m-%dT%H:%M:%S")
+    return (parse(last) - parse(first)).total_seconds() / 60.0
 
 
 def printable_model(model):
@@ -252,7 +273,7 @@ def printable_model(model):
 
 def blank():
     return {"turns": 0, "cost": 0.0, "outcost": 0.0, "ctx": 0, "out": 0, "read": 0, "write": 0,
-            "days": set(), "sessions": 0, "unpriced": 0}
+            "days": set(), "sessions": 0, "unpriced": 0, "first": None, "last": None}
 
 
 def add_into(dst, src):
@@ -260,6 +281,10 @@ def add_into(dst, src):
     for key in ("turns", "cost", "outcost", "ctx", "out", "read", "write"):
         dst[key] += src[key]
     dst["days"] |= src["days"]
+    # ISO-8601 UTC stamps order as strings, so the window's ends are a min and a max of text.
+    for key, pick in (("first", min), ("last", max)):
+        both = [v for v in (dst.get(key), src.get(key)) if v]
+        dst[key] = pick(both) if both else None
 
 
 def turn_contexts(path, opts):
@@ -467,6 +492,20 @@ if opts["sessions"]:
           % ("SESSION", "SESSNS", "TURNS", "COST USD", "USD/TURN", "CONTEXT TOK", "CTX/TURN"))
     for sid, skills, r in sorted(session_rows, key=lambda x: -x[2]["cost"]):
         print(session_row(sid, skills, r))
+
+if opts["by_session"]:
+    print("")
+    print("%-10s| %-10s | %7s | %11s | %12s | %10s"
+          % ("SESSION", "SKILL", "TURNS", "ELAPSED MIN", "CONTEXT TOK", "COST USD"))
+    for sid, skills, r in sorted(session_rows, key=lambda x: x[2]["first"] or ""):
+        if r["turns"] == 0:
+            print("%-10s| %-10s | %7d | %11s | %12s | %10s" % (sid[:10], skills[:10], 0, "-", "-", "unpriced"))
+            continue
+        print("%-10s| %-10s | %7d | %11.1f | %12d | %10.2f"
+              % (sid[:10], skills[:10], r["turns"], elapsed_minutes(r["first"], r["last"]),
+                 r["ctx"], r["cost"]))
+    print("ELAPSED is first to last turn, so it excludes start-up before the first turn")
+    print("BY-SESSION attributes no run and no closed tickets, tools/sprint-ledger.sh record does from a run log")
 
 if opts["run"]:
     report_run_bound(directory, opts)

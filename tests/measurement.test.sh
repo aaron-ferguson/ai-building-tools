@@ -1227,5 +1227,39 @@ case "$OVERRIDE_OUT" in
 esac
 rm -rf "$RUNFIX"
 
+# --- 0041 — --by-session: one row per context window, with its first-to-last turn elapsed time ---
+echo "0041 AC15/AC9/AC10 — --by-session reports each window's elapsed minutes, and nothing else of it"
+BYS="$(mktemp -d)"
+UB='{"input_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0,"output_tokens":40000}'
+{
+  printf '{"type":"user","timestamp":"2026-09-20T10:00:00.000Z","message":{"role":"user","content":"<command-name>/ai-building-tools:develop</command-name>"}}\n'
+  printf '{"type":"assistant","timestamp":"2026-09-20T10:01:00.000Z","message":{"id":"msg_bys_1","model":"claude-opus-5","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":%s}}\n' "$UB"
+  # AC10: one response written as two content-block lines repeating its id is one turn.
+  printf '{"type":"assistant","timestamp":"2026-09-20T10:01:00.000Z","message":{"id":"msg_bys_1","model":"claude-opus-5","content":[{"type":"tool_use","name":"Read"}],"usage":%s}}\n' "$UB"
+  printf '{"type":"assistant","timestamp":"2026-09-20T10:43:00.000Z","message":{"id":"msg_bys_2","model":"claude-opus-5","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":%s}}\n' "$UB"
+} > "$BYS/dddddddd-0000-0000-0000-000000000000.jsonl"
+if [ -x "$HARVEST" ]; then OUTB="$("$HARVEST" "$BYS" --by-session 2>&1 || true)"; else OUTB=""; fi
+ROWB="$(printf '%s\n' "$OUTB" | grep '^dddddddd' | tail -1 || true)"
+# The row's cells, by position: SESSION | SKILL | TURNS | ELAPSED MIN | CONTEXT TOK | COST USD.
+cellb() { printf '%s' "$ROWB" | awk -F'|' -v n="$1" '{ v = $n; gsub(/^ +| +$/, "", v); print v }'; }
+if [ "$(cellb 4)" = "42.0" ]; then ok "AC15 — first and last turns 42 minutes apart read 42.0 elapsed minutes"; else
+  bad "0041 AC15 — expected 42.0 elapsed minutes in [$ROWB]; output: $(printf '%s' "$OUTB" | tr '\n' ' ' | cut -c1-300)"; fi
+if [ "$(cellb 2)" = "develop" ]; then ok "AC15 — beside the skill that ran in the window"; else bad "0041 AC15 — skill cell is [$(cellb 2)]"; fi
+if [ "$(cellb 3)" = "2" ]; then ok "AC10 — a repeated message.id is counted once: 2 turns, not 3"; else bad "0041 AC10 — turns cell is [$(cellb 3)]"; fi
+if [ "$(cellb 6)" = "2.00" ]; then ok "AC15 — and its USD, 80,000 output tokens at 25.00 per million"; else bad "0041 AC15 — USD cell is [$(cellb 6)]"; fi
+if [ "$(cellb 5)" = "0" ]; then ok "AC15 — and its context tokens"; else bad "0041 AC15 — context cell is [$(cellb 5)]"; fi
+case "$OUTB" in
+  *SENTINELPROSE*) bad "0041 AC9 — message text reached the --by-session output" ;;
+  *) ok "AC9 — the fixture's message text is absent from the --by-session output" ;;
+esac
+BADB="$(printf '%s\n' "$OUTB" | grep -vn '^[A-Za-z0-9 .,$%|:/-]*$' | head -1 || true)"
+if [ -z "$BADB" ]; then ok "every --by-session line is within the aggregate-figures character set"; else
+  bad "0041 AC9 — a --by-session line leaves the aggregate-figures character set: $BADB"; fi
+case "$OUTB" in
+  *"attributes no run and no closed tickets"*) ok "FR12/AC7 — it says it attributes no run and no closed tickets" ;;
+  *) bad "0041 FR12/AC7 — --by-session does not say it attributes no run and no closed tickets" ;;
+esac
+rm -rf "$BYS"
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]
