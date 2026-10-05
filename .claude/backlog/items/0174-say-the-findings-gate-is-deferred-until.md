@@ -3,7 +3,7 @@ id: "0174"
 title: Say the findings gate is deferred until the run is out of work when no scope was confirmed
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -16,9 +16,12 @@ expects:
   - skills/queue/templates/next
   - .claude/backlog/next
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "24f1"
+claimed_at: 2026-10-05T00:57:35Z
 touches:
+  - skills/queue/templates/next
+  - .claude/backlog/next
+  - tests/next.test.sh
 ---
 
 ## Problem
