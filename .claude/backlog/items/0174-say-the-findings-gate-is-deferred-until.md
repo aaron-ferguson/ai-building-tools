@@ -2,8 +2,8 @@
 id: "0174"
 title: Say the findings gate is deferred until the run is out of work when no scope was confirmed
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -16,9 +16,10 @@ expects:
   - skills/queue/templates/next
   - .claude/backlog/next
   - tests/next.test.sh
-claimed_by: "de3c"
-claimed_at: 2026-10-05T01:52:54Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-05
 ---
 
 ## Problem
@@ -52,9 +53,9 @@ go looking for the `--scope` ids it thinks it sent. Found verifying `0168` (clai
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a crossed buffer, one takeable row and no `--scope`, when `./next --drive` runs, then the NOTE does not contain the confirmed-scope phrase — reddened by restoring the single-form sentence.
-- [ ] AC2 — Given the same buffer with a `--scope` naming an unfinished id, when `./next --drive` runs, then the existing confirmed-scope wording is printed unchanged — reddened by applying the no-scope wording to both cases.
-- [ ] AC3 — Given both copies of `next`, when `tests/backlog-scripts-installed.test.sh` runs, then they match — reddened by editing only the template.
+- [x] AC1 — Given a crossed buffer, one takeable row and no `--scope`, when `./next --drive` runs, then the NOTE does not contain the confirmed-scope phrase — reddened by restoring the single-form sentence.
+- [x] AC2 — Given the same buffer with a `--scope` naming an unfinished id, when `./next --drive` runs, then the existing confirmed-scope wording is printed unchanged — reddened by applying the no-scope wording to both cases.
+- [x] AC3 — Given both copies of `next`, when `tests/backlog-scripts-installed.test.sh` runs, then they match — reddened by editing only the template.
 
 ## QA plan
 
@@ -80,3 +81,27 @@ go looking for the `--scope` ids it thinks it sent. Found verifying `0168` (clai
     read 44 passed, 1 failed until the installed copy was updated, then 45/0.
   - **The AC2 assertion pins the sentence plus its reason's first words** (`— FINDINGS.md holds 8
     entries`), so a reworded NOTE that still contains *confirmed scope* reds too.
+
+## QA evidence
+
+Verify de3c, 2026-10-04 — **PASS**, at `qa_level: unit`, batch 0187/0188/0174/0041 from one develop gate.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`) — 32 files, every tally `0 failed`; `tests/next.test.sh` 572 passed, 0 failed; `tests/backlog-scripts-installed.test.sh` 45 passed, 0 failed; `tests/citations.test.sh` 46 passed, 0 failed. No lint or typecheck is configured.
+Tree: `git status --porcelain` empty at Step 2 and at the verdict; the intersection is empty, so this is not advisory.
+
+Mutations were applied to committed `skills/queue/templates/next` (the copy the fixtures run), diff confirmed non-empty, restored by that path, and the tree read clean after each. The `next` cases ran from a verbatim scratch copy of `tests/next.test.sh`'s preamble plus its 0154 AC2/0188/0174 sections (control 53 passed, 0 failed).
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | Given a crossed buffer, one takeable row, no `--scope`; the NOTE lacks the confirmed-scope phrase | single-form sentence restored (`[ -z "$SCOPE" ] \|\| scope_live`) | red, 51 passed, 2 failed |
+| AC2 | Given the same buffer with `--scope` naming an unfinished id; the existing wording, unchanged | no-scope wording applied to both cases | red, 52 passed, 1 failed |
+| AC3 | both copies of `next` match | template edited alone | red, `tests/backlog-scripts-installed.test.sh` 44 passed, 1 failed |
+
+**Evidence set:** `skills/queue/templates/next`, `.claude/backlog/next`, `tests/next.test.sh`, `tests/backlog-scripts-installed.test.sh`, `tests/citations.test.sh`.
+
+| NFR | Check | Result |
+|---|---|---|
+| Observability — the NOTE names the condition the run is in | AC1's no-scope case asserts the absence of *confirmed scope* (red under the AC1 mutation) | holds, guarded |
+| Documentation — no restatement of 0168 FR4, only the wording | the diff touches only the NOTE branch and a two-line why-comment; `tests/citations.test.sh` 46 passed, 0 failed | holds |
+| Always-on (CONVENTIONS_CORE) | message-only change, no new field, no egress | holds |
