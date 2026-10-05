@@ -370,6 +370,14 @@ acceptance-criteria list it cannot tick**. That last one is yours to fix before 
 was simply absent. Rewrite them in the checkbox form and close again — never hand-tick around it,
 because the tick is the evidence your run produced.
 
+**Write the release note with the close: `--note "<text>"`** (0041). It lands under `## Unreleased`
+in `CHANGELOG.md`, in the close's own commit, and `tools/release` promotes it to the version it
+bumps. You have just read the ACs and the evidence, which makes this the cheapest moment the note
+exists. Voice it as what a session running these skills will do differently, in plain language,
+leading with the behaviour: the ticket ID never leads, and may follow in parentheses as provenance.
+**A ticket with no observable change gets no note** — close it without `--note`, because a padded
+entry is noise every release then carries.
+
 By hand, under the lock, committed before you release it — the fallback where the script is not
 installed:
 

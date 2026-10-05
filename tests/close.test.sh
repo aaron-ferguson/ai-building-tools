@@ -1406,6 +1406,17 @@ out="$(run_close 0005 ab12 --note)" && rc=0 || rc=$?
 assert_rc "exits 2" "$rc" 2 "$out"
 assert_line "the row is untouched" '| 0005 | A row | verify | in-progress | 0000 |' QUEUE.md
 
+
+echo "0041 AC17 — verify's close step instructs the note, its voice, and no note for no change"
+VSTEP5="$(awk '/^## Step 5/ { i = 1; next } /^## / { i = 0 } i' "$ROOT/skills/verify/SKILL.md" | tr '\n' ' ' | tr -s ' ')"
+for phrase in '--note "<text>"' 'what a session running these skills will do differently' 'in plain language' \
+              'the ticket ID never leads' 'A ticket with no observable change gets no note'; do
+  case "$VSTEP5" in
+    *"$phrase"*) ok "verify Step 5 says: $phrase" ;;
+    *) bad "0041 AC17 — verify Step 5 does not say: $phrase" ;;
+  esac
+done
+
 echo
 echo "$PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] || exit 1
