@@ -2,8 +2,8 @@
 id: "0174"
 title: Say the findings gate is deferred until the run is out of work when no scope was confirmed
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -16,12 +16,9 @@ expects:
   - skills/queue/templates/next
   - .claude/backlog/next
   - tests/next.test.sh
-claimed_by: "24f1"
-claimed_at: 2026-10-05T00:57:35Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next
-  - .claude/backlog/next
-  - tests/next.test.sh
 ---
 
 ## Problem
@@ -71,3 +68,15 @@ go looking for the `--scope` ids it thinks it sent. Found verifying `0168` (clai
 ## Notes & decisions
 
 - **2026-09-21 (retro)** — Filed from a park made verifying `0168`. Message wording only.
+
+- **2026-10-04 — built** (develop 24f1, commit `287a91e`). `findings_gate`'s `gate` site now splits
+  the one deferral sentence in two: empty `SCOPE` prints *"deferred until the run is out of work"*,
+  a live scope keeps the confirmed-scope sentence verbatim. Both copies of `next` carry it. When the
+  behaviour runs is untouched (0168 FR4).
+  - **Mutations (all run, 2026-10-04):** AC1, the single-form sentence restored, was the red before
+    the build (2 failed: the out-of-work phrase missing, and *confirmed scope* present). AC2, the
+    no-scope wording applied to both cases, mutated on committed `287a91e`: 1 failed, the
+    word-for-word case. AC3, the template edited alone: `tests/backlog-scripts-installed.test.sh`
+    read 44 passed, 1 failed until the installed copy was updated, then 45/0.
+  - **The AC2 assertion pins the sentence plus its reason's first words** (`— FINDINGS.md holds 8
+    entries`), so a reworded NOTE that still contains *confirmed scope* reds too.
