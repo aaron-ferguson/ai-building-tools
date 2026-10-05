@@ -1378,6 +1378,11 @@ assert_rc "exits 0" "$rc" 0 "$out"
 under="$(awk '/^## Unreleased/ { u = 1; next } /^## / { u = 0 } u' "$FIX/CHANGELOG.md")"
 assert_contains "the earlier note stays unreleased" "$under" '- An earlier note.'
 assert_contains "the new note joins it"             "$under" '- A later note.'
+# One section, not two: a close that failed to find the existing heading writes a second one, and
+# the section read above merges both (the 0041 mutation sweep found exactly that left green).
+n_unrel="$(grep -c '^## Unreleased' "$FIX/CHANGELOG.md" || true)"
+if [ "$n_unrel" = 1 ]; then ok "there is still exactly one ## Unreleased heading"; else
+  bad "there is still exactly one ## Unreleased heading"; saw "$n_unrel headings: $(cat "$FIX/CHANGELOG.md")"; fi
 released="$(awk '/^## 0.1.0/ { r = 1; next } /^## / { r = 0 } r' "$FIX/CHANGELOG.md")"
 refute_contains "and nothing lands in a released section" "$released" 'A later note.'
 
