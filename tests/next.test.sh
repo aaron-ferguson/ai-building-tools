@@ -3261,6 +3261,32 @@ seal
 out="$(run_next --help)" && rc=0 || rc=$?
 assert_contains "6 is wait"                                     "$out" '6 wait'
 
+# --- 0174 — the deferral NOTE names the condition the run is in ---------------------------------
+# With no --scope there is no confirmed scope, so a NOTE saying the gate waits for one sends a
+# supervisor looking for --scope ids it never passed (found verifying 0168, claim 8b1d).
+echo "0174 AC1 — with no --scope the NOTE says the gate waits for the run to be out of work"
+scaffold
+set_threshold 8
+add_row 9901 'Takeable' develop ready ''
+add_ticket 9901 develop ready '[]' '' a/x.md
+eight_findings
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+note174="$(first_line "$out" 'NOTE      the findings gate crossed')"
+assert_contains     "the NOTE says the gate is deferred until the run is out of work" "$note174" 'deferred until the run is out of work'
+assert_not_contains "and never mentions a confirmed scope"                            "$note174" 'confirmed scope'
+
+echo "0174 AC2 — with a --scope naming an unfinished id the wording is unchanged"
+scaffold
+set_threshold 8
+add_row 9901 'In scope' develop ready ''
+add_ticket 9901 develop ready '[]' '' a/x.md
+eight_findings
+seal
+out="$(run_next --drive --scope 9901)" && rc=0 || rc=$?
+assert_contains "the confirmed-scope NOTE, word for word" "$(first_line "$out" 'NOTE      the findings gate crossed')" \
+  'NOTE      the findings gate crossed and is deferred until confirmed scope is finished — FINDINGS.md holds 8 entries'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

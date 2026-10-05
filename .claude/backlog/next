@@ -1450,7 +1450,13 @@ if [ "${1:-}" = "--drive" ]; then
     fi
     [ -n "$fg_reason" ] || return 0
     if [ "$fg_site" = gate ]; then
-      if [ -z "$SCOPE" ] || scope_live; then
+      # Two sentences for two conditions (0174): with no --scope there is no confirmed scope to
+      # finish, and naming one sends a supervisor looking for ids it never passed.
+      if [ -z "$SCOPE" ]; then
+        printf 'NOTE      the findings gate crossed and is deferred until the run is out of work — %s\n' "$fg_reason"
+        return 0
+      fi
+      if scope_live; then
         printf 'NOTE      the findings gate crossed and is deferred until confirmed scope is finished — %s\n' "$fg_reason"
         return 0
       fi
