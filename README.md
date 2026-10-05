@@ -214,6 +214,12 @@ over it.
 
 Add `.claude/backlog/.lock/` to `.gitignore`.
 
+**Release notes land in `CHANGELOG.md` at the project root.** `verify` closes a ticket with
+`./close <id> <token> --note "<text>"`, which appends the note under `## Unreleased` in the close's
+own commit; a ticket with no observable change gets none. In this repo `tools/release --bump`
+promotes `## Unreleased` to the version it bumps, and refuses an empty one unless given
+`--no-behaviour-change`.
+
 ---
 
 ## Design notes
@@ -262,6 +268,13 @@ Two things are worth knowing before planning a lot of work with it:
   Skipping the independent QA pass saves 32%; fixing it inline in the session that found it saves
   87%. Tier by blast radius and detection latency — and never by dropping a principle, which is the
   one thing that does not get cheaper.
+
+**What one run delivered and cost** is the sprint's block in `.claude/backlog/LEDGER.md`, which
+`tools/sprint-ledger.sh record` writes from the run log: one row per context window with its elapsed
+minutes, context and dollars, the tickets the run closed, and cost per closed ticket beside
+`MEASUREMENT.md`'s figures. A hand-driven backlog has no run log; `tools/harvest-usage.sh
+<transcripts> --by-session --since <date> --until <date>` gives the same per-window rows over a date
+range, and says it attributes no run and no closed tickets.
 
 The measurements are in [`MEASUREMENT.md`](MEASUREMENT.md) — how they were taken, what reproduces
 them, and what they cannot see. The decisions built on them are in

@@ -1417,6 +1417,12 @@ for phrase in '--note "<text>"' 'what a session running these skills will do dif
   esac
 done
 
+
+echo "0041 Documentation NFR — README names the note at close and the per-window figures"
+for phrase in './close <id> <token> --note "<text>"' '--no-behaviour-change' '--by-session' 'one row per context window'; do
+  if grep -qF -- "$phrase" "$ROOT/README.md"; then ok "README says: $phrase"; else bad "0041 Documentation NFR — README does not say: $phrase"; fi
+done
+
 echo
 echo "$PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] || exit 1

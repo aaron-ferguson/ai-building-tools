@@ -664,7 +664,8 @@ def record(opts):
                      % pair)
         else:
             line += ", MEASUREMENT.md states no cost per closed ticket to compare against"
-        out.append(line + " (read @ %s)" % stamp)
+        out.append(line + " (harvest-usage.sh over %d session id(s), %s, MEASUREMENT.md read @ %s)"
+                   % (len(run_ids), outcome_src, stamp))
     out.append("")
 
     # FR6 -- the linear gate model, made falsifiable. Predicted and observed sit on one line
