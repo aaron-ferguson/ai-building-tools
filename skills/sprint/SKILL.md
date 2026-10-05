@@ -194,11 +194,15 @@ The proposal states, all of it from that one call:
   and a proposal showing three derived figures where one is invented is worse than one showing two
   and an admission.
 
-**Where a `next: design` row outside the scope outranks the gate, name it as where the run will
-stop.** `--drive` prints `DISPATCH  design` on it — the script routes on takeability and knows
-nothing of the confirmed scope — and refusing it is the supervisor's, not the script's. The run
-halts there, reported as the scope's edge rather than dispatched for or refused. A design row a person takes into scope is
-dispatched instead (the *Design alongside develop* section).
+**A sprint is planned from its develop head: plan from the first develop-ready row, and take the
+related design rows and the next sprint's head, nothing else** (the user's rule, 2026-09-24,
+run-20260924T050130Z). `--propose` passes `design ready` rows above the head rather than proposing
+one of them as the sprint, and names the design rows it takes as `DESIGN` lines: `related to this
+gate` where the row joins the gate as a develop row would, by file or parent, and `heads the next
+sprint` for the one row the next sprint would open on, so design stays a sprint ahead of develop.
+Confirm those ids as scope with the rest. The decision line still names the top design row: design
+goes first, then build, and a related row comes out of design and joins the gate rather than being
+built and rebuilt (the *Design beside other stages* section).
 
 **A sprint carries at least three tickets, and about five is the target.** `--propose` names one
 gate, and **a gate is the batching unit, which is not the scope**: where the gate is shorter,
@@ -282,7 +286,8 @@ the set is composed once and resent rather than rebuilt per call.
 
 **Route on the exit code, never on your own reading of the queue.** `0` dispatch what it named ·
 `3` the run is complete, nothing takeable · `4` escalate, a person decides · `5` the findings gate
-is reached, dispatch `retro`. `1` and `2` are a malformed config and a usage error, and both stop
+is reached, dispatch `retro` · `6` wait for the named design session's outcome, then re-call with `--completed`, never dispatch past it:
+the develop gate names a file that design session is reading (the *Design beside other stages* section). `1` and `2` are a malformed config and a usage error, and both stop
 the run. **`--drive` runs the same drift check `./next --drift` runs, before it picks a gate, and
 exits `4` on drift** — so a row disagreeing with its own item reaches this loop as *a person
 decides* rather than as *nothing takeable*, and the report names the same rows and classes the
@@ -315,41 +320,47 @@ asking a running stage whether it has finished reports no change and costs a ful
 
 ---
 
-## Design alongside develop
+## Design beside other stages
 
-**A `design` session is the one stage that may run beside another, and only beside `develop`.**
-The permission rests on two facts, and a reader generalising it has to break both. The sessions
-touch **disjoint** file kinds: `design` writes one item file and one `QUEUE.md` row, both under the
-lock and the claim scripts, and never the code tree two develop sessions cannot share. And it is
-token-neutral, because a design session is its own session either way, so running it concurrently
-re-pays no startup floor. Parallel develop fails the second fact, which is why `0137` declines it.
-How file scope works when the prose files are the product is `0050`'s open question, not settled
-here.
+**A `design` session may run beside `develop`, `verify` or `design`, and the check is one
+relation: a design row's `expects:` against a develop session's files.** The rule was widened on the
+user's call (2026-09-24) from develop alone. It rests on two facts. A design session writes one item
+file and one `QUEUE.md` row, both under the lock and the claim scripts, so its writes are
+**disjoint** from every other session's and conflict with nothing. And it is token-neutral, because a
+design session is its own session either way. What can conflict is what it *reads*: a design cites,
+line by line, files a running develop is editing, and its citations go stale under it. So `--drive`
+enforces it: a design row naming a file a running develop session touches is stepped over with a
+`NOTE`, and a develop gate naming a file a running design session names exits `6` and waits for it
+rather than being stepped over, which would build rank-2 work ahead of the head. Design beside design
+or verify never conflicts. Parallel develop fails the token fact, which is why `0137` declines it, and
+how file scope works when the prose files are the product is `0050`'s open question, not settled here.
 
 **`DISPATCH  design <id>` on an in-scope row is a dispatch, not a halt.** Design is autonomous
-work, so `--drive` routes it rather than escalating. What the script cannot see is the confirmed
-scope, so a design row outside the confirmed scope is never dispatched, and where one outranks the
-gate the run stops there, as the scope's edge the proposal names. For an in-scope row:
+work, so `--drive` routes it rather than escalating. Given `--scope`, a design row outside the
+confirmed scope is never dispatched — `--drive` steps over it — and every in-scope design row is
+dispatched before any develop gate. For an in-scope row:
 
 1. Dispatch `/ai-building-tools:design <id>` as its own process (Step 3), log its `dispatch` event, and add the id to
    the run's design set.
 2. **Wait until that row reads held** — the item's `claimed_by:` non-empty, or the session's outcome
    arrived first — with one backgrounded `until` loop, then re-call `--drive`. It steps over the held
-   row and names the develop gate below it. Re-calling before the claim lands names the same row
-   again, and acting on it starts a second session on one ticket: **never a second design session
-   for an id the design-windows check lists**, open or closed.
+   row and names what comes next: another design row, the develop gate, or exit `6`. Re-calling before
+   the claim lands names the same row again, and acting on it starts a second session on one ticket:
+   **never a second design session for an id the design-windows check lists**, open or closed.
 3. **Report a design finish through `--completed design:<id>`**, like any other stage. `--drive`
    carries on to the rank walk from there — and escalates only if the row is *still* at `next:
    design`, which is a design session that changed nothing rather than a stage to re-dispatch.
 
-**A designed ticket feeds the next proposal and is not added to the running gate.** Where `--drive`
-later names a gate holding ids the confirmed scope does not, dispatch only the confirmed ids; none
-left means the run has reached its scope's edge. Step 9 names the designed tickets.
+**A designed ticket the confirmed scope does not name is not added to the running gate.** A related
+row the person confirmed comes out of design at `develop ready` and joins the gate it was taken for;
+any other row `--drive` adds to a gate is dropped from the dispatch, and none left means the run has
+reached its scope's edge. Step 9 names the designed tickets.
 
-**Design runs never beside `retro` or `queue`**, which rewrite the skills and scripts every other
-session executes, and Step 6 enforces that with this check before the tail. Both stages still write
-the backlog, each under the lock; a stage finding it busy retries, since `./claim` refuses a busy
-lock rather than waiting (`CONCURRENCY.md`, *Lock every write to the backlog directory*).
+**Retro and queue run alone: design runs never beside `retro` or `queue`**, which rewrite the skills
+and scripts every other session executes, and Step 6 enforces that with this check before the tail.
+Both stages still write the backlog, each under the lock; a stage finding it busy retries, since
+`./claim` refuses a busy lock rather than waiting (`CONCURRENCY.md`, *Lock every write to the
+backlog directory*).
 
 ```sh
 # design-windows: every design session this run dispatched, open until its outcome is logged
@@ -664,7 +675,7 @@ gate read low.
 on, arriving as a dispatch: `retro` is the terminal sweeper for the *lesson* half and only a `queue`
 sweep can take the *work* half, so a tail of one leaves the buffer holding what it came to clear.
 **Each runs with no other stage session running**, and a design session is one: dispatch no design
-after the gate crosses, and run the design-windows check (the *Design alongside develop* section) before each
+after the gate crosses, and run the design-windows check (the *Design beside other stages* section) before each
 tail stage, waiting while it prints any `open` line. Including each other — both rewrite the skills
 and the backlog scripts every other session is executing, and a stage that resolved its instructions
 before the rewrite is running a version nothing else in the repo agrees with.
@@ -804,8 +815,8 @@ with the derivation beside it**, never a figure chosen here and never one rounde
   session it dispatches, never by the supervisor. Queuing new work and designing tickets are escalations, not automation.
   The one exception is the proposal's repair first: the person choosing it has answered that
   escalation, so the `queue` session minting the repair row is dispatched rather than escalated.
-- **It never runs two stage sessions at once, except a design session alongside a develop session**
-  (the *Design alongside develop* section). Otherwise the loop is sequential by decision, and what it
+- **It never runs two stage sessions at once, except a design session beside a develop, verify or design session**
+  (the *Design beside other stages* section). Otherwise the loop is sequential by decision, and what it
   parallelises is *tickets*, through the gate.
 - **It never drives more than one backlog.**
 - **It never writes to the backlog except to park findings** — entries in `FINDINGS.md` for what

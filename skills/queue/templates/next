@@ -337,10 +337,16 @@ usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] 
                      is still dispatchable a crossed findings gate DEFERS: the dispatch goes ahead
                      and one NOTE says so. The tail runs at the end of the scope, never in the
                      middle of it. With no --scope the gate waits for the end of the run instead.
+                     Given --scope, a takeable design row the scope does not name is stepped over
+                     with a NOTE, and every in-scope design row is dispatched before any develop
+                     gate: design first, then build.
                      --propose describes the dispatch a person is being asked to approve — how many
                      tickets, which, a line of work each, and what holds the gate together — and is
                      for the ONE call a run makes before its first stage. Opt-in because every later
                      cycle would re-send the same block into the driver's context for nothing.
+                     It plans from the first develop-ready row, passing design-ready rows above it,
+                     and names as DESIGN lines the design rows related to that gate and the design
+                     row that heads the next sprint, nothing else.
   ./next --help      this
 
 Takeable means four things: `next` matches the stage, no `blocked_by` entry is still open, the
@@ -359,7 +365,9 @@ empty stage — the two mean different things to whoever reads them.
 
 --drive spends a code per outcome, and they are the contract: 0 dispatch this · 3 run complete,
 nothing takeable · 4 escalate, a person decides, drift included · 5 the findings gate is reached,
-dispatch retro. 1 (drift, malformed) and 2 (usage error) mean what they mean everywhere else —
+dispatch retro · 6 wait, the develop gate names a file a design session in progress also names;
+wait for that session's outcome, then call again. A design row naming a file a develop session in
+progress touches is stepped over instead; design beside design or verify never conflicts. 1 (drift, malformed) and 2 (usage error) mean what they mean everywhere else —
 --drive reports drift on 4 rather than on 1 because what it has found is a decision for a person,
 which is the one thing 4 already means. Every other mode still spends 0 on "nothing is takeable",
 which is why --drive could not reuse it.
@@ -901,6 +909,7 @@ if [ "${1:-}" = "--drive" ]; then
   RUN_COMPLETE=3
   ESCALATE=4
   FINDINGS_GATE=5
+  WAIT=6
 
   read_threshold || exit 1
   read_max_sprints || exit 1
@@ -1199,8 +1208,14 @@ if [ "${1:-}" = "--drive" ]; then
   # because splitting one re-pays the floor batching exists to share. The gate itself stays the
   # decision line: this states the scope a person confirms, never a second dispatch.
   # `ps_` prefixes because sh has no locals and `gate_from` loops over `gid`.
+  #
+  # SPRINT_SCOPE is what `propose_design` removes to find the next sprint's head (0188): the develop
+  # tickets and the design rows this block names. Design rows ranked above the head, and rows
+  # related to the gate, are `propose_design`'s to name, so this block skips both.
+  SPRINT_SCOPE=""
   propose_sprint() {
     [ "$PROPOSE_STAGE" = develop ] || return 0
+    SPRINT_SCOPE="$PROPOSE_IDS"
     ps_n=0
     for ps_id in $PROPOSE_IDS; do ps_n=$((ps_n + 1)); done
     [ "$ps_n" -lt "$SPRINT_TARGET_TICKETS" ] || return 0
@@ -1217,13 +1232,18 @@ if [ "${1:-}" = "--drive" ]; then
     # Rank order, stopping at the lowest-ranked develop ticket taken: a design row below it is the
     # next sprint's, not this one's.
     ps_left="$ps_ids"
+    ps_head="${PROPOSE_IDS%% *}"
+    ps_below=0
     for ps_id in $(all_ids); do
       [ -n "$(printf '%s' "$ps_left" | tr -d ' ')" ] || break
+      [ "$ps_id" != "$ps_head" ] || ps_below=1
       if contains_word "$ps_id" "$ps_left"; then
         ps_left="$(without "$ps_left" "$ps_id")"
+        SPRINT_SCOPE="$SPRINT_SCOPE $ps_id"
         contains_word "$ps_id" "$PROPOSE_IDS" && continue
         ps_stage=develop
-      elif takeable_design "$ps_id"; then
+      elif [ "$ps_below" = 1 ] && ! contains_word "$ps_id" "$PLAN_RELATED" && takeable_design "$ps_id"; then
+        SPRINT_SCOPE="$SPRINT_SCOPE $ps_id"
         ps_stage=design
       else
         continue
@@ -1237,12 +1257,129 @@ if [ "${1:-}" = "--drive" ]; then
     fi
   }
 
+  # --- 0188: a sprint is planned from a develop-ready head, and design stays one sprint ahead ------
+  # The user's rule (2026-09-24, run-20260924T050130Z): a sprint is planned from the first
+  # develop-ready row; the design rows RELATED to that gate are designed in parallel and then built,
+  # and so is the design row that will head the NEXT sprint. Nothing else is designed.
+
+  # The first takeable develop row at or below $1, passing only `design ready` rows on the way. A
+  # `waiting` or `next: queue` row needs a person, and so does anything else this walk would stop on,
+  # so it ends the plan rather than being passed. Rows the walk steps over are stepped over here too.
+  # Answers 1, printing nothing, where no develop head is reachable.
+  plan_head() {
+    ph_from=0
+    for ph_id in $(all_ids); do
+      [ "$ph_id" != "$1" ] || ph_from=1
+      [ "$ph_from" = 1 ] || continue
+      ph_row="$(row_for "$ph_id")"
+      [ "$(field "$ph_row" "$STATUS")" != in-progress ] || continue
+      [ -z "$(open_blockers_of "$ph_id")" ] || continue
+      if held_by "$ph_id" >/dev/null; then continue; fi
+      if takeable_design "$ph_id"; then continue; fi
+      [ "$(field "$ph_row" "$STATUS")" != waiting ] || return 1
+      [ "$(field "$ph_row" "$NEXT")" = develop ] || return 1
+      printf '%s' "$ph_id"
+      return 0
+    done
+    return 1
+  }
+
+  # The design rows RELATED to the proposed gate: takeable, ranked above its lowest member, and
+  # admitted by `gate_admits` — the join that builds gates — against the gate's own scope. The scope
+  # is reset per candidate, so one design row cannot pull in another through a file the gate never
+  # names. Sets PLAN_RELATED, read by `propose_sprint` and `propose_design`.
+  PLAN_RELATED=""
+  plan_related() {
+    PLAN_RELATED=""
+    [ "$PROPOSE_STAGE" = develop ] || return 0
+    pr_last="${PROPOSE_IDS##* }"
+    pr_parent="$(fm "$(item_for "${PROPOSE_IDS%% *}")" parent)"
+    pr_scope=""
+    for pr_id in $PROPOSE_IDS; do pr_scope="$pr_scope $(fm_list "$(item_for "$pr_id")" expects)"; done
+    for pr_id in $(all_ids); do
+      if takeable_design "$pr_id"; then
+        lparent="$pr_parent"; gscope="$pr_scope"
+        if gate_admits "$pr_id"; then PLAN_RELATED="$PLAN_RELATED $pr_id"; fi
+      fi
+      [ "$pr_id" != "$pr_last" ] || break
+    done
+  }
+
+  # The DESIGN lines: every related row, then the next sprint's head — the first row the walk would
+  # reach once this sprint's scope is removed, named only where it is `design ready`. One row: the
+  # user said the head only.
+  propose_design() {
+    [ "$PROPOSE_STAGE" = develop ] || return 0
+    for pd_id in $PLAN_RELATED; do
+      printf 'DESIGN    %s | related to this gate | size %s | %s\n' "$pd_id" \
+        "$(fm "$(item_for "$pd_id")" size)" "$(field "$(row_for "$pd_id")" "$TITLE")"
+    done
+    pd_scope="$SPRINT_SCOPE $PLAN_RELATED"
+    for pd_id in $(all_ids); do
+      if contains_word "$pd_id" "$pd_scope"; then continue; fi
+      pd_row="$(row_for "$pd_id")"
+      [ "$(field "$pd_row" "$STATUS")" != in-progress ] || continue
+      [ -z "$(open_blockers_of "$pd_id")" ] || continue
+      if held_by "$pd_id" >/dev/null; then continue; fi
+      if takeable_design "$pd_id"; then
+        printf 'DESIGN    %s | heads the next sprint | size %s | %s\n' "$pd_id" \
+          "$(fm "$(item_for "$pd_id")" size)" "$(field "$pd_row" "$TITLE")"
+      fi
+      return 0
+    done
+  }
+
+  # FR6's one relation. A design session writes only its own item and row, so its WRITES conflict
+  # with nothing; what conflicts is a design reading and citing files a develop session is editing.
+  # So only develop's files count — its `touches:`, or its `expects:` where nothing is declared yet.
+  #
+  # running_at <stage> — every row at that stage another session is working: held, or in-progress.
+  running_at() {
+    for ra_id in $(all_ids); do
+      ra_row="$(row_for "$ra_id")"
+      [ "$(field "$ra_row" "$NEXT")" = "$1" ] || continue
+      if [ "$(field "$ra_row" "$STATUS")" = in-progress ] || held_by "$ra_id" >/dev/null; then
+        printf '%s ' "$ra_id"
+      fi
+    done
+  }
+
+  # design_conflict <design id> — prints "<develop id> <shared paths>" for the first running develop
+  # session whose files the design row's `expects:` names; answers 1 where there is none.
+  design_conflict() {
+    dc_expects="$(fm_list "$(item_for "$1")" expects)"
+    for dc_id in $(running_at develop); do
+      dc_files="$(fm_list "$(item_for "$dc_id")" touches)"
+      [ -n "$dc_files" ] || dc_files="$(fm_list "$(item_for "$dc_id")" expects)"
+      dc_shared="$(paths_shared "$dc_expects" "$dc_files")"
+      if [ -n "$dc_shared" ]; then printf '%s %s' "$dc_id" "${dc_shared% }"; return 0; fi
+    done
+    return 1
+  }
+
+  # gate_wait <gate ids> — prints "<design id> <shared paths>" for the first running design session
+  # whose `expects:` the gate's `expects:` meets; answers 1 where there is none. The gate WAITS rather
+  # than being stepped over, because stepping over the head would build rank-2 work ahead of it.
+  gate_wait() {
+    gw_scope=""
+    for gw_id in $1; do gw_scope="$gw_scope $(fm_list "$(item_for "$gw_id")" expects)"; done
+    for gw_id in $(running_at design); do
+      gw_shared="$(paths_shared "$(fm_list "$(item_for "$gw_id")" expects)" "$gw_scope")"
+      if [ -n "$gw_shared" ]; then printf '%s %s' "$gw_id" "${gw_shared% }"; return 0; fi
+    done
+    return 1
+  }
+
   # $1 the exit code, $2 the decision. The depth line goes out with every decision, never on its own
   # invocation — that second read is the cost FR17 exists to avoid.
   decide() {
     depth_line
     propose_block
-    [ "$PROPOSE" != 1 ] || propose_sprint
+    if [ "$PROPOSE" = 1 ]; then
+      plan_related
+      propose_sprint
+      propose_design
+    fi
     printf '%s\n' "$2"
     exit "$1"
   }
@@ -1530,8 +1667,24 @@ if [ "${1:-}" = "--drive" ]; then
         #
         # The findings gate applies exactly as it does to a develop gate: a design dispatch is new
         # work, and the gate exists to stop new work once the buffer crosses.
+        #
+        # 0188: given --scope, a design row the scope does not name is stepped over rather than
+        # dispatched, and one naming a file a running develop session touches is stepped over always.
+        # Under --propose the plan is drawn from the develop head below it; the decision stays this row.
         if [ "$rstatus" = "ready" ]; then
+          if [ -n "$SCOPE" ] && ! contains_word "$id" "$SCOPE"; then
+            printf 'NOTE      %s is at next: design outside the confirmed scope — stepping over it\n' "$id"
+            continue
+          fi
+          if dconflict="$(design_conflict "$id")"; then
+            printf 'NOTE      %s is at next: design and names %s, which develop %s is editing — stepping over it\n' \
+              "$id" "${dconflict#* }" "${dconflict%% *}"
+            continue
+          fi
           PROPOSE_STAGE="design"; PROPOSE_IDS="$id"
+          if [ "$PROPOSE" = 1 ] && phead="$(plan_head "$id")"; then
+            PROPOSE_STAGE="develop"; PROPOSE_IDS="$(gate_from "$phead" "$(takeable_develop)" "$GATE_MAX_ROWS")"
+          fi
           findings_gate gate
           decide "$DISPATCH" "DISPATCH  design $id
           $(design_question "$(item_for "$id")")"
@@ -1555,8 +1708,29 @@ if [ "${1:-}" = "--drive" ]; then
           PROPOSE_STAGE="verify"; PROPOSE_IDS="$svbatch"
           decide "$DISPATCH" "DISPATCH  verify $svbatch"
         fi
+        # 0188 FR5: design first, then build. An in-scope design row ranked below this gate is
+        # dispatched before it, so a related row comes out of design and joins the gate rather than
+        # being built and then rebuilt.
+        if [ -n "$SCOPE" ]; then
+          for sd_id in $(all_ids); do
+            contains_word "$sd_id" "$SCOPE" || continue
+            takeable_design "$sd_id" || continue
+            if sdconflict="$(design_conflict "$sd_id")"; then
+              printf 'NOTE      %s is at next: design and names %s, which develop %s is editing — stepping over it\n' \
+                "$sd_id" "${sdconflict#* }" "${sdconflict%% *}"
+              continue
+            fi
+            PROPOSE_STAGE="design"; PROPOSE_IDS="$sd_id"
+            findings_gate gate
+            decide "$DISPATCH" "DISPATCH  design $sd_id
+          $(design_question "$(item_for "$sd_id")")"
+          done
+        fi
         gate="$(gate_from "$id" "$(takeable_develop)" "$GATE_MAX_ROWS")"
         PROPOSE_STAGE="develop"; PROPOSE_IDS="$gate"
+        if gwait="$(gate_wait "$gate")"; then
+          decide "$WAIT" "WAIT      develop $gate names ${gwait#* }, which design ${gwait%% *} is reading — wait for its outcome, then call again with --completed"
+        fi
         findings_gate gate
         decide "$DISPATCH" "DISPATCH  develop $gate" ;;
       *)

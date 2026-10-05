@@ -2573,20 +2573,22 @@ add_ticket_expects 0002 develop ready '[]' '' '
   - src/feature.ts'
 seal
 out="$(run_next --drive --propose)" && d154_rc=0 || d154_rc=$?
-# SUPERSEDED BY 0159, and rewritten rather than deleted. 0154 made `--propose` name the develop gate
-# BELOW a design row because the run was going to stop there. It no longer stops: the design row is
-# itself the dispatch, so the proposal describes that and the gate below waits its turn.
+# SUPERSEDED BY 0159, then by 0188, and rewritten rather than deleted each time. 0154 made
+# `--propose` name the develop gate BELOW a design row because the run was going to stop there; 0159
+# made the design row itself the proposal. 0188 (the user's rule, 2026-09-24): a sprint is planned
+# from the first develop-ready row, so the proposal names that gate again, and the design row is
+# named as a DESIGN line. The decision line is unchanged: design still goes first.
 assert_rc "exits 0 — the design row is dispatched" "$d154_rc" 0 "$out"
 assert_contains "dispatches the design row" "$out" 'DISPATCH  design 0001'
 # The NFR requires equality on the PROPOSE line, not containment.
 propose_line="$(printf '%s' "$out" | grep '^PROPOSE' || true)"
-assert_eq "PROPOSE line names the design dispatch itself" \
-  "$propose_line" 'PROPOSE   design | 1 ticket(s)'
+assert_eq "PROPOSE line names the develop gate the sprint is planned from" \
+  "$propose_line" 'PROPOSE   develop | 1 ticket(s)'
 # The count alone is satisfied by the wrong ticket: re-verification 2026-09-13 found the ids asserted
 # by nothing. The proposal's TICKET lines, whole, by equality.
 ticket_lines="$(printf '%s\n' "$out" | grep '^TICKET' || true)"
-assert_eq "the proposed ticket is 0001 and only 0001" \
-  "$ticket_lines" 'TICKET    0001 | size s | A design decision'
+assert_eq "the proposed ticket is 0002 and only 0002" \
+  "$ticket_lines" 'TICKET    0002 | size s | A develop ticket'
 
 # --- 0178 — a join reaches below rank adjacency; the gate is bounded by a row cap --------------
 # `0158` bounded a new gate by rank contiguity: the gate ended at the first pool row that did not
@@ -3045,6 +3047,206 @@ sprint_fixture
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
 assert_not_contains "no SPRINT line without --propose"           "$out" 'SPRINT'
+
+# --- 0188 — plan a sprint from a develop-ready head; design first, and never over a develop's files --
+#
+# The user's rule (2026-09-24, run-20260924T050130Z): a sprint is planned from the first develop-ready
+# row; the related design rows and the NEXT sprint's head are designed in parallel; design may run
+# beside develop, verify or design where the files do not conflict. These run the real script.
+first_line() { printf '%s\n' "$1" | grep "^$2" || true; }
+
+echo "0188 AC1 — a design row heading the queue does not become the sprint; it heads the next one"
+scaffold
+add_row 0001 'A design row on top' design  ready ''
+add_row 0002 'The develop head'    develop ready ''
+add_ticket 0001 design  ready '[]' '' own/one.md
+add_ticket 0002 develop ready '[]' '' own/two.md
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_rc       "exits 0"                                       "$rc" 0 "$out"
+assert_eq       "the block proposes the develop gate"           "$(first_line "$out" PROPOSE)" 'PROPOSE   develop | 1 ticket(s)'
+assert_contains "its ticket is the develop head"                "$out" 'TICKET    0002'
+assert_contains "the design row heads the next sprint"          "$out" 'DESIGN    0001 | heads the next sprint'
+assert_contains "the decision is still design first"            "$out" 'DISPATCH  design 0001'
+assert_contains "and the one-ticket sprint says it is short"    "$out" 'SHORT     1 develop ticket(s), under the minimum of 3'
+
+echo "0188 AC2 — with no takeable develop row the proposal is today's design proposal"
+scaffold
+add_row 0001 'A design row on top' design ready ''
+add_row 0002 'A verify row'        verify ready ''
+add_ticket 0001 design ready '[]' '' own/one.md
+add_ticket 0002 verify ready '[]' '' own/two.md
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_eq       "PROPOSE design, as before"                     "$(first_line "$out" PROPOSE)" 'PROPOSE   design | 1 ticket(s)'
+assert_not_contains "and no DESIGN line"                        "$out" 'DESIGN    '
+
+echo "0188 AC3 — a waiting or next: queue row above the develop head still stops the run"
+for blocker in waiting queue; do
+  scaffold
+  if [ "$blocker" = waiting ]; then
+    add_row 0001 'Waits on a person' develop waiting ''
+    add_ticket 0001 develop waiting '[]' '' own/one.md
+  else
+    add_row 0001 'Needs specifying' queue ready ''
+    add_ticket 0001 queue ready '[]' '' own/one.md
+  fi
+  add_row 0002 'The develop head' develop ready ''
+  add_ticket 0002 develop ready '[]' '' own/two.md
+  seal
+  out="$(run_next --drive --propose)" && rc=0 || rc=$?
+  assert_rc       "a $blocker row exits 4"          "$rc" 4 "$out"
+  assert_contains "on that row"                     "$out" 'ESCALATE  0001'
+done
+# Only design-ready rows are passed: a design row above a waiting row plans from nothing below it.
+scaffold
+add_row 0001 'A design row on top' design  ready   ''
+add_row 0002 'Waits on a person'   develop waiting ''
+add_row 0003 'A develop row below' develop ready   ''
+add_ticket 0001 design  ready   '[]' '' own/one.md
+add_ticket 0002 develop waiting '[]' '' own/two.md
+add_ticket 0003 develop ready   '[]' '' own/three.md
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_eq       "the plan walk stops at the waiting row"        "$(first_line "$out" PROPOSE)" 'PROPOSE   design | 1 ticket(s)'
+assert_not_contains "and never reaches the develop row past it" "$out" 'TICKET    0003'
+
+echo "0188 AC4 — a design row joining the gate is named as related and does not end the gate"
+scaffold
+add_row 0002 'The develop head'       develop ready ''
+add_row 0003 'A design row, same file' design ready ''
+add_row 0004 'A develop row, same file' develop ready ''
+add_ticket 0002 develop ready '[]' '' a.md
+add_ticket 0003 design  ready '[]' '' a.md
+add_ticket 0004 develop ready '[]' '' a.md
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_contains "the gate is 0002 0004"                         "$out" 'DISPATCH  develop 0002 0004'
+assert_contains "the design row is related to this gate"        "$out" 'DESIGN    0003 | related to this gate'
+assert_not_contains "and is not also listed as a sprint row"    "$out" 'SPRINT    0003'
+
+echo "0188 AC5 — a design row above the head sharing its parent is related, not the next head"
+scaffold
+add_row 0001 'A design row, same parent' design  ready 0090
+add_row 0002 'The develop head'          develop ready 0090
+add_ticket 0001 design  ready '[]' 0090 own/one.md
+add_ticket 0002 develop ready '[]' 0090 own/two.md
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_contains     "named as related"                          "$out" 'DESIGN    0001 | related to this gate'
+assert_not_contains "never as the next head"                    "$out" 'heads the next sprint'
+
+echo "0188 AC6 — only the higher of two unrelated design rows heads the next sprint"
+scaffold
+add_row 0001 'Higher design row' design  ready ''
+add_row 0002 'Lower design row'  design  ready ''
+add_row 0003 'The develop head'  develop ready ''
+add_ticket 0001 design  ready '[]' '' own/one.md
+add_ticket 0002 design  ready '[]' '' own/two.md
+add_ticket 0003 develop ready '[]' '' own/three.md
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_contains     "the higher one heads the next sprint"      "$out" 'DESIGN    0001 | heads the next sprint'
+assert_not_contains "the lower one is named nowhere"            "$out" '0002'
+# The first row left after the scope is a develop row: no next-sprint head is named.
+scaffold
+add_row 0001 'A design row, same parent' design ready 0090
+add_ticket 0001 design ready '[]' 0090 own/one.md
+for n in 2 3 4 5 6 7; do
+  add_row 000$n "Develop row $n" develop ready ''
+  add_ticket 000$n develop ready '[]' '' own/$n.md
+done
+add_ticket 0002 develop ready '[]' 0090 own/2.md
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_contains     "the parent-sharing design row is related"  "$out" 'DESIGN    0001 | related to this gate'
+assert_not_contains "and 0007, a develop row, heads nothing"    "$out" 'heads the next sprint'
+
+echo "0188 AC7 — --scope steps over an out-of-scope design row above the gate"
+scaffold
+add_row 0001 'Outside the scope' design  ready ''
+add_row 0002 'The develop head'  develop ready ''
+add_ticket 0001 design  ready '[]' '' own/one.md
+add_ticket 0002 develop ready '[]' '' own/two.md
+seal
+out="$(run_next --drive --scope 0002)" && rc=0 || rc=$?
+assert_rc       "exits 0"                                       "$rc" 0 "$out"
+assert_contains "a NOTE steps over 0001 as outside the scope"   "$(first_line "$out" 'NOTE      0001')" 'outside the confirmed scope'
+assert_contains "and dispatches the develop row"                "$out" 'DISPATCH  develop 0002'
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_contains "without --scope the design row is dispatched as before" "$out" 'DISPATCH  design 0001'
+assert_not_contains "with no NOTE about scope"                  "$out" 'outside the confirmed scope'
+
+echo "0188 AC8 — an in-scope design row ranked below the gate is dispatched first"
+scaffold
+add_row 0002 'The develop head'    develop ready ''
+add_row 0003 'An in-scope design'  design  ready ''
+add_ticket 0002 develop ready '[]' '' own/two.md
+add_ticket 0003 design  ready '[]' '' own/three.md
+seal
+out="$(run_next --drive --scope 0002 --scope 0003)" && rc=0 || rc=$?
+assert_rc       "exits 0"                                       "$rc" 0 "$out"
+assert_contains "dispatches design 0003 before the develop gate" "$out" 'DISPATCH  design 0003'
+assert_not_contains "and no develop gate"                       "$out" 'DISPATCH  develop'
+
+echo "0188 AC9 — an in-scope design row over a running develop's files is stepped over"
+for files in a.md b.md; do
+  scaffold
+  add_row 0002 'A develop in progress' develop in-progress ''
+  add_row 0003 'An in-scope design'    design  ready       ''
+  add_ticket_held 0002 develop in-progress '[]' '' "$files" 'fx01'
+  awk -v f="$files" '/^touches:$/ { print "touches:"; print "  - " f; next } { print }' \
+    "$FIX/.claude/backlog/items/0002-fixture.md" > "$FIX/i.tmp" && mv "$FIX/i.tmp" "$FIX/.claude/backlog/items/0002-fixture.md"
+  add_ticket 0003 design ready '[]' '' a.md
+  seal
+  out="$(run_next --drive --scope 0003)" && rc=0 || rc=$?
+  if [ "$files" = a.md ]; then
+    assert_contains     "stepped over, naming the develop row" "$(first_line "$out" 'NOTE      0003')" '0002'
+    assert_contains     "and the file"                          "$(first_line "$out" 'NOTE      0003')" 'a.md'
+    assert_not_contains "and not dispatched"                    "$out" 'DISPATCH  design 0003'
+  else
+    assert_contains     "with disjoint files it is dispatched"  "$out" 'DISPATCH  design 0003'
+  fi
+done
+
+echo "0188 AC10 — a develop gate over a running design's files waits, exit 6"
+for files in a.md b.md; do
+  scaffold
+  add_row 0002 'The develop head'    develop ready       ''
+  add_row 0003 'A design in progress' design in-progress ''
+  add_ticket 0002 develop ready '[]' '' a.md
+  add_ticket_held 0003 design in-progress '[]' '' "$files" 'fx02'
+  seal
+  out="$(run_next --drive)" && rc=0 || rc=$?
+  if [ "$files" = a.md ]; then
+    assert_rc       "exits 6 — wait"                            "$rc" 6 "$out"
+    wline="$(first_line "$out" 'WAIT      ')"
+    assert_contains "the WAIT line names the gate"              "$wline" '0002'
+    assert_contains "the design row"                            "$wline" '0003'
+    assert_contains "and the file"                              "$wline" 'a.md'
+  else
+    assert_rc       "with disjoint files it exits 0"            "$rc" 0 "$out"
+    assert_contains "and dispatches the gate"                   "$out" 'DISPATCH  develop 0002'
+  fi
+done
+
+echo "0188 AC11 — design beside a running design or verify is never a conflict"
+for stage in design verify; do
+  scaffold
+  add_row 0002 "A $stage in progress" $stage in-progress ''
+  add_row 0003 'An in-scope design'   design ready       ''
+  add_ticket_held 0002 $stage in-progress '[]' '' a.md 'fx03'
+  add_ticket 0003 design ready '[]' '' a.md
+  seal
+  out="$(run_next --drive --scope 0003)" && rc=0 || rc=$?
+  assert_contains "beside $stage the design row is dispatched"  "$out" 'DISPATCH  design 0003'
+done
+
+echo "0188 AC12 — --help lists exit 6 as wait"
+scaffold
+seal
+out="$(run_next --help)" && rc=0 || rc=$?
+assert_contains "6 is wait"                                     "$out" '6 wait'
 
 # --- result -----------------------------------------------------------------------------------
 echo

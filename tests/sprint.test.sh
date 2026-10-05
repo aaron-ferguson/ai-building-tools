@@ -1846,7 +1846,11 @@ fi
 # they pin the premises the prose rests on — that two writers who retry both land, and that
 # `--drive --propose` names an out-of-scope design row as its escalation — and cannot see whether a
 # session obeyed any of it.
-DSEC="Design alongside develop"
+#
+# WIDENED BY 0188 on the user's call (2026-09-24): design may run beside develop, verify or design,
+# under a file-conflict check `--drive` enforces, so the section is renamed and every guard below
+# that pinned "only beside develop" is rewritten to the new rule rather than deleted.
+DSEC="Design beside other stages"
 
 echo "0134 FR1/AC1 — an in-scope design row is dispatched beside develop, and exit 4 there is not a halt"
 if [ -n "$(section "$SKILL" "$DSEC")" ]; then
@@ -1882,10 +1886,42 @@ if says "$SKILL" "$DSEC" 'Report a design finish through `--completed design:<id
 else
   bad "0134 AC1 / 0159 FR5 — the section does not route a design finish through --completed design:<id>"
 fi
-if says "$SKILL" "Step 8" 'except a design session alongside a develop session'; then
-  ok "Step 8 names design-beside-develop as the one exception to sequential stages"
+# Rewritten by 0188: the rule was widened on the user's call (2026-09-24) from develop alone.
+if says "$SKILL" "Step 8" 'except a design session beside a develop, verify or design session'; then
+  ok "Step 8 names design beside develop, verify or design as the one exception to sequential stages"
 else
-  bad "0134 FR1 — Step 8 still says the run never has two stage sessions at once, which FR1 falsifies"
+  bad "0134 FR1 / 0188 AC15 — Step 8 does not name design beside a develop, verify or design session as the exception"
+fi
+
+echo "0188 AC13 — the section is renamed and states the widened rule"
+if grep -qF 'Design alongside develop' "$SKILL"; then
+  bad "0188 AC13 — a cross-reference still names the old 'Design alongside develop' section"
+else
+  ok "no cross-reference names the old section"
+fi
+if says "$SKILL" "$DSEC" 'may run beside `develop`, `verify` or `design`'; then
+  ok "design may run beside develop, verify or design"
+else
+  bad "0188 AC13 — the section does not say design may run beside develop, verify or design"
+fi
+if says "$SKILL" "$DSEC" "a design row's \`expects:\` against a develop session's files" && \
+   says "$SKILL" "$DSEC" '`--drive` enforces it'; then
+  ok "the check is FR6's relation, and --drive enforces it"
+else
+  bad "0188 AC13 — the section does not state FR6's relation (a design row's expects: against a develop session's files) and that --drive enforces it"
+fi
+if says "$SKILL" "$DSEC" 'Retro and queue run alone'; then
+  ok "retro and queue run alone"
+else
+  bad "0188 AC13 — the section does not say retro and queue run alone"
+fi
+
+echo "0188 AC12 — Step 2 routes exit 6"
+if says "$SKILL" "Step 2" '`6` wait for the named design session' && \
+   says "$SKILL" "Step 2" 'then re-call with `--completed`, never dispatch past it'; then
+  ok "Step 2 routes 6: wait for the named session's outcome, then re-call with --completed"
+else
+  bad "0188 AC12 — Step 2 does not route exit 6: wait for the named design session's outcome, then re-call with --completed, never dispatch past it"
 fi
 
 echo "0134 FR2/FR3/FR4/FR6 — the three guards and the reason, stated where a supervisor reads them"
@@ -1904,8 +1940,10 @@ if says "$SKILL" "Step 6" 'design-windows'; then
 else
   bad "0134 AC2 — Step 6 dispatches the tail without the design-windows check, so FR2 is guidance rather than enforced at dispatch"
 fi
-if says "$SKILL" "$DSEC" 'not added to the running gate'; then
-  ok "FR4 — a ticket designed mid-sprint is not added to the running gate"
+# Narrowed by 0188 (widened rule, the user's call 2026-09-24): a related row the person confirmed is
+# designed and then built in this sprint, so only an UNCONFIRMED designed ticket stays out of the gate.
+if says "$SKILL" "$DSEC" 'the confirmed scope does not name is not added to the running gate'; then
+  ok "FR4 — a ticket designed mid-sprint outside the confirmed scope is not added to the running gate"
 else
   bad "0134 AC4 — the section does not stop a designed ticket being absorbed into the confirmed scope"
 fi
@@ -1988,6 +2026,15 @@ esac
 case "$dw_closed" in
   *"open "*) bad "0134 AC2 — an answered design session still reads open, so the tail would wait forever: [$dw_closed]" ;;
   *) ok "and nothing reads open once every design session has answered" ;;
+esac
+
+# 0188 AC16 — a retro dispatched while a design window is open: the check still reports it open,
+# which is the condition Step 6 refuses the tail on.
+dw_retro="$(dw_run retro '{"ts":"2026-09-12T09:01:00Z","run":"r-dw","event":"dispatch","stage":"design","session_id":"s-des","tickets":["0003"]}
+{"ts":"2026-09-12T09:05:00Z","run":"r-dw","event":"dispatch","stage":"retro","session_id":"s-ret","tickets":[]}')"
+case "$dw_retro" in
+  *"open 0003"*) ok "0188 AC16 — a design dispatch with no outcome, then a retro dispatch, reads open 0003" ;;
+  *) bad "0188 AC16 — the check did not report 0003 open beside a retro dispatch; it printed [$dw_retro]" ;;
 esac
 
 echo "0134 AC5 — a design and a develop writer on one backlog both land, the busy one retrying"
@@ -2088,11 +2135,19 @@ else
   bad "0134 AC5 — a write is left uncommitted: $(git -C "$TW" status --porcelain | tr '\n' ' ')"
 fi
 
-echo "0134 AC9/FR9 — an unscoped design row above the gate is named as where the run stops"
-if says "$SKILL" "$PROPSEC" 'where the run will stop'; then
-  ok "the proposal names an outranking unscoped design row as where the run will stop"
+# Rewritten by 0188 on the user's call (2026-09-24): a design row no longer halts the run at the
+# scope's edge. The proposal plans from the first develop-ready row and names the design rows taken.
+echo "0134 AC9 / 0188 AC14 — the proposal plans from the first develop-ready row"
+if says "$SKILL" "$PROPSEC" 'plan from the first develop-ready row' && \
+   says "$SKILL" "$PROPSEC" "take the related design rows and the next sprint's head, nothing else"; then
+  ok "the proposal plans from the first develop-ready row, taking the related design rows and the next head"
 else
-  bad "0134 AC9 — the proposal can report takeable gates and say nothing of the design row that will halt the run"
+  bad "0188 AC14 — the proposal does not say to plan from the first develop-ready row and take the related design rows and the next sprint's head, nothing else"
+fi
+if says "$SKILL" "$PROPSEC" 'outranks the gate, name it as where the run will'; then
+  bad "0188 AC14 — the proposal still names an outranking design row as where the run will stop"
+else
+  ok "and no longer names an outranking design row as where the run will stop"
 fi
 # The premise: the one --propose call already carries that row, so naming it costs no second read.
 PR="$FIX/propose-edge"
@@ -2101,6 +2156,8 @@ pr_rc=0; pr_out="$( cd "$PR" && .claude/backlog/next --drive --propose 2>&1 )" |
 # REWRITTEN BY 0159: the row is now DISPATCHED rather than escalated, and refusing it as out of
 # scope is the supervisor's job, not the script's. The premise is unchanged in substance — the one
 # --propose call already names that row, so reporting it as the scope's edge costs no second read.
+# 0188 (the user's call, 2026-09-24) keeps this premise: the decision line still names the design row,
+# while the PROPOSE block plans from the develop head below it (tests/next.test.sh, 0188 AC1).
 if [ "$pr_rc" = 0 ] && printf '%s' "$pr_out" | grep -q '^DISPATCH  design 0001'; then
   ok "premise — --drive --propose names the design row, from the call the proposal already makes"
 else
