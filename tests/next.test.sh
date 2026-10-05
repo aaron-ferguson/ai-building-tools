@@ -3110,6 +3110,19 @@ seal
 out="$(run_next --drive --propose)" && rc=0 || rc=$?
 assert_eq       "the plan walk stops at the waiting row"        "$(first_line "$out" PROPOSE)" 'PROPOSE   design | 1 ticket(s)'
 assert_not_contains "and never reaches the develop row past it" "$out" 'TICKET    0003'
+# The same for a next: queue row: any row that is not design-ready ends the plan walk, not only
+# waiting (the 0188 mutation sweep found the waiting case alone left this half unguarded).
+scaffold
+add_row 0001 'A design row on top' design  ready ''
+add_row 0002 'Needs specifying'    queue   ready ''
+add_row 0003 'A develop row below' develop ready ''
+add_ticket 0001 design  ready '[]' '' own/one.md
+add_ticket 0002 queue   ready '[]' '' own/two.md
+add_ticket 0003 develop ready '[]' '' own/three.md
+seal
+out="$(run_next --drive --propose)" && rc=0 || rc=$?
+assert_eq       "the plan walk stops at the queue row"          "$(first_line "$out" PROPOSE)" 'PROPOSE   design | 1 ticket(s)'
+assert_not_contains "and never reaches the develop row past it" "$out" 'TICKET    0003'
 
 echo "0188 AC4 — a design row joining the gate is named as related and does not end the gate"
 scaffold
