@@ -2,8 +2,8 @@
 id: "0188"
 title: Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -17,13 +17,9 @@ expects:
   - skills/queue/templates/next
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by: "3d93"
-claimed_at: 2026-10-04T23:58:20Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/sprint/SKILL.md
-  - skills/queue/templates/next
-  - tests/sprint.test.sh
-  - tests/next.test.sh
 ---
 
 ## Problem
@@ -163,3 +159,37 @@ Unit: `tests/next.test.sh` fixtures for `--propose` over a queue headed by a des
     walk, a new exit code and the skill rewrite. `expects:` is unchanged and still accurate.
 
 - 2026-09-26 — **AC1 amended by the sprint-size rule.** `./next --drive --propose` now extends a develop gate shorter than five down the rank in whole gates and prints the sprint as `SPRINT` lines, with `SHORT` under three (`SPRINT_MIN_TICKETS`/`SPRINT_TARGET_TICKETS` in `skills/queue/templates/next`; guards in `tests/next.test.sh`). A person's correction on run-20260925T203345Z: a one-ticket sprint is slower and dearer than `/develop` by hand. Build this ticket's plan-from-a-develop-head on top of that extension, not beside it: the develop head is the first gate, and the extension, including design rows in the span, is what a person confirms.
+
+- 2026-10-04 — **built** (develop 3d93; commits `6cd2d2f`, `03023ff`). In `skills/queue/templates/next`
+  (and the installed `.claude/backlog/next`): `plan_head` walks from the top design row passing only
+  `design ready` rows to the first takeable develop row; `plan_related` names takeable design rows
+  ranked above the gate's lowest member that `gate_admits` joins against the gate's own scope (reset
+  per candidate, so one design row cannot chain another in); `propose_design` prints the `DESIGN`
+  lines, related first, then the next sprint's head: the first row left once `SPRINT_SCOPE` (set by
+  `propose_sprint`) and the related rows are removed, named only if `design ready`. `propose_sprint`
+  now names in-span design rows only below the head and skips related ones. The design arm steps over
+  an out-of-scope row under `--scope` and a row whose `expects:` meets a running develop's
+  `touches:` (`expects:` where none is declared); the develop arm dispatches an in-scope design row
+  first, and exits `WAIT=6` where the gate's `expects:` meets a running design's. `--help` documents
+  6 and the `--scope`/`--propose` changes.
+  - **Guards falsified on purpose and rewritten, not deleted:** `tests/next.test.sh` 0154 AC2 (its
+    fixture is exactly AC1's shape; the PROPOSE line is now the develop gate), and in
+    `tests/sprint.test.sh` the `DSEC` heading, Step 8's exception, 0134 AC4's "not added to the
+    running gate" (narrowed to a designed ticket the confirmed scope does not name), and 0134 AC9's
+    scope's-edge guard (now AC14's rule, plus a negative check the old sentence is gone). Each
+    carries the "widened on the user's call (2026-09-24)" comment.
+  - **AC16 is a premise, reasoned and run:** the design-windows check already reports a design
+    dispatch with no outcome as open whatever follows it; the new fixture adds the retro dispatch
+    and asserts `open 0003`. No code changed for it, so there was nothing to mutate.
+  - **Mutation table (run, 2026-10-04, 29 mutations of committed `6cd2d2f`; controls next 569/0 and
+    sprint 367/0):** all red except one. Red: plan not passing design rows (AC1), plan disabled at the
+    design site (AC1), plan not stopping at waiting (AC3), related never admitted (AC4/AC5), sprint
+    listing related rows (AC4), sprint naming design rows above the head (AC6), more than one next
+    head (AC6), next head not excluding related (AC5), next head naming a non-design row (AC6),
+    scope step-over removed (AC7), design-first removed (AC8), develop conflict removed (AC9),
+    conflict widened to running design or verify (AC11, each), wait removed and WAIT=4 (AC10), help
+    without 6 (AC12), and all eleven skill-prose clauses of AC12–AC15. **The green:** plan
+    `continue`-ing past a non-develop row rather than stopping. AC3's sub-case covered only waiting,
+    so a `next: queue` sub-case was added (`03023ff`) and run red under that mutation (2 failed).
+  - **Staled by this change, not edited:** `FINDINGS.md`'s 2026-09-26 entry cites sprint's *Design
+    alongside develop* by its old name; closed 0134's item describes the old develop-only rule.
