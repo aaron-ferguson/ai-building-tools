@@ -2,8 +2,8 @@
 id: "0041"
 title: Write release notes for what a work session delivered
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -25,8 +25,8 @@ expects:
   - .claude/backlog/LEDGER.md
   - skills/sprint/SKILL.md
   - README.md
-claimed_by: "1d1f"
-claimed_at: 2026-10-05T01:52:54Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -390,3 +390,50 @@ concrete by AC16. AC9 and AC10 are confirmed for `--by-session`.
   - **Staled by this change, not edited:** `CLAUDE.md` and retro Step 5 name `tools/release --bump
     --yes` as the standing invocation, which now refuses on an empty `## Unreleased`. Parked in
     FINDINGS.md with the installed-verify gap, which means no ticket records a note before the next release.
+
+- 2026-10-04 — **verify FAIL, sent back to `develop`** (verify 1d1f). **One gap, AC1.** AC1 (confirmed by the 2026-09-12 design as naming the `LEDGER.md` block) requires that every ticket closed inside the boundary be listed **with ID, title and closing verdict**. `tools/sprint-ledger.sh record` writes `CLOSED 0101 (run.jsonl outcome events @ …)`, IDs only, and nothing in the block carries a title or a verdict. Observed output, run over the same fixture as `tests/sprint-ledger.test.sh`'s 0041 AC16 case:
+  `CLOSED 0101 (run.jsonl outcome events @ 2026-10-05T01:54:28Z)`
+  No guard asserts a title or a verdict, so this is absent behaviour, not a guard that failed to fire. **The constraint:** each closed ticket in the block carries its ID, its title and the verdict that closed it. Read the verdict from the closing `outcome` event's ticket entry (`"verdict":"pass"`), and the title from the record on disk (FR1: `DONE.md` or the item), never from a session. The guard asserts all three for the fixture's 0101, and that 0102, which failed verify, is still absent. The title must stay inside the block's aggregate character set; a title that cannot, or a ticket with no title on disk, is labelled rather than dropped (FR7). Every other AC held under mutation (see QA evidence), so nothing else needs to change.
+  - **AC2 is not counted as a develop gap, and it is not settled either.** Design amended AC2 to be "checked per version section (AC13)". No version section exists until the first release, so the `### Did not change` half has nothing to be read against. `CHANGELOG.md` now carries the preamble (who it is for, what to do) and three Unreleased entries, written by this session's closes of 0187, 0188 and 0174. Those are the first `--note` entries, and each leads with the behaviour.
+
+## QA evidence
+
+Verify 1d1f, 2026-10-04 — **FAIL** (AC1), at `qa_level: unit`, batch 0187/0188/0174/0041 from one develop gate.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`) — 32 files, every tally `0 failed`; `tests/close.test.sh` 280 passed, 0 failed; `tests/release.test.sh` 56 passed, 0 failed; `tests/measurement.test.sh` 143 passed, 0 failed; `tests/sprint-ledger.test.sh` 146 passed, 0 failed. No lint or typecheck is configured.
+Tree: `git status --porcelain` empty at Step 2 and at the verdict; the intersection is empty, so this is not advisory. The suite is green; the FAIL is behaviour AC1 names that no test asserts.
+
+Mutations: each applied to the committed file, diff confirmed non-empty, guard rerun, restored by that path, tree read clean after each (17/17).
+
+| AC | Clause | How checked / mutation | Result |
+|---|---|---|---|
+| AC1 | closed tickets listed with ID, **title and closing verdict** | `tools/sprint-ledger.sh record` run over the 0041 AC16 fixture; output `CLOSED 0101 (…)` | **FAIL — no title, no verdict** |
+| AC1/AC16 | lists none closed outside / not closed | every outcome ticket counted closed | red (143 passed, 3 failed) |
+| AC2 | what changed, who for, what to do, did not change; no ID-only entry | read `CHANGELOG.md`: preamble names the audience and what to do; Unreleased now holds three behaviour-led entries | not checkable per version section: none exists (see Notes) |
+| AC3 | every window with elapsed, tokens, USD, skill | window rows dropped | red (144/2) |
+| AC4 | totals and per-window averages | average printed as the total | red (145/1) |
+| AC5 | cost per ticket beside MEASUREMENT.md's pair, read at record time, as-at date | pair not read | red (145/1) |
+| AC6 | every figure names its script and window | read the block: WINDOWS/CLOSED/PER_TICKET/GATE lines each cite `harvest-usage.sh` or `run.jsonl` with a stamp | holds (read) |
+| AC7 | no run log: names what it could not attribute | no-attribution line removed | red (142/1) |
+| AC8 | names the boundary and its derivation | read: `## sprint <run> -- ended <ts>` plus sources citing `run.jsonl`; `--by-session --since/--until` prints `RANGE` | holds (read) |
+| AC9 | sentinel absent | the existing case passes; output columns are numeric | holds (not mutated) |
+| AC10 | a repeated `message.id` counted once | dedupe removed | red (139/4) |
+| AC11 | note under Unreleased, in the one close commit | note never written; CHANGELOG left out of the commit | red (274/6; 278/2) |
+| AC12 | no `--note` → CHANGELOG byte-identical | every close writes a note | red (274/6) |
+| AC13 | promoted in the bump commit | no promotion; CHANGELOG left out of the bump commit | red (51/5; 54/2) |
+| AC14 | empty Unreleased refused before step 5; flag writes the no-change line | refusal removed; no-change line dropped | red (53/3; 55/1) |
+| AC15 | 42 elapsed minutes | elapsed forced to zero | red (142/1) |
+| AC16 | per-window rows, closed list, totals, averages, per-ticket beside pair | as AC3/AC4/AC5/AC1 | red each |
+| AC17 | `--note`, voice, plain language, ID never leads, no note for no change | each phrase reworded (3 runs) | red (279/1 each) |
+
+**Evidence set:** `tools/sprint-ledger.sh`, `tools/harvest-usage.sh`, `tools/release`, `skills/queue/templates/close`, `.claude/backlog/close`, `skills/verify/SKILL.md`, `CHANGELOG.md`, `README.md`, `MEASUREMENT.md`, `tests/close.test.sh`, `tests/release.test.sh`, `tests/measurement.test.sh`, `tests/sprint-ledger.test.sh`.
+
+| NFR | Check | Result |
+|---|---|---|
+| Privacy & data | sentinel cases in measurement and ledger tests; character-set assertions on every new line | holds, guarded |
+| Security | local reads and writes only; no send | holds |
+| Measurement | figures carry stamps and sources; elapsed is labelled as excluding start-up | holds |
+| Compatibility | `./close` without `--note` is byte-identical (AC12 guard) | holds, guarded |
+| Dependencies | sh and python3 only | holds |
+| Documentation | README phrases guarded in `tests/close.test.sh` | holds, guarded |
