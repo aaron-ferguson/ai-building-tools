@@ -66,10 +66,24 @@ COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
 ID="${1:-}"
 TOKEN="${2:-}"
 [ -n "$ID" ] && [ -n "$TOKEN" ] || {
-  echo "usage: close <id> <token>" >&2
+  echo "usage: close <id> <token> [--note <text>]" >&2
   echo "the token is the item's claimed_by: — a close is only yours if you hold the claim" >&2
   exit 2
 }
+# `--note` is the release note for this ticket (0041 FR8): appended under `## Unreleased` in the
+# repo's CHANGELOG.md in this close's own commit, so the note and the DONE.md row cannot be split.
+# Absent, CHANGELOG.md is not touched at all: a ticket with no observable change records none.
+NOTE=""
+if [ $# -gt 2 ]; then
+  shift 2
+  case "$1" in
+    --note)
+      [ $# -ge 2 ] && [ -n "$2" ] || { echo "usage: close <id> <token> [--note <text>] — --note needs its text" >&2; exit 2; }
+      NOTE="$2"; shift 2 ;;
+    *) echo "usage: close <id> <token> [--note <text>] — unknown argument: $1" >&2; exit 2 ;;
+  esac
+  [ $# -eq 0 ] || { echo "usage: close <id> <token> [--note <text>] — unexpected argument: $1" >&2; exit 2; }
+fi
 [ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
 [ -f "$DONE" ]  || { echo "no DONE.md at $DONE — nowhere to move the row to" >&2; exit 1; }
 
@@ -119,6 +133,20 @@ if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --q
   echo "and wait, or 'git restore -- .claude/backlog/QUEUE.md .claude/backlog/DONE.md' if stray" >&2
   echo "nothing was changed and no lock was taken" >&2
   exit 1
+fi
+
+# The same refusal for CHANGELOG.md, only when this close will write it. Its path is `$DIR` plus
+# `--show-cdup`, relative, for the case-spelling reason above.
+CHANGELOG=""
+if [ -n "$NOTE" ]; then
+  git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || { echo "--note needs a git repository: the note is committed with the close" >&2; exit 1; }
+  CHANGELOG_REL="$(git -C "$DIR" rev-parse --show-cdup)CHANGELOG.md"
+  CHANGELOG="$DIR/$CHANGELOG_REL"
+  if ! git -C "$DIR" diff --quiet -- "$CHANGELOG_REL"; then
+    echo "refusing to close $ID: CHANGELOG.md holds uncommitted changes this close's commit would carry" >&2
+    echo "nothing was changed and no lock was taken" >&2
+    exit 1
+  fi
 fi
 
 # --- lock -------------------------------------------------------------------------------------
@@ -848,6 +876,47 @@ for dep in "$DIR"/items/*.md; do
   RECONCILED_PATHS="$RECONCILED_PATHS $DIR/items/$(basename "$dep")"
 done
 
+# --- CHANGELOG.md: the release note, under ## Unreleased (0041 FR8) -----------------------------
+# Appended as the last entry of `## Unreleased`; the section is created above the first released
+# version when absent, and the file when there is none. The text reaches awk through the
+# environment, because `-v` would expand backslashes in a note a person wrote.
+if [ -n "$NOTE" ]; then
+  tmp="$(mktemp)"
+  if [ -f "$CHANGELOG" ]; then
+    NOTE_TEXT="$NOTE" awk '
+      { line[++n] = $0 }
+      END {
+        entry = "- " ENVIRON["NOTE_TEXT"]
+        for (i = 1; i <= n; i++) if (line[i] ~ /^## Unreleased[ \t]*$/) { u = i; break }
+        if (u) {
+          e = n + 1
+          for (i = u + 1; i <= n; i++) if (line[i] ~ /^## /) { e = i; break }
+          last = u
+          for (i = u + 1; i < e; i++) if (line[i] != "") last = i
+          for (i = 1; i <= last; i++) print line[i]
+          if (last == u) print ""
+          print entry
+          if (e <= n) { print ""; for (i = e; i <= n; i++) print line[i] }
+          exit
+        }
+        for (i = 1; i <= n; i++) if (line[i] ~ /^## /) { f = i; break }
+        if (!f) f = n + 1
+        for (i = 1; i < f; i++) print line[i]
+        if (f > 1 && line[f - 1] != "") print ""
+        print "## Unreleased"; print ""; print entry
+        if (f <= n) { print ""; for (i = f; i <= n; i++) print line[i] }
+      }
+    ' "$CHANGELOG" > "$tmp"
+  else
+    # Double-quoted: tests/backlog-scripts-installed.test.sh reads a single-quoted string opening
+    # with `#` as an awk comment closed early.
+    printf "# Changelog\n\n## Unreleased\n\n- %s\n" "$NOTE" > "$tmp"
+  fi
+  mv "$tmp" "$CHANGELOG"
+  # A pathspec commit refuses a path git has never seen; an intent-to-add entry is what lets it.
+  git -C "$DIR" ls-files --error-unmatch -- "$CHANGELOG_REL" >/dev/null 2>&1 || git -C "$DIR" add -N -- "$CHANGELOG_REL"
+fi
+
 # --- commit, by pathspec, in the same breath as the edits --------------------------------------
 # An uncommittable repo is fatal here, not a skip: the commit is the entire reason this is a script,
 # so a close that silently leaves both shared files dirty is the failure it exists to prevent.
@@ -859,7 +928,7 @@ git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
 # Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
 n=0
 # shellcheck disable=SC2086
-until git -C "$DIR" commit -q -m "Close $ID [$TOKEN]" -m "$COAUTHOR" -- "$QUEUE" "$DONE" "$item" $RECONCILED_PATHS 2>/dev/null; do
+until git -C "$DIR" commit -q -m "Close $ID [$TOKEN]" -m "$COAUTHOR" -- "$QUEUE" "$DONE" "$item" $RECONCILED_PATHS ${CHANGELOG:+"$CHANGELOG"} 2>/dev/null; do
   n=$((n + 1))
   [ "$n" -lt 30 ] || {
     echo "could not commit the close (git busy) — the files are edited but uncommitted" >&2

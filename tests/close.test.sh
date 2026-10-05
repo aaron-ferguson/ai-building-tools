@@ -1350,6 +1350,62 @@ assert_rc       "exits 0 — no Conventions: line and none required" "$rc" 0 "$o
 assert_contains "the light ticket is done" "$(cat "$FIX/$BL/items/0001-fixture.md")" 'status: done'
 
 # --- result -----------------------------------------------------------------------------------
+
+# --- 0041 — the closing stage writes the release note, in the close's own commit ---------------
+echo "0041 AC11 — close --note appends under ## Unreleased, in the one close commit"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0001 | A fixture row | verify | in-progress | 0000 |'
+mkitem 0001 verify in-progress '"ab12"' '[]'
+commit_fixture
+out="$(run_close 0001 ab12 --note 'A session closing a ticket now records what changed (0001).')" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+cl="$(cat "$FIX/CHANGELOG.md" 2>/dev/null || true)"
+assert_contains "CHANGELOG.md carries the note as an entry" "$cl" '- A session closing a ticket now records what changed (0001).'
+under="$(awk '/^## Unreleased/ { u = 1; next } /^## / { u = 0 } u' "$FIX/CHANGELOG.md" 2>/dev/null || true)"
+assert_contains "under ## Unreleased"                       "$under" 'A session closing a ticket now records what changed'
+paths="$(git -C "$FIX" log -1 --name-only --format= | grep . | sort | tr '\n' ' ')"
+expect="$BL/DONE.md $BL/QUEUE.md $BL/items/0001-fixture.md CHANGELOG.md "
+if [ "$paths" = "$expect" ]; then ok "the note and the DONE.md row are in one commit"; saw_on_pass "$paths"; else
+  bad "the note and the DONE.md row are in one commit"; echo "         expected: $expect"; saw "$paths"; fi
+assert_clean "nothing is left uncommitted"
+
+echo "0041 AC11 — a second note joins the existing Unreleased section, above the released ones"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0002 | Another row | verify | in-progress | 0000 |'
+mkitem 0002 verify in-progress '"ab12"' '[]'
+printf '# Changelog\n\n## Unreleased\n\n- An earlier note.\n\n## 0.1.0 — 2026-01-01\n\n- A released note.\n' > "$FIX/CHANGELOG.md"
+commit_fixture
+out="$(run_close 0002 ab12 --note 'A later note.')" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+under="$(awk '/^## Unreleased/ { u = 1; next } /^## / { u = 0 } u' "$FIX/CHANGELOG.md")"
+assert_contains "the earlier note stays unreleased" "$under" '- An earlier note.'
+assert_contains "the new note joins it"             "$under" '- A later note.'
+released="$(awk '/^## 0.1.0/ { r = 1; next } /^## / { r = 0 } r' "$FIX/CHANGELOG.md")"
+refute_contains "and nothing lands in a released section" "$released" 'A later note.'
+
+echo "0041 AC12 — close with no --note leaves CHANGELOG.md unchanged, byte for byte"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0003 | A quiet row | verify | in-progress | 0000 |'
+mkitem 0003 verify in-progress '"ab12"' '[]'
+printf '# Changelog\n\n## Unreleased\n\n- An earlier note.\n' > "$FIX/CHANGELOG.md"
+cp "$FIX/CHANGELOG.md" "$FIX.before"
+commit_fixture
+out="$(run_close 0003 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+if cmp -s "$FIX.before" "$FIX/CHANGELOG.md"; then ok "CHANGELOG.md is byte-identical"; else
+  bad "CHANGELOG.md is byte-identical"; saw "$(diff "$FIX.before" "$FIX/CHANGELOG.md" || true)"; fi
+rm -f "$FIX.before"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0004 | No changelog yet | verify | in-progress | 0000 |'
+mkitem 0004 verify in-progress '"ab12"' '[]'
+commit_fixture
+out="$(run_close 0004 ab12)" && rc=0 || rc=$?
+if [ -e "$FIX/CHANGELOG.md" ]; then bad "no note, no CHANGELOG.md is created"; else ok "no note, no CHANGELOG.md is created"; fi
+
+echo "0041 — --note with no text is a usage error, and closes nothing"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0005 | A row | verify | in-progress | 0000 |'
+mkitem 0005 verify in-progress '"ab12"' '[]'
+commit_fixture
+out="$(run_close 0005 ab12 --note)" && rc=0 || rc=$?
+assert_rc "exits 2" "$rc" 2 "$out"
+assert_line "the row is untouched" '| 0005 | A row | verify | in-progress | 0000 |' QUEUE.md
+
 echo
 echo "$PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] || exit 1
