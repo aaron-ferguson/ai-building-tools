@@ -487,6 +487,60 @@ def harvest(transcripts, session_ids):
         % (os.path.basename(HARVEST), transcripts, shown[:HARVEST_QUOTE_CHARS] or "empty"))
 
 
+def windows(transcripts, session_ids):
+    """{session-id prefix: (elapsed minutes, context tokens, usd)} from harvest-usage.sh
+    --by-session (0041 FR11): per-window time is the transcript's, and harvest-usage.sh owns it.
+    An unpriced window maps to None, so it is labelled rather than written as a zero."""
+    if not session_ids:
+        return {}
+    cmd = [HARVEST, transcripts, "--by-session"]
+    for sid in session_ids:
+        cmd += ["--session", sid]
+    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if proc.returncode != 0:
+        die("%s --by-session failed (exit %d) over %s"
+            % (os.path.basename(HARVEST), proc.returncode, transcripts))
+    rows, inside = {}, False
+    for line in proc.stdout.splitlines():
+        if line.startswith("SESSION ") and "ELAPSED MIN" in line:
+            inside = True
+            continue
+        cells = [c.strip() for c in line.split("|")]
+        if not inside or len(cells) != 6:
+            continue
+        sid, _skill, _turns, elapsed, ctx, usd = cells
+        rows[sid] = None if usd == "unpriced" else (float(elapsed), int(ctx), float(usd))
+    return rows
+
+
+def closed_tickets(events):
+    """The ids the run's outcome events closed: a ticket entry left at `next: done` or
+    `status: done`, in the order the outcomes reported them (0041 FR1)."""
+    closed = []
+    for e in events:
+        if e.get("event") != "outcome":
+            continue
+        for t in e.get("tickets") or []:
+            if not isinstance(t, dict):
+                continue
+            if (t.get("next") == "done" or t.get("status") == "done") and t.get("id") not in closed:
+                closed.append(t.get("id"))
+    return closed
+
+
+def closed_ticket_pair(path):
+    """MEASUREMENT.md's whole-run and develop-and-verify cost per closed ticket, with the as-at
+    date its own section states -- read at record time, never copied (0041 FR5)."""
+    text = open(path, errors="replace").read() if os.path.exists(path) else ""
+    m = re.search(r"^### Cost per closed ticket$(.*?)(?=^### |\Z)", text, re.M | re.S)
+    section = m.group(1) if m else ""
+    figures = re.findall(r"\$([\d.]+) per closed ticket", section)
+    asat = re.search(r"as at (\d{4}-\d{2}-\d{2})", section)
+    if len(figures) < 2:
+        return None
+    return figures[0], figures[1], asat.group(1) if asat else "an unstated date"
+
+
 def labelled(h):
     """(usd, context tokens, note) for one harvest, with 0162's unpriced label already applied.
 
@@ -574,6 +628,43 @@ def record(opts):
         out.append("| %s | %s | %s | %s |"
                    % (figure, NO_PRIOR, cell("usd" if figure == "tail_usd" else figure, value),
                       tail_src))
+    out.append("")
+
+    # 0041 FR10 -- one row per context window, from the transcript's own clock, then the tickets
+    # this run closed and what each cost beside the record's pair.
+    win = windows(opts["transcripts"], run_ids)
+    out.append("| Window | Stage | Elapsed min | Context tokens | USD |")
+    out.append("|---|---|---|---|---|")
+    priced, dv_usd = [], 0.0
+    for stage, sid, _tickets in sessions:
+        w = win.get(sid.split("-")[0][:10])
+        if w is None:
+            out.append("| %s | %s | unpriced | unpriced | unpriced |" % (sid.split("-")[0], stage))
+            continue
+        priced.append(w)
+        if stage in ("develop", "verify"):
+            dv_usd += w[2]
+        out.append("| %s | %s | %.1f | %d | %.2f |" % (sid.split("-")[0], stage, w[0], w[1], w[2]))
+    if priced:
+        n = len(priced)
+        tot = [sum(w[i] for w in priced) for i in range(3)]
+        out.append("| total | %d window(s) | %.1f | %d | %.2f |" % (n, tot[0], tot[1], tot[2]))
+        out.append("| average | per window | %.1f | %d | %.2f |" % (tot[0] / n, tot[1] // n, tot[2] / n))
+    out.append("WINDOWS elapsed is first to last turn per transcript and excludes start-up "
+               "(harvest-usage.sh --by-session over %d session id(s) @ %s)" % (len(run_ids), stamp))
+    closed = closed_tickets(events)
+    out.append("CLOSED %s (%s @ %s)" % (" ".join(closed) or "none", outcome_src, stamp))
+    pair = closed_ticket_pair(opts["measurement"])
+    if closed and isinstance(usd, float):
+        whole = (usd + (tail_usd if isinstance(tail_usd, float) else 0.0)) / len(closed)
+        line = ("PER_TICKET whole-run USD %.2f, develop-and-verify USD %.2f over %d closed ticket(s)"
+                % (whole, dv_usd / len(closed), len(closed)))
+        if pair:
+            line += (", beside MEASUREMENT.md whole-run USD %s, develop-and-verify USD %s as at %s"
+                     % pair)
+        else:
+            line += ", MEASUREMENT.md states no cost per closed ticket to compare against"
+        out.append(line + " (read @ %s)" % stamp)
     out.append("")
 
     # FR6 -- the linear gate model, made falsifiable. Predicted and observed sit on one line

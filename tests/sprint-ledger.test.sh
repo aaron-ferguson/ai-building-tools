@@ -1348,5 +1348,60 @@ else
   bad "0186 AC3 — the all-priced output changed: $("$HARVEST" "$FIX/store" --sessions 2>&1 | diff - "$FIX/golden-0186.txt" | head -4 | tr '\n' ' ')"
 fi
 
+# --- 0041 AC16 -- the block carries the per-window table, the closed tickets and cost per ticket --
+echo "0041 AC16 -- record writes one row per window, the closed tickets, totals, averages and cost per ticket"
+W41="$FIX/w41"; mkdir -p "$W41/store"
+SW1="aaaaaaa1-0000-0000-0000-000000000000"; SW2="bbbbbbb2-0000-0000-0000-000000000000"
+cat > "$W41/run.jsonl" <<JSON
+{"ts":"2026-09-20T09:00:00Z","run":"r-w41","event":"scope_confirmed","tickets":["0101","0102"]}
+{"ts":"2026-09-20T09:01:00Z","run":"r-w41","event":"dispatch","stage":"develop","session_id":"$SW1","tickets":["0101","0102"]}
+{"ts":"2026-09-20T09:40:00Z","run":"r-w41","event":"outcome","stage":"develop","session_id":"$SW1","tickets":[{"id":"0101","verdict":"built","next":"verify","status":"ready"},{"id":"0102","verdict":"built","next":"verify","status":"ready"}]}
+{"ts":"2026-09-20T09:41:00Z","run":"r-w41","event":"dispatch","stage":"verify","session_id":"$SW2","tickets":["0101","0102"]}
+{"ts":"2026-09-20T10:00:00Z","run":"r-w41","event":"outcome","stage":"verify","session_id":"$SW2","tickets":[{"id":"0101","verdict":"pass","next":"done","status":"done"},{"id":"0102","verdict":"fail","next":"develop","status":"ready"}]}
+{"ts":"2026-09-20T10:01:00Z","run":"r-w41","event":"sprint_ended"}
+JSON
+w41_session() { # <skill> <first-stamp> <last-stamp> <output tokens per turn>
+  printf '{"type":"user","timestamp":"%s","message":{"role":"user","content":"<command-name>/ai-building-tools:%s</command-name>"}}\n' "$2" "$1"
+  printf '{"type":"assistant","timestamp":"%s","message":{"id":"msg_w41_%s_1","model":"claude-opus-5","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":%s}}\n' "$2" "$1" "$(u "$4")"
+  printf '{"type":"assistant","timestamp":"%s","message":{"id":"msg_w41_%s_2","model":"claude-opus-5","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":%s}}\n' "$3" "$1" "$(u "$4")"
+}
+w41_session develop 2026-09-20T09:02:00.000Z 2026-09-20T09:32:00.000Z 200000 > "$W41/store/$SW1.jsonl"
+w41_session verify  2026-09-20T09:42:00.000Z 2026-09-20T09:54:00.000Z 120000 > "$W41/store/$SW2.jsonl"
+cp "$EMPTY" "$W41/ledger.md"
+"$TOOL" record --ledger "$W41/ledger.md" --run "$W41/run.jsonl" --transcripts "$W41/store" \
+  --measurement "$MEAS" --config "$CONF" --estimate-tickets 2 --estimate-wall no-prior \
+  --estimate-tokens 1 --estimate-usd 1.00 --estimate-source "$EST_SOURCE" >/dev/null 2>&1 || true
+W41B="$(awk '/^## sprint /{s=1} s' "$W41/ledger.md")"
+for want in '| aaaaaaa1 | develop | 30.0 | 0 | 10.00 |' '| bbbbbbb2 | verify | 12.0 | 0 | 6.00 |' \
+            '| total | 2 window(s) | 42.0 | 0 | 16.00 |' '| average | per window | 21.0 | 0 | 8.00 |'; do
+  case "$W41B" in
+    *"$want"*) ok "the block holds: $want" ;;
+    *) bad "0041 AC16 -- the block does not hold: $want" ;;
+  esac
+done
+case "$W41B" in
+  *"CLOSED 0101 ("*) ok "the closed-ticket list names 0101, the ticket the verify outcome closed" ;;
+  *) bad "0041 AC16 -- no 'CLOSED 0101' line: $(printf '%s' "$W41B" | grep CLOSED || echo none)" ;;
+esac
+case "$W41B" in
+  *"CLOSED 0101 0102"*) bad "0041 AC16 -- 0102 failed verify and is listed as closed" ;;
+  *) ok "and not 0102, which failed verify" ;;
+esac
+# The pair is read from MEASUREMENT.md at test time too, so this case holds no second copy of it.
+PAIR="$(awk '/^### Cost per closed ticket/ { s = 1; next } /^### / { s = 0 } s' "$MEAS" | grep -oE '\$[0-9.]+ per closed ticket' | head -2 | grep -oE '[0-9.]+' | tr '\n' ' ')"
+ASAT="$(awk '/^### Cost per closed ticket/ { s = 1; next } /^### / { s = 0 } s' "$MEAS" | grep -oE 'as at [0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)"
+WR="$(printf '%s' "$PAIR" | cut -d' ' -f1)"; DV="$(printf '%s' "$PAIR" | cut -d' ' -f2)"
+case "$W41B" in
+  *"PER_TICKET whole-run USD 16.00, develop-and-verify USD 16.00 over 1 closed ticket(s), beside MEASUREMENT.md whole-run USD $WR, develop-and-verify USD $DV $ASAT"*)
+    ok "cost per closed ticket sits beside MEASUREMENT.md's pair with its as-at stamp" ;;
+  *) bad "0041 AC16 -- no PER_TICKET line beside the pair ($WR, $DV, $ASAT): $(printf '%s' "$W41B" | grep PER_TICKET || echo none)" ;;
+esac
+if printf '%s\n' "$W41B" | grep -vn '^[A-Za-z0-9 .,%|:@/_#()=-]*$' | grep -q .; then
+  bad "0041 AC16 -- a new ledger line leaves the aggregate character set: $(printf '%s\n' "$W41B" | grep -vn '^[A-Za-z0-9 .,%|:@/_#()=-]*$' | head -1)"
+else
+  ok "every line of the block stays within the aggregate character set"
+fi
+case "$W41B" in *SENTINELPROSE*) bad "0041 AC16 -- message text reached the ledger" ;; *) ok "and no message text reached it" ;; esac
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
