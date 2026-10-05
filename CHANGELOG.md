@@ -14,3 +14,4 @@ the release session, because only a whole-release view can say it.
 ## Unreleased
 
 - A sprint now resolves the opus alias once, at its Step 1 probe, and dispatches every stage and every resume on that concrete model id, recording it on scope_confirmed and on each dispatch event, so one run can no longer mix two models and a run log names the model each session ran on (0187).
+- A sprint is now planned from the first develop-ready row rather than from a design row that outranks it: the proposal names the design rows related to that gate and the one design row that will head the next sprint, and under a confirmed scope those are designed first and then built. Design may now run beside develop, verify or design; ./next --drive steps over a design row whose files a running develop is editing, and exits 6 (wait) when a develop gate names a file a running design session is reading. Retro and queue still run alone (0188).

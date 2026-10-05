@@ -2,8 +2,8 @@
 id: "0188"
 title: Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: l
@@ -17,9 +17,10 @@ expects:
   - skills/queue/templates/next
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by: "eb93"
-claimed_at: 2026-10-05T01:52:54Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-05
 ---
 
 ## Problem
@@ -71,23 +72,23 @@ section. The proposal section has no rule about where the queue will stand after
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a queue ranked `0001 design ready`, `0002 develop ready` with no shared file or parent, when `./next --drive --propose` runs, then the block reads `PROPOSE   develop | 1 ticket(s)` with `TICKET    0002`, it prints `DESIGN    0001 | heads the next sprint`, and the decision line is still `DISPATCH  design 0001` (design goes first). With one develop row in the queue the block also prints `SHORT     1 develop ticket(s), under the minimum of 3`: `PROPOSE   develop | 1 ticket(s)` states the first gate, never the sprint's scope, which the `SPRINT` lines state (amended 2026-09-26, see Notes & decisions).
-- [ ] AC2 — Given a queue with no takeable `develop` row, when `--drive --propose` runs, then it proposes the top design row exactly as today (`PROPOSE   design`).
-- [ ] AC3 — Given a `waiting` or `next: queue` row ranked above the first develop row, when `--drive --propose` runs, then it still exits 4 on that row; only `design ready` rows are passed on the way to the head.
-- [ ] AC4 — Given `0002 develop`, `0003 design ready`, `0004 develop`, all naming `a.md` in `expects:`, when `--drive --propose` runs, then the gate is `0002 0004` and the block prints `DESIGN    0003 | related to this gate`; a joining design row no longer ends the proposed gate.
-- [ ] AC5 — Given a `design ready` row ranked above the head that shares the head's `parent:`, when `--drive --propose` runs, then it is named `DESIGN    <id> | related to this gate`, not as the next head.
-- [ ] AC6 — Given two unrelated `design ready` rows above the head, when `--drive --propose` runs, then only the higher one is named `heads the next sprint` and the lower is named nowhere; and given the first row left after the scope is a `develop` row, then no `heads the next sprint` line is printed.
-- [ ] AC7 — Given `--drive --scope 0002` over `0001 design ready` (out of scope) above `0002 develop ready`, when it runs, then it prints a `NOTE` stepping over 0001 as outside the confirmed scope and exits 0 with `DISPATCH  develop 0002`. Without `--scope` the output is unchanged from today.
-- [ ] AC8 — Given `--drive --scope 0002 --scope 0003` with `0003 design ready` ranked below `0002 develop ready`, when it runs, then it exits 0 with `DISPATCH  design 0003` before any develop gate.
-- [ ] AC9 — Given in-scope `0003 design ready` with `expects: a.md`, and `0002` in-progress at `next: develop` with `touches: a.md`, when `--drive --scope 0003` runs, then 0003 is stepped over with a `NOTE` naming 0002 and the files; with disjoint files it is dispatched.
-- [ ] AC10 — Given the develop gate `0002` naming `a.md`, and `0003` in-progress at `next: design` with `expects: a.md`, when `--drive` runs, then it exits `6` with a `WAIT      ` line naming 0002, 0003 and `a.md`; with disjoint files it exits 0 with `DISPATCH  develop 0002`.
-- [ ] AC11 — Given an in-progress row at `next: design` or `next: verify` whose `expects:` overlaps an in-scope design candidate, when `--drive` runs, then the candidate is still dispatched: design beside design or verify is never a conflict.
-- [ ] AC12 — `./next --help` lists exit `6` as wait, and the sprint skill's Step 2 routes it: wait for the named session's outcome, then re-call with `--completed`, never dispatch past it.
-- [ ] AC13 — The sprint skill's *Design alongside develop* section is renamed *Design beside other stages*, every cross-reference to it is updated, and it states that design may run beside develop, verify or design, that the check is FR6's relation and `--drive` enforces it, and that retro and queue run alone.
-- [ ] AC14 — The proposal section replaces "Where a `next: design` row outside the scope outranks the gate, name it as where the run will stop" with the FR1/FR2 rule: plan from the first develop-ready row, and take the related design rows and the next sprint's head, nothing else.
-- [ ] AC15 — Every guard in `tests/sprint.test.sh` pinning the old wording (at least the `DSEC` heading, "except a design session alongside a develop session" in Step 8, and the 0134 AC9 scope's-edge guard) is rewritten to the new rule, each carrying a comment that the rule was widened on the user's call (2026-09-24).
-- [ ] AC16 — Given a fixture run log with a `design` dispatch for 0003 and no outcome, then a `retro` dispatch, when the design-windows check runs, then it prints `open 0003`, the condition Step 6 refuses the tail on.
-- [ ] AC17 — `tests/next.test.sh`, `tests/sprint.test.sh` and `tests/item-ac-form.test.sh` pass, and the rest of `tests/*.test.sh` is no redder than the baseline.
+- [x] AC1 — Given a queue ranked `0001 design ready`, `0002 develop ready` with no shared file or parent, when `./next --drive --propose` runs, then the block reads `PROPOSE   develop | 1 ticket(s)` with `TICKET    0002`, it prints `DESIGN    0001 | heads the next sprint`, and the decision line is still `DISPATCH  design 0001` (design goes first). With one develop row in the queue the block also prints `SHORT     1 develop ticket(s), under the minimum of 3`: `PROPOSE   develop | 1 ticket(s)` states the first gate, never the sprint's scope, which the `SPRINT` lines state (amended 2026-09-26, see Notes & decisions).
+- [x] AC2 — Given a queue with no takeable `develop` row, when `--drive --propose` runs, then it proposes the top design row exactly as today (`PROPOSE   design`).
+- [x] AC3 — Given a `waiting` or `next: queue` row ranked above the first develop row, when `--drive --propose` runs, then it still exits 4 on that row; only `design ready` rows are passed on the way to the head.
+- [x] AC4 — Given `0002 develop`, `0003 design ready`, `0004 develop`, all naming `a.md` in `expects:`, when `--drive --propose` runs, then the gate is `0002 0004` and the block prints `DESIGN    0003 | related to this gate`; a joining design row no longer ends the proposed gate.
+- [x] AC5 — Given a `design ready` row ranked above the head that shares the head's `parent:`, when `--drive --propose` runs, then it is named `DESIGN    <id> | related to this gate`, not as the next head.
+- [x] AC6 — Given two unrelated `design ready` rows above the head, when `--drive --propose` runs, then only the higher one is named `heads the next sprint` and the lower is named nowhere; and given the first row left after the scope is a `develop` row, then no `heads the next sprint` line is printed.
+- [x] AC7 — Given `--drive --scope 0002` over `0001 design ready` (out of scope) above `0002 develop ready`, when it runs, then it prints a `NOTE` stepping over 0001 as outside the confirmed scope and exits 0 with `DISPATCH  develop 0002`. Without `--scope` the output is unchanged from today.
+- [x] AC8 — Given `--drive --scope 0002 --scope 0003` with `0003 design ready` ranked below `0002 develop ready`, when it runs, then it exits 0 with `DISPATCH  design 0003` before any develop gate.
+- [x] AC9 — Given in-scope `0003 design ready` with `expects: a.md`, and `0002` in-progress at `next: develop` with `touches: a.md`, when `--drive --scope 0003` runs, then 0003 is stepped over with a `NOTE` naming 0002 and the files; with disjoint files it is dispatched.
+- [x] AC10 — Given the develop gate `0002` naming `a.md`, and `0003` in-progress at `next: design` with `expects: a.md`, when `--drive` runs, then it exits `6` with a `WAIT      ` line naming 0002, 0003 and `a.md`; with disjoint files it exits 0 with `DISPATCH  develop 0002`.
+- [x] AC11 — Given an in-progress row at `next: design` or `next: verify` whose `expects:` overlaps an in-scope design candidate, when `--drive` runs, then the candidate is still dispatched: design beside design or verify is never a conflict.
+- [x] AC12 — `./next --help` lists exit `6` as wait, and the sprint skill's Step 2 routes it: wait for the named session's outcome, then re-call with `--completed`, never dispatch past it.
+- [x] AC13 — The sprint skill's *Design alongside develop* section is renamed *Design beside other stages*, every cross-reference to it is updated, and it states that design may run beside develop, verify or design, that the check is FR6's relation and `--drive` enforces it, and that retro and queue run alone.
+- [x] AC14 — The proposal section replaces "Where a `next: design` row outside the scope outranks the gate, name it as where the run will stop" with the FR1/FR2 rule: plan from the first develop-ready row, and take the related design rows and the next sprint's head, nothing else.
+- [x] AC15 — Every guard in `tests/sprint.test.sh` pinning the old wording (at least the `DSEC` heading, "except a design session alongside a develop session" in Step 8, and the 0134 AC9 scope's-edge guard) is rewritten to the new rule, each carrying a comment that the rule was widened on the user's call (2026-09-24).
+- [x] AC16 — Given a fixture run log with a `design` dispatch for 0003 and no outcome, then a `retro` dispatch, when the design-windows check runs, then it prints `open 0003`, the condition Step 6 refuses the tail on.
+- [x] AC17 — `tests/next.test.sh`, `tests/sprint.test.sh` and `tests/item-ac-form.test.sh` pass, and the rest of `tests/*.test.sh` is no redder than the baseline.
 
 ## QA plan
 
@@ -193,3 +194,57 @@ Unit: `tests/next.test.sh` fixtures for `--propose` over a queue headed by a des
     so a `next: queue` sub-case was added (`03023ff`) and run red under that mutation (2 failed).
   - **Staled by this change, not edited:** `FINDINGS.md`'s 2026-09-26 entry cites sprint's *Design
     alongside develop* by its old name; closed 0134's item describes the old develop-only rule.
+
+## QA evidence
+
+Verify eb93, 2026-10-04 — **PASS**, at `qa_level: unit`, batch 0187/0188/0174/0041 from one develop gate.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`) — 32 files, every tally `0 failed`; `tests/next.test.sh` 572 passed, 0 failed; `tests/sprint.test.sh` 367 passed, 0 failed, 0 skipped; `tests/item-ac-form.test.sh` 8 passed, 0 failed; `tests/backlog-scripts-installed.test.sh` 45 passed, 0 failed (both copies of `next` match). No lint or typecheck is configured.
+Copy executed: the fixtures copy `skills/queue/templates/next`, which is what each router mutation edited; the repo copy of the sprint skill is the authority.
+Tree: `git status --porcelain` empty at Step 2 and at the verdict; the intersection is empty, so this is not advisory.
+
+**Router mutations** were run against a scratch copy of `tests/next.test.sh`: its helper preamble plus the 0154 AC2, 0188 and 0174 sections, copied verbatim, 53 cases, 53 passed, 0 failed as control. **Prose mutations** were run against `tests/sprint.test.sh`. Each mutation was applied to the committed file, its diff confirmed non-empty, restored by that path only, and the tree read clean after each one (28/28 plus AC16).
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | Given design-ready above develop-ready; PROPOSE develop, TICKET 0002 | `plan_head` stops at a design row | red (9 failed) |
+| AC1 | (same), decision still `DISPATCH design 0001` | plan disabled at the design site | red (7) |
+| AC1 | `SHORT` line | `SHORT` label changed | red (1) |
+| AC2 | no develop row → today's `PROPOSE design` | DESIGN lines printed for a design proposal | red (1) |
+| AC3 | a `waiting` row still exits 4 / stops the plan | waiting check removed | red (1) |
+| AC3 | a `next: queue` row stops the plan | non-develop row `continue`d past | red (2) |
+| AC4/AC5 | related rows named `related to this gate` | `gate_admits` never true | red (6) |
+| AC4 | a joining design row does not end the gate, is not a SPRINT row | related rows listed in the sprint | red (1) |
+| AC5 | a parent-sharing row is related, not the next head | next head ignores related rows | red (2) |
+| AC6 | only the higher row heads the next sprint | more than one head printed | red (1) |
+| AC6 | a develop row first after the scope → no head line | non-design row named as head | red (1) |
+| AC7 | `--scope` steps over an out-of-scope design row with a NOTE | step-over removed | red (2) |
+| AC8 | in-scope design below the gate dispatched first | design-first removed | red (2) |
+| AC9 | design over a running develop's `touches:` stepped over | conflict check disabled | red (3) |
+| AC10 | gate over a running design's `expects:` → WAIT | wait removed | red (4) |
+| AC10 | exits `6` | `WAIT=4` | red (1) |
+| AC11 | design beside design/verify never a conflict | conflict widened to running design and verify | red (2) |
+| AC12 | `--help` lists 6 wait | help text without `6 wait` | red (1) |
+| AC12 | Step 2: wait for the named design session's outcome | reworded | red |
+| AC12 | then re-call with `--completed`, never dispatch past it | clause removed | red |
+| AC13 | section renamed *Design beside other stages* | heading back to the old name | red (18) |
+| AC13 | may run beside develop, verify or design | narrowed to develop | red |
+| AC13 | FR6's relation | reworded | red |
+| AC13 | `--drive` enforces it | "the supervisor checks it" | red |
+| AC13 | retro and queue run alone | reworded | red |
+| AC14 | plan from the first develop-ready row | "top row" | red |
+| AC14 | the related design rows and the next sprint's head, nothing else | "any other design rows" | red |
+| AC15 | Step 8 exception widened, with a comment | back to "beside a develop session" | red |
+| AC16 | a design dispatch with no outcome, then a retro dispatch → `open 0003` | the design-windows block closes open windows on a retro dispatch (verify's own mutation, since the build changed no code for it) | red |
+| AC17 | the three named suites pass, the rest no redder than baseline | whole suite above | holds |
+
+Every prose red reads `365 passed, 2 failed` (the target plus 0165 AC2's cascade), except the rename, which reads 18 failed. **No gaps.**
+
+**Evidence set:** `skills/queue/templates/next`, `.claude/backlog/next`, `skills/sprint/SKILL.md`, `tests/next.test.sh`, `tests/sprint.test.sh`, `tests/backlog-scripts-installed.test.sh`, `tests/item-ac-form.test.sh`.
+
+| NFR | Check | Result |
+|---|---|---|
+| Concurrency — design never beside retro/queue, never over overlapping files | AC16 fixture (red under the retro-closes-windows mutation); AC9/AC10/AC11 for the file relation | holds, guarded |
+| Always-on (CONVENTIONS_CORE) | the router change is a shell script with no secret or company material, and every FR is enforced by the script rather than by prose (FR6) | holds |
+| Newly reachable | exit 6 is a new state, and Step 2 routes it as wait, never past it; under `--scope` an out-of-scope design row is now stepped over rather than halting the run. The guard is the NOTE plus the AC7 case | reviewed, nothing destructive reachable |
