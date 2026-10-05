@@ -3,7 +3,7 @@ id: "0187"
 title: Decide whether a sprint dispatch pins a concrete model or records the one that answered
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -15,8 +15,8 @@ relates: ["0149", "0186"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "9c33"
+claimed_at: 2026-10-05T01:52:54Z
 touches:
 ---
 
