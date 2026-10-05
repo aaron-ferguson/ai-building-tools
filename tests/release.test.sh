@@ -302,11 +302,14 @@ mk_case() { # <dir> -> CO2 REMOTE2 INST2 REC2 SHA2, local 1.2.3, installed 1.2.3
   printf 'beta\n'  > "$CO2/README.md"
   printf '#!/bin/sh\nexit 0\n' > "$CO2/tests/noop.test.sh"
   chmod +x "$CO2/tests/noop.test.sh"
+  # 0041: a bump refuses on an empty `## Unreleased`, so every case that reaches a bump carries one
+  # entry unless it sets MK_CHANGELOG to say otherwise.
+  printf '%s' "${MK_CHANGELOG-$(printf '# Changelog\n\n## Unreleased\n\n- A fixture change.\n')}" > "$CO2/CHANGELOG.md"
   git init -q -b main "$CO2"
   git -C "$CO2" config user.email fixture@example.invalid
   git -C "$CO2" config user.name fixture
   git -C "$CO2" config commit.gpgsign false
-  git -C "$CO2" add .claude-plugin/plugin.json skills/demo/SKILL.md README.md tests/noop.test.sh
+  git -C "$CO2" add .claude-plugin/plugin.json skills/demo/SKILL.md README.md tests/noop.test.sh CHANGELOG.md
   git -C "$CO2" commit -q -m "fixture"
   SHA2="$(git -C "$CO2" rev-parse HEAD)"
   git init -q --bare "$REMOTE2"
@@ -469,6 +472,74 @@ else
   else
     bad "AC4 — the push did not reach the fixture remote"
   fi
+fi
+
+# --- 0041 — the bump promotes ## Unreleased, and refuses an empty one ----------------------------
+if PATH="$NOCLAUDE" command -v claude >/dev/null 2>&1; then
+  bad "0041 — could not build a PATH without \`claude\`; the cases would run the real install chain"
+else
+  echo "0041 AC13 — --bump moves the Unreleased entries under the new version, in the bump commit"
+  C13="$FIX/c13"; mkdir -p "$C13"; mk_case "$C13"
+  C13ST=0
+  C13OUT="$(PATH="$NOCLAUDE" "$TOOL" --bump --yes --record "$REC2" --plugin "$KEY" \
+             --checkout "$CO2" --confirm-device "$C13/none" 2>&1)" || C13ST=$?
+  CL="$(cat "$CO2/CHANGELOG.md")"
+  VER_SEC="$(awk '/^## 1\.2\.4 — / { v = 1; next } /^## / { v = 0 } v' "$CO2/CHANGELOG.md")"
+  UNREL="$(awk '/^## Unreleased/ { u = 1; next } /^## / { u = 0 } u' "$CO2/CHANGELOG.md" | grep . || true)"
+  case "$CL" in
+    *"## 1.2.4 — $(date -u +%Y-%m-%d)"*) ok "the version section is headed with the new version and today's date" ;;
+    *) bad "0041 AC13 — no '## 1.2.4 — <date>' heading after the bump: $CL" ;;
+  esac
+  case "$VER_SEC" in
+    *"- A fixture change."*) ok "the Unreleased entry sits under the new version" ;;
+    *) bad "0041 AC13 — the entry is not under the version section: [$VER_SEC] in $CL" ;;
+  esac
+  case "$CL" in
+    *"## Unreleased"*) ok "## Unreleased is still present" ;;
+    *) bad "0041 AC13 — the bump removed ## Unreleased: $CL" ;;
+  esac
+  if [ -z "$UNREL" ]; then ok "and is empty"; else bad "0041 AC13 — ## Unreleased still holds: $UNREL"; fi
+  BUMPED="$(git -C "$CO2" log -1 --name-only --format=%s)"
+  case "$BUMPED" in
+    *"Bump the plugin version to 1.2.4"*CHANGELOG.md*) ok "the CHANGELOG edit is in the bump commit" ;;
+    *) bad "0041 AC13 — the bump commit does not carry CHANGELOG.md: $BUMPED" ;;
+  esac
+  if git -C "$CO2" diff --quiet -- CHANGELOG.md; then ok "nothing of it is left uncommitted"; else bad "0041 AC13 — CHANGELOG.md left dirty"; fi
+
+  echo "0041 AC14 — an empty Unreleased refuses before step 5; nothing committed, pushed or edited"
+  C14="$FIX/c14"; mkdir -p "$C14"
+  MK_CHANGELOG="$(printf '# Changelog\n\n## Unreleased\n')" mk_case "$C14"
+  cp "$CO2/CHANGELOG.md" "$C14/before.md"
+  C14ST=0
+  C14OUT="$(PATH="$NOCLAUDE" "$TOOL" --bump --yes --record "$REC2" --plugin "$KEY" \
+             --checkout "$CO2" --confirm-device "$C14/none" 2>&1)" || C14ST=$?
+  if [ "$C14ST" -ne 0 ]; then ok "exits non-zero"; else bad "0041 AC14 — an empty Unreleased released anyway: $C14OUT"; fi
+  case "$C14OUT" in
+    *"step 5/9"*) bad "0041 AC14 — the refusal came at or after step 5: $C14OUT" ;;
+    *) ok "the refusal comes before step 5" ;;
+  esac
+  case "$C14OUT" in
+    *"--no-behaviour-change"*) ok "and names the flag that releases with no behaviour change" ;;
+    *) bad "0041 AC14 — the refusal does not name --no-behaviour-change: $C14OUT" ;;
+  esac
+  if untouched "$CO2" "$SHA2" && cmp -s "$C14/before.md" "$CO2/CHANGELOG.md" && \
+     [ "$(git -C "$REMOTE2" rev-parse main)" = "$SHA2" ]; then
+    ok "HEAD, plugin.json, CHANGELOG.md and the remote are all as they were"
+  else
+    bad "0041 AC14 — the refusal left something changed"
+  fi
+
+  echo "0041 AC14 — with --no-behaviour-change the version section carries the explicit line"
+  C14B="$FIX/c14b"; mkdir -p "$C14B"
+  MK_CHANGELOG="$(printf '# Changelog\n\n## Unreleased\n')" mk_case "$C14B"
+  C14BST=0
+  C14BOUT="$(PATH="$NOCLAUDE" "$TOOL" --bump --yes --no-behaviour-change --record "$REC2" --plugin "$KEY" \
+              --checkout "$CO2" --confirm-device "$C14B/none" 2>&1)" || C14BST=$?
+  VER_SEC="$(awk '/^## 1\.2\.4 — / { v = 1; next } /^## / { v = 0 } v' "$CO2/CHANGELOG.md")"
+  case "$VER_SEC" in
+    *"No behaviour change — internal guards and records only."*) ok "the version section says there is no behaviour change" ;;
+    *) bad "0041 AC14 — the no-change line is not in the version section: $(cat "$CO2/CHANGELOG.md") / $C14BOUT" ;;
+  esac
 fi
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
