@@ -2,8 +2,8 @@
 id: "0187"
 title: Decide whether a sprint dispatch pins a concrete model or records the one that answered
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -15,9 +15,10 @@ relates: ["0149", "0186"]
 expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "9c33"
-claimed_at: 2026-10-05T01:52:54Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-05
 ---
 
 ## Problem
@@ -57,24 +58,24 @@ server-side and moved between two dispatches of one run. Every per-session cost 
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/sprint/SKILL.md`, when Step 3 is read, then its dispatch block passes
+- [x] AC1 — Given `skills/sprint/SKILL.md`, when Step 3 is read, then its dispatch block passes
   `--model "$RUN_MODEL"` (the resolved id), not `--model opus`, and the prose names
   run-20260922T031109Z and says the alias moved between dispatches of one run.
-- [ ] AC2 — Given the `step-1-probe` block, when it is read, then it passes both `--model opus` and
+- [x] AC2 — Given the `step-1-probe` block, when it is read, then it passes both `--model opus` and
   `--session-id`, and Step 1 says the resolved id is read from the probe's transcript, not its stdout.
-- [ ] AC3 — Given Step 3's `--resume` instruction, when it is read, then it says the resume passes the
+- [x] AC3 — Given Step 3's `--resume` instruction, when it is read, then it says the resume passes the
   run's resolved id, so a resumed leg cannot re-resolve the alias (the retro legs of
   run-20260922T031109Z ran 50 turns of `claude-opus-5-5` beside 29 of `claude-opus-5`).
-- [ ] AC4 — Given Step 5, when it is read, then it says `scope_confirmed` carries `model` and every
+- [x] AC4 — Given Step 5, when it is read, then it says `scope_confirmed` carries `model` and every
   `dispatch` event carries `model`.
-- [ ] AC5 — Given a fixture run log of two `dispatch` events, one per model, when the model-per-session
+- [x] AC5 — Given a fixture run log of two `dispatch` events, one per model, when the model-per-session
   read Step 5 names is run over it, then it prints two distinct models, one per session id; and given
   the same log with the `model` fields removed, then the guard reds rather than reporting one model.
-- [ ] AC6 — Given the probe's resolution, when its transcript names no model or more than one, then
+- [x] AC6 — Given the probe's resolution, when its transcript names no model or more than one, then
   Step 1 says the run stops before the first stage, as a failed probe does.
-- [ ] AC7 — Given `skills/sprint/SKILL.md`, when it is grepped, then no dispatch or probe block
+- [x] AC7 — Given `skills/sprint/SKILL.md`, when it is grepped, then no dispatch or probe block
   carries a literal `claude-opus-` id: the pinned id comes from the run, never from the file.
-- [ ] AC8 — Given the existing run-20260913T034946Z guard in `tests/sprint.test.sh`, when it runs,
+- [x] AC8 — Given the existing run-20260913T034946Z guard in `tests/sprint.test.sh`, when it runs,
   then it asserts the probe resolves `opus` and Step 3 still says stages are thinking work, instead
   of asserting `--model opus` on the dispatch block.
 
@@ -155,3 +156,42 @@ the guard reds. Run `tests/item-ac-form.test.sh` and the whole suite before hand
     no-model transcript, because `models.pop()` on an empty set raises; fail-closed either way.
   - **Staled by this change (sibling notes, not edited):** 0149's 2026-09-13 note and 0160's
     out-of-scope line both say the dispatch passes `--model opus`; it now passes the resolved id.
+
+## QA evidence
+
+Verify 9c33, 2026-10-04 — **PASS**, at `qa_level: unit`, batch 0187/0188/0174/0041 from one develop gate.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`; per-file so every file reports) — 32 files, every tally `0 failed` (`tests/sprint.test.sh` 367 passed, 0 failed, 0 skipped; `tests/item-ac-form.test.sh` 8 passed, 0 failed). No lint or typecheck is configured.
+Copy executed: the repo copy is the authority for the skill under test; this session ran the installed 0.9.36 verify skill.
+Tree: `git status --porcelain` empty at Step 2 and at the verdict; dirty set empty, so the intersection is empty and the verdict is not advisory.
+
+**Clause table and mutations** — each mutation applied to committed `skills/sprint/SKILL.md`, diff confirmed non-empty, `tests/sprint.test.sh` rerun, restored by that path only, tree read clean after each. Every red reads `365 passed, 2 failed` (the target plus 0165 AC2's clean-copy cascade).
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | Given Step 3; dispatch passes `--model "$RUN_MODEL"`, not `--model opus` | dispatch back to `--model opus` | red |
+| AC1 | prose names run-20260922T031109Z | id removed from the first bullet only | green: id still in Step 3's `--resume` bullet, so not a gap |
+| AC1 | (same) | id removed from all three occurrences | red |
+| AC1 | says the alias moved between dispatches of one run | phrase reworded | red |
+| AC2 | probe passes `--model opus` | line removed | red |
+| AC2 | probe passes `--session-id` | line removed | red |
+| AC2 | read from the transcript, not its stdout | "not" → "or" | red |
+| AC3 | resume passes the run's resolved id; a resumed leg cannot re-resolve the alias; 50/29 figure | "cannot re-resolve" reworded | red |
+| AC4 | `scope_confirmed` carries `model`; every `dispatch` carries `model` | dispatch sentence reworded | red |
+| AC5 | read prints two distinct models, one per session id | read prints one constant model | red |
+| AC5 | model fields removed → guard reds, not one model | read prints `unknown` instead of failing | red |
+| AC6 | no model or more than one → stop | resolver `!= 1` → `< 1` (accepts two) | red |
+| AC6 | Step 1 says the run stops before the first stage | phrase reworded | red |
+| AC7 | no literal `claude-opus-` id in a dispatch or probe block | `--fallback-model claude-opus-5` added to dispatch | red |
+| AC8 | existing guard asserts the probe resolves `opus` | probe `--model opus` removed (as AC2) | red |
+| AC8 | Step 3 still says thinking work | phrase reworded | red |
+
+Control after the last restore: `tests/sprint.test.sh` 367 passed, 0 failed, 0 skipped.
+
+**Evidence set:** `skills/sprint/SKILL.md`, `tests/sprint.test.sh`, `tests/item-ac-form.test.sh`.
+
+| NFR | Check | Result |
+|---|---|---|
+| Measurement — a cost comparison can tell whether sessions ran on one model | AC5's executed fixture: two dispatches, two models, read twice; stripped of `model`, the read exits non-zero | holds, guarded (both AC5 mutations red) |
+| Always-on (CONVENTIONS_CORE) | no secret or company material; the run log records only a model id; no committed model id (FR4, AC7 guard) | holds |

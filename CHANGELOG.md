@@ -12,3 +12,5 @@ leads with the behaviour; a ticket number in parentheses is provenance. `tools/r
 the release session, because only a whole-release view can say it.
 
 ## Unreleased
+
+- A sprint now resolves the opus alias once, at its Step 1 probe, and dispatches every stage and every resume on that concrete model id, recording it on scope_confirmed and on each dispatch event, so one run can no longer mix two models and a run log names the model each session ran on (0187).
