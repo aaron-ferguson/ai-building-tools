@@ -2,8 +2,8 @@
 id: "0041"
 title: Write release notes for what a work session delivered
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -25,22 +25,9 @@ expects:
   - .claude/backlog/LEDGER.md
   - skills/sprint/SKILL.md
   - README.md
-claimed_by: "9b67"
-claimed_at: 2026-10-05T01:26:19Z
+claimed_by:
+claimed_at:
 touches:
-  - CHANGELOG.md
-  - .claude/backlog/close
-  - tests/close.test.sh
-  - skills/verify/SKILL.md
-  - tools/release
-  - tests/release.test.sh
-  - tools/harvest-usage.sh
-  - tests/measurement.test.sh
-  - tools/sprint-ledger.sh
-  - tests/sprint-ledger.test.sh
-  - .claude/backlog/LEDGER.md
-  - skills/sprint/SKILL.md
-  - README.md
 ---
 
 ## Problem
@@ -360,3 +347,46 @@ concrete by AC16. AC9 and AC10 are confirmed for `--by-session`.
     work spans `close`, `release`, `harvest-usage`, `sprint-ledger` and `verify`. It splits cleanly
     into a notes half (FR8–FR9, AC11–AC14, AC17) and a timing half (FR10–FR11, AC15–AC16), with no
     shared file. If `queue` or `develop` finds `l` too big for one pass, split it along that line.
+
+- **2026-10-04 — built** (develop 9b67; commits `25456ae`, `d6a6b40`, `f104ad8`, `45bd5de`,
+  `e05ba36`, `d9276c3`, plus the guard `e7b3c8e` for the one-heading case).
+  Both halves in one pass; the split the design offered was not needed.
+  - **Notes half.** `./close <id> <token> --note <text>` (template and installed copy) appends
+    `- <text>` as the last entry of `## Unreleased`, creating the section above the first released
+    version or the file when absent, and commits `CHANGELOG.md` with the DONE.md row. No `--note`
+    leaves the file untouched; `--note` with no text exits 2 before the lock; a dirty CHANGELOG.md
+    is refused before the lock like QUEUE.md/DONE.md. `tools/release` refuses a bump at step 4
+    (before authorisation) on an empty `## Unreleased` unless `--no-behaviour-change`, and step 7
+    promotes it to `## <version> — <date>` under a fresh empty `## Unreleased` in the bump commit.
+    `verify` Step 5 instructs the note, its voice and no note for no change. `CHANGELOG.md` is
+    started with a preamble (who it is for, what to do, how entries are written) and an empty
+    `## Unreleased`, so AC2 has a file to read. **AC2 is a reading**, and it can only be fully
+    judged once a note exists: the first `--note` close writes one.
+  - **Timing half.** `harvest-usage.sh --by-session` prints SESSION, SKILL, TURNS, ELAPSED MIN
+    (first to last priced turn, labelled as excluding start-up), CONTEXT TOK and COST USD, plus a
+    line saying it attributes no run and no closed tickets (FR12/AC7). `sprint-ledger.sh record`
+    reads it for a `| Window | Stage | Elapsed min | Context tokens | USD |` table with total and
+    average rows, a `CLOSED` line (outcome tickets left at `next: done` or `status: done`), and a
+    `PER_TICKET` line: whole-run and develop-and-verify cost per closed ticket beside the pair read
+    from MEASUREMENT.md's *Cost per closed ticket* section at record time, with its as-at date
+    (AC5: the test reads the pair from MEASUREMENT.md too, so no copy is held anywhere).
+  - **Mechanisms that surprised:** `tests/backlog-scripts-installed.test.sh` reads a single-quoted
+    shell string starting with `#` as an awk comment (worked around; parked in FINDINGS.md).
+    `tools/release --help` printed a fixed `sed -n '2,68p'` range that the new header paragraph
+    outgrew, so the range is now derived (up to `set -eu`). The release fixtures (`mk_case`) gained
+    a one-entry CHANGELOG.md, because the new refusal would otherwise have refused every existing
+    bump case at step 4. That rewrites their premise on purpose, and `MK_CHANGELOG` overrides it.
+  - **Mutation table (run, 2026-10-04, 19 mutations over the committed tree; controls close 279/0,
+    release 56/0, measurement 143/0, ledger 146/0):** red for the note never written and written
+    outside the commit (AC11), written with no note (AC12), `--note` accepted with no text, no
+    promotion and CHANGELOG outside the bump commit (AC13), the empty-Unreleased refusal removed and
+    the no-change line dropped (AC14), elapsed forced to zero (AC15), the message-id dedupe removed
+    (AC10), the no-attribution line removed (FR12), window rows dropped (AC3), every outcome ticket
+    counted closed (AC1), the pair not read (AC5), the average printed as the total (AC4), both
+    AC17 phrases, and README's `--by-session`. **One green:** the Unreleased heading never matched,
+    so the close writes a second `## Unreleased` and the section reader merges both. An
+    exactly-one-heading assertion was added and run red under that mutation (1 failed), green on
+    restore (280/0).
+  - **Staled by this change, not edited:** `CLAUDE.md` and retro Step 5 name `tools/release --bump
+    --yes` as the standing invocation, which now refuses on an empty `## Unreleased`. Parked in
+    FINDINGS.md with the installed-verify gap, which means no ticket records a note before the next release.
