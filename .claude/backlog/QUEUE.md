@@ -30,7 +30,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0190 | Re-argue the sprint skill's size exemption against its current size, or relocate | design | ready |  |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | develop | ready |  |
 | 0189 | Make the citations guard resolve the conventions path from a worktree outside the checkout's parent | develop | ready |  |
-| 0041 | Write release notes for what a work session delivered | verify | in-progress | 0128 |
 | 0191 | Read the first CHANGELOG.md version section against 0041's release-notes criterion | verify | waiting |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
 | 0183 | Decide what checks that an NFR row's named guard can actually red on that requirement | design | ready |  |

@@ -2,8 +2,8 @@
 id: "0041"
 title: Write release notes for what a work session delivered
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -25,9 +25,10 @@ expects:
   - .claude/backlog/LEDGER.md
   - skills/sprint/SKILL.md
   - README.md
-claimed_by: "f380"
-claimed_at: 2026-10-07T04:06:04Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-07
 ---
 
 ## Problem
@@ -158,31 +159,31 @@ Neither is a new skill, a `retro` mode, or new work in the sprint tail. See *Not
 Placement-independent, so they survive whatever the design question settles. **Design adds the ACs
 that name the invocation, the output path and the implementing file.**
 
-- [ ] AC1 — Given a work session whose boundary is stated, when the review runs, then its output
+- [x] AC1 — Given a work session whose boundary is stated, when the review runs, then its output
       lists every ticket that closed inside that boundary with ID, title and closing verdict, and
       lists no ticket that closed outside it.
 ~~AC2 — Given the release-notes file, when read, then it states what changed, who it is for, what
       to do and what did not change, and no entry describes a change only by its ticket ID.~~
       **Moved to `0191`** (2026-10-06): checked there against the first released version section.
-- [ ] AC3 — Given the review's output, when read, then every context window in the session appears
+- [x] AC3 — Given the review's output, when read, then every context window in the session appears
       with its elapsed wall-clock time, its token count, its dollar cost, and the skill that ran in
       it.
-- [ ] AC4 — Given the same output, when read, then it reports total elapsed time, total cost, average
+- [x] AC4 — Given the same output, when read, then it reports total elapsed time, total cost, average
       elapsed time per context window and average cost per context window.
-- [ ] AC5 — Given the same output, when read, then it reports cost per closed ticket for the session
+- [x] AC5 — Given the same output, when read, then it reports cost per closed ticket for the session
       alongside the whole-run and develop-plus-verify pair **read from `MEASUREMENT.md` at the time
       the report runs**, with the as-at date it was read — and the file contains no second copy of
       that pair.
-- [ ] AC6 — Given the same output, when read, then every figure names the committed script that
+- [x] AC6 — Given the same output, when read, then every figure names the committed script that
       produced it and the window it was computed over, so a reader can re-run it — and no dollar
       figure in the report was computed inside a transcript.
-- [ ] AC7 — Given a backlog with no run log present, when the review runs, then it names what it
+- [x] AC7 — Given a backlog with no run log present, when the review runs, then it names what it
       could not attribute and does not present its totals as complete.
-- [ ] AC8 — Given the same output, when read, then it names the boundary it counted over and how that
+- [x] AC8 — Given the same output, when read, then it names the boundary it counted over and how that
       boundary was derived.
-- [ ] AC9 — Given a fixture transcript carrying a sentinel string in its message text, when the
+- [x] AC9 — Given a fixture transcript carrying a sentinel string in its message text, when the
       computation runs over it, then the sentinel appears nowhere in the output.
-- [ ] AC10 — Given a fixture in which two content-block lines repeat one `message.id`, when the
+- [x] AC10 — Given a fixture in which two content-block lines repeat one `message.id`, when the
       computation runs, then that turn is counted once.
 
 **Placement ACs — added by design, 2026-09-12.** AC1, AC3–AC6 and AC8 are confirmed and now name
@@ -190,25 +191,25 @@ their file, the `LEDGER.md` block written by `tools/sprint-ledger.sh record`. AC
 release-notes file is `CHANGELOG.md`, checked per version section (AC13). AC7 is confirmed and made
 concrete by AC16. AC9 and AC10 are confirmed for `--by-session`.
 
-- [ ] AC11 — Given a claimed ticket, when `./close <id> <token> --note "<text>"` runs, then
+- [x] AC11 — Given a claimed ticket, when `./close <id> <token> --note "<text>"` runs, then
       `CHANGELOG.md` gains `<text>` under `## Unreleased` and `DONE.md` gains the row, both in
       **one** commit.
-- [ ] AC12 — Given a claimed ticket, when `./close <id> <token>` runs with no `--note`, then
+- [x] AC12 — Given a claimed ticket, when `./close <id> <token>` runs with no `--note`, then
       `CHANGELOG.md` is unchanged, byte for byte.
-- [ ] AC13 — Given `CHANGELOG.md` with entries under `## Unreleased`, when `tools/release --bump`
+- [x] AC13 — Given `CHANGELOG.md` with entries under `## Unreleased`, when `tools/release --bump`
       completes, then those entries sit under `## <new version> — <date>`, `## Unreleased` is
       present and empty, and that edit is in the bump commit.
-- [ ] AC14 — Given an empty `## Unreleased`, when `tools/release --bump` runs without
+- [x] AC14 — Given an empty `## Unreleased`, when `tools/release --bump` runs without
       `--no-behaviour-change`, then it exits non-zero before step 5 and nothing is committed,
       pushed or edited. With the flag, the version section carries the explicit no-change line.
-- [ ] AC15 — Given a fixture transcript whose session's first and last turns are 42 minutes apart,
+- [x] AC15 — Given a fixture transcript whose session's first and last turns are 42 minutes apart,
       when `tools/harvest-usage.sh --by-session` runs, then that session's row reads 42 elapsed
       minutes, alongside its skill, turns, context and USD.
-- [ ] AC16 — Given a fixture run log and transcripts, when `tools/sprint-ledger.sh record` runs,
+- [x] AC16 — Given a fixture run log and transcripts, when `tools/sprint-ledger.sh record` runs,
       then the appended block holds one per-window row per dispatched session id, the closed-ticket
       list, total and average elapsed time and cost, and cost per closed ticket beside
       `MEASUREMENT.md`'s pair with its as-at stamp.
-- [ ] AC17 — Given `skills/verify/SKILL.md`, when grepped, then its close step instructs a `--note`
+- [x] AC17 — Given `skills/verify/SKILL.md`, when grepped, then its close step instructs a `--note`
       voiced as what a session will do differently, plain language and ID not leading, and it
       instructs **no note** for a ticket with no observable change.
 
