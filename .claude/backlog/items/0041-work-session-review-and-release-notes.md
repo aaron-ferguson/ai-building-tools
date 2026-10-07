@@ -443,6 +443,21 @@ concrete by AC16. AC9 and AC10 are confirmed for `--by-session`.
     AC section, which `./close` would read as non-checkbox criteria. The bullet marker is removed.
     AC2 stays struck and annotated, and it is still not a checkbox.
 
+- 2026-10-07 — **verify FAIL, sent back to `develop`** (verify 4c6e). **One gap, AC1's quantifier
+  "every ticket that closed inside that boundary".** Every fixture that exercises
+  `tools/sprint-ledger.sh record` closes exactly **one** ticket (0101), so no guard can tell "every
+  closed ticket" from "the first". Mutation run: `for cid, verdict in closed_pairs:` →
+  `closed_pairs[:1]` leaves `tests/sprint-ledger.test.sh` at **154 passed, 0 failed**. The break
+  did land. A hand-run fixture with two tickets closed by one verify outcome printed
+  `TICKET 0101 …` and `TICKET 0103 …` on the committed code and only `TICKET 0101 …` under the
+  mutation. **The mechanism is correct today and was cleared.** What is missing is the guard. The
+  build notes' sweep row "with ID … (every ticket closed inside) → TICKET lines removed" mutated
+  the ID, not the quantifier.
+  **The constraint:** the AC1 guard must assert a `TICKET` line, with its title and its own verdict,
+  for **each** of at least two tickets closed inside the boundary. It must still assert that a
+  ticket which did not close (0102) is absent. Every other AC1 clause reddened under mutation (see
+  QA evidence), so nothing else needs to change.
+
 ## QA evidence
 
 Verify 1d1f, 2026-10-04 — **FAIL** (AC1), at `qa_level: unit`, batch 0187/0188/0174/0041 from one develop gate.
@@ -484,3 +499,50 @@ Mutations: each applied to the committed file, diff confirmed non-empty, guard r
 | Compatibility | `./close` without `--note` is byte-identical (AC12 guard) | holds, guarded |
 | Dependencies | sh and python3 only | holds |
 | Documentation | README phrases guarded in `tests/close.test.sh` | holds, guarded |
+
+Verify 4c6e, 2026-10-07 — **FAIL** (AC1 quantifier unguarded), at `qa_level: unit`, single ticket
+(develop 9f96 re-entry). AC2 is judged in `0191`, not here.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`) — 32 files, every tally `0 failed`; `tests/sprint-ledger.test.sh` 154 passed, 0 failed; `tests/close.test.sh` 280 passed, 0 failed; `tests/release.test.sh` 59 passed, 0 failed; `tests/measurement.test.sh` 143 passed, 0 failed; `tests/retro-tool-edit.test.sh` 53 passed, 0 failed; `tests/item-ac-form.test.sh` 8 passed, 0 failed. No lint or typecheck is configured.
+Tree: `git status --porcelain` was empty at Step 2 and again after the last mutation restore. The intersection is empty, so this is not advisory.
+Copy executed: the repo's `tools/sprint-ledger.sh` (the tests invoke it by repo path), not the plugin cache.
+
+Mutations: each was applied to the committed `tools/sprint-ledger.sh` by an exact single-match replace. The diff was confirmed non-empty, `tests/sprint-ledger.test.sh` was re-run, and the file was restored by that path and `cmp`-checked against a pre-run copy. Control after restore: 154/0.
+
+AC1 clause table:
+
+| AC1 clause | kind | mutation | result |
+|---|---|---|---|
+| Given a work session whose boundary is stated | Given | the run log is the boundary; covered by the inside/outside rows below | — |
+| lists every ticket that closed inside that boundary | predicate + quantifier | `closed_pairs[:1]` (only the first closed ticket listed) | **green 154/0 — GAP.** The break landed: a hand-run two-ticket fixture loses `TICKET 0103` |
+| with ID | object | `TICKET` lines removed | red 149/5 |
+| title | object | title replaced by a constant | red 152/2 |
+| title (from disk, FR1) | object | `DONE.md` never read | red 152/2 |
+| closing verdict | object | verdict forced to `pass` | red 152/2 |
+| lists no ticket that closed outside it | predicate | every outcome ticket counted closed | red 145/9 |
+| FR7: labelled, not dropped (no title) | qualifier | untitled ticket skipped | red 151/3 |
+| FR7: out-of-set title labelled | qualifier | charset check removed | red 152/2 |
+
+| AC | How checked | Result |
+|---|---|---|
+| AC1 | clause table above | **FAIL: the "every" quantifier is unguarded**; behaviour correct when run by hand |
+| AC2 | struck; moved to `0191` | not judged here |
+| AC3 | window rows dropped | red 152/2 |
+| AC4 | average printed as the total | red 153/1 |
+| AC5 | MEASUREMENT.md pair not read | red 153/1 |
+| AC6 | `CLOSED` line's source and stamp dropped | red 153/1 |
+| AC7, AC9, AC10, AC15 | `tools/harvest-usage.sh` and `tests/measurement.test.sh` are byte-unchanged since verify 1d1f's mutations; suite green | **not re-mutated this round.** The next verify re-runs them |
+| AC8 | read: `## sprint <run> -- ended <ts>` heading, and sources cite `run.jsonl` | holds (read) |
+| AC11–AC14, AC17 | `.claude/backlog/close`, `tools/release`, `skills/verify/SKILL.md` are byte-unchanged since 1d1f; suite green | **not re-mutated this round** |
+| AC16 | as AC3/AC4/AC5 plus `CLOSED`, mutated above | red each |
+
+**Evidence set:** `tools/sprint-ledger.sh`, `tests/sprint-ledger.test.sh`, `README.md`, `MEASUREMENT.md`, `skills/sprint/SKILL.md`, `.claude/backlog/config.yml`, `.claude/backlog/DONE.md`.
+
+| NFR | Check | Result |
+|---|---|---|
+| Privacy & data | Titles are the one new non-aggregate. The NFR allows "ticket titles the project already tracks". They are read from `DONE.md` and held to `LEDGER_CHARSET`, and an out-of-set title is labelled, not written | holds, guarded (charset mutation red 152/2) |
+| Security | local reads and writes only | holds |
+| Compatibility | the `CLOSED` line is kept and the AC16 guard reads it; `--done` is optional, and by default reads the `DONE.md` beside `--ledger` | holds |
+| Dependencies | python3 stdlib only | holds |
+| Documentation | the `README.md` sentence names the title and verdict | holds (read; not guarded for this phrase) |
