@@ -3,7 +3,7 @@ id: "0191"
 title: Read the first CHANGELOG.md version section against 0041's release-notes criterion
 type: chore
 next: verify
-status: waiting
+status: ready
 qa_level: verify
 size: s
 created: 2026-10-06
@@ -86,6 +86,9 @@ audience or no instruction to the reader.
   appears only on a release, which a person runs. `qa_level: verify` because no runner applies and
   QA step 3 names the mechanical check. Ranked directly below `0041`, ahead of every other waiting
   row, so `./next --waiting` and sprint proposals surface it beside the ticket it came from.
+- 2026-10-07 — **Waiting cleared**: `tools/release --bump` produced `## 0.9.37 — 2026-10-07` at
+  633c4e3, after `0041` closed at 737a80e. Set `status: ready` by the verify session the person
+  invoked for this ticket.
 
 ## Waiting on
 
