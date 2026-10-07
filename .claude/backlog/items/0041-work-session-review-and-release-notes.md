@@ -28,19 +28,14 @@ expects:
 claimed_by: "9f96"
 claimed_at: 2026-10-07T03:23:27Z
 touches:
-  - CHANGELOG.md
-  - .claude/backlog/close
-  - tests/close.test.sh
-  - skills/verify/SKILL.md
-  - tools/release
-  - tests/release.test.sh
-  - tools/harvest-usage.sh
-  - tests/measurement.test.sh
   - tools/sprint-ledger.sh
   - tests/sprint-ledger.test.sh
-  - .claude/backlog/LEDGER.md
-  - skills/sprint/SKILL.md
   - README.md
+  - CLAUDE.md
+  - skills/retro/SKILL.md
+  - tests/release.test.sh
+  - tests/retro-tool-edit.test.sh
+  - .claude/backlog/items/0041-work-session-review-and-release-notes.md
 ---
 
 ## Problem
@@ -174,7 +169,7 @@ that name the invocation, the output path and the implementing file.**
 - [ ] AC1 — Given a work session whose boundary is stated, when the review runs, then its output
       lists every ticket that closed inside that boundary with ID, title and closing verdict, and
       lists no ticket that closed outside it.
-- ~~AC2 — Given the release-notes file, when read, then it states what changed, who it is for, what
+~~AC2 — Given the release-notes file, when read, then it states what changed, who it is for, what
       to do and what did not change, and no entry describes a change only by its ticket ID.~~
       **Moved to `0191`** (2026-10-06): checked there against the first released version section.
 - [ ] AC3 — Given the review's output, when read, then every context window in the session appears
@@ -415,6 +410,46 @@ concrete by AC16. AC9 and AC10 are confirmed for `--by-session`.
   word at `next: verify, status: waiting`. **`0041` closes on its remaining ACs.** AC2 is struck and
   annotated above rather than deleted, and is no longer a checkbox so `./close` cannot tick it. The
   row stays `next: develop, status: ready` for the AC1 gap verify 1d1f found.
+
+- 2026-10-07 — **develop 9f96, re-entry on verify 1d1f's AC1 gap, plus the parked staleness.**
+  - **AC1.** `tools/sprint-ledger.sh record` keeps its `CLOSED <ids> (…)` line (AC16's guard reads
+    it) and now writes one line per closed ticket under it:
+    `TICKET 0101 verdict pass title <title> (run.jsonl outcome events, DONE.md @ <stamp>)`. The
+    verdict is the closing `outcome` entry's own `verdict`, and the title comes from `DONE.md`'s
+    table. By default that is the `DONE.md` beside `--ledger`, and `--done <path>` overrides it.
+    Neither is read from a session. Three labels instead of a drop (FR7): `title not on disk`,
+    `title outside the ledger character set, read DONE.md` (the set the privacy guard holds every
+    block line to, now one constant `LEDGER_CHARSET`), and `verdict not reported`. Titles are labelled,
+    never rewritten into the set, so a real title with an apostrophe or backtick reads as the label.
+    That is deliberate: rewriting a title would print text that is not on disk. The privacy comment
+    at the top of the script now names titles as the one non-aggregate it emits. The ticket's
+    privacy NFR already allowed this ("ticket titles the project already tracks").
+  - **Mutation sweep, all RUN** (enumerated from AC1's clauses, not the guard):
+    | AC1 clause | mutation | result |
+    |---|---|---|
+    | with ID … (every ticket closed inside) | TICKET lines removed | red 149/5 |
+    | title | title replaced by a constant | red 151/3 |
+    | title, read from disk | DONE.md never read | red 152/2 (first attempt `{} or …` was a no-op, green, and was re-run) |
+    | closing verdict | verdict constant `pass` | red 152/2 |
+    | closing verdict (the closing entry's) | verdict from the develop entry (`built`) | red 149/5 |
+    | lists no ticket closed outside | every outcome ticket counted closed | red 145/9 |
+    | FR7 labelled not dropped | untitled ticket skipped | red 151/3 |
+    | FR7 out-of-set title | charset check removed | red 152/2 |
+    | FR7 missing verdict | missing verdict defaulted to `pass` | red 153/1 |
+    Control after restore: 154/0. The "boundary is stated" Given is the run log itself. A sweep
+    cannot falsify it apart from "inside/outside", and the 0102 case covers that.
+  - **Staleness (FINDINGS 2026-10-04, first half).** `CLAUDE.md`'s release paragraph and retro Step
+    5 now say a bump refuses on an empty `## Unreleased`. CLAUDE.md says to add the notes there first
+    and to pass `--no-behaviour-change` only when the release changes none. Retro also says its
+    own edits put nothing there, since `./close --note` fills it and a retro closes no ticket. So
+    retro writes the note in the commit that carries the edit. Guards: `tests/release.test.sh`
+    (CLAUDE.md, three phrases) and `tests/retro-tool-edit.test.sh` (Step 5 window, three phrases).
+    Each phrase was reworded once and each went red (RUN); controls 59/0 and 53/0. No existing guarded
+    line was rewrapped: both edits are inserted lines.
+  - **Baseline red fixed in this item, not in code.** `tests/item-ac-form.test.sh` was red at the
+    claim on this file. `580b434` (the AC2 split) left the struck AC2 as a plain `- ` bullet in the
+    AC section, which `./close` would read as non-checkbox criteria. The bullet marker is removed.
+    AC2 stays struck and annotated, and it is still not a checkbox.
 
 ## QA evidence
 
