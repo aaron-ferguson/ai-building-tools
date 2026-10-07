@@ -18,7 +18,7 @@ conventions:
 # to 104 and so queued up a reissue those five citations would have silently followed. The
 # 2026-09-07 retro set this to 111 and left 0104 unissued. Item 0105 then repointed the five at
 # b9a5ee0, which resolves permanently, and gave the withdrawal path the rules it never had.
-next_id: 192
+next_id: 195
 
 # How many FINDINGS.md entries before a driver runs a retro instead of the next ticket. Read by
 # `./next --findings` and gated on by `./next --drive` (exit 5). Left at retro's stated cadence
@@ -85,6 +85,7 @@ stage_budget_usd:
   verify: 5.45           # 3.63 x 1.5
   retro: 3.75            # 2.51 x 1.5
   queue: 6.36            # 4.24 x 1.5
+  design: 3.48           # 2.32 x 1.5 (one session in that table; recompute as it grows)
   per_extra_ticket:
     develop: 4.03
     verify: 3.63
@@ -130,7 +131,8 @@ routing:
 # natural form is the worst one: `tests/next.test.sh 2>&1 | grep -E 'FAIL|passed,' | head`
 # cannot flush through `head`, so a run cut short delivers NOTHING — not a partial tally, not
 # the reds already printed — and a slow run is indistinguishable from a hung one. Redirect
-# instead (`tests/next.test.sh > /tmp/out.txt 2>&1`) and poll the file: progress shows line by
+# instead (`tests/next.test.sh > out.txt 2>&1`, inside the session's working directories, never
+# /tmp: a driven session's Monitor refuses paths outside them) and poll the file: progress shows line by
 # line and survives the timeout. `verify` Step 3 asks for a mutation per cited check and this
 # repo's ACs cite that suite constantly, so this recurs on every router ticket (verify
 # 0158/0159).
