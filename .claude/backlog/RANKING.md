@@ -413,3 +413,11 @@ sits below every all-projects Tier 2 row above it on tie-breaker 1. It sits abov
 release notes are Tier 4 value.
 
 The regret operator was not needed for any of the five.
+
+## 2026-10-06 - 0191 placed directly below 0041
+
+Split from `0041` AC2 by the person in run-20261004T232135Z. A regression guard ranks with what it
+guards, and this is the same rule applied to a split criterion: `0191` is `0041`'s release-notes
+check, deferred only because no version section exists yet, so it sits immediately under its
+parent row rather than at the bottom. It is the first `waiting` row in the queue, which is what puts
+it at the top of `./next --waiting` and in front of a sprint's proposals once a release lands.

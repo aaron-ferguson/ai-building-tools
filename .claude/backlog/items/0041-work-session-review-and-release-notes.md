@@ -161,8 +161,9 @@ that name the invocation, the output path and the implementing file.**
 - [ ] AC1 — Given a work session whose boundary is stated, when the review runs, then its output
       lists every ticket that closed inside that boundary with ID, title and closing verdict, and
       lists no ticket that closed outside it.
-- [ ] AC2 — Given the release-notes file, when read, then it states what changed, who it is for, what
-      to do and what did not change, and no entry describes a change only by its ticket ID.
+- ~~AC2 — Given the release-notes file, when read, then it states what changed, who it is for, what
+      to do and what did not change, and no entry describes a change only by its ticket ID.~~
+      **Moved to `0191`** (2026-10-06): checked there against the first released version section.
 - [ ] AC3 — Given the review's output, when read, then every context window in the session appears
       with its elapsed wall-clock time, its token count, its dollar cost, and the skill that ran in
       it.
@@ -395,6 +396,12 @@ concrete by AC16. AC9 and AC10 are confirmed for `--by-session`.
   `CLOSED 0101 (run.jsonl outcome events @ 2026-10-05T01:54:28Z)`
   No guard asserts a title or a verdict, so this is absent behaviour, not a guard that failed to fire. **The constraint:** each closed ticket in the block carries its ID, its title and the verdict that closed it. Read the verdict from the closing `outcome` event's ticket entry (`"verdict":"pass"`), and the title from the record on disk (FR1: `DONE.md` or the item), never from a session. The guard asserts all three for the fixture's 0101, and that 0102, which failed verify, is still absent. The title must stay inside the block's aggregate character set; a title that cannot, or a ticket with no title on disk, is labelled rather than dropped (FR7). Every other AC held under mutation (see QA evidence), so nothing else needs to change.
   - **AC2 is not counted as a develop gap, and it is not settled either.** Design amended AC2 to be "checked per version section (AC13)". No version section exists until the first release, so the `### Did not change` half has nothing to be read against. `CHANGELOG.md` now carries the preamble (who it is for, what to do) and three Unreleased entries, written by this session's closes of 0187, 0188 and 0174. Those are the first `--note` entries, and each leads with the behaviour.
+- 2026-10-06 — **AC2 split out to `0191`, person decision in run-20261004T232135Z.** AC2's
+  did-not-change half cannot exist before a release: it is checked per `CHANGELOG.md` version section
+  (AC13), and no version section exists until `tools/release --bump` runs. `0191` carries AC2 word for
+  word at `next: verify, status: waiting`. **`0041` closes on its remaining ACs.** AC2 is struck and
+  annotated above rather than deleted, and is no longer a checkbox so `./close` cannot tick it. The
+  row stays `next: develop, status: ready` for the AC1 gap verify 1d1f found.
 
 ## QA evidence
 
