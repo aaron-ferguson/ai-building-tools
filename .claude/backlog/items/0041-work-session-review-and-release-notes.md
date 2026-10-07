@@ -586,3 +586,55 @@ AC1 clause table:
 | Compatibility | the `CLOSED` line is kept and the AC16 guard reads it; `--done` is optional, and by default reads the `DONE.md` beside `--ledger` | holds |
 | Dependencies | python3 stdlib only | holds |
 | Documentation | the `README.md` sentence names the title and verdict | holds (read; not guarded for this phrase) |
+
+Verify f380, 2026-10-06 — **PASS**, at `qa_level: unit`, single ticket (develop 6ed0 re-entry on
+verify 4c6e). AC2 is judged in `0191`, not here (person decision, run-20261004T232135Z).
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`) — 32 files, every tally `0 failed`; `tests/sprint-ledger.test.sh` 165 passed, 0 failed; `tests/close.test.sh` 281 passed, 0 failed; `tests/release.test.sh` 63 passed, 0 failed; `tests/measurement.test.sh` 143 passed, 0 failed; `tests/item-ac-form.test.sh` 8 passed, 0 failed. No lint or typecheck is configured.
+Tree: `git status --porcelain` empty at Step 2 and after the last mutation restore. The intersection is empty, so this is not advisory.
+Copy executed: the repo's `tools/sprint-ledger.sh`, `tools/harvest-usage.sh`, `tools/release`, `skills/queue/templates/close` (`cmp`-identical to `.claude/backlog/close`) and `skills/verify/SKILL.md`, which the tests invoke by repo path. The installed plugin 0.9.36 copy of `skills/verify/SKILL.md` differs and lacks the AC17 rule, as expected for unreleased work.
+
+Mutations: every AC was re-mutated this round, including those 4c6e left un-mutated. Each was applied to the committed file by an exact single-match replace, the diff was confirmed non-empty, the owning guard was re-run, and the file was restored by that path and `cmp`-checked against a pre-run copy. The tree read clean afterwards.
+
+AC1 clause table (reused from 4c6e, with no new division):
+
+| AC1 clause | kind | mutation | result |
+|---|---|---|---|
+| Given a work session whose boundary is stated | Given | the boundary is the `--run` log, and the rows below test inside versus outside it | — |
+| lists every ticket that closed inside that boundary | predicate + quantifier | `closed_pairs[:1]` | **red 163/2** (4c6e's gap, now guarded: "missing: TICKET 0103 …") |
+| with ID | object | `TICKET` line not written | red 157/8 |
+| title | object | title replaced by a constant | red 160/5 |
+| closing verdict (each ticket's own) | object | the first ticket's verdict reused for all | red 163/2 |
+| lists no ticket that closed outside it | predicate | every outcome ticket counted closed (`done = True`) | red 150/15 |
+
+| AC | How checked / mutation | Result |
+|---|---|---|
+| AC1 | clause table above | holds, guarded |
+| AC2 | struck; moved to `0191` | not judged here |
+| AC3 | window rows dropped; stage cell replaced | red 161/4; 163/2 |
+| AC4 | average printed as the total | red 164/1 |
+| AC5 | MEASUREMENT.md pair not read (`pair = None`). No `5.71`/`4.23` literal in `tools/sprint-ledger.sh` | red 164/1 |
+| AC6 | `CLOSED` line's source and stamp dropped | red 162/3 |
+| AC7 | `--by-session` "attributes no run and no closed tickets" line removed | red 142/1 |
+| AC8 | `-- ended <ts>` dropped from the heading | red 164/1 (plus the AC6 row's run.jsonl citation red) |
+| AC9 | message content printed into the harvest output | red 139/4 |
+| AC10 | `message.id` dedupe removed | red 139/4 ("turns cell is [3]") |
+| AC11 | note never written; CHANGELOG left out of the close commit | red 275/6; 279/2 |
+| AC12 | a no-note close appends a byte to CHANGELOG.md | red 273/8, including "CHANGELOG.md is byte-identical" |
+| AC13 | nothing promoted; CHANGELOG left out of the bump commit; `## Unreleased` not re-created | red 60/3; 61/2; 62/1 |
+| AC14 | empty-Unreleased refusal removed; no-change line dropped | red 60/3; 62/1 |
+| AC15 | elapsed divided by 61 instead of 60 | red 142/1 (41.3, not 42.0) |
+| AC16 | as AC1/AC3/AC4/AC5/AC6 | red each |
+| AC17 | each of the five guarded phrases reworded, one run each | red 280/1 each |
+
+**Evidence set:** `tools/sprint-ledger.sh`, `tools/harvest-usage.sh`, `tools/release`, `skills/queue/templates/close`, `.claude/backlog/close`, `skills/verify/SKILL.md`, `README.md`, `MEASUREMENT.md`, `tests/sprint-ledger.test.sh`, `tests/measurement.test.sh`, `tests/close.test.sh`, `tests/release.test.sh`.
+
+| NFR | Check | Result |
+|---|---|---|
+| Privacy & data | sentinel and character-set guards (AC9 mutation red); titles are held to `LEDGER_CHARSET`, and an out-of-set title is labelled (4c6e's charset mutation) | holds, guarded |
+| Security | no network import or call in either script (`json, os, re, subprocess, sys, datetime, glob` only) | holds (read) |
+| Measurement | figures carry stamps and sources (AC6/AC8 mutations red); elapsed is labelled as excluding start-up | holds, guarded |
+| Compatibility | `./close` without `--note` leaves CHANGELOG.md byte-identical | holds, guarded (AC12) |
+| Dependencies | sh and python3 stdlib only | holds (read) |
+| Documentation | README documents `--note` (l.218), `sprint-ledger.sh record` (l.273) and `--by-session` (l.277) | holds; guarded per 6ed0 row 5 |
