@@ -295,3 +295,46 @@ RATIO verify_usd_per_ticket unbatched session 9c168ec0 = 0.00
 DESIGN 0187 session 6c7d50e2 concurrent: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-26T13:51:15Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
 DESIGN 0188 session ee037d50 concurrent: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-09-26T13:51:15Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-09-26T13:51:15Z)
 FINDINGS parked 6 (run-20260925T203345Z.jsonl outcome events @ 2026-09-26T13:51:15Z)
+
+## sprint run-20261004T232135Z -- ended 2026-10-07T04:36:27Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 5 | 5 | confirmed scope @ 2026-10-07T04:36:41Z |
+| wall_clock_min | 1046 | 3183 | LEDGER.md 7 recorded sprint(s) over 34 ticket(s), 1 excluded (no ticket count), 5 predate the tail split @ 2026-10-04T23:27:36Z |
+| tokens | 28584006 | unpriced | LEDGER.md 7 recorded sprint(s) over 34 ticket(s), 1 excluded (no ticket count), 5 predate the tail split @ 2026-10-04T23:27:36Z — unpriced: 384 turn(s) on a model with no published rate |
+| usd | 33.80 | unpriced | LEDGER.md 7 recorded sprint(s) over 34 ticket(s), 1 excluded (no ticket count), 5 predate the tail split @ 2026-10-04T23:27:36Z — unpriced: 384 turn(s) on a model with no published rate |
+| tail_tokens | no prior | unpriced | harvest-usage.sh over 2 session id(s) @ 2026-10-07T04:36:41Z — unpriced: 53 turn(s) on a model with no published rate |
+| tail_usd | no prior | unpriced | harvest-usage.sh over 2 session id(s) @ 2026-10-07T04:36:41Z — unpriced: 53 turn(s) on a model with no published rate |
+
+| Window | Stage | Elapsed min | Context tokens | USD |
+|---|---|---|---|---|
+| 4a8af893 | develop | unpriced | unpriced | unpriced |
+| ef438b66 | verify | unpriced | unpriced | unpriced |
+| ddf44e82 | queue | unpriced | unpriced | unpriced |
+| 94fa35d3 | develop | unpriced | unpriced | unpriced |
+| d0572e62 | verify | unpriced | unpriced | unpriced |
+| 526d4ea6 | develop | unpriced | unpriced | unpriced |
+| 5720f253 | verify | unpriced | unpriced | unpriced |
+| 955b4491 | retro | unpriced | unpriced | unpriced |
+WINDOWS elapsed is first to last turn per transcript and excludes start-up (harvest-usage.sh --by-session over 8 session id(s) @ 2026-10-07T04:36:41Z)
+CLOSED 0187 0188 0174 0041 (run-20261004T232135Z.jsonl outcome events @ 2026-10-07T04:36:41Z)
+TICKET 0187 verdict pass title Decide whether a sprint dispatch pins a concrete model or records the one that answered (run-20261004T232135Z.jsonl outcome events, DONE.md @ 2026-10-07T04:36:41Z)
+TICKET 0188 verdict pass title Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop (run-20261004T232135Z.jsonl outcome events, DONE.md @ 2026-10-07T04:36:41Z)
+TICKET 0174 verdict pass title Say the findings gate is deferred until the run is out of work when no scope was confirmed (run-20261004T232135Z.jsonl outcome events, DONE.md @ 2026-10-07T04:36:41Z)
+TICKET 0041 verdict pass title Write release notes for what a work session delivered (run-20261004T232135Z.jsonl outcome events, DONE.md @ 2026-10-07T04:36:41Z)
+
+GATE develop 4 ticket(s) session 4a8af893: predicted USD 18.14 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-10-07T04:36:41Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-10-07T04:36:41Z)
+GATE develop 1 ticket(s) session 94fa35d3: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-10-07T04:36:41Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-10-07T04:36:41Z)
+GATE develop 1 ticket(s) session 526d4ea6: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-10-07T04:36:41Z) observed USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-10-07T04:36:41Z)
+RATIO verify_usd_per_ticket batched session ef438b66 = 0.00
+  numerator USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-10-07T04:36:41Z)
+  denominator 4 ticket(s) (run-20261004T232135Z.jsonl outcome events @ 2026-10-07T04:36:41Z)
+RATIO verify_usd_per_ticket unbatched session d0572e62 = 0.00
+  numerator USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-10-07T04:36:41Z)
+  denominator 1 ticket(s) (run-20261004T232135Z.jsonl outcome events @ 2026-10-07T04:36:41Z)
+RATIO verify_usd_per_ticket unbatched session 5720f253 = 0.00
+  numerator USD 0.00 (harvest-usage.sh over 1 session id(s) @ 2026-10-07T04:36:41Z)
+  denominator 1 ticket(s) (run-20261004T232135Z.jsonl outcome events @ 2026-10-07T04:36:41Z)
+FINDINGS parked 7 (run-20261004T232135Z.jsonl outcome events @ 2026-10-07T04:36:41Z)
+RETRO consumed 0 produced 0 (run-20261004T232135Z.jsonl outcome events @ 2026-10-07T04:36:41Z)
