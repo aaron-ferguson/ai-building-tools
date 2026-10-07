@@ -1403,5 +1403,51 @@ else
 fi
 case "$W41B" in *SENTINELPROSE*) bad "0041 AC16 -- message text reached the ledger" ;; *) ok "and no message text reached it" ;; esac
 
+# --- 0041 AC1 -- each closed ticket carries its ID, its title and the verdict that closed it -----
+# The verdict is the closing outcome's own ticket entry; the title is DONE.md's row beside the
+# ledger, never a session's. A title the block's character set cannot hold, and a ticket with no
+# DONE.md row, are each labelled rather than dropped (FR7).
+echo "0041 AC1 -- the closed-ticket list carries ID, title and closing verdict"
+w41_record() { # <DONE.md content, or empty for none>
+  rm -f "$W41/DONE.md"; [ -n "$1" ] && printf '%s\n' "$1" > "$W41/DONE.md"
+  cp "$EMPTY" "$W41/ledger.md"
+  "$TOOL" record --ledger "$W41/ledger.md" --run "$W41/run.jsonl" --transcripts "$W41/store" \
+    --measurement "$MEAS" --config "$CONF" --estimate-tickets 2 --estimate-wall no-prior \
+    --estimate-tokens 1 --estimate-usd 1.00 --estimate-source "$EST_SOURCE" >/dev/null 2>&1 || true
+  awk '/^## sprint /{s=1} s' "$W41/ledger.md"
+}
+DONE_HEAD='| ID | Title | Type | QA | Closed | Item |
+|------|-------|------|----|--------|------|'
+A1B="$(w41_record "$DONE_HEAD
+| 0102 | Fixture title the verify outcome did not close | bug | unit | 2026-09-20 | x |
+| 0101 | Fixture title for the closed ticket | bug | unit | 2026-09-20 | x |")"
+case "$A1B" in
+  *"TICKET 0101 verdict pass title Fixture title for the closed ticket (run.jsonl outcome events, DONE.md @ "*)
+    ok "0101 is listed with its ID, its DONE.md title and the verdict that closed it" ;;
+  *) bad "0041 AC1 -- no ID, title and verdict line for 0101: $(printf '%s' "$A1B" | grep -E '^(CLOSED|TICKET)' || echo none)" ;;
+esac
+case "$A1B" in
+  *"TICKET 0102"*|*"did not close"*) bad "0041 AC1 -- 0102, which failed verify, is listed as closed" ;;
+  *) ok "and 0102, which failed verify, is listed nowhere" ;;
+esac
+if printf '%s\n' "$A1B" | grep -vn '^[A-Za-z0-9 .,%|:@/_#()=-]*$' | grep -q .; then
+  bad "0041 AC1 -- a title line leaves the aggregate character set: $(printf '%s\n' "$A1B" | grep -vn '^[A-Za-z0-9 .,%|:@/_#()=-]*$' | head -1)"
+else
+  ok "and the title line stays within the aggregate character set"
+fi
+A1Q="$(w41_record "$DONE_HEAD
+| 0101 | Fixture title with a \`backtick\` the set cannot hold | bug | unit | 2026-09-20 | x |")"
+case "$A1Q" in
+  *"TICKET 0101 verdict pass title outside the ledger character set, read DONE.md ("*)
+    ok "a title the character set cannot hold is labelled, and 0101 is still listed" ;;
+  *) bad "0041 AC1 -- an out-of-set title is not labelled: $(printf '%s' "$A1Q" | grep -E '^(CLOSED|TICKET)' || echo none)" ;;
+esac
+case "$A1Q" in *backtick*) bad "0041 AC1 -- the out-of-set title reached the block" ;; *) ok "and the out-of-set title itself is not written" ;; esac
+A1N="$(w41_record "")"
+case "$A1N" in
+  *"TICKET 0101 verdict pass title not on disk ("*) ok "a ticket with no DONE.md row is labelled, not dropped" ;;
+  *) bad "0041 AC1 -- a ticket with no title on disk is not labelled: $(printf '%s' "$A1N" | grep -E '^(CLOSED|TICKET)' || echo none)" ;;
+esac
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

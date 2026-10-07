@@ -271,7 +271,8 @@ Two things are worth knowing before planning a lot of work with it:
 
 **What one run delivered and cost** is the sprint's block in `.claude/backlog/LEDGER.md`, which
 `tools/sprint-ledger.sh record` writes from the run log: one row per context window with its elapsed
-minutes, context and dollars, the tickets the run closed, and cost per closed ticket beside
+minutes, context and dollars, the tickets the run closed with each one's `DONE.md` title and the
+verdict that closed it, and cost per closed ticket beside
 `MEASUREMENT.md`'s figures. A hand-driven backlog has no run log; `tools/harvest-usage.sh
 <transcripts> --by-session --since <date> --until <date>` gives the same per-window rows over a date
 range, and says it attributes no run and no closed tickets.

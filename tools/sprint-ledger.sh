@@ -27,7 +27,8 @@
 #
 # PRIVACY (0135's data-privacy NFR, and 0026's before it): the ledger is committed to a public
 # repo. This reads run logs and, through tools/harvest-usage.sh, full conversation transcripts, and
-# it emits ONLY aggregate numbers, stage names, file paths it was given, and session-id prefixes.
+# it emits ONLY aggregate numbers, stage names, file paths it was given, session-id prefixes, and
+# the titles DONE.md already tracks for the tickets the run closed (0041 AC1).
 # It never reads or prints message text. tests/sprint-ledger.test.sh asserts both halves against a
 # fixture transcript carrying a sentinel string.
 #
@@ -49,6 +50,7 @@
 #                                   --estimate-tickets N --estimate-wall <N|no-prior>
 #                                   --estimate-tokens N --estimate-usd N
 #                                   --estimate-source <string>
+#                                   [--done <DONE.md>]   default: DONE.md beside --ledger
 #
 # Requires: sh and python3. No packages -- consistent with tools/harvest-usage.sh.
 
@@ -78,6 +80,8 @@ TAIL_STAGES = ("retro", "queue")
 TAIL_FIGURES = ["tail_tokens", "tail_usd"]
 LEDGER_FIGURES = FIGURES + TAIL_FIGURES
 NO_PRIOR = "no prior"
+# Every character a generated ledger line may hold -- tests/sprint-ledger.test.sh's privacy guard.
+LEDGER_CHARSET = r"^[A-Za-z0-9 .,%|:@/_#()=-]*$"
 # How much of a failed harvest's own output a refusal quotes back. Bounded because harvest
 # output is unbounded, and wide enough to carry a changed header line, which is the likeliest
 # cause of an unparsable TOTAL.
@@ -514,8 +518,9 @@ def windows(transcripts, session_ids):
 
 
 def closed_tickets(events):
-    """The ids the run's outcome events closed: a ticket entry left at `next: done` or
-    `status: done`, in the order the outcomes reported them (0041 FR1)."""
+    """[(id, verdict)] the run's outcome events closed: a ticket entry left at `next: done` or
+    `status: done`, in the order the outcomes reported them, with the verdict that closing entry
+    carried (0041 FR1)."""
     closed = []
     for e in events:
         if e.get("event") != "outcome":
@@ -523,9 +528,29 @@ def closed_tickets(events):
         for t in e.get("tickets") or []:
             if not isinstance(t, dict):
                 continue
-            if (t.get("next") == "done" or t.get("status") == "done") and t.get("id") not in closed:
-                closed.append(t.get("id"))
+            done = t.get("next") == "done" or t.get("status") == "done"
+            if done and t.get("id") not in [cid for cid, _v in closed]:
+                closed.append((t.get("id"), t.get("verdict")))
     return closed
+
+
+def done_titles(path):
+    """{id: title} from DONE.md's table. A title is the project's own record, read from disk and
+    never from a session (0041 FR1); a missing file is an empty map, labelled per ticket below."""
+    if not os.path.exists(path):
+        return {}
+    titles = {}
+    for line in open(path, errors="replace"):
+        m = re.match(r"^\|\s*(\d{4})\s*\|([^|]*)\|", line)
+        if m:
+            titles[m.group(1)] = m.group(2).strip()
+    return titles
+
+
+def in_ledger_set(text):
+    """Whether a value read from disk may be written as it stands. The set is the one the privacy
+    guard holds every generated line to; anything outside it is labelled, never rewritten."""
+    return isinstance(text, str) and re.match(LEDGER_CHARSET, text) is not None
 
 
 def closed_ticket_pair(path):
@@ -652,8 +677,21 @@ def record(opts):
         out.append("| average | per window | %.1f | %d | %.2f |" % (tot[0] / n, tot[1] // n, tot[2] / n))
     out.append("WINDOWS elapsed is first to last turn per transcript and excludes start-up "
                "(harvest-usage.sh --by-session over %d session id(s) @ %s)" % (len(run_ids), stamp))
-    closed = closed_tickets(events)
+    closed_pairs = closed_tickets(events)
+    closed = [cid for cid, _v in closed_pairs]
     out.append("CLOSED %s (%s @ %s)" % (" ".join(closed) or "none", outcome_src, stamp))
+    # 0041 AC1 -- each closed ticket with its title and the verdict that closed it. Labelled rather
+    # than dropped where disk has no title or the title cannot sit in the block (FR7).
+    titles = done_titles(opts["done"] or os.path.join(os.path.dirname(opts["ledger"]), "DONE.md"))
+    for cid, verdict in closed_pairs:
+        title = titles.get(cid)
+        if title is None:
+            title = "not on disk"
+        elif not in_ledger_set(title):
+            title = "outside the ledger character set, read DONE.md"
+        verdict = verdict if in_ledger_set(verdict) and verdict else "not reported"
+        out.append("TICKET %s verdict %s title %s (%s, DONE.md @ %s)"
+                   % (cid, verdict, title, outcome_src, stamp))
     pair = closed_ticket_pair(opts["measurement"])
     if closed and isinstance(usd, float):
         whole = (usd + (tail_usd if isinstance(tail_usd, float) else 0.0)) / len(closed)
@@ -744,12 +782,13 @@ def parse(argv):
     opts = {"ledger": None, "measurement": "MEASUREMENT.md", "config": None, "run": None,
             "transcripts": None, "tickets": 0, "develop_gates": 1, "verify_sessions": 1,
             "retro": False, "queue": False, "estimate_tickets": None, "estimate_wall": NO_PRIOR,
-            "estimate_tokens": None, "estimate_usd": None, "estimate_source": None}
+            "estimate_tokens": None, "estimate_usd": None, "estimate_source": None, "done": None}
     ints = {"--tickets": "tickets", "--develop-gates": "develop_gates",
             "--verify-sessions": "verify_sessions", "--estimate-tickets": "estimate_tickets",
             "--estimate-tokens": "estimate_tokens"}
     strs = {"--ledger": "ledger", "--measurement": "measurement", "--config": "config",
-            "--run": "run", "--transcripts": "transcripts", "--estimate-source": "estimate_source"}
+            "--run": "run", "--transcripts": "transcripts", "--estimate-source": "estimate_source",
+            "--done": "done"}
     i = 0
     while i < len(argv):
         a = argv[i]
