@@ -3,7 +3,7 @@ id: "0041"
 title: Write release notes for what a work session delivered
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -25,8 +25,8 @@ expects:
   - .claude/backlog/LEDGER.md
   - skills/sprint/SKILL.md
   - README.md
-claimed_by:
-claimed_at:
+claimed_by: "f380"
+claimed_at: 2026-10-07T04:06:04Z
 touches:
 ---
 
