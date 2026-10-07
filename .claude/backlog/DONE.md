@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0191 | Read the first CHANGELOG.md version section against 0041's release-notes criterion | chore | verify | 2026-10-07 | [items/0191-read-the-first-changelog-version-section-against-0041-ac2.md](items/0191-read-the-first-changelog-version-section-against-0041-ac2.md) |
 | 0041 | Write release notes for what a work session delivered | feature | unit | 2026-10-07 | [items/0041-work-session-review-and-release-notes.md](items/0041-work-session-review-and-release-notes.md) |
 | 0174 | Say the findings gate is deferred until the run is out of work when no scope was confirmed | bug | unit | 2026-10-05 | [items/0174-say-the-findings-gate-is-deferred-until.md](items/0174-say-the-findings-gate-is-deferred-until.md) |
 | 0188 | Plan a sprint from a develop-ready head, and keep design one sprint ahead of develop | feature | unit | 2026-10-05 | [items/0188-keep-design-ahead-of-develop-in-a-sprint.md](items/0188-keep-design-ahead-of-develop-in-a-sprint.md) |
