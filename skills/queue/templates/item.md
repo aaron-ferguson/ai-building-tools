@@ -180,6 +180,9 @@ three shapes that read as criteria and are not.
 **ONE form: every criterion is a `- [ ] ACn — ` checkbox**, and `./close` ticks exactly that.
 Written any other way — `- **AC1** —` is the one that happened — it ticks none of them, and until
 0044 it closed the ticket anyway, leaving no record that anything was checked.
+**To strike a criterion, take it out of the list:** a non-list line `~~ACn — …~~ (moved to NNNN)`.
+A struck bullet, `- ~~ACn …~~`, is the plain-bullet shape `./close` misreads, and it reds
+`tests/item-ac-form.test.sh` (`580b434`).
 
 - [ ] AC1 —
 - [ ] AC2 —

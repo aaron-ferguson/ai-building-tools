@@ -242,6 +242,10 @@ each predicate (the action), and each object or destination the AC names.
 A Given row is the whole Given clause, verbatim, and its guard asserts all of it,
 qualifier and predicate together, never the predicate half: 0180's AC5 row is
 "whose introducing commit belongs to an open ticket", not "belongs to an open ticket".
+**A plural or quantifier row — *every*, *each*, *those*, *per X* — needs a fixture of at least two
+items that differ in the value under test.** With one item a per-item figure equals the total and a
+running count equals a per-session one, so a mutation keeping only the first item stays green:
+five such clauses in 0041 and the unpriced count in 0186 all passed that mutation.
 Record the table in QA evidence. Without it each round divides the ACs its own way: 0180 went four
 rounds — guard phrases, then predicates and objects, then qualifiers — each hand-back listing only
 what that round found. **The gap test:** a clause mutation that stays green is a gap only if the
@@ -292,6 +296,11 @@ Enumerate the space mechanically instead. A sweep of that size outruns the tool'
 so it has to print a sentinel line last and be waited on with an `until grep -q` over its output
 file, which means **planning the sentinel before you start it** rather than discovering the need
 once it is already running in the background.
+**Put that output file inside one of the session's working directories, never `/tmp`**: in a driven
+session `Monitor` refuses to `grep` a path outside them, so the wait cannot be armed on the file. If
+it still cannot be armed, poll in a bounded foreground loop (`for i in $(seq 60); do …; sleep 10; done`),
+never an unbounded wait: under host load one mutation slice ran 40 minutes against a 14-second
+control (0178).
 **In a driven `claude -p` session, wait inside the turn, never by ending it**: an ended turn is the
 session's end, and the harness then forces the outcome while the sweep still runs — 0180 returned
 `blocked` and closed the ticket afterwards, so the supervisor read a verdict its history contradicts.

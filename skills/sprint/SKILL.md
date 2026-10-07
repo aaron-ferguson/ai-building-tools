@@ -143,7 +143,10 @@ line and the depth line come from the same call. A `next: design` row is not whe
 design is autonomous work and `--drive` dispatches it.
 
 **4. Run the baseline: the unit suite at `HEAD`, in a throwaway worktree.** `git worktree add
---detach` it, removed in the same turn, never the shared working tree — an untracked file another
+--detach` it as a **sibling of the checkout** (`../<repo>-baseline`), never in a scratch directory,
+because `config.yml`'s relative paths must resolve from it: placed in the session scratchpad,
+`conventions.path: ../ai-building-conventions` resolved nothing and a green `HEAD` read red.
+It is removed in the same turn, and never the shared working tree — an untracked file another
 window is still writing reds that tree without being the baseline, and stages build on what is
 committed. Run `commands.unit_by_file` from `config.yml`; where it is unset, run `commands.unit` and
 say its tally may be a lower bound, because a fail-fast command stops at its first red. Redirect the
@@ -557,6 +560,11 @@ on disk in the item file, `FINDINGS.md`, or the run log, and the pointer says wh
 this run is learnable from anywhere else**, because the stage narrative you would otherwise have
 read is exactly what was trimmed. Surface it: a cycle's report carries the findings-parked count,
 and a pointer worth opening gets named.
+
+**Open the `detail` pointer of every `fail` before presenting it to a person**, and name the failed AC
+from it. The outcome carries no fail reason, and `escalation` may hold a separate open question: in
+run-20261004T232135Z it was relayed as the cause of 0041's fail, the person decided on it, and the
+real cause, AC1, was only in the item's Notes.
 
 ---
 
