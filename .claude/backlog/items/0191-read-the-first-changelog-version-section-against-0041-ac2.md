@@ -3,7 +3,7 @@ id: "0191"
 title: Read the first CHANGELOG.md version section against 0041's release-notes criterion
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-10-06
@@ -12,8 +12,8 @@ blocked_by: []
 relates: ["0041"]
 expects:
   - CHANGELOG.md
-claimed_by:
-claimed_at:
+claimed_by: "abe1"
+claimed_at: 2026-10-07T05:01:01Z
 touches:
 ---
 
