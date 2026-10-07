@@ -1427,6 +1427,13 @@ echo "0041 Documentation NFR — README names the note at close and the per-wind
 for phrase in './close <id> <token> --note "<text>"' '--no-behaviour-change' '--by-session' 'one row per context window'; do
   if grep -qF -- "$phrase" "$ROOT/README.md"; then ok "README says: $phrase"; else bad "0041 Documentation NFR — README does not say: $phrase"; fi
 done
+# The sentence wraps in README.md, so it is matched with the file unwrapped onto one line.
+README_FLAT="$(tr '\n' ' ' < "$ROOT/README.md")"
+phrase="the tickets the run closed with each one's \`DONE.md\` title and the verdict that closed it"
+case "$README_FLAT" in
+  *"$phrase"*) ok "README says the ledger lists each closed ticket's title and closing verdict" ;;
+  *) bad "0041 Documentation NFR — README does not say: $phrase" ;;
+esac
 
 echo
 echo "$PASS passed, $FAIL failed"

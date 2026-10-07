@@ -517,6 +517,35 @@ else
   esac
   if git -C "$CO2" diff --quiet -- CHANGELOG.md; then ok "nothing of it is left uncommitted"; else bad "0041 AC13 — CHANGELOG.md left dirty"; fi
 
+  # AC13 says "those entries", plural, and the case above carries one, so promoting only the first
+  # entry was invisible. This one holds two above an already-released section, which must survive.
+  echo "0041 AC13 — every Unreleased entry moves, above the previous release, which is left unchanged"
+  C13P="$FIX/c13p"; mkdir -p "$C13P"
+  MK_CHANGELOG="$(printf '# Changelog\n\n## Unreleased\n\n- The first fixture change.\n- The second fixture change.\n\n## 1.2.3 — 2026-01-01\n\n- An already released change.\n\n### Did not change\n\nThe fixture release section.\n')" mk_case "$C13P"
+  awk '/^## 1\.2\.3 — /{ s = 1 } s' "$CO2/CHANGELOG.md" > "$C13P/old-before.md"
+  C13PST=0
+  C13POUT="$(PATH="$NOCLAUDE" "$TOOL" --bump --yes --record "$REC2" --plugin "$KEY" \
+              --checkout "$CO2" --confirm-device "$C13P/none" 2>&1)" || C13PST=$?
+  VER_SEC="$(awk '/^## 1\.2\.4 — / { v = 1; next } /^## / { v = 0 } v' "$CO2/CHANGELOG.md")"
+  for entry in '- The first fixture change.' '- The second fixture change.'; do
+    case "$VER_SEC" in
+      *"$entry"*) ok "under the new version: $entry" ;;
+      *) bad "0041 AC13 — not every Unreleased entry moved, missing: $entry in [$VER_SEC] / $C13POUT" ;;
+    esac
+  done
+  NEW_AT="$(grep -n '^## 1\.2\.4 — ' "$CO2/CHANGELOG.md" | cut -d: -f1)"
+  OLD_AT="$(grep -n '^## 1\.2\.3 — ' "$CO2/CHANGELOG.md" | cut -d: -f1)"
+  if [ -n "$NEW_AT" ] && [ -n "$OLD_AT" ] && [ "$NEW_AT" -lt "$OLD_AT" ]; then
+    ok "the new version sits above the previous release"
+  else
+    bad "0041 AC13 — the new version is not above 1.2.3 (lines '$NEW_AT', '$OLD_AT')"
+  fi
+  if awk '/^## 1\.2\.3 — /{ s = 1 } s' "$CO2/CHANGELOG.md" | cmp -s - "$C13P/old-before.md"; then
+    ok "and the previous release section is byte-unchanged"
+  else
+    bad "0041 AC13 — the bump changed the 1.2.3 section: $(awk '/^## 1\.2\.3 — /{ s = 1 } s' "$CO2/CHANGELOG.md" | diff "$C13P/old-before.md" - | head -4 | tr '\n' ' ')"
+  fi
+
   echo "0041 AC14 — an empty Unreleased refuses before step 5; nothing committed, pushed or edited"
   C14="$FIX/c14"; mkdir -p "$C14"
   MK_CHANGELOG="$(printf '# Changelog\n\n## Unreleased\n')" mk_case "$C14"

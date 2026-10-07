@@ -1462,5 +1462,83 @@ case "$A1V" in
   *) bad "0041 AC1 -- a missing verdict is not labelled: $(printf '%s' "$A1V" | grep -E '^(CLOSED|TICKET)' || echo none)" ;;
 esac
 
+# --- 0041 AC1/AC5/AC16 -- EVERY closed ticket, not the first ----------------------------------
+# Every fixture above closes exactly one ticket, so "every ticket that closed" could not be told
+# from "the first" (verify 4c6e: `closed_pairs[:1]` stayed green), and cost per closed ticket
+# equalled the total, so the division was unguarded too. Two tickets close here, each with a
+# verdict of its own, and 0102 between them does not.
+echo "0041 AC1 -- every ticket closed inside the boundary is listed, each with its own title and verdict"
+mkdir -p "$W41/two"  # named run.jsonl, because the block cites the log by its file name
+cat > "$W41/two/run.jsonl" <<JSON
+{"ts":"2026-09-20T09:00:00Z","run":"r-w41","event":"scope_confirmed","tickets":["0101","0102","0103"]}
+{"ts":"2026-09-20T09:01:00Z","run":"r-w41","event":"dispatch","stage":"develop","session_id":"$SW1","tickets":["0101","0102","0103"]}
+{"ts":"2026-09-20T09:40:00Z","run":"r-w41","event":"outcome","stage":"develop","session_id":"$SW1","tickets":[{"id":"0101","verdict":"built","next":"verify","status":"ready"},{"id":"0102","verdict":"built","next":"verify","status":"ready"},{"id":"0103","verdict":"built","next":"verify","status":"ready"}]}
+{"ts":"2026-09-20T09:41:00Z","run":"r-w41","event":"dispatch","stage":"verify","session_id":"$SW2","tickets":["0101","0102","0103"]}
+{"ts":"2026-09-20T10:00:00Z","run":"r-w41","event":"outcome","stage":"verify","session_id":"$SW2","tickets":[{"id":"0101","verdict":"pass","next":"done","status":"done"},{"id":"0102","verdict":"fail","next":"develop","status":"ready"},{"id":"0103","verdict":"advisory","next":"done","status":"done"}]}
+{"ts":"2026-09-20T10:01:00Z","run":"r-w41","event":"sprint_ended"}
+JSON
+A12="$(w41_record "$DONE_HEAD
+| 0101 | Fixture title for the first closed ticket | bug | unit | 2026-09-20 | x |
+| 0102 | Fixture title the verify outcome did not close | bug | unit | 2026-09-20 | x |
+| 0103 | Fixture title for the second closed ticket | bug | unit | 2026-09-20 | x |" "$W41/two/run.jsonl")"
+for want in 'TICKET 0101 verdict pass title Fixture title for the first closed ticket (run.jsonl outcome events, DONE.md @ ' \
+            'TICKET 0103 verdict advisory title Fixture title for the second closed ticket (run.jsonl outcome events, DONE.md @ '; do
+  case "$A12" in
+    *"$want"*) ok "listed: ${want%% (*}" ;;
+    *) bad "0041 AC1 -- not every closed ticket is listed with its own title and verdict, missing: ${want%% (*}: $(printf '%s' "$A12" | grep -E '^(CLOSED|TICKET)' || echo none)" ;;
+  esac
+done
+if [ "$(printf '%s\n' "$A12" | grep -c '^TICKET ')" -eq 2 ]; then
+  ok "exactly two TICKET lines, one per closed ticket"
+else
+  bad "0041 AC1 -- expected two TICKET lines: $(printf '%s' "$A12" | grep -E '^TICKET' || echo none)"
+fi
+case "$A12" in
+  *"TICKET 0102"*|*"did not close"*) bad "0041 AC1 -- 0102, which failed verify, is listed between the closed two" ;;
+  *) ok "and 0102, which failed verify, is listed nowhere" ;;
+esac
+echo "0041 AC16 -- the closed-ticket list holds both closed tickets"
+case "$A12" in
+  *"CLOSED 0101 0103 (run.jsonl outcome events @ "*) ok "CLOSED names 0101 and 0103, and not 0102" ;;
+  *) bad "0041 AC16 -- the closed-ticket list is not 0101 0103: $(printf '%s' "$A12" | grep '^CLOSED' || echo none)" ;;
+esac
+echo "0041 AC5 -- cost per closed ticket divides by the closed count"
+case "$A12" in
+  *"PER_TICKET whole-run USD 8.00, develop-and-verify USD 8.00 over 2 closed ticket(s)"*) ok "USD 16.00 over two closed tickets reads 8.00 each" ;;
+  *) bad "0041 AC5 -- cost per closed ticket is not the total over two: $(printf '%s' "$A12" | grep '^PER_TICKET' || echo none)" ;;
+esac
+
+# --- 0041 AC16 -- one window row per dispatched session id, each by its own id -----------------
+# The ids are read from the fixture's dispatch events rather than listed here, so a fixture that
+# grows a window grows the assertion with it; the count check keeps the fixture plural.
+echo "0041 AC16 -- one per-window row for EACH dispatched session id"
+W41IDS="$(grep '"event":"dispatch"' "$W41/run.jsonl" | grep -oE '"session_id":"[^"]*"' | cut -d'"' -f4 | cut -d- -f1 | sort -u)"
+if [ "$(printf '%s\n' "$W41IDS" | grep -c .)" -ge 2 ]; then
+  ok "the fixture dispatches $(printf '%s\n' "$W41IDS" | grep -c .) session ids"
+else
+  bad "0041 AC16 -- the fixture dispatches fewer than two session ids, so 'each' is untested"
+fi
+for sid in $W41IDS; do
+  if [ "$(printf '%s\n' "$W41B" | grep -c "^| $sid | ")" -eq 1 ]; then
+    ok "one window row for $sid"
+  else
+    bad "0041 AC16 -- no single window row for dispatched session $sid: $(printf '%s\n' "$W41B" | grep '^| [a-z0-9]* | ' || echo none)"
+  fi
+done
+
+# --- 0041 AC8 -- the block names its boundary and how it was derived -----------------------------
+# The boundary is the run: the heading carries its id and the run log's last stamp, and the
+# closed-ticket line cites the run log those outcomes were read from.
+echo "0041 AC8 -- the block names the run it counted over and the run log it derived that from"
+case "$W41B" in
+  *"## sprint r-w41 -- ended 2026-09-20T10:01:00Z"*) ok "the heading names the run and the run log's last stamp" ;;
+  *) bad "0041 AC8 -- no '## sprint r-w41 -- ended 2026-09-20T10:01:00Z' heading: $(printf '%s\n' "$W41B" | grep '^## ' || echo none)" ;;
+esac
+if printf '%s\n' "$W41B" | grep -q '^CLOSED .*(run\.jsonl outcome events @ [0-9T:Z-]*)$'; then
+  ok "the closed-ticket line cites run.jsonl, the source of the boundary"
+else
+  bad "0041 AC8 -- the closed-ticket line does not cite run.jsonl: $(printf '%s\n' "$W41B" | grep '^CLOSED' || echo none)"
+fi
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
