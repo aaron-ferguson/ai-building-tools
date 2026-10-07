@@ -471,6 +471,46 @@ concrete by AC16. AC9 and AC10 are confirmed for `--by-session`.
   ticket which did not close (0102) is absent. Every other AC1 clause reddened under mutation (see
   QA evidence), so nothing else needs to change.
 
+- 2026-10-07 — **develop 6ed0, re-entry on verify 4c6e: guard work only.** No code changed. Guards
+  in `9ed888b` (`tests/sprint-ledger.test.sh`, `tests/release.test.sh`, `tests/close.test.sh`).
+  Controls on the committed tree before mutating: ledger 165/0, release 63/0, close 281/0. Every
+  mutation below was **RUN**: applied by exact replace to the committed file, the diff confirmed
+  non-empty, the guard re-run, the file restored by `git checkout` and checked with `cmp` against a
+  pre-run copy. The tree was clean after the sweep.
+  | # | AC clause | mutation | result |
+  |---|---|---|---|
+  | 1 | AC1 "every ticket that closed inside" | `closed_pairs[:1]` | red 163/2 |
+  | 1 | AC1 each ticket's **own** verdict | the first ticket's verdict reused for all | red 164/1 |
+  | 2 | AC13 "those entries" sit under the new version | `body = body[:1]` (promote only the first) | red 62/1 |
+  | 2 | AC13 the old release section is left alone | old section dropped (`lines[end:]` removed) | red 61/2 |
+  | 2 | AC13 the new version sits above the old one | new section written after the old one | red 61/2 |
+  | 3 | AC16 "one per-window row per dispatched session id" | only the first window row written | red 163/2 |
+  | 4 | AC8 boundary named: `## sprint <run> -- ended <ts>` | `-- ended <ts>` dropped | red 164/1 |
+  | 4 | AC8 how it was derived: the source cites `run.jsonl` | `outcome_src` dropped from the CLOSED line | red 163/2 |
+  | 5 | README: each closed ticket's title and the closing verdict | "verdict that closed it" → "verdict it received" | red 280/1 |
+  | + | AC16 "the closed-ticket list" (plural) | `" ".join(closed[:1])` | red 164/1 |
+  | + | AC5 cost **per** closed ticket | `/ len(closed)` → `/ 1` | red 164/1 |
+  Green again after the restores: ledger 165/0, release 63/0, close 281/0. Whole suite: 32 files,
+  all `0 failed`.
+  - **Fixtures.** AC1's new fixture is a run log (`two/run.jsonl`, named so because the block cites
+    the log by its file name) in which **0101 closes `pass`, 0103 closes `advisory`**, and 0102 fails
+    between them. The two verdicts differ, so a verdict copied from one ticket to the other reddens.
+    AC13's case puts two Unreleased entries above a released `## 1.2.3 — 2026-01-01` section that
+    has its own `### Did not change`. It asserts both entries sit under 1.2.4, that 1.2.4's line
+    comes before 1.2.3's, and that the 1.2.3-to-end slice is `cmp`-identical. AC16 reads the session
+    ids from the fixture's dispatch events and asserts at least two, so a fixture shrunk to one
+    window reddens rather than passing trivially.
+  - **Two more clauses of the same shape, found and fixed (rows marked `+`).** AC16's closed-ticket
+    list, and AC5's cost per closed ticket. With one closed ticket the per-ticket figure equals the
+    total, so the division was unguarded.
+  - **README:** the guarded sentence wraps across two lines, so it is matched against the file
+    unwrapped (`tr '\n' ' '`). No paragraph was rewrapped.
+  - **AC8 reading.** The heading's `ended` stamp is the run log's last event. The only lines that
+    cite `run.jsonl` are the `run.jsonl outcome events` lines. `log_src` (`run.jsonl event
+    timestamps`) is assigned in `record` and never written, so no line says the wall-clock came from
+    the run log's stamps. Parked in FINDINGS.md rather than fixed: the code is believed correct and
+    this pass was asked to do guard work only.
+
 ## QA evidence
 
 Verify 1d1f, 2026-10-04 — **FAIL** (AC1), at `qa_level: unit`, batch 0187/0188/0174/0041 from one develop gate.
