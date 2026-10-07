@@ -1408,10 +1408,10 @@ case "$W41B" in *SENTINELPROSE*) bad "0041 AC16 -- message text reached the ledg
 # ledger, never a session's. A title the block's character set cannot hold, and a ticket with no
 # DONE.md row, are each labelled rather than dropped (FR7).
 echo "0041 AC1 -- the closed-ticket list carries ID, title and closing verdict"
-w41_record() { # <DONE.md content, or empty for none>
+w41_record() { # <DONE.md content, or empty for none> [run log, default the AC16 one]
   rm -f "$W41/DONE.md"; [ -n "$1" ] && printf '%s\n' "$1" > "$W41/DONE.md"
   cp "$EMPTY" "$W41/ledger.md"
-  "$TOOL" record --ledger "$W41/ledger.md" --run "$W41/run.jsonl" --transcripts "$W41/store" \
+  "$TOOL" record --ledger "$W41/ledger.md" --run "${2:-$W41/run.jsonl}" --transcripts "$W41/store" \
     --measurement "$MEAS" --config "$CONF" --estimate-tickets 2 --estimate-wall no-prior \
     --estimate-tokens 1 --estimate-usd 1.00 --estimate-source "$EST_SOURCE" >/dev/null 2>&1 || true
   awk '/^## sprint /{s=1} s' "$W41/ledger.md"
@@ -1447,6 +1447,19 @@ A1N="$(w41_record "")"
 case "$A1N" in
   *"TICKET 0101 verdict pass title not on disk ("*) ok "a ticket with no DONE.md row is labelled, not dropped" ;;
   *) bad "0041 AC1 -- a ticket with no title on disk is not labelled: $(printf '%s' "$A1N" | grep -E '^(CLOSED|TICKET)' || echo none)" ;;
+esac
+# The verdict is the closing entry's own, whatever it says: a develop-closed ticket reads `closed`.
+sed 's/"verdict":"pass"/"verdict":"closed"/' "$W41/run.jsonl" > "$W41/run-closed.jsonl"
+A1C="$(w41_record "" "$W41/run-closed.jsonl")"
+case "$A1C" in
+  *"TICKET 0101 verdict closed title "*) ok "the verdict is the one the closing outcome carried, not a constant" ;;
+  *) bad "0041 AC1 -- the closing verdict is not the outcome's own: $(printf '%s' "$A1C" | grep -E '^TICKET' || echo none)" ;;
+esac
+sed 's/"verdict":"pass",//' "$W41/run.jsonl" > "$W41/run-noverdict.jsonl"
+A1V="$(w41_record "" "$W41/run-noverdict.jsonl")"
+case "$A1V" in
+  *"TICKET 0101 verdict not reported title "*) ok "a closing entry with no verdict is labelled, and 0101 is still listed" ;;
+  *) bad "0041 AC1 -- a missing verdict is not labelled: $(printf '%s' "$A1V" | grep -E '^(CLOSED|TICKET)' || echo none)" ;;
 esac
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
