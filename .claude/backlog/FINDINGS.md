@@ -53,3 +53,4 @@ which entries, what is expired unprocessed, and why a sweeper removes only what 
 normal state of this file is empty, and **if it has grown, that is itself the finding**.
 
 ---
+- 2026-10-06 — **In a driven retro, `Monitor` refused both forms of a wait on a background suite run** ("brace with quote character", then "quoted text can't be checked") before any path question arose, and this harness blocks a foreground `sleep`, so the bounded `for …; sleep 10` poll the retro just wrote into `verify` Step 3 may itself be refused; a bounded python `time.sleep` loop in one foreground Bash call worked. The wait recipe wants a form tested under `claude -p` (retro run-20261004T232135Z tail; skills/verify/SKILL.md Step 3).
