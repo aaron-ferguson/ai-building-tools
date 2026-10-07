@@ -2,8 +2,8 @@
 id: "0041"
 title: Write release notes for what a work session delivered
 type: feature
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -25,17 +25,9 @@ expects:
   - .claude/backlog/LEDGER.md
   - skills/sprint/SKILL.md
   - README.md
-claimed_by: "9f96"
-claimed_at: 2026-10-07T03:23:27Z
+claimed_by:
+claimed_at:
 touches:
-  - tools/sprint-ledger.sh
-  - tests/sprint-ledger.test.sh
-  - README.md
-  - CLAUDE.md
-  - skills/retro/SKILL.md
-  - tests/release.test.sh
-  - tests/retro-tool-edit.test.sh
-  - .claude/backlog/items/0041-work-session-review-and-release-notes.md
 ---
 
 ## Problem
