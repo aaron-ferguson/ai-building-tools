@@ -147,6 +147,11 @@ else
   bad "AC7 — tools/release does not document \`tools/release --bump --yes\`, so the instruction and the script disagree about what to run"
 fi
 
+echo "0041 — Step 5 says what to do when that invocation refuses on an empty ## Unreleased"
+in_window "0041 — the bump refuses on an empty ## Unreleased" "$W" 'refuses on an empty `## Unreleased`'
+in_window "0041 — a retro edit writes its own note before the bump" "$W" 'write one note under `## Unreleased`'
+in_window "0041 — and the flag is for no behaviour change, never the refusal" "$W" '`--no-behaviour-change` only when'
+
 echo "0114 AC5 — the step that owns the chain says how to recover a bump that never reached the remote"
 in_window "AC5 — the half-released state is named"      "$W" 'bump committed and unpushed'
 in_window "AC5 — and the signal to look for is named"   "$W" 'origin/<branch>..HEAD'

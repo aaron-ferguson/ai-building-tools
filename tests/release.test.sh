@@ -277,6 +277,17 @@ else
   bad "AC5 — CLAUDE.md still lets a reader treat 'updated from x to y' as evidence; that line was true and the bytes were stale"
 fi
 
+# 0041: the standing release instruction refuses on an empty `## Unreleased` since FR9, so the
+# paragraph a session reads before releasing has to say what to do about it, not only what to run.
+echo "0041 — CLAUDE.md says what to do when the bump refuses on an empty ## Unreleased"
+for phrase in 'refuses on an empty `## Unreleased`' 'add the notes there first' '`--no-behaviour-change` only when'; do
+  if [ -f "$PROJ" ] && grep -qF -- "$phrase" "$PROJ"; then
+    ok "CLAUDE.md says: $phrase"
+  else
+    bad "0041 — CLAUDE.md does not say '$phrase', so a session following it meets the refusal unprepared"
+  fi
+done
+
 # --- 0114: the release is authorised BEFORE anything is written ---------------------------------
 #
 # WHY THESE CASES. `retro` Step 5 tells every session to run this chain, and an agent session has

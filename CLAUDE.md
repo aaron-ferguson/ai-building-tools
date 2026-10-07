@@ -42,6 +42,9 @@ Two consequences, and both have cost real work:
   `tools/release` does the whole chain in one invocation, refuses before pushing when the version
   has not been bumped, and ends by diffing the resolved install directory against the pushed
   commit; `tools/release verify` makes that comparison on its own.
+  A bump refuses on an empty `## Unreleased` in `CHANGELOG.md`: add the notes there first, one per
+  behaviour a session will now see differently, and pass `--no-behaviour-change` only when the
+  release changes none.
 
 ## Tests
 

@@ -346,6 +346,12 @@ sessions it was written for.
   is a standing cost rather than news: `Skills changed — ran tools/release, restart required.` is
   the whole message. It is a consequence of an edit, never a *finding*: it does not belong in
   `FINDINGS.md`, where it would sit un-triageable and make a healthy buffer look neglected.
+- **That invocation refuses on an empty `## Unreleased` in `CHANGELOG.md`, and a retro's own edits
+  put nothing there** — `./close --note` fills it, and a skill edit made here closes no ticket.
+  Before the bump, write one note under `## Unreleased` per behaviour a session will now see
+  differently, in the commit that carries the edit, leading with the behaviour and not the ID.
+  Pass `--no-behaviour-change` only when the release changes no behaviour, never to get past the
+  refusal.
 - **That chain begins with a fetch, and the version comes from it.** `tools/release` fetches first
   and derives the next version from the **remote's `plugin.json`**, reporting the observed remote
   version and the derived one — **never the local file**, which is how a bump read off the local
