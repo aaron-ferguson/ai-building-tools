@@ -65,19 +65,24 @@ DIR="$1"; shift
 exec python3 - "$DIR" "$@" <<'PY'
 import datetime, json, os, re, sys, glob
 
-# Per-million-token list rates, and the cache multipliers that apply to the input rate.
-# Source: the claude-api skill's model table (cached 2026-06-24) and shared/prompt-caching.md,
-# read 2026-09-13. Cache read is 0.1x input; a 5-minute cache write is 1.25x input; a 1-hour cache
-# write is 2x. Every model a stage session has actually run on belongs here: an unlisted one is an
-# UNPRICED turn, and run-20260913T034946Z recorded USD 0.00 for two real sessions on sonnet-4-6.
+# Per-million-token list rates as (input, output, cache read), and the cache-write multipliers that
+# apply to the input rate. Source: the claude-api skill's model table (cached 2026-06-24) and
+# shared/prompt-caching.md, read 2026-09-13, for every model but claude-opus-5-5; claude-opus-5-5 from
+# the same table (cached 2026-10-06) and prompt-caching.md's "Economics", read 2026-10-08 (0192).
+# Cache read is a per-model RATE, not a global multiplier: 0.1x input for most models, but 0.05x on
+# claude-opus-5-5 (USD 0.20 against 4.00), so a shared multiplier would overprice every read on it.
+# A 5-minute cache write is 1.25x input and a 1-hour write 2x, on every model listed. Every model a
+# stage session has actually run on belongs here: an unlisted one is an UNPRICED turn, and
+# run-20260913T034946Z recorded USD 0.00 for two real sessions on sonnet-4-6.
 RATES = {
-    "claude-opus-5":     (5.00, 25.00),
-    "claude-opus-4-8":   (5.00, 25.00),
-    "claude-opus-4-7":   (5.00, 25.00),
-    "claude-opus-4-6":   (5.00, 25.00),
-    "claude-sonnet-5":   (2.00, 10.00),
-    "claude-sonnet-4-6": (3.00, 15.00),
-    "claude-haiku-4-5":  (1.00, 5.00),
+    "claude-opus-5-5":   (4.00, 20.00, 0.20),
+    "claude-opus-5":     (5.00, 25.00, 0.50),
+    "claude-opus-4-8":   (5.00, 25.00, 0.50),
+    "claude-opus-4-7":   (5.00, 25.00, 0.50),
+    "claude-opus-4-6":   (5.00, 25.00, 0.50),
+    "claude-sonnet-5":   (2.00, 10.00, 0.20),
+    "claude-sonnet-4-6": (3.00, 15.00, 0.30),
+    "claude-haiku-4-5":  (1.00, 5.00, 0.10),
 }
 # Transcripts record some models with a snapshot date (claude-haiku-4-5-20251001) where the table
 # keys the bare id, so every such turn went unpriced until the suffix was stripped for the lookup.
@@ -90,7 +95,6 @@ UNSHAPED_MODEL_ID = "unrecognised-model-id"
 # tests/sprint.test.sh reads BOTH and compares them, rather than restating it a third time.
 DEFAULT_TURN_BUDGET = 3
 
-CACHE_READ_MULT = 0.1
 CACHE_WRITE_5M_MULT = 1.25
 CACHE_WRITE_1H_MULT = 2.0
 M = 1_000_000
@@ -130,7 +134,7 @@ def cost_of(usage, model):
     rates = RATES.get(model) or RATES.get(DATE_SUFFIX.sub("", model or ""))
     if rates is None:
         return None
-    inp, outp = rates
+    inp, outp, cache_read = rates
     creation = usage.get("cache_creation") or {}
     w1h = creation.get("ephemeral_1h_input_tokens", 0) or 0
     w5m = creation.get("ephemeral_5m_input_tokens", 0) or 0
@@ -142,7 +146,7 @@ def cost_of(usage, model):
     output_cost = (usage.get("output_tokens", 0) or 0) * outp / M
     input_cost = (
         (usage.get("input_tokens", 0) or 0) * inp
-        + (usage.get("cache_read_input_tokens", 0) or 0) * inp * CACHE_READ_MULT
+        + (usage.get("cache_read_input_tokens", 0) or 0) * cache_read
         + w5m * inp * CACHE_WRITE_5M_MULT
         + w1h * inp * CACHE_WRITE_1H_MULT
     ) / M
@@ -472,7 +476,7 @@ print(row("TOTAL", totals))
 if unpriced_total:
     print("UNPRICED turns on a model with no published rate: %d" % unpriced_total)
 
-# Where the context money actually goes. Isolation trades cache READS, at 0.1x input, for cache
+# Where the context money actually goes. Isolation trades cache READS, at 0.05x-0.1x input, for cache
 # WRITES at 1.25x-2x — so a fall in context per turn does not buy a proportional fall in cost,
 # and this block is what shows that rather than asserting it.
 print("")

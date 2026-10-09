@@ -1540,5 +1540,44 @@ else
   bad "0041 AC8 -- the closed-ticket line does not cite run.jsonl: $(printf '%s\n' "$W41B" | grep '^CLOSED' || echo none)"
 fi
 
+# --- 0192 AC6/AC7 — a claude-opus-5-5 turn is priced at its own published rate -------------------
+#
+# claude-opus-5-5 became the default model with no RATES entry, so a whole quantum-catan sprint
+# (run-20261008T021734Z, 154 turns) recorded its actuals as unpriced. One turn carrying a million
+# of each token kind makes every rate visible in the total, and the figures are chosen so the three
+# plausible wrong answers differ: unpriced (no TOTAL cost, an UNPRICED line), 29.40 (cache read at
+# the 0.1x every other model gets, rather than this model's 0.05x), 36.75 (claude-opus-5's rates).
+echo "0192 AC6 — a claude-opus-5-5 turn prices at 4.00 in, 20.00 out, 0.05x cache read"
+mk_model_turn() { # <model id>
+  printf '{"type":"user","timestamp":"2026-10-08T09:02:00.000Z","message":{"role":"user","content":"<command-name>/ai-building-tools:develop</command-name>"}}\n'
+  printf '{"type":"assistant","timestamp":"2026-10-08T09:03:00.000Z","message":{"id":"msg_0192","model":"%s","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":{"input_tokens":1000000,"cache_read_input_tokens":1000000,"cache_creation_input_tokens":1000000,"output_tokens":1000000}}}\n' "$1"
+}
+mkdir -p "$FIX/store-0192" "$FIX/store-0192-dated"
+mk_model_turn claude-opus-5-5 > "$FIX/store-0192/$SID_DEV.jsonl"
+mk_model_turn claude-opus-5-5-20261001 > "$FIX/store-0192-dated/$SID_DEV.jsonl"
+for store in store-0192 store-0192-dated; do
+  H192="$("$HARVEST" "$FIX/$store" 2>&1 || true)"
+  T192="$(printf '%s\n' "$H192" | grep '^TOTAL' || true)"
+  case "$T192" in
+    *" 29.20 |"*) ok "$store: the TOTAL row reads USD 29.20" ;;
+    *) bad "0192 AC6/AC7 — $store: expected TOTAL USD 29.20 (29.40 = 0.1x cache read, 36.75 = opus 5 rates), got: ${T192:-no TOTAL row}" ;;
+  esac
+  case "$H192" in
+    *UNPRICED*) bad "0192 AC6/AC7 — $store: the turn was counted unpriced: $(printf '%s\n' "$H192" | grep UNPRICED)" ;;
+    *) ok "$store: and no UNPRICED line prints" ;;
+  esac
+done
+
+# AC9 — moving the cache read into RATES leaves every other model where it was. 0186 AC3's golden
+# cannot show this: its turns carry no cache-read tokens, so any cache-read rate passes it.
+echo "0192 AC9 — the same turn on claude-opus-5 still prices at 0.1x cache read"
+mkdir -p "$FIX/store-0192-opus5"
+mk_model_turn claude-opus-5 > "$FIX/store-0192-opus5/$SID_DEV.jsonl"
+T192_5="$("$HARVEST" "$FIX/store-0192-opus5" 2>&1 | grep '^TOTAL' || true)"
+case "$T192_5" in
+  *" 36.75 |"*) ok "claude-opus-5 totals USD 36.75 (5.00 + 25.00 + 0.50 + 6.25)" ;;
+  *) bad "0192 AC9 — claude-opus-5 moved off 36.75: ${T192_5:-no TOTAL row}" ;;
+esac
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
