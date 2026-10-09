@@ -431,3 +431,9 @@ hypothetical: quantum-catan `0003` AC8, rewritten by `develop` and passed twice 
 verdict — and its blast radius is every project installing the plugin, since every close passes
 through the gate it changes. Knowledge freshness also favours it: the owner settled the design today.
 The regret operator was not needed.
+
+- **Retro 2026-10-09 placements.** **0196** below 0195 and above 0177: every fresh scaffold cannot
+  close a ticket until someone invents `DONE.md`, which is a broken first run on every new project.
+  **0199, 0197, 0198, 0200** at the foot, in that order: a vacuous guard a design session trusts,
+  then a release-time promise only memory keeps, then two design questions — 0198 carries an owner
+  requirement, 0200 one instance — none blocking other work.

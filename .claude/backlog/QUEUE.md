@@ -24,6 +24,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0195 | Stop a criterion changing without its author by digesting it at write and checking it at close | develop | ready |  |
+| 0196 | Ship a DONE.md template so a freshly scaffolded backlog can close a ticket | develop | ready |  |
 | 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
 | 0175 | Decide what identifies a sprint across a suspension, and which mechanisms key off it | design | ready |  |
 | 0172 | Decide how a script refusal and the skill that must satisfy it reach a session together | design | ready |  |
@@ -107,6 +108,10 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | develop | ready |  |
 | 0193 | Stop the awk-quote scanner flagging a single-quoted shell string that starts with a hash | develop | ready |  |
 | 0194 | Give tests/next.test.sh a runner that selects one ticket's sections | develop | ready |  |
+| 0199 | Make the AC form check that design Step 4 names read the consuming project's items | develop | ready |  |
+| 0197 | Make tools/release refuse a behaviour-changing bump with no Did not change section | develop | ready |  |
+| 0198 | Decide how verify names the pattern behind a surviving mutation and what an FR-level survivor means | design | ready |  |
+| 0200 | Decide where queue puts an owner decision that blocks several tickets and builds nothing | design | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in

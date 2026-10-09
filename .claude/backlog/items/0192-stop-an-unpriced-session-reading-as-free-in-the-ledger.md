@@ -73,3 +73,8 @@ readers of the same figures still do, and three sessions hit them independently.
 - **2026-10-06 (retro, run-20261004T232135Z tail).** Filed from five FINDINGS.md entries dated
   2026-09-25..10-07. One row because they share two files and one defect class: an unpriced figure
   printed as zero, or a guard too small to tell counts apart.
+- 2026-10-09 — retro, absorbed from tools `FINDINGS.md` (2026-10-08): a fourth instance. quantum-catan
+  run-20261008T021734Z ran on `claude-opus-5-5`, which no `RATES` entry matched (154 unpriced turns),
+  so `sprint-ledger.sh record` scored the develop gate at observed USD 0.00 against a predicted 0.00
+  and the first sprint's USD 7.66 estimate against nothing. FR1 covers the printing; FR5 still governs
+  adding a rate.
