@@ -788,7 +788,10 @@ the work is local and unpushed and no other session starts while one waits, so t
 picks it back up. Log a `limit_hit` event carrying the reset time the message names, wait for the
 reset or for the person to say tokens are back, then log `resumed` and dispatch
 `claude -p --resume <session-id>` with the same schema, flags and `--model "$RUN_MODEL"`, capped at what that session
-has left: its stage cap less what a harvest of that session id already shows spent. The resumed
+has left: its stage cap less what a harvest of that session id already shows spent. Where that
+harvest shows the session wholly or partly unpriced, nothing is subtracted: resume at the full stage cap
+and log `resumed` with `cap_basis: "unpriced"`, because a guessed allowance is a figure nobody
+measured. The resumed
 outcome's `cost_usd` covers only the resumed leg, so the harvest and never the outcome is that
 session's cost. A resume that returns no valid outcome is Step 4's failure, and a stop that names no
 session limit is the cap kill below.

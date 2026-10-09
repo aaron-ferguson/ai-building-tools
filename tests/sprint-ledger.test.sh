@@ -1725,5 +1725,21 @@ case "$W192_SRC" in
   *) bad "0192 AC4 — the wall_clock_min source cell does not cite the run log's timestamps: ${W192:-no row}" ;;
 esac
 
+# --- 0192 AC5 — the session-limit resume says what its cap is when the harvest cannot price it ---
+# Paused verify 0178 ran wholly unpriced: the harvest said 0.00 spent, and the supervisor
+# subtracted a 1.00 allowance it invented. Two claims, asserted separately: the cap, and the record.
+echo "0192 AC5 — sprint Step 7 names the resume cap for an unpriced session, and its run-log record"
+STEP7="Step 7 — A held lock, and a stage killed by its cap"
+if says "$SKILL" "$STEP7" "wholly or partly unpriced, nothing is subtracted: resume at the full stage cap"; then
+  ok "Step 7 resumes an unpriced session at the full stage cap"
+else
+  bad "0192 AC5 — Step 7 does not name the resume cap for a wholly or partly unpriced session"
+fi
+if says "$SKILL" "$STEP7" '`cap_basis: "unpriced"`'; then
+  ok "and the resumed event records that the subtraction could not be made"
+else
+  bad "0192 AC5 — Step 7 does not have the run log record that the subtraction could not be made"
+fi
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
