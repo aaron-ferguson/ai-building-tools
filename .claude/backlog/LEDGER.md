@@ -38,6 +38,9 @@ Each `## sprint` block carries one table and a few derived lines.
   `concurrency not measured` is a session with no outcome, or one beside an unanswered develop
   window, and it belongs to neither population. The claim these lines check is that `concurrent`
   costs no more than `sequential`; read it as *consistent with* until at least 5 are `concurrent`.
+- An observed figure on a `GATE`, `RATIO` or `DESIGN` line whose session ran turns on a model with
+  no published rate reads `unpriced` when nothing was priced, or keeps its figure followed by
+  `partial: <n> unpriced turn(s)`. It never reads `USD 0.00`, which is a measured zero (`0192`).
 - `FINDINGS parked` and `RETRO consumed … produced …` are the yield figures that replace `0133`'s
   interim threshold and age limit once there is enough of them.
 

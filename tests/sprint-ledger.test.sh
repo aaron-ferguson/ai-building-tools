@@ -1614,5 +1614,61 @@ else
   esac
 fi
 
+# --- 0192 AC1 — a gate, ratio or design line over unpriced sessions never reads USD 0.00 ---------
+# run-20260925T203345Z: the usd row said unpriced and every GATE, RATIO and DESIGN line beneath it
+# said observed USD 0.00, so the block contradicted itself and the per-line figures read as free.
+echo "0192 AC1 — wholly unpriced GATE, RATIO and DESIGN lines print unpriced, with the count"
+SID_DES192="dddddddd-0192-0000-0000-000000000000"
+RUN192="$FIX/r-0192.jsonl"
+cat > "$RUN192" <<JSON
+{"ts":"2026-10-08T09:00:00Z","run":"r-0192","event":"scope_confirmed","tickets":["0101","0102"]}
+{"ts":"2026-10-08T09:01:00Z","run":"r-0192","event":"dispatch","stage":"design","session_id":"$SID_DES192","tickets":["0102"]}
+{"ts":"2026-10-08T09:20:00Z","run":"r-0192","event":"outcome","stage":"design","session_id":"$SID_DES192","tickets":[{"id":"0102"}]}
+{"ts":"2026-10-08T09:21:00Z","run":"r-0192","event":"dispatch","stage":"develop","session_id":"$SID_DEV","tickets":["0101"]}
+{"ts":"2026-10-08T10:00:00Z","run":"r-0192","event":"outcome","stage":"develop","session_id":"$SID_DEV","tickets":[{"id":"0101"}]}
+{"ts":"2026-10-08T10:01:00Z","run":"r-0192","event":"dispatch","stage":"verify","session_id":"$SID_VER","tickets":["0101"]}
+{"ts":"2026-10-08T10:30:00Z","run":"r-0192","event":"outcome","stage":"verify","session_id":"$SID_VER","tickets":[{"id":"0101"}]}
+{"ts":"2026-10-08T10:31:00Z","run":"r-0192","event":"sprint_ended"}
+JSON
+mkdir -p "$FIX/store-0192-up"
+mk_unpriced "$SID_DEV"      develop 400000 > "$FIX/store-0192-up/$SID_DEV.jsonl"
+mk_unpriced "$SID_VER"      verify  240000 > "$FIX/store-0192-up/$SID_VER.jsonl"
+mk_unpriced "$SID_DES192"   design   40000 > "$FIX/store-0192-up/$SID_DES192.jsonl"
+L192="$FIX/ledger-0192.md"
+cp "$EMPTY" "$L192"
+O192="$("$TOOL" record --ledger "$L192" --run "$RUN192" --transcripts "$FIX/store-0192-up" \
+       --measurement "$MEAS" --config "$CONF" --estimate-tickets 2 --estimate-wall no-prior \
+       --estimate-tokens 1200000 --estimate-usd 20.00 --estimate-source "$EST_SOURCE" 2>&1 || true)"
+for kind in '^GATE develop' '^RATIO ' '^  numerator' '^DESIGN 0102'; do
+  line="$(grep "$kind" "$L192" || true)"
+  case "$line" in
+    "") bad "0192 AC1 — no line matching $kind was recorded; record said: $(printf '%s' "$O192" | tr '\n' ' ' | cut -c1-200)" ;;
+    *"USD 0.00"*|*"= 0.00"*) bad "0192 AC1 — a wholly unpriced line reads as a measured zero: $line" ;;
+    *"unpriced: 1 turn(s)"*) ok "$kind reads unpriced and names its 1 unpriced turn" ;;
+    *) bad "0192 AC1 — $kind does not say it is unpriced with its count: $line" ;;
+  esac
+done
+
+echo "0192 FR1 — a partly unpriced GATE line keeps its figure and says how many turns it lacks"
+mkdir -p "$FIX/store-0192-part"
+{ mk_session "$SID_DEV" develop 400000; mk_unpriced "$SID_DEV" develop 400000 | tail -1; } \
+  > "$FIX/store-0192-part/$SID_DEV.jsonl"
+mk_session "$SID_VER" verify 240000 > "$FIX/store-0192-part/$SID_VER.jsonl"
+mk_session "$SID_DES192" design 40000 > "$FIX/store-0192-part/$SID_DES192.jsonl"
+cp "$EMPTY" "$L192"
+"$TOOL" record --ledger "$L192" --run "$RUN192" --transcripts "$FIX/store-0192-part" \
+  --measurement "$MEAS" --config "$CONF" --estimate-tickets 2 --estimate-wall no-prior \
+  --estimate-tokens 1200000 --estimate-usd 20.00 --estimate-source "$EST_SOURCE" >/dev/null 2>&1 || true
+G192P="$(grep '^GATE develop' "$L192" || true)"
+case "$G192P" in
+  *"observed USD 10.00"*"partial: 1 unpriced turn(s)"*) ok "the partly-priced gate reads USD 10.00, partial: 1 unpriced turn(s)" ;;
+  *) bad "0192 FR1 — the partly-priced gate line: ${G192P:-none}" ;;
+esac
+R192P="$(grep '^RATIO ' "$L192" || true)"
+case "$R192P" in
+  *"= 6.00"*) ok "and a wholly priced ratio is unchanged: $R192P" ;;
+  *) bad "0192 FR1 — a priced RATIO line changed: ${R192P:-none}" ;;
+esac
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

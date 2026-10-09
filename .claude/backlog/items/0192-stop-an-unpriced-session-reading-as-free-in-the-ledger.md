@@ -24,6 +24,7 @@ touches:
   - tools/harvest-usage.sh
   - tests/sprint-ledger.test.sh
   - skills/sprint/SKILL.md
+  - .claude/backlog/LEDGER.md
 ---
 
 ## Problem

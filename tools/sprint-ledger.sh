@@ -586,6 +586,16 @@ def labelled(h):
     return h["usd"], h["ctx"], ""
 
 
+def observed_text(h):
+    """One session's observed USD as a GATE, RATIO or DESIGN line prints it: `USD x.xx`, or
+    `unpriced` where nothing was priced, with labelled()'s note after a comma whenever any turn went
+    unpriced. Those lines once printed `observed USD 0.00` under a usd row that read `unpriced`,
+    and a block that contradicts itself is read at its most specific figure (0192 FR1)."""
+    usd, _ctx, note = labelled(h)
+    text = usd if isinstance(usd, str) else "USD %.2f" % usd
+    return text if not note else "%s, %s" % (text, note)
+
+
 # --- record -------------------------------------------------------------------------------------
 def record(opts):
     events = read_run(opts["run"])
@@ -713,9 +723,9 @@ def record(opts):
             continue
         n = len(tickets)
         predicted = base.get("develop", 0.0) + extra.get("develop", 0.0) * (n - 1)
-        observed = harvest(opts["transcripts"], [sid])["usd"]
+        observed = observed_text(harvest(opts["transcripts"], [sid]))
         out.append("GATE develop %d ticket(s) session %s: predicted USD %.2f (%s @ %s) "
-                   "observed USD %.2f (%s @ %s)"
+                   "observed %s (%s @ %s)"
                    % (n, sid.split("-")[0], predicted, conf_src, stamp, observed,
                       harvest_src % 1, stamp))
 
@@ -732,10 +742,13 @@ def record(opts):
         if stage != "verify" or not tickets:
             continue
         n = len(tickets)
-        observed = harvest(opts["transcripts"], [sid])["usd"]
-        out.append("RATIO verify_usd_per_ticket %s session %s = %.2f"
-                   % ("batched" if n > 1 else "unbatched", sid.split("-")[0], observed / n))
-        out.append("  numerator USD %.2f (%s @ %s)" % (observed, harvest_src % 1, stamp))
+        h = harvest(opts["transcripts"], [sid])
+        usd, _ctx, note = labelled(h)
+        per_ticket = usd if isinstance(usd, str) else "%.2f" % (usd / n)
+        out.append("RATIO verify_usd_per_ticket %s session %s = %s"
+                   % ("batched" if n > 1 else "unbatched", sid.split("-")[0],
+                      per_ticket if not note else "%s, %s" % (per_ticket, note)))
+        out.append("  numerator %s (%s @ %s)" % (observed_text(h), harvest_src % 1, stamp))
         out.append("  denominator %d ticket(s) (%s @ %s)" % (n, outcome_src, stamp))
 
     # 0134 FR7/FR8 -- one DESIGN line per design session, so "a design session run alongside
@@ -751,10 +764,10 @@ def record(opts):
         design_windows = windows_of(events, "design")
         develop_windows = list(windows_of(events, "develop").values())
         for sid, tickets in design:
-            observed = harvest(opts["transcripts"], [sid])["usd"]
+            observed = observed_text(harvest(opts["transcripts"], [sid]))
             for tid in tickets:
                 out.append("DESIGN %s session %s %s: predicted %s (%s @ %s) "
-                           "observed USD %.2f (%s @ %s)"
+                           "observed %s (%s @ %s)"
                            % (tid, sid.split("-")[0],
                               concurrency(design_windows.get(tid), develop_windows),
                               predicted, meas_src, stamp, observed, harvest_src % 1, stamp))
