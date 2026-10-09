@@ -1714,5 +1714,16 @@ for pair in "eeeeeeee:2" "ffffffff:3"; do
   esac
 done
 
+# --- 0192 AC4 — the wall_clock_min row says where its actual came from ---------------------------
+# record assigned log_src since a3f5a7a (0135) and never wrote it, so the one actual derived from
+# the run log rather than a harvest named no source for itself.
+echo "0192 AC4 — the wall_clock_min row names the run log's event timestamps as its source"
+W192="$(grep -E '^\|[[:space:]]*wall_clock_min[[:space:]]*\|' "$L192" || true)"
+W192_SRC="$(printf '%s\n' "$W192" | awk -F'|' '{print $5}')"
+case "$W192_SRC" in
+  *"r-0192.jsonl event timestamps"*) ok "its source cell cites r-0192.jsonl event timestamps" ;;
+  *) bad "0192 AC4 — the wall_clock_min source cell does not cite the run log's timestamps: ${W192:-no row}" ;;
+esac
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

@@ -651,6 +651,9 @@ def record(opts):
         # produces -- so a reader of one row never has to find it somewhere else in the block.
         if unpriced_note and figure in ("usd", "tokens"):
             src = "%s — %s" % (src, unpriced_note)
+        # The one actual read from the run log rather than a harvest says so (0192 FR4).
+        if figure == "wall_clock_min":
+            src = "%s, actual from %s" % (src, log_src)
         out.append("| %s | %s | %s | %s |"
                    % (figure, cell(figure, est[figure]), cell(figure, actual[figure]), src))
     # 0166 FR1. Written even when no tail ran, because a recorded 0.00 is a measured zero and an
