@@ -298,8 +298,10 @@ file, which means **planning the sentinel before you start it** rather than disc
 once it is already running in the background.
 **Put that output file inside one of the session's working directories, never `/tmp`**: in a driven
 session `Monitor` refuses to `grep` a path outside them, so the wait cannot be armed on the file. If
-it still cannot be armed, poll in a bounded foreground loop (`for i in $(seq 60); do …; sleep 10; done`),
-never an unbounded wait: under host load one mutation slice ran 40 minutes against a 14-second
+it still cannot be armed, poll in a bounded foreground loop inside **one `python3` call** that checks
+the file and `time.sleep(10)`s up to a fixed count — not a shell `for …; sleep 10` loop, because the
+harness blocks a foreground `sleep` and a driven retro saw `Monitor` refuse both quoted forms of the
+wait (run-20261004T232135Z) — and never an unbounded wait: under host load one mutation slice ran 40 minutes against a 14-second
 control (0178).
 **In a driven `claude -p` session, wait inside the turn, never by ending it**: an ended turn is the
 session's end, and the harness then forces the outcome while the sweep still runs — 0180 returned

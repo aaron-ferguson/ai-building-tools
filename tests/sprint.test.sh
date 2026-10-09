@@ -925,7 +925,7 @@ else
   # `< /dev/null` is not tidiness. Without it the nested CLI waits on stdin and then prints
   # "Warning: no stdin data received in 3s" INTO the output being parsed, so a supervisor reading
   # stdout as JSON gets a warning line first and concludes the stage failed the schema.
-  got="$(claude -p --json-schema "$(cat "$SCHEMA")" --max-budget-usd 0.25 \
+  got="$(claude -p --json-schema "$(cat "$SCHEMA")" --max-budget-usd 1.00 \
           'Return a minimal valid stage outcome: stage "retro", empty arrays for commits and tickets, 0 for cost_usd and findings_parked, null for conventions_resolved and escalation.' \
           < /dev/null 2>/dev/null || true)"
   printf '%s' "$got" > "$FIX/probe-got.json"

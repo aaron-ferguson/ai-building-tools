@@ -42,7 +42,10 @@ row, so every ownership check built on claim tokens is blind to it.
 
 The supervisor's own context is a floor times a turn count. The floor is what every turn re-sends
 before any run state exists — the harness, this file, the project's `CLAUDE.md` and what it
-imports — and it is roughly **20k tokens, fixed** before the first stage runs. The growth is what a
+imports — and it is fixed before the first stage runs, but **per host, never a constant**: about 20k
+tokens where this was first measured, **76,019** on quantum-catan (run-20261008T023251Z), whose
+`CLAUDE.md` imports the conventions core beside the MCP and skill listings. Read yours from
+`tools/harvest-usage.sh --run` rather than assume the smaller figure. The growth is what a
 cycle adds: one `--drive` decision, one stage outcome, and your own text, at **roughly 800 tokens
 per cycle**. Cost is turns times floor, so **the turn count is the only term this skill can move**,
 and one turn removed per cycle saves more than trimming every word in a stage's report.
@@ -72,7 +75,7 @@ claude -p \
   --model opus \
   --session-id "$RUN_PROBE_UUID" \
   --json-schema "$(cat <plugin root>/skills/sprint/outcome.schema.json)" \
-  --max-budget-usd 0.25 \
+  --max-budget-usd 1.00 \
   'Return a minimal valid stage outcome: stage "retro", empty arrays for commits and tickets, 0 for cost_usd and findings_parked, null for conventions_resolved and escalation.' \
   < /dev/null
 ```
@@ -505,8 +508,10 @@ unattended loop's environment on a separate billing path.
 
 **A cap below the startup floor fails every stage identically.** The probe above was written at
 USD 0.05 and returned `Error: Exceeded USD budget` rather than the object — not because the work
-was expensive, but because a session pays its ~20k-token floor before it does anything at all. A
-cap set below that reads exactly like a broken CLI. Size a stage's cap against this repo's observed
+was expensive, but because a session pays its startup floor before it does anything at all. A
+cap set below that reads exactly like a broken CLI. **USD 0.25 failed the same way** on a fresh
+quantum-catan host (run-20261008T021734Z), whose floor is near four times this repo's; 1.00 returned
+the object. Size a stage's cap against this repo's observed
 per-session figures in `MEASUREMENT.md`, never against a guess at how small the work is.
 
 **Authority is the narrowest that works, and it does not outlive the process.**

@@ -13,6 +13,9 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- A sprint's Step 1 probe now runs at --max-budget-usd 1.00, since 0.25 fell below a fresh host's startup floor and failed like a broken CLI; the skill states the supervisor's per-turn floor as per host (76k measured on one) and says to read it from harvest-usage.sh --run.
+- verify's fallback wait for a long sweep is now a bounded loop inside one python3 call with time.sleep, rather than a shell sleep loop the harness refuses.
+
 ## 0.9.37 — 2026-10-07
 
 - A sprint now resolves the opus alias once, at its Step 1 probe, and dispatches every stage and every resume on that concrete model id, recording it on scope_confirmed and on each dispatch event, so one run can no longer mix two models and a run log names the model each session ran on (0187).
