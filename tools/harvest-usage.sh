@@ -466,7 +466,12 @@ if unpriced_models:
 print(header)
 print("RANGE %s to %s" % (min(totals["days"]) if totals["days"] else "none",
                           max(totals["days"]) if totals["days"] else "none"))
-print("RATES per million: opus 5 in 5.00 out 25.00, cache read 0.1x in, write 1.25x in at 5m and 2.0x at 1h")
+# Derived, never restated: a literal here once named "opus 5" for a run that used only a model the
+# table did not carry, so the header and the pricing disagreed with nothing to say so (0192).
+print("RATES per million: "
+      + ", ".join("%s in %.2f out %.2f cache read %.2f" % (model, inp, outp, read)
+                  for model, (inp, outp, read) in RATES.items())
+      + ", cache write %sx in at 5m and %sx at 1h" % (CACHE_WRITE_5M_MULT, CACHE_WRITE_1H_MULT))
 print("")
 print("%-10s| %6s | %7s | %10s | %8s | %12s | %10s"
       % ("SKILL", "SESSNS", "TURNS", "COST USD", "USD/TURN", "CONTEXT TOK", "CTX/TURN"))

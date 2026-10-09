@@ -1319,11 +1319,13 @@ case "$H186_SHAPE" in
 esac
 
 echo "0186 AC3 — an all-priced harvest is byte-for-byte what it was before 0186"
-# Golden output of the pre-0186 script over the FR3 store above, captured at e830d00.
+# Golden output of the pre-0186 script over the FR3 store above, captured at e830d00. The RATES
+# line alone was re-captured by 0192, whose AC8 derives it from the table; every other line is
+# the e830d00 capture unchanged, and that is what this case still proves.
 cat > "$FIX/golden-0186.txt" <<'GOLDEN'
 HARVEST of 3 sessions
 RANGE 2026-09-06 to 2026-09-06
-RATES per million: opus 5 in 5.00 out 25.00, cache read 0.1x in, write 1.25x in at 5m and 2.0x at 1h
+RATES per million: claude-opus-5-5 in 4.00 out 20.00 cache read 0.20, claude-opus-5 in 5.00 out 25.00 cache read 0.50, claude-opus-4-8 in 5.00 out 25.00 cache read 0.50, claude-opus-4-7 in 5.00 out 25.00 cache read 0.50, claude-opus-4-6 in 5.00 out 25.00 cache read 0.50, claude-sonnet-5 in 2.00 out 10.00 cache read 0.20, claude-sonnet-4-6 in 3.00 out 15.00 cache read 0.30, claude-haiku-4-5 in 1.00 out 5.00 cache read 0.10, cache write 1.25x in at 5m and 2.0x at 1h
 
 SKILL     | SESSNS |   TURNS |   COST USD | USD/TURN |  CONTEXT TOK |   CTX/TURN
 queue     |      1 |       1 |      20.00 |  20.0000 |            0 |          0
@@ -1578,6 +1580,39 @@ case "$T192_5" in
   *" 36.75 |"*) ok "claude-opus-5 totals USD 36.75 (5.00 + 25.00 + 0.50 + 6.25)" ;;
   *) bad "0192 AC9 — claude-opus-5 moved off 36.75: ${T192_5:-no TOTAL row}" ;;
 esac
+
+# AC8 — the header printed beside the table is DERIVED from it. It was a literal naming "opus 5",
+# so a sprint run wholly on claude-opus-5-5 printed a rate for a model it never used beside a
+# table that had no rate for the one it did. The keys are read from the script, not restated here.
+echo "0192 AC8 — the RATES header names every RATES key and follows an edit to the table"
+R192="$("$HARVEST" "$FIX/store" 2>&1 | grep '^RATES per million:' || true)"
+R192_KEYS="$(awk '/^RATES = \{/ {s=1; next} s && /^\}/ {exit} s' "$HARVEST" | grep -oE '"claude-[a-z0-9-]+"' | tr -d '"')"
+R192_MISSING=""
+for key in $R192_KEYS; do
+  case "$R192" in *"$key in "*) ;; *) R192_MISSING="$R192_MISSING $key" ;; esac
+done
+if [ -z "$R192_KEYS" ]; then
+  bad "0192 AC8 — could not read any key out of RATES in $HARVEST"
+elif [ -n "$R192_MISSING" ]; then
+  bad "0192 AC8 — the RATES header omits:$R192_MISSING; header: ${R192:-none}"
+else
+  ok "the header names all $(printf '%s\n' "$R192_KEYS" | wc -l | tr -d ' ') RATES keys"
+fi
+case "$R192" in
+  *"claude-opus-5-5 in 4.00 out 20.00 cache read 0.20"*) ok "and claude-opus-5-5 with its own three figures" ;;
+  *) bad "0192 AC8 — the header does not carry claude-opus-5-5's figures: ${R192:-none}" ;;
+esac
+sed 's/"claude-opus-5-5":   (4.00,/"claude-opus-5-5":   (4.50,/' "$HARVEST" > "$FIX/harvest-0192.sh"
+chmod +x "$FIX/harvest-0192.sh"
+R192_EDIT="$("$FIX/harvest-0192.sh" "$FIX/store" 2>&1 | grep '^RATES per million:' || true)"
+if cmp -s "$HARVEST" "$FIX/harvest-0192.sh"; then
+  bad "0192 AC8 — the test's edit to RATES matched nothing, so it proves nothing"
+else
+  case "$R192_EDIT" in
+    *"claude-opus-5-5 in 4.50 "*) ok "and an edit to a rate in RATES reaches the header" ;;
+    *) bad "0192 AC8 — the header did not follow an edit to RATES: ${R192_EDIT:-none}" ;;
+  esac
+fi
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
