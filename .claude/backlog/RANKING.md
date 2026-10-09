@@ -421,3 +421,13 @@ guards, and this is the same rule applied to a split criterion: `0191` is `0041`
 check, deferred only because no version section exists yet, so it sits immediately under its
 parent row rather than at the bottom. It is the first `waiting` row in the queue, which is what puts
 it at the top of `./next --waiting` and in front of a sprint's proposals once a release lands.
+
+## 2026-10-08 - 0195 placed at row 1, above 0177
+
+Tier 1, silently wrong output: a `verify` PASS recorded against criteria the author never wrote is a
+close that reads as checked when the contract moved, and nobody counts that damage. Observed, not
+hypothetical: quantum-catan `0003` AC8, rewritten by `develop` and passed twice as edited. It beats
+`0177` on tier — `0177` is Tier 2, and its retro stop reports and halts rather than recording a wrong
+verdict — and its blast radius is every project installing the plugin, since every close passes
+through the gate it changes. Knowledge freshness also favours it: the owner settled the design today.
+The regret operator was not needed.
