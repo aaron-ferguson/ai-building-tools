@@ -105,7 +105,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0155 | Make claim and next agree on what blocks a take | develop | ready |  |
 | 0156 | Let handoff record a blocker without leaving drift that stops a driver | develop | ready |  |
 | 0157 | Make release verify compare the install against the released commit | develop | ready |  |
-| 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | develop | ready |  |
+| 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | develop | in-progress |  |
 | 0193 | Stop the awk-quote scanner flagging a single-quoted shell string that starts with a hash | develop | ready |  |
 | 0194 | Give tests/next.test.sh a runner that selects one ticket's sections | develop | ready |  |
 | 0199 | Make the AC form check that design Step 4 names read the consuming project's items | develop | ready |  |
