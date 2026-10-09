@@ -207,7 +207,7 @@ def harvest_session(path, opts):
     current = "unmarked"
     seen = set()
     unpriced = 0
-    unpriced_models, unpriced_skills = set(), set()
+    unpriced_models, unpriced_skills = set(), {}
     for line in open(path, errors="replace"):
         line = line.strip()
         if not line:
@@ -242,7 +242,7 @@ def harvest_session(path, opts):
         if cost is None:
             unpriced += 1
             unpriced_models.add(printable_model(msg.get("model")))
-            unpriced_skills.add(current)
+            unpriced_skills[current] = unpriced_skills.get(current, 0) + 1
             continue
         total_cost, output_cost = cost
         row = per_skill.setdefault(current, blank())
@@ -412,6 +412,20 @@ def row(name, r):
         r["ctx"], r["ctx"] // turns)
 
 
+def skill_row(name, r):
+    """One skill's row. A skill whose every turn went unpriced has a row and no dollar figure, and
+    any skill with unpriced turns says how many: otherwise a wholly unpriced skill had no row at
+    all, and its turns reached only the global UNPRICED line (0192 FR2)."""
+    if r["turns"] == 0:
+        line = "%-10s| %6d | %7d | %10s | %8s | %12s | %10s" % (
+            name[:10], r["sessions"], 0, "unpriced", "-", "-", "-")
+    else:
+        line = row(name, r)
+    if r["unpriced"]:
+        line += " | unpriced turns: %d" % r["unpriced"]
+    return line
+
+
 def session_row(sid, skills, r):
     """One session's row. A session with no priced turn prints no dollar figure at all: USD 0.00
     there would be a measured zero for a session that really spent money (0186)."""
@@ -451,14 +465,16 @@ for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
     merged = blank()
     for name, r in per_skill.items():
         add_into(merged, r)
-        skill_row = by_skill.setdefault(name, blank())
-        add_into(skill_row, r)
-        skill_row["sessions"] += 1
+        add_into(by_skill.setdefault(name, blank()), r)
+    for name in set(per_skill) | set(unpriced_skills):
+        by_skill.setdefault(name, blank())["sessions"] += 1
+    for name, n in unpriced_skills.items():
+        by_skill[name]["unpriced"] += n
     add_into(totals, merged)
     totals["sessions"] += 1
     merged["sessions"] = 1
     merged["unpriced"] = unpriced
-    session_rows.append((sid, "/".join(sorted(set(per_skill) | unpriced_skills)), merged))
+    session_rows.append((sid, "/".join(sorted(set(per_skill) | set(unpriced_skills))), merged))
 
 header = "HARVEST of %d sessions" % totals["sessions"]
 if unpriced_models:
@@ -476,7 +492,7 @@ print("")
 print("%-10s| %6s | %7s | %10s | %8s | %12s | %10s"
       % ("SKILL", "SESSNS", "TURNS", "COST USD", "USD/TURN", "CONTEXT TOK", "CTX/TURN"))
 for name in sorted(by_skill, key=lambda n: -by_skill[n]["cost"]):
-    print(row(name, by_skill[name]))
+    print(skill_row(name, by_skill[name]))
 print(row("TOTAL", totals))
 if unpriced_total:
     print("UNPRICED turns on a model with no published rate: %d" % unpriced_total)
@@ -489,6 +505,9 @@ print("%-10s| %12s | %12s | %12s | %8s | %8s"
       % ("SKILL", "READ TOK", "WRITE TOK", "OUTPUT TOK", "READ PCT", "OUT PCT"))
 for name in sorted(by_skill, key=lambda n: -by_skill[n]["cost"]) + ["TOTAL"]:
     r = totals if name == "TOTAL" else by_skill[name]
+    # Its figures are priced turns only, so a wholly unpriced skill has nothing to break down here.
+    if r["turns"] == 0 and name != "TOTAL":
+        continue
     ctx_tok = r["ctx"] or 1
     cost_usd = r["cost"] or 1.0
     print("%-10s| %12d | %12d | %12d | %7.1f%% | %7.1f%%"

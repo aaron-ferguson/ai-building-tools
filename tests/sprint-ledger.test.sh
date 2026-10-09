@@ -1670,5 +1670,49 @@ case "$R192P" in
   *) bad "0192 FR1 — a priced RATIO line changed: ${R192P:-none}" ;;
 esac
 
+# --- 0192 AC2/AC3 — every skill that ran has a row, and each unpriced count is its own -----------
+# Two wholly unpriced sessions, one skill each, with DIFFERENT turn counts (2 and 3). 0186 AC2's
+# fixture had one unpriced turn in one session, so a row printing 1 for every session, or the
+# running total for each, read the same as the right answer. Here 1 and 5 are both wrong.
+echo "0192 AC2 — the per-skill table has a row, with its own count, for each wholly unpriced skill"
+mk_unpriced_n() { # <skill> <turns>
+  printf '{"type":"user","timestamp":"2026-10-08T09:02:00.000Z","message":{"role":"user","content":"<command-name>/ai-building-tools:%s</command-name>"}}\n' "$1"
+  i=1
+  while [ "$i" -le "$2" ]; do
+    printf '{"type":"assistant","timestamp":"2026-10-08T09:0%d:00.000Z","message":{"id":"msg_n_%s_%d","model":"claude-no-such-model-0","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":%s}}\n' "$((i+2))" "$1" "$i" "$(u 1000)"
+    i=$((i+1))
+  done
+}
+SID_Q192="eeeeeeee-0192-0000-0000-000000000000"
+SID_R192="ffffffff-0192-0000-0000-000000000000"
+mkdir -p "$FIX/store-0192-skills"
+mk_unpriced_n queue 2 > "$FIX/store-0192-skills/$SID_Q192.jsonl"
+mk_unpriced_n retro 3 > "$FIX/store-0192-skills/$SID_R192.jsonl"
+H192S="$("$HARVEST" "$FIX/store-0192-skills" --sessions 2>&1 || true)"
+# The per-skill table is the block between the first SKILL header and the TOTAL row.
+SK192="$(printf '%s\n' "$H192S" | awk '/^SKILL /{s++; next} s==1 && /^TOTAL/{exit} s==1')"
+for pair in "queue:2" "retro:3"; do
+  skill="${pair%%:*}"; n="${pair##*:}"
+  line="$(printf '%s\n' "$SK192" | grep "^$skill " || true)"
+  case "$line" in
+    "") bad "0192 AC2 — no per-skill row for $skill; table: $(printf '%s' "$SK192" | tr '\n' ' ')" ;;
+    *"unpriced turns: $n") ok "the $skill row carries its own 'unpriced turns: $n'" ;;
+    *) bad "0192 AC2 — the $skill row does not end 'unpriced turns: $n': $line" ;;
+  esac
+  if printf '%s' "$line" | grep -qE '[0-9]+\.[0-9]{2}'; then
+    bad "0192 AC2 — the wholly unpriced $skill row carries a dollar figure: $line"
+  fi
+done
+
+echo "0192 AC3 — 0186 AC2's session rows, over two unpriced sessions of different counts"
+for pair in "eeeeeeee:2" "ffffffff:3"; do
+  sid="${pair%%:*}"; n="${pair##*:}"
+  line="$(printf '%s\n' "$H192S" | grep "^$sid " || true)"
+  case "$line" in
+    *"unpriced turns: $n") ok "session $sid carries its own 'unpriced turns: $n'" ;;
+    *) bad "0192 AC3 — session $sid does not end 'unpriced turns: $n': ${line:-no row}" ;;
+  esac
+done
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
