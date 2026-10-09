@@ -127,3 +127,29 @@ readers of the same figures still do, and three sessions hit them independently.
   so `sprint-ledger.sh record` scored the develop gate at observed USD 0.00 against a predicted 0.00
   and the first sprint's USD 7.66 estimate against nothing. FR1 covers the printing; FR5 still governs
   adding a rate.
+- **2026-10-09 (develop, token ead5) — build notes.** Commits `80eb428` (FR5/FR6), `0a8bdbd` (FR7),
+  `1e8a3fb` (FR1), `ab9c3f5` (FR2), `05e97c2` (FR4), `dafe7fa` (FR3), `285357b` (CHANGELOG). Every
+  new case is in `tests/sprint-ledger.test.sh` under a `0192` heading, and each was recorded red
+  before its fix: AC6/AC7 printed `TOTAL … 0.00` plus an `UNPRICED` line, AC8 printed the literal
+  `opus 5` header, AC1 printed `observed USD 0.00`, AC2 printed no skill rows, AC4 printed no
+  run-log source, AC5 had no text.
+  - **Decisions.** `RATES` holds each model's cache read as a **USD rate** (0.20 for opus-5-5,
+    0.50 for opus 5), not as a multiplier. That is the figure the source publishes, and it is
+    0.05x and 0.1x respectively. `cap_basis: "unpriced"` rides on the existing `resumed` event
+    rather than adding a new event name. The per-skill context-breakdown table skips a wholly
+    unpriced skill, because its figures are priced turns only. RATIO prints `= unpriced, unpriced:
+    <n> turn(s) …`, and its numerator line uses the same text as GATE/DESIGN via `observed_text`.
+    Added a bullet to LEDGER.md's "How to read a block" (in `touches:`). 0186 AC3's golden was
+    re-captured for its RATES line only. AC9's extra `claude-opus-5` 36.75 case exists because that
+    golden has no cache-read tokens, so it could not see FR6 move any other model.
+  - **Mutation table — all RUN against the committed tree, each restored by `git checkout`:**
+    AC3 `% r["unpriced"]`→`% 1` in `session_row` → 2 fail; AC3 `merged["unpriced"] = unpriced`→
+    `= unpriced_total` → 1 fail; AC2 the same `% 1` in `skill_row` → 2 fail; AC2 drop the wholly
+    unpriced skill row → 2 fail; AC6 remove the opus-5-5 entry → 6 fail; AC6 cache read 0.40 (0.1x)
+    → 3 fail; AC6 alias to opus 5 rates → 4 fail; AC7 break the `DATE_SUFFIX` fallback → 2 fail;
+    AC9 opus-5 cache read 0.60 → 1 fail; AC8 restore the literal header → 3 fail; AC1 restore
+    `"USD %.2f" % h["usd"]` → 3 fail. AC4 and AC5 are proved by the recorded pre-fix reds
+    (reasoned equivalent to deleting the fix).
+  - **Not covered, and stays so:** a GATE over a session id with no transcript at all still
+    reads a measured `USD 0.00`. That is 0173's case (no turns, no unpriced count), not an
+    unpriced one.
