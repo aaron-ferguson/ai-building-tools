@@ -206,6 +206,9 @@ backlog — never `tests/next.test.sh`, whose 485 cases run past a tool timeout 
 
 ## Notes & decisions
 
+- 2026-10-08 — Owner confirmed decision 4: `design` stamps `ac_digest:` too. The rule is "the
+  author's write path stamps it" (`queue` and `design`); `develop` and `verify` never do. FR3 and
+  AC11 stand as written.
 - 2026-10-08 — queue: **Routed to `develop`.** The owner made the design decision on 2026-10-08
   (digest at queue write, `--drift` drift, `verify` refuses, `develop` routes); no surface and no open
   decision remains, so `design` has nothing to settle.
