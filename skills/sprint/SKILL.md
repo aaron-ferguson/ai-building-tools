@@ -867,6 +867,12 @@ root. Three things it cannot say, because they are specific to a run rather than
 - **What the run designed.** Every ticket a design session this run moved to `next: develop`, named
   as available for the next sprint rather than as work this one did.
 
+**Every ticket the report names is a link**, in this report and every escalation or proposal before
+it: the item's path from the repo root, with `:<line>` of the AC where an AC is named —
+`.claude/backlog/items/0032-stop-the-monte-carlo-odds-tests-timing-out.md:57` for 0032 AC2 — which
+the terminal opens on a click. A bare id sends the person searching for the file to read the
+criterion the report is asking them to judge (the user's request, 2026-10-10).
+
 **The supervisor parks findings about its own tooling under the backlog lock, before the hand-off
 line.** Every other stage parks what surprised it; this run is no different. An escalation about
 the supervisor's own behaviour (a misconfigured dispatch flag, a schema rejection, a probe that

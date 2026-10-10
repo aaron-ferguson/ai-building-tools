@@ -3146,6 +3146,17 @@ else
   bad "0185 AC4 — Step 5's 'One fact crosses runs' paragraph does not say the count is per machine, that a fresh clone starts at zero completed sprints, and that the age half fires later, never earlier"
 fi
 
+# A ticket the report names is a link (the user's request, 2026-10-10). A bare id costs the person a
+# search for every ticket whose AC the report names; the item's path with the AC's line is what the
+# terminal opens on a click. Greps the rule's two load-bearing halves: the path, and the AC line.
+echo "Step 9 — every ticket a report names is a clickable path to its item, at the AC's line"
+if says "$SKILL" "Step 9" 'Every ticket the report names is a link' && \
+   says "$SKILL" "Step 9" 'with `:<line>` of the AC'; then
+  ok "Step 9 names tickets as item-file paths, at the AC's line where an AC is named"
+else
+  bad "Step 9 does not require ticket references to be item-file paths with the AC's line; a bare id sends the person searching for the ticket"
+fi
+
 # 0165 FR1 — every FAIL line again, immediately above the tally.
 #
 # A pass that filters this file to its tally sees "1 failed" with the FAIL line hundreds of lines
