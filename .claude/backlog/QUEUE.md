@@ -112,6 +112,9 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0197 | Make tools/release refuse a behaviour-changing bump with no Did not change section | develop | ready |  |
 | 0198 | Decide how verify names the pattern behind a surviving mutation and what an FR-level survivor means | design | ready |  |
 | 0200 | Decide where queue puts an owner decision that blocks several tickets and builds nothing | design | ready |  |
+| 0201 | Make sprint-ledger.sh refuse an outcome event whose stage fields are nested rather than flat | queue | ready |  |
+| 0202 | Name a liveness check for a dispatched stage that works from a backgrounded call in sprint | queue | ready |  |
+| 0203 | Decide where the one model pricing table lives that cost-by-category.sh and harvest-usage.sh both read | design | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
