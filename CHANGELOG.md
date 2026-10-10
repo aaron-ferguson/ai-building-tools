@@ -13,6 +13,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+## 0.9.38 — 2026-10-10
+
 - A sprint's Step 1 probe now runs at --max-budget-usd 1.00, since 0.25 fell below a fresh host's startup floor and failed like a broken CLI; the skill states the supervisor's per-turn floor as per host (76k measured on one) and says to read it from harvest-usage.sh --run.
 - harvest-usage.sh prices claude-opus-5-5 (USD 4.00 in, 20.00 out, cache read 0.20 per million, which is 0.05x input), holds each model's cache-read rate in RATES rather than as one 0.1x multiplier, and derives its `RATES per million:` header from that table, naming every model.
 - harvest-usage.sh's per-skill table now has a row for a skill whose turns all went unpriced, and any skill row with unpriced turns ends `unpriced turns: <n>`.
