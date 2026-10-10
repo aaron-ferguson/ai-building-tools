@@ -53,3 +53,4 @@ which entries, what is expired unprocessed, and why a sweeper removes only what 
 normal state of this file is empty, and **if it has grown, that is itself the finding**.
 
 ---
+- 2026-10-10 — **quantum-catan's buffer carried head tokens outside the documented vocabulary: `[->queue]` on an entry still needing a row and `[->ai-building-tools]` on a tool finding left in the local buffer.** `templates/FINDINGS.md` defines only `[->NNNN]` and `[->none]`, so a sweeper invented two more; a forwarded entry sitting locally means the routing in `references/CONVENTIONS.md` was not followed, and a `grep '\[->'` partition now counts these as dispositioned. (pointer: quantum-catan commit ec13509, retro run-20261010T011031Z)
