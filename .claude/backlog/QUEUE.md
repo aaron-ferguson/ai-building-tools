@@ -115,6 +115,11 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0201 | Make sprint-ledger.sh refuse an outcome event whose stage fields are nested rather than flat | queue | ready |  |
 | 0202 | Name a liveness check for a dispatched stage that works from a backgrounded call in sprint | queue | ready |  |
 | 0203 | Decide where the one model pricing table lives that cost-by-category.sh and harvest-usage.sh both read | design | ready |  |
+| 0204 | Route a queue completion that re-specifies a waiting row to develop instead of exiting 4 | queue | ready |  |
+| 0205 | Decide what may join a develop gate, and whether a related design row in flight holds it | queue | ready |  |
+| 0206 | Decide whether a verify bounce carrying a precise test-only constraint routes back to develop | queue | ready |  |
+| 0207 | Decide whether the queue tail runs when the retro filed every work entry | queue | ready |  |
+| 0208 | Make the prototype template's render keep focus and play enter animations once | queue | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in

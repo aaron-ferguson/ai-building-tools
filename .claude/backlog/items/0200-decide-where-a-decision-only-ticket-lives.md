@@ -41,3 +41,4 @@ To be written by design.
 ## Notes & decisions
 
 - 2026-10-09 — Filed by retro from the tools `FINDINGS.md` entry of 2026-10-08.
+- 2026-10-10 — Absorbed by retro (tail of quantum-catan run-20261010T212209Z): a second instance with a different gap: quantum-catan 0031, a `waiting` owner-decision ticket ruled "nothing to build", had no scripted exit (`./close` needs `next: verify`, a token and tickable ACs) and was closed by hand under the lock against DONE.md's "never edited by hand" (quantum-catan commit 89d71a9). The design should name the close path as well as the home.

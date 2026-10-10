@@ -124,3 +124,4 @@ signal from one filed last week. `./next --findings` already counts entries agai
 - **The outcome that was actually missing was *absorbed*** — an existing row already carries the whole
   lesson, so nothing new is written but the row is named and appended to. Without it, eight entries
   marked *"kept for the lesson"* sat through two sweeps because neither sweeper could finish them.
+- 2026-10-10 — Absorbed by retro (tail of quantum-catan run-20261010T212209Z): the tools buffer reported quantum-catan's buffer carrying `[->queue]` and `[->ai-building-tools]`, head tokens outside the `[->NNNN]`/`[->none]` vocabulary in `templates/FINDINGS.md` (quantum-catan commit ec13509). A sweeper invented them, and `grep '\[->'` counts them as dispositioned; this row's greppable-form work should make an unknown token fail rather than count.

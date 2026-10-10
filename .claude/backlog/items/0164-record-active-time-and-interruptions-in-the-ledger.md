@@ -112,3 +112,4 @@ half is not:
 - **AC3's figures were chosen so the rules disagree.** Each wrong reading gives a different number
   from the right one on the figure it corrupts: 100 against 73 for elapsed, 53 against 40 for
   active.
+- 2026-10-10 — Absorbed by retro (tail of quantum-catan run-20261010T212209Z): a second instance: quantum-catan run-20261010T011031Z logged `limit_hit` then `resumed` around queue session 1419ed92 and the ledger reported wall_clock 311 min (estimate 178) and that window's elapsed as 283.4 min, nearly all of it the reset wait. Print the subtracted minutes when this lands.
