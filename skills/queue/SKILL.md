@@ -327,6 +327,12 @@ X, whose fix is ticket NNNN"). **State any size or budget target absolutely** �
 ceiling — never as a percentage of a baseline a sibling ticket in the same project is still moving: two
 independently-written targets over a shifting baseline leave the second one unclosable.
 
+**Pin a declared success threshold in a test**, so moving it is a visible diff rather than a quiet
+edit — `develop` iterates toward it and never edits it (quantum-catan 0008). **And before writing a
+contended-run AC** ("passes N of N under load"), read the file's other timing assertions: a frozen
+wall-clock ceiling reds at exactly the load that reproduces the flake, which made quantum-catan 0032's
+AC unmeetable by any build. Phrase it as "no <named failure> in N runs", not "N/N green".
+
 **Name what would make each AC red** — the input, change or mutation that turns it from green to
 red, and an AC for which none can be named **is not a criterion yet**. It cannot be *met*, only not
 contradicted, and `verify` closing on it records a check nobody ran. The underlying rules are

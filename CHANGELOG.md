@@ -13,6 +13,10 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- develop now treats a declared success threshold as a goal to iterate toward or escalate, never a number to edit; queue pins such a threshold in a test and checks a file's other timing assertions before writing a contended-run AC, phrasing it as "no <named failure> in N runs".
+- develop's mutation-check rule now says to `git add` an untracked file before committing it and to chain the mutation run on the commit with `&&`, and its hand-off step says never to batch `./handoff` in one parallel tool call with the notes writes it must follow.
+- prototype now builds at a path the ticket pins rather than the default, and resolves a level 1 or 2 path from the repo root when no `prototype:` block is configured.
+
 ## 0.9.39 — 2026-10-10
 
 No behaviour change — internal guards and records only.

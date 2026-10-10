@@ -260,6 +260,12 @@ stop.** Missing detail you sharpen here; a missing decision answered by the sess
 against it is a contract nobody agreed to, and `verify` is what discovers you invented it. Name the
 command: `/design <id>`, in its own session.
 
+**A declared success threshold is a goal to iterate toward, never a number you may move.** When the
+build misses one — a balance cap, a latency ceiling, a rate — change the inputs and try again, or stop
+and escalate the miss; editing the threshold, its test, or its tolerance to turn the build green is
+the contract narrowing `queue` alone may do. quantum-catan 0008 held on the strength of a ticket note
+until the owner stated this as a general rule (2026-10-10).
+
 If the ticket's assumptions have gone stale (the code moved, the bug is fixed, a dependency changed),
 say so and ask before building to a spec that no longer matches reality.
 
@@ -524,7 +530,10 @@ restores that file to `HEAD` rather than to the state you found it in, so revert
 fix you have not committed **deletes the fix** — silently, with no error, and the run that follows
 reports unrelated reds that read as a surprising finding rather than as self-inflicted damage. The trap
 is that the same script shape is perfectly safe inside a worktree pinned to a commit, which is where
-most sessions first use it. Commit the fix, then break it. Where something genuinely cannot be committed
+most sessions first use it. Commit the fix, then break it — and **a file git has never seen needs
+`git add` first**: `git commit -- <untracked path>` refuses with "pathspec did not match", the
+`git checkout --` after it fails too, and the mutations stack (quantum-catan 0007). Chain the mutation
+run on the commit's success with `&&` so a commit that did not happen stops it. Where something genuinely cannot be committed
 first, copy it to a scratch path and restore from that copy, and finish with a control run whose green
 is what licenses the reds before it.
 
@@ -575,6 +584,11 @@ that field's own raise-only rule below does not reach it by implication.** Lower
    `in-progress`, so it no-oped and the commit proceeded anyway, leaving a row at `verify | ready`
    over an item at `develop | in-progress`. It refuses a token that is not yours, and a row and an
    item that disagree about the current stage.
+
+   **Never issue it in the same parallel tool batch as a write it must follow.** A batch has no
+   order: a refused notes append beside an accepted `./handoff` committed the hand-off without the
+   notes it should have carried (quantum-catan 0007). Confirm every *Notes & decisions* write landed,
+   then hand off in a call of its own.
 
    **Correct `qa_level` first if this session proved the declared level wrong** — a re-entry carrying
    "`unit` was too low for a change that moves rendered geometry" as an explicit `verify` verdict has

@@ -136,6 +136,11 @@ Re-generate only what's called out, re-display, repeat until approved.
 - From a ticket: `PROJ-1234` → `proj-1234-[short-feature-name]`
 - Ad-hoc: kebab-case the feature name, e.g. "case timeline redesign" → `case-timeline-redesign`
 
+**A path the ticket pins wins over this default.** Where an AC or `expects` names the file — quantum-catan
+0014 required `prototypes/turn-loop/index.html` because it is served to phones — build there, and say
+so in the report. Only level 3 builds inside `prototype.root`; for levels 1 and 2 with no `prototype:`
+block configured, resolve the path from the repo root rather than stopping.
+
 ### Level 1 — Diagram
 
 Write `prototypes/[slug]/diagram.html`, a standalone Mermaid viewer:
