@@ -13,6 +13,10 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+## 0.9.39 — 2026-10-10
+
+No behaviour change — internal guards and records only.
+
 ## 0.9.38 — 2026-10-10
 
 - A sprint's Step 1 probe now runs at --max-budget-usd 1.00, since 0.25 fell below a fresh host's startup floor and failed like a broken CLI; the skill states the supervisor's per-turn floor as per host (76k measured on one) and says to read it from harvest-usage.sh --run.
