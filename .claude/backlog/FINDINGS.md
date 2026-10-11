@@ -53,3 +53,4 @@ which entries, what is expired unprocessed, and why a sweeper removes only what 
 normal state of this file is empty, and **if it has grown, that is itself the finding**.
 
 ---
+- 2026-10-11 — [quantum-catan 0034, design] design Step 4 says run `tests/item-ac-form.test.sh` before handoff, but that script resolves ROOT from its own location, so from a project it only checks the tools repo's items. To check the project's items I had to copy it into a scratch tree beside a copy of them. A path argument or BACKLOG_DIR override would make the step runnable as written.
