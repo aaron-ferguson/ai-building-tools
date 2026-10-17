@@ -126,3 +126,4 @@ the transcript.
   FR1 is meant to replace, and evidence that it works when someone happens to look. The same
   collision is available for `design` and `run`. The finding's own fix direction matches FR1–FR4: a
   distinguishing name, or a line telling a session to invoke the plugin-qualified form explicitly.
+- **2026-10-17 (retro, absorbed from AetherWorks FINDINGS.md).** A fourth occurrence: bare `/verify` loaded the bundled skill during AetherWorks 0095's verify with CLAUDE.md's *invoke the stage skills as `ai-building-tools:<name>`* warning already in context; caught only by reading that paragraph and the `Hand off 0095 to verify` commit. A rule broken four times is not enforceable as prose — the finding proposed a `UserPromptSubmit` hook or project-level skills shadowing the bundled names, either of which is a stronger form of FR1's distinguishing name. Unverified: whether a hook sees a slash command before expansion.

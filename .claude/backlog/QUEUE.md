@@ -120,6 +120,10 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0206 | Decide whether a verify bounce carrying a precise test-only constraint routes back to develop | queue | ready |  |
 | 0207 | Decide whether the queue tail runs when the retro filed every work entry | queue | ready |  |
 | 0208 | Make the prototype template's render keep focus and play enter animations once | queue | ready |  |
+| 0209 | Let item-ac-form check a named item, whatever its stage and wherever it lives | develop | ready |  |
+| 0210 | Resume a waiting row through a script once its person has answered | develop | ready |  |
+| 0211 | Make a backlog script refuse when it is running from the templates directory | develop | ready |  |
+| 0212 | Stop --drive dispatching develop beside a design session holding one of its files | develop | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
