@@ -538,7 +538,8 @@ first, copy it to a scratch path and restore from that copy, and finish with a c
 is what licenses the reds before it.
 
 **And a whole-suite run is a shared resource on a project whose browser suite forbids overlap.** Check
-for a live run before starting one (`pgrep -f <runner>`), and wait on it rather than racing: a
+for a live run before starting one (`pgrep -f '<runner> <run-subcommand>'`, e.g. `'playwright test|vitest run'`
+— a bare `playwright` matches the Playwright MCP server, which never exits), and wait on it rather than racing: a
 background `until` loop on the worker process is clean and costs nothing, where the obvious fallback — a
 throwaway worktree — needs its own `node_modules` and is not actually cheap. Neither this skill nor
 `CONCURRENCY.md` names which session yields, so the rule is simply that the one arriving second waits.

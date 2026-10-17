@@ -375,7 +375,9 @@ removal of a phrase an existing test requires and the next session must choose b
 ticket and another's guard. **Compute an absence assertion's expected wrong answer
 from the fixture rather than estimating it**, or name no value at all: an estimated constant that
 never appears reddens through some generic branch instead, so the message that would have named the
-cause never fires.
+cause never fires. **A secret's absence is asserted against the value's shape, never its name** —
+a token prefix, a long run after `token=` or `Bearer` — because the correct fix, reading it from a
+store, puts the variable's name in tracked files and a name grep can then never pass.
 
 If the report genuinely doesn't contain enough to write FRs or ACs, ask — once, batched, with your
 proposed defaults.

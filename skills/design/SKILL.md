@@ -144,8 +144,13 @@ This step is most of the skill's value.
    a false negative. Say which existing criteria the answer confirms, which it changes, and which it
    adds — an answer that leaves every one of them untouched is the real negative. **That accounting
    goes in *Notes & decisions*, and every criterion stays a `- [ ] ACn — ` checkbox**: a numbered list
-   and a bulleted cross-reference each took `tests/item-ac-form.test.sh` red on another stage's time,
-   so run it before the handoff.
+   and a bulleted cross-reference each took `tests/item-ac-form.test.sh` red on another stage's time.
+   **That test cannot check this item yet**: it skips rows still at `next: design`, and it reads the
+   items beside its own copy, so run from a project it reads the tools repo's backlog. Its green before
+   the handoff is about other items — two sessions banked it as this one's (item 0209 gives it a path).
+   Until then, read every criterion line against the `- [ ] ACn — ` form yourself.
+   **Re-read `qa_level` and `close_by` against the criteria you just wrote**: `queue` predicted both
+   before any existed, and this is the only stage that learns what they should be.
 3. Delete the *Open design question* section, then release the row with
    `./handoff <id> <token> develop`. It writes the stage and clears the claim in one locked commit, so
    everything else this pass owes the item is written before it (`CONCURRENCY.md`, *The release is the final act*).

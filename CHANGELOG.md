@@ -13,6 +13,10 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- design Step 4 no longer tells a session to bank `tests/item-ac-form.test.sh` before the handoff as a check of its own item — the test skips `next: design` rows and reads its own repo's items — and now has it re-read `qa_level` and `close_by` against the criteria it just wrote.
+- develop's live-run check now matches the runner's run subcommand (`'playwright test|vitest run'`), so a running Playwright MCP server no longer reads as a test run.
+- queue now writes a secret-absence check against the value's shape, never the variable's name.
+
 ## 0.9.40 — 2026-10-11
 
 - develop now treats a declared success threshold as a goal to iterate toward or escalate, never a number to edit; queue pins such a threshold in a test and checks a file's other timing assertions before writing a contended-run AC, phrasing it as "no <named failure> in N runs".
