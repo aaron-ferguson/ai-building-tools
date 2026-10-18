@@ -54,4 +54,3 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
-- 2026-10-17 — [AetherWorks retro, run-20261017T193821Z] **`FINDINGS.md`'s header tells a sweeper to match entries with `^- (\*\*)?20[0-9]{2}-`, and its own fenced `[->0060]` example matches that pattern.** `next --findings` is fence-aware and counts right, but a by-hand drain following the header literally counted 8 entries where there were 7; an assertion caught it mid-write, after the items, row and counter were already written, so the commit had to be completed under a second lock. Either indent the example so it cannot match, or say beside the pattern that readers must skip fenced lines (pointer: `skills/queue/templates/FINDINGS.md` header, *Readers match*).

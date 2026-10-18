@@ -72,6 +72,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0008 | Add the graph rules to queue, develop, and verify | develop | blocked | 0002 |
 | 0003 | Phase 2 — the readiness gate and outcome reviews | develop | blocked | 0001 |
 | 0004 | Phase 3 — extend tracker mirroring with hierarchy and standards | develop | blocked | 0001 |
+| 0213 | Stop the findings header's own example matching the entry pattern it tells readers to use | develop | ready |  |
 | 0100 | Give the two findings markers a greppable form and count them | develop | ready |  |
 | 0101 | Say what a capture session does when only some repos resolve conventions | develop | ready |  |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
