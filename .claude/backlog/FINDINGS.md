@@ -54,3 +54,4 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
+- 2026-10-18 — **`./claim` and `./next` read only a YAML-array or block-list `expects:`, and silently treat a bare comma list (`expects: a.ts, b.ts`) as no prediction.** In one consumer backlog, an item written that way was offered as "EXPECTS not predicted", and `./claim` reported "declares no expects:" and left `touches:` unset. Several of that backlog's items use the comma form, so file-scope triage is blind for all of them. Either the parsers accept it, or `queue`/the item template refuses to write it (`claim`'s `expects:` awk, `next`'s EXPECTS line).
