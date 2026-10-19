@@ -13,6 +13,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- A finding about a skill, reference file or backlog script now routes to the tools repo's `.claude/backlog/FINDINGS.md` with the root explicitly ruled out, so a session no longer falls back to a local park because the tools root has no buffer.
+
 ## 0.9.41 — 2026-10-18
 
 - design Step 4 no longer tells a session to bank `tests/item-ac-form.test.sh` before the handoff as a check of its own item — the test skips `next: design` rows and reads its own repo's items — and now has it re-read `qa_level` and `close_by` against the criteria it just wrote.

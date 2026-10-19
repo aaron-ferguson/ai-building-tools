@@ -96,6 +96,8 @@ one the session stands in. The subject test above decides which:
   gaps found from outside, in the format stated there — never its `.claude/backlog/` buffer, which
   holds gaps found from inside.
 - **a skill, a reference file, or a backlog script** → the tools repo's `.claude/backlog/FINDINGS.md`.
+  **Not its root**: the root buffer above is the conventions repo's alone. Two sessions on one
+  day found no `FINDINGS.md` at the tools root and parked locally as though nothing resolved.
 - **anything else, this project's own code included** → stays in the local buffer.
 
 **Both destinations are resolved, never guessed.** The conventions repo is the directory the ladder
