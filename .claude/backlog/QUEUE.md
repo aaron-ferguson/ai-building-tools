@@ -75,6 +75,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0213 | Stop the findings header's own example matching the entry pattern it tells readers to use | develop | ready |  |
 | 0100 | Give the two findings markers a greppable form and count them | develop | ready |  |
 | 0101 | Say what a capture session does when only some repos resolve conventions | develop | ready |  |
+| 0214 | Add a profile-declared gate that a stage refuses to pass without its artifact | design | ready |  |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
 | 0071 | Add a decision-map mode for work too large or too foggy for one project ticket | design | ready |  |
