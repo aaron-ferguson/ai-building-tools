@@ -17,6 +17,7 @@ the release session, because only a whole-release view can say it.
 - `develop` no longer edits a criterion it finds wrong or impossible, even to correct it: it records which `ACn`, why and the proposed text in *Notes & decisions* and hands the ticket to `queue` (0195).
 - `queue` and `design` now stamp `ac_digest:` from `./next --ac-digest <id>` wherever they write criteria, and `./next --drift` (so `--drive`, on exit 4) reports a stamped digest the criteria no longer match, naming each criterion changed, added or removed (0195).
 - `close` and `verify` refuse criteria that differ from their `ac_digest:` stamp — `verify` sends the ticket to `queue` as a stale contract — and an item with no stamp closes with an `ac_digest absent — unverifiable` line rather than reading as a match (0195).
+- `queue` now files work that should exist only if a measurement clears as a gate ticket alone, carrying the template's new `## Kill criteria` section (thresholds, a `**Verdict:**` line, an `**If it clears:**` prose outline). The decided work is not filed as FRs or as a `blocked_by` dependent, and the gate's criteria assert only that the verdict was recorded, so it closes `done` on a kill (0110).
 
 ## 0.9.42 — 2026-10-25
 
