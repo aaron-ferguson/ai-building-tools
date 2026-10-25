@@ -328,6 +328,7 @@ tests/release.test.sh                    # tools/release verifies the install ag
 tests/remote-anchor.test.sh              # a session editing a tool repo anchors to the remote first
 tests/reopen.test.sh                     # ./reopen — a done ticket back to verify, ACs unticked, dependents re-blocked
 tests/retro-tool-edit.test.sh            # retro runs the target repo's suite before committing a tool edit
+tests/scaffold-close.test.sh             # a backlog scaffolded from the queue templates alone can close a ticket
 tests/sprint-ledger.test.sh              # the sprint estimate ledger
 tests/sprint.test.sh                     # the sprint skill and the stage outcome schema
 tests/transient-mutation.test.sh         # develop declares a file it breaks on purpose and restores
