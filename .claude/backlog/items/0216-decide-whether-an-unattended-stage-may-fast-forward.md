@@ -3,7 +3,7 @@ id: "0216"
 title: Decide whether an unattended stage may fast-forward a clean checkout that is only behind
 type: feature
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -17,8 +17,8 @@ expects:
   - skills/sprint/SKILL.md
   - skills/develop/SKILL.md
   - tests/remote-anchor.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "5da6"
+claimed_at: 2026-10-25T16:51:30Z
 touches:
 ---
 
