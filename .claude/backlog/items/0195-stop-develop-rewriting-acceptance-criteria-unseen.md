@@ -2,8 +2,8 @@
 id: "0195"
 title: Stop a criterion changing without its author by digesting it at write and checking it at close
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -26,9 +26,10 @@ expects:
   - tests/ac-digest.test.sh
   - tests/backlog-scripts-installed.test.sh
   - CHANGELOG.md
-claimed_by: "9eba"
-claimed_at: 2026-10-25T17:34:11Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-25
 ---
 
 ## Problem
@@ -135,49 +136,49 @@ Every scripted criterion lives in a new `tests/ac-digest.test.sh`, which builds 
 backlog — never `tests/next.test.sh`, whose 485 cases run past a tool timeout (`config.yml`, the
 `commands:` comment). Fixture ids must not look like real backlog rows, e.g. `9901`.
 
-- [ ] AC1 — Given a fixture item whose criteria are `AC1` and `AC2`, with AC2 reading "a player at
+- [x] AC1 — Given a fixture item whose criteria are `AC1` and `AC2`, with AC2 reading "a player at
   5 VP", when `./next --ac-digest` runs before and after (a) ticking AC1 to `[x]` and (b) rewrapping
   AC2 across two lines, then all three outputs are identical; and after changing AC2's "5 VP" to
   "6 VP", AC2's key differs and AC1's does not. Red: remove the tick normalisation and (a) differs;
   remove the whitespace collapse and (b) differs; key the whole section as one hash and AC1's key
   changes with AC2's.
-- [ ] AC2 — Given the same fixture, when the prose above the first `ACn` label is edited, then
+- [x] AC2 — Given the same fixture, when the prose above the first `ACn` label is edited, then
   `./next --ac-digest`'s output is unchanged. Red: start the digest at the section heading.
-- [ ] AC3 — Given a queued fixture row whose item has `ac_digest:` stamped and AC2's text then
+- [x] AC3 — Given a queued fixture row whose item has `ac_digest:` stamped and AC2's text then
   changed, when `./next --drift` runs, then it exits 1 and prints one `DRIFT` line for that row
   naming `AC2` and not `AC1`. Red: delete the new class from `drift_report` and it exits 0.
-- [ ] AC4 — Given the AC3 fixture, when `./next --drive` runs, then it exits 4 and prints the AC3
+- [x] AC4 — Given the AC3 fixture, when `./next --drive` runs, then it exits 4 and prints the AC3
   drift line. Red: same mutation as AC3.
-- [ ] AC5 — Given a queued fixture item with no `ac_digest:` key, when `./next --drift` and then
+- [x] AC5 — Given a queued fixture item with no `ac_digest:` key, when `./next --drift` and then
   `./close` run, then `--drift` exits 0 with no line for that row, and `close` closes it and prints a
   line containing both `ac_digest absent` and `unverifiable`. Red: treat absent as a mismatch and
   `--drift` exits 1; treat it as a silent match and the line is not printed.
-- [ ] AC6 — Given the AC3 fixture held under a token, when `./close` runs with that token, then it
+- [x] AC6 — Given the AC3 fixture held under a token, when `./close` runs with that token, then it
   exits non-zero naming `AC2`, the row is still in `QUEUE.md` and absent from `DONE.md`, no commit was
   made (`git rev-parse HEAD` unchanged) and `.lock/` does not exist afterwards. Red: remove the
   check, or make it warn and continue, and the row reaches `DONE.md`.
-- [ ] AC7 — Given a fixture whose stamped digest matches, when `./close` runs and then `./reopen`
+- [x] AC7 — Given a fixture whose stamped digest matches, when `./close` runs and then `./reopen`
   restores it and `./next --drift` runs, then the close succeeds, and after the reopen (which unticks
   every criterion) `--drift` reports no line for that row. Red: invert the comparison and the close
   refuses; remove the tick normalisation and the post-reopen `--drift` reports the row.
-- [ ] AC8 — Given a stamped fixture to which an `AC3` is then added, and a second from which `AC2`
+- [x] AC8 — Given a stamped fixture to which an `AC3` is then added, and a second from which `AC2`
   is then removed, when `./next --drift` runs, then it names `AC3` as added on the first and `AC2` as
   removed on the second. Red: compare only the keys present in the stamp, and the added `AC3` reports
   nothing.
-- [ ] AC9 — Given `skills/queue/templates/close`, when the test greps it, then it invokes `next
+- [x] AC9 — Given `skills/queue/templates/close`, when the test greps it, then it invokes `next
   --ac-digest` and names no hash tool itself. Red: copy the normalisation into `close` and the second
   assertion fails. (Proves FR5's single definition.)
-- [ ] AC10 — Given `skills/queue/templates/item.md`, when the test reads its frontmatter, then
+- [x] AC10 — Given `skills/queue/templates/item.md`, when the test reads its frontmatter, then
   `ac_digest:` is declared, and its comment contains `unverifiable`. Red: delete the field.
-- [ ] AC11 — Given `skills/queue/SKILL.md` and `skills/design/SKILL.md`, when the test greps each,
+- [x] AC11 — Given `skills/queue/SKILL.md` and `skills/design/SKILL.md`, when the test greps each,
   then each instructs writing `ac_digest` from `./next --ac-digest` where it writes criteria. Red:
   delete either sentence. Each asserted phrase fits on one line, per `CLAUDE.md`'s rewrap hazard.
-- [ ] AC12 — Given `skills/develop/SKILL.md`, when the test greps it, then it finds the instruction to
+- [x] AC12 — Given `skills/develop/SKILL.md`, when the test greps it, then it finds the instruction to
   hand a wrong or impossible criterion to `queue` naming the `ACn` and proposed text. Red: delete it.
-- [ ] AC13 — Given `skills/verify/SKILL.md`, when the test greps it, then it finds that a digest
+- [x] AC13 — Given `skills/verify/SKILL.md`, when the test greps it, then it finds that a digest
   mismatch takes the stale-contract branch to `queue` and is never passed, and that an absent digest
   is recorded as `unverifiable`. Red: delete either sentence.
-- [ ] AC14 — Given this repo after the change, when `tests/backlog-scripts-installed.test.sh` runs,
+- [x] AC14 — Given this repo after the change, when `tests/backlog-scripts-installed.test.sh` runs,
   then it passes: `.claude/backlog/next` and `.claude/backlog/close` match their templates byte for
   byte. Red: edit either installed copy.
 
