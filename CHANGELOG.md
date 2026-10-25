@@ -13,6 +13,10 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- `develop` no longer edits a criterion it finds wrong or impossible, even to correct it: it records which `ACn`, why and the proposed text in *Notes & decisions* and hands the ticket to `queue` (0195).
+- `queue` and `design` now stamp `ac_digest:` from `./next --ac-digest <id>` wherever they write criteria, and `./next --drift` (so `--drive`, on exit 4) reports a stamped digest the criteria no longer match, naming each criterion changed, added or removed (0195).
+- `close` and `verify` refuse criteria that differ from their `ac_digest:` stamp — `verify` sends the ticket to `queue` as a stale contract — and an item with no stamp closes with an `ac_digest absent — unverifiable` line rather than reading as a match (0195).
+
 ## 0.9.42 — 2026-10-25
 
 - A finding about a skill, reference file or backlog script now routes to the tools repo's `.claude/backlog/FINDINGS.md` with the root explicitly ruled out, so a session no longer falls back to a local park because the tools root has no buffer.

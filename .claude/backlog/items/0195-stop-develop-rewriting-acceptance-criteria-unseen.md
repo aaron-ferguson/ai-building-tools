@@ -38,8 +38,7 @@ touches:
   - skills/design/SKILL.md
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
-  - tests/ac-digest.test.sh
-  - tests/backlog-scripts-installed.test.sh
+  - tests/ac-digest.test.sh   # new
   - CHANGELOG.md
 ---
 
@@ -238,3 +237,38 @@ backlog — never `tests/next.test.sh`, whose 485 cases run past a tool timeout 
      the *author's* write path stamps, `develop` and `verify` never do — `design` is part of it,
      recording the owner's decision. If the owner meant it literally, strike `design` from FR3 and
      AC11 and route design-cleared tickets back through `queue` instead; nothing else changes.
+- 2026-10-25 — develop (7871): **built.** Commits `49c5abc` (scripts + `tests/ac-digest.test.sh`)
+  and `6f90517` (template field + prose), plus the CHANGELOG notes committed with this hand-off.
+  - **`--ac-digest <id> --check`** is the comparison mode `close` invokes: exit 0 `ac_digest matches`,
+    exit 1 naming `changed:`/`added:`/`removed:` keys, exit 0 `ac_digest absent — unverifiable` when
+    unstamped. The key-by-key diff (`ac_digest_diff`) lives in `next` beside the digest, so `--drift`
+    and `close` name a mismatch through one function. `close` reads the stamp's *presence* itself (a
+    frontmatter read, not the normalisation) so an unstamped item never needs `next` — existing
+    `close.test.sh` fixtures copy `close` alone. A stamped item with no executable `next` beside
+    `close` refuses (fail closed).
+  - **Drift class 7** is the last `elif` in `drift_report`, so a row drifting on an earlier class
+    reports that one line only; the class comment also corrected "Five classes" to "Seven".
+  - **CHANGELOG written here, not by `./close --note`.** The NFR requires the notes and the repo's
+    convention is verify's `--note`; written now so verify can check them rather than author them.
+    **verify: do not pass `--note`**, or the notes duplicate.
+  - **Mutation sweep — run**, in a scratch copy of `tests/` + `skills/` (never the live tree), one
+    mutation per named red. Every one reddened its own assertion and the control was 40/40:
+    AC1(a) checkbox kept in the text (`text = $0`) → ticking and AC1-key cases red; AC1(b) whitespace
+    collapse removed → rewrap red; AC2 preamble lines keyed as `AC0` → preamble red; AC3/AC4 class 7
+    disabled → `--drift` 0, `--drive` 0, AC8 red; AC5 absent treated as a refusal in `close` → close
+    and unverifiable-line red; AC6 refusal made warn-and-continue → row/DONE/HEAD red; AC7 comparison
+    inverted in `next` only → AC7's close refuses (the behavioural proof `close` has no second
+    definition) and AC3/AC6 red; AC8 diff iterating stamped keys only → added-AC3 red; AC9 `cksum`
+    named in `close` → red; AC10 field deleted → both red; AC11 each sentence → its own red; AC12
+    and both AC13 sentences → each its own red.
+  - **AC7's second named red cannot fire — reasoned, then run.** "Remove the tick normalisation and
+    the post-reopen `--drift` reports the row": the stamp is taken over unticked criteria and
+    `reopen` unticks, so the post-reopen text equals the stamped text with or without tick
+    normalisation. Run: the AC1(a) mutation left AC7's post-reopen case green. AC1(a) is the guard
+    that catches a lost tick normalisation; AC7's close case proves the comparison's direction.
+  - **Size:** `develop` +339 bytes (FR7 replaced the narrowing sentence and added the routed action;
+    the worked example is one clause), `queue` +372, `verify` +513, `design` +250.
+    `tests/skill-size.test.sh` stays green — budgets over goal need a justification, not a cut.
+  - This ticket itself carries no `ac_digest:` (FR8: no backfill), so its own close prints the
+    `unverifiable` line.
+
