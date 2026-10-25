@@ -2,8 +2,8 @@
 id: "0195"
 title: Stop a criterion changing without its author by digesting it at write and checking it at close
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -26,20 +26,9 @@ expects:
   - tests/ac-digest.test.sh
   - tests/backlog-scripts-installed.test.sh
   - CHANGELOG.md
-claimed_by: "7871"
-claimed_at: 2026-10-25T16:54:51Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/next
-  - skills/queue/templates/close
-  - skills/queue/templates/item.md
-  - .claude/backlog/next
-  - .claude/backlog/close
-  - skills/queue/SKILL.md
-  - skills/design/SKILL.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - tests/ac-digest.test.sh   # new
-  - CHANGELOG.md
 ---
 
 ## Problem
