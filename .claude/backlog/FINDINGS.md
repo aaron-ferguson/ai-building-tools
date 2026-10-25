@@ -53,3 +53,5 @@ which entries, what is expired unprocessed, and why a sweeper removes only what 
 normal state of this file is empty, and **if it has grown, that is itself the finding**.
 
 ---
+
+- 2026-10-25 — develop 0195 (7871): **`CHANGELOG.md`'s header says every entry is written by `verify` through `./close --note`, yet `queue` writes tickets whose FRs/ACs require the `## Unreleased` note to exist before the close (0195's Documentation NFR, 0216 FR7/AC9).** An AC verify must check before closing cannot be satisfied by a note the close itself writes, so develop wrote the notes and told verify not to pass `--note` — a per-ticket workaround. Either `queue` Step 2 stops writing CHANGELOG ACs (the note is verify's), or the header admits develop-written notes; today the two contradict.
