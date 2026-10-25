@@ -3,7 +3,7 @@ id: "0182"
 title: Name the write mechanism that works for each backlog file, the lock included, where every stage reads it
 type: bug
 next: design
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: m
@@ -15,8 +15,8 @@ relates: ["0065", "0091", "0172", "0176", "0126"]
 expects:
   - references/CONCURRENCY.md
   - references/CONCURRENCY-INCIDENTS.md
-claimed_by:
-claimed_at:
+claimed_by: "8e9a"
+claimed_at: 2026-10-25T22:32:46Z
 touches:
 ---
 
