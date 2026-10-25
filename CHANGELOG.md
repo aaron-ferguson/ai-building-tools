@@ -13,6 +13,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+## 0.9.43 — 2026-10-25
+
 - `develop` and `retro` now fast-forward a behind checkout whose incoming commits are backlog-only — clean tree, ahead of nothing, every incoming path under `.claude/backlog/` — and report the repo, the SHA before and after and the incoming paths, rather than stopping the pass; any other behind state still stops (`CONCURRENCY.md`, *A behind checkout fast-forwards only over backlog commits*) (0216).
 - `develop` no longer edits a criterion it finds wrong or impossible, even to correct it: it records which `ACn`, why and the proposed text in *Notes & decisions* and hands the ticket to `queue` (0195).
 - `queue` and `design` now stamp `ac_digest:` from `./next --ac-digest <id>` wherever they write criteria, and `./next --drift` (so `--drive`, on exit 4) reports a stamped digest the criteria no longer match, naming each criterion changed, added or removed (0195).
