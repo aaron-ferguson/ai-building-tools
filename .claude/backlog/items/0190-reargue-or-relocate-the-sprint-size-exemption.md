@@ -3,7 +3,7 @@ id: "0190"
 title: Re-argue the sprint skill's size exemption against its current size, or relocate
 type: bug
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -15,8 +15,8 @@ relates: ["0040", "0035", "0180"]
 expects:
   - tests/skill-size.test.sh
   - skills/sprint/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "a309"
+claimed_at: 2026-10-25T22:34:59Z
 touches:
 ---
 
