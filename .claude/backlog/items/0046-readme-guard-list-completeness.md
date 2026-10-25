@@ -2,8 +2,8 @@
 id: "0046"
 title: Make the README guard list provably complete
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: s
 created: 2026-08-25
@@ -14,11 +14,9 @@ relates: ["0027", "0028"]
 expects:
   - README.md
   - tests/citations.test.sh
-claimed_by: "8fc8"
-claimed_at: 2026-10-25T20:04:49Z
+claimed_by:
+claimed_at:
 touches:
-  - README.md
-  - tests/citations.test.sh
 ---
 
 ## Problem
