@@ -110,3 +110,30 @@ its neighbours in `tests/` and the README is a second place nobody is reminded o
   `FINDINGS.md` append, which took `.claude/backlog/.lock` and committed, and `sprint.test.sh` reads
   the live `.claude/backlog/`. That cause is REASONED, not run — the failing case's name was not
   captured, because the loop kept only each file's last line. Not this ticket's file.
+
+## QA evidence
+
+2026-10-25 — verify, token 637e, at `f5112dc` (build `9f2f6cd`). Executed copy: the repo checkout (`tests/`, `README.md`); no skill file under test.
+
+Conventions: ../ai-building-conventions
+
+Command (`commands.unit_by_file`, the reporting form of `commands.unit`): `for t in tests/*.test.sh; do "$t" || true; done` — each file's FAIL/ABORTED/tally lines kept.
+
+Tree: `git status --porcelain` empty at Step 2 and empty again after the last control run. Intersection with the evidence set: empty — not advisory.
+
+| AC / NFR | How checked | Result |
+|---|---|---|
+| AC1 every file named | independent `diff <(ls tests/*.test.sh) <(block paths, sorted)`; plus the real-tree case in `tests/citations.test.sh` | identical, 35 files; `ok 0046 FR1` |
+| AC2 removed name reported | deleted the `tests/graph-fields.test.sh` line from `README.md`, ran `tests/citations.test.sh`, restored by path | `FAIL 0046 — README.md's guard block disagrees with tests/: missing tests/graph-fields.test.sh` / `50 passed, 1 failed` |
+| AC2 stays guarded | mutated `tests/citations.test.sh` `\|\| echo "missing $rel"` → `\|\| true` | `FAIL 0046 FR2 — a suite removed from the block was not reported:` / `50 passed, 1 failed` |
+| AC3 stale name reported | added `tests/no-such-suite.test.sh   # gone` to the block, restored by path | `FAIL 0046 — … stale tests/no-such-suite.test.sh` / `50 passed, 1 failed` |
+| AC3 stays guarded | mutated `\|\| echo "stale $rel"` → `\|\| true` | `FAIL 0046 FR3 — a stale name was not reported:` / `50 passed, 1 failed` |
+| AC4 one-line description | read all 35 block lines (0 lines lacking `  # <text>`); stripped the description from the real `tests/citations.test.sh` line | `FAIL 0046 — … undescribed tests/citations.test.sh` / `50 passed, 1 failed` |
+| control | no mutation, after each restore | `51 passed, 0 failed`; porcelain empty |
+| AC5 whole suite | `unit_by_file` above | all 35 files `0 failed`, none ABORTED; e.g. `tests/citations.test.sh` `51 passed, 0 failed`, `tests/next.test.sh` `572 passed, 0 failed`, `tests/sprint.test.sh` `368 passed, 0 failed, 0 skipped` |
+| NFR Documentation | `documentation-conventions.md`: the README claim "Run every guard" is now true and each added line has a description; guarded by the `undescribed` check (AC4 mutation reddened it) | holds, guarded |
+| Always-on (`CONVENTIONS_CORE.md`) | diff `9f2f6cd`: no secrets, no company material in the public README, the guard takes the tree root, no swallowed failure | holds |
+
+Drift noted, not a stale contract: the Problem and AC4 say "three newly-added lines"; at build 25 lines were added (develop's note). AC4 was checked over all 25 (indeed all 35), a superset of what it names, so the outcome holds.
+
+Clause table (AC → Given / predicate / object): AC1 Given `README.md` / compared against `ls tests/*.test.sh` / every file named — quantifier exercised over 35 real files and a 2-file fixture differing by name. AC2 Given the new guard / a name removed / suite fails reporting that filename — mutation above. AC3 Given the new guard / a non-existent name added / suite fails reporting that name — mutation above. AC4 Given each newly-added line / read / carries a one-line description in the existing shape — read + mutation. AC5 Given the whole suite / the loop runs / every suite passes — run above. No clause mutation stayed green.
