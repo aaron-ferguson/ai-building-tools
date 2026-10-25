@@ -3,7 +3,7 @@ id: "0089"
 title: Sweep the guards for assertions that cannot fail
 type: bug
 next: develop
-status: in-progress
+status: ready
 qa_level: unit
 size: l
 created: 2026-09-05
@@ -33,11 +33,9 @@ expects:
   - tests/reporting.test.sh
   - tests/retro-tool-edit.test.sh
   - tests/skill-size.test.sh
-claimed_by: "aab8"
-claimed_at: 2026-10-25T17:19:16Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/cost-by-category.test.sh
-  - tests/sprint.test.sh
 ---
 
 ## Problem
