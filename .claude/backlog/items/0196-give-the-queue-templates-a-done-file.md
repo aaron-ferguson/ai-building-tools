@@ -3,7 +3,7 @@ id: "0196"
 title: Ship a DONE.md template so a freshly scaffolded backlog can close a ticket
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,9 +15,10 @@ blocked_by: []
 relates: ["0161"]
 expects:
   - skills/queue/templates/DONE.md
-claimed_by:
-claimed_at:
+claimed_by: "da05"
+claimed_at: 2026-10-25T22:44:34Z
 touches:
+  - skills/queue/templates/DONE.md
 ---
 
 ## Problem
