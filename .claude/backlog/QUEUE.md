@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0195 | Stop a criterion changing without its author by digesting it at write and checking it at close | develop | ready |  |
+| 0195 | Stop a criterion changing without its author by digesting it at write and checking it at close | develop | in-progress |  |
 | 0196 | Ship a DONE.md template so a freshly scaffolded backlog can close a ticket | develop | ready |  |
 | 0216 | Decide whether an unattended stage may fast-forward a clean checkout that is only behind | develop | ready |  |
 | 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
