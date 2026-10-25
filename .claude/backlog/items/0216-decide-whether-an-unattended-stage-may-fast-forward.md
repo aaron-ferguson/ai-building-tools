@@ -172,3 +172,31 @@ safe to fast-forward.
     attended behaviour changes too, said explicitly (FR3). FR5 confirmed, with `the pull is the user`
     replaced by name (AC4). Added: FR6's no-restatement and falsifying-fixture checks, FR7's changelog
     note, and the Size NFR. `qa_level: unit` and `close_by: verify` re-read against the ACs: both hold.
+- 2026-10-25 — develop (3c97): **built** in `510f52d`.
+  - The rule sits in `CONCURRENCY.md` Part 1, between *A second checkout never writes the backlog*
+    and *A change that touches every file*; `retro` Step 3 and `develop` Step 1 cite it by heading,
+    keep `Behind the remote stops the pass|session`, and say `any other pull is the user's call`.
+    `sprint` is not edited (FR2). The old `the pull is the user` case is renamed in place, and the
+    leak fixture's text and phrase list moved with it so that probe still means something.
+  - **`window()` in `tests/remote-anchor.test.sh` could not open a window whose end regex matches its
+    own heading** — `first` was never set, so `!first` was true on the opening line and the window
+    closed at once (the class 0089 records for `falsifiable-acs.test.sh`). The CONCURRENCY window
+    needs `^## ` as its end, so `first = 1` is now set on the opening line. Existing windows' end
+    regexes never matched their headings, so their behaviour is unchanged — run: 22 pre-existing
+    cases still pass.
+  - **Mutation sweep — run**, scratch copy, one per clause: each of the five AC1 phrases, both AC2
+    phrases, both AC3 phrases, each stage citation, develop's `any other pull`, a restated
+    `every incoming path under` in each stage window (AC6), and the rule heading renamed (empty
+    window, named). Every one reddened exactly its own case (34/1); the heading rename reddened all
+    nine CONCURRENCY cases as EMPTY. AC7 is the `uncited-ff.md` fixture, reported as a passing negative.
+  - Clause table (AC text → guard): `clean working tree`, `ahead of nothing`, `every incoming path
+    under`, `--ff-only`, `under the backlog lock` → 0216 AC1 ×5; `the stage that fetched`, `attended
+    and unattended alike` → AC2 ×2; `the SHA before and after`, `the incoming paths` → AC3 ×2;
+    rule heading in W3, `Behind the remote stops the pass`, `any other pull is the user` → AC4 (the
+    second is the pre-existing AC1 case); heading, `Behind the remote stops the session`, `any other
+    pull is the user` in WD1 → AC5 (the stop is the pre-existing FR1 case); `every incoming path
+    under` absent from W3 and WD1 → AC6 ×2; uncited fixture → AC7.
+  - CHANGELOG note written here (AC9 is checked before the close), so **verify: do not pass
+    `--note`**. Sizes, measured: `develop` +111 bytes,
+    `retro` +129, `CONCURRENCY.md` +963; `skill-size` and `reference-size` green.
+
