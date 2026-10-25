@@ -3,7 +3,7 @@ id: "0175"
 title: Decide what identifies a sprint across a suspension, and which mechanisms key off it
 type: debt
 next: design
-status: ready
+status: in-progress
 qa_level: verify
 size: l
 created: 2026-09-21
@@ -15,8 +15,8 @@ expects:
   - skills/sprint/SKILL.md
   - tools/sprint-ledger.sh
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "82d1"
+claimed_at: 2026-10-25T22:30:43Z
 touches:
 ---
 
