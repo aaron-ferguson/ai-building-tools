@@ -48,7 +48,8 @@ set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 RETRO="$ROOT/skills/retro/SKILL.md"
 DEVELOP="$ROOT/skills/develop/SKILL.md"
-for f in "$RETRO" "$DEVELOP"; do
+CONC="$ROOT/references/CONCURRENCY.md"
+for f in "$RETRO" "$DEVELOP" "$CONC"; do
   [ -f "$f" ] || { echo "no file at $f" >&2; exit 2; }
 done
 
@@ -76,7 +77,7 @@ saw_on_pass() { [ -n "${SHOW_MATCHED:-}" ] && saw "$1"; return 0; }
 # reports rather than passing over.
 window() {
   awk -v start="$2" -v endre="$3" '
-    !inw && index($0, start) { inw = 1 }
+    !inw && index($0, start) { inw = 1; first = 1 }
     inw && $0 ~ endre && !first { exit }
     inw { print; first = 0 }
   ' "$1"
@@ -109,7 +110,7 @@ echo "AC1 — retro fetches every repo it will edit before the destination check
 in_window "AC1 — the fetch covers every repo the pass will edit"   "$W3" 'every repo it will edit'
 in_window "AC1 — a check against a stale tree is not evidence"     "$W3" 'stale tree is not evidence'
 in_window "AC1 — being behind stops the pass rather than warning it" "$W3" 'Behind the remote stops the pass'
-in_window "AC1 — the fetch is read-only; the pull is the user's call" "$W3" 'the pull is the user'
+in_window "AC1 — outside the fast-forward rule, any pull is the user's call" "$W3" 'any other pull is the user'
 in_window "AC1 — and the checkout is the resolved one, never the plugin install" "$W3" 'never the plugin install'
 
 # The step that owns the release chain is the step that has to say where the chain starts and what
@@ -137,6 +138,44 @@ echo "FR1 — develop anchors to the remote before it claims"
 in_window "FR1 — the fetch precedes the claim"                     "$WD1" 'Fetch before you claim'
 in_window "FR1 — a check against a stale tree is not evidence"     "$WD1" 'stale tree is not evidence'
 in_window "FR1 — being behind stops the session rather than warning it" "$WD1" 'Behind the remote stops the session'
+
+# 0216: one rule, in CONCURRENCY.md, lets the stage that fetched fast-forward a clean checkout that
+# is only behind by backlog commits. The preconditions live there alone; each stage cites the rule
+# by its heading and restates none of them, so the two cannot drift apart.
+FFRULE='A behind checkout fast-forwards only over backlog commits'
+WC="$(window "$CONC" "## $FFRULE" '^## ')"
+
+echo "0216 AC1 — the rule's preconditions, in its own CONCURRENCY.md section"
+in_window "0216 AC1 — a clean working tree"                 "$WC" 'clean working tree'
+in_window "0216 AC1 — ahead of nothing"                     "$WC" 'ahead of nothing'
+in_window "0216 AC1 — every incoming path under the backlog" "$WC" 'every incoming path under'
+in_window "0216 AC1 — a fast-forward and nothing else"      "$WC" '--ff-only'
+in_window "0216 AC1 — checked and acted on under the lock"  "$WC" 'under the backlog lock'
+
+echo "0216 AC2 — the performer, in every mode"
+in_window "0216 AC2 — the stage that fetched performs it"   "$WC" 'the stage that fetched'
+in_window "0216 AC2 — attended and unattended alike"        "$WC" 'attended and unattended alike'
+
+echo "0216 AC3 — a fast-forward is reported, never silent"
+in_window "0216 AC3 — the SHA before and after"             "$WC" 'the SHA before and after'
+in_window "0216 AC3 — the incoming paths"                   "$WC" 'the incoming paths'
+
+echo "0216 AC4/AC5 — each stage cites the rule and keeps its stop for every other behind"
+in_window "0216 AC4 — retro Step 3 cites the rule"          "$W3"  "$FFRULE"
+in_window "0216 AC5 — develop cites the rule"               "$WD1" "$FFRULE"
+in_window "0216 AC5 — any other pull is the user's"         "$WD1" 'any other pull is the user'
+
+echo "0216 AC6 — neither stage restates the precondition"
+for pair in "retro Step 3:$W3" "develop Step 1:$WD1"; do
+  name="${pair%%:*}"; win="${pair#*:}"
+  if [ -z "$win" ]; then
+    bad "0216 AC6 — $name's window is EMPTY; nothing was searched"
+  elif window_has "$win" 'every incoming path under'; then
+    bad "0216 AC6 — $name restates the precondition; it belongs only in CONCURRENCY.md"
+  else
+    ok "0216 AC6 — $name does not restate the precondition"
+  fi
+done
 
 # ---------------------------------------------------------------------------
 # AC4 — the falsifiability probes. The fixtures drive the same matcher as the
@@ -198,7 +237,7 @@ cat > "$FIX/outside3.md" <<'FIXTURE'
 ## Step 2 — Propose, then wait
 
 Fetch every repo it will edit before the first grep: a check against a stale tree is not evidence,
-so Behind the remote stops the pass and the pull is the user's call. Use the resolved checkout,
+so Behind the remote stops the pass and any other pull is the user's call. Use the resolved checkout,
 never the plugin install.
 
 ## Step 3 — Check the destination, then choose it
@@ -210,7 +249,7 @@ FIXTURE
 WP="$(window "$FIX/outside3.md" "$RSTEP3" "$REND3")"
 LEAKED=0
 for phrase in 'every repo it will edit' 'stale tree is not evidence' \
-              'Behind the remote stops the pass' 'the pull is the user' \
+              'Behind the remote stops the pass' 'any other pull is the user' \
               'never the plugin install'; do
   window_has "$WP" "$phrase" && LEAKED=1
 done
@@ -219,6 +258,27 @@ if [ "$LEAKED" = 1 ]; then
   saw "$WP"
 else
   ok "the fetch rule is asserted in the step that greps the destination, not across the file"
+fi
+
+# 0216 AC7 — a retro Step 3 that tells the pass to fast-forward but cites no rule must fail the
+# citation case, or a restated rule could replace the cited one silently.
+echo "0216 AC7 — a fast-forward instruction with no citation does not satisfy AC4"
+cat > "$FIX/uncited-ff.md" <<'FIXTURE'
+## Step 3 — Check the destination, then choose it
+
+Fetch every repo it will edit. If the tree is clean and only behind, fast-forward it with
+`git merge --ff-only @{u}` and carry on; any other pull is the user's call.
+
+## Step 4 — Write it
+FIXTURE
+WP="$(window "$FIX/uncited-ff.md" "$RSTEP3" "$REND3")"
+if [ -z "$WP" ]; then
+  bad "0216 AC7 — the fixture's window is empty, so the negative proves nothing"
+elif window_has "$WP" "$FFRULE"; then
+  bad "0216 AC7 — an uncited fast-forward satisfied the citation case"
+  saw "$WP"
+else
+  ok "0216 AC7 — an uncited fast-forward instruction stays red"
 fi
 
 echo "AC4 — the phrases outside develop Step 1 do not satisfy the guard"

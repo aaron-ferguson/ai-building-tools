@@ -72,6 +72,21 @@ reached after the worktree was removed. `claim`, `close`, `handoff` and `reopen`
 before taking the lock. **A second clone is caught by nothing but this rule**: nothing inside a clone
 tells it from the primary.
 
+## A behind checkout fast-forwards only over backlog commits
+
+The stop on a behind checkout exists because resolving divergence can mean choosing between two of
+the author's commits. A fast-forward over backlog-only commits chooses nothing — the same event as
+another session's `./claim` landing — so the stage that fetched performs it, attended and unattended alike,
+when every one of these holds, checked and acted on under the backlog lock in one shell invocation:
+
+- a clean working tree — `git status --porcelain` prints nothing;
+- ahead of nothing — `git rev-list --count @{u}..HEAD` is `0`;
+- every incoming path under `.claude/backlog/` — `git diff --name-only HEAD @{u}`;
+- the merge is `git merge --ff-only @{u}`, never a rebase or a merge commit.
+
+Any precondition failing leaves the stop exactly as the stage states it. **Reported, never silent:**
+the stage's report names the repo, the SHA before and after, and the incoming paths (0216).
+
 ## A change that touches every file takes an exclusive claim
 
 A vocabulary rename rewrites the whole tree at once, and that scope is

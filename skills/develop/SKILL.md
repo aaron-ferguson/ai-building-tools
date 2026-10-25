@@ -146,9 +146,10 @@ can.
 **Fetch before you claim, and stop if you are behind.** Every check this stage makes runs against
 the tree you have — Step 2's staleness greps, Step 3's guard greps — and a check against a
 **stale tree is not evidence**: a green "the rule is not there yet" is indistinguishable from a
-real one. `git fetch` then `git status -sb`, read-only. **Behind the remote stops the session**,
-because resolving divergence can mean choosing between two of the author's own commits and that is
-their call, not this stage's (`git-conventions.md`). A pass that edited this repo 47 commits behind
+real one. `git fetch` then `git status -sb`. **Behind the remote stops the session** unless
+*A behind checkout fast-forwards only over backlog commits* (`CONCURRENCY.md`) applies — then
+fast-forward and report it; any other pull is the user's call, since resolving divergence can mean
+choosing between two of the author's own commits (`git-conventions.md`). A pass that edited this repo 47 commits behind
 `origin/main` rewrote a commit already pushed four days earlier, and found out at the rebase.
 
 **Claim it with `./claim`** — one step, and the supported path:

@@ -208,8 +208,9 @@ against a stale tree is not evidence — it reads as one, which is what makes it
 after the pull, and had by then written a commit somebody else had already pushed four days
 earlier; it surfaced as a rebase conflict whose resolution meant choosing between two of the
 author's own commits. So `git fetch` then `git status -sb`, per repo, read-only.
-**Behind the remote stops the pass**, and **the pull is the user's call** because that choice is
-theirs (`git-conventions.md`). The repos are the ones already resolved — the conventions ladder and
+**Behind the remote stops the pass** unless `CONCURRENCY.md`,
+*A behind checkout fast-forwards only over backlog commits*, applies — then fast-forward and report it;
+any other pull is the user's call, because that choice is theirs (`git-conventions.md`). The repos are the ones already resolved — the conventions ladder and
 `tools.path` — and **never the plugin install** (`references/CONVENTIONS.md`, *Routing a finding to
 the repo it is about*): the marketplace clone beside it reads as a working checkout and reports a
 stale divergence in the direction that looks safe.
