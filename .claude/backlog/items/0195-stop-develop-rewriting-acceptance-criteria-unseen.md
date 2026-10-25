@@ -261,3 +261,57 @@ backlog — never `tests/next.test.sh`, whose 485 cases run past a tool timeout 
   - This ticket itself carries no `ac_digest:` (FR8: no backfill), so its own close prints the
     `unverifiable` line.
 
+
+## QA evidence
+
+2026-10-25 — verify (9eba). **PASS.**
+
+Conventions: ../ai-building-conventions
+Command (`commands.unit_by_file`, verbatim): `for t in tests/*.test.sh; do "$t" || true; done` — run at `0b85f60`, clean tree.
+Copy executed: the repo copies (`skills/queue/templates/*`, `.claude/backlog/{next,close}`); the installed plugin (0.9.42) predates this change — `diff -rq` shows `skills/{queue,design,develop,verify}/**` differ.
+Digest (FR6): `.claude/backlog/next --ac-digest 0195 --check` → `0195: ac_digest absent — unverifiable: no stamp to compare the criteria against`. Recorded as **ac_digest absent — unverifiable**, not as a match (FR8: no backfill).
+
+Suite tallies, pasted: `ac-digest: 40 passed, 0 failed`; `backlog-scripts-installed` `45 passed, 0 failed`; `close` `281 passed, 0 failed`; `reopen: 78 passed, 0 failed`; `next` `572 passed, 0 failed`; `skill-size` `27 passed, 0 failed`; `citations` `46 passed, 0 failed`; all 34 files report `0 failed`.
+
+Mutations: re-run by this pass in a detached worktree at `0b85f60` (never the shared checkout), each restored by path, worktree `git status` empty afterwards. Controls: `ac-digest: 40 passed, 0 failed`, `backlog-scripts-installed` `45 passed, 0 failed`.
+
+Clause table → evidence:
+
+| AC | Clause | Mutation (in `skills/queue/templates/next` unless named) | Result |
+|---|---|---|---|
+| AC1 | tick ignored | `text = $0` (checkbox kept) | red, 3 failed (tick, rewrap, AC1-key) |
+| AC1 | rewrap ignored | whitespace-collapse `gsub` deleted | red, 1 failed (rewrap) |
+| AC1 | one key per criterion; AC1's key unchanged | each key hashes the whole section | red, 6 failed (incl. `AC1's key moved with AC2's`) |
+| AC2 | prose above first label excluded | preamble keyed as `AC0` | red, 2 failed |
+| AC3 | `--drift` exits 1, one DRIFT line naming AC2 not AC1 | class 7 disabled (`elif false && …`) | red, 6 failed (exit 0, no line, no AC2) |
+| AC4 | `--drive` exits 4 with the line | same | red (`--drive exited 0`) |
+| AC5 | absent → no drift line | `[ -n "$dstamp" ]` removed | red, 2 failed (`--drift exited 1`) |
+| AC5 | close prints `ac_digest absent` + `unverifiable` | `close`: note emptied | red, 1 failed |
+| AC6 | exits non-zero naming AC2; row in QUEUE, not DONE; HEAD unchanged; no `.lock/` | `close`: `exit 1` removed (warn and continue) | red, 4 failed (row/DONE/HEAD) |
+| AC6 | — | `close`: check removed | red, 6 failed |
+| AC7 | matching digest closes | `--check` comparison inverted | red, 8 failed (close refuses 9907) |
+| AC7 | post-reopen `--drift` silent | tick normalisation removed (AC1a mutation) | **stays green — published, not a gap**: the stamp is over unticked text and `reopen` unticks, so this named red cannot fire; the outcome is guarded by AC1's tick case |
+| AC7 / QA plan | `close` follows `next`'s single definition | `%08x` → `%08X` in `next` only | green 40/40, as required: `close` has no second copy |
+| AC8 | added AC3 named | diff iterates stamped keys only | red, 1 failed |
+| AC8 | removed AC2 named | class 7 disabled | red (`9918 does not name AC2 as removed`) |
+| AC9 | invokes `next --ac-digest` | `close` check removed | red (`close does not invoke next --ac-digest`) |
+| AC9 | names no hash tool | `# cksum` added to `close` | red, 1 failed |
+| AC10 | `ac_digest:` declared | field deleted from `item.md` | red, 2 failed |
+| AC10 | comment contains `unverifiable` | word replaced | red, 1 failed |
+| AC11 | queue sentence | phrase replaced in `skills/queue/SKILL.md` | red, 1 failed |
+| AC11 | design sentence | phrase replaced in `skills/design/SKILL.md` | red, 1 failed |
+| AC12 | stop / which `ACn` + proposed text / `./handoff … queue` | each phrase in `skills/develop/SKILL.md` | each red, 1 failed, its own case |
+| AC13 | stale contract / never passes / absent `unverifiable` | each phrase in `skills/verify/SKILL.md` | each red, 1 failed, its own case |
+| AC14 | installed `next` and `close` match templates | edit `.claude/backlog/next`; edit `.claude/backlog/close` | each red, `44 passed, 1 failed` |
+
+NFRs:
+
+| Row | Check | Result |
+|---|---|---|
+| Security | AC6 warn-and-continue mutation; `close` refuses a stamp with no executable `next` (fail closed, read in `skills/queue/templates/close`) | holds, guarded |
+| Observability | AC3/AC8 label assertions, AC5 absent line — each mutation above reddened on the missing label/line | holds, guarded |
+| Migration / schema | AC5's two mutations (absent as mismatch / absent as silent match) | holds, guarded |
+| Documentation | `CHANGELOG.md` `## Unreleased` carries three 0195 notes (develop, queue/design + `--drift`, close/verify); read | holds; guarded only by `tools/release`'s empty-Unreleased refusal, so one stage's note going missing would not red |
+
+Always-on (`CONVENTIONS_CORE.md`): no secrets, no company material, single definition (AC9), fails loudly (refusal names criteria). No privacy surface.
+Advisory: Step 2 dirty set empty; verdict-time capture empty; intersection empty → not advisory.
