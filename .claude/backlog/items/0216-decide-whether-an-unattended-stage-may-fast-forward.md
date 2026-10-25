@@ -195,3 +195,45 @@ safe to fast-forward.
     `--note`**. Sizes, measured: `develop` +111 bytes,
     `retro` +129, `CONCURRENCY.md` +963; `skill-size` and `reference-size` green.
 
+
+## QA evidence
+
+2026-10-25 — verify (60da). **PASS.**
+
+Conventions: ../ai-building-conventions
+Command (`commands.unit`, verbatim): `for t in tests/*.test.sh; do "$t" || exit 1; done` — run at `b5f8f7d`, clean tree, **exit 0** (all 34 files). The by-file form ran earlier at `0b85f60` (same non-backlog tree): every file `0 failed`, including `remote-anchor` `35 passed, 0 failed`, `citations` `46 passed, 0 failed`, `skill-size` `27 passed, 0 failed`, `reference-size` `15 passed, 0 failed`.
+Copy executed: repo copies (`references/CONCURRENCY.md`, `skills/{retro,develop}/SKILL.md`); the installed 0.9.42 plugin predates this change.
+Digest: `.claude/backlog/next --ac-digest 0216 --check` → `0216: ac_digest absent — unverifiable`. Recorded as **ac_digest absent — unverifiable**, not a match.
+
+Mutations: re-run by this pass in a detached worktree at `b5f8f7d`, each restored by path, worktree clean afterwards; control `35 passed, 0 failed`. Each phrase mutation below gave `34 passed, 1 failed`, naming its own case.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | `clean working tree` | phrase reworded in `references/CONCURRENCY.md` | red, own case |
+| AC1 | `ahead of nothing` | reworded | red, own case |
+| AC1 | `every incoming path under` | reworded | red, own case |
+| AC1 | `--ff-only` | reworded | red, own case |
+| AC1 | `under the backlog lock` | reworded | red, own case |
+| AC1 | window non-empty | heading renamed | red, `26 passed, 9 failed`, every CONCURRENCY case `EMPTY` |
+| AC2 | `the stage that fetched` / `attended and unattended alike` | each removed | each red, own case |
+| AC3 | `the SHA before and after` / `the incoming paths` | each removed | each red, own case |
+| AC4 | retro W3 cites the heading | citation replaced in `skills/retro/SKILL.md` | red, `0216 AC4` |
+| AC4 | `Behind the remote stops the pass` | reworded | red, `AC1 — being behind stops the pass` |
+| AC4 | `the pull is the user` replaced by `any other pull is the user` | reworded; `grep` finds no `the pull is the user` in `tests/remote-anchor.test.sh` | red; old case gone |
+| AC5 | develop WD1 cites / `stops the session` / `any other pull is the user` | each reworded in `skills/develop/SKILL.md` | each red, own case |
+| AC6 | `every incoming path under` absent from W3 and WD1 | phrase inserted into each window | each red, own case |
+| AC7 | uncited fixture stays red | citation inserted into the `uncited-ff.md` fixture | red, `an uncited fast-forward satisfied the citation case` |
+| AC8 | whole suite exits 0 | configured fail-fast command | exit 0 |
+| AC9 | one `## Unreleased` note | read `CHANGELOG.md`: the `develop` and `retro` fast-forward note (0216) | present, one note |
+
+NFRs:
+
+| Row | Check | Result |
+|---|---|---|
+| Documentation | AC6 mutations | holds, guarded |
+| Observability | AC3 mutations | holds, guarded |
+| Size | `tests/skill-size.test.sh` `27 passed, 0 failed`, `tests/reference-size.test.sh` `15 passed, 0 failed` | holds, guarded |
+
+Newly reachable: a session now runs `git merge --ff-only` without asking. The rule limits it to a clean tree, ahead of nothing, backlog-only incoming paths, under the lock, and it must be reported. `--ff-only` cannot discard or rewrite local work, which is consistent with `git-conventions.md` (nothing destructive).
+Always-on (`CONVENTIONS_CORE.md`): no secrets, no company material, one definition cited by heading.
+Advisory: Step 2 dirty set empty; verdict-time capture empty; intersection empty → not advisory.
