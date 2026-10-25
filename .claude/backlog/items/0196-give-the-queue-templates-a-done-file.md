@@ -56,3 +56,28 @@ Unit: the configured suite.
 - 2026-10-09 — Filed by retro from the tools `FINDINGS.md` entry of 2026-10-08.
 
 - 2026-10-24 — Absorbed by retro (second leg of AetherWorks run-20261024T195310Z's tail): parked again 2026-10-19: `close` line ~88 refuses with no `DONE.md`, and `skills/queue/templates/` still has none. No new evidence beyond the Problem section.
+
+- 2026-10-25 — Built [da05], develop. `skills/queue/templates/DONE.md` carries
+  `| ID | Title | Type | QA | Closed | Item |`, read off `templates/close`'s DONE.md writer (the
+  `v == "ID"` … `v == "Item"` arms), the same six this repo's own `DONE.md` uses. `Closed` chosen over
+  its aliases `Completed`/`Date` to match this repo. FR2 is `tests/scaffold-close.test.sh` (new): it
+  `cp`s `skills/queue/templates/*` and nothing else into a temp repo, appends one QUEUE row under the
+  template header (the template's blank placeholder row left in place; close tolerates it), writes
+  the item by heredoc, closes, and asserts exit 0 plus the whole DONE row cell for cell. **The whole
+  row, not "a row with the id", is what makes AC2 falsifiable**: close fills an unrecognised column
+  blank, prints a `note:` and still exits 0, so a renamed `Closed`/`Title`/`Type`/`QA`/`Item` shows
+  only as an empty cell. Fixture id 9901, titled "Scaffold fixture row".
+- Mutations, all **run** against committed `40bcc52`, each restored with `git checkout --`, control
+  green after (3/0), tree clean:
+
+  | AC clause | mutation | result |
+  |---|---|---|
+  | AC1 "delete `templates/DONE.md` → `close` exits non-zero naming DONE.md" | `mv` the template away | red, 2 fails; close says `no DONE.md at …` |
+  | AC2 "change one header cell … that `close` keys on" | rename `ID` → `XID` | red, 2 fails (close: no table header) |
+  | AC2, same | rename `Title`, `Type`, `QA`, `Closed`, `Item` each to `X<name>` | red, 2 fails each (exit 0, cell blank) |
+
+- Whole suite: one red, mine — `tests/citations.test.sh` (0046) requires README.md's guard block to
+  list every suite; added the line in `4b6306c`, citations then 51/0. All other suites green.
+- Review checklist: the test is one flat sequence, no nesting beyond a case/if; abort block copied
+  byte-identical from `close.test.sh`. Nothing surprised me beyond the README guard, which is an
+  existing documented guard rather than a finding.
