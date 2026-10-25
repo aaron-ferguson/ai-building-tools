@@ -306,6 +306,31 @@ tests/external-feedback.test.sh  # no shipped file names a specific feedback pro
 tests/measurement.test.sh        # the harvest and classifier arithmetic, and what MEASUREMENT.md must state
 tests/reporting.test.sh          # every stage skill cites references/REPORTING.md, and that rule holds its shape
 tests/last-line.test.sh          # every stage skill ends on the hand-off line naming the next stage
+tests/abort-announce.test.sh             # every suite says ABORTED with its counts when it dies before its tally
+tests/ac-digest.test.sh                  # ./next --ac-digest, the --drift class it feeds, and close refusing a changed contract
+tests/backlog-scripts-installed.test.sh  # this repo's installed backlog scripts still match their templates
+tests/citations.test.sh                  # cited CONCURRENCY.md rules and conventions files resolve, and this block names every suite
+tests/close-by.test.sh                   # close_by's two branches in develop, and verify's review level
+tests/cost-by-category.test.sh           # the by-category cost measurement
+tests/cross-cutting-change.test.sh       # a change touching every file takes the exclusive claim
+tests/design-hold.test.sh                # design holds its row while it reasons over it
+tests/falsifiable-acs.test.sh            # the falsifiability rules in queue and verify, and the shared clause table
+tests/findings-buffer.test.sh            # what the findings gate counts and what each sweeper does with the buffer
+tests/findings-routing.test.sh           # a parked finding goes to the repo it is about
+tests/floor-probe.test.sh                # the startup-floor probe behind MEASUREMENT.md's harness-floor figures
+tests/gate-ticket.test.sh                # the gate-ticket shape: a measurement that can kill the rest goes first
+tests/graph-fields.test.sh               # the ticket template carries parent, blocked_by and relates
+tests/handoff.test.sh                    # ./handoff — all five fields land or none do
+tests/item-ac-form.test.sh               # every item's criteria are in the one form close can tick
+tests/money-in-skill-prose.test.sh       # no skill file writes a dollar figure that argument substitution would eat
+tests/qa-level-once.test.sh              # the QA level is written in one place in the item template
+tests/release.test.sh                    # tools/release verifies the install against the pushed commit
+tests/remote-anchor.test.sh              # a session editing a tool repo anchors to the remote first
+tests/reopen.test.sh                     # ./reopen — a done ticket back to verify, ACs unticked, dependents re-blocked
+tests/retro-tool-edit.test.sh            # retro runs the target repo's suite before committing a tool edit
+tests/sprint-ledger.test.sh              # the sprint estimate ledger
+tests/sprint.test.sh                     # the sprint skill and the stage outcome schema
+tests/transient-mutation.test.sh         # develop declares a file it breaks on purpose and restores
 ```
 
 Each case scaffolds a throwaway git repo with one `QUEUE.md` shape, runs the script against it,

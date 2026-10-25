@@ -795,6 +795,78 @@ for cfg in "$ROOT/skills/queue/templates/config.yml" "$ROOT/.claude/backlog/conf
   says "NFR — $rel says what a withdrawal does instead" "$body" 'withdrawal'
 done
 
+# ---------------------------------------------------------------------------
+# 0046 — README.md's "Run every guard" block names every suite, and nothing else.
+#
+# The list is hand-maintained beside a directory that grows one file per ticket, and it drifted
+# three times without a red: a contributor running the block believed they had run the suite.
+# Checked in both directions, because a list checked one way is the same defect 0043 found in the
+# size gates — a stale name for a deleted suite reads exactly as authoritative as a live one.
+# The block is the fenced one after the line ending "Run every guard:"; a suite line there is a
+# `tests/<name>.test.sh` path followed by a `#` description.
+# ---------------------------------------------------------------------------
+
+# guard_block_lines <root> — the lines of README.md's guard block, fences excluded.
+guard_block_lines() {
+  awk '/Run every guard:$/ { anchored = 1; next }
+       anchored && !inside && /^```/ { inside = 1; next }
+       inside && /^```/ { exit }
+       inside { print }' "$1/README.md"
+}
+
+# guard_list_gaps <root> — "missing <path>" for a suite the block omits, "stale <path>" for a name
+# with no suite behind it, "undescribed <path>" for a line carrying no `# description`.
+guard_list_gaps() {
+  named="$(guard_block_lines "$1" | awk '$1 ~ /^tests\/.*\.test\.sh$/ { print $1 }')"
+  for suite in "$1"/tests/*.test.sh; do
+    [ -e "$suite" ] || continue
+    rel="tests/${suite##*/}"
+    printf '%s\n' "$named" | grep -qxF "$rel" || echo "missing $rel"
+  done
+  for rel in $named; do
+    [ -f "$1/$rel" ] || echo "stale $rel"
+  done
+  guard_block_lines "$1" | awk '$1 ~ /^tests\// && $0 !~ /# [^ ]/ { print "undescribed " $1 }'
+}
+
+echo "0046 — README.md's guard block names every tests/*.test.sh and nothing that is not one"
+GAPS="$(guard_list_gaps "$ROOT")"
+if [ -z "$(guard_block_lines "$ROOT")" ]; then bad "0046 — no fenced block after 'Run every guard:' in README.md"
+elif [ -z "$GAPS" ]; then ok "0046 FR1 — every suite is named, each with a description, and no name is stale"
+else bad "0046 — README.md's guard block disagrees with tests/: $(printf '%s' "$GAPS" | tr '\n' ';')"; fi
+
+# The two directions, driven through the same function against a fixture tree, so AC2 and AC3 stay
+# proved after this ticket closes rather than once by hand.
+RG="$FIX/readme-guard"
+mkdir -p "$RG/tests"
+: > "$RG/tests/one.test.sh"
+: > "$RG/tests/two.test.sh"
+write_readme() { # $@ the block's lines
+  { printf 'Run every guard:\n\n```bash\n'; printf '%s\n' "$@"; printf '```\n'; } > "$RG/README.md"
+}
+write_readme 'tests/one.test.sh   # the first' 'tests/two.test.sh   # the second'
+if [ -z "$(guard_list_gaps "$RG")" ]; then ok "0046 — fixture: a complete block reports nothing"
+else bad "0046 — fixture: a complete block reported gaps: $(guard_list_gaps "$RG")"; fi
+
+write_readme 'tests/one.test.sh   # the first'
+case "$(guard_list_gaps "$RG")" in
+  *'missing tests/two.test.sh'*) ok "0046 FR2 — a suite removed from the block is reported by name" ;;
+  *) bad "0046 FR2 — a suite removed from the block was not reported: $(guard_list_gaps "$RG")" ;;
+esac
+
+write_readme 'tests/one.test.sh   # the first' 'tests/two.test.sh   # the second' 'tests/gone.test.sh  # deleted'
+case "$(guard_list_gaps "$RG")" in
+  *'stale tests/gone.test.sh'*) ok "0046 FR3 — a name with no suite behind it is reported by name" ;;
+  *) bad "0046 FR3 — a stale name was not reported: $(guard_list_gaps "$RG")" ;;
+esac
+
+write_readme 'tests/one.test.sh' 'tests/two.test.sh   # the second'
+case "$(guard_list_gaps "$RG")" in
+  *'undescribed tests/one.test.sh'*) ok "0046 AC4 — a line with no description is reported" ;;
+  *) bad "0046 AC4 — a line with no description was not reported: $(guard_list_gaps "$RG")" ;;
+esac
+rm -rf "$RG"
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 TALLIED=1
 [ "$FAIL" = 0 ]
