@@ -167,3 +167,40 @@ implement it and do not restate its reasoning.
     the rewrite came.
   - Sizes: `queue/SKILL.md` grew by the one paragraph; `skill-size` green.
 
+
+## QA evidence
+
+2026-10-25 — verify (daba). **PASS.**
+
+Conventions: ../ai-building-conventions
+Command (the QA plan's scripted assertion, verbatim): `tests/gate-ticket.test.sh` → `gate-ticket: 14 passed, 0 failed`, at the 0110 claim commit, clean tree. No lint or typecheck is configured. Whole suite, run in this session over the same non-backlog tree: by-file (`for t in tests/*.test.sh; do "$t" || true; done`, at `0b85f60`) gave every one of 34 files `0 failed`, including `item-ac-form` `8 passed, 0 failed` and `close` `281 passed, 0 failed`. Fail-fast `commands.unit` at `b5f8f7d` exited 0.
+Copy executed: the repo copies (`skills/queue/templates/item.md`, `skills/queue/SKILL.md`). The installed 0.9.42 plugin predates this change.
+Digest: `.claude/backlog/next --ac-digest 0110 --check` → `0110: ac_digest absent — unverifiable`. Recorded as **ac_digest absent — unverifiable**, not as a match.
+
+Mutations: re-run by this pass in a detached worktree at the claim commit, each restored by path, worktree clean afterwards. Control: `gate-ticket: 14 passed, 0 failed`.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | heading marked only for a gate ticket | marker removed | `13 passed, 1 failed`, own case |
+| AC1 | `## Kill criteria` section exists | heading deleted | `10 passed, 4 failed`, every template case `EMPTY` |
+| AC1 | `**Verdict:**` line | removed, others standing | own case red |
+| AC1 | `**If it clears:**` line | removed, others standing | own case red |
+| AC1 (FR1) | outline is prose, never FRs/checkbox criteria | clause reworded | own case red |
+| AC2 | not-filed sentence | reworded | own case red |
+| AC2 | neither FRs nor `blocked_by` | reworded | own case red |
+| AC2 | reason: `close` frees a dependent whatever the verdict | reworded | own case red |
+| AC3 | criteria assert the verdict was recorded / never favourable | each reworded | each red, own case |
+| AC4 | on `cleared`, one `FINDINGS.md` entry | reworded | own case red |
+| AC4 | cites `docs/decisions/004` | citation removed | own case red |
+| scope | rule sits in Step 2 | Step 2 heading renamed | own case red (`EMPTY`) |
+| AC5 | 0104 rewritable as a gate ticket with no invented form | judgement: this pass rewrote 0104 (at `7764732`) independently, in a scratch file outside the repo under fixture id `9904` | **holds.** It used only template headings (`## Kill criteria`, `- **Criterion:**` ×3, `**Verdict:**`, `**If it clears:**`). FR2–FR6 became the prose outline. No FR carries "only if it clears", and no AC asserts the killed state (0104's old AC2, "verify unchanged on a kill", has nothing left to assert). The one verdict-referencing AC is the `FINDINGS.md` entry "exists exactly when the Verdict reads `cleared`". That is a biconditional over the gate's own output, required by the rule's FR4, and satisfiable either way, so it is not the conditional AC this ticket removes. |
+
+NFRs:
+
+| Row | Check | Result |
+|---|---|---|
+| Documentation | `004` citation mutation red; restating `conditional FR` and `third terminal` in the rule each red (`found: …`) | holds, guarded |
+
+Out-of-scope check: `git show --stat 6ca3875` touches no `close`, `next` or `verify`.
+Always-on (`CONVENTIONS_CORE.md`): prose-only change, with no secrets and no company material.
+Advisory: Step 2 dirty set was empty, and the verdict-time capture was empty. The intersection is empty, so this is not advisory.
