@@ -36,7 +36,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0146 | Decide when a required duplication earns a drift guard | design | ready |  |
 | 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | design | ready |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
-| 0046 | Make the README guard list provably complete | develop | ready |  |
+| 0046 | Make the README guard list provably complete | develop | in-progress |  |
 | 0126 | Stop retro restating the by-hand lock rule it drifted from | develop | ready |  |
 | 0091 | Make a by-hand backlog write take the lock and prove its commit landed | develop | ready |  |
 | 0092 | Prove claim and close hold the lock through their commit | develop | ready |  |
