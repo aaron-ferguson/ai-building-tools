@@ -20,9 +20,9 @@ expects:
 claimed_by: "9fa0"
 claimed_at: 2026-10-25T19:42:30Z
 touches:
-  - tests/abort-announce.test.sh
-  - tests/sprint.test.sh
-  - tests/next.test.sh
+  - "tests/*.test.sh"  # all 34: each sources the helper and sets TALLIED after its tally
+  - tests/lib/announce-abort.sh  # new
+  - tests/abort-announce.test.sh  # new
 ---
 
 ## Problem
