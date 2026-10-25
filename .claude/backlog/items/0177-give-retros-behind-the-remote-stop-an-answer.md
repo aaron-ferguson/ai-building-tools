@@ -98,3 +98,8 @@ a rung it does not belong on, in a repo that merely happens to be current — an
   change is an **addition** beside that sentence, never a rewrite of it, and AC3 is the guard on
   that constraint — `queue`'s rule that a QA plan's absence assertions are checked against the
   guards already shipped.
+- **2026-10-25 (queue sweep)** — A second observation of this defect, on the tools repo at
+  `behind 1` (a concurrent capture moving `next_id`), cost a full second pass over a 16-entry buffer
+  under this ticket's own FR2 answer. Its proposed alternative — fast-forward a clean, behind-only
+  checkout — is this ticket's *Out of scope* line and is now `0216`, ranked directly above. This
+  ticket's FRs stand whatever `0216` decides.

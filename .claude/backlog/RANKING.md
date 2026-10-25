@@ -439,3 +439,13 @@ The regret operator was not needed.
   **0199, 0197, 0198, 0200** at the foot, in that order: a vacuous guard a design session trusts,
   then a release-time promise only memory keeps, then two design questions — 0198 carries an owner
   requirement, 0200 one instance — none blocking other work.
+
+## 2026-10-25 - 0216 placed directly above 0177
+
+**0216** (may an unattended stage fast-forward a clean, behind-only checkout) goes directly above
+**0177**, below 0195 and 0196. Same tier as 0177 — Tier 2, compounding: every sprint tail that meets
+a concurrent push loses its tools-buffer pass and pays it again, measured once in
+run-20261024T195310Z. Above 0177 by the prerequisite rule: both rewrite retro Step 3's
+behind-the-remote paragraph, and 0216's answer decides how much of 0177's text survives. It does not
+block 0177, whose FRs hold either way. Below 0195 and 0196, which are integrity and scaffold defects
+every project inherits; 0216 costs a second pass, never a wrong close.

@@ -25,6 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0195 | Stop a criterion changing without its author by digesting it at write and checking it at close | develop | ready |  |
 | 0196 | Ship a DONE.md template so a freshly scaffolded backlog can close a ticket | develop | ready |  |
+| 0216 | Decide whether an unattended stage may fast-forward a clean checkout that is only behind | design | ready |  |
 | 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
 | 0175 | Decide what identifies a sprint across a suspension, and which mechanisms key off it | design | ready |  |
 | 0172 | Decide how a script refusal and the skill that must satisfy it reach a session together | design | ready |  |
