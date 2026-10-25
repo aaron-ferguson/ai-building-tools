@@ -3,7 +3,7 @@ id: "0169"
 title: Make a test file announce an abort instead of exiting silently under set -eu
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: develop
 qa_manual:
@@ -17,9 +17,12 @@ expects:
   - tests/abort-announce.test.sh
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "9fa0"
+claimed_at: 2026-10-25T19:42:30Z
 touches:
+  - tests/abort-announce.test.sh
+  - tests/sprint.test.sh
+  - tests/next.test.sh
 ---
 
 ## Problem
