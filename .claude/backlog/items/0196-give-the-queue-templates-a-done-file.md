@@ -2,8 +2,8 @@
 id: "0196"
 title: Ship a DONE.md template so a freshly scaffolded backlog can close a ticket
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,12 +15,9 @@ blocked_by: []
 relates: ["0161"]
 expects:
   - skills/queue/templates/DONE.md
-claimed_by: "da05"
-claimed_at: 2026-10-25T22:44:34Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/DONE.md
-  - tests/scaffold-close.test.sh   # new
-  - README.md
 ---
 
 ## Problem
