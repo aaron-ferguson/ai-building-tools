@@ -175,6 +175,22 @@ before running a test.
 Delete this section when the item moves to `next: develop`, and record the answer in
 **Notes & decisions**.
 
+## Kill criteria  *(only on a gate ticket)*
+
+A gate ticket is a measurement whose verdict decides whether further work exists
+(`docs/decisions/004-a-gate-ticket-and-the-work-it-decides.md`). Write each threshold and the
+measurement that produces it **before the measurement runs**.
+
+- **Criterion:** <threshold> — measured by <how>
+
+**Verdict:** <empty until the measurement runs; then `cleared` or `killed`, the figure against every
+criterion, and the date>
+
+**If it clears:** <the follow-on work as prose outline — never FRs or checkbox criteria, so nothing
+here can be ticked or built>
+
+Delete this section on any other ticket.
+
 ## Acceptance criteria
 
 Given / when / then. `verify` checks these literally and will not close the item without them.

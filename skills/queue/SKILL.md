@@ -387,6 +387,16 @@ store, puts the variable's name in tracked files and a name grep can then never 
 If the report genuinely doesn't contain enough to write FRs or ACs, ask — once, batched, with your
 proposed defaults.
 
+**Where work should exist only if a measurement clears, file the measurement alone as a gate ticket**
+carrying the template's `## Kill criteria` section (`docs/decisions/004-a-gate-ticket-and-the-work-it-decides.md`).
+The work it decides is not filed —
+neither as FRs in the gate ticket nor as a ticket `blocked_by` it — because
+`close` frees a dependent whatever the verdict. Its criteria
+assert the verdict was recorded against every criterion,
+never that it was favourable, so the ticket closes `done` on a kill. It carries an FR requiring,
+on `cleared`, one `FINDINGS.md` entry pointing at its *If it clears* outline, so the follow-on reaches
+this skill through Step 5's sweep; on `killed`, nothing else is written.
+
 ### Set `next` now — this skill routes, and `design` does not screen
 
 **Every ticket this skill writes leaves with `next: design` or `next: develop`, and the reason recorded
