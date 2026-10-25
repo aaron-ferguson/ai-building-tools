@@ -23,6 +23,7 @@ touches:
   - "tests/*.test.sh"  # all 34: each sources the helper and sets TALLIED after its tally
   - tests/lib/announce-abort.sh  # new
   - tests/abort-announce.test.sh  # new
+  - CLAUDE.md  # Tests: one paragraph naming the block
 ---
 
 ## Problem
@@ -78,3 +79,43 @@ case, which has its own row.
   sweep that planned it (session 7bc65dbf) could not write under `.claude/` unattended. Its review
   list ranked this below `0089` and related it to `0119`. `close_by: develop`: every criterion is a
   committed assertion in a named guard.
+- 2026-10-25 (develop, 9fa0) — **Built inline, not as a sourced helper.** The first build put the
+  block in `tests/lib/announce-abort.sh` and sourced it; it was reverted before commit because
+  `CLAUDE.md` and five suites state the house rule *a suite here is self-contained and sources
+  nothing*, and reversing that is the author's call. So every `tests/*.test.sh` carries the same
+  15-line block directly after `set -eu`, and `tests/abort-announce.test.sh` asserts each copy is
+  byte-identical to its own — the duplication is enforced as one definition, the same way
+  `claim`/`close`/`next.test.sh` keep their shared helpers in step. `CLAUDE.md` *Tests* gains one
+  paragraph saying a new file copies the block (`touches:` widened to it).
+- **Mechanism.** `announce_abort` reads `$?` first, prints `ABORTED before the tally: N passed, M
+  failed so far (exit S)` unless `TALLIED` is set, forces a 0 status to 1, runs any cleanup passed
+  as arguments, then exits with the status. A file's own EXIT cleanup is installed as
+  `trap 'announce_abort cleanup' EXIT` (INT/TERM keep the bare cleanup), and `TALLIED=1` sits
+  between the tally line and the final status check in all 35 files.
+- **QA-plan substitution (AC1).** "An early `exit 1` injected after its first assertion" is not a
+  location a script can find in 35 differently-shaped files. The guard injects at the end of each
+  file's setup — after its first EXIT trap other than the block's own, else after `FAIL=0` — the
+  line `PASS=$((PASS+1)); <death>`, for both `false` (a `set -e` death) and `exit 0` (`0119`'s
+  silent-success shape), and asserts `ABORTED before the tally: 1 passed, 0 failed so far` plus a
+  non-zero exit. The copy runs in a scratch mirror (every top-level repo entry symlinked except
+  `.git`, `tests/` real) so its `ROOT` resolves and setup completes.
+- **Trap found while building:** injecting after the *last* `^trap .*EXIT` line recursed without
+  bound — the guard's own AC3 fixture then held a column-0 trap line inside a heredoc, so its copy
+  re-ran the whole sweep. Fixture is now built with `printf`, and injection takes the first trap.
+- **Clause table and sweep — every row RUN** against `a956a20`, each mutation restored from `HEAD`,
+  control green (251/0):
+
+  | AC clause | Mutation | Result |
+  |---|---|---|
+  | AC2 "each installs the … trap" — block present | block deleted from `tests/graph-fields.test.sh` | red, 4 failed |
+  | AC2 — trap installed, not replaced | `tests/claim.test.sh` trap made `trap cleanup EXIT` | red, 4 failed |
+  | AC2/AC3 — tally marks the normal path | `TALLIED=1` deleted from `tests/external-feedback.test.sh` | red, 1 failed; the file itself then prints `ABORTED … 9 passed` and exits 1 |
+  | AC1 "the exit status is non-zero" | forced-non-zero line deleted, all files | red, 35 failed (`exit 0` rows) |
+  | AC1 "contains a count" | counts dropped from the ABORTED line, all files | red, 70 failed |
+  | AC1 "stdout contains `ABORTED`" | covered by the same row as the count: one assertion matches the whole line | red (above) |
+  | AC3 "a trap that fires on the normal path" | `TALLIED` check replaced by `true`, all files | red, 3 failed |
+  | AC3 — own cleanup still runs | cleanup call removed from the block, all files | red, 2 failed |
+  | AC3 "the whole-suite command still exits 0" | the suite itself | 35 files green, each printing its own tally |
+
+  Red before the build, also run: the guard against the untouched 34 files read 51 passed,
+  200 failed.
