@@ -13,6 +13,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+## 0.9.42 — 2026-10-25
+
 - A finding about a skill, reference file or backlog script now routes to the tools repo's `.claude/backlog/FINDINGS.md` with the root explicitly ruled out, so a session no longer falls back to a local park because the tools root has no buffer.
 - `develop` now sends an item whose Problem section contradicts its own FRs or ACs to `design`, rather than building half to each side and calling it a deliberate asymmetry.
 - `sprint`'s tail-cap snippet now passes `tail-cap` the findings count alone, so scaling the retro and queue caps no longer dies with a `ValueError`.
