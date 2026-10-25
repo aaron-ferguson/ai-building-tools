@@ -3,7 +3,7 @@ id: "0146"
 title: Decide when a required duplication earns a drift guard, and guard the copies that qualify
 type: debt
 next: design
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-09-09
@@ -15,8 +15,8 @@ expects:
   - tests/close.test.sh
   - skills/queue/templates
   - references/CONCURRENCY.md
-claimed_by:
-claimed_at:
+claimed_by: "d2ae"
+claimed_at: 2026-10-25T22:39:48Z
 touches:
 ---
 
