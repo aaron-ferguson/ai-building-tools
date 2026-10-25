@@ -23,6 +23,21 @@
 # Requires: sh, awk, grep. No runner — this project has none.
 
 set -eu
+# Announce an abort instead of exiting silently (0169): a death under `set -eu` otherwise prints the
+# passes reached and no tally. TALLIED=1 follows the tally; exiting without it says ABORTED and never
+# exits 0. Byte-identical in every tests/*.test.sh, which tests/abort-announce.test.sh asserts.
+TALLIED=""
+announce_abort() {
+  abort_status=$?
+  if [ -z "$TALLIED" ]; then
+    printf '\nABORTED before the tally: %s passed, %s failed so far (exit %s)\n' \
+      "${PASS:-0}" "${FAIL:-0}" "$abort_status"
+    [ "$abort_status" -ne 0 ] || abort_status=1
+  fi
+  if [ "$#" -gt 0 ]; then "$@" || true; fi
+  exit "$abort_status"
+}
+trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 DEV="$ROOT/skills/develop/SKILL.md"
@@ -37,7 +52,8 @@ bad() { FAIL=$((FAIL + 1)); printf '  FAIL — %s\n' "$1"; }
 # The paragraph, ending on its own blank line rather than on a line count — a count is a guess at
 # how long the prose is and goes wrong silently in both directions (0032).
 PARA="$(mktemp)"
-trap 'rm -f "$PARA"' EXIT INT TERM
+trap 'announce_abort rm -f "$PARA"' EXIT
+trap 'rm -f "$PARA"' INT TERM
 awk '/break on purpose/ { f = 1 } f && /^[[:space:]]*$/ { exit } f { print }' "$DEV" > "$PARA"
 
 present() {
@@ -63,4 +79,5 @@ present "and it never survives the hand-off" 'hand-off'
 
 echo
 echo "$PASS passed, $FAIL failed"
+TALLIED=1
 [ "$FAIL" -eq 0 ] || exit 1

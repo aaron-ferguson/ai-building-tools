@@ -64,6 +64,21 @@
 # Requires: sh, awk, grep. No runner — this project has none.
 
 set -eu
+# Announce an abort instead of exiting silently (0169): a death under `set -eu` otherwise prints the
+# passes reached and no tally. TALLIED=1 follows the tally; exiting without it says ABORTED and never
+# exits 0. Byte-identical in every tests/*.test.sh, which tests/abort-announce.test.sh asserts.
+TALLIED=""
+announce_abort() {
+  abort_status=$?
+  if [ -z "$TALLIED" ]; then
+    printf '\nABORTED before the tally: %s passed, %s failed so far (exit %s)\n' \
+      "${PASS:-0}" "${FAIL:-0}" "$abort_status"
+    [ "$abort_status" -ne 0 ] || abort_status=1
+  fi
+  if [ "$#" -gt 0 ]; then "$@" || true; fi
+  exit "$abort_status"
+}
+trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 
@@ -82,7 +97,8 @@ bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
 
 FIX=""
 cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
-trap cleanup EXIT INT TERM
+trap 'announce_abort cleanup' EXIT
+trap cleanup INT TERM
 
 # ---------------------------------------------------------------------------
 # The guard itself. Every function takes the tree root as a parameter so the
@@ -780,4 +796,5 @@ for cfg in "$ROOT/skills/queue/templates/config.yml" "$ROOT/.claude/backlog/conf
 done
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
+TALLIED=1
 [ "$FAIL" = 0 ]

@@ -37,6 +37,21 @@
 # Requires: sh, grep, awk, python3. No runner -- this project has none.
 
 set -eu
+# Announce an abort instead of exiting silently (0169): a death under `set -eu` otherwise prints the
+# passes reached and no tally. TALLIED=1 follows the tally; exiting without it says ABORTED and never
+# exits 0. Byte-identical in every tests/*.test.sh, which tests/abort-announce.test.sh asserts.
+TALLIED=""
+announce_abort() {
+  abort_status=$?
+  if [ -z "$TALLIED" ]; then
+    printf '\nABORTED before the tally: %s passed, %s failed so far (exit %s)\n' \
+      "${PASS:-0}" "${FAIL:-0}" "$abort_status"
+    [ "$abort_status" -ne 0 ] || abort_status=1
+  fi
+  if [ "$#" -gt 0 ]; then "$@" || true; fi
+  exit "$abort_status"
+}
+trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 TOOL="$ROOT/tools/sprint-ledger.sh"
@@ -53,7 +68,8 @@ bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
 
 FIX=""
 cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
-trap cleanup EXIT INT TERM
+trap 'announce_abort cleanup' EXIT
+trap cleanup INT TERM
 FIX="$(mktemp -d)"
 
 # says <file> <section> <fixed-string> -- the section unwrapped to one logical line, so an
@@ -1742,4 +1758,5 @@ else
 fi
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
+TALLIED=1
 [ "$FAIL" -eq 0 ]

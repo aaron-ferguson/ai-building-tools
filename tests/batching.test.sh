@@ -26,6 +26,21 @@
 # Requires: sh, grep. No runner — this project has none.
 
 set -eu
+# Announce an abort instead of exiting silently (0169): a death under `set -eu` otherwise prints the
+# passes reached and no tally. TALLIED=1 follows the tally; exiting without it says ABORTED and never
+# exits 0. Byte-identical in every tests/*.test.sh, which tests/abort-announce.test.sh asserts.
+TALLIED=""
+announce_abort() {
+  abort_status=$?
+  if [ -z "$TALLIED" ]; then
+    printf '\nABORTED before the tally: %s passed, %s failed so far (exit %s)\n' \
+      "${PASS:-0}" "${FAIL:-0}" "$abort_status"
+    [ "$abort_status" -ne 0 ] || abort_status=1
+  fi
+  if [ "$#" -gt 0 ]; then "$@" || true; fi
+  exit "$abort_status"
+}
+trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 DEV="$ROOT/skills/develop/SKILL.md"
@@ -87,7 +102,8 @@ binds() {
 # so it cannot drift as the prose is edited.
 DEVPARA="$(mktemp)"
 VERPARA="$(mktemp)"
-trap 'rm -f "$DEVPARA" "$VERPARA"' EXIT INT TERM
+trap 'announce_abort rm -f "$DEVPARA" "$VERPARA"' EXIT
+trap 'rm -f "$DEVPARA" "$VERPARA"' INT TERM
 
 # extract <file> <anchor-fixed-string> <outfile>
 extract() {
@@ -210,4 +226,5 @@ binds "the figure's own date is bound to the figure, not merely present in the p
 says "0026 named as the source of the develop-side figure" "$DEV1" '0026'
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
+TALLIED=1
 [ "$FAIL" = 0 ]

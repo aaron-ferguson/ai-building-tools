@@ -54,6 +54,11 @@ No test runner. The suite is `tests/*.test.sh`, each self-contained and printing
 **rewrapping a guarded paragraph is a breaking change**: `grep` is line-based, so an asserted
 phrase that straddles a line break cannot be matched at all.
 
+Every file carries the same announce-on-abort block directly after `set -eu` and sets `TALLIED=1`
+on the line after its tally, so a file that dies early prints `ABORTED` with its counts so far and
+never exits 0. A new file copies the block from a sibling; `tests/abort-announce.test.sh` reds until
+it does (0169).
+
 ## Concurrency
 
 Several sessions work this backlog at once. `references/CONCURRENCY.md` governs every write;
