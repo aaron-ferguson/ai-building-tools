@@ -3,7 +3,7 @@ id: "0110"
 title: Decide the shape of a ticket whose first requirement can kill the rest
 type: chore
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -17,9 +17,12 @@ expects:
   - skills/queue/templates/item.md   # the optional Kill criteria section
   - skills/queue/SKILL.md            # Step 2, the gate-ticket rule
   - tests/gate-ticket.test.sh        # new; the guard on both
-claimed_by:
-claimed_at:
+claimed_by: "844a"
+claimed_at: 2026-10-25T17:12:08Z
 touches:
+  - skills/queue/templates/item.md   # the optional Kill criteria section
+  - skills/queue/SKILL.md            # Step 2, the gate-ticket rule
+  - tests/gate-ticket.test.sh        # new; the guard on both
 ---
 ## Problem
 
