@@ -35,3 +35,5 @@ Re-calling with no `--completed` routed it normally, so the supervisor drops the
   section. Not read: which function in `tools/next` holds the completion rules.
 
 ## Notes & decisions
+
+- 2026-10-24 — Absorbed by retro (second leg of AetherWorks run-20261024T195310Z's tail): a broader trigger than the Problem names: AetherWorks run-20261024T195310Z dispatched a `queue` stage on the repair-first path for 0130, a fresh row rather than a re-specified `waiting` one, and `./next --drive --completed queue:0130` still exited 4 ("which no routing rule covers"); without `--completed` it gave `DISPATCH develop 0130`. So the fix is routing any `develop | ready` row after `queue`, not only a re-specified waiting row.

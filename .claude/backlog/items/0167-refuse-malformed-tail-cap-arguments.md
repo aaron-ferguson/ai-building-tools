@@ -71,3 +71,5 @@ Validating `estimate` and `record` arguments.
 - 2026-09-17 (queue sweep after retro e30dfa9d) — filed from `FINDINGS.md`. `next: develop`: a CLI
   flag, no decision. `close_by: develop`: every criterion is a committed assertion in
   `tests/sprint-ledger.test.sh`.
+
+- 2026-10-24 — Absorbed by retro (second leg of AetherWorks run-20261024T195310Z's tail): the SKILL side of this is landed at ec5458e: sprint Step 6's snippet passed the whole `./next --findings` line (`FINDINGS  15 entries; …`) to `--findings`, which is how a malformed value reached the parser in AetherWorks run-20261018T191111Z. The snippet now extracts the count. No guard executes that snippet yet; verify's *the guard must execute the snippet* applies if this item adds one.

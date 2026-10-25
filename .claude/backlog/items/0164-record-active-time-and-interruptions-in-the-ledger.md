@@ -113,3 +113,5 @@ half is not:
   from the right one on the figure it corrupts: 100 against 73 for elapsed, 53 against 40 for
   active.
 - 2026-10-10 — Absorbed by retro (tail of quantum-catan run-20261010T212209Z): a second instance: quantum-catan run-20261010T011031Z logged `limit_hit` then `resumed` around queue session 1419ed92 and the ledger reported wall_clock 311 min (estimate 178) and that window's elapsed as 283.4 min, nearly all of it the reset wait. Print the subtracted minutes when this lands.
+
+- 2026-10-24 — Absorbed by retro (second leg of AetherWorks run-20261024T195310Z's tail): parked again from AetherWorks run-20261018T011502Z: a verify stopped on the session limit, `limit_hit` 02:09Z, `resumed` ~12h later, and `record` logged `wall_clock_min` 901 against an estimate of 147 with ~170 min of work. That actual becomes the next estimate's prior, inflated ~5x — the cost of leaving FR-ledger half unbuilt. `stage_killed`→`resumed` windows are the same shape and should be subtracted too.

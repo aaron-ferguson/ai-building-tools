@@ -47,3 +47,5 @@ the AetherWorks and the tools buffer.
 ## Notes & decisions
 
 - Filed by retro 2026-10-17 (AetherWorks run-20261017T193821Z) from one entry in each buffer.
+
+- 2026-10-24 — Absorbed by retro (second leg of AetherWorks run-20261024T195310Z's tail): a third instance, AetherWorks 2026-10-18 sprint: a `/design` stage was dispatched onto a `next: design, status: waiting` row whose question the author had just answered in the supervising session; `./claim` refused it and the session flipped `status:` by hand under a by-hand lock. So the resume path is needed for `design` rows too, not only verify's `waiting` branch, and `/sprint` dispatching onto a `waiting` row is the same gap seen from the supervisor.

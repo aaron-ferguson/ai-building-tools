@@ -65,6 +65,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0181 | Decide whether stage outcomes carry a registered code that guards match instead of English | design | ready |  |
 | 0112 | Hoist the line-wrap hazard to the session editing prose, not only the one writing a guard | develop | ready |  |
 | 0096 | Make the frontmatter path lists checkable to read and safe to edit | develop | ready |  |
+| 0215 | Make claim and next read expects and touches through one parser that refuses or accepts the comma form | develop | ready |  |
 | 0095 | Hoist the shell short-circuit hazard where a guard author will read it | develop | ready |  |
 | 0043 | Make the two size gates fail on a registry entry that no longer resolves | develop | ready |  |
 | 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |

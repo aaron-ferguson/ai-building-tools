@@ -51,3 +51,5 @@ Unit: the configured suite.
 ## Notes & decisions
 
 - 2026-10-09 — Filed by retro from the tools `FINDINGS.md` entry of 2026-10-08.
+
+- 2026-10-24 — Absorbed by retro (second leg of AetherWorks run-20261024T195310Z's tail): parked again 2026-10-19: `close` line ~88 refuses with no `DONE.md`, and `skills/queue/templates/` still has none. No new evidence beyond the Problem section.
