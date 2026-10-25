@@ -312,10 +312,16 @@ answers it; a grep answers only "does this still exist".
 
 **A superseded FR does not always condemn the whole ticket.** Where some FRs are stale and the rest are
 perfectly buildable, `next: design` for the ticket entire is the wrong instrument — say which FRs are
-stale and why, build the rest, and ask before splitting them out. Only the author may narrow a
-contract, and only `queue` may write the row that carries the remainder. One ticket enumerated a five-step procedure that a sibling
+stale and why, build the rest, and ask before splitting them out; only `queue` writes the row that
+carries the remainder. One ticket enumerated a five-step procedure that a sibling
 had since made a six-step one; building it as written would have automated the very defect the sibling
 existed to fix.
+
+**Only the author changes a criterion.** Where a criterion is wrong or impossible, **stop**:
+record in *Notes & decisions* which `ACn`, why, and the proposed text, then
+`./handoff <id> <token> queue`. It does not edit the criterion, even to correct it; `close` refuses
+one that no longer matches `ac_digest:`. A correct fix (5 → 6 VP) once passed two `verify` passes
+unseen (0195).
 
 **And a figure a ticket quotes about a file it does not own is a cache, not a fact — re-read the
 source, never the FR.** A cited number is an assertion about another file, and it is the one kind of

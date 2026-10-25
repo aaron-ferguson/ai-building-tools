@@ -151,6 +151,9 @@ This step is most of the skill's value.
    Until then, read every criterion line against the `- [ ] ACn — ` form yourself.
    **Re-read `qa_level` and `close_by` against the criteria you just wrote**: `queue` predicted both
    before any existed, and this is the only stage that learns what they should be.
+   **Where you wrote or changed criteria, last of all**:
+   write `ac_digest:` from `./next --ac-digest <id>` into the frontmatter — the author's stamp,
+   which `close` and `--drift` refuse criteria against, so it rides in the same commit (0195).
 3. Delete the *Open design question* section, then release the row with
    `./handoff <id> <token> develop`. It writes the stage and clears the claim in one locked commit, so
    everything else this pass owes the item is written before it (`CONCURRENCY.md`, *The release is the final act*).

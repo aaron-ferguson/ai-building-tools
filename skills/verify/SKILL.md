@@ -198,6 +198,12 @@ browser you started, this same turn.
 
 ## Step 3 — Check the acceptance criteria literally
 
+**Before checking any criterion literally, run `./next --ac-digest <id> --check`.** Literal checking
+reads whatever text is on disk, so it cannot see a criterion that moved; a digest mismatch is a stale contract:
+write the named `ACn` into *Notes & decisions* and `./handoff <id> <token> queue` (Step 5's branch).
+It never passes a criterion whose text the author did not write, however right the new text is.
+An absent stamp is not a match: record `ac_digest absent — unverifiable` in the QA evidence (0195).
+
 Walk each AC and record how you verified it — which test, which behaviour, which screenshot — **and
 where**: the repo paths that verification read or executed, the files asserted over, the fixture, the
 script run. Those paths are the run's **evidence set**, and Step 7 derives the advisory label from

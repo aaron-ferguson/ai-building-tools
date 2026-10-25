@@ -81,6 +81,12 @@ relates: []
 # protects nothing, it goes stale, and being wrong here costs one suboptimal pick. `develop`
 # checks it against the code on claim and promotes the corrected list to `touches:`.
 expects:
+# The digest of the criteria the AUTHOR agreed, one key per ACn: `ac_digest: AC1=<hex> AC2=<hex>`.
+# Written from `./next --ac-digest <id>` by `queue` (Add, Re-specify, Amend) and by `design` when it
+# writes criteria, in the same commit as them; `develop` and `verify` never write it. `--drift` and
+# `close` recompute it from the file and refuse a mismatch. Absent or empty means unverifiable —
+# neither drift nor a match. It detects an edit made in good faith; an edit that restamps defeats it.
+ac_digest:
 # Written by `develop` when it claims the item, cleared when it closes or releases it.
 # This is where the token lives; the pared QUEUE.md carries no ownership column. An item is
 # yours only if you minted its token in this conversation — see the ai-building-tools

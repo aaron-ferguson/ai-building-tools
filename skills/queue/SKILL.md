@@ -166,6 +166,11 @@ change, and neither is optional:
   is where the work actually is; the FR itself is the cheap part. Never amend a claimed ticket — its
   session is building against the contract you are changing.
 
+**Every path that writes or edits criteria — Add, Re-specify, Amend — ends the same way:**
+write `ac_digest:` from `./next --ac-digest <id>` into the frontmatter, in the same commit as the
+criteria. It is the author's stamp: `--drift` and `close` refuse criteria that no longer match it,
+which is what stops a later stage rewriting the contract it is held to (0195).
+
 ### Withdrawing a ticket — the work goes, the id is burned
 
 A withdrawal is the one operation that can make an existing citation resolve to the **wrong**
