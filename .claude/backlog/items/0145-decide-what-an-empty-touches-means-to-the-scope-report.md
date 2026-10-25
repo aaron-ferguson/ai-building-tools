@@ -3,7 +3,7 @@ id: "0145"
 title: Decide what an empty touches means to the scope report, and record it where the field is read
 type: debt
 next: design
-status: ready
+status: in-progress
 qa_level: verify
 size: s
 created: 2026-09-09
@@ -15,8 +15,8 @@ expects:
   - skills/queue/templates/close
   - skills/queue/templates/handoff
   - references/CONCURRENCY.md
-claimed_by:
-claimed_at:
+claimed_by: "6e1a"
+claimed_at: 2026-10-25T22:38:38Z
 touches:
 ---
 
