@@ -20,9 +20,9 @@ expects:
 claimed_by: "844a"
 claimed_at: 2026-10-25T17:12:08Z
 touches:
-  - skills/queue/templates/item.md   # the optional Kill criteria section
-  - skills/queue/SKILL.md            # Step 2, the gate-ticket rule
-  - tests/gate-ticket.test.sh        # new; the guard on both
+  - skills/queue/templates/item.md
+  - skills/queue/SKILL.md
+  - tests/gate-ticket.test.sh   # new
 ---
 ## Problem
 
@@ -143,3 +143,30 @@ implement it and do not restate its reasoning.
   abandoned work is a `withdrawn` ticket. The Documentation NFR row gained a *How it would red*
   column per `0107`. `close_by: verify` set explicitly: AC5 is a judgement, so the light tier does not
   apply.
+
+- 2026-10-25 — develop (844a): **built** in `6ca3875`.
+  - `## Kill criteria  *(only on a gate ticket)*` sits in `item.md` directly above
+    *Acceptance criteria*, after the other conditional sections; its `- **Criterion:**` bullet lives
+    outside the AC section, so `close`'s ticking and `item-ac-form.test.sh` never read it (run: both
+    suites green). The gate rule is one paragraph in `queue` Step 2, immediately above *Set `next`
+    now*, citing `004` by path; the rejected alternatives are not restated (guarded by two absence
+    cases scoped to the paragraph).
+  - **The guard's windows are scoped**, the template section from its heading to the next `## `,
+    the rule from its opening phrase to the next blank line, plus a case that the rule opens inside
+    Step 2. `window()` sets `first` on the opening line, which is the fix the 0089 notes name for
+    `falsifiable-acs.test.sh` (the same defect is fixed in `remote-anchor.test.sh` by 0216).
+  - **Mutation sweep — run**, scratch copy, one per phrase: heading marker, heading renamed (EMPTY,
+    named), Verdict, If-it-clears, prose-only clause, not-filed, neither-FRs-nor-blocked_by, the
+    reason, verdict-recorded, never-favourable, on-cleared FINDINGS entry, the `004` citation, a
+    restated `conditional FR` (NFR), and the rule moved out of Step 2. Each reddened its own case
+    (13/1); the two structural ones reddened every case in their window.
+  - **AC5 — a rewrite was done, for verify to judge, not closed here.** Scratch file outside the repo
+    (`/tmp/0110-scratch/gate-rewrite.md`, id `9104`): 0104 as a gate ticket needed no heading or field
+    the template lacks; FR2-FR7 became the *If it clears* outline; no FR carries "only if it clears"
+    and no AC asserts the killed state. **One judgement verify should make:** its AC3 reads "given
+    `cleared` … one entry; given `killed` … no entry" — satisfiable either way, but it does name both
+    verdicts. A single-branch form ("an entry exists exactly when the verdict reads `cleared`") reads
+    the same; I do not believe it is the conditional AC this ticket removes, but it is the closest
+    the rewrite came.
+  - Sizes: `queue/SKILL.md` grew by the one paragraph; `skill-size` green.
+
