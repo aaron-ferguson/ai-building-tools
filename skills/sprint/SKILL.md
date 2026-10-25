@@ -706,7 +706,7 @@ holds more entries per sweep and needs a larger cap — a fixed cap firing mid-s
 cap. Compute the cap from the rule in `config.yml`'s `TAIL SCALING` comment:
 
 ```sh
-findings="$(./next --findings | head -1)"          # current buffer count
+findings="$(./next --findings | sed -n '1s/^FINDINGS *\([0-9]*\).*/\1/p')"   # the count, not the whole line
 threshold="$(sed -n 's/^findings_threshold: *//p' .claude/backlog/config.yml)"
 retro_base="$(grep -A30 'stage_budget_usd:' .claude/backlog/config.yml | grep -E '^\s+retro:' | sed 's/.*retro: *//' | cut -d'#' -f1 | tr -d ' \t')"
 queue_base="$(grep -A30 'stage_budget_usd:' .claude/backlog/config.yml | grep -E '^\s+queue:' | sed 's/.*queue: *//' | cut -d'#' -f1 | tr -d ' \t')"

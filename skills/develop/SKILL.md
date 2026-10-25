@@ -258,7 +258,10 @@ verified.
 `status: ready`, write the question into the *Open design question* section, release the claim, and
 stop.** Missing detail you sharpen here; a missing decision answered by the session about to build
 against it is a contract nobody agreed to, and `verify` is what discovers you invented it. Name the
-command: `/design <id>`, in its own session.
+command: `/design <id>`, in its own session. **An item that disagrees with itself is this case** — a
+Problem section calling a behaviour correct that an FR or AC forbids. Building half to each side and
+recording it as a "deliberate asymmetry" decides it, and costs a `verify` session that can only send
+it to `design` anyway (2026-10-17, a consumer backlog).
 
 **A declared success threshold is a goal to iterate toward, never a number you may move.** When the
 build misses one — a balance cap, a latency ceiling, a rate — change the inputs and try again, or stop
