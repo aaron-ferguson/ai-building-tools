@@ -880,14 +880,18 @@ if [ -x "$BL/next" ]; then
   fi
 
   out="$(cd "$FIX/bl" && .claude/backlog/next develop 2>&1 || true)"
-  case "$out" in
-    *0002*) ok "a hand-driven session is offered the free row (0002), not the held one" ;;
-    *)      bad "AC16 — ./next develop did not offer the free row: $out" ;;
-  esac
-  case "$out" in
-    "TAKE      0001"*) bad "AC16 — the orphaned claim on 0001 was offered as takeable" ;;
-    *) ok "the orphaned claim on 0001 is not offered" ;;
-  esac
+  # Anchored to the TAKE line (0089): `*0002*` over the whole output is satisfied by a COLLIDES or
+  # SKIP line naming 0002, and a prefix match on the capture misses a TAKE printed after a warning.
+  if printf '%s\n' "$out" | grep -q '^TAKE      0002 '; then
+    ok "a hand-driven session is offered the free row (0002), not the held one"
+  else
+    bad "AC16 — ./next develop did not offer the free row: $out"
+  fi
+  if printf '%s\n' "$out" | grep -q '^TAKE      0001 '; then
+    bad "AC16 — the orphaned claim on 0001 was offered as takeable"
+  else
+    ok "the orphaned claim on 0001 is not offered"
+  fi
 else
   skip "AC16 — .claude/backlog/next is not installed in this checkout, so the fixture cannot be driven"
 fi
@@ -1001,23 +1005,31 @@ INNER
 
 out="$("$HARVEST" "$RUNDIR/transcripts" --run "$RUNDIR/run.jsonl" 2>&1 || true)"
 
-case "$out" in
-  *"FLOOR"*20000*) ok "the floor is the FIRST turn's context (20000), not the last or the largest" ;;
-  *) bad "AC13 — no FLOOR of 20000 in the output:
-$out" ;;
-esac
-case "$out" in
-  *"GROWTH"*1500*) ok "growth is reported as an absolute figure per cycle (1500)" ;;
-  *) bad "AC13 — no GROWTH of 1500 per cycle in the output:
-$out" ;;
-esac
-case "$out" in
-  *"TURNS"*2.0*) ok "turns per cycle is reported (2.0 over 3 cycles)" ;;
-  *) bad "AC13 — no TURNS per cycle of 2.0 in the output:
-$out" ;;
-esac
-case "$out" in
-  *"budget"*) ok "turns per cycle is reported against a budget" ;;
+# Each figure is read from its OWN line's second field and compared for equality (0089). The
+# former `*"GROWTH"*1500*` over the whole output stayed green on a growth of 15000, and `*"FLOOR"*20000*`
+# could pair the word on one line with the figure on another.
+bound_field() { printf '%s\n' "$out" | awk -v tag="$1" '$1 == tag { print $2; exit }'; }
+bound_line()  { printf '%s\n' "$out" | awk -v tag="$1" '$1 == tag { print; exit }'; }
+if [ "$(bound_field FLOOR)" = 20000 ]; then
+  ok "the floor is the FIRST turn's context (20000), not the last or the largest"
+else
+  bad "AC13 — the FLOOR line does not read 20000:
+$out"
+fi
+if [ "$(bound_field GROWTH)" = 1500 ]; then
+  ok "growth is reported as an absolute figure per cycle (1500)"
+else
+  bad "AC13 — the GROWTH line does not read 1500 per cycle:
+$out"
+fi
+if [ "$(bound_field TURNS)" = 2.0 ]; then
+  ok "turns per cycle is reported (2.0 over 3 cycles)"
+else
+  bad "AC13 — the TURNS line does not read 2.0 per cycle:
+$out"
+fi
+case "$(bound_line TURNS)" in
+  *"against a budget of"*) ok "turns per cycle is reported against a budget" ;;
   *) bad "AC13 — turns per cycle is reported with nothing to judge it against" ;;
 esac
 
