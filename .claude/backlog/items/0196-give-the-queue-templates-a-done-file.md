@@ -2,8 +2,8 @@
 id: "0196"
 title: Ship a DONE.md template so a freshly scaffolded backlog can close a ticket
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,9 +15,10 @@ blocked_by: []
 relates: ["0161"]
 expects:
   - skills/queue/templates/DONE.md
-claimed_by: "7074"
-claimed_at: 2026-10-25T22:58:23Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-25
 ---
 
 ## Problem
@@ -37,8 +38,8 @@ session had to invent one, reading the columns off `close`'s awk (ID, Title, Typ
 
 ## Acceptance criteria
 
-- [ ] AC1 — FR2's test passes. Red: delete `templates/DONE.md` → `close` exits non-zero naming DONE.md.
-- [ ] AC2 — Red: change one header cell in `templates/DONE.md` that `close` keys on → the test fails.
+- [x] AC1 — FR2's test passes. Red: delete `templates/DONE.md` → `close` exits non-zero naming DONE.md.
+- [x] AC2 — Red: change one header cell in `templates/DONE.md` that `close` keys on → the test fails.
 
 ## QA plan
 

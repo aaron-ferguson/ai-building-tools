@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0196 | Ship a DONE.md template so a freshly scaffolded backlog can close a ticket | bug | unit | 2026-10-25 | [items/0196-give-the-queue-templates-a-done-file.md](items/0196-give-the-queue-templates-a-done-file.md) |
 | 0046 | Make the README guard list provably complete | bug | unit | 2026-10-25 | [items/0046-readme-guard-list-completeness.md](items/0046-readme-guard-list-completeness.md) |
 | 0169 | Make a test file announce an abort instead of exiting silently under set -eu | bug | unit | 2026-10-25 | [items/0169-make-a-test-file-announce-an-abort.md](items/0169-make-a-test-file-announce-an-abort.md) |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | chore | verify | 2026-10-25 | [items/0110-shape-of-a-ticket-with-a-killing-gate.md](items/0110-shape-of-a-ticket-with-a-killing-gate.md) |

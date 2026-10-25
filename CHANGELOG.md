@@ -13,6 +13,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- A freshly scaffolded backlog can now close its first ticket: `queue` ships a `DONE.md` template whose columns are the ones `close` fills, so no project has to invent one (0196).
+
 ## 0.9.43 — 2026-10-25
 
 - `develop` and `retro` now fast-forward a behind checkout whose incoming commits are backlog-only — clean tree, ahead of nothing, every incoming path under `.claude/backlog/` — and report the repo, the SHA before and after and the incoming paths, rather than stopping the pass; any other behind state still stops (`CONCURRENCY.md`, *A behind checkout fast-forwards only over backlog commits*) (0216).
