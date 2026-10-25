@@ -2,8 +2,8 @@
 id: "0169"
 title: Make a test file announce an abort instead of exiting silently under set -eu
 type: bug
-next: develop
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: develop
 qa_manual:
@@ -17,13 +17,10 @@ expects:
   - tests/abort-announce.test.sh
   - tests/sprint.test.sh
   - tests/next.test.sh
-claimed_by: "9fa0"
-claimed_at: 2026-10-25T19:42:30Z
+claimed_by:
+claimed_at:
 touches:
-  - "tests/*.test.sh"  # all 34: each sources the helper and sets TALLIED after its tally
-  - tests/lib/announce-abort.sh  # new
-  - tests/abort-announce.test.sh  # new
-  - CLAUDE.md  # Tests: one paragraph naming the block
+closed: 2026-10-25
 ---
 
 ## Problem
@@ -51,12 +48,12 @@ nothing else can notice the absence.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given any `tests/*.test.sh` copied to a scratch dir with an early `exit 1` injected
+- [x] AC1 — Given any `tests/*.test.sh` copied to a scratch dir with an early `exit 1` injected
   after its first assertion, when it runs, then stdout contains `ABORTED`, contains a count, and
   the exit status is non-zero. Guard: `tests/abort-announce.test.sh`. Red: today's bare `set -eu`.
-- [ ] AC2 — Given every file in `tests/`, an assertion that each installs the announce-on-abort
+- [x] AC2 — Given every file in `tests/`, an assertion that each installs the announce-on-abort
   trap passes. Guard: `tests/abort-announce.test.sh`. Red: removing the trap from one file.
-- [ ] AC3 — Given the unmodified suite, every file still prints its own tally and the whole-suite
+- [x] AC3 — Given the unmodified suite, every file still prints its own tally and the whole-suite
   command still exits 0. Guard: `tests/abort-announce.test.sh` plus the suite itself. Red: a trap
   that fires on the normal path.
 
