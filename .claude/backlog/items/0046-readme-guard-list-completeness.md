@@ -83,3 +83,32 @@ its neighbours in `tests/` and the README is a second place nobody is reminded o
   is the assertion of that set difference. Nothing to settle.
 - FR3 matters as much as FR2. A list checked in one direction only is the same defect 0043
   describes in the size gates, and there is no reason to ship the second instance of it knowingly.
+- 2026-10-25 (develop, 8fc8) — **The Problem's figures were stale; the FRs were not.** At capture the
+  block named 8 of 11 suites; at build it named 10 of 35, so 25 lines were added, not 3. FR1-FR4 carry
+  no figure and were built as written. AC4's "each of the three newly-added lines" is therefore a
+  subset of the 25 added: every one carries a description in the existing `path  # description`
+  shape, and the guard now asserts that for every line (`undescribed <path>`). The ten existing
+  descriptions were not audited (Out of scope).
+- **Where the guard lives (FR4):** `tests/citations.test.sh`, as a new section before its tally. A
+  README line naming a suite is a citation of a file, which is that suite's question. Following the
+  file's own rule that every function takes the tree root, `guard_block_lines <root>` and
+  `guard_list_gaps <root>` are driven against the real repo and against a fixture tree under the
+  suite's existing `$FIX`, so AC2 and AC3 stay guarded after the close rather than proved once:
+  fixture cases for complete, a removed name (`missing`), a name with no suite (`stale`) and a line
+  with no description (`undescribed`). The block is the fenced one after the line ending
+  `Run every guard:`.
+- **Mutations against the real README, RUN on `9f2f6cd`, each restored from `HEAD`:**
+
+  | AC clause | Mutation | Result |
+  |---|---|---|
+  | AC2 "a name is removed … fails reporting that filename" | deleted the `tests/graph-fields.test.sh` line | red: `missing tests/graph-fields.test.sh`, 50/1 |
+  | AC3 "a non-existent suite is added … reporting that name" | added `tests/no-such-suite.test.sh  # gone` | red: `stale tests/no-such-suite.test.sh`, 50/1 |
+  | control | none | 51/0 |
+  | AC1 "every file is named" | the real-tree case | red before the README edit, listing all 25 missing suites; green after |
+  | AC4 "carries a one-line description" | fixture line with no `#` | `undescribed tests/one.test.sh` reported |
+
+- **AC5 whole suite:** 35 files run. 34 green; `tests/sprint.test.sh` read 368 passed, 1 failed in
+  that run and 368/0 on an immediate rerun at `1521f78`. The run overlapped this session's
+  `FINDINGS.md` append, which took `.claude/backlog/.lock` and committed, and `sprint.test.sh` reads
+  the live `.claude/backlog/`. That cause is REASONED, not run — the failing case's name was not
+  captured, because the loop kept only each file's last line. Not this ticket's file.
