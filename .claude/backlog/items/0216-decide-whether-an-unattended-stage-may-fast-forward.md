@@ -2,8 +2,8 @@
 id: "0216"
 title: Decide whether an unattended stage may fast-forward a clean checkout that is only behind
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -18,9 +18,10 @@ expects:
   - skills/develop/SKILL.md
   - tests/remote-anchor.test.sh
   - CHANGELOG.md
-claimed_by: "60da"
-claimed_at: 2026-10-25T17:39:55Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-25
 ---
 
 ## Problem
@@ -91,15 +92,15 @@ safe to fast-forward.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `references/CONCURRENCY.md`, when the window opening on the heading `A behind checkout fast-forwards only over backlog commits` is read, then it holds each of `clean working tree`, `ahead of nothing`, `every incoming path under`, `--ff-only` and `under the backlog lock`, each on one source line, and the window is non-empty.
-- [ ] AC2 — Given that same window, when it is read, then it names the performer with `the stage that fetched` and says `attended and unattended alike`.
-- [ ] AC3 — Given that same window, when it is read, then it requires the report to carry `the SHA before and after` and `the incoming paths`.
-- [ ] AC4 — Given `retro` Step 3's existing window in `tests/remote-anchor.test.sh`, when the suite runs, then the window cites `A behind checkout fast-forwards only over backlog commits`, still holds `Behind the remote stops the pass`, and the old case `the pull is the user` is replaced by name with `any other pull is the user`.
-- [ ] AC5 — Given `develop`'s fetch window, when the suite runs, then it cites `A behind checkout fast-forwards only over backlog commits`, still holds `Behind the remote stops the session`, and holds `any other pull is the user`.
-- [ ] AC6 — Given the `retro` Step 3 and `develop` fetch windows, when the suite runs, then neither contains `every incoming path under` — the precondition lives only in `CONCURRENCY.md`.
-- [ ] AC7 — Given a fixture copy of `retro` Step 3 that says to fast-forward but omits the citation, when the citation case runs against it, then it fails; the fixture is part of the suite and the suite reports it as a passing negative.
-- [ ] AC8 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it exits 0, including `tests/remote-anchor.test.sh`, `tests/citations.test.sh` and `tests/skill-size.test.sh`.
-- [ ] AC9 — Given `CHANGELOG.md`, when `## Unreleased` is read, then it carries one note that a behind checkout whose incoming commits are backlog-only is fast-forwarded and reported rather than stopping the pass.
+- [x] AC1 — Given `references/CONCURRENCY.md`, when the window opening on the heading `A behind checkout fast-forwards only over backlog commits` is read, then it holds each of `clean working tree`, `ahead of nothing`, `every incoming path under`, `--ff-only` and `under the backlog lock`, each on one source line, and the window is non-empty.
+- [x] AC2 — Given that same window, when it is read, then it names the performer with `the stage that fetched` and says `attended and unattended alike`.
+- [x] AC3 — Given that same window, when it is read, then it requires the report to carry `the SHA before and after` and `the incoming paths`.
+- [x] AC4 — Given `retro` Step 3's existing window in `tests/remote-anchor.test.sh`, when the suite runs, then the window cites `A behind checkout fast-forwards only over backlog commits`, still holds `Behind the remote stops the pass`, and the old case `the pull is the user` is replaced by name with `any other pull is the user`.
+- [x] AC5 — Given `develop`'s fetch window, when the suite runs, then it cites `A behind checkout fast-forwards only over backlog commits`, still holds `Behind the remote stops the session`, and holds `any other pull is the user`.
+- [x] AC6 — Given the `retro` Step 3 and `develop` fetch windows, when the suite runs, then neither contains `every incoming path under` — the precondition lives only in `CONCURRENCY.md`.
+- [x] AC7 — Given a fixture copy of `retro` Step 3 that says to fast-forward but omits the citation, when the citation case runs against it, then it fails; the fixture is part of the suite and the suite reports it as a passing negative.
+- [x] AC8 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it exits 0, including `tests/remote-anchor.test.sh`, `tests/citations.test.sh` and `tests/skill-size.test.sh`.
+- [x] AC9 — Given `CHANGELOG.md`, when `## Unreleased` is read, then it carries one note that a behind checkout whose incoming commits are backlog-only is fast-forwarded and reported rather than stopping the pass.
 
 ## QA plan
 

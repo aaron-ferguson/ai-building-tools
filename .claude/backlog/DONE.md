@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0216 | Decide whether an unattended stage may fast-forward a clean checkout that is only behind | feature | unit | 2026-10-25 | [items/0216-decide-whether-an-unattended-stage-may-fast-forward.md](items/0216-decide-whether-an-unattended-stage-may-fast-forward.md) |
 | 0195 | Stop a criterion changing without its author by digesting it at write and checking it at close | bug | unit | 2026-10-25 | [items/0195-stop-develop-rewriting-acceptance-criteria-unseen.md](items/0195-stop-develop-rewriting-acceptance-criteria-unseen.md) |
 | 0191 | Read the first CHANGELOG.md version section against 0041's release-notes criterion | chore | verify | 2026-10-07 | [items/0191-read-the-first-changelog-version-section-against-0041-ac2.md](items/0191-read-the-first-changelog-version-section-against-0041-ac2.md) |
 | 0041 | Write release notes for what a work session delivered | feature | unit | 2026-10-07 | [items/0041-work-session-review-and-release-notes.md](items/0041-work-session-review-and-release-notes.md) |
