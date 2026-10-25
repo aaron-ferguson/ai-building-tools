@@ -34,7 +34,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0183 | Decide what checks that an NFR row's named guard can actually red on that requirement | develop | ready |  |
 | 0145 | Decide what an empty touches means to the scope report | design | in-progress |  |
 | 0146 | Decide when a required duplication earns a drift guard | design | in-progress |  |
-| 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | design | ready |  |
+| 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | design | in-progress |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
 | 0126 | Stop retro restating the by-hand lock rule it drifted from | develop | ready |  |
 | 0091 | Make a by-hand backlog write take the lock and prove its commit landed | develop | ready |  |

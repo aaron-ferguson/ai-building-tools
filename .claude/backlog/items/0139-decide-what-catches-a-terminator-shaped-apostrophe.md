@@ -3,7 +3,7 @@ id: "0139"
 title: Decide what catches an apostrophe that lands where a legitimate awk terminator goes
 type: bug
 next: design
-status: ready
+status: in-progress
 qa_level: verify
 qa_manual:
 size: m
@@ -15,8 +15,8 @@ relates: ["0077", "0089"]
 expects:
   - tests/backlog-scripts-installed.test.sh   # the AC8 scanner
   - references/CONCURRENCY.md                 # The four scripts
-claimed_by:
-claimed_at:
+claimed_by: "2ed8"
+claimed_at: 2026-10-25T22:41:03Z
 touches:
 ---
 ## Problem
