@@ -2,8 +2,8 @@
 id: "0139"
 title: Decide what catches an apostrophe that lands where a legitimate awk terminator goes
 type: bug
-next: design
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 ac_digest: AC1=6d585035 AC2=03a5c1bf AC3=2949833a AC4=1badbf48 AC5=5e27d9fe AC6=5cd77fe3
@@ -17,10 +17,9 @@ relates: ["0077", "0089"]
 expects:
   - tests/backlog-scripts-installed.test.sh   # the AC8 scanner
   - references/CONCURRENCY.md                 # The five scripts
-claimed_by: "2ed8"
-claimed_at: 2026-10-25T22:41:03Z
+claimed_by:
+claimed_at:
 touches:
-  - .claude/backlog/items/0139-decide-what-catches-a-terminator-shaped-apostrophe.md
 ---
 ## Problem
 
