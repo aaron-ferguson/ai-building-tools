@@ -3,7 +3,7 @@ id: "0195"
 title: Stop a criterion changing without its author by digesting it at write and checking it at close
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -26,8 +26,8 @@ expects:
   - tests/ac-digest.test.sh
   - tests/backlog-scripts-installed.test.sh
   - CHANGELOG.md
-claimed_by:
-claimed_at:
+claimed_by: "9eba"
+claimed_at: 2026-10-25T17:34:11Z
 touches:
 ---
 
