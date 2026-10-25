@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0196 | Ship a DONE.md template so a freshly scaffolded backlog can close a ticket | verify | ready |  |
+| 0196 | Ship a DONE.md template so a freshly scaffolded backlog can close a ticket | verify | in-progress |  |
 | 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | develop | ready |  |
 | 0175 | Decide what identifies a sprint across a suspension, and which mechanisms key off it | develop | ready |  |
 | 0172 | Decide how a script refusal and the skill that must satisfy it reach a session together | develop | ready |  |
