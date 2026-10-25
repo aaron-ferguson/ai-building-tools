@@ -2,8 +2,8 @@
 id: "0110"
 title: Decide the shape of a ticket whose first requirement can kill the rest
 type: chore
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -17,9 +17,10 @@ expects:
   - skills/queue/templates/item.md   # the optional Kill criteria section
   - skills/queue/SKILL.md            # Step 2, the gate-ticket rule
   - tests/gate-ticket.test.sh        # new; the guard on both
-claimed_by: "daba"
-claimed_at: 2026-10-25T17:44:54Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-25
 ---
 ## Problem
 
@@ -74,22 +75,22 @@ implement it and do not restate its reasoning.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/queue/templates/item.md`, when it is read, then it has a `## Kill criteria`
+- [x] AC1 — Given `skills/queue/templates/item.md`, when it is read, then it has a `## Kill criteria`
       section marked as only for a gate ticket, containing a `**Verdict:**` line and an
       `**If it clears:**` line. `tests/gate-ticket.test.sh`. **Red when:** any one of the heading, the
       Verdict line or the If-it-clears line is deleted while the other two stand — each reds its own
       assertion.
-- [ ] AC2 — Given `queue` Step 2, when the gate-ticket rule is read, then it says the decided work is
+- [x] AC2 — Given `queue` Step 2, when the gate-ticket rule is read, then it says the decided work is
       not filed as FRs or as a `blocked_by` dependent, and gives `close` freeing a dependent whatever
       the verdict as the reason. `tests/gate-ticket.test.sh`. **Red when:** the not-filed sentence is
       deleted, or the reason sentence is deleted, each on its own.
-- [ ] AC3 — Given `queue` Step 2, when the rule is read, then it states a gate ticket's criteria assert
+- [x] AC3 — Given `queue` Step 2, when the rule is read, then it states a gate ticket's criteria assert
       the verdict was recorded, not that it was favourable. `tests/gate-ticket.test.sh`. **Red when:**
       that sentence is deleted.
-- [ ] AC4 — Given `queue` Step 2, when the rule is read, then it requires the `FINDINGS.md` entry on
+- [x] AC4 — Given `queue` Step 2, when the rule is read, then it requires the `FINDINGS.md` entry on
       `cleared` and cites `docs/decisions/004`. `tests/gate-ticket.test.sh`. **Red when:** the
       FINDINGS sentence is deleted, or the `004` citation is deleted, each on its own.
-- [ ] AC5 — Given the template and Step 2 as shipped, when `0104`'s subject (preserved at `7764732`) is
+- [x] AC5 — Given the template and Step 2 as shipped, when `0104`'s subject (preserved at `7764732`) is
       rewritten as a gate ticket against them in a scratch file, then it needs no heading, field or
       condition the template does not provide, and none of its ACs is conditional on the verdict.
       **Red when:** the rewrite has to add an inline "only if it clears" clause or an AC asserting the
