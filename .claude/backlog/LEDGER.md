@@ -341,3 +341,43 @@ RATIO verify_usd_per_ticket unbatched session 5720f253 = 0.00
   denominator 1 ticket(s) (run-20261004T232135Z.jsonl outcome events @ 2026-10-07T04:36:41Z)
 FINDINGS parked 7 (run-20261004T232135Z.jsonl outcome events @ 2026-10-07T04:36:41Z)
 RETRO consumed 0 produced 0 (run-20261004T232135Z.jsonl outcome events @ 2026-10-07T04:36:41Z)
+
+## sprint run-20261025T164527Z -- ended 2026-10-25T21:01:02Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 5 | 6 | confirmed scope @ 2026-10-25T21:01:32Z |
+| wall_clock_min | 1380 | 250 | LEDGER.md 8 recorded sprint(s) over 39 ticket(s), 1 excluded (no ticket count), 6 predate the tail split @ 2026-10-25T16:46:04Z, actual from run-20261025T164527Z.jsonl event timestamps |
+| tokens | 28584006 | 37011339 | LEDGER.md 8 recorded sprint(s) over 39 ticket(s), 1 excluded (no ticket count), 6 predate the tail split @ 2026-10-25T16:46:04Z — partial: 4 unpriced turn(s) |
+| usd | 33.80 | 17.22 | LEDGER.md 8 recorded sprint(s) over 39 ticket(s), 1 excluded (no ticket count), 6 predate the tail split @ 2026-10-25T16:46:04Z — partial: 4 unpriced turn(s) |
+| tail_tokens | no prior | 0 | harvest-usage.sh over 0 session id(s) @ 2026-10-25T21:01:32Z |
+| tail_usd | no prior | 0.00 | harvest-usage.sh over 0 session id(s) @ 2026-10-25T21:01:32Z |
+
+| Window | Stage | Elapsed min | Context tokens | USD |
+|---|---|---|---|---|
+| 910ad043 | design | 2.1 | 744974 | 0.93 |
+| ae083246 | develop | 38.7 | 19842719 | 7.46 |
+| 0a863faf | verify | 13.2 | 5792432 | 3.05 |
+| 9285f1bd | develop | 173.7 | 8961356 | 4.61 |
+| e685f1cd | verify | 15.7 | 1669858 | 1.16 |
+| total | 5 window(s) | 243.4 | 37011339 | 17.21 |
+| average | per window | 48.7 | 7402267 | 3.44 |
+WINDOWS elapsed is first to last turn per transcript and excludes start-up (harvest-usage.sh --by-session over 5 session id(s) @ 2026-10-25T21:01:32Z)
+CLOSED 0195 0216 0110 0169 0046 (run-20261025T164527Z.jsonl outcome events @ 2026-10-25T21:01:32Z)
+TICKET 0195 verdict pass title Stop a criterion changing without its author by digesting it at write and checking it at close (run-20261025T164527Z.jsonl outcome events, DONE.md @ 2026-10-25T21:01:32Z)
+TICKET 0216 verdict pass title Decide whether an unattended stage may fast-forward a clean checkout that is only behind (run-20261025T164527Z.jsonl outcome events, DONE.md @ 2026-10-25T21:01:32Z)
+TICKET 0110 verdict pass title Decide the shape of a ticket whose first requirement can kill the rest (run-20261025T164527Z.jsonl outcome events, DONE.md @ 2026-10-25T21:01:32Z)
+TICKET 0169 verdict closed title Make a test file announce an abort instead of exiting silently under set -eu (run-20261025T164527Z.jsonl outcome events, DONE.md @ 2026-10-25T21:01:32Z)
+TICKET 0046 verdict pass title Make the README guard list provably complete (run-20261025T164527Z.jsonl outcome events, DONE.md @ 2026-10-25T21:01:32Z)
+PER_TICKET whole-run USD 3.44, develop-and-verify USD 3.26 over 5 closed ticket(s), beside MEASUREMENT.md whole-run USD 5.71, develop-and-verify USD 4.23 as at 2026-08-30 (harvest-usage.sh over 5 session id(s), run-20261025T164527Z.jsonl outcome events, MEASUREMENT.md read @ 2026-10-25T21:01:32Z)
+
+GATE develop 4 ticket(s) session ae083246: predicted USD 18.14 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-10-25T21:01:32Z) observed USD 7.46 (harvest-usage.sh over 1 session id(s) @ 2026-10-25T21:01:32Z)
+GATE develop 2 ticket(s) session 9285f1bd: predicted USD 10.08 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-10-25T21:01:32Z) observed USD 4.61, partial: 4 unpriced turn(s) (harvest-usage.sh over 1 session id(s) @ 2026-10-25T21:01:32Z)
+RATIO verify_usd_per_ticket batched session 0a863faf = 1.02
+  numerator USD 3.05 (harvest-usage.sh over 1 session id(s) @ 2026-10-25T21:01:32Z)
+  denominator 3 ticket(s) (run-20261025T164527Z.jsonl outcome events @ 2026-10-25T21:01:32Z)
+RATIO verify_usd_per_ticket unbatched session e685f1cd = 1.16
+  numerator USD 1.16 (harvest-usage.sh over 1 session id(s) @ 2026-10-25T21:01:32Z)
+  denominator 1 ticket(s) (run-20261025T164527Z.jsonl outcome events @ 2026-10-25T21:01:32Z)
+DESIGN 0216 session 910ad043 sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-10-25T21:01:32Z) observed USD 0.93 (harvest-usage.sh over 1 session id(s) @ 2026-10-25T21:01:32Z)
+FINDINGS parked 3 (run-20261025T164527Z.jsonl outcome events @ 2026-10-25T21:01:32Z)
