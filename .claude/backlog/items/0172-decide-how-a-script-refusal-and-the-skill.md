@@ -3,7 +3,7 @@ id: "0172"
 title: Decide how a script refusal and the skill that must satisfy it reach a session together
 type: debt
 next: design
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-09-21
@@ -15,8 +15,8 @@ expects:
   - skills/develop/SKILL.md
   - skills/retro/SKILL.md
   - skills/queue/templates/close
-claimed_by:
-claimed_at:
+claimed_by: "dcfa"
+claimed_at: 2026-10-25T22:31:45Z
 touches:
 ---
 
