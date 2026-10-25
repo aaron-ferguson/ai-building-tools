@@ -3,7 +3,7 @@ id: "0183"
 title: Decide what checks that an NFR row's named guard can actually red on that requirement
 type: bug
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -16,8 +16,8 @@ expects:
   - tests/falsifiable-acs.test.sh
   - skills/verify/SKILL.md
   - skills/queue/templates/item.md
-claimed_by:
-claimed_at:
+claimed_by: "a32e"
+claimed_at: 2026-10-25T22:36:10Z
 touches:
 ---
 
