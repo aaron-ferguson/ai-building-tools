@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0046 | Make the README guard list provably complete | bug | unit | 2026-10-25 | [items/0046-readme-guard-list-completeness.md](items/0046-readme-guard-list-completeness.md) |
 | 0169 | Make a test file announce an abort instead of exiting silently under set -eu | bug | unit | 2026-10-25 | [items/0169-make-a-test-file-announce-an-abort.md](items/0169-make-a-test-file-announce-an-abort.md) |
 | 0110 | Decide the shape of a ticket whose first requirement can kill the rest | chore | verify | 2026-10-25 | [items/0110-shape-of-a-ticket-with-a-killing-gate.md](items/0110-shape-of-a-ticket-with-a-killing-gate.md) |
 | 0216 | Decide whether an unattended stage may fast-forward a clean checkout that is only behind | feature | unit | 2026-10-25 | [items/0216-decide-whether-an-unattended-stage-may-fast-forward.md](items/0216-decide-whether-an-unattended-stage-may-fast-forward.md) |

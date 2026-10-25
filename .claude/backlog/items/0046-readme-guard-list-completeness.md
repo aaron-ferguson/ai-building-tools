@@ -2,8 +2,8 @@
 id: "0046"
 title: Make the README guard list provably complete
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: s
 created: 2026-08-25
@@ -14,9 +14,10 @@ relates: ["0027", "0028"]
 expects:
   - README.md
   - tests/citations.test.sh
-claimed_by: "637e"
-claimed_at: 2026-10-25T20:44:30Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-25
 ---
 
 ## Problem
@@ -50,15 +51,15 @@ its neighbours in `tests/` and the README is a second place nobody is reminded o
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `README.md`, when its guard block is compared against `ls tests/*.test.sh`, then
+- [x] AC1 — Given `README.md`, when its guard block is compared against `ls tests/*.test.sh`, then
   every file is named.
-- [ ] AC2 — Given the new guard, when a name is removed from `README.md`'s block, then the suite
+- [x] AC2 — Given the new guard, when a name is removed from `README.md`'s block, then the suite
   fails reporting that filename.
-- [ ] AC3 — Given the new guard, when a name for a non-existent suite is added to the block, then
+- [x] AC3 — Given the new guard, when a name for a non-existent suite is added to the block, then
   the suite fails reporting that name.
-- [ ] AC4 — Given each of the three newly-added lines, when read, then it carries a one-line
+- [x] AC4 — Given each of the three newly-added lines, when read, then it carries a one-line
   description in the same shape as the eight already there.
-- [ ] AC5 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
+- [x] AC5 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs,
   then every suite passes.
 
 ## QA plan
