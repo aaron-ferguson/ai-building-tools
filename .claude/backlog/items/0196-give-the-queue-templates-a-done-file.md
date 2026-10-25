@@ -78,3 +78,38 @@ Unit: the configured suite.
 - Review checklist: the test is one flat sequence, no nesting beyond a case/if; abort block copied
   byte-identical from `close.test.sh`. Nothing surprised me beyond the README guard, which is an
   existing documented guard rather than a finding.
+
+## QA evidence
+
+Verified 2026-10-25 [7074], verify, at `qa_level: unit`, against the repo copy (the change is a
+template plus a test; `close` executed is the repo's `skills/queue/templates/close`, copied by the test).
+
+Conventions: ../ai-building-conventions
+
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`; every file
+reports) — 36 of 36 files exit 0. `tests/scaffold-close.test.sh`: `3 passed, 0 failed`.
+
+AC digest: `ac_digest absent — unverifiable` (`./next --ac-digest 0196 --check`).
+
+Clause table:
+
+| AC | clause | kind |
+|---|---|---|
+| AC1 | "FR2's test passes" — scaffolds from `skills/queue/templates/` alone, captures a row, `./close` moves it into `DONE.md` with exit 0 | Given |
+| AC1 | "delete `templates/DONE.md`" | predicate (mutation) |
+| AC1 | "`close` exits non-zero naming DONE.md" | object |
+| AC2 | "change one header cell in `templates/DONE.md` that `close` keys on" | predicate — quantifier over the six keyed cells, swept |
+| AC2 | "the test fails" | object |
+
+| Check | How | Result |
+|---|---|---|
+| AC1 | ran `tests/scaffold-close.test.sh` | `3 passed, 0 failed` |
+| AC1 red | `mv skills/queue/templates/DONE.md` away, run test, `mv` back | `1 passed, 2 failed`; close: `no DONE.md at …/.claude/backlog/DONE.md — nowhere to move the row to` (non-zero, names DONE.md). Also shows the test reads the template, not this repo's DONE.md |
+| AC2 red (sweep) | `sed` each of `ID`, `Title`, `Type`, `QA`, `Closed`, `Item` → `X<name>` in the template (diff non-empty each time), run, `git checkout --` that path | all six: `1 passed, 2 failed` |
+| Control | test after restores; `git status --porcelain` empty | `3 passed, 0 failed`, tree clean |
+| FR1 | template header vs `templates/close` writer arms (lines 812–822) | six cells match the six arms |
+| NFRs | none declared; always-on pass on the diff (test + template + README line) | no secrets, no company material, fixture id 9901 / "Scaffold fixture row" unmistakable, abort block present (`tests/abort-announce.test.sh` green) |
+
+Evidence set: `skills/queue/templates/DONE.md`, `skills/queue/templates/close`,
+`skills/queue/templates/*` (copied by the test), `tests/scaffold-close.test.sh`, `README.md`.
+Dirty set at Step 2: empty; at verdict: empty. Intersection empty — not advisory.
