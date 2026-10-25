@@ -19,6 +19,7 @@ claimed_by: "da05"
 claimed_at: 2026-10-25T22:44:34Z
 touches:
   - skills/queue/templates/DONE.md
+  - tests/scaffold-close.test.sh   # new
 ---
 
 ## Problem
