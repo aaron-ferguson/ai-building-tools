@@ -2,8 +2,8 @@
 id: "0145"
 title: Decide what an empty touches means to the scope report, and record it where the field is read
 type: debt
-next: design
-status: in-progress
+next: develop
+status: ready
 qa_level: verify
 size: m
 created: 2026-09-09
@@ -24,8 +24,8 @@ expects:
   - tests/handoff.test.sh
   - tests/claim.test.sh
 ac_digest: AC1=d17c382c AC2=2d4130ed AC3=d3afa06b AC4=90afc7eb AC5=8f6b7035 AC6=65bde2f6 AC7=06419276 AC8=11c26142
-claimed_by: "6e1a"
-claimed_at: 2026-10-25T22:38:38Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
