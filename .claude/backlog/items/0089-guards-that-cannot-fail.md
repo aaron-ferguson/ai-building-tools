@@ -181,3 +181,50 @@ Found while verifying `0085` (pointer: `tests/cost-by-category.test.sh`, item `0
      scans the directory it lives in.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Twelve findings-buffer entries (2026-09-10..12) are more instances of this ticket's class, each found by a mutation that did not redden: `tests/orchestrate.test.sh` (now `sprint.test.sh`) `section()` matching a heading as a prefix, so an absence assertion over an empty extraction is green forever; a `says` token satisfied by a code fence in the same section; `tests/batching.test.sh` `binds()` spanning a sentence break; `tests/falsifiable-acs.test.sh` `window()` whose `!first` clause can never fire (`first = 1` is the fix); `tests/sprint-ledger.test.sh` AC6 awk reporting only inside its last branch, so a missing denominator is invisible (needs an `END` block); `assert_contains "DISPATCH  verify 0102"` passing on a batch (a list assertion is an equality); `paired()` satisfied by a default estimate the tool forges (anchor on the source, not the figure); an error message too shredded to assert on inviting a loosened assertion; `qa-level-once` not seeing a stale *Why that level* rationale; `add_item_blank_scope` silently setting `claimed_by`; fixture titles describing a state their bytes do not build; and low fixture ids colliding with real ids in `develop` Step 2's own-id grep. The general forms are `testing-conventions.md` material; the instances are this sweep's.
 - **2026-10-06 (retro, run-20261004T232135Z tail, absorbed from FINDINGS.md).** Two more instances, parked by verify 0161 (2026-09-25): `tests/handoff.test.sh` FR2 "touches: entries written at column 0 are cleared too" calls `assert_no_item_line … '- src/two.ts'`, a pattern beginning with `-`, so BSD grep prints `invalid option --` and the case reports `ok` whatever the file holds — needs `grep -e`/`--` or a fixed-string compare, and a mutation proving it reddens. And `tests/backlog-scripts-installed.test.sh`: removing `reopen` from `SCRIPTS=` stays green (45→37 passed, 0 failed), because `handoff.test.sh` pins only the prefix `SCRIPTS="next claim close handoff`; no guard notices a script dropping out of the install check.
+- **2026-10-25 — develop (aab8): a first slice, released back to `develop` unfinished.** The sweep
+  is larger than one session: `tests/` now holds **34** files, not the 21 FR4 and `expects:` name
+  (a stale figure — the loop is over whatever `tests/*.test.sh` holds, so the contract stands), and
+  FR5's guard cannot land until FR1/FR2 are complete, or it reds the current tree. What this slice did:
+  - **AC2 — already discharged by `df07072`, proven now (run).** The `*10000*` assertion was
+    re-anchored to an exact `marg/turn` cell compare under 0085. The AC's own mutation, in a scratch
+    copy, `turnb 2 110000` → `109999` (protocol's appended figure 10000 → 9999): `AC10 — protocol
+    reports a marginal footprint of 9999` red, 27 passed / 2 failed; control 29/0.
+  - **`tests/sprint.test.sh` — re-anchored in `4766607` (examined: its six `case "$out"` hits).**
+    AC13's four harvest assertions now read their own line's field (`bound_field FLOOR|GROWTH|TURNS`,
+    `bound_line TURNS`) and compare for equality; AC16's two `next develop` assertions grep the
+    `^TAKE      000n ` line. Mutations on the SUBJECT, scratch root, each adding exactly its own red
+    to the scratch control (the scratch root is not a git checkout, so 8 unrelated `0165 AC2` cases
+    fail there at baseline; the real-tree suite is green):
+    - `tools/harvest-usage.sh` growth ×10 (prints 15000) → `the GROWTH line does not read 1500`.
+      **The old `*"GROWTH"*1500*` stayed green on 15000 — run** — the FR2 class.
+    - floor + 4500 (prints 24500, the last turn) → `the FLOOR line does not read 20000`.
+    - TURNS `%.1f` → `%.2f` (prints 2.00) → `the TURNS line does not read 2.0`. **The old
+      `*"TURNS"*2.0*` stayed green on 2.00 — run.**
+    - `against a budget of` → `against a limit of` → `nothing to judge it against`.
+    - `next` printing `SKIP      0002` in place of `TAKE` → `did not offer the free row`; the old
+      `*0002*` would match that SKIP line (reasoned from the pattern).
+    - The `0001` negative: disabling the held-row skip in the take loop alone did NOT red — the
+      row is defended by a second mechanism too (the double-defence case recorded above, run).
+      Proved falsifiable instead by injecting `NOTE … \nTAKE      0001 | injected` ahead of the real
+      TAKE → `the orphaned claim on 0001 was offered as takeable`. The old prefix match
+      `"TAKE      0001"*` would have missed that line behind the NOTE (reasoned).
+  - **Examined-clean or examined-and-done so far:** `tests/cost-by-category.test.sh` (AC2 only —
+    its other `case "$OUT"` hits at lines 115/119/187 are not yet examined), `tests/sprint.test.sh`
+    (the six `case "$out"` hits only; its other whole-output matches are not yet examined).
+  - **Remaining worklist, from the loop rather than from reading** (run 2026-10-25):
+    - AC1 — `grep -n 'case "\$out"' tests/*.test.sh` still hits 66 times: `citations` 18,
+      `reporting` 16, `last-line` 10, `money-in-skill-prose` 8, `skill-size` 6, `reference-size` 5,
+      `external-feedback` 3. Most needles there are a complete, specific line (e.g. `'FAIL
+      skills/develop/SKILL.md cites "…", which is not a rule'`), which cannot be satisfied by
+      unrelated text — but AC1 as written asks for every hit to be against an extracted line, so
+      each still needs the `grep`-the-line form and a mutation.
+    - FR2 — numeric needles inside a glob, `grep -nE '^\s*\*[^)]*[0-9]{2,}[^)]*\*\)' tests/*.test.sh`:
+      ~40 hits outside `sprint.test.sh`, densest in `sprint-ledger` (`*2.00*`, `*10.00*`, `*0.00*`
+      — each a substring of a larger figure the same output can carry), `measurement`
+      (`*"30.00"*`, `*"35.87"*`), `cost-by-category` (`*0.2550*`, `*0.0525*`), `close-by`.
+    - FR1's whole-FILE class (`grep … "$FILE"` over a whole document) has not been looped yet.
+    - FR5 last, once the tree carries no instance for it to red on.
+  - **Suggest `queue` split this row** (only `queue` may): one row per class above (AC1 `case
+    "$out"`, FR2 numeric needles, FR1 whole-file, FR5 guard), each a sitting, with FR5 `blocked_by`
+    the other three. As one `l` it has now been claimed once and released partly done.
+
