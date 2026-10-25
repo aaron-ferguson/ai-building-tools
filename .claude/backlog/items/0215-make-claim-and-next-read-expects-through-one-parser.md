@@ -54,14 +54,14 @@ gives `expects:`/`touches:` none, so the writers — `queue` and `design` hand-o
 
 ## Acceptance criteria
 
-- AC1 — Given an item whose `expects:` is an inline `["a", "b"]` list, `./claim <id>` seeds
+- [ ] AC1 — Given an item whose `expects:` is an inline `["a", "b"]` list, `./claim <id>` seeds
   `touches:` with `a` and `b`, asserted in `tests/claim.test.sh`.
-- AC2 — Given the same item in block form and in inline form, `./next develop`'s EXPECTS line and
+- [ ] AC2 — Given the same item in block form and in inline form, `./next develop`'s EXPECTS line and
   `./claim`'s seeded `touches:` name the same paths, asserted in one test over both forms.
-- AC3 — Given an item whose `expects:` is `a.ts, b.ts`, either `./next develop` prints both paths or
+- [ ] AC3 — Given an item whose `expects:` is `a.ts, b.ts`, either `./next develop` prints both paths or
   `./next --drift` names that item and `expects:`; `EXPECTS not predicted` is not printed for it.
   Asserted in `tests/next.test.sh`.
-- AC4 — `templates/item.md`'s `expects:` comment states one written form.
+- [ ] AC4 — `templates/item.md`'s `expects:` comment states one written form.
 
 ## Notes & decisions
 
