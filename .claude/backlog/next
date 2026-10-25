@@ -308,15 +308,19 @@ findings_sources() {
 
 usage() {
   cat <<'USAGE'
-usage: ./next [<stage> | --waiting | --drift | --findings | --drive [--propose] [--completed <stage>[:<id>]] [--started <id>]… [--scope <id>]… | --help]
+usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --findings | --drive [--propose] [--completed <stage>[:<id>]] [--started <id>]… [--scope <id>]… | --help]
 
   ./next             counts by stage and by status, plus anything another session holds
   ./next <stage>     the first takeable row for that stage, and its size
                      stages: queue | design | develop | verify
   ./next --waiting   every waiting row with the question it is waiting on
   ./next --drift     every row that disagrees with its blocked_by or with its own item —
-                     stage, status, a claim the row does not match either way, a missing item file;
-                     one line per row, exits 1 if any
+                     stage, status, a claim the row does not match either way, a missing item file,
+                     a stamped ac_digest the criteria no longer match; one line per row, exits 1 if any
+  ./next --ac-digest <id> [--check]
+                     the digest of the item's acceptance criteria, one key per ACn, as queue and
+                     design stamp it; --check compares it with the stamped ac_digest: and exits 1
+                     naming each criterion changed, added or removed
   ./next --findings  how many entries FINDINGS.md holds, and the TWO limits a driver gates on:
                      the count against findings_threshold, and the oldest entry's age in completed
                      sprints against findings_max_sprints. Either one crossed dispatches the tail
@@ -407,6 +411,105 @@ if [ "${1:-}" = "--findings" ]; then
     echo "the count above is not trustworthy: an entry matches neither '- <date>' nor '- **<date>'" >&2
     exit 1
   }
+  exit 0
+fi
+
+# --- --ac-digest ------------------------------------------------------------------------------
+# The ONE definition of what an acceptance criterion's digest is (0195 FR1). `close` invokes this
+# rather than carrying a copy, and `--drift` below calls the same functions: a second copy of the
+# normalisation is a second contract, and the two would disagree the first time one was edited.
+#
+# A criterion is identified by its `ACn` label, on a checkbox line (`- [ ] ACn`) or a struck line
+# (`~~ACn`), and its text runs to the next label line or the section's end. Normalised here and
+# nowhere else:
+#   - the tick is dropped, so `close` ticking and `reopen` unticking are not edits to the contract;
+#   - every whitespace run, newlines included, is one space, so a rewrap is not an edit;
+#   - prose above the first label is excluded — it is the template's instructions, not the contract.
+# `cksum` because POSIX guarantees it and it prints the same CRC on macOS and Linux. This detects a
+# unilateral edit; it is not a tamper control — a session that edits and restamps defeats it.
+ac_digest_of() {
+  awk '
+    function flush() {
+      if (label == "") return
+      gsub(/[ \t]+/, " ", text); sub(/^ /, "", text); sub(/ $/, "", text)
+      printf "%s\t%s\n", label, text
+      label = ""; text = ""
+    }
+    /^## / { flush(); in_ac = ($0 ~ /^## Acceptance criteria/); next }
+    !in_ac { next }
+    /^- \[[ xX]\][ \t]+AC[0-9]+([^0-9]|$)/ || /^~~AC[0-9]+([^0-9]|$)/ {
+      flush()
+      line = $0
+      sub(/^- \[[ xX]\][ \t]+/, "", line)
+      label = line; sub(/^~~/, "", label); sub(/[^A-Z0-9].*$/, "", label)
+      text = line
+      next
+    }
+    label != "" { text = text " " $0 }
+    END { flush() }
+  ' "$1" | while IFS="$(printf '\t')" read -r acd_label acd_text; do
+    printf '%s=%08x\n' "$acd_label" "$(printf '%s' "$acd_text" | cksum | awk '{ print $1 }')"
+  done | awk '{ printf "%s%s", (NR > 1 ? " " : ""), $0 }'
+}
+
+# The keys of a stamped digest against a computed one, as `changed: AC2; added: AC3; removed: AC4`
+# — empty when they agree. By KEY, never by string: a stamp written in another order still matches,
+# and a criterion present on only one side is named as added or removed rather than missed (0195
+# FR4). `--drift` and `close` both report through this, so the two name a mismatch identically.
+ac_digest_diff() {
+  awk -v stamped="$1" -v computed="$2" '
+    function load(s, arr,   n, i, kv, parts) {
+      n = split(s, parts, " ")
+      for (i = 1; i <= n; i++) { split(parts[i], kv, "="); arr[kv[1]] = kv[2]; order[++norder] = kv[1] }
+    }
+    function add(kind, key) { list[kind] = list[kind] (list[kind] == "" ? "" : " ") key }
+    BEGIN {
+      load(stamped, s); load(computed, c)
+      for (i = 1; i <= norder; i++) {
+        k = order[i]
+        if (seen[k]++) continue
+        if (!(k in c)) add("removed", k)
+        else if (!(k in s)) add("added", k)
+        else if (s[k] != c[k]) add("changed", k)
+      }
+      out = ""
+      if (list["changed"] != "") out = "changed: " list["changed"]
+      if (list["added"] != "")   out = out (out == "" ? "" : "; ") "added: " list["added"]
+      if (list["removed"] != "") out = out (out == "" ? "" : "; ") "removed: " list["removed"]
+      printf "%s", out
+    }
+  '
+}
+
+# `--ac-digest <id>` prints the digest line `queue` and `design` stamp. `--ac-digest <id> --check`
+# compares it with the item's stamped `ac_digest:` and is what `close` runs: exit 0 and `ac_digest
+# matches` on agreement, exit 1 naming the criteria on a mismatch, and on an absent stamp exit 0
+# with `ac_digest absent — unverifiable` — absent is neither drift nor a match (0195 FR8).
+if [ "${1:-}" = "--ac-digest" ]; then
+  [ -n "${2:-}" ] || { echo "usage: ./next --ac-digest <id> [--check]" >&2; exit 2; }
+  case "${3:-}" in ''|--check) : ;; *) echo "usage: ./next --ac-digest <id> [--check]" >&2; exit 2 ;; esac
+  acd_item="$(ls "$DIR/items/$2-"*.md 2>/dev/null | head -1 || true)"
+  [ -n "$acd_item" ] || { echo "no item file for $2 — items/$2-*.md resolves to nothing" >&2; exit 1; }
+  acd_computed="$(ac_digest_of "$acd_item")"
+  if [ -z "${3:-}" ]; then
+    printf 'ac_digest: %s\n' "$acd_computed"
+    exit 0
+  fi
+  acd_stamped="$(awk '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && /^ac_digest:/ { sub(/^ac_digest: */, ""); sub(/[ \t]+$/, ""); print; exit }
+  ' "$acd_item")"
+  if [ -z "$acd_stamped" ]; then
+    printf '%s: ac_digest absent — unverifiable: no stamp to compare the criteria against\n' "$2"
+    exit 0
+  fi
+  acd_diff="$(ac_digest_diff "$acd_stamped" "$acd_computed")"
+  if [ -n "$acd_diff" ]; then
+    printf '%s: ac_digest differs from the criteria on disk — %s\n' "$2" "$acd_diff"
+    exit 1
+  fi
+  printf '%s: ac_digest matches\n' "$2"
   exit 0
 fi
 
@@ -801,7 +904,7 @@ fi
 # --- --drift ----------------------------------------------------------------------------------
 # A row and the item behind it are two records of one ticket, and only one of them is authoritative
 # on each field. This names every row where the two disagree, so the staleness is visible without
-# opening a ticket. Five classes, and this comment is the one place they are listed — `usage()`
+# opening a ticket. Seven classes, and this comment is the one place they are listed — `usage()`
 # names them in a line, and the prose that cites this mode cites the contract rather than copying
 # it (0115 FR6):
 #
@@ -816,8 +919,11 @@ fi
 #      ticket
 #   6. a row NOT at `in-progress` over a HELD item                — the mirror of 5, and the
 #      direction that loses work rather than time: the row reads takeable while somebody is
-#      building it (0140). Reported last of the six so a row disagreeing on `status:` as well is
-#      one line, class 4's, rather than two
+#      building it (0140). Reported after 4 so a row disagreeing on `status:` as well is one line,
+#      class 4's, rather than two
+#   7. a stamped `ac_digest:` that differs from the criteria on disk (0195 FR4) — naming each
+#      criterion changed, added or removed. An ABSENT stamp is not this class: every backlog holds
+#      items written before the field, and `--drive` would stop on exit 4 for a state nobody caused
 #
 # One line per row, the classes in that order: a second line about the same row is noise, and the
 # stale `blocked` cache is the more actionable reading whenever it and 4 both fire. It exits
@@ -867,6 +973,11 @@ drift_report() {
     elif [ "$written" != "in-progress" ] && dtok="$(held_by "$id")"; then
       printf 'DRIFT     %s | row Status %s, item claimed_by: %s — held, and the row does not say so\n' \
         "$id" "$written" "$dtok"
+      dr_drifted=1
+    elif dstamp="$(fm "$item" ac_digest)" && [ -n "$dstamp" ] &&
+         ddiff="$(ac_digest_diff "$dstamp" "$(ac_digest_of "$item")")" && [ -n "$ddiff" ]; then
+      printf 'DRIFT     %s | ac_digest differs from the criteria on disk — %s — a person decides whether the new text is agreed\n' \
+        "$id" "$ddiff"
       dr_drifted=1
     fi
   done

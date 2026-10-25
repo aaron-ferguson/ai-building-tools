@@ -505,6 +505,37 @@ if [ "$ac_bullets" -eq 0 ] && [ "$ac_content" -gt 0 ]; then
   exit 1
 fi
 
+# --- the criteria the author agreed, against the criteria on disk (0195) -----------------------
+# `verify` checks criteria literally against whatever text is on disk, so a criterion rewritten by
+# the stage being held to it passes as edited and the contract moves without its author. The
+# author's write path stamps `ac_digest:`; this compares it, BEFORE anything is written, and covers
+# `close_by: develop`, where no verify session exists to notice.
+#
+# The digest is obtained by INVOKING the sibling `next`, never computed here: the normalisation
+# has one definition, and a copy in this file would be a second contract (0195 FR5). Reading the
+# stamp to learn whether one exists is a frontmatter read, not that definition.
+#
+# An ABSENT stamp closes and says `unverifiable` — an item written before the field carries none,
+# and refusing those would block every close in every installed backlog. A present stamp with no
+# `next` to check it against refuses: a control that cannot run blocks rather than allows.
+AC_DIGEST_NOTE=""
+if [ -z "$(fm_value "$item" ac_digest)" ]; then
+  AC_DIGEST_NOTE="$ID: ac_digest absent — unverifiable: closed without a stamp to check the criteria against"
+else
+  [ -x "$DIR/next" ] || {
+    echo "refusing to close $ID: it carries an ac_digest: stamp and there is no executable $DIR/next to check it" >&2
+    echo "install next beside close (queue Step 0) — nothing was changed" >&2
+    exit 1
+  }
+  if ! acd_out="$("$DIR/next" --ac-digest "$ID" --check 2>&1)"; then
+    echo "refusing to close $ID: its acceptance criteria are not the text the author stamped" >&2
+    echo "  $acd_out" >&2
+    echo "a criterion changed by anyone but its author is a stale contract, never a pass — hand it" >&2
+    echo "to queue with the proposed text in Notes & decisions; nothing was ticked, moved or committed" >&2
+    exit 1
+  fi
+fi
+
 # --- the sixth refusal: a verify close that records no conventions (0160) ----------------------
 # Counted BEFORE anything is written, like the two above, so the refusal leaves the tree as it
 # found it.
@@ -937,6 +968,7 @@ until git -C "$DIR" commit -q -m "Close $ID [$TOKEN]" -m "$COAUTHOR" -- "$QUEUE"
 done
 
 echo "closed $ID — $title"
+[ -z "$AC_DIGEST_NOTE" ] || echo "$AC_DIGEST_NOTE"
 [ -z "$SCOPE_NOTE" ] || echo "$SCOPE_NOTE"
 [ -z "$FREED" ]   || echo "reconciled (no longer blocked):$FREED"
 [ -z "$SKIPPED" ] || echo "left alone, held by another session:$SKIPPED"
