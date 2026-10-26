@@ -147,3 +147,40 @@ AC6's deletions and watch each red; run AC1 and AC2 against fixtures built under
     | AC5 verify Step 4 sentence, in Step 4's window | `0183 AC5` (`says`, exactly once) | sentence line deleted → 1 FAIL |
     | AC6 template preamble sentence, in the NFR section | `0183 AC6` (`says`) | bold sentence removed → 1 FAIL |
     | AC7 live backlog green, 0177 re-specified, whole suite green | AC7 scan | observed red on 0177 before `1f30316`, green after; suite green at `f288a69` |
+
+## QA evidence
+
+**2026-10-25 — verify, token f299. PASS.**
+
+Conventions: ../ai-building-conventions
+Level: `unit` (frontmatter; QA plan agrees). Command, verbatim, in its reporting form `commands.unit_by_file`:
+`for t in tests/*.test.sh; do "$t" || true; done` — 37 files, 37 tallies reading `N passed, 0 failed`, none ABORTED.
+`./next --ac-digest 0183 --check` → `0183: ac_digest matches`. `git status --porcelain` at Step 2: empty.
+Copy executed: the repo's `tests/` and skill files under test; the session's own instructions came from the installed 0.9.43 verify skill.
+
+Clause table (every mutation run on committed files by this pass, restored by path with `git checkout -- <path>`; control after: `tests/item-nfr-red.test.sh` 12 passed, 0 failed; `tests/falsifiable-acs.test.sh` 56 passed, 0 failed):
+
+| AC | Clause | Guard | Mutation → result |
+|---|---|---|---|
+| AC1 | Given an item at `next: develop` | `AC1/AC3` fixture case | `develop` dropped from `nfr_scanned` → 11 passed, 1 failed |
+| AC1 | cell is a bare file reference | `AC1/AC3` | bare check deleted → 1 failed |
+| AC1 | names the item's id | `AC1/AC3` | id dropped from the report → 1 failed |
+| AC1 | names the row's dimension | `AC1/AC3` | dimension replaced → 1 failed |
+| AC2 | Given an item at `next: verify` | `AC2` | `verify` dropped from scope → 1 failed |
+| AC2 | cell empty, reported | `AC2` | empty branch deleted (falls through to "bare file reference") → 1 failed |
+| AC2 | names item and dimension | `AC2` | dimension replaced → 1 failed |
+| AC3 | probe runs the scan's matcher; reds with bare check removed | `scanned_misses` → `nfr_misses` | bare check deleted → `FAIL AC1/AC3 — a bare file cell was not reported: <nothing>` |
+| AC4 | each of four cells not reported (plural: four fixtures differing in cell) | `AC4` ×4 | any cell containing a span treated as bare → 9 passed, 6 failed (fixtures and live rows red); span masking removed → 1 failed |
+| AC5 | Step 4 window asserts the unguarded rule; deleting it reds | `0183 AC5` in `tests/falsifiable-acs.test.sh` | sentence reworded out of `skills/verify/SKILL.md` → 55 passed, 1 failed |
+| AC6 | NFR section asserts a filename alone is not an answer; deleting it reds | `0183 AC6` | bold sentence deleted from `skills/queue/templates/item.md` → 55 passed, 1 failed |
+| AC7 | live backlog passes | AC7 scan | a bare cell written into this item's Testing row (at `verify`) → `FAIL 0183 — Testing: bare file reference` |
+| AC7 | 0177's Documentation cell names a check | read directly in `.claude/backlog/items/0177-*.md`: names `tests/remote-anchor.test.sh`, case *0177 NFR — Step 5's clause is cited, not copied* (present in that file), plus `prose only — no artifact yet` for the copy half | 0177 is now `done`, so it is out of the scan's floor; checked by reading |
+| AC7 | every `tests/*.test.sh` passes | suite above | 37/37 green |
+
+| NFR row | Check | Result |
+|---|---|---|
+| Testing — guard falsifiable through the item matcher | M1 (bare check deleted) and M8 (span-cell over-match) both red | holds, guarded |
+| Documentation — each sentence once, pinned by phrase | M10, M11 red; `says` asserts exactly once in its window | holds, guarded |
+
+Always-on: the new test file carries the abort-announce block (`tests/abort-announce.test.sh` green); no secrets, no company material; README guard block lists it (`tests/citations.test.sh` green).
+Evidence set: `tests/item-nfr-red.test.sh`, `tests/falsifiable-acs.test.sh`, `tests/remote-anchor.test.sh`, `skills/verify/SKILL.md`, `skills/queue/templates/item.md`, `.claude/backlog/items/0183-*.md`, `.claude/backlog/items/0177-*.md`, all of `tests/` (AC7). Dirty set at Step 2: empty, so the intersection is empty and the pass is not advisory. Fresh capture after the last check: only this pass's untracked scratch directory.
