@@ -221,3 +221,38 @@ independent session was refused the same way and **splitting the call cleared it
 - [ ] AC8 — Given `skills/sprint/SKILL.md` Step 3, when read, then it cites *When a backlog write is refused* and no longer says to `cp` a backlog file into place.
 - [ ] AC9 — Given `CHANGELOG.md` `## Unreleased`, when read, then it names the move to `.backlog/`, `./migrate`, the 2026-12-31 legacy end and the install-before-migrate order.
 - [ ] AC10 — Given the existing `tests/*.test.sh`, when the suite is run after fixtures are moved to `.backlog/`, then every file tallies green, and at least one existing script test still runs against a legacy fixture.
+
+- **2026-10-25 (develop, 04e8) — STOPPED before building: AC7 contradicts FR2/AC2, so it goes
+  back to `queue`.** FR2 and AC2 need `claim`, `close`, `handoff`, `next` and `reopen` to recognise
+  the legacy location and keep working there. Each script derives the repo root by path
+  arithmetic from its own directory: `claim` uses `ROOT="$DIR/../.."` (line 379), and `next`
+  resolves the tools repo's buffer as `$troot/.claude/backlog/FINDINGS.md` (line 257). So each
+  script has to name the legacy layout `.claude/backlog` to tell `../..` from `..`, and `next`
+  has to name it again to find a legacy tools repo's buffer. AC7's allowlist permits
+  `.claude/backlog` in `skills/**` only in `skills/queue/templates/migrate`. The only way through
+  is to spell the path so the grep cannot see it, for example by comparing `basename "$DIR"` to
+  `backlog` and its parent to `.claude`. That would meet AC7's letter while breaking FR1's "the
+  legacy path appears only in …", and it games the guard. No code was written.
+  - **Proposed AC7 text:** "Given `skills/**` and `references/**` after the change, when grepped
+    for `.claude/backlog`, then the only hits are in *Where the backlog lives*, the FR4 legacy
+    clause, `skills/queue/templates/migrate`, and one location block that is byte-identical in
+    each of `claim`, `close`, `handoff`, `next` and `reopen`, plus `next`'s tools-repo buffer
+    lookup (FR2). A test asserts that allowlist, asserts the five blocks are identical, and goes
+    red on a new hit anywhere else."
+  - **The same fix touches FR5.** "The date is written once, in FR1's section" cannot hold either,
+    because AC2 requires the scripts' stderr line to print `2026-12-31`. So the date sits in the
+    location block too. The proposed AC7 test's identical-block assertion is what keeps those
+    copies from disagreeing.
+  - **Build plan for the next develop, already scoped this session:**
+    - The location block sets `ROOT` and `LEGACY` and refuses when both backlogs exist (AC3).
+    - It prints the one legacy line and exports a marker, so `close`'s nested `"$DIR/next"`
+      call (line 530, which captures `2>&1`) does not print it a second time. Without the marker
+      AC2's "exactly one line" fails on `close`.
+    - The installed copies under `.claude/backlog/` must be updated with the templates, or
+      `tests/backlog-scripts-installed.test.sh` (AC2, byte-identical) goes red. Updating them makes
+      this repo's own scripts print the legacy line on every call. That is accurate, and the
+      supervisor reads stderr as text, not as parsed output.
+    - 19 test files hold about 300 `.claude/backlog` mentions. Some are fixtures and some are this
+      repo's real backlog (for example `backlog-scripts-installed.test.sh`'s `BACKLOG=`, which must
+      stay legacy until the out-of-scope migration). Each hit needs a judgement, not a blind
+      `sed`.
