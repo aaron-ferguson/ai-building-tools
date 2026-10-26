@@ -2,8 +2,8 @@
 id: "0183"
 title: Decide what checks that an NFR row's named guard can actually red on that requirement
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -17,9 +17,10 @@ expects:
   - skills/verify/SKILL.md
   - skills/queue/templates/item.md
 ac_digest: AC1=fc5b06e3 AC2=3a779806 AC3=478021db AC4=9e64bc44 AC5=a8c2f1f5 AC6=57e2eae1 AC7=593ca365
-claimed_by: "f299"
-claimed_at: 2026-10-26T02:06:40Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-26
 ---
 
 ## Problem
@@ -64,13 +65,13 @@ equivalent.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given an item at `next: develop` whose filled NFR row's *How it would red* cell is `` `tests/citations.test.sh` `` and nothing else, when `tests/item-nfr-red.test.sh` runs, then it fails naming that item's id and the row's dimension.
-- [ ] AC2 — Given an item at `next: verify` whose filled NFR row's *How it would red* cell is empty, when the guard runs, then it fails naming that item and dimension.
-- [ ] AC3 — Given the guard's own fixture of a bare-file cell, when its probe runs the same matcher the item scan uses, then the matcher reports a miss; and with the bare-file check removed from the matcher, that probe fails.
-- [ ] AC4 — Given cells reading `` AC8 — `tests/skill-size.test.sh` red ``, `AC1`, `prose only — no artifact yet`, and `` `tests/falsifiable-acs.test.sh`, case *AC1 — the preamble requires it* ``, when the matcher reads each, then none is reported.
-- [ ] AC5 — Given `skills/verify/SKILL.md` Step 4, when `tests/falsifiable-acs.test.sh` runs, then a case scoped to Step 4's window asserts the rule that a named check which stays green under a mutation of the requirement is recorded as unguarded, and deleting that sentence reds the case.
-- [ ] AC6 — Given `skills/queue/templates/item.md`'s NFR preamble, when `tests/falsifiable-acs.test.sh` runs, then a case scoped to that section asserts that a filename alone is not an answer, and deleting the sentence reds the case.
-- [ ] AC7 — Given the live backlog after the change, when `tests/item-nfr-red.test.sh` runs, then it passes, `0177`'s Documentation cell names a check or `prose only — no artifact yet`, and every `tests/*.test.sh` passes.
+- [x] AC1 — Given an item at `next: develop` whose filled NFR row's *How it would red* cell is `` `tests/citations.test.sh` `` and nothing else, when `tests/item-nfr-red.test.sh` runs, then it fails naming that item's id and the row's dimension.
+- [x] AC2 — Given an item at `next: verify` whose filled NFR row's *How it would red* cell is empty, when the guard runs, then it fails naming that item and dimension.
+- [x] AC3 — Given the guard's own fixture of a bare-file cell, when its probe runs the same matcher the item scan uses, then the matcher reports a miss; and with the bare-file check removed from the matcher, that probe fails.
+- [x] AC4 — Given cells reading `` AC8 — `tests/skill-size.test.sh` red ``, `AC1`, `prose only — no artifact yet`, and `` `tests/falsifiable-acs.test.sh`, case *AC1 — the preamble requires it* ``, when the matcher reads each, then none is reported.
+- [x] AC5 — Given `skills/verify/SKILL.md` Step 4, when `tests/falsifiable-acs.test.sh` runs, then a case scoped to Step 4's window asserts the rule that a named check which stays green under a mutation of the requirement is recorded as unguarded, and deleting that sentence reds the case.
+- [x] AC6 — Given `skills/queue/templates/item.md`'s NFR preamble, when `tests/falsifiable-acs.test.sh` runs, then a case scoped to that section asserts that a filename alone is not an answer, and deleting the sentence reds the case.
+- [x] AC7 — Given the live backlog after the change, when `tests/item-nfr-red.test.sh` runs, then it passes, `0177`'s Documentation cell names a check or `prose only — no artifact yet`, and every `tests/*.test.sh` passes.
 
 ## QA plan
 
