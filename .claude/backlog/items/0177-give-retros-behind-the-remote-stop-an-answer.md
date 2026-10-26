@@ -2,8 +2,8 @@
 id: "0177"
 title: Give retro's behind-the-remote stop an answer for a pass with nobody to ask
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -15,11 +15,9 @@ relates: ["0113"]
 expects:
   - skills/retro/SKILL.md
   - tests/remote-anchor.test.sh
-claimed_by: "b472"
-claimed_at: 2026-10-25T23:08:30Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/retro/SKILL.md
-  - tests/remote-anchor.test.sh
 ---
 
 ## Problem
