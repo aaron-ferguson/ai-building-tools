@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | verify | ready |  |
+| 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | verify | in-progress |  |
 | 0175 | Decide what identifies a sprint across a suspension, and which mechanisms key off it | develop | ready |  |
 | 0172 | Decide how a script refusal and the skill that must satisfy it reach a session together | develop | ready |  |
 | 0182 | Name the write mechanism that works for each backlog file, the lock included, where every stage reads it | develop | ready |  |
