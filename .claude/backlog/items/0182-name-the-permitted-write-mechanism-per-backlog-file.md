@@ -38,7 +38,7 @@ claimed_at: 2026-10-26T01:18:36Z
 touches:
   - references/CONCURRENCY.md
   - references/CONCURRENCY-INCIDENTS.md
-  - skills/queue/templates/migrate
+  - skills/queue/templates/migrate  # new
   - skills/queue/templates/claim
   - skills/queue/templates/close
   - skills/queue/templates/handoff
@@ -53,8 +53,36 @@ touches:
   - skills/prototype/SKILL.md
   - references/CONVENTIONS.md
   - references/TRACKER.md
-  - tests/backlog-location.test.sh
+  - tests/backlog-location.test.sh  # new
   - CHANGELOG.md
+  - tests/ac-digest.test.sh
+  - tests/backlog-scripts-installed.test.sh
+  - tests/citations.test.sh
+  - tests/claim.test.sh
+  - tests/close-by.test.sh
+  - tests/close.test.sh
+  - tests/cost-by-category.test.sh
+  - tests/design-hold.test.sh
+  - tests/findings-buffer.test.sh
+  - tests/findings-routing.test.sh
+  - tests/handoff.test.sh
+  - tests/item-ac-form.test.sh
+  - tests/measurement.test.sh
+  - tests/next.test.sh
+  - tests/reopen.test.sh
+  - tests/retro-tool-edit.test.sh
+  - tests/scaffold-close.test.sh
+  - tests/sprint-ledger.test.sh
+  - tests/sprint.test.sh
+  - tools/harvest-usage.sh
+  - skills/queue/templates/config.yml
+  - skills/queue/templates/item.md
+  - .claude/backlog/next
+  - .claude/backlog/claim
+  - .claude/backlog/close
+  - .claude/backlog/handoff
+  - .claude/backlog/reopen
+  - .claude/backlog/migrate  # new, installed copy
 ---
 
 ## Problem
