@@ -322,6 +322,7 @@ tests/gate-ticket.test.sh                # the gate-ticket shape: a measurement 
 tests/graph-fields.test.sh               # the ticket template carries parent, blocked_by and relates
 tests/handoff.test.sh                    # ./handoff — all five fields land or none do
 tests/item-ac-form.test.sh               # every item's criteria are in the one form close can tick
+tests/item-nfr-red.test.sh               # every open item's NFR rows say how they would red, not a bare file
 tests/money-in-skill-prose.test.sh       # no skill file writes a dollar figure that argument substitution would eat
 tests/qa-level-once.test.sh              # the QA level is written in one place in the item template
 tests/release.test.sh                    # tools/release verifies the install against the pushed commit

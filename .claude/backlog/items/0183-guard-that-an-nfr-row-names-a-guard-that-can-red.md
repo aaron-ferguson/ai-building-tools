@@ -23,6 +23,9 @@ touches:
   - tests/falsifiable-acs.test.sh
   - skills/verify/SKILL.md
   - skills/queue/templates/item.md
+  - tests/item-nfr-red.test.sh  # new
+  - README.md
+  - .claude/backlog/items/0177-give-retros-behind-the-remote-stop-an-answer.md  # FR4, under 0177 claim 48b5
 ---
 
 ## Problem
