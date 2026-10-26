@@ -1858,7 +1858,14 @@ block175() { awk -v want="## sprint $1 " 'index($0, "## sprint ") == 1 { on = (i
 rec175 "$FIX/r-a175.jsonl" 1.00
 rec175 "$FIX/r-b175-first.jsonl" 2.00
 rec175 "$FIX/r-c175.jsonl" 3.00
-A_BEFORE="$(block175 r-a175)"; C_BEFORE="$(block175 r-c175)"
+# A block opens with the blank line BEFORE its heading, so a heading-anchored comparison cannot
+# see a replace that eats C's separator. Every byte outside B's span is compared too: the lines
+# before B's leading blank, and the lines from C's leading blank to the end.
+outside175() {
+  awk 'index($0, "## sprint r-b175 ") == 1 { hb = NR } index($0, "## sprint r-c175 ") == 1 { hc = NR }
+       { l[NR] = $0 } END { for (i = 1; i < hb - 1; i++) print l[i]; print "--"; for (i = hc - 1; i <= NR; i++) print l[i] }' "$LED175"
+}
+A_BEFORE="$(block175 r-a175)"; C_BEFORE="$(block175 r-c175)"; OUT_BEFORE175="$(outside175)"
 rec175 "$FIX/r-b175-second.jsonl" 7.00
 NB175="$(grep -c '^## sprint r-b175 ' "$LED175" || true)"
 if [ "$NB175" = 1 ]; then
@@ -1879,17 +1886,8 @@ if [ -n "$A_BEFORE" ] && [ "$A_BEFORE" = "$(block175 r-a175)" ] && \
 else
   bad "0175 AC7 — replacing r-b175 changed a neighbouring block"
 fi
-# A block opens with the blank line BEFORE its heading, so the heading-anchored comparison above
-# cannot see a replace that eats C's separator. Every byte outside B's span is compared too: the
-# lines before B's leading blank, and the lines from C's leading blank to the end.
-outside175() {
-  awk 'index($0, "## sprint r-b175 ") == 1 { hb = NR } index($0, "## sprint r-c175 ") == 1 { hc = NR }
-       { l[NR] = $0 } END { for (i = 1; i < hb - 1; i++) print l[i]; print "--"; for (i = hc - 1; i <= NR; i++) print l[i] }' "$LED175"
-}
-OUT_BEFORE175="$(outside175)"
-rec175 "$FIX/r-b175-second.jsonl" 8.00
 if [ "$OUT_BEFORE175" = "$(outside175)" ]; then
-  ok "a third call leaves every byte outside r-b175's own span unchanged, separators included"
+  ok "every byte outside r-b175's own span is unchanged, separators included"
 else
   bad "0175 AC7 — replacing r-b175 changed bytes outside its own block"
 fi
