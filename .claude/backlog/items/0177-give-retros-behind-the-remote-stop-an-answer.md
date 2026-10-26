@@ -2,8 +2,8 @@
 id: "0177"
 title: Give retro's behind-the-remote stop an answer for a pass with nobody to ask
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -15,9 +15,10 @@ relates: ["0113"]
 expects:
   - skills/retro/SKILL.md
   - tests/remote-anchor.test.sh
-claimed_by: "dc3b"
-claimed_at: 2026-10-26T01:44:25Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-26
 ---
 
 ## Problem
@@ -65,10 +66,10 @@ a rung it does not belong on, in a repo that merely happens to be current — an
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/retro/SKILL.md` Step 3, when `tests/remote-anchor.test.sh` runs, then a guard asserts the pass with nobody to ask continues over the current repos and treats the stale one as unavailable — reddened by deleting that clause.
-- [ ] AC2 — Given the same file, when `tests/remote-anchor.test.sh` runs, then a guard asserts a finding destined for an unavailable repo stays in the buffer — reddened by changing that clause to re-route the finding down the ladder.
-- [ ] AC3 — Given the same file, when `tests/remote-anchor.test.sh` runs, then its existing AC1 check for `Behind the remote stops the pass` in Step 3's window still passes — reddened by removing that phrase while adding the unattended clause.
-- [ ] AC4 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it is green — reddened by leaving `skills/retro/SKILL.md` over its size budget after the addition.
+- [x] AC1 — Given `skills/retro/SKILL.md` Step 3, when `tests/remote-anchor.test.sh` runs, then a guard asserts the pass with nobody to ask continues over the current repos and treats the stale one as unavailable — reddened by deleting that clause.
+- [x] AC2 — Given the same file, when `tests/remote-anchor.test.sh` runs, then a guard asserts a finding destined for an unavailable repo stays in the buffer — reddened by changing that clause to re-route the finding down the ladder.
+- [x] AC3 — Given the same file, when `tests/remote-anchor.test.sh` runs, then its existing AC1 check for `Behind the remote stops the pass` in Step 3's window still passes — reddened by removing that phrase while adding the unattended clause.
+- [x] AC4 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it is green — reddened by leaving `skills/retro/SKILL.md` over its size budget after the addition.
 
 ## QA plan
 
@@ -135,3 +136,31 @@ a rung it does not belong on, in a repo that merely happens to be current — an
   deleting the citation, and to say plainly that a *copy* written beside the citation is unguarded
   (`prose only — no artifact yet`). Nothing else in this item changed; verify should treat that
   half as prose under Step 4.
+
+## QA evidence
+
+**2026-10-25 (verify, token dc3b)** — PASS at `qa_level: unit`, against `HEAD` 325cf94 (build `c8606bc`).
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`, so every file reports); 37 files, every one exit 0.
+Tree: `git status --porcelain` empty at Step 2; at the verdict it showed only this pass's own scratch dir `.qa-0177/` (since removed), so the intersection with the evidence set is empty and the verdict is not advisory.
+Executed copy: the repo copy of `skills/retro/SKILL.md` and `tests/` (the subject under test). This session's verify skill ran from the 0.9.43 install.
+`ac_digest absent — unverifiable`: no stamp to compare the criteria against, so the ACs were checked literally as they read on disk.
+
+Clause table: reused develop's (Notes & decisions, b472). Every mutation below was **re-run by this pass** against the committed file and restored from a scratch copy. Each diff was confirmed non-empty, and a control run followed.
+
+| AC / NFR | Check | Mutation (run by verify) | Result |
+|---|---|---|---|
+| AC1: continues over the current repos, stale one unavailable | `tests/remote-anchor.test.sh` case *0177 AC1* in Step 3's window | deleted the bold AC1 sentence | red: 45 passed, 1 failed (0177 AC1) |
+| FR1: never pulled | case *0177 FR1* | `never pulled` → `pulled` | red: 1 failed (0177 FR1) |
+| AC2: finding stays in the buffer, not re-routed | cases *0177 AC2* and *FR2* | rewrote the clause to "is re-routed down the ladder" | red: 44 passed, 2 failed |
+| AC3: `Behind the remote stops the pass` kept | existing case *AC1 — being behind stops the pass* | phrase → "Behind the remote warns" | red: 45 passed, 1 failed |
+| AC1–3 window scoping | in-window matcher | moved the whole unattended paragraph under `## Step 4` | red: 37 passed, 9 failed |
+| AC4: whole suite green, size budget | `tests/skill-size.test.sh` | appended 5,100 bytes to the retro skill (35135 bytes) | red: "5101 past the 30034 bytes its reason was argued at, over the 5000 margin". Develop's note that the size guard "cannot red" no longer holds: 0190 has since bounded it, so AC4 is now guarded |
+| NFR Documentation: cited, not copied | case *0177 NFR — Step 5's clause is cited* | replaced the citation with "the one the release chain is on" | red: 1 failed. The *copy* half is `prose only — no artifact yet`. On reading, Step 3 names Step 5's *Nobody to ask* clause and does not restate it, so it holds, unguarded |
+| NFR Observability: loud report | cases *0177 FR3* ×3 | collapsed the report sentence to "The pull is outstanding," | red: 43 passed, 3 failed |
+| FR4: attended pass still stops | case *0177 FR4* | deleted the sentence | red: 1 failed |
+
+Controls after restore: `tests/remote-anchor.test.sh` 46 passed, 0 failed; `tests/skill-size.test.sh` 45 passed, 0 failed; `tests/citations.test.sh` 51 passed, 0 failed.
+
+Step 4: the change is prose in a shipped skill. It makes no new action reachable: it narrows a dispatched pass to *not* pulling. It adds no log field, egress, auth or UI, and holds no company material. Read against CONVENTIONS_CORE always-on rules: no conflict.
