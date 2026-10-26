@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0190 | Re-argue the sprint skill's size exemption against its current size, or relocate | bug | unit | 2026-10-26 | [items/0190-reargue-or-relocate-the-sprint-size-exemption.md](items/0190-reargue-or-relocate-the-sprint-size-exemption.md) |
 | 0177 | Give retro's behind-the-remote stop an answer for a pass with nobody to ask | bug | unit | 2026-10-26 | [items/0177-give-retros-behind-the-remote-stop-an-answer.md](items/0177-give-retros-behind-the-remote-stop-an-answer.md) |
 | 0196 | Ship a DONE.md template so a freshly scaffolded backlog can close a ticket | bug | unit | 2026-10-25 | [items/0196-give-the-queue-templates-a-done-file.md](items/0196-give-the-queue-templates-a-done-file.md) |
 | 0046 | Make the README guard list provably complete | bug | unit | 2026-10-25 | [items/0046-readme-guard-list-completeness.md](items/0046-readme-guard-list-completeness.md) |

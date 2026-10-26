@@ -15,6 +15,7 @@ the release session, because only a whole-release view can say it.
 
 - A freshly scaffolded backlog can now close its first ticket: `queue` ships a `DONE.md` template whose columns are the ones `close` fills, so no project has to invent one (0196).
 - A sprint-dispatched retro no longer stops when a repo it would edit is behind the remote: it carries on over the repos that are current, leaves findings bound for the stale repo in FINDINGS.md rather than re-routing them, and reports each skipped repo, its divergence and the outstanding pull (0177).
+- The skill-size guard now fails when a skill already recorded as over the size goal grows more than 5,000 bytes past the size its reason was argued at. The fix is to re-argue the reason at the new size, or relocate content. The sprint skill's reason has been re-argued at its current size. (0190)
 
 ## 0.9.43 — 2026-10-25
 

@@ -2,8 +2,8 @@
 id: "0190"
 title: Re-argue the sprint skill's size exemption against its current size, or relocate
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -15,10 +15,11 @@ relates: ["0040", "0035", "0180"]
 expects:
   - tests/skill-size.test.sh
   - skills/sprint/SKILL.md
-claimed_by: "6d2e"
-claimed_at: 2026-10-26T01:55:37Z
+claimed_by:
+claimed_at:
 ac_digest: AC1=a4716eef AC2=72ea4e63 AC3=a4efcede AC4=8248d2f4 AC5=5383b1a3 AC6=6874b554
 touches:
+closed: 2026-10-26
 ---
 
 ## Problem
@@ -57,12 +58,12 @@ raise.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `tests/skill-size.test.sh`, when the `skills/sprint/SKILL.md` entry is read, then it cites 0190, names Step 7's lock and cap-kill recovery and the design-beside rule as what was considered relocating, says why each was rejected, and carries no number of four or more digits after its ticket id; and the "0035 AC4/FR6" loop includes `skills/sprint/SKILL.md`.
-- [ ] AC2 — Given a recorded fixture file with no argued-at size, when the guard runs, then it reds and names the file as missing its argued-at size.
-- [ ] AC3 — Given a fixture recorded at argued-at size S (generated, independent of the real tree), when the file is exactly S + `MARGIN` bytes then the guard passes, and when it is S + `MARGIN` + 1 bytes then it reds with a line naming the file, its size, S, and the words "re-argue its reason or relocate".
-- [ ] AC4 — Given the FR7 fixture that today asserts a recorded file far over the goal passes, when this ships, then that case asserts the opposite: a recorded file 30,000 bytes past its argued-at size reds; the cases that a recorded file just over the goal passes and a recorded file under the goal goes stale still pass.
-- [ ] AC5 — Given the header above `set -eu`, when it is read, then it states `MARGIN`, its value, its derivation, that the argued-at size is a separate field never written into a reason, and the 0190 grandfathering of the other recorded files; header-grep cases in the same file red when any of `MARGIN`, `argued at`, or `0190` is missing.
-- [ ] AC6 — Given the real tree, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then every file passes, and `skills/sprint/SKILL.md` passes because its argued-at size is its size on the build commit.
+- [x] AC1 — Given `tests/skill-size.test.sh`, when the `skills/sprint/SKILL.md` entry is read, then it cites 0190, names Step 7's lock and cap-kill recovery and the design-beside rule as what was considered relocating, says why each was rejected, and carries no number of four or more digits after its ticket id; and the "0035 AC4/FR6" loop includes `skills/sprint/SKILL.md`.
+- [x] AC2 — Given a recorded fixture file with no argued-at size, when the guard runs, then it reds and names the file as missing its argued-at size.
+- [x] AC3 — Given a fixture recorded at argued-at size S (generated, independent of the real tree), when the file is exactly S + `MARGIN` bytes then the guard passes, and when it is S + `MARGIN` + 1 bytes then it reds with a line naming the file, its size, S, and the words "re-argue its reason or relocate".
+- [x] AC4 — Given the FR7 fixture that today asserts a recorded file far over the goal passes, when this ships, then that case asserts the opposite: a recorded file 30,000 bytes past its argued-at size reds; the cases that a recorded file just over the goal passes and a recorded file under the goal goes stale still pass.
+- [x] AC5 — Given the header above `set -eu`, when it is read, then it states `MARGIN`, its value, its derivation, that the argued-at size is a separate field never written into a reason, and the 0190 grandfathering of the other recorded files; header-grep cases in the same file red when any of `MARGIN`, `argued at`, or `0190` is missing.
+- [x] AC6 — Given the real tree, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then every file passes, and `skills/sprint/SKILL.md` passes because its argued-at size is its size on the build commit.
 
 ## QA plan
 
