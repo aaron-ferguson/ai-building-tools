@@ -151,3 +151,49 @@ Unit, in `tests/skill-size.test.sh`.
     | AC6 sprint passes at its build-commit size | real-tree AC1 | sprint argued-at deleted → 1 FAIL |
     | FR4 the constant itself | `MARGIN=5000` feeds AC3 | 50000 → 1 FAIL |
   - AC6: the whole suite is green at `cb01eec`.
+
+## QA evidence
+
+**2026-10-25 — verify (token 6d2e), at `3fbaff7` (build `cf8eb22`, `cb01eec`).** PASS.
+
+Conventions: ../ai-building-conventions
+Command (`commands.unit_by_file`, verbatim): `for t in tests/*.test.sh; do "$t" || true; done`, with each file's last line captured. 37 files, every one `N passed, 0 failed`; `tests/skill-size.test.sh: 45 passed, 0 failed`.
+`ac_digest`: `./next --ac-digest 0190 --check` → `0190: ac_digest matches`.
+Tree: `git status --porcelain` empty at Step 2. Its only dirt afterwards was this pass's own scratch directory, since removed. Dirty set ∩ evidence set = ∅, so not advisory.
+Copy executed: the repo's `tests/skill-size.test.sh`. No skill file changed.
+Evidence set: `tests/skill-size.test.sh`, `skills/*/SKILL.md` (sizes read), `skills/sprint/SKILL.md` (60813 bytes).
+
+Clause table. I re-ran every mutation myself against the committed file. Each one was applied to a single line or to the header only, its diff checked non-empty, and the file restored by path afterwards. Control after the set: 45 passed, 0 failed.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | Given the sprint entry, it cites 0190 | `0190 —` → `0040 —` in the reason | 1 FAIL |
+| AC1 | names Step 7's lock and cap-kill recovery | phrase cut to `Step 7` | 1 FAIL |
+| AC1 | names the design-beside rule | first of 2 occurrences removed | green: the phrase survives in the same reason, so this is not a gap by the gap test. Both removed → 1 FAIL |
+| AC1 | says why each was rejected | `rejected on both conditions:` → `dropped:` | 1 FAIL. The guard checks for the phrase. I read each per-branch reason myself: Step 7 → lock stolen; design-beside → step-over overridden |
+| AC1 | no number of 4+ digits after the ticket id | `~2,100 bytes` inserted | 1 FAIL (0035 FR6, commas stripped) |
+| AC1 | the 0035 AC4/FR6 loop includes sprint | sprint entry renamed out of the table | 6 FAIL |
+| AC2 | recorded, no argued-at size → reds, named | missing-size branch disabled | 1 FAIL |
+| AC3 | exactly S+MARGIN passes | `-gt` → `-ge` | 1 FAIL |
+| AC3 | S+MARGIN+1 reds | bound moved +1 | 1 FAIL |
+| AC3 | the line names its size | size dropped from the message | 1 FAIL |
+| AC3 | the line names S | argued-at size dropped from the message | 1 FAIL |
+| AC3 | the line says "re-argue its reason or relocate" | remedy words dropped | 2 FAIL |
+| AC4 | 30,000 past the argued-at size reds | upper-bound branch disabled | 2 FAIL |
+| AC4 | just over the goal still passes | stale threshold moved to GOAL+1 | 2 FAIL |
+| AC4 | under the goal still goes stale | stale branch disabled | 1 FAIL |
+| AC5 | header states `MARGIN` | header-only `MARGIN` → `MRGN` | 2 FAIL |
+| AC5 | its value | `5,000 bytes` reworded | 1 FAIL |
+| AC5 | its derivation | `Derivation:` → `Basis:` | 1 FAIL |
+| AC5 | `argued at` | header-only → `reasoned at` | 1 FAIL |
+| AC5 | separate field, never written into a reason | phrase reworded | 1 FAIL |
+| AC5 | 0190 grandfathering | header-only `0190` → `0x90` | 1 FAIL |
+| AC6 | sprint passes at its build-commit size | argued-at 60813 → 50000 | 1 FAIL (`10813 past the 50000`) |
+| FR4 | `MARGIN` is 5,000 | `MARGIN=50000` | 1 FAIL |
+
+| NFR | Check | Result |
+|---|---|---|
+| Documentation — a recorded exemption describes the file it exempts | AC4/AC6 mutations: a recorded file grown past its argued-at size + MARGIN reds | holds, guarded |
+| Always-on (CONVENTIONS_CORE) | diff confined to one test file; no secrets, no company material, no magic number without a named constant (`MARGIN`, `GOAL`) | holds |
+
+Beyond the letter, accepted: the FR6 loop now reads its files from the `justification` table, which also brings retro in. Retro's reason passes both checks.
