@@ -215,6 +215,14 @@ any other pull is the user's call, because that choice is theirs (`git-conventio
 the repo it is about*): the marketplace clone beside it reads as a working checkout and reports a
 stale divergence in the direction that looks safe.
 
+**The pass with nobody to ask continues over the current repos and treats the stale one as unavailable**
+— a `sprint`-dispatched pass, where the stale repo is never pulled because the call is nobody's to make.
+**A finding destined for an unavailable repo stays in the buffer**, undispositioned in `FINDINGS.md`,
+and is never re-routed down the ladder to a repo that merely happens to be current: that re-route
+breaks the generalising test below. The report names each repo skipped with its divergence and
+every finding left in the buffer because of it, and the pull is outstanding on that run's checklist,
+the one Step 5's *Nobody to ask* clause puts the release chain on. An attended pass still stops.
+
 **Grep the destination before writing anything.** One command, and the difference between sharpening a
 rule and duplicating it. Where something related exists, **sharpen it in place**: an adjacent second
 bullet is how a file grows without getting better.

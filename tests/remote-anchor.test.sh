@@ -129,6 +129,22 @@ in_window "AC1 — being behind stops the pass rather than warning it" "$W3" 'Be
 in_window "AC1 — outside the fast-forward rule, any pull is the user's call" "$W3" 'any other pull is the user'
 in_window "AC1 — and the checkout is the resolved one, never the plugin install" "$W3" 'never the plugin install'
 
+# 0177: a pass with nobody to ask cannot stop for the user's pull, so it needs its own answer — and
+# Step 3 states it beside the stop rather than in place of it (AC3 above still asserts the stop).
+# The phrases are 0177's AC words verbatim, so a paraphrase that loses an AC clause reds here.
+echo "0177 — a pass with nobody to ask, when a resolved repo is behind"
+in_window "0177 AC1 — it continues over the current repos and treats the stale one as unavailable" \
+  "$W3" 'pass with nobody to ask continues over the current repos and treats the stale one as unavailable'
+in_window "0177 FR1 — the stale repo is never pulled"                      "$W3" 'stale repo is never pulled'
+in_window "0177 AC2 — a finding destined for an unavailable repo stays in the buffer" \
+  "$W3" 'finding destined for an unavailable repo stays in the buffer'
+in_window "0177 FR2 — and is never re-routed down the ladder"             "$W3" 'never re-routed down the ladder'
+in_window "0177 FR3 — the report names each skipped repo and its divergence" "$W3" 'names each repo skipped with its divergence'
+in_window "0177 FR3 — and every finding left in the buffer because of it"  "$W3" 'every finding left in the buffer because of it'
+in_window "0177 FR3 — the pull is outstanding on the run checklist"        "$W3" "the pull is outstanding on that run's checklist"
+in_window "0177 NFR — Step 5's clause is cited, not copied"                "$W3" "Step 5's *Nobody to ask* clause"
+in_window "0177 FR4 — an attended pass still stops"                        "$W3" 'An attended pass still stops'
+
 # The step that owns the release chain is the step that has to say where the chain starts and what
 # the version is derived from.
 RSTEP5='## Step 5 — Make it durable'
@@ -274,6 +290,32 @@ if [ "$LEAKED" = 1 ]; then
   saw "$WP"
 else
   ok "the fetch rule is asserted in the step that greps the destination, not across the file"
+fi
+
+# 0177 AC1/AC2 — the reddening edits the ACs name, run against the real file rather than reasoned.
+echo "0177 AC1 — deleting the unattended clause turns AC1 red"
+grep -v 'continues over the current repos' "$RETRO" > "$FIX/no-unattended.md"
+WP="$(window "$FIX/no-unattended.md" "$RSTEP3" "$REND3")"
+if [ -z "$WP" ]; then
+  bad "0177 AC1 — the fixture's window is empty, so the negative proves nothing"
+elif window_has "$WP" 'pass with nobody to ask continues over the current repos and treats the stale one as unavailable'; then
+  bad "0177 AC1 — the clause was deleted and the matcher still saw it"
+else
+  ok "0177 AC1 — deleting the unattended clause turns AC1 red"
+fi
+
+echo "0177 AC2 — re-routing the finding down the ladder turns AC2 red"
+sed -e 's/finding destined for an unavailable repo stays in the buffer/finding destined for an unavailable repo is re-routed down the ladder/' \
+    -e 's/never re-routed down the ladder/re-routed down the ladder/' "$RETRO" > "$FIX/reroute.md"
+WP="$(window "$FIX/reroute.md" "$RSTEP3" "$REND3")"
+if [ -z "$WP" ]; then
+  bad "0177 AC2 — the fixture's window is empty, so the negative proves nothing"
+elif window_has "$WP" 'finding destined for an unavailable repo stays in the buffer' \
+  || window_has "$WP" 'never re-routed down the ladder'; then
+  bad "0177 AC2 — a re-routing clause still satisfied the guard"
+  saw "$WP"
+else
+  ok "0177 AC2 — re-routing the finding down the ladder turns AC2 red"
 fi
 
 # 0216 AC7 — a retro Step 3 that tells the pass to fast-forward but cites no rule must fail the
