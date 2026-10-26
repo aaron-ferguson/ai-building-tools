@@ -10,7 +10,7 @@
 # discipline cannot fix it, because the foreign edit is already in the file before you touch it.
 # The only fix is upstream — never leave the claim uncommitted — and a script cannot forget.
 #
-# Usage:  .claude/backlog/claim <id> [token]
+# Usage:  .backlog/claim <id> [token]
 #
 # **`touches:` is written here, provisionally, from the item's `expects:` — but only on a FRESH
 # `develop` claim.** It used to be printed as an instruction, which made the one field the other
@@ -51,6 +51,28 @@
 set -eu
 
 DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+# --- where the backlog lives (0182) -- byte-identical in claim, close, handoff, next and reopen ---
+# `.backlog/` at the repo root is the location. `.claude/backlog/` is the legacy one: the harness
+# refuses writes under any `.claude` path segment as a sensitive file, which is what this moves away
+# from. A repo holding both is refused rather than guessed at. LEGACY_UNTIL is the date in
+# references/CONCURRENCY.md, *Where the backlog lives*, and tests/backlog-location.test.sh holds the
+# two equal. The note is exported so a nested call (`close` runs `next`) does not print it twice.
+LEGACY_UNTIL=2026-12-31
+case "$DIR" in
+  */.claude/backlog) ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"; OTHER_BACKLOG="$ROOT/.backlog" ;;
+  *)                 ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; OTHER_BACKLOG="$ROOT/.claude/backlog" ;;
+esac
+if [ -d "$OTHER_BACKLOG" ]; then
+  echo "refusing: this repo holds two backlogs, $ROOT/.backlog and $ROOT/.claude/backlog -- keep one (references/CONCURRENCY.md, Where the backlog lives)" >&2
+  exit 1
+fi
+if [ "$OTHER_BACKLOG" = "$ROOT/.backlog" ] && [ -z "${BACKLOG_LEGACY_NOTED:-}" ]; then
+  echo "note: this backlog is at the legacy .claude/backlog/ -- run ./migrate to move it to .backlog/; the legacy location works until $LEGACY_UNTIL" >&2
+  BACKLOG_LEGACY_NOTED=1
+  export BACKLOG_LEGACY_NOTED
+fi
+# --- end of where the backlog lives ---
 QUEUE="$DIR/QUEUE.md"
 LOCK="$DIR/.lock"
 
@@ -112,7 +134,7 @@ if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --q
   echo "the rows that would land under 'Claim $ID [$TOKEN]':" >&2
   git -C "$DIR" diff -U0 -- QUEUE.md | awk '/^[+-]\| / { print "  " $0 }' >&2
   echo "commit them by pathspec if they are yours; if they are another session's, leave them alone" >&2
-  echo "and wait, or 'git restore -- .claude/backlog/QUEUE.md' if you know they are stray" >&2
+  echo "and wait, or 'git restore -- .backlog/QUEUE.md' if you know they are stray" >&2
   echo "nothing was changed and no lock was taken" >&2
   exit 1
 fi
@@ -376,7 +398,6 @@ rm -f "$count"
 # and folding the two together would turn every held path into a reported fiction.
 paths_missing=""
 if [ "$SEED" -eq 1 ] && [ "${N_EXPECTS:-0}" -gt 0 ]; then
-  ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"
   paths_missing="$(cd "$ROOT" && while IFS= read -r p; do
     [ -n "$p" ] || continue
     found=0

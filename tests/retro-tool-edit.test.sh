@@ -214,7 +214,7 @@ in_window "AC4 — a deferral records what was established" "$W1C" 'records what
 in_window "AC4 — the buffer converges rather than emptying in one pass" "$W1C" 'transit, not residence'
 
 # ---------------------------------------------------------------------------
-# 0111 — Step 1 said "`.claude/backlog/FINDINGS.md` is the input" and nothing about what that
+# 0111 — Step 1 said "`.backlog/FINDINGS.md` is the input" and nothing about what that
 # path resolves against. Invoked from a workspace root holding four backlogs and being none of
 # them, the 2026-09-07 pass swept all four on freshness and threshold. That was defensible and it
 # was invention: no step licensed it, and it puts a company-tracked buffer and this public repo's
@@ -232,7 +232,7 @@ in_window "AC4 — the buffer converges rather than emptying in one pass" "$W1C"
 echo "0111 AC1 — Step 1 states a numbered resolution order, not a bare relative path"
 in_window "AC1 — the order is stated as an order"     "$W1C" 'Where that path resolves, in order'
 in_window "AC1 — rung 1 is the repo root, walked up to" "$W1C" 'The git repository root'
-in_window "AC1 — rung 2 covers a backlog below its repo root" "$W1C" 'nearest `.claude/backlog/`'
+in_window "AC1 — rung 2 covers a backlog below its repo root" "$W1C" 'nearest `.backlog/`'
 
 echo "0111 AC2 — nothing resolving stops the session and names what was searched"
 in_window "AC2 — the last rung is a stop, not a guess" "$W1C" 'Nothing resolved'
@@ -340,7 +340,7 @@ Read the buffer.
 ## Step 2 — Propose, then wait
 
 Where that path resolves, in order. The git repository root, then the
-nearest `.claude/backlog/` above it. Nothing resolved → stop, and
+nearest `.backlog/` above it. Nothing resolved → stop, and
 report every directory searched, as `CONVENTIONS.md` rung 3 does. The order
 walks upward only; a buffer is resolved, never discovered, so a sibling is
 unreachable by construction. A backlog with no routing block is

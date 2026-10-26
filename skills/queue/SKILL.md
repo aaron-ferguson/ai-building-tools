@@ -11,7 +11,7 @@ description: >
   and the artifact is code. NOT for the user's own tasks, meetings, or notes — that is /capture,
   which keeps a personal knowledge base and where the executor is the user. When the input is a
   commitment to a person, a meeting outcome, or a dated follow-up, it belongs there instead. The
-  backlog lives in .claude/backlog/ inside the project.
+  backlog lives in .backlog/ inside the project.
 ---
 
 # /queue
@@ -38,7 +38,7 @@ Resolve them per `references/CONVENTIONS.md`; if none resolve, stop as that file
 ## Storage layout
 
 ```
-.claude/backlog/
+.backlog/
   config.yml     project settings, next_id, conventions path, test commands, optional tracker/cost blocks
   QUEUE.md       the stack rank — line order IS the rank. Header and table only.
   RANKING.md     why the order is what it is NOW. Standing reasoning, read only for re-ranks.
@@ -99,7 +99,7 @@ point in both cases, and `CONCURRENCY.md`'s *A claim must be durable the moment 
 
 ## Step 0 — Locate or create the backlog
 
-Find `.claude/backlog/` at the project root. If it doesn't exist, scaffold it by copying every template
+Find `.backlog/` at the project root, or a legacy backlog (`references/CONCURRENCY.md`, *Where the backlog lives*), which you use where it is rather than scaffolding beside it. If neither exists, scaffold `.backlog/` by copying every template
 above (`chmod +x` `next`, `claim`, `close`, `handoff` and `reopen`), creating `items/`, and filling `config.yml` from what the repo
 actually uses — read `package.json` scripts (or `Makefile`, `pyproject.toml`) for the real
 test/lint/typecheck commands rather than guessing. Leave `tracker:`, `cost_tracking:` and
@@ -540,7 +540,7 @@ treatment.
 
 | Source | Availability | What it holds |
 |---|---|---|
-| `.claude/backlog/FINDINGS.md` | always, no config | what a session noticed while working and could not place |
+| `.backlog/FINDINGS.md` | always, no config | what a session noticed while working and could not place |
 | an external feedback source | only if `config.yml` has `external_feedback.enabled: true` | what other humans reported |
 
 ### The buffer — `FINDINGS.md`
@@ -625,12 +625,12 @@ provide, the de-duplication log and the field mapping.
 ## Step 6 — Commit the backlog, and only the backlog
 
 `queue` writes backlog files and never source, so **every path in its commit is under
-`.claude/backlog/`** — enforced by what you stage, not by what you believe you edited:
+`.backlog/`** — enforced by what you stage, not by what you believe you edited:
 
 ```bash
-git add -N .claude/backlog/items/0007-*.md          # a file git does not know yet
+git add -N .backlog/items/0007-*.md          # a file git does not know yet
 git commit -m "Capture 0007: <title>" -m "Co-Authored-By: <model> <noreply@anthropic.com>" -- \
-  .claude/backlog/QUEUE.md .claude/backlog/items/0007-*.md .claude/backlog/config.yml
+  .backlog/QUEUE.md .backlog/items/0007-*.md .backlog/config.yml
 ```
 
 **The `git add -N` is not optional**: the item file is the one capture just wrote, and a pathspec
@@ -650,7 +650,7 @@ them out of *your* commit without touching their working tree. Never `git stash`
 
 ## Step 7 — Park what surprised you
 
-Before reporting, park what surprised you in `.claude/backlog/FINDINGS.md` — one dated line, while the
+Before reporting, park what surprised you in `.backlog/FINDINGS.md` — one dated line, while the
 context is still hot.
 
 Triggers: **a template or skill step that had no correct answer for your case**, a configured command that

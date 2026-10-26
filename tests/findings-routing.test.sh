@@ -153,7 +153,7 @@ WR="$(window "$CONV" "$RULE")"
 
 echo "AC1 — the rule names all three destinations, so no finding is left without one"
 in_window "AC1 — a convention finding goes to the conventions repo's outside buffer" "$WR" 'gaps found from outside'
-in_window "AC1 — a tools finding goes to the tools repo's backlog buffer"            "$WR" "the tools repo's \`.claude/backlog/FINDINGS.md\`"
+in_window "AC1 — a tools finding goes to the tools repo's backlog buffer"            "$WR" "the tools repo's \`.backlog/FINDINGS.md\`"
 in_window "AC1 — everything else stays local"                                        "$WR" 'stays in the local'
 
 echo "AC2 — the destination repo is resolved, and nothing resolving is a stop rather than a guess"
@@ -260,7 +260,7 @@ Route it by subject, not by where you are standing, per `references/CONVENTIONS.
 
 ## Step 7 — Park what surprised you
 
-Park what surprised you in `.claude/backlog/FINDINGS.md`, one dated line.
+Park what surprised you in `.backlog/FINDINGS.md`, one dated line.
 
 ## Step 8 — Report
 FIXTURE

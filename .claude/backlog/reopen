@@ -9,7 +9,7 @@
 # and CONCURRENCY-INCIDENTS.md record as leaking silently, because a dropped step is invisible in
 # the commit afterwards. This script is that composition, made one invocation (0161).
 #
-# Usage:  .claude/backlog/reopen <id> <top|above:<row-id>> <reason>
+# Usage:  .backlog/reopen <id> <top|above:<row-id>> <reason>
 #
 # **The rank is an argument, never a default.** Where the row goes back is a `queue` judgement, so
 # the caller passes it: `top`, or `above:<row-id>` for directly above a row already in QUEUE.md.
@@ -47,6 +47,28 @@
 set -eu
 
 DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+# --- where the backlog lives (0182) -- byte-identical in claim, close, handoff, next and reopen ---
+# `.backlog/` at the repo root is the location. `.claude/backlog/` is the legacy one: the harness
+# refuses writes under any `.claude` path segment as a sensitive file, which is what this moves away
+# from. A repo holding both is refused rather than guessed at. LEGACY_UNTIL is the date in
+# references/CONCURRENCY.md, *Where the backlog lives*, and tests/backlog-location.test.sh holds the
+# two equal. The note is exported so a nested call (`close` runs `next`) does not print it twice.
+LEGACY_UNTIL=2026-12-31
+case "$DIR" in
+  */.claude/backlog) ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"; OTHER_BACKLOG="$ROOT/.backlog" ;;
+  *)                 ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; OTHER_BACKLOG="$ROOT/.claude/backlog" ;;
+esac
+if [ -d "$OTHER_BACKLOG" ]; then
+  echo "refusing: this repo holds two backlogs, $ROOT/.backlog and $ROOT/.claude/backlog -- keep one (references/CONCURRENCY.md, Where the backlog lives)" >&2
+  exit 1
+fi
+if [ "$OTHER_BACKLOG" = "$ROOT/.backlog" ] && [ -z "${BACKLOG_LEGACY_NOTED:-}" ]; then
+  echo "note: this backlog is at the legacy .claude/backlog/ -- run ./migrate to move it to .backlog/; the legacy location works until $LEGACY_UNTIL" >&2
+  BACKLOG_LEGACY_NOTED=1
+  export BACKLOG_LEGACY_NOTED
+fi
+# --- end of where the backlog lives ---
 QUEUE="$DIR/QUEUE.md"
 DONE="$DIR/DONE.md"
 LOCK="$DIR/.lock"

@@ -498,7 +498,7 @@ bash_call() { printf '[{"type":"tool_use","id":"t%s","name":"Bash","input":{"com
   printf '{"type":"user","timestamp":"2026-08-23T03:00:00.000Z","message":{"role":"user","content":"<command-name>/ai-building-tools:develop</command-name>"}}\n'
   asst 1 100 '[{"type":"text","text":"SENTINELPROSE no tool call here"}]'
   asst 2 200 "$(bash_call 2 'cat skills/develop/SKILL.md')"
-  asst 3 300 "$(bash_call 3 './.claude/backlog/claim 0073')"
+  asst 3 300 "$(bash_call 3 './.backlog/claim 0073')"
   asst 4 400 '[{"type":"tool_use","id":"t4","name":"Edit","input":{"file_path":"MEASUREMENT.md","old_string":"SENTINELPROSE","new_string":"b"}}]'
   asst 5 500 "$(bash_call 5 'tests/measurement.test.sh')"
   asst 6 600 "$(bash_call 6 'echo SENTINELPROSE')"
@@ -768,7 +768,7 @@ echo "0073 verify AC1/AC4 — every published table's rows sum to its own total 
 # so a reader checking the arithmetic of a record built for reproducibility got a mismatch with
 # no note: 28 sessions against a published 30, 2,169,772 growth tokens against 2,182,427, 465
 # mechanism turns against 466. No headline figure was wrong, which is exactly why nothing caught
-# it. Columns are resolved by HEADER NAME, never position (`.claude/backlog/claim` records what
+# it. Columns are resolved by HEADER NAME, never position (`.backlog/claim` records what
 # a positional parser costs).
 if python3 - "$REC" <<'PY'
 import re, sys

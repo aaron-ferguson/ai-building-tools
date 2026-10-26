@@ -304,7 +304,7 @@ For level 2, the raw HTML of `prototype.html` can be pasted straight into the pl
 
 ## Step 8: Park what surprised you
 
-Before reporting, park what surprised you in `.claude/backlog/FINDINGS.md` — one dated line, while the
+Before reporting, park what surprised you in `.backlog/FINDINGS.md` — one dated line, while the
 context is still hot.
 
 Triggers: **a template or skill step that had no correct answer for your case**, a configured command that

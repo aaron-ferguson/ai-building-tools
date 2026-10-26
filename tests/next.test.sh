@@ -35,7 +35,7 @@ announce_abort() {
 trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-# The harness runs the TEMPLATE copy below, never .claude/backlog/<script>: a mutation applied to
+# The harness runs the TEMPLATE copy below, never .backlog/<script>: a mutation applied to
 # the installed copy lands a real diff and reddens nothing.
 NEXT_SRC="$ROOT/skills/queue/templates/next"
 [ -f "$NEXT_SRC" ] || { echo "no next script at $NEXT_SRC" >&2; exit 2; }
@@ -55,7 +55,7 @@ trap cleanup INT TERM
 scaffold() {
   cleanup
   FIX="$(mktemp -d)"
-  mkdir -p "$FIX/.claude/backlog/items"
+  mkdir -p "$FIX/.backlog/items"
   git -C "$FIX" init -q
   git -C "$FIX" config user.email test@example.invalid
   git -C "$FIX" config user.name "next test"
@@ -69,20 +69,20 @@ scaffold() {
       printf '| %s |\n' "$1"
       printf '%s|\n' "$(printf '%s' "$1" | awk -F'|' '{ for (i = 1; i <= NF; i++) printf "|------" }')"
     fi
-  } > "$FIX/.claude/backlog/QUEUE.md"
+  } > "$FIX/.backlog/QUEUE.md"
 
-  cp "$NEXT_SRC" "$FIX/.claude/backlog/next"
-  chmod +x "$FIX/.claude/backlog/next"
+  cp "$NEXT_SRC" "$FIX/.backlog/next"
+  chmod +x "$FIX/.backlog/next"
 }
 
 # $1 id, $2 title, $3 next, $4 status, $5 parent
 add_row() {
-  printf '| %s | %s | %s | %s | %s |\n' "$1" "$2" "$3" "$4" "$5" >> "$FIX/.claude/backlog/QUEUE.md"
+  printf '| %s | %s | %s | %s | %s |\n' "$1" "$2" "$3" "$4" "$5" >> "$FIX/.backlog/QUEUE.md"
 }
 
 # $1 id, $2 status, $3 blocked_by as an inline list, e.g. '["0002"]' or '[]'
 add_item() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -106,7 +106,7 @@ ITEM
 # The line is passed WHOLE so a case can hand in the empty string and get an item with no
 # `close_by:` key at all — which is the default-reading half of 0086 AC8.
 add_item_close_by() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -134,7 +134,7 @@ ITEM
 # $1 id, $2 status, $3 blocked_by value (inline, e.g. '[]'), $4 the touches block body — a
 # leading newline then `  - ` entries, or empty for none.
 add_item_lists() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -157,7 +157,7 @@ ITEM
 # The same, with `blocked_by` written as a block so an entry can carry an inline comment.
 # $1 id, $2 status, $3 the blocked_by block body.
 add_item_blocked_block() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -183,7 +183,7 @@ ITEM
 #
 # $1 id, $2 status, $3 the claimed_by value written verbatim, e.g. '"aa11" # mine'
 add_item_commented_scalar() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -211,7 +211,7 @@ ITEM
 
 # $1 id, $2 next, $3 status, $4 blocked_by inline (e.g. '[]'), $5 parent, $6 one expects path
 add_ticket() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -239,7 +239,7 @@ ITEM
 # $1 id, $2 next, $3 status, $4 blocked_by inline, $5 parent, $6 the expects block body — a
 # leading newline then `  - ` entries.
 add_ticket_expects() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -267,7 +267,7 @@ ITEM
 # $1 id, $2 next, $3 status, $4 blocked_by inline, $5 parent, $6 one expects path, $7 the
 # claimed_by value written verbatim.
 add_ticket_held() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -290,13 +290,13 @@ ITEM
 
 # $1 id, $2 the section body including its `## ` heading line
 append_section() {
-  printf '\n%s\n' "$2" >> "$FIX/.claude/backlog/items/$1-fixture.md"
+  printf '\n%s\n' "$2" >> "$FIX/.backlog/items/$1-fixture.md"
 }
 
 # A project: an item with no row, `next:` blank and `status: active` — the shape a ticket takes the
 # moment it gains a child and its row leaves QUEUE.md.
 add_project() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Project $1
@@ -313,12 +313,12 @@ ITEM
 
 # $1 id — one DONE.md row, so a closed ticket can be told from a vanished one.
 add_done() {
-  if [ ! -f "$FIX/.claude/backlog/DONE.md" ]; then
+  if [ ! -f "$FIX/.backlog/DONE.md" ]; then
     printf '# Done\n\n| ID | Title | Type | QA | Closed | Item |\n|------|-------|------|----|--------|------|\n' \
-      > "$FIX/.claude/backlog/DONE.md"
+      > "$FIX/.backlog/DONE.md"
   fi
   printf '| %s | Fixture %s | feature | unit | 2026-01-01 | items/%s-fixture.md |\n' "$1" "$1" "$1" \
-    >> "$FIX/.claude/backlog/DONE.md"
+    >> "$FIX/.backlog/DONE.md"
 }
 
 # $1 the whole findings body, appended under the preamble's `---` rule.
@@ -326,28 +326,28 @@ add_findings() {
   {
     printf '# Findings\n\nPreamble, which holds no entries.\n\n---\n\n'
     printf '%s\n' "$1"
-  } > "$FIX/.claude/backlog/FINDINGS.md"
+  } > "$FIX/.backlog/FINDINGS.md"
 }
 
 # $1 the threshold value, written verbatim so a case can supply a non-number.
 set_threshold() {
-  printf 'project: Fixture\nfindings_threshold: %s\n' "$1" > "$FIX/.claude/backlog/config.yml"
+  printf 'project: Fixture\nfindings_threshold: %s\n' "$1" > "$FIX/.backlog/config.yml"
 }
 
 # $1 the develop gate's row cap (0178), written verbatim so a case can supply a non-number.
 set_gate_max_rows() {
-  printf 'project: Fixture\ngate_max_rows: %s\n' "$1" > "$FIX/.claude/backlog/config.yml"
+  printf 'project: Fixture\ngate_max_rows: %s\n' "$1" > "$FIX/.backlog/config.yml"
 }
 
 # One `| a | b | c |` row, cells verbatim, for a table whose columns are not the canonical five.
-add_row_cells() { printf '| %s |\n' "$1" >> "$FIX/.claude/backlog/QUEUE.md"; }
+add_row_cells() { printf '| %s |\n' "$1" >> "$FIX/.backlog/QUEUE.md"; }
 
 seal() {
   git -C "$FIX" add -A
   git -C "$FIX" commit -q -m "fixture"
 }
 
-run_next() { (cd "$FIX" && .claude/backlog/next "$@" 2>&1); }
+run_next() { (cd "$FIX" && .backlog/next "$@" 2>&1); }
 
 # --- assertions -------------------------------------------------------------------------------
 # Every assertion reports the text it matched against: always on FAIL, and on a pass only when
@@ -635,16 +635,16 @@ assert_contains "names the key and the value"   "$out" 'findings_threshold'
 # $1 the tools.path value, written verbatim so a case can supply one that does not resolve.
 set_tools_path() {
   printf 'project: Fixture\nfindings_threshold: %s\ntools:\n  path: %s\n' "${2:-8}" "$1" \
-    > "$FIX/.claude/backlog/config.yml"
+    > "$FIX/.backlog/config.yml"
 }
 
 # A second checkout beside the fixture, with its own backlog buffer. $1 dir name, $2 the body.
 add_tools_repo() {
-  mkdir -p "$FIX/../$1/.claude/backlog"
+  mkdir -p "$FIX/../$1/.backlog"
   {
     printf '# Findings\n\nPreamble, which holds no entries.\n\n---\n\n'
     printf '%s\n' "$2"
-  } > "$FIX/../$1/.claude/backlog/FINDINGS.md"
+  } > "$FIX/../$1/.backlog/FINDINGS.md"
 }
 
 echo "0060 AC1 — a buffer a retro has fully dispositioned reports zero and reads as under"
@@ -1376,7 +1376,7 @@ assert_not_contains "no comment reaches the take line" "$out" '#'
 # $1 id, $2 next, $3 status, $4 one expects path, $5 the touches block body — a leading newline
 # then `  - ` entries, or empty for none — $6 claimed_by written verbatim, e.g. '"aa11"' or empty.
 add_item_scope() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -1403,7 +1403,7 @@ ITEM
 #
 # $1 id, $2 next, $3 status
 add_item_blank_scope() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -1574,7 +1574,7 @@ add_row 0002 'The cross-cutting change, held' develop in-progress 0000
 # Written inline rather than via `add_item_blank_scope`, which hardcodes a `claimed_by` — a HELD
 # candidate is skipped by the take loop before any collision is computed, so that helper would have
 # made this case green for a reason that has nothing to do with the exclusive claim.
-cat > "$FIX/.claude/backlog/items/0001-fixture.md" <<'ITEM'
+cat > "$FIX/.backlog/items/0001-fixture.md" <<'ITEM'
 ---
 id: "0001"
 title: Fixture 0001
@@ -1638,7 +1638,7 @@ echo "0086 AC8/AC9 — and an item with no close_by: line reads as verify, not a
 scaffold
 add_row 0001 'An ordinary ticket' develop ready 0000
 add_item_close_by 0001 ready '[]' ''
-assert_not_contains "the fixture really has no close_by: line" "$(cat "$FIX/.claude/backlog/items/0001-fixture.md")" 'close_by'
+assert_not_contains "the fixture really has no close_by: line" "$(cat "$FIX/.backlog/items/0001-fixture.md")" 'close_by'
 seal
 out="$(run_next develop)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0
@@ -1695,7 +1695,7 @@ scaffold
 add_row 0001 'A tokenless row' develop in-progress 0000
 add_ticket 0001 develop in-progress '[]' 0000 a/one.md
 assert_not_contains "the fixture really leaves claimed_by: empty" \
-  "$(cat "$FIX/.claude/backlog/items/0001-fixture.md")" 'claimed_by: '
+  "$(cat "$FIX/.backlog/items/0001-fixture.md")" 'claimed_by: '
 seal
 out="$(run_next --drift)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc"
@@ -1750,7 +1750,7 @@ assert_not_contains "names no row"           "$out" 'DRIFT'
 #
 # $1 id, $2 status, $3 blocked_by inline, $4 claimed_by written verbatim, $5 one expects path
 add_item_held() {
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -1900,7 +1900,7 @@ done
 # $1 id, $2 the Problem body line. The fixture helpers above end every item at a bare `## Problem`
 # heading, and the WORK line is drawn from the first non-empty line UNDER it.
 add_problem() {
-  printf '\n%s\n' "$2" >> "$FIX/.claude/backlog/items/$1-fixture.md"
+  printf '\n%s\n' "$2" >> "$FIX/.backlog/items/$1-fixture.md"
 }
 
 # A gate of five: 0101 leads, 0102 and 0103 join through hub/shared.md, 0104 joins 0103 through
@@ -2317,7 +2317,7 @@ assert_not_contains "and no longer says it does not check"  "$route" 'does not c
 # next sprint whenever it comes — and a dormant project's calendar clock runs while nothing is
 # there to read it. What a sprint count measures is opportunities missed, which is the thing.
 #
-# WHERE THE COUNT COMES FROM. `.claude/backlog/runs/<run-id>.jsonl`, one file per run, each
+# WHERE THE COUNT COMES FROM. `.backlog/runs/<run-id>.jsonl`, one file per run, each
 # carrying a `sprint_ended` event when its run finished. That directory is the ONLY durable record
 # a supervisor may write: `sprint` Step 7 forbids it the backlog lock, so config.yml — where a
 # counter would otherwise live beside `next_id` — is closed to it.
@@ -2325,21 +2325,21 @@ assert_not_contains "and no longer says it does not check"  "$route" 'does not c
 # $1 threshold, $2 max sprints. Both verbatim, so a case can supply a non-number.
 set_findings_limits() {
   printf 'project: Fixture\nfindings_threshold: %s\nfindings_max_sprints: %s\n' "$1" "$2" \
-    > "$FIX/.claude/backlog/config.yml"
+    > "$FIX/.backlog/config.yml"
 }
 
 # A run that ENDED: $1 the run id, $2 the UTC date of its `sprint_ended` event.
 add_ended_run() {
-  mkdir -p "$FIX/.claude/backlog/runs"
+  mkdir -p "$FIX/.backlog/runs"
   printf '{"event":"sprint_ended","at":"%sT12:00:00Z","run":"%s"}\n' "$2" "$1" \
-    > "$FIX/.claude/backlog/runs/$1.jsonl"
+    > "$FIX/.backlog/runs/$1.jsonl"
 }
 
 # A run that started and never ended — provenance, and not a completed sprint.
 add_open_run() {
-  mkdir -p "$FIX/.claude/backlog/runs"
+  mkdir -p "$FIX/.backlog/runs"
   printf '{"event":"scope_confirmed","at":"%sT12:00:00Z","run":"%s"}\n' "$2" "$1" \
-    > "$FIX/.claude/backlog/runs/$1.jsonl"
+    > "$FIX/.backlog/runs/$1.jsonl"
 }
 
 # A backlog with one takeable develop row, so `--drive` has something to dispatch when the gate
@@ -3225,7 +3225,7 @@ for files in a.md b.md; do
   add_row 0003 'An in-scope design'    design  ready       ''
   add_ticket_held 0002 develop in-progress '[]' '' "$files" 'fx01'
   awk -v f="$files" '/^touches:$/ { print "touches:"; print "  - " f; next } { print }' \
-    "$FIX/.claude/backlog/items/0002-fixture.md" > "$FIX/i.tmp" && mv "$FIX/i.tmp" "$FIX/.claude/backlog/items/0002-fixture.md"
+    "$FIX/.backlog/items/0002-fixture.md" > "$FIX/i.tmp" && mv "$FIX/i.tmp" "$FIX/.backlog/items/0002-fixture.md"
   add_ticket 0003 design ready '[]' '' a.md
   seal
   out="$(run_next --drive --scope 0003)" && rc=0 || rc=$?
@@ -3312,9 +3312,9 @@ scaffold
 set_findings_limits 8 2
 one_takeable_row
 add_findings "$(printf -- '- 2026-01-02 — one entry.')"
-mkdir -p "$FIX/.claude/backlog/runs"
+mkdir -p "$FIX/.backlog/runs"
 printf '{"event":"sprint_ended","at":"2026-01-03T12:00:00Z","run":"r1","reason":"stopped"}\n{"event":"sprint_ended","at":"2026-01-04T12:00:00Z","run":"r1","reason":"completed"}\n' \
-  > "$FIX/.claude/backlog/runs/r1.jsonl"
+  > "$FIX/.backlog/runs/r1.jsonl"
 seal
 out="$(run_next --findings)" && rc=0 || rc=$?
 assert_rc       "exits 0"                                  "$rc" 0

@@ -5,7 +5,7 @@ description: >
   at the QA level the item declares — unit, integration, or end-to-end. Use when the user says
   "QA this", "verify it", "check it works", "run the e2e tests on this", "does this meet the
   criteria", or invokes /verify. Runs in its own session on a ticket `develop` left at
-  `next: verify`, and is the stage that closes it. Reads .claude/backlog/items/ for the
+  `next: verify`, and is the stage that closes it. Reads .backlog/items/ for the
   acceptance criteria and QA plan.
 ---
 
@@ -57,7 +57,7 @@ of work you notice goes to `queue`; an unplaceable finding goes in `FINDINGS.md`
 
 ## Step 1 — Get the contract, refuse what is not yours, then claim it
 
-With an ID: read `.claude/backlog/items/<id>-*.md` and take the **Acceptance criteria**,
+With an ID: read `.backlog/items/<id>-*.md` and take the **Acceptance criteria**,
 **Non-functional requirements** and **QA plan**. With no argument, `./next verify` prints the topmost
 `next: verify` / `status: ready` row.
 
@@ -377,7 +377,7 @@ earlier pass mutated the right behaviour and saw it go red.
 **On green, close it with `./close`** — one step, and the supported path:
 
 ```bash
-.claude/backlog/close 0007 8a04        # lock → re-read → tick ACs → move row → reconcile → commit → unlock
+.backlog/close 0007 8a04        # lock → re-read → tick ACs → move row → reconcile → commit → unlock
 ```
 
 It does the whole sequence below under the lock and **commits it**, which is the step a session under
@@ -443,9 +443,9 @@ it sets `next` and `status` and clears `claimed_by:`, `claimed_at:` and `touches
 reading the result back first:
 
 ```bash
-.claude/backlog/handoff 0007 8a04 develop           # red — back to the bench
-.claude/backlog/handoff 0007 8a04 queue             # stale contract — re-specify it, not you
-.claude/backlog/handoff 0007 8a04 develop waiting   # a person is needed
+.backlog/handoff 0007 8a04 develop           # red — back to the bench
+.backlog/handoff 0007 8a04 queue             # stale contract — re-specify it, not you
+.backlog/handoff 0007 8a04 develop waiting   # a person is needed
 ```
 
 By hand, under the lock, committed before you release it — the fallback where the script is not
@@ -511,7 +511,7 @@ mechanism was cleared**. Without that line the next session opens a correct comp
 
 ## Step 6 — Park what surprised you
 
-Before reporting, park what surprised you in `.claude/backlog/FINDINGS.md` — one dated line, while the
+Before reporting, park what surprised you in `.backlog/FINDINGS.md` — one dated line, while the
 context is still hot.
 
 Triggers: **a template or skill step that had no correct answer for your case**, a configured command that

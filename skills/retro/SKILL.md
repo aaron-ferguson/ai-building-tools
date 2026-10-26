@@ -67,7 +67,7 @@ sessions recorded, not the decisions taken in them** — a choice the user alrea
 
 ## Step 1 — Read the buffer
 
-`.claude/backlog/FINDINGS.md` is the input. Sessions parked these as they hit them,
+`.backlog/FINDINGS.md` is the input. Sessions parked these as they hit them,
 which is cheaper and more reliable than reconstructing them afterwards — the context was hot at the time,
 and a parked entry survives compaction, an interrupted session, and the gap between sessions.
 
@@ -75,8 +75,8 @@ and a parked entry survives compaction, an interrupted session, and the gap betw
 stands in a workspace root rather than a project root — which is where these sessions start, and is
 what made the 2026-09-07 pass sweep four sibling backlogs it was never told to touch.
 
-1. **The git repository root** containing the working directory — its `.claude/backlog/FINDINGS.md`.
-2. **The nearest `.claude/backlog/` at or above the working directory**, for a backlog that does not
+1. **The git repository root** containing the working directory — its `.backlog/FINDINGS.md`.
+2. **The nearest `.backlog/` at or above the working directory**, for a backlog that does not
    sit at its own repo root.
 3. **Nothing resolved → stop**, and report every directory searched. That is
    `references/CONVENTIONS.md` rung 3's refusal, cited rather than restated so the two cannot drift.
@@ -289,7 +289,7 @@ the rule prevents, not the reasoning that convinced you of it.
 If a destination check changed your mind about *where* something goes, say so before writing — that is
 the disagreement the user is most likely to have.
 
-**Take the backlog lock for every write inside `.claude/backlog/`.** Draining `FINDINGS.md` and
+**Take the backlog lock for every write inside `.backlog/`.** Draining `FINDINGS.md` and
 appending to an item are both inside the boundary, and `retro` holds no claim token that would make its
 writes visible otherwise. Read, write, commit and release in **one shell invocation** — a session gets a
 fresh shell per tool call, so a `trap ... EXIT` releases the lock the moment that call returns and every
@@ -384,7 +384,7 @@ sessions it was written for.
 
 ## Step 6 — Park what surprised you
 
-Before reporting, park what surprised you in `.claude/backlog/FINDINGS.md` — one dated line, while the
+Before reporting, park what surprised you in `.backlog/FINDINGS.md` — one dated line, while the
 context is still hot.
 
 Triggers: **a template or skill step that had no correct answer for your case**, a configured command that

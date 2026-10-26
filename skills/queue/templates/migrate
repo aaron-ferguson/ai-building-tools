@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+# Move a legacy `.claude/backlog/` to `.backlog/` at the repo root, as one commit (0182 FR3).
+#
+# **Why it exists.** The harness refuses writes under any `.claude` path segment as a "sensitive
+# file", so every stage writing a backlog under `.claude/` improvised a route around the refusal
+# while holding the lock. Moving the directory removes the cause instead of naming more fallbacks
+# (references/CONCURRENCY.md, *Where the backlog lives*).
+#
+# Usage:  .claude/backlog/migrate [token]
+#
+# **It is a change that touches every file**, so it runs only when nothing else is held
+# (references/CONCURRENCY.md, *A change that touches every file takes an exclusive claim*). It
+# refuses, naming the cause and changing nothing, when: the lock is held; a row is claimed by a
+# token other than the one given; a sprint `runs/.active/` marker is present; `.backlog/` already
+# exists; or the backlog holds uncommitted changes, which the move's commit would carry off.
+#
+# Otherwise it takes the lock, `git mv`s the tree, rewrites the root `.gitignore` entries naming
+# `.claude/backlog/`, commits the renames and that `.gitignore` change as ONE pathspec commit, and
+# releases the lock at its new path. Run again from `.backlog/` it says the repo is already
+# migrated and exits 0.
+#
+# **Install the release carrying this script on every machine that works the repo first.** A skill
+# installed before it looks only at `.claude/backlog/`, so on a migrated repo it finds no backlog;
+# `tools/release verify` is the check.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+TOKEN="${1:-}"
+COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+
+case "$DIR" in
+  */.backlog)
+    echo "already migrated: the backlog is at $DIR"
+    exit 0 ;;
+  */.claude/backlog) ;;
+  *)
+    echo "refusing to migrate: $DIR is neither .claude/backlog/ nor .backlog/" >&2
+    exit 1 ;;
+esac
+
+ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"
+refuse() { echo "refusing to migrate: $1 -- nothing was changed" >&2; exit 1; }
+
+[ ! -e "$ROOT/.backlog" ] || refuse "$ROOT/.backlog already exists"
+[ ! -d "$DIR/.lock" ] || refuse "the lock is held ($(cat "$DIR/.lock/held-by" 2>/dev/null || echo 'no held-by'))"
+[ ! -d "$DIR/runs/.active" ] || refuse "a sprint marker is present at runs/.active ($(cat "$DIR/runs/.active/held-by" 2>/dev/null || echo 'no held-by'))"
+git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1 || refuse "$ROOT is not a git repository"
+[ -z "$(git -C "$ROOT" status --porcelain -- .claude/backlog)" ] || refuse "the backlog holds uncommitted changes the move would carry"
+
+foreign=""
+for item in "$DIR"/items/*.md; do
+  [ -f "$item" ] || continue
+  held="$(awk '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && /^claimed_by:/ { v = $0; sub(/^claimed_by:[ \t]*/, "", v); gsub(/["\047 \t]/, "", v); print v; exit }
+  ' "$item")"
+  [ -n "$held" ] && [ "$held" != "$TOKEN" ] && foreign="$foreign $(basename "$item" .md) [$held]"
+done
+[ -z "$foreign" ] || refuse "a row is claimed by another token:$foreign"
+
+mkdir "$DIR/.lock" 2>/dev/null || refuse "the lock was taken while checking"
+printf 'migrate by %s %s\n' "${TOKEN:-none}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$DIR/.lock/held-by"
+
+git -C "$ROOT" mv .claude/backlog .backlog
+paths=".claude/backlog .backlog"
+if [ -f "$ROOT/.gitignore" ] && grep -q '\.claude/backlog/' "$ROOT/.gitignore"; then
+  sed 's#\.claude/backlog/#.backlog/#g' "$ROOT/.gitignore" > "$ROOT/.gitignore.migrate"
+  mv "$ROOT/.gitignore.migrate" "$ROOT/.gitignore"
+  paths="$paths .gitignore"
+fi
+# shellcheck disable=SC2086  # $paths is a fixed list of three words, split on purpose.
+git -C "$ROOT" commit -q -m "Move the backlog to .backlog/
+
+$COAUTHOR" -- $paths
+rm -rf "$ROOT/.backlog/.lock"
+echo "migrated: $ROOT/.claude/backlog -> $ROOT/.backlog ($(git -C "$ROOT" rev-parse --short HEAD))"

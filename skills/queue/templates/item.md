@@ -37,7 +37,7 @@ qa_level: verify | review | unit | integration | e2e
 # automated assertion, NAMED ON THE AC LINE, which the build session proved red before green. No
 # criterion whose verdict is a reading, a judgement or an eyeball — the tier is safe only where
 # there is no belief to be wrong about, and the two recorded times the independent gate bit in
-# this repo, it bit on AC quality rather than on code. `.claude/backlog/close` enforces this
+# this repo, it bit on AC quality rather than on code. `.backlog/close` enforces this
 # mechanically and refuses the close otherwise.
 #
 # `queue` SETS this field. `develop` may RAISE it from `develop` to `verify` when it finds a

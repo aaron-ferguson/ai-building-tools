@@ -88,6 +88,8 @@ assert_rc_nonzero() {
 $3"; fi
 }
 
+# Deliberately the LEGACY location (0182 AC10): every other script suite moved its fixtures to
+# `.backlog/`, and this one is what proves a script still works end to end at `.claude/backlog/`.
 BL() { printf '%s' "$FIX/.claude/backlog"; }
 
 # A refusal that edits half a file and then exits non-zero satisfies "refuses"; it does not

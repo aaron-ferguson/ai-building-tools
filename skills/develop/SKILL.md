@@ -7,12 +7,12 @@ description: >
   work on the next thing", "pick up the next item", "what's next — do it", "work the backlog",
   "develop 0007", "start on the top item", or invokes /develop. Also use when the user has
   tokens/time to spend and asks what to do next with intent to actually do it. Reads
-  .claude/backlog/ — created by the queue skill.
+  .backlog/ — created by the queue skill.
 ---
 
 # /develop
 
-Take the top `ready` item off `.claude/backlog/QUEUE.md` and build it: implemented, committed,
+Take the top `ready` item off `.backlog/QUEUE.md` and build it: implemented, committed,
 the tree left green, and the ticket set to `next: verify` so a QA session can check it against the
 written ACs and close it.
 
@@ -86,7 +86,7 @@ files every in-progress ticket has claimed. Reading the queue whole to learn one
 avoidable context cost in the backlog; open the file only for questions about *order*.
 
 ```bash
-.claude/backlog/next develop
+.backlog/next develop
 ```
 
 Without the script, read `QUEUE.md` and apply the same rules:
@@ -155,7 +155,7 @@ choosing between two of the author's own commits (`git-conventions.md`). A pass 
 **Claim it with `./claim`** — one step, and the supported path:
 
 ```bash
-.claude/backlog/claim 0007          # lock → re-read → edit row → frontmatter → commit → unlock
+.backlog/claim 0007          # lock → re-read → edit row → frontmatter → commit → unlock
 ```
 
 **The commit is why this is a script**: until it lands, the claim is visible only in your working
@@ -176,7 +176,7 @@ read-modify-write two sessions can both win:
    is new**. Correct `expects:` where it was wrong; the next capture calibrates on it.
 4. **Commit by pathspec** — `git commit -m "Claim 0007 [$CLAIM]" -- <queue> <item>`, with the
    `Co-Authored-By` trailer (`git-conventions.md`). A lifecycle commit is not exempt from it.
-5. `rm -rf .claude/backlog/.lock` — this same turn, before any implementation work.
+5. `rm -rf .backlog/.lock` — this same turn, before any implementation work.
 
 Widen `touches:` the moment the work reaches further: the other window reads it to decide what it may
 safely take.
@@ -453,7 +453,7 @@ whole index.
 Respect the ticket's **Out of scope**. Adjacent problems you find get queued as new tickets, not fixed
 here. Append anything non-obvious to *Notes & decisions* as you learn it — a disproved theory, a
 mechanism that surprised you, a rule that misled you. **What has no home yet goes in
-`.claude/backlog/FINDINGS.md`, one dated line, as you hit it**; Step 7 is the backstop, not the place
+`.backlog/FINDINGS.md`, one dated line, as you hit it**; Step 7 is the backstop, not the place
 to start remembering.
 
 ---
@@ -586,7 +586,7 @@ that field's own raise-only rule below does not reach it by implication.** Lower
 4. **Hand it to QA with `./handoff`** — one step, and the supported path:
 
    ```bash
-   .claude/backlog/handoff 0007 08b7 verify        # lock → re-read → row + item → commit → unlock
+   .backlog/handoff 0007 08b7 verify        # lock → re-read → row + item → commit → unlock
    ```
 
    It sets `next: verify` and `status: ready` and clears `claimed_by:`, `claimed_at:` and `touches:`
@@ -654,7 +654,7 @@ findings. Say whether the buffer looks worth sweeping, and name the command —
 
 ## Step 7 — Park what surprised you
 
-Before reporting, park what surprised you in `.claude/backlog/FINDINGS.md` — one dated line, while the
+Before reporting, park what surprised you in `.backlog/FINDINGS.md` — one dated line, while the
 context is still hot.
 
 Triggers: **a template or skill step that had no correct answer for your case**, a configured command that

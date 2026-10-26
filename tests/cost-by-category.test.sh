@@ -89,7 +89,7 @@ turn() { # <n> <ctx> <out> <content-json>
 }
 {
   printf '{"type":"user","timestamp":"2026-08-23T00:00:00.000Z","message":{"role":"user","content":[{"type":"text","text":"<command-name>/ai-building-tools:develop</command-name>"}]}}\n'
-  turn 1 100000 100 '[{"type":"text","text":"SENTINELPROSE"},{"type":"tool_use","name":"Bash","input":{"command":".claude/backlog/claim 0007 # SENTINELCMD"}}]'
+  turn 1 100000 100 '[{"type":"text","text":"SENTINELPROSE"},{"type":"tool_use","name":"Bash","input":{"command":".backlog/claim 0007 # SENTINELCMD"}}]'
   turn 2 110000 200 '[{"type":"tool_use","name":"Bash","input":{"command":"git status # SENTINELCMD"}}]'
   turn 3 120000 300 '[{"type":"tool_use","name":"Bash","input":{"command":"tests/thing.test.sh # SENTINELCMD"}}]'
   turn 4 130000 400 '[{"type":"tool_use","name":"Edit","input":{"file_path":"/x/skills/develop/SKILL.md","new_string":"SENTINELPAYLOAD"}}]'
@@ -119,7 +119,7 @@ turnb() { # <n> <ctx> <out> <content-json> — fixture 2, its own message ids an
 }
 {
   printf '{"type":"user","timestamp":"2026-08-23T10:00:00.000Z","message":{"role":"user","content":[{"type":"text","text":"<command-name>/ai-building-tools:develop</command-name>"}]}}\n'
-  turnb 1 100000 100 '[{"type":"tool_use","name":"Bash","input":{"command":".claude/backlog/claim 0007 # SENTINELCMD"}}]'
+  turnb 1 100000 100 '[{"type":"tool_use","name":"Bash","input":{"command":".backlog/claim 0007 # SENTINELCMD"}}]'
   turnb 2 110000 200 '[{"type":"tool_use","name":"Bash","input":{"command":"git status # SENTINELCMD"}}]'
   turnb 3 140000 300 '[{"type":"tool_use","name":"Bash","input":{"command":"tests/thing.test.sh # SENTINELCMD"}}]'
   turnb 4 190000 400 '[{"type":"tool_use","name":"Read","input":{"file_path":"/x/skills/develop/SKILL.md"}}]'

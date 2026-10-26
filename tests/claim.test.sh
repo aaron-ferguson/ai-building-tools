@@ -34,7 +34,7 @@ announce_abort() {
 trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-# The harness runs the TEMPLATE copy below, never .claude/backlog/<script>: a mutation applied to
+# The harness runs the TEMPLATE copy below, never .backlog/<script>: a mutation applied to
 # the installed copy lands a real diff and reddens nothing.
 CLAIM_SRC="$ROOT/skills/queue/templates/claim"
 [ -f "$CLAIM_SRC" ] || { echo "no claim script at $CLAIM_SRC" >&2; exit 2; }
@@ -55,7 +55,7 @@ trap cleanup INT TERM
 scaffold() {
   cleanup
   FIX="$(mktemp -d)"
-  mkdir -p "$FIX/.claude/backlog/items"
+  mkdir -p "$FIX/.backlog/items"
   git -C "$FIX" init -q
   git -C "$FIX" config user.email test@example.invalid
   git -C "$FIX" config user.name "claim test"
@@ -63,9 +63,9 @@ scaffold() {
   {
     printf '# Backlog\n\n'
     printf '%s\n%s\n%s\n' "$1" "$2" "$3"
-  } > "$FIX/.claude/backlog/QUEUE.md"
+  } > "$FIX/.backlog/QUEUE.md"
 
-  cat > "$FIX/.claude/backlog/items/$4-fixture.md" <<ITEM
+  cat > "$FIX/.backlog/items/$4-fixture.md" <<ITEM
 ---
 id: "$4"
 title: Fixture
@@ -79,13 +79,13 @@ ${6:-touches:}
 ## Problem
 ITEM
 
-  cp "$CLAIM_SRC" "$FIX/.claude/backlog/claim"
-  chmod +x "$FIX/.claude/backlog/claim"
+  cp "$CLAIM_SRC" "$FIX/.backlog/claim"
+  chmod +x "$FIX/.backlog/claim"
   git -C "$FIX" add -A
   git -C "$FIX" commit -q -m "fixture"
 }
 
-run_claim() { (cd "$FIX" && .claude/backlog/claim "$1" tok0 2>&1); }
+run_claim() { (cd "$FIX" && .backlog/claim "$1" tok0 2>&1); }
 
 # --- assertions -------------------------------------------------------------------------------
 # Every assertion reports the text it matched against: always on FAIL, and on a pass only when
@@ -160,7 +160,7 @@ touches_block() {
     fm && /^touches:/  { intou = 1; print; next }
     intou && /^[ \t]/ { print; next }
     intou             { exit }
-  ' "$FIX/.claude/backlog/items/$1-fixture.md"
+  ' "$FIX/.backlog/items/$1-fixture.md"
 }
 
 assert_count() {
@@ -174,8 +174,8 @@ $2"; fi
 # parser under test passes and fails with it, and this one did — it reported a correct claim as a
 # missing row because it was still finding the id in column 2.
 assert_row() {
-  table="$(sed -n '/^|/p' "$FIX/.claude/backlog/QUEUE.md")"
-  if grep -Fxq "$2" "$FIX/.claude/backlog/QUEUE.md"; then
+  table="$(sed -n '/^|/p' "$FIX/.backlog/QUEUE.md")"
+  if grep -Fxq "$2" "$FIX/.backlog/QUEUE.md"; then
     ok "$1"
     saw_on_pass "$table"
   else
@@ -196,7 +196,7 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0001 | A fixture row | develop | ready | 00
 out="$(run_claim 0001)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "row is set in-progress" '| 0001 | A fixture row | develop | in-progress | 0000 |'
-assert_contains "item records the token" "$(cat "$FIX/.claude/backlog/items/0001-fixture.md")" 'claimed_by: "tok0"'
+assert_contains "item records the token" "$(cat "$FIX/.backlog/items/0001-fixture.md")" 'claimed_by: "tok0"'
 assert_contains "the claim is committed" "$(git -C "$FIX" log -1 --format=%s)" 'Claim 0001 [tok0]'
 assert_contains "nothing is left uncommitted" "clean$(git -C "$FIX" status --porcelain)" 'clean'
 
@@ -245,7 +245,7 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0006 | Has expects | develop | ready | 0000
   - src/alpha.ts
   - tests/alpha.test.ts'
 out="$(run_claim 0006)" && rc=0 || rc=$?
-item="$(cat "$FIX/.claude/backlog/items/0006-fixture.md")"
+item="$(cat "$FIX/.backlog/items/0006-fixture.md")"
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_contains "touches: carries the whole expects list" "$item" 'touches:
   - src/alpha.ts
@@ -256,7 +256,7 @@ assert_contains "expects: is left as queue wrote it" "$item" 'expects:
 # Written is not committed, and committed is the whole reason this is a script. Assert on the
 # commit's own diff rather than on the file, so a write left dirty cannot pass.
 assert_contains "the provisional scope is IN the claim commit" \
-  "$(git -C "$FIX" show --format= -U0 HEAD -- .claude/backlog/items/0006-fixture.md)" \
+  "$(git -C "$FIX" show --format= -U0 HEAD -- .backlog/items/0006-fixture.md)" \
   '+  - src/alpha.ts'
 assert_contains "nothing is left uncommitted" "clean$(git -C "$FIX" status --porcelain)" 'clean'
 assert_contains "the report says to narrow it" "$out" 'NARROW it'
@@ -268,7 +268,7 @@ assert_not_contains "does not tell the session the field is unset" "$out" 'now s
 echo "0082 AC3 — an item with no expects: claims as it does today, and the report says so"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0007 | No expects | develop | ready | 0000 |' 0007
 out="$(run_claim 0007)" && rc=0 || rc=$?
-item="$(cat "$FIX/.claude/backlog/items/0007-fixture.md")"
+item="$(cat "$FIX/.backlog/items/0007-fixture.md")"
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_contains "touches: is left empty" "$item" 'touches:
 ---'
@@ -281,20 +281,20 @@ assert_contains "the report says the scope is unset" "$out" 'unset'
 # A script holding the lock can refuse instead of narrating.
 echo "0082 AC4 — a foreign uncommitted QUEUE.md edit is refused and nothing is changed"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0008 | Ready row | develop | ready | 0000 |' 0008
-printf '| 0009 | Another session mid-edit | develop | in-progress | 0000 |\n' >> "$FIX/.claude/backlog/QUEUE.md"
-before_queue="$(cat "$FIX/.claude/backlog/QUEUE.md")"
-before_item="$(cat "$FIX/.claude/backlog/items/0008-fixture.md")"
+printf '| 0009 | Another session mid-edit | develop | in-progress | 0000 |\n' >> "$FIX/.backlog/QUEUE.md"
+before_queue="$(cat "$FIX/.backlog/QUEUE.md")"
+before_item="$(cat "$FIX/.backlog/items/0008-fixture.md")"
 before_head="$(git -C "$FIX" rev-parse HEAD)"
 before_index="$(git -C "$FIX" diff --cached --name-only)"
 out="$(run_claim 0008)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names the row it would have carried" "$out" '0009 | Another session mid-edit'
 assert_contains "says what to do about it" "$out" 'restore'
-assert_eq "QUEUE.md is byte-identical" "$(cat "$FIX/.claude/backlog/QUEUE.md")" "$before_queue"
-assert_eq "the item is byte-identical" "$(cat "$FIX/.claude/backlog/items/0008-fixture.md")" "$before_item"
+assert_eq "QUEUE.md is byte-identical" "$(cat "$FIX/.backlog/QUEUE.md")" "$before_queue"
+assert_eq "the item is byte-identical" "$(cat "$FIX/.backlog/items/0008-fixture.md")" "$before_item"
 assert_eq "the index is untouched" "$(git -C "$FIX" diff --cached --name-only)" "$before_index"
 assert_eq "no claim was committed" "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
-assert_contains "the lock is not left behind" "none$(ls "$FIX/.claude/backlog/.lock" 2>/dev/null)" 'none'
+assert_contains "the lock is not left behind" "none$(ls "$FIX/.backlog/.lock" 2>/dev/null)" 'none'
 
 echo "0082 AC5 — that refusal reads as its own ground, not as one of the other three"
 assert_contains "says it is refusing, not warning" "$out" 'refusing to claim'
@@ -320,7 +320,7 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0010 | Re-claimed | develop | ready | 0000 
   # narrowed: src/beta.ts is read, never written
   - src/alpha.ts'
 out="$(run_claim 0010)" && rc=0 || rc=$?
-item="$(cat "$FIX/.claude/backlog/items/0010-fixture.md")"
+item="$(cat "$FIX/.backlog/items/0010-fixture.md")"
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_contains "the narrowed block survives intact, comment and all" "$item" 'touches:
   # narrowed: src/beta.ts is read, never written
@@ -346,7 +346,7 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0011 | Up for QA | verify | ready | 0000 |'
   - src/alpha.ts
   - tests/alpha.test.ts'
 out="$(run_claim 0011)" && rc=0 || rc=$?
-item="$(cat "$FIX/.claude/backlog/items/0011-fixture.md")"
+item="$(cat "$FIX/.backlog/items/0011-fixture.md")"
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_contains "touches: is left empty" "$item" 'touches:
 ---'
@@ -362,7 +362,7 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0012 | To build | develop | ready | 0000 |'
   - src/alpha.ts'
 out="$(run_claim 0012)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
-assert_contains "touches: carries the expects list" "$(cat "$FIX/.claude/backlog/items/0012-fixture.md")" 'touches:
+assert_contains "touches: carries the expects list" "$(cat "$FIX/.backlog/items/0012-fixture.md")" 'touches:
   - src/alpha.ts
 ---'
 assert_contains "the report says to narrow it" "$out" 'NARROW it'
@@ -374,17 +374,17 @@ assert_contains "the report says to narrow it" "$out" 'NARROW it'
 # not on the exit status, because a refusal that has already edited the row still exits non-zero.
 echo "0090 AC2 — a row whose item file is missing leaves QUEUE.md untouched"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0011 | Item was never written | develop | ready | 0000 |' 0011
-rm "$FIX/.claude/backlog/items/0011-fixture.md"
+rm "$FIX/.backlog/items/0011-fixture.md"
 git -C "$FIX" add -A && git -C "$FIX" commit -q -m "remove the item file"
-before_queue="$(cat "$FIX/.claude/backlog/QUEUE.md")"
+before_queue="$(cat "$FIX/.backlog/QUEUE.md")"
 before_head="$(git -C "$FIX" rev-parse HEAD)"
 out="$(run_claim 0011)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names the missing item as the cause" "$out" 'no item file for 0011'
-assert_eq "QUEUE.md is byte-identical" "$(cat "$FIX/.claude/backlog/QUEUE.md")" "$before_queue"
-assert_eq "git sees no change to QUEUE.md" "$(git -C "$FIX" diff --name-only -- .claude/backlog/QUEUE.md)" ""
+assert_eq "QUEUE.md is byte-identical" "$(cat "$FIX/.backlog/QUEUE.md")" "$before_queue"
+assert_eq "git sees no change to QUEUE.md" "$(git -C "$FIX" diff --name-only -- .backlog/QUEUE.md)" ""
 assert_eq "nothing was committed" "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
-assert_contains "the lock is released on that refusal" "none$(ls "$FIX/.claude/backlog/.lock" 2>/dev/null)" 'none'
+assert_contains "the lock is released on that refusal" "none$(ls "$FIX/.backlog/.lock" 2>/dev/null)" 'none'
 
 # --- 0090 AC5 — the claim commit carries the Co-Authored-By trailer ----------------------------
 # Same rule and same reading as in tests/close.test.sh and tests/handoff.test.sh: the trailer is
@@ -412,8 +412,8 @@ assert_contains "the subject still names the claim" "$(git -C "$FIX" log -1 --fo
 # A second ticket, appended to the fixture as a held row with a token in its item. Written here
 # rather than in `scaffold`, which builds exactly one row and one item.
 add_held() {
-  printf '| %s | Another ticket | develop | in-progress | 0000 |\n' "$1" >> "$FIX/.claude/backlog/QUEUE.md"
-  cat > "$FIX/.claude/backlog/items/$1-fixture.md" <<ITEM
+  printf '| %s | Another ticket | develop | in-progress | 0000 |\n' "$1" >> "$FIX/.backlog/QUEUE.md"
+  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Held fixture
@@ -436,15 +436,15 @@ echo "0067 AC7 — a \"*\" claim is refused while another ticket is held, naming
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0020 | A cross-cutting rename | develop | ready | 0000 |' 0020 \
   "$(printf 'expects:\n  - "*"')"
 add_held 0021 zz99
-before_queue="$(cat "$FIX/.claude/backlog/QUEUE.md")"
-before_item="$(cat "$FIX/.claude/backlog/items/0020-fixture.md")"
+before_queue="$(cat "$FIX/.backlog/QUEUE.md")"
+before_item="$(cat "$FIX/.backlog/items/0020-fixture.md")"
 out="$(run_claim 0020)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names the ticket that holds" "$out" '0021'
 assert_contains "and its token"               "$out" 'zz99'
 # `assert_contains` is satisfied by a string that has grown, so "wrote neither file" needs equality.
-assert_eq "QUEUE.md is byte-for-byte unchanged" "$(cat "$FIX/.claude/backlog/QUEUE.md")" "$before_queue"
-assert_eq "the item is byte-for-byte unchanged" "$(cat "$FIX/.claude/backlog/items/0020-fixture.md")" "$before_item"
+assert_eq "QUEUE.md is byte-for-byte unchanged" "$(cat "$FIX/.backlog/QUEUE.md")" "$before_queue"
+assert_eq "the item is byte-for-byte unchanged" "$(cat "$FIX/.backlog/items/0020-fixture.md")" "$before_item"
 
 echo "0067 AC7 — and the same ticket claims normally once nothing is held"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0020 | A cross-cutting rename | develop | ready | 0000 |' 0020 \
@@ -452,7 +452,7 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0020 | A cross-cutting rename | develop | r
 out="$(run_claim 0020)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "the row is set in-progress" '| 0020 | A cross-cutting rename | develop | in-progress | 0000 |'
-assert_contains "the item records the token" "$(cat "$FIX/.claude/backlog/items/0020-fixture.md")" 'claimed_by: "tok0"'
+assert_contains "the item records the token" "$(cat "$FIX/.backlog/items/0020-fixture.md")" 'claimed_by: "tok0"'
 
 # An ORDINARY ticket must still claim while another is held — the refusal is scoped to `"*"`, and
 # without this case a script refusing every claim whenever anything is held would pass above.
@@ -493,7 +493,7 @@ assert_not_contains "and not the one that does"    "$out" 'src/real.ts'
 # The warning is about the SEED, so the seed still has to have happened — a script that reported
 # the path and then declined to write it would pass the three assertions above.
 assert_contains "the fictional path is still seeded, because FR2 warns rather than refuses" \
-  "$(cat "$FIX/.claude/backlog/items/0030-fixture.md")" 'touches:
+  "$(cat "$FIX/.backlog/items/0030-fixture.md")" 'touches:
   - src/real.ts
   - tests/never-written.test.sh
 ---'
@@ -511,7 +511,7 @@ out="$(run_claim 0031)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_eq "the report is byte-for-byte what it was before this ticket" "$out" \
 "claimed 0031 with token tok0
-touches: is set provisionally from expects: (2 paths) — NARROW it in $FIX/.claude/backlog/items/0031-fixture.md to
+touches: is set provisionally from expects: (2 paths) — NARROW it in $FIX/.backlog/items/0031-fixture.md to
 what you will actually open, and widen it the moment the work reaches further"
 
 # `-f` reports every directory as absent, which is the mutation AC3 names. A directory is a
@@ -561,15 +561,15 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0036 | Worktree row | develop | ready | 000
 WT="$FIX.wt"
 git -C "$FIX" worktree add -q --detach "$WT"
 before_head="$(git -C "$WT" rev-parse HEAD)"
-before_sums="$(find "$WT/.claude/backlog" -type f | sort | xargs cksum)"
-out="$( (cd "$WT" && .claude/backlog/claim 0036 tok0) 2>&1 )" && rc=0 || rc=$?
+before_sums="$(find "$WT/.backlog" -type f | sort | xargs cksum)"
+out="$( (cd "$WT" && .backlog/claim 0036 tok0) 2>&1 )" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names a linked worktree" "$out" 'linked worktree'
 assert_contains "cites CONCURRENCY.md" "$out" 'CONCURRENCY.md'
 assert_contains "names the primary checkout to run from" "$out" "$(cd "$FIX" && pwd -P)"
 assert_eq "no commit lands on the worktree's HEAD" "$(git -C "$WT" rev-parse HEAD)" "$before_head"
 assert_eq "the worktree's backlog is byte-identical" \
-  "$(find "$WT/.claude/backlog" -type f | sort | xargs cksum)" "$before_sums"
+  "$(find "$WT/.backlog" -type f | sort | xargs cksum)" "$before_sums"
 
 # --- result -----------------------------------------------------------------------------------
 echo

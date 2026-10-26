@@ -37,7 +37,7 @@ announce_abort() {
 trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-# The harness runs the TEMPLATE copy below, never .claude/backlog/<script>: a mutation applied to
+# The harness runs the TEMPLATE copy below, never .backlog/<script>: a mutation applied to
 # the installed copy lands a real diff and reddens nothing.
 CLOSE_SRC="$ROOT/skills/queue/templates/close"
 [ -f "$CLOSE_SRC" ] || { echo "no close script at $CLOSE_SRC" >&2; exit 2; }
@@ -50,7 +50,7 @@ cleanup() { [ -n "$FIX" ] && rm -rf "$FIX" "$FIX.wt"; return 0; }
 trap 'announce_abort cleanup' EXIT
 trap cleanup INT TERM
 
-BL=".claude/backlog"
+BL=".backlog"
 
 # --- fixture ----------------------------------------------------------------------------------
 # scaffold <header> <separator> <rows…>  — one argument per data row.

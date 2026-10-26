@@ -18,7 +18,7 @@ end. Rule names are the headings in `CONCURRENCY.md`.
 ### A busy or stale lock — rule: *Lock every write to the backlog directory*
 
 ```bash
-BACKLOG=".claude/backlog"
+BACKLOG=".backlog"
 if mkdir "$BACKLOG/.lock" 2>/dev/null; then
   printf '%s\t%s\n' "$CLAIM" "$(date -u +%FT%TZ)" > "$BACKLOG/.lock/held-by"
 else

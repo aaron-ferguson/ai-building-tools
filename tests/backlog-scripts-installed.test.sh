@@ -40,7 +40,7 @@ trap announce_abort EXIT
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 BACKLOG="$ROOT/.claude/backlog"
 TEMPLATES="$ROOT/skills/queue/templates"
-SCRIPTS="next claim close handoff reopen"
+SCRIPTS="next claim close handoff reopen migrate"
 
 [ -d "$BACKLOG" ]   || { echo "no backlog at $BACKLOG" >&2; exit 2; }
 [ -d "$TEMPLATES" ] || { echo "no templates at $TEMPLATES" >&2; exit 2; }
@@ -53,7 +53,7 @@ bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
 
 echo "AC1 — all five are installed and executable"
 for s in $SCRIPTS; do
-  if [ -f "$BACKLOG/$s" ]; then ok "$s exists"; else bad "$s missing from .claude/backlog/"; fi
+  if [ -f "$BACKLOG/$s" ]; then ok "$s exists"; else bad "$s missing from this repo's backlog ($BACKLOG)"; fi
   if [ -x "$BACKLOG/$s" ]; then ok "$s is executable"; else bad "$s is not executable (chmod +x)"; fi
 done
 
@@ -199,7 +199,7 @@ done
 
 echo "AC6 — a transient lock cannot be committed"
 if grep -qF '.claude/backlog/.lock/' "$ROOT/.gitignore"; then
-  ok ".claude/backlog/.lock/ is ignored"
+  ok ".claude/backlog/.lock/ is ignored (this repo has not migrated, 0182)"
 else
   bad ".gitignore does not ignore .claude/backlog/.lock/"
 fi

@@ -37,7 +37,7 @@
 #                      30 sessions now returning 42 -- so a figure that has to stay true is
 #                      selected by id set and never by --since/--until (0135 FR3). Applied before
 #                      --exclude, which still subtracts from whatever this selected.
-#   --run              a supervised run's log (.claude/backlog/runs/<id>.jsonl). Adds the three
+#   --run              a supervised run's log (.backlog/runs/<id>.jsonl). Adds the three
 #                      figures a supervisor is bounded by (0039 AC13): the per-turn FLOOR, the
 #                      per-cycle GROWTH as an absolute number, and TURNS per cycle against a
 #                      budget. All three are computed over the ONE session the log's

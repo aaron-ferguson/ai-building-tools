@@ -318,7 +318,7 @@ if [ ! -f "$D003" ]; then
 else
   ok "AC10 — 003 exists"
   has "AC10 — 003 names the field that shipped"        "$D003" 'close_by'
-  has "AC10 — and the script that enforces it"         "$D003" '.claude/backlog/close'
+  has "AC10 — and the script that enforces it"         "$D003" '.claude/backlog/close'   # a dated record: 0182 rewrote no decision
   has "AC10 — and the eligibility rule"                "$D003" 'named on the AC line'
   has "AC10 — records the rejected alternatives"       "$D003" 'Rejected'
   has "AC10 — and the residual risk it accepted"       "$D003" 'Residual risk'

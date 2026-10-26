@@ -1,6 +1,6 @@
 # Mirroring to an external tracker, and recording what an item cost
 
-Read by `queue` and `develop` when `.claude/backlog/config.yml` carries a `tracker:` or
+Read by `queue` and `develop` when `.backlog/config.yml` carries a `tracker:` or
 `cost_tracking:` block. Both are opt-in and absent by default.
 
 These tools own **workflow**, not standards — the same split `CONVENTIONS.md` describes.
@@ -40,7 +40,7 @@ report becomes a properly specified item rather than being copied across
 
 Resolve once, at the start of the skill, and stop at the first that answers:
 
-**1. `.claude/backlog/config.yml` → `tracker:`**
+**1. `.backlog/config.yml` → `tracker:`**
 
 ```yaml
 tracker:

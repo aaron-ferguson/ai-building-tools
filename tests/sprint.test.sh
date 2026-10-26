@@ -786,7 +786,7 @@ else
   bad "AC18 — a released marker could not be retaken"
 fi
 
-if grep -qF 'mkdir .claude/backlog/runs/.active' "$SKILL"; then
+if grep -qF 'mkdir .backlog/runs/.active' "$SKILL"; then
   ok "the skill names the atomic marker it takes"
 else
   bad "AC18/FR12 — the skill does not name the single-instance marker"
@@ -798,7 +798,7 @@ fi
 # first run, with no second supervisor anywhere. The rule is that a busy marker and an absent
 # parent are distinguishable, and the fixture is a backlog with neither.
 echo "AC18 — an absent runs/ directory is not reported as a busy marker"
-FRESH="$FIX/fresh/.claude/backlog"
+FRESH="$FIX/fresh/.backlog"
 mkdir -p "$FRESH"
 if mkdir "$FRESH/runs/.active" 2>/dev/null; then
   bad "AC18 — the fixture is wrong: mkdir succeeded with no parent, so this case proves nothing"
@@ -811,7 +811,7 @@ if mkdir "$FRESH/runs/.active" 2>/dev/null; then
 else
   bad "AC18 — the marker could not be taken even with its parent present"
 fi
-if grep -qF 'mkdir -p .claude/backlog/runs' "$SKILL"; then
+if grep -qF 'mkdir -p .backlog/runs' "$SKILL"; then
   ok "the skill creates runs/ before reaching for the marker"
 else
   bad "AC18 — the skill takes the marker without creating runs/ first; on a fresh backlog the first supervisor is told the run is busy"
@@ -827,7 +827,7 @@ echo "AC16 — a killed supervisor leaves a backlog a hand-driven session can pi
 
 # Built as a real backlog and driven through the real ./next, because the criterion is about what a
 # hand-driven session is OFFERED, and only the script can answer that.
-BL="$FIX/bl/.claude/backlog"
+BL="$FIX/bl/.backlog"
 mkdir -p "$BL/items"
 cp "$ROOT/.claude/backlog/next" "$BL/next" 2>/dev/null || true
 cat > "$BL/config.yml" <<'CFG'
@@ -888,14 +888,14 @@ Takeable.
 IT
 
 if [ -x "$BL/next" ]; then
-  out="$(cd "$FIX/bl" && .claude/backlog/next --drift 2>&1)"; code=$?
+  out="$(cd "$FIX/bl" && .backlog/next --drift 2>&1)"; code=$?
   if [ "$code" = 0 ]; then
     ok "./next --drift exits zero over a killed supervisor's backlog"
   else
     bad "AC16 — ./next --drift exited $code: $out"
   fi
 
-  out="$(cd "$FIX/bl" && .claude/backlog/next develop 2>&1 || true)"
+  out="$(cd "$FIX/bl" && .backlog/next develop 2>&1 || true)"
   # Anchored to the TAKE line (0089): `*0002*` over the whole output is satisfied by a COLLIDES or
   # SKIP line naming 0002, and a prefix match on the capture misses a TAKE printed after a warning.
   if printf '%s\n' "$out" | grep -q '^TAKE      0002 '; then
@@ -909,7 +909,7 @@ if [ -x "$BL/next" ]; then
     ok "the orphaned claim on 0001 is not offered"
   fi
 else
-  skip "AC16 — .claude/backlog/next is not installed in this checkout, so the fixture cannot be driven"
+  skip "AC16 — .backlog/next is not installed in this checkout, so the fixture cannot be driven"
 fi
 
 # SCOPED TO STEP 5, and anchored to the RULE rather than to the citation. Asserted as a whole-file
@@ -1218,7 +1218,7 @@ fi
 
 # NO DISPATCHABLE PATH REMOVES THE LOCK.
 #
-# Anchored to STATE, not to vocabulary: correct prose is free to NAME `rm -rf .claude/backlog/.lock`
+# Anchored to STATE, not to vocabulary: correct prose is free to NAME `rm -rf .backlog/.lock`
 # in the sentence forbidding it, and an absence grep over the whole file would red that correct
 # file (testing-conventions.md, a negative assertion anchors to a state). The reachable state in an
 # instruction file is its FENCED BLOCKS — the only text a session copies and runs — so the check
@@ -1252,7 +1252,7 @@ fi
 # And the block naming BOTH tokens: Step 1's marker block also reads lock_stale_seconds, for the
 # supervisor marker's age (0175), and is not a check on the backlog lock at all.
 agecheck="$FIX/agecheck.sh"
-awk -v tok='lock_stale_seconds' -v lock='.claude/backlog/.lock' '
+awk -v tok='lock_stale_seconds' -v lock='.backlog/.lock' '
   /^```/ {
     if (inside) { if (hit && haslock) { for (i = 0; i < n; i++) print buf[i]; exit } ; n = 0; hit = 0; haslock = 0 }
     inside = !inside; next
@@ -1261,19 +1261,19 @@ awk -v tok='lock_stale_seconds' -v lock='.claude/backlog/.lock' '
 ' "$SKILL" > "$agecheck" 2>/dev/null || true
 
 mkbacklog() {   # mkbacklog <dir> <stale-seconds>
-  mkdir -p "$1/.claude/backlog"
-  printf 'project: fixture\nlock_stale_seconds: %s\n' "$2" > "$1/.claude/backlog/config.yml"
+  mkdir -p "$1/.backlog"
+  printf 'project: fixture\nlock_stale_seconds: %s\n' "$2" > "$1/.backlog/config.yml"
 }
 
 if [ -s "$agecheck" ] && grep -q 'lock_stale_seconds' "$agecheck"; then
   ok "the skill prescribes a runnable lock-age check that reads lock_stale_seconds"
 
   AGED="$FIX/aged"; mkbacklog "$AGED" 900
-  mkdir -p "$AGED/.claude/backlog/.lock"
+  mkdir -p "$AGED/.backlog/.lock"
   # `claim`'s held-by, verbatim in shape: an id and a token, and NO timestamp. A mechanism reading
   # a date out of this file has nothing to read, which is the defect this fixture exists to catch.
-  printf 'claim 0001 by ab12\n' > "$AGED/.claude/backlog/.lock/held-by"
-  touch -t 202601010000 "$AGED/.claude/backlog/.lock"
+  printf 'claim 0001 by ab12\n' > "$AGED/.backlog/.lock/held-by"
+  touch -t 202601010000 "$AGED/.backlog/.lock"
   out="$( cd "$AGED" && sh "$agecheck" 2>&1 || true )"
   if printf '%s' "$out" | grep -qi 'aged'; then
     ok "an aged lock is classified aged from the directory itself, with no timestamp in held-by"
@@ -1282,8 +1282,8 @@ if [ -s "$agecheck" ] && grep -q 'lock_stale_seconds' "$agecheck"; then
   fi
 
   FRESH="$FIX/fresh"; mkbacklog "$FRESH" 900
-  mkdir -p "$FRESH/.claude/backlog/.lock"
-  printf 'claim 0002 by cd34\n' > "$FRESH/.claude/backlog/.lock/held-by"
+  mkdir -p "$FRESH/.backlog/.lock"
+  printf 'claim 0002 by cd34\n' > "$FRESH/.backlog/.lock/held-by"
   out="$( cd "$FRESH" && sh "$agecheck" 2>&1 || true )"
   if printf '%s' "$out" | grep -qi 'fresh'; then
     ok "a lock taken a moment ago is classified fresh — the normal case, held for seconds"
@@ -1482,7 +1482,7 @@ fi
 # (testing-conventions.md). The marker line is what an edit moving the dispatch must also move.
 prop_at="$(grep -n "^## $PROPSEC" "$SKILL" | head -1 | cut -d: -f1)"
 stage_at="$(grep -n '\-\-session-id "\$RUN_STAGE_UUID"' "$SKILL" | head -1 | cut -d: -f1)"
-marker_at="$(grep -n 'mkdir .claude/backlog/runs/.active' "$SKILL" | head -1 | cut -d: -f1)"
+marker_at="$(grep -n 'mkdir .backlog/runs/.active' "$SKILL" | head -1 | cut -d: -f1)"
 if [ -n "$prop_at" ] && [ -n "$stage_at" ] && [ "$prop_at" -lt "$stage_at" ]; then
   ok "the proposal is stated before the stage dispatch (line $prop_at before $stage_at)"
 else
@@ -1559,7 +1559,7 @@ fi
 # Anchored to the marker PATH, not to the word "release": correct prose is free to mention releasing
 # for other reasons, and Step 1 already does. The path is what an edit dropping the release must
 # also drop.
-if says "$SKILL" "$PROPSEC" '.claude/backlog/runs/.active'; then
+if says "$SKILL" "$PROPSEC" '.backlog/runs/.active'; then
   ok "and the decline path names the marker it removes"
 else
   bad "AC5 — nothing says the supervisor marker is removed on a decline; the next sprint reports the backlog as held"
@@ -2028,8 +2028,8 @@ fi
 # $1 fixture name, $2 the run log body. Prints what the prescribed check prints over it.
 dw_run() {
   dw_dir="$FIX/dw-$1"
-  mkdir -p "$dw_dir/.claude/backlog/runs"
-  printf '%s\n' "$2" > "$dw_dir/.claude/backlog/runs/r-dw.jsonl"
+  mkdir -p "$dw_dir/.backlog/runs"
+  printf '%s\n' "$2" > "$dw_dir/.backlog/runs/r-dw.jsonl"
   ( cd "$dw_dir" && RUN_ID=r-dw sh "$dwcheck" 2>&1 ) || true
 }
 
@@ -2078,7 +2078,7 @@ fi
 # claim/next/handoff scripts from the template every install scaffolds from.
 mk_two_row_backlog() {
   tw="$1"
-  rm -rf "$tw"; mkdir -p "$tw/.claude/backlog/items"
+  rm -rf "$tw"; mkdir -p "$tw/.backlog/items"
   git -C "$tw" init -q
   git -C "$tw" config user.email test@example.invalid
   git -C "$tw" config user.name "sprint test"
@@ -2086,15 +2086,15 @@ mk_two_row_backlog() {
     printf '# Backlog\n\n| ID | Title | Next | Status | Parent |\n|------|-------|------|--------|--------|\n'
     printf '| 0001 | A design row | design | ready |  |\n'
     printf '| 0002 | A develop row | develop | ready |  |\n'
-  } > "$tw/.claude/backlog/QUEUE.md"
+  } > "$tw/.backlog/QUEUE.md"
   for tw_pair in 0001:design 0002:develop; do
     tw_id="${tw_pair%%:*}"; tw_next="${tw_pair#*:}"
     printf -- '---\nid: "%s"\ntitle: Fixture %s\ntype: feature\nnext: %s\nstatus: ready\nqa_level: unit\nsize: s\nparent:\nblocked_by: []\nexpects:\n  - src/%s.ts\nclaimed_by:\nclaimed_at:\ntouches:\n---\n\n## Problem\n\nA fixture.\n' \
-      "$tw_id" "$tw_id" "$tw_next" "$tw_id" > "$tw/.claude/backlog/items/$tw_id-fixture.md"
+      "$tw_id" "$tw_id" "$tw_next" "$tw_id" > "$tw/.backlog/items/$tw_id-fixture.md"
   done
   for s in claim next handoff; do
-    cp "$ROOT/skills/queue/templates/$s" "$tw/.claude/backlog/$s"
-    chmod +x "$tw/.claude/backlog/$s"
+    cp "$ROOT/skills/queue/templates/$s" "$tw/.backlog/$s"
+    chmod +x "$tw/.backlog/$s"
   done
   git -C "$tw" add -A
   git -C "$tw" commit -q -m fixture
@@ -2102,11 +2102,11 @@ mk_two_row_backlog() {
 
 TW="$FIX/two-writer"
 mk_two_row_backlog "$TW"
-mkdir "$TW/.claude/backlog/.lock"
-printf 'claim 9999 by held\n' > "$TW/.claude/backlog/.lock/held-by"
+mkdir "$TW/.backlog/.lock"
+printf 'claim 9999 by held\n' > "$TW/.backlog/.lock/held-by"
 
 # The control AC5 warns about: one claim, no retry, against a busy lock refuses outright.
-if ( cd "$TW" && .claude/backlog/claim 0001 tokc ) >/dev/null 2>&1; then
+if ( cd "$TW" && .backlog/claim 0001 tokc ) >/dev/null 2>&1; then
   bad "0134 AC5 — ./claim took a busy lock; the fixture cannot model the retry it exists for"
 else
   ok "control — a single ./claim against a busy lock refuses rather than waits"
@@ -2116,7 +2116,7 @@ fi
 # number of refusals is recorded so the case can show both writers really met the busy lock.
 claim_retrying() {
   cr_n=0
-  until ( cd "$TW" && .claude/backlog/claim "$1" "$2" ) >/dev/null 2>&1; do
+  until ( cd "$TW" && .backlog/claim "$1" "$2" ) >/dev/null 2>&1; do
     cr_n=$((cr_n + 1))
     [ "$cr_n" -lt 150 ] || return 1
     sleep 0.1
@@ -2126,7 +2126,7 @@ claim_retrying() {
 claim_retrying 0001 tokd & tw_p1=$!
 claim_retrying 0002 toke & tw_p2=$!
 sleep 1
-rm -rf "$TW/.claude/backlog/.lock"
+rm -rf "$TW/.backlog/.lock"
 tw_rc1=0; wait "$tw_p1" || tw_rc1=$?
 tw_rc2=0; wait "$tw_p2" || tw_rc2=$?
 
@@ -2140,15 +2140,15 @@ if [ "$(cat "$FIX/tw-refusals-tokd" 2>/dev/null || echo 0)" -ge 1 ] && [ "$(cat 
 else
   bad "0134 AC5 — a writer never met the busy lock; the case did not exercise the retry"
 fi
-if grep -q '^| 0001 | A design row | design | in-progress |' "$TW/.claude/backlog/QUEUE.md" \
-   && grep -q '^| 0002 | A develop row | develop | in-progress |' "$TW/.claude/backlog/QUEUE.md"; then
+if grep -q '^| 0001 | A design row | design | in-progress |' "$TW/.backlog/QUEUE.md" \
+   && grep -q '^| 0002 | A develop row | develop | in-progress |' "$TW/.backlog/QUEUE.md"; then
   ok "both rows read in-progress — neither write was lost"
 else
-  bad "0134 AC5 — a row was lost: $(grep '^| 000' "$TW/.claude/backlog/QUEUE.md" | tr '\n' ' ')"
+  bad "0134 AC5 — a row was lost: $(grep '^| 000' "$TW/.backlog/QUEUE.md" | tr '\n' ' ')"
 fi
 # `claim` writes the token quoted; either spelling is the same owner.
-if grep -qE '^claimed_by: "?tokd"?$' "$TW/.claude/backlog/items/0001-fixture.md" \
-   && grep -qE '^claimed_by: "?toke"?$' "$TW/.claude/backlog/items/0002-fixture.md"; then
+if grep -qE '^claimed_by: "?tokd"?$' "$TW/.backlog/items/0001-fixture.md" \
+   && grep -qE '^claimed_by: "?toke"?$' "$TW/.backlog/items/0002-fixture.md"; then
   ok "and each item carries its own writer's token"
 else
   bad "0134 AC5 — an item does not carry its own writer's token"
@@ -2159,7 +2159,7 @@ if [ "$tw_commits" = 2 ]; then
 else
   bad "0134 AC5 — expected 2 claim commits, got $tw_commits"
 fi
-if [ -z "$(git -C "$TW" status --porcelain -- .claude/backlog/QUEUE.md .claude/backlog/items)" ]; then
+if [ -z "$(git -C "$TW" status --porcelain -- .backlog/QUEUE.md .backlog/items)" ]; then
   ok "and nothing either writer touched is left uncommitted"
 else
   bad "0134 AC5 — a write is left uncommitted: $(git -C "$TW" status --porcelain | tr '\n' ' ')"
@@ -2182,7 +2182,7 @@ fi
 # The premise: the one --propose call already carries that row, so naming it costs no second read.
 PR="$FIX/propose-edge"
 mk_two_row_backlog "$PR"
-pr_rc=0; pr_out="$( cd "$PR" && .claude/backlog/next --drive --propose 2>&1 )" || pr_rc=$?
+pr_rc=0; pr_out="$( cd "$PR" && .backlog/next --drive --propose 2>&1 )" || pr_rc=$?
 # REWRITTEN BY 0159: the row is now DISPATCHED rather than escalated, and refusing it as out of
 # scope is the supervisor's job, not the script's. The premise is unchanged in substance — the one
 # --propose call already names that row, so reporting it as the scope's edge costs no second read.
@@ -2262,10 +2262,10 @@ HEARTBEAT="$(awk '
 # The samples must be the fixture run id with a UTC stamp, and the stamp must advance; after the
 # block's own `kill`, the file must stop changing.
 BEAT_DIR="$FIX/0153-heartbeat"
-BEAT_HELD="$BEAT_DIR/.claude/backlog/runs/.active/held-by"
-mkdir -p "$BEAT_DIR/.claude/backlog/runs/.active"
+BEAT_HELD="$BEAT_DIR/.backlog/runs/.active/held-by"
+mkdir -p "$BEAT_DIR/.backlog/runs/.active"
 cat > "$BEAT_DIR/standin" <<'STANDIN'
-for i in 1 2 3 4; do sleep 1; cat .claude/backlog/runs/.active/held-by >> samples 2>/dev/null || echo MISSING >> samples; done
+for i in 1 2 3 4; do sleep 1; cat .backlog/runs/.active/held-by >> samples 2>/dev/null || echo MISSING >> samples; done
 STANDIN
 printf '%s' "$HEARTBEAT" | awk -v standin="$BEAT_DIR/standin" '
   /^#.*dispatch/ { while ((getline line < standin) > 0) print line; next }
@@ -2277,7 +2277,7 @@ BEAT_STAMPS="$(grep -E '^run-fixture-0153-beat [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{
 BEAT_BAD="$(grep -cvE '^run-fixture-0153-beat [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$' "$BEAT_DIR/samples" || true)"
 BEAT_DISTINCT="$(printf '%s\n' "$BEAT_STAMPS" | grep -c . || true)"
 if [ "$BEAT_BAD" = 0 ] && [ "$BEAT_DISTINCT" -ge 2 ] && printf '%s\n' "$BEAT_STAMPS" | sort -c; then
-  ok "run as written, the Step 3 heartbeat rewrites .claude/backlog/runs/.active/held-by with an advancing UTC stamp ($BEAT_DISTINCT distinct) while the dispatch stands in"
+  ok "run as written, the Step 3 heartbeat rewrites .backlog/runs/.active/held-by with an advancing UTC stamp ($BEAT_DISTINCT distinct) while the dispatch stands in"
 else
   bad "0153 AC2 — run as written, the Step 3 heartbeat did not keep held-by advancing during the dispatch ($BEAT_DISTINCT distinct stamps, $BEAT_BAD bad samples); samples: $(tr '\n' '|' < "$BEAT_DIR/samples")"
 fi
@@ -2497,41 +2497,29 @@ guard_says() { # <file> <section> <phrase> <ok text> <bad text>
   if says_ci "$1" "$2" "$3"; then ok "$4"; else bad "$5"; fi
 }
 echo "retro 2026-09-13 — lessons from the September sprint runs"
-guard_says "$SKILL" "Step 3" 'Bash heredoc' \
-  "Step 3 names Bash as the write channel for backlog item files" \
-  "retro 2026-09-13 — Step 3 names no write channel; an unattended stage's Write on .claude/backlog/items/*.md stalls on a sensitive-file prompt nobody answers"
-
-# --- 0176 — the named write channel is itself refused non-deterministically ----------------------
-# The guard above names the channel; these four cover what a stage does when that channel is refused
-# anyway. The refusal is not a retry problem: an unattended sweep is refused WHILE HOLDING
-# .claude/backlog/.lock/, which blocks every claim and close in the repository until a human clears it.
-echo "0176 — Step 3 gives a refused write channel a fallback"
-guard_says "$SKILL" "Step 3" '`cp` it into place' \
-  "0176 AC1 — Step 3 names the write-outside-then-copy fallback" \
-  "0176 AC1 — Step 3 names no fallback form; a stage refused on the named channel stalls holding the backlog lock"
-guard_says "$SKILL" "Step 3" 'not predictable by command shape' \
-  "0176 FR2 — Step 3 says the refusal is not predictable by command shape, so a stage falls back rather than reasoning about the trigger" \
-  "0176 FR2 — Step 3 does not say the refusal is unpredictable; a stage that saw one refusal concludes the channel is unavailable"
+# 0182 FR7 reversed the write-channel text these guards held (0176): the refusal is the harness's
+# protected `.claude` path segment, so "heredoc, else `cp` it into place" was disproved (cp was
+# refused 2026-10-10) and "not predictable by command shape" was explained. The rules now live once,
+# in CONCURRENCY.md *When a backlog write is refused* (tests/backlog-location.test.sh AC6); Step 3
+# cites them. What stays here is what Step 3 itself must still say.
+echo "0182 — Step 3 cites the shared refused-write section and keeps its own two rules"
+guard_says "$SKILL" "Step 3" '*When a backlog write is refused*' \
+  "0182 FR7 — Step 3 cites *When a backlog write is refused*" \
+  "0182 FR7 — Step 3 does not cite the shared section; an unattended stage refused a write has no rule"
+guard_says "$SKILL" "Step 3" 'never leave the lock held' \
+  "0176 AC6 — Step 3 still rules that a refused release is never taken at face value" \
+  "0176 AC6 — Step 3 does not forbid accepting a refused release; a stage stops politely and blocks every claim and close in the repository"
 guard_says "$SKILL" "Step 3" 'says so in its stdout' \
   "0176 Observability NFR — a stage that falls back reports the fallback" \
   "0176 Observability NFR — Step 3 lets a stage fall back silently; the refused command is unexplained in the stdout capture"
 guard_says "$SKILL" "Step 3" 'Do not re-probe these' \
   "0176 AC3 — Step 3 still rules the three probed permission routes out of re-probing" \
-  "0176 AC3 — Step 3's no-re-probe ruling is gone; the fallback was added by replacing it rather than beside it"
-
-# --- 0176 FR5 — the refusal reaches the lock RELEASE, not only the write -------------------------
-# Observed 2026-09-21 (`FINDINGS.md`): `rm -rf .claude/backlog/.lock` was refused as a sensitive
-# file, and `python3 -c 'shutil.rmtree(...)'` cleared it. A stage taking that refusal at face value
-# leaves the lock HELD — which is the stranding failure this ticket exists to prevent, reached by a
-# live stage denied its own release rather than by a dying one. The write fallback above does not
-# reach it: `cp`-ing a file into place says nothing about removing a directory.
-echo "0176 — Step 3's fallback covers a refused lock release"
-guard_says "$SKILL" "Step 3" 'shutil.rmtree' \
-  "0176 AC5 — Step 3 names the fallback form for a refused lock release" \
-  "0176 AC5 — Step 3 names no release fallback; a stage refused on rm -rf .claude/backlog/.lock leaves it held"
-guard_says "$SKILL" "Step 3" 'never leave the lock held' \
-  "0176 AC6 — Step 3 rules that a refused release is never taken at face value" \
-  "0176 AC6 — Step 3 does not forbid accepting a refused release; a stage stops politely and blocks every claim and close in the repository"
+  "0176 AC3 — Step 3's no-re-probe ruling is gone"
+if section "$ROOT/references/CONCURRENCY.md" "When a backlog write is refused" | grep -qF 'shutil.rmtree'; then
+  ok "0176 AC5 — the shared section names the fallback form for a refused lock release"
+else
+  bad "0176 AC5 — no release fallback is named; a stage refused on removing the lock leaves it held"
+fi
 
 guard_says "$SKILL" "Step 3" 'outlive the supervisor' \
   "Step 3 captures stage stdout where it outlives the supervisor" \
@@ -2627,7 +2615,7 @@ fi
 # Bound to the COMMAND, not to Step 2. The section also EXPLAINS `--scope` in prose, so a
 # section-scoped grep is satisfied by the explanation and stays green with the flag deleted from the
 # command it documents — which is what a mutation of this guard showed it doing.
-drive_cmd="$(awk '/^\.claude\/backlog\/next --drive/ { c = 1 } c { print; if ($0 !~ /\\$/) exit }' "$SKILL" | tr '\n' ' ')"
+drive_cmd="$(awk '/^\.backlog\/next --drive/ { c = 1 } c { print; if ($0 !~ /\\$/) exit }' "$SKILL" | tr '\n' ' ')"
 if printf '%s\n' "$drive_cmd" | grep -qF -- '--scope'; then
   ok "Step 2's --drive command passes --scope"
 else
@@ -2968,12 +2956,12 @@ else
   # argument is a symlink, because BSD grep does not descend into one. A real tree has neither
   # problem, and no guard here behaves differently because of how the fixture was built.
   #
-  # `.claude/backlog/runs/` IS PRUNED, and that is 0165 FR3 rather than tidiness. Any live sprint
+  # `.backlog/runs/` IS PRUNED, and that is 0165 FR3 rather than tidiness. Any live sprint
   # writes there continuously, and `cp -R` exits non-zero when a file it has already enumerated is
   # deleted before it is read -- which under `set -eu` kills this whole file, printing no tally and
   # no FAIL line at all. Measured, with a loop writing there: 6 aborts in 32 runs. Nothing in this
   # file reads runs/, so the directory is skipped rather than raced. Anything else added under
-  # .claude/backlog/ that a sprint writes belongs in the same prune list.
+  # .backlog/ that a sprint writes belongs in the same prune list.
   copy_into() { # <destination-dir> <source-entry>... — copy each entry, keeping its basename.
     dest="$1"; shift
     mkdir -p "$dest"
@@ -3097,7 +3085,7 @@ fi
 # grepped: an echo that writes the wrong contents or clobbers on a second run reads fine as prose.
 marker_block() {
   awk '
-    /^```/ { if (infence) { if (body ~ /mkdir \.claude\/backlog\/runs\/\.active/) { printf "%s", body; exit }
+    /^```/ { if (infence) { if (body ~ /mkdir \.backlog\/runs\/\.active/) { printf "%s", body; exit }
                             infence = 0; body = "" }
              else { infence = 1 } ; next }
     infence { body = body $0 "\n" }
@@ -3105,28 +3093,28 @@ marker_block() {
 }
 MB="$(marker_block "$SKILL")"
 REPO185="$FIX/repo185"
-mkdir -p "$REPO185/.claude/backlog"
+mkdir -p "$REPO185/.backlog"
 git -C "$REPO185" init -q
 if [ -z "$MB" ]; then
   bad "0185 AC2 — no fenced block in the skill takes the .active marker; nothing to run"
-elif [ -e "$REPO185/.claude/backlog/runs" ]; then
+elif [ -e "$REPO185/.backlog/runs" ]; then
   bad "0185 AC2 — the fixture is wrong: runs/ exists before the block runs, so this case proves nothing"
 else
   (cd "$REPO185" && printf '%s' "$MB" | sh) >/dev/null 2>&1 || true
-  RIGN="$REPO185/.claude/backlog/runs/.gitignore"
+  RIGN="$REPO185/.backlog/runs/.gitignore"
   if [ -f "$RIGN" ] && [ "$(cat "$RIGN")" = '*' ]; then
     ok "the marker block writes runs/.gitignore containing *"
   else
     bad "0185 AC2 — after Step 1's marker block, runs/.gitignore is missing or does not contain exactly *"
   fi
-  printf '{}\n' > "$REPO185/.claude/backlog/runs/run-X.jsonl"
+  printf '{}\n' > "$REPO185/.backlog/runs/run-X.jsonl"
   if [ -z "$(git -C "$REPO185" status --porcelain)" ]; then
     ok "a run log written into runs/ afterwards is invisible to git status"
   else
     bad "0185 AC2 — git status shows runs/ content after the marker block: $(git -C "$REPO185" status --porcelain | tr '\n' ' ')"
   fi
   printf 'hand-edited\n' > "$RIGN"
-  rm -rf "$REPO185/.claude/backlog/runs/.active"
+  rm -rf "$REPO185/.backlog/runs/.active"
   (cd "$REPO185" && printf '%s' "$MB" | sh) >/dev/null 2>&1 || true
   if [ "$(cat "$RIGN" 2>/dev/null)" = 'hand-edited' ]; then
     ok "running the block a second time leaves an existing runs/.gitignore unchanged"
@@ -3145,9 +3133,9 @@ if [ "$(git -C "$ROOT" rev-parse --is-inside-work-tree 2>/dev/null)" != true ]; 
 else
   if git -C "$ROOT" check-ignore -q .claude/backlog/runs/run-X.jsonl && \
      grep -qx '\.claude/backlog/runs/' "$ROOT/.gitignore"; then
-    ok "this repo ignores .claude/backlog/runs/ whole"
+    ok "this repo ignores .backlog/runs/ whole"
   else
-    bad "0185 AC3 — .claude/backlog/runs/ is not ignored whole by this repo's .gitignore"
+    bad "0185 AC3 — .backlog/runs/ is not ignored whole by this repo's .gitignore"
   fi
   if [ -z "$(git -C "$ROOT" ls-files .claude/backlog/runs)" ]; then
     ok "nothing under runs/ is tracked"
@@ -3200,12 +3188,12 @@ MARKER_BLOCK="$(awk '
 ' "$SKILL" 2>/dev/null)"
 ago_stamp() { date -u -v-"$1"H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "$1 hours ago" +%Y-%m-%dT%H:%M:%SZ; }
 marker_fixture() { # <dir> <held run id or empty> <held stamp>
-  rm -rf "$1"; mkdir -p "$1/.claude/backlog/runs"
-  printf 'project: fixture\nlock_stale_seconds: 900\n' > "$1/.claude/backlog/config.yml"
-  printf '{"event":"scope_confirmed","at":"%s","run":"run-fx-0175r"}\n' "$3" > "$1/.claude/backlog/runs/run-fx-0175r.jsonl"
+  rm -rf "$1"; mkdir -p "$1/.backlog/runs"
+  printf 'project: fixture\nlock_stale_seconds: 900\n' > "$1/.backlog/config.yml"
+  printf '{"event":"scope_confirmed","at":"%s","run":"run-fx-0175r"}\n' "$3" > "$1/.backlog/runs/run-fx-0175r.jsonl"
   [ -z "$2" ] && return 0
-  mkdir "$1/.claude/backlog/runs/.active"
-  printf '%s %s\n' "$2" "$3" > "$1/.claude/backlog/runs/.active/held-by"
+  mkdir "$1/.backlog/runs/.active"
+  printf '%s %s\n' "$2" "$3" > "$1/.backlog/runs/.active/held-by"
 }
 run_marker() { # <dir> <RUN_ID> — the block's stdout and stderr, then its exit status on the last line
   printf '%s' "$MARKER_BLOCK" > "$1/marker.sh"
@@ -3221,7 +3209,7 @@ fi
 echo "0175 AC3 — a marker naming the supervisor's own run id is retaken whatever its age"
 marker_fixture "$MK" run-fx-0175r "$OLD175"
 OUT175="$(run_marker "$MK" run-fx-0175r)"
-HELD175="$(cat "$MK/.claude/backlog/runs/.active/held-by" 2>/dev/null || true)"
+HELD175="$(cat "$MK/.backlog/runs/.active/held-by" 2>/dev/null || true)"
 case "$OUT175" in
   *"rc=0") ok "the block exits 0 for its own run's 10-hour-old marker" ;;
   *) bad "0175 AC3 — the block refused its own run's marker: $(printf '%s' "$OUT175" | tr '\n' '|')" ;;
@@ -3231,13 +3219,13 @@ case "$HELD175" in
   "run-fx-0175r "*) ok "held-by still names run-fx-0175r, with a rewritten stamp" ;;
   *) bad "0175 AC3 — held-by names another run after a retake: '$HELD175'" ;;
 esac
-RES175="$(grep '"supervisor_resumed"' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl" || true)"
+RES175="$(grep '"supervisor_resumed"' "$MK/.backlog/runs/run-fx-0175r.jsonl" || true)"
 if printf '%s' "$RES175" | grep -qF "\"suspended_at\":\"$OLD175\"" && printf '%s' "$RES175" | grep -qF '"resumed_at":"'; then
   ok "the run log gains supervisor_resumed with suspended_at at the old stamp, and resumed_at"
 else
   bad "0175 AC3 — no supervisor_resumed event with suspended_at $OLD175 and resumed_at: '${RES175}'"
 fi
-if grep -qF 'sprint_ended' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl"; then
+if grep -qF 'sprint_ended' "$MK/.backlog/runs/run-fx-0175r.jsonl"; then
   bad "0175 AC3 — retaking its own marker ended its own run"
 else
   ok "and its own run is not ended"
@@ -3246,20 +3234,20 @@ fi
 echo "0175 AC4 — a stale marker naming another run is taken over, ending that run once as superseded"
 marker_fixture "$MK" run-fx-0175r "$OLD175"
 OUT175="$(run_marker "$MK" run-fx-0175n)"
-case "$(cat "$MK/.claude/backlog/runs/.active/held-by" 2>/dev/null || true)" in
+case "$(cat "$MK/.backlog/runs/.active/held-by" 2>/dev/null || true)" in
   "run-fx-0175n "*) ok "the stale marker is taken: held-by names run-fx-0175n" ;;
   *) bad "0175 AC4 — the stale marker was not taken over: $(printf '%s' "$OUT175" | tr '\n' '|')" ;;
 esac
-ENDED175="$(grep -c '"sprint_ended"' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl" || true)"
-if [ "$ENDED175" = 1 ] && grep '"sprint_ended"' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl" | grep -qF '"reason":"superseded"' && \
-   grep '"sprint_ended"' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl" | grep -qF '"by":"run-fx-0175n"'; then
+ENDED175="$(grep -c '"sprint_ended"' "$MK/.backlog/runs/run-fx-0175r.jsonl" || true)"
+if [ "$ENDED175" = 1 ] && grep '"sprint_ended"' "$MK/.backlog/runs/run-fx-0175r.jsonl" | grep -qF '"reason":"superseded"' && \
+   grep '"sprint_ended"' "$MK/.backlog/runs/run-fx-0175r.jsonl" | grep -qF '"by":"run-fx-0175n"'; then
   ok "the superseded run's log gains exactly one sprint_ended, reason superseded, by run-fx-0175n"
 else
   bad "0175 AC4 — the superseded log holds $ENDED175 sprint_ended events, or the one it holds names no reason superseded by run-fx-0175n"
 fi
-printf 'run-fx-0175r %s\n' "$OLD175" > "$MK/.claude/backlog/runs/.active/held-by"
+printf 'run-fx-0175r %s\n' "$OLD175" > "$MK/.backlog/runs/.active/held-by"
 run_marker "$MK" run-fx-0175m >/dev/null
-if [ "$(grep -c '"sprint_ended"' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl" || true)" = 1 ]; then
+if [ "$(grep -c '"sprint_ended"' "$MK/.backlog/runs/run-fx-0175r.jsonl" || true)" = 1 ]; then
   ok "a second supersession of an already-ended run appends no second sprint_ended"
 else
   bad "0175 FR6 — a log already holding sprint_ended gained another"
@@ -3268,7 +3256,7 @@ marker_fixture "$MK" run-fx-0175r "$(ago_stamp 0)"
 OUT175="$(run_marker "$MK" run-fx-0175n)"
 case "$OUT175" in
   *"rc=0") bad "0175 AC4/0153 — a FRESH marker naming another run was taken over" ;;
-  *) if grep -qF 'sprint_ended' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl"; then
+  *) if grep -qF 'sprint_ended' "$MK/.backlog/runs/run-fx-0175r.jsonl"; then
        bad "0175 AC4/0153 — refusing a fresh marker still ended the run it names"
      else ok "0153 unchanged: a fresh marker naming another run is refused and ends nothing"; fi ;;
 esac
@@ -3276,11 +3264,11 @@ esac
 echo "0175 AC5 — a run whose log already carries sprint_ended is refused, and nothing is taken"
 marker_fixture "$MK" "" "$OLD175"
 printf '{"event":"sprint_ended","at":"%s","run":"run-fx-0175r","reason":"completed"}\n' "$OLD175" \
-  >> "$MK/.claude/backlog/runs/run-fx-0175r.jsonl"
+  >> "$MK/.backlog/runs/run-fx-0175r.jsonl"
 OUT175="$(run_marker "$MK" run-fx-0175r)"
 case "$OUT175" in
   *"rc=0") bad "0175 AC5 — resuming an ended run was allowed" ;;
-  *) if [ -d "$MK/.claude/backlog/runs/.active" ]; then bad "0175 AC5 — refused, but the marker was taken anyway"
+  *) if [ -d "$MK/.backlog/runs/.active" ]; then bad "0175 AC5 — refused, but the marker was taken anyway"
      else ok "resuming an ended run is refused before the marker is taken, so nothing is dispatched"; fi ;;
 esac
 if says "$SKILL" "Step 1" 'refuses a run whose log already carries `sprint_ended`, and dispatches nothing'; then

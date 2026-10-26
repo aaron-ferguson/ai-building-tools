@@ -62,7 +62,7 @@ gate_max_rows: 5
 # project's own parking rate. Raise this one on a project whose sprints are long.
 findings_max_sprints: 2
 
-# How long a held `.claude/backlog/.lock/` may be before a driver escalates instead of waiting on
+# How long a held `.backlog/.lock/` may be before a driver escalates instead of waiting on
 # it (`sprint` Step 7). Seconds. A lock in use is held for seconds; anything far above that is
 # a stage that died holding it, and it blocks every claim and close in the repo until a human
 # clears it. Read from the lock DIRECTORY's mtime, never from `held-by`, which the claim path
