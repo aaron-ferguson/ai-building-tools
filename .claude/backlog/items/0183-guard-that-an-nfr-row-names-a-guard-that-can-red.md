@@ -123,3 +123,33 @@ AC6's deletions and watch each red; run AC1 and AC2 against fixtures built under
   - **Criteria accounting:** the row arrived with no ACs; FR1/FR2 are kept and sharpened, FR3/FR4 and
     AC1–AC7 added. `qa_level: unit` and `close_by: verify` re-read against them and kept. `verify`
     Step 4 already sits near `tests/skill-size.test.sh`'s budget — develop should read that first.
+- **2026-10-25 (develop, 2672)** — Built in `7a6fce2` and `f288a69`.
+  - **Columns are found by header, not position — a mechanism the design did not mention.** 88 of the 97
+    items at develop or verify carry the pre-0107 three-column table (`Dimension | Requirement |
+    Convention`). Read by position, every one of them reported its convention filename as a bare
+    answer, which gave 111 false reds on the first run. The matcher now finds *How it would red*
+    and *Requirement for this item* by their header cells. A table without the column is counted in
+    the AC7 pass line ("9 scanned (88 more carry the pre-0107 table …)") rather than passed over in
+    silence. Those 88 have answered nothing for this question; that is parked in `FINDINGS.md`, not
+    fixed here.
+  - **Backticked spans are masked before the `|` split**, so a cell holding
+    `'playwright test|vitest run'` keeps its columns. There is a case for this.
+  - **FR4 was done under its own claim of 0177 (token 48b5, `1f30316`, released back to
+    `verify | ready`).** 0177's cell now names `tests/remote-anchor.test.sh`, case *0177 NFR —
+    Step 5's clause is cited, not copied*, which reds on deleting the citation. It says the copy
+    half is `prose only — no artifact yet`, because no guard reds on a copy written beside the
+    citation, and this ticket's Out of scope forbids pretending otherwise. AC7's live run: before
+    the re-spec it was red on exactly `0177 — Documentation: bare file reference`, and green after.
+  - `README.md`'s guard block gained the new file. `tests/citations.test.sh` 0046 reds without it.
+  - **Clause table. Every mutation was run against committed files, restored from copies, with
+    controls at 12/0 and 56/0 after.**
+
+    | AC clause | Guard | Mutation → result |
+    |---|---|---|
+    | AC1 bare file at develop, named by id and dimension | `AC1/AC3` fixture case | id dropped → 1 FAIL; bare never empty → 1 FAIL |
+    | AC2 empty cell at verify, named | `AC2` fixture case | empty check removed → 1 FAIL; dimension dropped → 1 FAIL; `verify` dropped from scope → 1 FAIL |
+    | AC3 probe runs the same matcher; reds with the bare check removed | fixtures go through `scanned_misses` → `nfr_misses`, the scan's own path | bare check removed → 1 FAIL |
+    | AC4 four named cells not reported | `AC4` ×4 + pipe-in-span | span masking removed → 1 FAIL |
+    | AC5 verify Step 4 sentence, in Step 4's window | `0183 AC5` (`says`, exactly once) | sentence line deleted → 1 FAIL |
+    | AC6 template preamble sentence, in the NFR section | `0183 AC6` (`says`) | bold sentence removed → 1 FAIL |
+    | AC7 live backlog green, 0177 re-specified, whole suite green | AC7 scan | observed red on 0177 before `1f30316`, green after; suite green at `f288a69` |
