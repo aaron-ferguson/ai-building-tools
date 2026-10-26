@@ -221,3 +221,38 @@ independent session was refused the same way and **splitting the call cleared it
 - [ ] AC8 — Given `skills/sprint/SKILL.md` Step 3, when read, then it cites *When a backlog write is refused* and no longer says to `cp` a backlog file into place.
 - [ ] AC9 — Given `CHANGELOG.md` `## Unreleased`, when read, then it names the move to `.backlog/`, `./migrate`, the 2026-12-31 legacy end and the install-before-migrate order.
 - [ ] AC10 — Given the existing `tests/*.test.sh`, when the suite is run after fixtures are moved to `.backlog/`, then every file tallies green, and at least one existing script test still runs against a legacy fixture.
+- **2026-10-26 (develop, token 7bff)** — Built in c5798b9, one commit, held as an exclusive claim
+  (`touches: - "*"`). The whole suite was green at c5798b9, run before an account session limit.
+  - **FR2** — one location block, byte-identical in `claim`, `close`, `handoff`, `next`, `reopen`,
+    between `# --- where the backlog lives (0182)` and `# --- end of where the backlog lives ---`.
+    It sets `ROOT`, refuses a repo holding both locations, and prints the legacy line once. The
+    line is exported as `BACKLOG_LEGACY_NOTED`, so `close`'s nested `next` stays quiet. `claim`'s
+    own `ROOT=` line is gone (the block sets it). `next`'s tools buffer reads `$ROOT/<tools.path>`,
+    falling back to the legacy path.
+  - **FR3** — `skills/queue/templates/migrate` is new and installed beside the other scripts. It also
+    refuses on uncommitted backlog changes, an addition beyond the FR: the move's commit would carry
+    them off. It takes `[token]`, so a row claimed by the ticket that runs it does not block it.
+    `runs/` and the lock move with the `git mv`, because it renames the directory.
+  - **FR4/FR1** — *Where the backlog lives* and *When a backlog write is refused* open Part 1 of
+    `references/CONCURRENCY.md`. Skills now name `.backlog/` in fenced blocks too. The legacy
+    window is one rule there: read every `.backlog/` as `.claude/backlog/` until migrated.
+  - **FR7** — 0176's Step 3 guards in `tests/sprint.test.sh` asserted the text FR7 retires
+    (`cp` it into place, "not predictable by command shape", `Bash heredoc`). They were
+    deliberately rewritten to assert the citation; the `shutil.rmtree` guard now reads the shared
+    section.
+  - **AC10** — 16 suites moved their fixtures to `.backlog/`. Lines naming this repo's real backlog
+    (`$ROOT/.claude/backlog`, its `.gitignore`) stay legacy, as does the 0185 child-repo copy.
+    `tests/reopen.test.sh` is kept on the legacy fixture, with a comment saying so.
+    `tests/citations.test.sh` gained `backlog_of`, because it reads both this repo and fixtures.
+    `tests/close-by.test.sh` still expects decision record 003's literal `.claude/backlog/close`:
+    no decision record was rewritten.
+  - Also changed, outside the AC lists: README (installer docs, plus a legacy paragraph naming
+    `migrate`) and a `tools/harvest-usage.sh` comment. CLAUDE.md and `docs/decisions/` are left alone:
+    this repo is still legacy, and the records are dated.
+  - **NOT RUN — the mutation sweep.** The host began sleeping between calls after the session limit:
+    a `./next` taking 0.8 s of CPU took 16 min of wall time. Two guards I wrote for gaps I found
+    were reverted unrun rather than committed: (a) nothing asserts the block *exports*
+    `BACKLOG_LEGACY_NOTED`, since AC2's nested case sets the variable by hand, so dropping
+    `export` would stay green (reasoned, not run); (b) nothing exercises `next` reading a legacy
+    tools repo's `FINDINGS.md`, which is FR2's second allowed site (reasoned, not run). Verify
+    should treat both as unguarded until a guard exists.
