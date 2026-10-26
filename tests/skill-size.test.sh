@@ -60,6 +60,30 @@
 #   ONE CLAUSE, MOVE THE STORY. A rule whose failure has been relocated is a rule the next session
 #   argues with, which is why the test can reject a cut as well as a move.
 #
+# A RECORDED REASON HAS A BOUND — the argued-at size, and MARGIN (0190). A reason is true of the
+# file it was argued against and of nothing larger: 0040 argued the sprint skill a tenth over the
+# goal, and the file tripled under that reason with this guard green. So every recorded file also
+# carries the byte size it was argued at, as a separate field the guard reads — argued_at() below,
+# never written into a reason, because a number in prose goes stale silently (0035 FR6) while a
+# number the guard reads reds. A recorded file more than MARGIN bytes past its argued-at size fails
+# until its reason is re-argued at the new size, both fields updated together, or relocation brings
+# the file back inside the margin. Moving the number without re-arguing the reason is the silent
+# drift this bound exists to stop.
+#
+#   MARGIN = 5,000 bytes, absolute. Derivation: a quarter of the goal, ~1,240 tokens. Growth smaller
+#   than that is a block whose relocation would need p = 1/(1 + 5,000/17,000), ~77% of runs, to skip
+#   it, so a re-argument would rarely find anything; at the observed growth (0180 alone added ~2,600)
+#   it asks every two or three growing tickets rather than every one. Never a share of the argued-at
+#   size: rent is paid per byte, and a proportional margin gives the largest files the most slack.
+#   Rejected: B0 as the margin (nearly the whole goal, so a file could grow most of the way to the
+#   sprint skill's size unexamined), and no margin (every growing ticket re-argues, which trains
+#   sessions to rubber-stamp).
+#
+#   GRANDFATHERED by 0190, 2026-10-25: the argued-at sizes of every recorded file except the sprint
+#   skill are their sizes on 0190's build commit, not the sizes their reasons were argued at, which
+#   nobody recorded. That is a re-blessing, not a re-argument — those reasons stand unexamined until
+#   each is next re-argued, and the first ticket to grow one past its margin is the one that does it.
+#
 # It is measured in bytes, absolutely — never a percentage of a baseline. 0021's first pass could
 # not close because its target was 25% off a baseline eight sibling tickets moved 18% while it
 # waited. Bytes rather than characters: these files are full of multi-byte em-dashes and a decoded
@@ -89,6 +113,7 @@ trap announce_abort EXIT
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 
 GOAL=20190             # ~5,000 tokens at the 4.038 bytes/token ratio this repo measured
+MARGIN=5000            # bytes a recorded file may grow past its argued-at size — derived in the header
 
 # Asked for in the same words as tests/reference-size.test.sh, deliberately: a guard that asks only
 # for "a reason" gets a reason, and a reason that does not say what was considered is one nobody can
@@ -109,8 +134,23 @@ justification() {
     skills/queue/SKILL.md)     echo "0035 — considered relocating the specification rules; rejected on (a), because every other stage reads them and p is zero — there is no branch here that any run skips" ;;
     skills/develop/SKILL.md)   echo "0035 — considered relocating its worked anecdotes; rejected on both: they are already the one-clause statement of the failure each rule prevents, so moving them leaves a rule with no failure named, and they are read on every run" ;;
     skills/retro/SKILL.md)     echo "b9a5ee0 — considered relocating Step 4's four dispositions and Step 1's two modes; rejected on both: a run reaches them before it can triage a single entry, so p is zero, and each is mandatory the moment the buffer is non-empty" ;;
-    skills/sprint/SKILL.md) echo "0040 — considered relocating Step 7's lock policy and budget-kill recovery, the ~2,100 bytes that put this file over; rejected on BOTH conditions: p is 89% against a section every run reads before it dispatches anything, so nothing shows the branch is skipped, and the policy is mandatory the moment a lock is met — which is exactly when a step behind a pointer gets skipped, and the failure it prevents is a driver stealing a lock from a working stage" ;;
+    skills/sprint/SKILL.md)    echo "0190 — considered relocating Step 7's lock and cap-kill recovery and the design-beside rule, the only two branches a run can skip; rejected on both conditions: Step 7 is mandatory the moment a lock is met, and behind a pointer it is skipped exactly then, so a driver steals a working stage's lock; the design-beside rule is taken on most runs now design runs a sprint ahead, and it is what stops the supervisor overriding the step-over that --drive decides, so design cites files a running develop is editing; every other section is on every run's main path, so p is zero" ;;
     skills/verify/SKILL.md)    echo "0052 — considered relocating Step 3's mutation guidance to a pointer file; rejected on (b), because it is mandatory the moment an AC rests on an automated check, and a mandatory step behind a pointer is a step that gets skipped" ;;
+    *) return 0 ;;
+  esac
+}
+
+# argued_at <relative-path> — echoes the byte size the file's justification was argued at, or nothing.
+# A field of its own, never part of the reason (header, 0190). Re-argue the reason and update this
+# together; moving this number alone is the drift the bound exists to catch.
+argued_at() {
+  case "$1" in
+    skills/prototype/SKILL.md) echo 25361 ;;   # grandfathered by 0190
+    skills/queue/SKILL.md)     echo 48538 ;;   # grandfathered by 0190
+    skills/develop/SKILL.md)   echo 50862 ;;   # grandfathered by 0190
+    skills/retro/SKILL.md)     echo 30034 ;;   # grandfathered by 0190
+    skills/sprint/SKILL.md)    echo 60813 ;;   # argued by 0190
+    skills/verify/SKILL.md)    echo 45522 ;;   # grandfathered by 0190
     *) return 0 ;;
   esac
 }
@@ -125,23 +165,30 @@ cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
 trap 'announce_abort cleanup' EXIT
 trap cleanup INT TERM
 
-# offenders <root> <justification-lookup-fn> — prints one line per file that is over the goal with
-# no recorded reason, or recorded while under it; nothing when every file is accounted for. The
-# lookup is a parameter so the fixture cases can drive both paths whatever the real tree holds.
+# offenders <root> <justification-lookup-fn> <argued-at-lookup-fn> — prints one line per file that
+# is over the goal with no recorded reason, recorded while under it, recorded with no argued-at size,
+# or grown more than MARGIN past that size; nothing when every file is accounted for. The lookups are
+# parameters so the fixture cases can drive every path whatever the real tree holds.
 offenders() {
   root="$1"
   lookup="${2:?offenders needs a justification-lookup function}"
+  sizes="${3:?offenders needs an argued-at-lookup function}"
   for f in "$root"/skills/*/SKILL.md; do
     [ -f "$f" ] || continue
     rel="skills/$(basename "$(dirname "$f")")/SKILL.md"
     bytes="$(wc -c < "$f" | tr -d ' ')"
     if [ -n "$("$lookup" "$rel")" ]; then
-      # Recorded. No upper bound — the reason is the control, not a second number. Written as a
-      # full `if` rather than `[ ... ] &&`: a short-circuit as the last command in this loop makes
-      # the function exit non-zero on a legitimately-fine file, which `set -e` turns into a
-      # silent, empty result for every caller.
+      # Recorded. Bounded by its argued-at size plus MARGIN (0190). Written as a full `if` rather
+      # than `[ ... ] &&`: a short-circuit as the last command in this loop makes the function exit
+      # non-zero on a legitimately-fine file, which `set -e` turns into a silent, empty result for
+      # every caller.
+      argued="$("$sizes" "$rel")"
       if [ "$bytes" -le "$GOAL" ]; then
         echo "$rel is $bytes bytes, under the $GOAL goal — remove its stale justification"
+      elif [ -z "$argued" ]; then
+        echo "$rel is recorded over the goal but is missing its argued-at size — add it to argued_at() at the size its reason was argued at"
+      elif [ "$bytes" -gt $((argued + MARGIN)) ]; then
+        echo "$rel is $bytes bytes, $((bytes - argued)) past the $argued bytes its reason was argued at, over the $MARGIN margin — re-argue its reason or relocate"
       fi
     elif [ "$bytes" -gt "$GOAL" ]; then
       echo "$rel is $bytes bytes, over the $GOAL goal by $((bytes - GOAL)) — $RELOCATE"
@@ -150,7 +197,7 @@ offenders() {
 }
 
 echo "AC1 — every skill file is within the goal, or over it with a recorded reason"
-found="$(offenders "$ROOT" justification)"
+found="$(offenders "$ROOT" justification argued_at)"
 if [ -z "$found" ]; then
   # Name the recorded files with their sizes rather than reporting a clean sweep: an accepted cost
   # is still a cost, and a pass line hiding it reads as "everything is within the goal".
@@ -159,7 +206,7 @@ if [ -z "$found" ]; then
     rel="skills/$(basename "$(dirname "$f")")/SKILL.md"
     if [ -n "$(justification "$rel")" ]; then
       over="$over
-         $rel ($(wc -c < "$f" | tr -d ' ') bytes) — $(justification "$rel")"
+         $rel ($(wc -c < "$f" | tr -d ' ') bytes, argued at $(argued_at "$rel")) — $(justification "$rel")"
     fi
   done
   if [ -n "$over" ]; then
@@ -201,7 +248,7 @@ pad() {   # pad <path> <target-bytes> — base plus filler to an exact size
 echo "AC4 — an unrecorded file over the goal fails, named, with its overage"
 rm -rf "$FIX/skills"; mkdir -p "$FIX/skills/padded"
 pad "$FIX/skills/padded/SKILL.md" $((GOAL + 500))
-out="$(offenders "$FIX" justification)"
+out="$(offenders "$FIX" justification argued_at)"
 case "$out" in
   *"skills/padded/SKILL.md is $((GOAL + 500)) bytes, over the $GOAL goal by 500"*)
     ok "unrecorded file over the goal reported with its overage" ;;
@@ -226,47 +273,82 @@ esac
 echo "AC4 — a file within the goal passes"
 rm -rf "$FIX/skills"; mkdir -p "$FIX/skills/plain"
 pad "$FIX/skills/plain/SKILL.md" $((GOAL - 1))
-out="$(offenders "$FIX" justification)"
+out="$(offenders "$FIX" justification argued_at)"
 if [ -z "$out" ]; then
   ok "file one byte under the goal reported nothing"
 else
   bad "AC4 — compliant file was reported: $out"
 fi
 
-echo "FR7 — a recorded reason carries no upper bound, and goes stale under the goal"
+echo "FR7 — a recorded reason is bounded by its argued-at size, and goes stale under the goal"
 justification_fixture() {
-  case "$1" in skills/recorded/SKILL.md) echo "0099 — fixture reason" ;; *) return 0 ;; esac
+  case "$1" in skills/recorded/SKILL.md|skills/unsized/SKILL.md) echo "0099 — fixture reason" ;; *) return 0 ;; esac
+}
+# The recorded fixture is argued at one byte over the goal, so every size below is relative to a
+# number this script chose, never to the tree.
+FIX_ARGUED=$((GOAL + 1))
+argued_at_fixture() {
+  case "$1" in skills/recorded/SKILL.md) echo "$FIX_ARGUED" ;; *) return 0 ;; esac
 }
 rm -rf "$FIX/skills"; mkdir -p "$FIX/skills/recorded"
 
 pad "$FIX/skills/recorded/SKILL.md" $((GOAL + 1))
-out="$(offenders "$FIX" justification_fixture)"
+out="$(offenders "$FIX" justification_fixture argued_at_fixture)"
 if [ -z "$out" ]; then
   ok "a recorded file just over the goal passes"
 else
   bad "FR7 — recorded file was reported: $out"
 fi
 
-pad "$FIX/skills/recorded/SKILL.md" $((GOAL + 30000))
-out="$(offenders "$FIX" justification_fixture)"
-if [ -z "$out" ]; then
-  ok "a recorded file far over the goal passes — the reason is the control, not a second number"
-else
-  bad "FR7 — recorded file far over the goal was reported: $out"
-fi
+# 0190 AC4 — this case once asserted the opposite: a recorded file far over the goal passed, because
+# the reason was the only control. That is how the sprint skill tripled under a stale reason.
+pad "$FIX/skills/recorded/SKILL.md" $((FIX_ARGUED + 30000))
+out="$(offenders "$FIX" justification_fixture argued_at_fixture)"
+case "$out" in
+  *"skills/recorded/SKILL.md"*"re-argue its reason or relocate"*)
+    ok "0190 AC4 — a recorded file 30,000 bytes past its argued-at size fails" ;;
+  *) bad "0190 AC4 — a recorded file 30,000 bytes past its argued-at size was not reported: ${out:-<nothing>}" ;;
+esac
 
 pad "$FIX/skills/recorded/SKILL.md" $((GOAL - 1))
-out="$(offenders "$FIX" justification_fixture)"
+out="$(offenders "$FIX" justification_fixture argued_at_fixture)"
 case "$out" in
   *"remove its stale justification"*) ok "a justification on a file back under the goal fails" ;;
   *) bad "FR7 — stale justification was not reported: ${out:-<nothing>}" ;;
+esac
+
+echo "0190 AC3 — the margin is inclusive at S + MARGIN and breached at one byte more"
+pad "$FIX/skills/recorded/SKILL.md" $((FIX_ARGUED + MARGIN))
+out="$(offenders "$FIX" justification_fixture argued_at_fixture)"
+if [ -z "$out" ]; then
+  ok "0190 AC3 — a recorded file exactly MARGIN past its argued-at size passes"
+else
+  bad "0190 AC3 — a file exactly at the margin was reported: $out"
+fi
+pad "$FIX/skills/recorded/SKILL.md" $((FIX_ARGUED + MARGIN + 1))
+out="$(offenders "$FIX" justification_fixture argued_at_fixture)"
+want="skills/recorded/SKILL.md is $((FIX_ARGUED + MARGIN + 1)) bytes, $((MARGIN + 1)) past the $FIX_ARGUED bytes its reason was argued at"
+case "$out" in
+  *"$want"*"re-argue its reason or relocate"*)
+    ok "0190 AC3 — one byte past the margin fails, naming the file, its size, the argued-at size and the remedy" ;;
+  *) bad "0190 AC3 — one byte past the margin did not report as expected: ${out:-<nothing>}" ;;
+esac
+
+echo "0190 AC2 — a recorded file with no argued-at size fails, named"
+rm -rf "$FIX/skills"; mkdir -p "$FIX/skills/unsized"
+pad "$FIX/skills/unsized/SKILL.md" $((GOAL + 1))
+out="$(offenders "$FIX" justification_fixture argued_at_fixture)"
+case "$out" in
+  *"skills/unsized/SKILL.md"*"missing its argued-at size"*)
+    ok "0190 AC2 — a recorded file missing its argued-at size is reported by name" ;;
+  *) bad "0190 AC2 — a recorded file with no argued-at size was not reported: ${out:-<nothing>}" ;;
 esac
 
 echo "FR7 — an unrecorded file is judged by the goal, not by a neighbour's reason"
 rm -rf "$FIX/skills"; mkdir -p "$FIX/skills/recorded" "$FIX/skills/other"
 pad "$FIX/skills/recorded/SKILL.md" $((GOAL + 5000))
 pad "$FIX/skills/other/SKILL.md" $((GOAL + 5000))
-out="$(offenders "$FIX" justification_fixture)"
+out="$(offenders "$FIX" justification_fixture argued_at_fixture)"
 case "$out" in
   *"skills/other/SKILL.md"*)
     case "$out" in
@@ -319,8 +401,37 @@ case "$HEADER" in
   *) bad "0035 AC2 — the header no longer names the pointer as the first move at all" ;;
 esac
 
+echo "0190 AC5 — the header states the margin, the argued-at field and the grandfathering"
+for want in 'MARGIN' 'MARGIN = 5,000 bytes' 'Derivation' 'argued at' 'never written into a reason' 'GRANDFATHERED by 0190'
+do
+  case "$HEADER" in
+    *"$want"*) ok "0190 AC5 — the header names $want" ;;
+    *) bad "0190 AC5 — the header does not state $want" ;;
+  esac
+done
+
+# Every recorded file, read from the justification table itself rather than a hand-kept list: a hand
+# list once left the sprint and retro reasons out, and a byte count in the sprint reason went stale
+# exactly as FR6 predicted (0190).
 echo "0035 AC4/FR6 — every justification names what was considered, and carries no byte count"
-for rel in skills/prototype/SKILL.md skills/queue/SKILL.md skills/develop/SKILL.md skills/verify/SKILL.md; do
+RECORDED=""
+for f in "$ROOT"/skills/*/SKILL.md; do
+  rel="skills/$(basename "$(dirname "$f")")/SKILL.md"
+  [ -n "$(justification "$rel")" ] && RECORDED="$RECORDED $rel"
+done
+case " $RECORDED " in
+  *" skills/sprint/SKILL.md "*) ok "0190 AC1 — the loop includes skills/sprint/SKILL.md" ;;
+  *) bad "0190 AC1 — the loop leaves skills/sprint/SKILL.md out" ;;
+esac
+SPRINT_REASON="$(justification skills/sprint/SKILL.md)"
+for want in '0190 — ' "Step 7's lock and cap-kill recovery" 'the design-beside rule' 'rejected on both conditions'
+do
+  case "$SPRINT_REASON" in
+    *"$want"*) ok "0190 AC1 — the sprint reason names $want" ;;
+    *) bad "0190 AC1 — the sprint reason does not name $want: $SPRINT_REASON" ;;
+  esac
+done
+for rel in $RECORDED; do
   reason="$(justification "$rel")"
   if [ -z "$reason" ]; then
     bad "0035 AC4 — $rel has no recorded justification"
