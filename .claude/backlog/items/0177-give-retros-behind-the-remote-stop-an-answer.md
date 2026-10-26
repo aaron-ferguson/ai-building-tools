@@ -105,3 +105,29 @@ a rung it does not belong on, in a repo that merely happens to be current — an
   under this ticket's own FR2 answer. Its proposed alternative — fast-forward a clean, behind-only
   checkout — is this ticket's *Out of scope* line and is now `0216`, ranked directly above. This
   ticket's FRs stand whatever `0216` decides.
+- **2026-10-25 (develop, b472)** — Built in `c8606bc`. Step 3 gains one paragraph *beside* the
+  stop, never replacing it (AC3's `Behind the remote stops the pass` untouched). Step 5's clause is
+  cited by name (`Step 5's *Nobody to ask* clause`), not restated. The prose uses the ACs' own
+  words verbatim so the guards assert them, not a paraphrase.
+
+  Clause table (AC → guard phrase in Step 3's window, all in `tests/remote-anchor.test.sh`):
+
+  | AC clause | Guard phrase | Mutation (run) |
+  |---|---|---|
+  | AC1 Given `skills/retro/SKILL.md` Step 3 | window `## Step 3 — Check the destination` → `## Step 4` | existing empty-window case |
+  | AC1 continues over the current repos and treats the stale one as unavailable | `pass with nobody to ask continues over the current repos and treats the stale one as unavailable` | line deleted → 1 FAIL; fixture case also in-file |
+  | FR1 never pulled | `stale repo is never pulled` | deleted → 1 FAIL |
+  | AC2 a finding destined for an unavailable repo stays in the buffer | same phrase | deleted → 1 FAIL; re-route sed fixture red in-file |
+  | AC2 re-route down the ladder | `never re-routed down the ladder` | deleted → 1 FAIL |
+  | FR3 skipped repo + divergence | `names each repo skipped with its divergence` | deleted → 1 FAIL |
+  | FR3 findings left | `every finding left in the buffer because of it` | deleted → 2 FAIL (line also holds the checklist phrase) |
+  | FR3 run checklist | `the pull is outstanding on that run's checklist` | deleted → 2 FAIL |
+  | NFR cite, never copy | `Step 5's *Nobody to ask* clause` | deleted → 2 FAIL |
+  | FR4 attended stops | `An attended pass still stops` | deleted → 2 FAIL |
+  | AC3 stop kept | `Behind the remote stops the pass` (pre-existing) | deleted → 1 FAIL |
+
+  All mutations **run** against the committed file, restored from a copy; control run 46/0 after.
+  AC4: whole suite green. `skills/retro/SKILL.md` is over the 20,190-byte goal under its existing
+  `b9a5ee0` justification, which carries no upper bound, so the addition cannot red the size guard.
+  One whole-suite loop saw `tests/sprint.test.sh` exit non-zero once; an immediate rerun was 368/0
+  and it did not reproduce (parked in `FINDINGS.md`).
