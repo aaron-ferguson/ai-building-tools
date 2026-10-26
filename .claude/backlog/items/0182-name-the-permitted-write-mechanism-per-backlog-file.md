@@ -36,25 +36,7 @@ expects:
 claimed_by: "7bff"
 claimed_at: 2026-10-26T02:55:05Z
 touches:
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
-  - skills/queue/templates/migrate
-  - skills/queue/templates/claim
-  - skills/queue/templates/close
-  - skills/queue/templates/handoff
-  - skills/queue/templates/next
-  - skills/queue/templates/reopen
-  - skills/queue/SKILL.md
-  - skills/sprint/SKILL.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/retro/SKILL.md
-  - skills/design/SKILL.md
-  - skills/prototype/SKILL.md
-  - references/CONVENTIONS.md
-  - references/TRACKER.md
-  - tests/backlog-location.test.sh
-  - CHANGELOG.md
+  - "*"
 ---
 
 ## Problem
