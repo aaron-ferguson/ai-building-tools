@@ -439,7 +439,9 @@ for rel in $RECORDED; do
   fi
   # Drop the leading ticket id so its four digits are not read as a byte count.
   body="${reason#[0-9][0-9][0-9][0-9] }"
-  if printf '%s' "$body" | grep -Eq '[0-9]{4,}'; then
+  # Commas stripped first: the stale sprint reason wrote its count as "~2,100", which no run of four
+  # digits matches, so the check could not see the very number FR6 exists to catch (0190).
+  if printf '%s' "$body" | tr -d ',' | grep -Eq '[0-9]{4,}'; then
     bad "0035 FR6 — $rel's justification carries a number that will go stale: $body"
   else
     ok "$rel's justification carries no byte count"
