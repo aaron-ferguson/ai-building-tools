@@ -18,6 +18,7 @@ expects:
 claimed_by: "48b5"
 claimed_at: 2026-10-26T01:28:02Z
 touches:
+  - .claude/backlog/items/0177-give-retros-behind-the-remote-stop-an-answer.md
 ---
 
 ## Problem
@@ -60,7 +61,7 @@ a rung it does not belong on, in a repo that merely happens to be current — an
 
 | Dimension | Requirement for this item | How it would red | Convention |
 |---|---|---|---|
-| Documentation | Step 5's nobody-to-ask clause is cited from Step 3, never copied into it; the two must not be able to disagree | `tests/citations.test.sh` | `documentation-conventions.md` |
+| Documentation | Step 5's nobody-to-ask clause is cited from Step 3, never copied into it; the two must not be able to disagree | `tests/remote-anchor.test.sh`, case *0177 NFR — Step 5's clause is cited, not copied*, reds on deleting the citation; a copy of the clause written beside the citation: prose only — no artifact yet | `documentation-conventions.md` |
 | Observability | An unavailable destination is loud — named with its divergence and with what was left unlanded — rather than a pass that reads as complete | A guard asserting Step 3 requires the skipped repo and the left findings in the report; reddened by deleting that clause | `observability-conventions.md` |
 
 ## Acceptance criteria
@@ -129,3 +130,9 @@ a rung it does not belong on, in a repo that merely happens to be current — an
   `b9a5ee0` justification, which carries no upper bound, so the addition cannot red the size guard.
   One whole-suite loop saw `tests/sprint.test.sh` exit non-zero once; an immediate rerun was 368/0
   and it did not reproduce (parked in `FINDINGS.md`).
+- **2026-10-25 (0183's build, token 48b5)** — The Documentation row's *How it would red* cell was
+  `tests/citations.test.sh` alone, a file with no duplication check, and `tests/item-nfr-red.test.sh`
+  (0183) reds on a bare file reference. Re-specified under 0183 FR4 to name the case that does red,
+  deleting the citation, and to say plainly that a *copy* written beside the citation is unguarded
+  (`prose only — no artifact yet`). Nothing else in this item changed; verify should treat that
+  half as prose under Step 4.
