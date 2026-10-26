@@ -121,7 +121,9 @@ commitment `develop` and `verify` will hold you to.
 
 The second column says what **this item** must satisfy. The third names the check, mutation or
 observation that would fail if it did not: **Each row names how it would red**, and a row for which
-none can be named **is not a commitment and does not ship**. The fourth cites the convention file
+none can be named **is not a commitment and does not ship**. **A filename alone is not an answer**:
+the cell names the case, criterion or mutation within it, because a file that exists reads as a
+check whether or not it can see this requirement. The fourth cites the convention file
 that defines the rule — by bare filename, since the conventions directory is resolved per project.
 **Cite, never restate:** a rule copied in here drifts from source, and `verify` will then verify the
 stale copy. The convention files below are the usual mapping; check the conventions core's index

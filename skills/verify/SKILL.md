@@ -348,7 +348,10 @@ rule. Record each checked row's paths into Step 3's evidence set on the same ter
 red** — run the check the row names, or perform its mutation and watch it fail. A row can be **true
 today and guarded by nothing**, and that is a different verdict from one that holds and is pinned:
 the second still catches the requirement being broken tomorrow, the first never will. Where the row
-names no check, **flag the row as unguarded** in the evidence rather than ticking it. A row reading
+names no check, **flag the row as unguarded** in the evidence rather than ticking it. Mutate the
+**requirement**, never the guard: a named check that stays green under a mutation of the requirement
+is recorded as unguarded, never ticked — the same verdict as a row naming no check. A filename that
+exists reads as an answer, and one row named a test with no way to see the defect (0183). A row reading
 **`prose only — no artifact yet`** is answered rather than unanswered — check that prose against the
 cited convention and say so.
 

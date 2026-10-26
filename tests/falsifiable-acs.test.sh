@@ -228,6 +228,14 @@ says "AC1 — and refuses a row that cannot"          "$IN" 'is not a commitment
 says "AC4/FR4 — the permitted prose form is named"  "$IN" 'prose only — no artifact yet'
 says "AC4/FR4 — an empty cell is the other state"   "$IN" 'An empty cell is an unanswered row'
 
+# 0183 — a cell can name a file that cannot red on its requirement, and the filename reads as an
+# answer. The shape is guarded per item by tests/item-nfr-red.test.sh; relatedness stays verify's
+# judgement, and these two cases pin the sentences that say so, each in its own file once.
+echo "0183 AC5/AC6 — a named check must red on the requirement, and a filename alone is not an answer"
+says "0183 AC5 — verify Step 4: a check green under the requirement's mutation is unguarded" "$V4" \
+  'a named check that stays green under a mutation of the requirement is recorded as unguarded'
+says "0183 AC6 — the template: a filename alone is not an answer" "$IN" 'A filename alone is not an answer'
+
 # ---------------------------------------------------------------------------
 # The clause table (direct task, 2026-09-25). Step 3 said "mutate at the altitude the AC is written
 # at" and never defined one clause, so 0180 went four verify rounds, each dividing the ACs its own
