@@ -1757,6 +1757,134 @@ else
   bad "0192 AC5 — Step 7 does not have the run log record that the subtraction could not be made"
 fi
 
+# --- 0175 AC1/AC2 — a resumed session's cap re-grants the context floor it re-pays --------------
+# Every resume re-pays the session's context floor, so "stage cap less spent" shrinks toward zero
+# while the unfinished scope does not (run-20260920T222013Z: USD 3.21 for two untouched tickets).
+# The floor is a cost of being interrupted, not of scope: FR1 excludes each resumed leg's first
+# priced turn from the spend and grants back the largest such turn for the leg about to start.
+# Legs are split on S's `resumed` events in the run log; the transcript alone cannot see them.
+echo "0175 AC1 — the resume cap, from harvest-usage.sh --legs, is 12.00 - (12.00 - 2.40) + 1.30"
+SID_LEG="abab0175-0000-0000-0000-000000000000"
+RUN175="$FIX/run-0175.jsonl"
+cat > "$RUN175" <<JSON
+{"ts":"2026-10-25T09:00:00Z","run":"r-0175","event":"dispatch","stage":"verify","session_id":"$SID_LEG","tickets":["0101","0102"]}
+{"ts":"2026-10-25T11:00:00Z","run":"r-0175","event":"limit_hit","session_id":"$SID_LEG"}
+{"ts":"2026-10-25T13:00:00Z","run":"r-0175","event":"resumed","session_id":"$SID_LEG"}
+{"ts":"2026-10-26T08:00:00Z","run":"r-0175","event":"resumed","session_id":"$SID_LEG"}
+JSON
+# Output-only turns at 25.00 USD per million: 16,000 -> 0.40, 368,000 -> 9.20, 44,000 -> 1.10,
+# 52,000 -> 1.30. Spend 12.00; first priced turns 0.40 (original leg), 1.10 and 1.30 (resumed).
+leg_turn() { # <id> <stamp> <output tokens> [model]
+  printf '{"type":"assistant","timestamp":"%s.000Z","message":{"id":"msg_leg_%s","model":"%s","content":[{"type":"text","text":"SENTINELPROSE"}],"usage":%s}}\n' \
+    "$2" "$1" "${4:-claude-opus-5}" "$(u "$3")"
+}
+mkdir -p "$FIX/store-0175" "$FIX/store-0175-up"
+{ printf '{"type":"user","timestamp":"2026-10-25T09:00:30.000Z","message":{"role":"user","content":"<command-name>/ai-building-tools:verify</command-name>"}}\n'
+  leg_turn 1 2026-10-25T09:01:00 16000
+  leg_turn 2 2026-10-25T09:30:00 368000
+  leg_turn 3 2026-10-25T13:01:00 44000
+  leg_turn 4 2026-10-26T08:01:00 52000; } > "$FIX/store-0175/$SID_LEG.jsonl"
+L175="$("$HARVEST" "$FIX/store-0175" --legs "$SID_LEG" --run "$RUN175" --stage-cap 12.00 2>&1 || true)"
+for want in "LEG 1 start 2026-10-25T09:01:00Z first USD 0.40 leg USD 9.60" \
+            "LEG 2 start 2026-10-25T13:00:00Z first USD 1.10 leg USD 1.10" \
+            "LEG 3 start 2026-10-26T08:00:00Z first USD 1.30 leg USD 1.30"; do
+  if printf '%s\n' "$L175" | grep -qxF "$want"; then
+    ok "--legs prints: $want"
+  else
+    bad "0175 AC1/FR2 — --legs does not print '$want'; it printed: $(printf '%s' "$L175" | tr '\n' '|')"
+  fi
+done
+CAP175="$(printf '%s\n' "$L175" | sed -n 's/^CAP \([0-9.]*\) .*/\1/p')"
+if [ "$CAP175" = "3.70" ]; then
+  ok "the cap is 3.70 (today's stage-cap-less-spent rule gives 0.00)"
+else
+  bad "0175 AC1 — the cap is '${CAP175:-none}', not 3.70; output: $(printf '%s' "$L175" | tr '\n' '|')"
+fi
+if printf '%s\n' "$L175" | grep -qxF "CAP 3.70 stage cap 12.00 spent 12.00 repaid 2.40 repay next 1.30"; then
+  ok "and it names the spend, the repaid floor and the floor re-granted for the next leg"
+else
+  bad "0175 FR1 — the CAP line does not name spent 12.00, repaid 2.40 and repay next 1.30"
+fi
+BADL175="$(printf '%s\n' "$L175" | grep -vn '^[A-Za-z0-9 .,$%|:/-]*$' | head -1 || true)"
+case "$L175" in
+  *SENTINELPROSE*) bad "0175 FR2/privacy — transcript text reached the --legs output" ;;
+  *) if [ -z "$BADL175" ]; then ok "--legs output stays inside the aggregate-figures character set"
+     else bad "0175 FR2/privacy — a --legs line leaves the aggregate-figures character set: $BADL175"; fi ;;
+esac
+
+echo "0175 AC2 — one unpriced leg resumes at the full stage cap, labelled unpriced"
+{ leg_turn 1 2026-10-25T09:01:00 16000
+  leg_turn 2 2026-10-25T09:30:00 368000
+  leg_turn 3 2026-10-25T13:01:00 44000 claude-no-such-model-0
+  leg_turn 4 2026-10-26T08:01:00 52000; } > "$FIX/store-0175-up/$SID_LEG.jsonl"
+U175="$("$HARVEST" "$FIX/store-0175-up" --legs "$SID_LEG" --run "$RUN175" --stage-cap 12.00 2>&1 || true)"
+if printf '%s\n' "$U175" | grep -qxF "CAP 12.00 cap basis unpriced"; then
+  ok "the cap is the full 12.00 stage cap, with cap basis unpriced"
+else
+  bad "0175 AC2 — an unpriced leg did not give 'CAP 12.00 cap basis unpriced'; output: $(printf '%s' "$U175" | tr '\n' '|')"
+fi
+if printf '%s\n' "$U175" | grep -qxF "LEG 2 start 2026-10-25T13:00:00Z first USD unpriced leg USD unpriced"; then
+  ok "and the unpriced leg prints no dollar figure"
+else
+  bad "0175 AC2 — the unpriced leg is not printed as unpriced; output: $(printf '%s' "$U175" | tr '\n' '|')"
+fi
+if says "$SKILL" "$STEP7" '`cap_basis: "unpriced"`' && says "$SKILL" "$STEP7" '--legs <session-id> --run'; then
+  ok "Step 7 reads the cap from --legs and logs cap_basis unpriced on the resumed event"
+else
+  bad "0175 AC2 — Step 7 does not compute the resume cap with harvest-usage.sh --legs"
+fi
+
+# --- 0175 AC7 — record replaces its own run's block and leaves every other block untouched -------
+# A resumed run calls record again; appending a second block double-counts the run in every
+# estimate read back from the ledger. Three blocks, so a replace that eats its neighbour on EITHER
+# side is caught: A before B, C after it.
+echo "0175 AC7 — record twice for run B leaves one B block, carrying the second call's figures"
+mk_run175() { # <run id> <last event stamp>
+  printf '{"ts":"2026-10-25T09:00:00Z","run":"%s","event":"dispatch","stage":"develop","session_id":"%s","tickets":["0101"]}\n' "$1" "$SID_DEV"
+  printf '{"ts":"%s","run":"%s","event":"sprint_ended","reason":"completed"}\n' "$2" "$1"
+}
+mk_run175 r-a175 2026-10-25T10:00:00Z > "$FIX/r-a175.jsonl"
+mk_run175 r-b175 2026-10-25T10:00:00Z > "$FIX/r-b175-first.jsonl"
+mk_run175 r-b175 2026-10-25T12:00:00Z > "$FIX/r-b175-second.jsonl"
+mk_run175 r-c175 2026-10-25T10:00:00Z > "$FIX/r-c175.jsonl"
+LED175="$FIX/ledger-0175.md"
+cp "$EMPTY" "$LED175"
+rec175() { # <run log> <estimate usd>
+  "$TOOL" record --ledger "$LED175" --run "$1" --transcripts "$FIX/store" \
+    --measurement "$MEAS" --config "$CONF" --estimate-tickets 1 --estimate-wall no-prior \
+    --estimate-tokens 1000 --estimate-usd "$2" --estimate-source "$EST_SOURCE" >/dev/null 2>&1 || true
+}
+block175() { awk -v want="## sprint $1 " 'index($0, "## sprint ") == 1 { on = (index($0, want) == 1) } on' "$LED175"; }
+rec175 "$FIX/r-a175.jsonl" 1.00
+rec175 "$FIX/r-b175-first.jsonl" 2.00
+rec175 "$FIX/r-c175.jsonl" 3.00
+A_BEFORE="$(block175 r-a175)"; C_BEFORE="$(block175 r-c175)"
+rec175 "$FIX/r-b175-second.jsonl" 7.00
+NB175="$(grep -c '^## sprint r-b175 ' "$LED175" || true)"
+if [ "$NB175" = 1 ]; then
+  ok "the ledger holds exactly one ## sprint r-b175 block"
+else
+  bad "0175 AC7 — the ledger holds $NB175 ## sprint r-b175 blocks, not 1"
+fi
+B_AFTER="$(block175 r-b175)"
+if printf '%s\n' "$B_AFTER" | grep -qE '^\| usd \| 7\.00 \|' && \
+   printf '%s\n' "$B_AFTER" | grep -qE '^\| wall_clock_min \| [^|]* \| 180 \|'; then
+  ok "and it carries the second call's estimate (7.00) and actual wall-clock (180 min)"
+else
+  bad "0175 AC7 — the r-b175 block does not carry the second call's figures: $(printf '%s' "$B_AFTER" | tr '\n' '|')"
+fi
+if [ -n "$A_BEFORE" ] && [ "$A_BEFORE" = "$(block175 r-a175)" ] && \
+   [ -n "$C_BEFORE" ] && [ "$C_BEFORE" = "$(block175 r-c175)" ]; then
+  ok "the blocks either side of it, r-a175 and r-c175, are byte-identical"
+else
+  bad "0175 AC7 — replacing r-b175 changed a neighbouring block"
+fi
+if [ "$(grep -c '^## sprint ' "$LED175")" = 3 ]; then
+  ok "and the ledger still holds three blocks"
+else
+  bad "0175 AC7 — the ledger holds $(grep -c '^## sprint ' "$LED175") blocks, not 3"
+fi
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 TALLIED=1
 [ "$FAIL" -eq 0 ]

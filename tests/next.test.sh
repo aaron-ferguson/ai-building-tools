@@ -3303,6 +3303,24 @@ out="$(run_next --drive --scope 9901)" && rc=0 || rc=$?
 assert_contains "the confirmed-scope NOTE, word for word" "$(first_line "$out" 'NOTE      the findings gate crossed')" \
   'NOTE      the findings gate crossed and is deferred until confirmed scope is finished — FINDINGS.md holds 8 entries'
 
+# --- 0175 AC6 — one run log ending twice is still one completed sprint ------------------------
+# A run interrupted and resumed is one sprint (0175), and a superseded run can gain its ending from
+# the run that took over its marker. Either way the count is per LOG: two sprint_ended events in one
+# file must count once, or a resumed run inflates the age half of the findings gate.
+echo "0175 AC6 — a log carrying two sprint_ended events after D counts as one sprint since D"
+scaffold
+set_findings_limits 8 2
+one_takeable_row
+add_findings "$(printf -- '- 2026-01-02 — one entry.')"
+mkdir -p "$FIX/.claude/backlog/runs"
+printf '{"event":"sprint_ended","at":"2026-01-03T12:00:00Z","run":"r1","reason":"stopped"}\n{"event":"sprint_ended","at":"2026-01-04T12:00:00Z","run":"r1","reason":"completed"}\n' \
+  > "$FIX/.claude/backlog/runs/r1.jsonl"
+seal
+out="$(run_next --findings)" && rc=0 || rc=$?
+assert_rc       "exits 0"                                  "$rc" 0
+assert_contains "counts the one log once"                  "$out" 'has survived 1 completed sprint(s)'
+assert_contains "and so stays under a limit of two"        "$out" 'under the limit'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

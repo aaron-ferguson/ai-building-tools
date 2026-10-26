@@ -49,6 +49,11 @@
 #                      supervisor gets steadily worse.
 #   --budget           turns-per-cycle budget to judge against (default DEFAULT_TURN_BUDGET).
 #                      Keep it equal to the number skills/sprint/SKILL.md states.
+#   --legs             with --run: ONLY one line per leg of that session (0175 FR2) -- leg number,
+#                      start stamp, first priced turn's USD and the leg's USD -- split on the
+#                      session's `resumed` events in the run log, which the transcript cannot see.
+#                      With --stage-cap, a CAP line: sprint Step 7's resume cap, computed here once
+#                      so the supervisor reads it rather than doing the arithmetic (0175 FR1).
 #
 # Requires: sh and python3. No packages — a one-directory JSON read does not earn a dependency.
 
@@ -175,7 +180,7 @@ def marker_skill(message):
 def parse_args(argv):
     opts = {"since": None, "until": None, "sessions": False, "by_session": False,
             "exclude": [], "session": [],
-            "run": None, "budget": DEFAULT_TURN_BUDGET}
+            "run": None, "budget": DEFAULT_TURN_BUDGET, "legs": None, "stage_cap": None}
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -183,7 +188,8 @@ def parse_args(argv):
             opts["sessions"] = True
         elif a == "--by-session":
             opts["by_session"] = True
-        elif a in ("--since", "--until", "--exclude", "--session", "--run", "--budget"):
+        elif a in ("--since", "--until", "--exclude", "--session", "--run", "--budget",
+                   "--legs", "--stage-cap"):
             i += 1
             if i >= len(argv):
                 sys.exit("%s needs a value" % a)
@@ -193,6 +199,8 @@ def parse_args(argv):
                 opts["session"].append(argv[i])
             elif a == "--budget":
                 opts["budget"] = int(argv[i])
+            elif a == "--stage-cap":
+                opts["stage_cap"] = float(argv[i])
             else:
                 opts[a[2:]] = argv[i]
         else:
@@ -440,8 +448,88 @@ def session_row(sid, skills, r):
     return line
 
 
+def stamp_of(text):
+    """`2026-10-25T09:01:00.000Z` and `2026-10-25T09:01:00Z` alike, as `2026-10-25T09:01:00Z`."""
+    return text[:19] + "Z" if text and len(text) >= 19 else None
+
+
+def resumed_stamps(log, session):
+    """When each resumed leg of `session` began: its `resumed` events in the run log, in order."""
+    out = []
+    for line in open(log, errors="replace"):
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        sid = d.get("session_id") or ""
+        if d.get("event") != "resumed" or not (sid.startswith(session) or session.startswith(sid)):
+            continue
+        when = stamp_of(d.get("ts") or d.get("at") or d.get("timestamp") or "")
+        if when:
+            out.append(when)
+    return sorted(out)
+
+
+def session_turns(directory, session):
+    """(stamp, cost or None) for every turn of one session, deduplicated by message id, in time
+    order. None is an unpriced turn, kept so a leg containing one is never priced as cheaper."""
+    turns, seen = [], set()
+    for path in sorted(glob.glob(os.path.join(directory, "*.jsonl"))):
+        sid = os.path.basename(path).split("-")[0]
+        if not (sid.startswith(session.split("-")[0]) or session.startswith(sid)):
+            continue
+        for line in open(path, errors="replace"):
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            msg = d.get("message", {}) if d.get("type") == "assistant" else {}
+            if not msg.get("usage") or msg.get("id") in seen:
+                continue
+            seen.add(msg.get("id"))
+            cost = cost_of(msg["usage"], msg.get("model"))
+            turns.append((stamp_of(d.get("timestamp") or ""), None if cost is None else cost[0]))
+    return sorted(turns, key=lambda t: t[0] or "")
+
+
+def report_legs(directory, opts):
+    """0175 FR1-FR2. A resume re-pays the session's context floor -- its first priced turn -- so a
+    cap of `stage cap - spent` shrinks toward zero across resumes while the unfinished scope does
+    not. The floor is a cost of being interrupted, not of scope: every resumed leg's first turn is
+    excluded from the spend, and the largest first turn so far is granted back for the next leg."""
+    if not opts["run"] or not os.path.exists(opts["run"]):
+        sys.exit("--legs needs --run <run-log.jsonl> that exists: the legs are split on its resumed events")
+    starts = resumed_stamps(opts["run"], opts["legs"])
+    turns = session_turns(directory, opts["legs"])
+    if not turns:
+        sys.exit("--legs: no turns for session %s in %s" % (opts["legs"], directory))
+    bounds = [turns[0][0]] + starts
+    legs = []
+    for n, start in enumerate(bounds):
+        end = bounds[n + 1] if n + 1 < len(bounds) else None
+        legs.append([c for when, c in turns if when >= start and (end is None or when < end)])
+    for n, costs in enumerate(legs):
+        first = "unpriced" if not costs or costs[0] is None else "%.2f" % costs[0]
+        total = "unpriced" if not costs or None in costs else "%.2f" % sum(costs)
+        print("LEG %d start %s first USD %s leg USD %s" % (n + 1, bounds[n], first, total))
+    if opts["stage_cap"] is None:
+        return
+    if any(not costs or None in costs for costs in legs):
+        print("CAP %.2f cap basis unpriced" % opts["stage_cap"])
+        return
+    spent = sum(sum(costs) for costs in legs)
+    repaid = sum(costs[0] for costs in legs[1:])
+    repay_next = max(costs[0] for costs in legs)
+    cap = opts["stage_cap"] - (spent - repaid) + repay_next
+    print("CAP %.2f stage cap %.2f spent %.2f repaid %.2f repay next %.2f"
+          % (cap, opts["stage_cap"], spent, repaid, repay_next))
+
+
 directory = sys.argv[1]
 opts = parse_args(sys.argv[2:])
+if opts["legs"]:
+    report_legs(directory, opts)
+    sys.exit(0)
 
 totals, by_skill, session_rows = blank(), {}, []
 unpriced_total, unpriced_models = 0, set()

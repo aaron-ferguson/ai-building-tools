@@ -111,30 +111,57 @@ probe whose transcript names no model, or more than one, stops the run before th
 other failed probe does — there is then no single id to pin.
 
 **2. Refuse to be the second supervisor.** One supervisor per backlog, and the marker is a
-directory because `mkdir` is atomic:
+directory because `mkdir` is atomic. **The run id is minted once, at the run's start —
+`RUN_ID=run-$(date -u +%Y%m%dT%H%M%SZ)` — and names the run log and the first field of `held-by`.**
+A supervisor continuing a run reuses that id and that run log; `/sprint resume <run-id>` adopts it
+in a new conversation, taking `RUN_MODEL` from that log's `scope_confirmed`. Re-minting it is how a
+resumed conversation turns one interrupted sprint into two (0175). Pass `$RUN_ID` into each call:
 
 ```sh
+# step-1-marker
+RUNS=.claude/backlog/runs; HELD=$RUNS/.active/held-by; NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+grep -qs '"sprint_ended"' "$RUNS/$RUN_ID.jsonl" && { echo "refused: $RUN_ID has ended"; exit 1; }
 mkdir -p .claude/backlog/runs                       # the parent, which a fresh backlog lacks
 [ -f .claude/backlog/runs/.gitignore ] || printf '*\n' > .claude/backlog/runs/.gitignore
-mkdir .claude/backlog/runs/.active 2>/dev/null || echo busy
+if ! mkdir .claude/backlog/runs/.active 2>/dev/null; then
+  read -r held_run held_at < "$HELD" && [ -n "$held_at" ] || { echo "busy: no held-by yet"; exit 1; }
+  if [ "$held_run" = "$RUN_ID" ]; then             # our own run, suspended: retake at any age
+    printf '{"event":"supervisor_resumed","run":"%s","at":"%s","suspended_at":"%s","resumed_at":"%s"}\n' \
+      "$RUN_ID" "$NOW" "$held_at" "$NOW" >> "$RUNS/$RUN_ID.jsonl"
+  else
+    stale=$(sed -n 's/^lock_stale_seconds: *//p' .claude/backlog/config.yml)
+    then_s=$(date -u -j -f %Y-%m-%dT%H:%M:%SZ "$held_at" +%s 2>/dev/null || date -u -d "$held_at" +%s)
+    age=$(( $(date -u +%s) - then_s ))
+    [ "$age" -gt "$stale" ] || { echo "busy: $held_run, heartbeat ${age}s ago"; exit 1; }
+    grep -qs '"sprint_ended"' "$RUNS/$held_run.jsonl" || printf \
+      '{"event":"sprint_ended","run":"%s","at":"%s","reason":"superseded","by":"%s"}\n' \
+      "$held_run" "$NOW" "$RUN_ID" >> "$RUNS/$held_run.jsonl"
+  fi
+fi
+printf '%s %s\n' "$RUN_ID" "$NOW" > "$HELD"
 ```
 
 The `.gitignore` line makes `runs/` ignore itself in every project this drives, with no edit to
 that project's own root `.gitignore` (Step 5, *`runs/` is machine-local*).
 
 **The `-p` line is not tidiness.** Without it, a backlog that has never been driven has no `runs/`,
-the second `mkdir` fails on the missing parent, and `|| echo busy` reports *another supervisor holds
-this backlog* — on the first run, with no second supervisor anywhere. An absent parent and a busy
-marker have to be distinguishable, and one line is what distinguishes them.
+the marker's `mkdir` fails on the missing parent, and the run is reported busy — on the first run,
+with no second supervisor anywhere. An absent parent and a busy marker have to be distinguishable,
+and one line is what distinguishes them.
 
-Busy → read `.active/held-by` for the run id and the UTC timestamp, and say who holds it
-rather than double-driving the queue. **A pid cannot serve as a liveness signal here: each Bash
+**The block refuses a run whose log already carries `sprint_ended`, and dispatches nothing**: an
+ended run is never continued, under its own name or any other.
+
+**Busy, the run id is checked before the age.** A marker naming this run's own id is this run,
+suspended — an account limit, the wrapper's ceiling, a sleeping host — and is retaken whatever its
+age, logging `supervisor_resumed` with the gap's bounds; it is never reported as another supervisor
+or as stale. Any other id is aged, and **a pid cannot serve as a liveness signal here: each Bash
 tool call runs in a fresh shell, so the recorded pid is always dead the moment it is written.**
 Instead, a live supervisor keeps `.active/` fresh with a heartbeat that rewrites the timestamp every
-60 s for the whole of each dispatch (Step 3), so it stays fresh however long a stage runs. A
-marker older than `lock_stale_seconds` (from `config.yml`) is stale — say that it is,
-name the run id and age, and take it over. Write your own `held-by` the moment you take it, and
-remove the directory when the run ends.
+60 s for the whole of each dispatch (Step 3), so it stays fresh however long a stage runs. Fresh →
+say who holds it rather than double-driving the queue. Older than `lock_stale_seconds` → stale: say
+so, name the run id and age, and take it over — which ends the run it names, once, as `superseded`
+(Step 6). Remove the directory when the run ends.
 
 **3. Report the depth, in one line, from the read you make anyway.** `./next --drive` prints how
 many takeable gates deep the backlog is and where it runs dry. Say it before dispatching anything:
@@ -727,17 +754,22 @@ tools/sprint-ledger.sh record --ledger .claude/backlog/LEDGER.md \
 ```
 
 The `--estimate-*` values are the ones the proposal printed and nothing else; re-deriving them here
-scores the estimate against itself. It appends one block pairing all four figures, the develop
+scores the estimate against itself. **`record` replaces its own block** — the one headed with this
+run id — and appends only when there is none, so the latest call wins: call it at any halt you see
+coming, a `limit_hit` wait included, and always at the terminal end. It writes one block pairing all four figures, the develop
 gate's observed cost against `config.yml`'s linear prediction for that ticket count, verify cost per
 ticket for each session batched or unbatched, and what the run parked. **Commit it** — uncommitted
 it is one `git stash` from gone, and a sprint that is not recorded is a sprint the next estimate
 cannot learn from. This is the only moment the attribution exists: aggregate spend is recoverable
 from the transcripts later, which run it belonged to is not.
 
-**Write the run's ending as a `sprint_ended` event** (Step 5), whichever way it ends. That event is
-what `findings_max_sprints` counts — a completed sprint is a run log carrying one, never a run log
-file, because a supervisor killed mid-run offered the buffer no opportunity to be swept. Unwritten,
-this run does not count and the age limit silently measures one sprint short.
+**Write the run's ending as a `sprint_ended` event** (Step 5) at its terminal end, carrying
+`reason`: `completed`, `stopped` (an escalation or a person), or `superseded` (written by the run
+that took over its stale marker, Step 1, with `by` naming that run). It is written never at a suspension: a run
+interrupted and resumed under its own id is one sprint. That event is what `findings_max_sprints`
+counts — a completed sprint is a run log carrying one, never a run log file, because a supervisor
+killed mid-run offered the buffer no opportunity to be swept. Unwritten, this run does not count
+and the age limit silently measures one sprint short.
 
 **The run ends at the tail, and the release chain is handed over as a checklist.** See the retro's
 and the queue sweep's edits committed, then stop. **No push, no version bump, no install, no restart, and no further
@@ -788,7 +820,11 @@ the work is local and unpushed and no other session starts while one waits, so t
 picks it back up. Log a `limit_hit` event carrying the reset time the message names, wait for the
 reset or for the person to say tokens are back, then log `resumed` and dispatch
 `claude -p --resume <session-id>` with the same schema, flags and `--model "$RUN_MODEL"`, capped at what that session
-has left: its stage cap less what a harvest of that session id already shows spent. Where that
+has left. Every resume re-pays the session's context floor — a cost of being interrupted, not of
+scope — so the cap excludes it: `tools/harvest-usage.sh <transcript-dir> --legs <session-id> --run
+<run-log> --stage-cap <cap>` prints its `CAP`, the stage cap less the spend net of `repaid` (each
+resumed leg's first priced turn) plus `repay_next` (the largest first turn so far), and the
+`resumed` event carries `cap`, `repaid` and `repay_next`. Where that
 harvest shows the session wholly or partly unpriced, nothing is subtracted: resume at the full stage cap
 and log `resumed` with `cap_basis: "unpriced"`, because a guessed allowance is a figure nobody
 measured. The resumed

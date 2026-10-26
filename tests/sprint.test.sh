@@ -1249,13 +1249,15 @@ fi
 # ONE block, not the union of them. `fenced` concatenates every block in the file with nothing
 # between — it drops the fence lines, so two adjacent blocks abut and no separator survives to split
 # them on. Extracting "the block containing the token" has to be done at the fence.
+# And the block naming BOTH tokens: Step 1's marker block also reads lock_stale_seconds, for the
+# supervisor marker's age (0175), and is not a check on the backlog lock at all.
 agecheck="$FIX/agecheck.sh"
-awk -v tok='lock_stale_seconds' '
+awk -v tok='lock_stale_seconds' -v lock='.claude/backlog/.lock' '
   /^```/ {
-    if (inside) { if (hit) { for (i = 0; i < n; i++) print buf[i]; exit } ; n = 0; hit = 0 }
+    if (inside) { if (hit && haslock) { for (i = 0; i < n; i++) print buf[i]; exit } ; n = 0; hit = 0; haslock = 0 }
     inside = !inside; next
   }
-  inside { buf[n++] = $0; if (index($0, tok)) hit = 1 }
+  inside { buf[n++] = $0; if (index($0, tok)) hit = 1; if (index($0, lock)) haslock = 1 }
 ' "$SKILL" > "$agecheck" 2>/dev/null || true
 
 mkbacklog() {   # mkbacklog <dir> <stale-seconds>
@@ -3184,6 +3186,145 @@ if says "$SKILL" "Step 9" 'Every ticket the report names is a link' && \
 else
   bad "Step 9 does not require ticket references to be item-file paths with the AC's line; a bare id sends the person searching for the ticket"
 fi
+
+# --- 0175 — one sprint across a suspension: the run id decides, before the marker's age ----------
+# run-20260920T222013Z resumed across a date boundary: the heartbeat lives inside one Bash call, so
+# an overnight gap aged the supervisor's OWN marker past lock_stale_seconds and it read itself as a
+# stale run to take over. The claim is about what the block DOES, so it is run, not read: the
+# `# step-1-marker` block is extracted as written and driven against fixture backlogs.
+MARKER_BLOCK="$(awk '
+  index($0, "## Step 1") == 1 { inside = 1; next }
+  /^## / { inside = 0 }
+  inside && /^```/ { if (infence && body ~ /# step-1-marker/) printf "%s", body; body = ""; infence = !infence; next }
+  inside && infence { body = body $0 "\n" }
+' "$SKILL" 2>/dev/null)"
+ago_stamp() { date -u -v-"$1"H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "$1 hours ago" +%Y-%m-%dT%H:%M:%SZ; }
+marker_fixture() { # <dir> <held run id or empty> <held stamp>
+  rm -rf "$1"; mkdir -p "$1/.claude/backlog/runs"
+  printf 'project: fixture\nlock_stale_seconds: 900\n' > "$1/.claude/backlog/config.yml"
+  printf '{"event":"scope_confirmed","at":"%s","run":"run-fx-0175r"}\n' "$3" > "$1/.claude/backlog/runs/run-fx-0175r.jsonl"
+  [ -z "$2" ] && return 0
+  mkdir "$1/.claude/backlog/runs/.active"
+  printf '%s %s\n' "$2" "$3" > "$1/.claude/backlog/runs/.active/held-by"
+}
+run_marker() { # <dir> <RUN_ID> — the block's stdout and stderr, then its exit status on the last line
+  printf '%s' "$MARKER_BLOCK" > "$1/marker.sh"
+  # `&& ... ||` rather than `; echo rc=$?`: under `set -e` a refusing block would end this file.
+  (cd "$1" && { RUN_ID="$2" sh marker.sh 2>&1 && echo "rc=0" || echo "rc=$?"; })
+}
+MK="$FIX/0175-marker"
+OLD175="$(ago_stamp 10)"
+if [ -z "$MARKER_BLOCK" ]; then
+  bad "0175 FR4 — Step 1 carries no '# step-1-marker' block; the busy branch is prose a session re-derives"
+fi
+
+echo "0175 AC3 — a marker naming the supervisor's own run id is retaken whatever its age"
+marker_fixture "$MK" run-fx-0175r "$OLD175"
+OUT175="$(run_marker "$MK" run-fx-0175r)"
+HELD175="$(cat "$MK/.claude/backlog/runs/.active/held-by" 2>/dev/null || true)"
+case "$OUT175" in
+  *"rc=0") ok "the block exits 0 for its own run's 10-hour-old marker" ;;
+  *) bad "0175 AC3 — the block refused its own run's marker: $(printf '%s' "$OUT175" | tr '\n' '|')" ;;
+esac
+case "$HELD175" in
+  "run-fx-0175r $OLD175"|"") bad "0175 AC3 — held-by was not rewritten with a fresh stamp: '${HELD175}'" ;;
+  "run-fx-0175r "*) ok "held-by still names run-fx-0175r, with a rewritten stamp" ;;
+  *) bad "0175 AC3 — held-by names another run after a retake: '$HELD175'" ;;
+esac
+RES175="$(grep '"supervisor_resumed"' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl" || true)"
+if printf '%s' "$RES175" | grep -qF "\"suspended_at\":\"$OLD175\"" && printf '%s' "$RES175" | grep -qF '"resumed_at":"'; then
+  ok "the run log gains supervisor_resumed with suspended_at at the old stamp, and resumed_at"
+else
+  bad "0175 AC3 — no supervisor_resumed event with suspended_at $OLD175 and resumed_at: '${RES175}'"
+fi
+if grep -qF 'sprint_ended' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl"; then
+  bad "0175 AC3 — retaking its own marker ended its own run"
+else
+  ok "and its own run is not ended"
+fi
+
+echo "0175 AC4 — a stale marker naming another run is taken over, ending that run once as superseded"
+marker_fixture "$MK" run-fx-0175r "$OLD175"
+OUT175="$(run_marker "$MK" run-fx-0175n)"
+case "$(cat "$MK/.claude/backlog/runs/.active/held-by" 2>/dev/null || true)" in
+  "run-fx-0175n "*) ok "the stale marker is taken: held-by names run-fx-0175n" ;;
+  *) bad "0175 AC4 — the stale marker was not taken over: $(printf '%s' "$OUT175" | tr '\n' '|')" ;;
+esac
+ENDED175="$(grep -c '"sprint_ended"' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl" || true)"
+if [ "$ENDED175" = 1 ] && grep '"sprint_ended"' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl" | grep -qF '"reason":"superseded"' && \
+   grep '"sprint_ended"' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl" | grep -qF '"by":"run-fx-0175n"'; then
+  ok "the superseded run's log gains exactly one sprint_ended, reason superseded, by run-fx-0175n"
+else
+  bad "0175 AC4 — the superseded log holds $ENDED175 sprint_ended events, or the one it holds names no reason superseded by run-fx-0175n"
+fi
+printf 'run-fx-0175r %s\n' "$OLD175" > "$MK/.claude/backlog/runs/.active/held-by"
+run_marker "$MK" run-fx-0175m >/dev/null
+if [ "$(grep -c '"sprint_ended"' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl" || true)" = 1 ]; then
+  ok "a second supersession of an already-ended run appends no second sprint_ended"
+else
+  bad "0175 FR6 — a log already holding sprint_ended gained another"
+fi
+marker_fixture "$MK" run-fx-0175r "$(ago_stamp 0)"
+OUT175="$(run_marker "$MK" run-fx-0175n)"
+case "$OUT175" in
+  *"rc=0") bad "0175 AC4/0153 — a FRESH marker naming another run was taken over" ;;
+  *) if grep -qF 'sprint_ended' "$MK/.claude/backlog/runs/run-fx-0175r.jsonl"; then
+       bad "0175 AC4/0153 — refusing a fresh marker still ended the run it names"
+     else ok "0153 unchanged: a fresh marker naming another run is refused and ends nothing"; fi ;;
+esac
+
+echo "0175 AC5 — a run whose log already carries sprint_ended is refused, and nothing is taken"
+marker_fixture "$MK" "" "$OLD175"
+printf '{"event":"sprint_ended","at":"%s","run":"run-fx-0175r","reason":"completed"}\n' "$OLD175" \
+  >> "$MK/.claude/backlog/runs/run-fx-0175r.jsonl"
+OUT175="$(run_marker "$MK" run-fx-0175r)"
+case "$OUT175" in
+  *"rc=0") bad "0175 AC5 — resuming an ended run was allowed" ;;
+  *) if [ -d "$MK/.claude/backlog/runs/.active" ]; then bad "0175 AC5 — refused, but the marker was taken anyway"
+     else ok "resuming an ended run is refused before the marker is taken, so nothing is dispatched"; fi ;;
+esac
+if says "$SKILL" "Step 1" 'refuses a run whose log already carries `sprint_ended`, and dispatches nothing'; then
+  ok "Step 1 says the refusal dispatches nothing"
+else
+  bad "0175 AC5 — Step 1 does not say a refused resume dispatches nothing"
+fi
+
+echo "0175 AC8 — Step 1, Step 6 and Step 7 state the run identity, its ending and the resume cap"
+if says "$SKILL" "Step 1" 'run-$(date -u +%Y%m%dT%H%M%SZ)'; then
+  ok "Step 1 names the run id format"
+else
+  bad "0175 AC8/FR3 — Step 1 does not name how the run id is minted"
+fi
+OWN_LINE="$(printf '%s' "$MARKER_BLOCK" | grep -n '"$RUN_ID"' | grep -F 'held_run' | head -1 | cut -d: -f1)"
+AGE_LINE="$(printf '%s' "$MARKER_BLOCK" | grep -n 'lock_stale_seconds' | head -1 | cut -d: -f1)"
+if [ -n "$OWN_LINE" ] && [ -n "$AGE_LINE" ] && [ "$OWN_LINE" -lt "$AGE_LINE" ]; then
+  ok "the marker block checks the own run id (line $OWN_LINE) before the age (line $AGE_LINE)"
+else
+  bad "0175 AC8/FR4 — the marker block does not check the own run id before the age (own '${OWN_LINE}', age '${AGE_LINE}')"
+fi
+if says "$SKILL" "Step 1" '/sprint resume <run-id>' && says "$SKILL" "Step 1" 'reuses that id and that run log'; then
+  ok "Step 1 says a continuing supervisor reuses the id and log, and /sprint resume <run-id> adopts it"
+else
+  bad "0175 AC8/FR3 — Step 1 does not say how a run is continued under its own id"
+fi
+for reason in '`completed`' '`stopped`' '`superseded`'; do
+  if says "$SKILL" "Step 6" "$reason"; then ok "Step 6 names sprint_ended reason $reason"
+  else bad "0175 AC8/FR5 — Step 6 does not name sprint_ended reason $reason"; fi
+done
+if says "$SKILL" "Step 6" 'never at a suspension'; then
+  ok "Step 6 says sprint_ended is never written at a suspension"
+else
+  bad "0175 AC8/FR5 — Step 6 does not say sprint_ended is written only at a terminal end"
+fi
+if says "$SKILL" "Step 6" 'replaces its own block' && says "$SKILL" "Step 6" 'the latest call wins'; then
+  ok "Step 6 says record replaces its own block, so it may be called at any foreseen halt"
+else
+  bad "0175 AC8/FR7-FR8 — Step 6 does not say record replaces its own block and the latest call wins"
+fi
+for word in '`repaid`' '`repay_next`'; do
+  if says "$SKILL" "Step 7" "$word"; then ok "Step 7 names $word"
+  else bad "0175 AC8/FR1 — Step 7 does not name $word"; fi
+done
 
 # 0165 FR1 — every FAIL line again, immediately above the tally.
 #

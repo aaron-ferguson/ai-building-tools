@@ -788,9 +788,31 @@ def record(opts):
     out.append("")
 
     block = "\n".join(out)
-    with open(opts["ledger"], "a") as fh:
-        fh.write(block if block.endswith("\n") else block + "\n")
+    write_block(opts["ledger"], run_id, block if block.endswith("\n") else block + "\n")
     return block
+
+
+def write_block(path, run_id, block):
+    """0175 FR7: replace this run's block in place, or append when it has none. A run resumed
+    across a suspension is one sprint and calls record again; a second block would count it twice
+    in every estimate read back from the ledger. Every other block is left byte-identical.
+
+    A block opens with the blank line before its heading and runs to the blank line before the
+    next `## ` heading, or to the end of the file -- exactly the span record() appends."""
+    lines = open(path).read().splitlines(True) if os.path.exists(path) else []
+    heading = "## sprint %s -- " % run_id
+    start = next((i for i, line in enumerate(lines) if line.startswith(heading)), None)
+    if start is None:
+        with open(path, "a") as fh:
+            fh.write(block)
+        return
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    while end < len(lines) and end > start + 1 and not lines[end - 1].strip():
+        end -= 1
+    if start > 0 and not lines[start - 1].strip():
+        start -= 1
+    with open(path, "w") as fh:
+        fh.write("".join(lines[:start]) + block + "".join(lines[end:]))
 
 
 # --- arguments ----------------------------------------------------------------------------------
