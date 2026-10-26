@@ -2,8 +2,8 @@
 id: "0183"
 title: Decide what checks that an NFR row's named guard can actually red on that requirement
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 size: s
@@ -17,15 +17,9 @@ expects:
   - skills/verify/SKILL.md
   - skills/queue/templates/item.md
 ac_digest: AC1=fc5b06e3 AC2=3a779806 AC3=478021db AC4=9e64bc44 AC5=a8c2f1f5 AC6=57e2eae1 AC7=593ca365
-claimed_by: "2672"
-claimed_at: 2026-10-26T01:26:32Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/falsifiable-acs.test.sh
-  - skills/verify/SKILL.md
-  - skills/queue/templates/item.md
-  - tests/item-nfr-red.test.sh  # new
-  - README.md
-  - .claude/backlog/items/0177-give-retros-behind-the-remote-stop-an-answer.md  # FR4, under 0177 claim 48b5
 ---
 
 ## Problem
