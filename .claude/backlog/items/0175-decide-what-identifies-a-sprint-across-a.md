@@ -3,7 +3,7 @@ id: "0175"
 title: Decide what identifies a sprint across a suspension, and which mechanisms key off it
 type: debt
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: l
@@ -19,9 +19,14 @@ expects:
   - tools/harvest-usage.sh
   - tests/sprint.test.sh
   - tests/sprint-ledger.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "fa94"
+claimed_at: 2026-10-26T02:20:45Z
 touches:
+  - skills/sprint/SKILL.md
+  - tools/sprint-ledger.sh
+  - tools/harvest-usage.sh
+  - tests/sprint.test.sh
+  - tests/sprint-ledger.test.sh
 ---
 
 ## Problem
