@@ -119,3 +119,36 @@ Unit, in `tests/skill-size.test.sh`.
     `qa_level: unit` and `close_by: verify` re-read and kept — every criterion is a case in one test
     file. `touches:` set to the one file the build edits; `skills/sprint/SKILL.md` is read, not
     written.
+- **2026-10-25 (develop, 537f)** — Built in `cf8eb22` and `cb01eec`, all in
+  `tests/skill-size.test.sh`; `skills/sprint/SKILL.md` was read, not edited.
+  - **Mechanism.** `argued_at()` is a second case table beside `justification()`. `offenders` takes
+    it as a third lookup and reports a recorded file in three ways: under the goal (stale reason), missing
+    its argued-at size, or more than `MARGIN` past it. The seeds are the sizes at the build
+    commit: sprint 60813 (argued by 0190), and develop 50862, queue 48538, verify 45522,
+    retro 30034 and prototype 25361 (grandfathered). Retro's figure includes 0177's addition
+    from earlier in this session (`c8606bc`).
+  - **Beyond the letter, recorded so verify can judge it.** The 0035 AC4/FR6 loop now reads its
+    files from the `justification` table instead of a hand-kept list. That brings retro in as well
+    as sprint, the gap design 0190's finding named. Retro's reason passes both checks.
+  - **A gap the sweep found and this build fixed.** The FR6 regex `[0-9]{4,}` cannot see a
+    comma-grouped number. The old sprint reason's `~2,100` is exactly such a number, so adding
+    sprint to the loop alone would never have reddened it. Commas are now stripped before the
+    match (`cb01eec`).
+  - **Clause table, every mutation run against the committed file, with a control of 45/0 after.**
+    The first pass's greens were artefacts. A file-wide `sed` also rewrote the test's own expected
+    phrases, and one phrase occurs twice in the sprint reason. Those were re-run with line-scoped
+    mutations, and all went red.
+
+    | AC clause | Guard | Mutation → result |
+    |---|---|---|
+    | AC1 cites 0190 / names Step 7's lock and cap-kill recovery / the design-beside rule / why rejected | `0190 AC1 — the sprint reason names …` (4 cases) | design-beside removed → 1 FAIL |
+    | AC1 no number of four or more digits | 0035 FR6 check, commas stripped | `~2,100` reinserted → 1 FAIL |
+    | AC1 loop includes sprint | `0190 AC1 — the loop includes skills/sprint/SKILL.md` | sprint unrecorded → 6 FAIL |
+    | AC2 missing argued-at size reds, named | `0190 AC2` | branch deleted → 1 FAIL |
+    | AC3 exactly S+MARGIN passes | `0190 AC3` pass case | `-gt` → `-ge` → 1 FAIL |
+    | AC3 S+MARGIN+1 reds naming file, size, S, "re-argue its reason or relocate" | `0190 AC3` fail case | bound +1 → 1 FAIL; remedy words dropped → 2 FAIL |
+    | AC4 30,000 past reds; just-over passes; under goes stale | FR7 cases | no upper bound → 2 FAIL |
+    | AC5 `MARGIN`, value, derivation, separate field, 0190 grandfathering | `0190 AC5` (6 header phrases) | value → 1, grandfathering → 1, field → 1 FAIL |
+    | AC6 sprint passes at its build-commit size | real-tree AC1 | sprint argued-at deleted → 1 FAIL |
+    | FR4 the constant itself | `MARGIN=5000` feeds AC3 | 50000 → 1 FAIL |
+  - AC6: the whole suite is green at `cb01eec`.
