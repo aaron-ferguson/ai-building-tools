@@ -189,3 +189,45 @@ exactly as it subtracts `limit_hit`→`resumed` windows.
   `l`: three files of behaviour plus two test files. Ordering note for develop: 0164 also edits
   `record` and the `FIGURES` list; FR7's replace is independent of which figures a block carries, so
   either may land first.
+- **2026-10-25 (develop, token fa94)** — Built in 9337f11, guard tightened in two follow-ups
+  (AC7's outside-span comparison). What landed:
+  - **FR1–FR2** — `tools/harvest-usage.sh --legs <sid> --run <log> [--stage-cap <usd>]` prints only
+    `LEG n start <stamp> first USD x leg USD y` lines and, with a cap, one `CAP` line: `CAP 3.70 stage
+    cap 12.00 spent 12.00 repaid 2.40 repay next 1.30`, or `CAP 12.00 cap basis unpriced` when any
+    leg holds an unpriced turn (or no turn). The formula lives once, in the tool; Step 7 names the
+    command and says the `resumed` event carries `cap`, `repaid`, `repay_next`. Output stays inside
+    the harvest's aggregate-figures character set, so the words are spaced (`repay next`, `cap
+    basis`) where the event's JSON keys are underscored. Leg 1 starts at the session's first turn;
+    each later leg at its `resumed` event's `ts`/`at`.
+  - **FR3–FR6** — Step 1's marker mkdir became one runnable `# step-1-marker` block: refusal of an
+    ended `$RUN_ID` first (before `mkdir`, because an ended run has usually removed its marker, so
+    a busy-branch-only check would never see AC5), then own-run-id retake with `supervisor_resumed`,
+    then 0153's age rule, and on a stale takeover an append of `sprint_ended` `reason: superseded`,
+    `by` — only if that log holds none. The tests RUN the extracted block, as 0153's heartbeat guard
+    does, against fixture backlogs.
+  - **FR7** — `record` writes through `write_block`: the span is the blank line before the heading
+    to the blank line before the next `## ` heading (or EOF), exactly what it appends.
+  - **AC6** — the guard is in `tests/next.test.sh` beside 0133's age cases, which own the scaffold
+    helpers (`expects:` named only `tests/sprint.test.sh`; touches should have been widened to it).
+  - **AC25 (0040) guard narrowed, not weakened**: it took "the first fenced block naming
+    `lock_stale_seconds`" as Step 7's lock-age check; the new Step 1 block also reads that key, so
+    the extraction now requires the block to name `.claude/backlog/.lock` as well.
+  - Size: the sprint skill went 60,813 → 63,662 bytes, inside 0190's 5,000-byte margin.
+- **Clause table and mutation sweep (all RUN, against committed code)** — each mutation was applied
+  to the committed file, the owning suite run, and the file restored:
+
+  | AC clause | Mutation | Result |
+  |---|---|---|
+  | AC1 `+ repay_next` | drop the re-grant | red (cap 2.40) |
+  | AC1 `− (spent − repaid)` | subtract full spend | red (cap 1.30) |
+  | AC1/FR2 per-leg lines | (tool absent) | red before build |
+  | AC2 unpriced → full cap | ignore unpriced legs | red |
+  | AC3 own id retaken at any age | own-id branch → `false` | red |
+  | AC4 exactly one `sprint_ended`, `superseded`, `by` | reason → `stopped` | red |
+  | AC4/FR6 not appended twice | drop the `grep -qs ||` | red |
+  | AC4 0153 unchanged (fresh refused) | asserted directly; pre-build block took nothing | red before build |
+  | AC5 refuse, dispatch nothing | drop refusal line | red |
+  | AC6 counts 1 | count events in a two-ending log | red |
+  | AC7 one B block | always append | red |
+  | AC7 A byte-identical (and C, separators) | don't back off over C's leading blank | red after the tightening; green before it (gap found and closed) |
+  | AC8 greps | — | each red before the prose was written |
