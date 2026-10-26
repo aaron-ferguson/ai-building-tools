@@ -2,8 +2,8 @@
 id: "0182"
 title: Name the write mechanism that works for each backlog file, the lock included, where every stage reads it
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 close_by: verify
 ac_digest: AC1=61582456 AC2=17c866ac AC3=1b77b10e AC4=027c306a AC5=b97f8cf9 AC6=6249bb7e AC7=6df4dbb3 AC8=9fbc9516 AC9=b54a046f AC10=d0d0b2b8
@@ -33,10 +33,9 @@ expects:
   - references/TRACKER.md
   - tests/backlog-location.test.sh
   - CHANGELOG.md
-claimed_by: "7bff"
-claimed_at: 2026-10-26T02:55:05Z
+claimed_by:
+claimed_at:
 touches:
-  - "*"
 ---
 
 ## Problem
