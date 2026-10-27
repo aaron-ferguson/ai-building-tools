@@ -25,7 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0189 | Make the citations guard resolve the conventions path from a worktree outside the checkout's parent | develop | ready |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
-| 0145 | Decide what an empty touches means to the scope report | verify | ready |  |
+| 0145 | Decide what an empty touches means to the scope report | verify | in-progress |  |
 | 0146 | Decide when a required duplication earns a drift guard | design | ready |  |
 | 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | develop | ready |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
