@@ -353,12 +353,85 @@ else
   ok "Step 3 no longer says to cp a backlog file into place"
 fi
 
-echo "AC9 — CHANGELOG ## Unreleased names the move, ./migrate, the legacy end and the install order"
-UNREL="$(section "$ROOT/CHANGELOG.md" "Unreleased")"
-for phrase in '`.backlog/`' '`./migrate`' '2026-12-31' 'install' '`tools/release verify`'; do
-  if printf '%s\n' "$UNREL" | grep -qF -- "$phrase"; then ok "Unreleased names $phrase"
-  else bad "0182 AC9 — ## Unreleased does not name $phrase"; fi
+# The 0182 release note is found by what it says, never by the section holding it: `tools/release
+# --bump` moves every `## Unreleased` entry under the version it bumps (0041 AC13), so a section
+# locator passes only until the first release after its ticket closes (0221).
+NOTE_LOCATOR_A='`.backlog/`'
+NOTE_LOCATOR_B='`./migrate`'
+NOTE_PHRASES='`.backlog/`|`./migrate`|2026-12-31|install|`tools/release verify`'
+
+# entries_naming_0182 <changelog> — each top-level `- ` entry under any `## ` heading that names both
+# locators, one per line, its continuation lines joined on with a space.
+entries_naming_0182() {
+  awk -v a="$NOTE_LOCATOR_A" -v b="$NOTE_LOCATOR_B" '
+    function flush() { if (e != "" && index(e, a) && index(e, b)) print e; e = "" }
+    /^- / { flush(); e = $0; next }
+    /^#/ || /^[[:space:]]*$/ { flush(); next }
+    e != "" { e = e " " $0 }
+    END { flush() }' "$1"
+}
+
+# check_0182_note <changelog> — one line per verdict: `found <phrase>`, `missing <phrase>`, or why no
+# single entry could be judged. Exits 0 only when one entry carries all five phrases.
+check_0182_note() {
+  notes="$(entries_naming_0182 "$1")"
+  n="$(printf '%s' "$notes" | grep -c . || true)"
+  if [ "$n" -eq 0 ]; then echo "no entry names both $NOTE_LOCATOR_A and $NOTE_LOCATOR_B"; return 1; fi
+  if [ "$n" -gt 1 ]; then echo "more than one entry ($n) names both $NOTE_LOCATOR_A and $NOTE_LOCATOR_B"; return 1; fi
+  status=0
+  old_ifs="$IFS"; IFS='|'
+  for phrase in $NOTE_PHRASES; do
+    if printf '%s\n' "$notes" | grep -qF -- "$phrase"; then echo "found $phrase"
+    else echo "missing $phrase"; status=1; fi
+  done
+  IFS="$old_ifs"
+  return "$status"
+}
+
+echo "AC9 — the 0182 CHANGELOG entry, under whichever heading, names the move, ./migrate, the legacy end and the install order"
+AC9_OUT="$(check_0182_note "$ROOT/CHANGELOG.md" || true)"
+while IFS= read -r verdict; do
+  case "$verdict" in
+    found\ *) ok "the 0182 entry names ${verdict#found }" ;;
+    missing\ *) bad "0182 AC9 — the 0182 entry does not name ${verdict#missing }" ;;
+    *) bad "0182 AC9 — $verdict" ;;
+  esac
+done <<EOF
+$AC9_OUT
+EOF
+
+echo "0221 — the AC9 check locates its entry by content, against fixture CHANGELOGs"
+NOTE_FULL='- The backlog moves to `.backlog/`; run `./migrate`. The legacy path works until 2026-12-31.
+  Update the install first, and confirm it with `tools/release verify`.'
+# note_without <phrase> — the full fixture entry with every occurrence of that phrase removed.
+note_without() { printf '%s\n' "$NOTE_FULL" | awk -v p="$1" '{ while ((i = index($0, p)) > 0) $0 = substr($0, 1, i - 1) substr($0, i + length(p)); print }'; }
+OTHER_ENTRY='- An unrelated fixture entry.'
+
+printf '# Changelog\n\n## Unreleased\n\n%s\n%s\n\n## 1.0.0 — 2026-01-01\n\n- Released.\n' "$OTHER_ENTRY" "$NOTE_FULL" > "$WORK/cl-unreleased.md"
+printf '# Changelog\n\n## Unreleased\n\n## 9.9.9 — 2099-01-01\n\n%s\n%s\n\n### Did not change\n\nNothing.\n' "$OTHER_ENTRY" "$NOTE_FULL" > "$WORK/cl-versioned.md"
+for fx in cl-unreleased cl-versioned; do
+  if out="$(check_0182_note "$WORK/$fx.md")"; then ok "0221 AC2 — $fx.md passes"
+  else bad "0221 AC2 — $fx.md fails: $(printf '%s' "$out" | tr '\n' ';')"; fi
 done
+
+old_ifs="$IFS"; IFS='|'
+for phrase in $NOTE_PHRASES; do
+  IFS="$old_ifs"
+  printf '# Changelog\n\n## 9.9.9 — 2099-01-01\n\n%s\n- Another fixture entry, naming %s.\n' "$(note_without "$phrase")" "$phrase" > "$WORK/cl-lacks.md"
+  if out="$(check_0182_note "$WORK/cl-lacks.md")"; then bad "0221 AC3 — an entry lacking $phrase passes because another entry names it"
+  elif printf '%s\n' "$out" | grep -qF -- "$phrase"; then ok "0221 AC3 — an entry lacking $phrase fails and names it"
+  else bad "0221 AC3 — an entry lacking $phrase fails without naming it: $(printf '%s' "$out" | tr '\n' ';')"; fi
+done
+IFS="$old_ifs"
+
+printf '# Changelog\n\n## Unreleased\n\n%s\n' "$OTHER_ENTRY" > "$WORK/cl-none.md"
+printf '# Changelog\n\n## Unreleased\n\n%s\n\n## 9.9.9 — 2099-01-01\n\n%s\n' "$NOTE_FULL" "$NOTE_FULL" > "$WORK/cl-two.md"
+if out="$(check_0182_note "$WORK/cl-none.md")"; then bad "0221 AC4 — a CHANGELOG with no matching entry passes"
+elif printf '%s\n' "$out" | grep -qF 'no entry'; then ok "0221 AC4 — no matching entry fails, saying \"no entry\""
+else bad "0221 AC4 — no matching entry fails without saying \"no entry\": $out"; fi
+if out="$(check_0182_note "$WORK/cl-two.md")"; then bad "0221 AC4 — a CHANGELOG with two matching entries passes"
+elif printf '%s\n' "$out" | grep -qF 'more than one entry'; then ok "0221 AC4 — two matching entries fail, saying \"more than one entry\""
+else bad "0221 AC4 — two matching entries fail without saying \"more than one entry\": $out"; fi
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 TALLIED=1
