@@ -2,8 +2,8 @@
 id: "0091"
 title: Make a by-hand backlog write take the lock and prove its commit landed
 type: bug
-next: develop
-status: in-progress
+next: queue
+status: ready
 qa_level: verify
 size: m
 created: 2026-09-05
@@ -22,19 +22,9 @@ expects:
   - skills/queue/SKILL.md
   - docs/decisions/001-one-command-per-stage-boundary.md
   - tests/citations.test.sh
-claimed_by: "5dc5"
-claimed_at: 2026-10-27T03:59:03Z
+claimed_by:
+claimed_at:
 touches:
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
-  - skills/retro/SKILL.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/design/SKILL.md
-  - skills/prototype/SKILL.md
-  - skills/queue/SKILL.md
-  - docs/decisions/001-one-command-per-stage-boundary.md
-  - tests/citations.test.sh
 ---
 
 ## Problem
