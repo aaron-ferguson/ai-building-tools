@@ -390,6 +390,10 @@ acceptance-criteria list it cannot tick**. That last one is yours to fix before 
 was simply absent. Rewrite them in the checkbox form and close again — never hand-tick around it,
 because the tick is the evidence your run produced.
 
+**A busy lock at close is not a refusal to stop on**: `./close` exits on it, but the verdict exists
+only in this session, so retry, per the close-time case in
+`CONCURRENCY-INCIDENTS.md`, rule *Lock every write to the backlog directory*.
+
 **Write the release note with the close: `--note "<text>"`** (0041). It lands under `## Unreleased`
 in `CHANGELOG.md`, in the close's own commit, and `tools/release` promotes it to the version it
 bumps. You have just read the ACs and the evidence, which makes this the cheapest moment the note

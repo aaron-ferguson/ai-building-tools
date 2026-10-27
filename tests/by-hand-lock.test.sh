@@ -172,6 +172,36 @@ echo "0091 AC5 — decision 001 does not fold the FINDINGS.md append into the bo
 not_in_window "AC5 — the fold instruction is gone" "$WD" 'Fold it into the boundary commit'
 in_window "AC5 — the append precedes the boundary commit" "$WD" 'before the boundary commit'
 
+# ---------------------------------------------------------------------------------------------
+# 0047 — a busy lock at CLOSE time. Stopping, right at claim time, strands a verdict at close time,
+# so the procedure states both cases and tells them apart by what the session holds. Scoped to the
+# *A busy or stale lock* section, never the file: "close" and "retry" are ordinary words there.
+# ---------------------------------------------------------------------------------------------
+VERIFY="$ROOT/skills/verify/SKILL.md"
+[ -f "$VERIFY" ] || { echo "no file at $VERIFY" >&2; exit 2; }
+
+echo "0047 AC1 — the close-time case retries rather than stopping"
+in_window "AC1 — the section names the close-time case and retries" "$WB" \
+  'At close time, retry rather than stop'
+
+echo "0047 AC2 — where the verdict goes while the lock is still held"
+in_window "AC2 — the verdict stays in the held item's QA evidence" "$WB" \
+  'the verdict stays in the item you hold'
+in_window "AC2 — named by its section" "$WB" '`## QA evidence`'
+
+echo "0047 AC3 — the claim-time instruction is unchanged"
+in_window "AC3 — under 5 minutes at claim time, report and stop" "$WB" 'Report it to the user and stop'
+in_window "AC3 — and still says not to break it" "$WB" '**Do not break it.**'
+
+echo "0047 FR3 — the two cases are told apart by what the session holds"
+in_window "FR3 — distinguished by what you hold, not by the script" "$WB" \
+  'by what you are holding, not by which script'
+
+echo "0047 AC4 — verify Step 5 points at the procedure by the rule name"
+W5="$(window "$VERIFY" '## Step 5 — Act on the verdict')"
+in_window "AC4 — Step 5 cites the procedure's file" "$W5" '`CONCURRENCY-INCIDENTS.md`, rule *Lock every write to the backlog directory*'
+in_window "AC4 — and names the close-time case it meets" "$W5" 'busy lock at close'
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 TALLIED=1
 [ "$FAIL" -eq 0 ]

@@ -34,6 +34,17 @@ moment, so a genuine holder will be gone. Still held, then read `held-by`:
 - **Over 5 minutes** → stale; a session almost certainly ended between `mkdir` and `rmdir`. Say so,
   name the timestamp, `rm -rf "$BACKLOG/.lock"`, and continue.
 
+**At close time, retry rather than stop.** The two cases are told apart by what you are holding,
+not by which script you are running. Claiming, you hold nothing, so stopping costs nothing. Holding
+a verdict, stopping discards evidence that exists nowhere else and leaves the row `in-progress`
+under a token whose session is ending. So keep retrying, with more patience — re-read `held-by`
+each time — until the lock is released or its timestamp passes 5 minutes, where the stale path
+above takes over; a lock under 5 minutes old is still never broken. While you wait, the verdict
+stays in the item you hold, in its `## QA evidence` table, written before the close was attempted
+(`verify` Step 7). If the session must end first, its report says the row is `in-progress` under
+your token, the close is owed, and the evidence is in that section, uncommitted — never
+`./handoff` the row away to free yourself.
+
 Always release with `rm -rf` in the turn you took it, including on the path where you decide *not* to
 make the change. A script releases on its failure paths via a `trap`.
 
