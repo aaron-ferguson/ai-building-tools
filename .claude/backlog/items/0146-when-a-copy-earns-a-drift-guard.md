@@ -2,8 +2,8 @@
 id: "0146"
 title: Decide when a required duplication earns a drift guard, and guard the copies that qualify
 type: debt
-next: develop
-status: in-progress
+next: design
+status: ready
 qa_level: verify
 size: m
 created: 2026-09-09
@@ -18,14 +18,9 @@ expects:
   - tests
   - CHANGELOG.md
 ac_digest: AC1=5fbfaaac AC2=c1acc8f1 AC3=9050975f AC4=56e774ba AC5=8f2742d6 AC6=a6cbfedc AC7=727df98e AC8=b99456d7 AC9=c672124b
-claimed_by: "e36d"
-claimed_at: 2026-10-27T02:37:50Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/declared-copies.test.sh
-  - tests/close.test.sh
-  - skills/queue/templates
-  - tests
-  - CHANGELOG.md
 ---
 
 ## Problem
@@ -104,6 +99,42 @@ Each carries a comment saying to change them together, which is a rule with noth
   runs after the change, then every file passes, `tests/abort-announce.test.sh` included for the new
   file.
 
+## Open design question
+
+**FR3, FR4 and AC5 cannot all hold for `fm_list`, so the tree cannot be green as specified.**
+Checked at HEAD cd66ca3 (develop, token e36d) by hashing every function body defined in more than
+one `skills/queue/templates/` file:
+
+| function | copies | identical? |
+|---|---|---|
+| `fm_list` | `close`, `next`, `reopen` | **no, all three differ.** `close` and `next` differ only in a two-line comment's wording. `reopen` lacks `close`'s first line `[ -n "$1" ] \|\| return 0` and the comment |
+| `column_named` | `claim`, `handoff`, `next` | `claim` = `handoff`; `next` reads `$name_row` where the others read `$header`, a real local difference |
+| `fm_value`, `read_cell` | `close`, `handoff`, `reopen` | yes |
+| `column_in`, `header_of` | `close`, `reopen` | yes |
+| `declared_touches`, `names_this_ticket`, `scope_note` | `close`, `handoff` | yes (inside the scope block) |
+
+FR4 says `fm-list` is declared only "where its copies are identical", and a differing copy "is
+reported in *Notes & decisions*, not normalised". No two `fm_list` copies are identical, so none
+gets marked. FR3 then reds on `fm_list`, which is defined outside a marked block in three
+templates. AC5 requires the suite to exit 0 on the repo, so as written the build fails its own
+criterion. The design note re-verified the four enumerated text blocks, but `fm_list` was not
+among them.
+
+**The decision owed, one of:**
+1. **Normalise `close`/`next` (comment wording only) and mark them `fm-list`.** `reopen` then
+   stays alone and unmarked, and FR3 does not red. This contradicts FR4's "not normalised", though
+   the change is to a comment and not to behaviour.
+2. **Also normalise `reopen`**, adding the `[ -n "$1" ] || return 0` guard. That is a behaviour
+   change in `reopen`, and it might be the silent drift this row exists to catch. Is it a defect,
+   or a deliberate local difference?
+3. **Narrow FR3**, e.g. an allowlist of names that are known to differ. That reintroduces a
+   per-name exception the decision rejected for comparisons.
+
+Also unasked: FR3 forces markers on `column_in`, `header_of`, `read_cell` and `column_named`
+(`claim` + `handoff`), which FR4 does not enumerate. Develop would read FR4 as a floor and mark
+them, but the AC5 block list would then be incomplete as a description of the repo.
+No code was written for this ticket.
+
 ## Out of scope
 
 - Extracting shared code into a library. Forbidden by the install contract, named above.
@@ -159,3 +190,7 @@ Each carries a comment saying to change them together, which is a rule with noth
   copies while the rest keep the old comment. `qa_level: verify` and no `close_by` re-read and kept:
   AC7 is a mutation check a verifying session should run itself.
 
+- **2026-10-26 (develop, token e36d) — STOPPED before building: FR3/FR4 contradict AC5 on
+  `fm_list`.** See *Open design question*. Routed to `design` (`/design 0146`). No code was
+  written. The hashes were taken at cd66ca3, after 0145 added `names_this_ticket` to the scope
+  block.
