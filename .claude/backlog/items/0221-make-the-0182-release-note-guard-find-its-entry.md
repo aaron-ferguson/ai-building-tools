@@ -130,3 +130,52 @@ surface, no schema, no dependency. A release note for it is `tools/release`'s co
   gate reads red on someone else's account, and the release gate is blocked. See `RANKING.md`,
   "2026-10-27 - 0221 placed at row 1".
 - Queue only: nothing was fixed in this session, by instruction.
+- 2026-10-27 (develop, token f7e4) — Built in `6ec60db` (locator), `cc2a58a` (guard file),
+  `bbae59c` (README suite block). Whole suite 44/44 files green at `bbae59c`, tree clean.
+  - **What the check is.** `tests/backlog-location.test.sh` `entries_naming_0182 <changelog>` splits
+    the file into top-level `- ` entries (a `#` line or a blank line ends an entry, other lines
+    join on as continuation) and prints each one naming both `` `.backlog/` `` and `` `./migrate` ``.
+    `check_0182_note <changelog>` (FR2) prints `found`/`missing <phrase>`, or `no entry …` /
+    `more than one entry (n) …` (FR3), and returns non-zero on any failure. The real-file call maps
+    those lines to ok/bad.
+  - **AC3 on the two locator phrases.** An entry lacking `` `.backlog/` `` or `` `./migrate` `` is no
+    longer *located*, so the failure is "no entry names both `.backlog/` and `./migrate`". That
+    message names the missing phrase, and the AC3 assertion is "fails, and the output names that
+    phrase", which holds for all five. For the other three phrases the failure is `missing <phrase>`.
+  - **FR4 scan rule.** On a line naming `Unreleased`, a `$ROOT/CHANGELOG.md` in any quoting
+    (`${ROOT}`, `"$ROOT"/`) is a hit. Then every `$VAR/CHANGELOG.md` (a fixture) is stripped, and any
+    `CHANGELOG.md` left is a literal repo path (bare, `./`, `../`, absolute) and is a hit. **It reads
+    comments too:** the guard first reddened on a comment in its own header. That is deliberate.
+    A comment pairing the two words is how the next author copies the form, so reword it. The
+    AC5 fixture line is assembled from variables so the guard file never carries it whole.
+  - **Mutations: run** (named mutation, then the effect). Each was applied to a committed file
+    and restored with `git checkout --`.
+    | AC | Mutation | Result |
+    |---|---|---|
+    | AC1 | b63e23c's file, before the change | 43 passed, 5 failed (the repro) |
+    | AC2 | locator := `section "$1" "Unreleased"` | `cl-versioned.md fails`, real-file AC9 red; 7 failed |
+    | AC3 | locator := the whole file | all five `an entry lacking <phrase> passes because another entry names it`; 7 failed |
+    | AC4 | the `-gt 1` count check deleted | `two matching entries passes`; 1 failed |
+    | AC5 | b63e23c's `UNREL=…section "$ROOT/CHANGELOG.md" "Unreleased"` line appended to `tests/backlog-location.test.sh` | guard names `tests/backlog-location.test.sh:439`; 1 failed. The fixture case is the in-file self-test |
+    | AC6 | abort block deleted from the new file | `tests/abort-announce.test.sh` 3 failed, all naming it |
+  - **Coverage the FR4 self-test runs:** `"${ROOT}/CHANGELOG.md"`, `"$ROOT"/CHANGELOG.md`, bare
+    `CHANGELOG.md` and `../CHANGELOG.md` are refused, and `"$FIX/…"`, `"$CO2"/…` and `"${WORK}/…"`
+    are left alone. **Reasoned, not run:** an absolute literal path and `./CHANGELOG.md` take the
+    same branch as `../CHANGELOG.md`.
+  - **Clause table (AC text, for verify):** AC1 Given "HEAD's `CHANGELOG.md`, with `## Unreleased`
+    empty and the 0182 entry under `## 0.9.44`" → real-file run; predicate "exits 0 and its AC9
+    lines report all five phrases found" → five `the 0182 entry names …` ok lines. AC2 "under
+    `## Unreleased`" / "under `## 9.9.9 — 2099-01-01`" → `cl-unreleased.md` / `cl-versioned.md`;
+    "both pass". AC3 "lacks one of the five phrases" plus "a **different** entry … carry it" →
+    `cl-lacks.md` built per phrase with `Another fixture entry, naming <phrase>`; "fails and names
+    that phrase, once for each" → the loop over `NOTE_PHRASES`. AC4 "no entry" / "more than one
+    entry" → `cl-none.md` / `cl-two.md`, each message substring asserted. AC5 "fixture tests
+    directory … that line" → `$FIX/tests/broken.test.sh:3`; "names that `file:line`" → asserted;
+    "real `tests/` … passes" → the last guard case. AC6 → abort-announce's three per-file checks.
+  - The README suite block (`tests/citations.test.sh`, 0046) has to name every test file, so
+    `README.md` was added to `touches:`.
+  - **Refused backlog writes, quoted:** (1) `mkdir .claude/backlog/.lock && python3 - <<'EOF' … EOF`
+    chained with `git commit … ; rm -rf .claude/backlog/.lock`, refused as a compound;
+    (2) `mkdir /Users/…/ai-building-tools/.claude/backlog/.lock`, refused as a sensitive file. After
+    that, `python3 os.makedirs` / `shutil.rmtree` took and released the lock, as CONCURRENCY.md
+    step 2 says. The lock was never left held.
