@@ -3,7 +3,7 @@ id: "0221"
 title: Make the 0182 release-note guard find its entry wherever a release moves it
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -17,9 +17,11 @@ expects:
   - tests/backlog-location.test.sh
   - tests/changelog-entry-guards.test.sh
 ac_digest: AC1=de3ed1a3 AC2=22a6488f AC3=2abe7175 AC4=e8829718 AC5=b2c730d4 AC6=6e862a51
-claimed_by:
-claimed_at:
+claimed_by: "f7e4"
+claimed_at: 2026-10-27T19:08:39Z
 touches:
+  - tests/backlog-location.test.sh
+  - tests/changelog-entry-guards.test.sh
 ---
 
 ## Problem

@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0221 | Make the 0182 release-note guard find its entry wherever a release moves it | develop | ready |  |
+| 0221 | Make the 0182 release-note guard find its entry wherever a release moves it | develop | in-progress |  |
 | 0189 | Make the citations guard resolve the conventions path from a worktree outside the checkout's parent | develop | ready |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
