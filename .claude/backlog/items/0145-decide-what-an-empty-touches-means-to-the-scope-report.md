@@ -2,8 +2,8 @@
 id: "0145"
 title: Decide what an empty touches means to the scope report, and record it where the field is read
 type: debt
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 size: m
 created: 2026-09-09
@@ -24,9 +24,10 @@ expects:
   - tests/handoff.test.sh
   - tests/claim.test.sh
 ac_digest: AC1=d17c382c AC2=2d4130ed AC3=d3afa06b AC4=90afc7eb AC5=8f6b7035 AC6=65bde2f6 AC7=06419276 AC8=11c26142
-claimed_by: "d31d"
-claimed_at: 2026-10-27T02:54:34Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -83,30 +84,30 @@ whole subject is that field meaning one thing.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a claimed ticket with an empty `touches:` whose commits since the claim changed
+- [x] AC1 — Given a claimed ticket with an empty `touches:` whose commits since the claim changed
   `src/undeclared.ts`, when `close` closes it, then its output contains
   `scope: touched but undeclared: src/undeclared.ts`; and the same holds for `handoff`.
-- [ ] AC2 — Given a claimed ticket with an empty `touches:` whose commits since the claim changed
+- [x] AC2 — Given a claimed ticket with an empty `touches:` whose commits since the claim changed
   only its item file and `QUEUE.md`, when `close` or `handoff` releases it, then the output contains
   `scope: nothing declared, and the commits since the claim changed only backlog bookkeeping` and no
   `touched but undeclared` line.
-- [ ] AC3 — Given a claimed ticket with `touches: "*"` inline, and another with `"*"` as its only
+- [x] AC3 — Given a claimed ticket with `touches: "*"` inline, and another with `"*"` as its only
   list entry, each with commits changing `src/a.ts`, when `close` or `handoff` releases it, then the
   output contains `scope: exclusive claim — touches: "*" covers every path` and neither
   `undeclared` nor `untouched` appears.
-- [ ] AC4 — Given the existing populated-`touches:` cases in `tests/close.test.sh` and
+- [x] AC4 — Given the existing populated-`touches:` cases in `tests/close.test.sh` and
   `tests/handoff.test.sh`, when the suites run after the change, then every one still passes
   unchanged.
-- [ ] AC5 — Given `skills/queue/templates/close`, `skills/queue/templates/handoff` and
+- [x] AC5 — Given `skills/queue/templates/close`, `skills/queue/templates/handoff` and
   `skills/queue/templates/item.md`, when grepped, then each contains the line-unwrapped phrase
   `empty touches: means nothing declared` within its scope or field comment; and
   `references/CONCURRENCY.md` contains it in *The working tree is shared too*.
-- [ ] AC6 — Given a row at `next: design` or `next: verify`, when `claim` takes it, then its output
+- [x] AC6 — Given a row at `next: design` or `next: verify`, when `claim` takes it, then its output
   contains `touches: stays empty` and does not contain `to what design will write` or
   `to what verify will write`.
-- [ ] AC7 — Given the installed scripts, when `tests/backlog-scripts-installed.test.sh` runs, then
+- [x] AC7 — Given the installed scripts, when `tests/backlog-scripts-installed.test.sh` runs, then
   `.claude/backlog/close`, `handoff` and `claim` are byte-identical to their templates.
-- [ ] AC8 — Given a claimed ticket with an empty `touches:`, whose range holds one commit
+- [x] AC8 — Given a claimed ticket with an empty `touches:`, whose range holds one commit
   `Fix it (<id>)` changing `src/mine.ts` and one commit `Claim 9876 [abcd]` changing another item
   file, when `close` or `handoff` releases it, then the output names `src/mine.ts` as undeclared,
   does not name the other item file, and contains `1 commits since the claim name neither`.
