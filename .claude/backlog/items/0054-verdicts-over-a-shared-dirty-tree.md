@@ -193,3 +193,34 @@ because the verifier happened to re-run the suite at the end.
   the revert/worktree-migration case and says the discriminator is your own log rather than
   `git status`, or it stops promising a fresh read distinguishes them.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Three more cases from the buffer: `develop` Step 5's `pgrep -f <runner>` matches its own command line and always reports a live run (develop 2026-09-10); this repo has no runner process to name at all, only `sh` over a changing file (develop 0135); and a BACKGROUNDED mutation sweep issues `git checkout` on its own schedule against files the foreground is still editing, which destroyed an uncommitted refactor of `skills/queue/templates/next` — a sweep that is asynchronous must run in a worktree.
+
+### Build notes — develop 2026-10-27 (8705)
+
+- **Built FR1–FR7** in `80c655a`, with follow-ups `7e5867a` (Step 5 scoping) and `b256944` (generic wording); guard is the new
+  `tests/shared-dirty-tree.test.sh` (19 assertions, listed in `README.md`'s guard block, which
+  `tests/citations.test.sh` 0046 requires). Develop assertions are scoped to Step 5 first, then to
+  the paragraph; verify's to its Step 2; CONCURRENCY.md's to *The working tree is shared too*.
+- **Where each AC landed:** AC1–AC4 and FR3 — four new paragraphs in `skills/develop/SKILL.md`
+  Step 5 directly after "What you do run is the project's whole test suite once". AC5 — sentence
+  appended to *Then stop, in this order* item 5 ("Then confirm `git status --porcelain` lists none
+  of your own paths"). AC6 — new bullet at the end of `skills/verify/SKILL.md` Step 2's dirty-path
+  list. AC7 — new bullet in `references/CONCURRENCY.md` *The working tree is shared too*. AC8 —
+  citations used are `CONCURRENCY.md` *The working tree is shared too* and *A second checkout never
+  writes the backlog*, both existing headings; `tests/citations.test.sh` 51/51.
+- **From the absorbed notes, two were built** because they are FR1/FR2's own failure: the worktree
+  must be sited so the conventions directory resolves (cited to 0189, which owns the guard-side
+  fix), and the `pgrep` wait condition is "no runner **and** a clean `git status`, over several
+  samples" (one sentence after the existing pgrep paragraph). **Four were not built** — no FR or AC
+  asks for them: verify Step 7 re-taking the label before `./close`, the revert/worktree-migration
+  third case, a narrower evidence set for repo-wide guards and documentation-only NFR paths, and
+  backgrounded sweeps running in a worktree. Parked in `FINDINGS.md` (`8021a5e`) as needing a row.
+- **Mutation sweep — run**, in a throwaway worktree at the guard's commit (removed same turn),
+  enumerated from the AC text: AC1 predicate "before believing", AC1 object `git status`, AC1
+  paragraph removed, AC2 each of three causes, AC2 "distinct from falsified and exposed", AC3 "at
+  your last commit", AC4 pin, AC4 record, AC5 "own paths", AC5 whole check removed, AC6 pointer,
+  AC7 statement — **15 of 15 red**. **Reasoned, not run:** the AC1 Given (*in Step 5*) — the
+  "moved out of Step 5" mutation as written only deleted the paragraph; the Step 5 extraction
+  (`## Step 5` to `## Step 6`) is what makes a moved paragraph red.
+- Whole suite green after the last commit, `git status --porcelain` empty before and after.
+- **A wrapped phrase bit twice in this build** ("a tree that exists", "records the pin" straddled
+  line breaks) — exactly the `CLAUDE.md` *Tests* warning; caught by the guard red, fixed by rewrap.
