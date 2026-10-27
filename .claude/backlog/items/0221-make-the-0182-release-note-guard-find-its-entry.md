@@ -20,8 +20,9 @@ ac_digest: AC1=de3ed1a3 AC2=22a6488f AC3=2abe7175 AC4=e8829718 AC5=b2c730d4 AC6=
 claimed_by: "f7e4"
 claimed_at: 2026-10-27T19:08:39Z
 touches:
-  - tests/backlog-location.test.sh
-  - tests/changelog-entry-guards.test.sh
+  - tests/backlog-location.test.sh   # also mutated and restored, transiently, for AC2-AC5 reds
+  - tests/changelog-entry-guards.test.sh   # new; also mutated transiently for the AC6 red
+  - README.md   # the guard block tests/citations.test.sh (0046) checks names every suite
 ---
 
 ## Problem
