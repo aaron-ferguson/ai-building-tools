@@ -36,25 +36,12 @@ expects:
 claimed_by: "8083"
 claimed_at: 2026-10-27T02:10:31Z
 touches:
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
-  - skills/queue/templates/migrate
-  - skills/queue/templates/claim
-  - skills/queue/templates/close
-  - skills/queue/templates/handoff
-  - skills/queue/templates/next
-  - skills/queue/templates/reopen
-  - skills/queue/SKILL.md
-  - skills/sprint/SKILL.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/retro/SKILL.md
-  - skills/design/SKILL.md
-  - skills/prototype/SKILL.md
-  - references/CONVENTIONS.md
-  - references/TRACKER.md
   - tests/backlog-location.test.sh
-  - CHANGELOG.md
+  - skills/queue/templates/claim  # transient mutation only: export dropped to prove the guard red, restored
+  - skills/queue/templates/close  # transient mutation only
+  - skills/queue/templates/handoff  # transient mutation only
+  - skills/queue/templates/next  # transient mutation only
+  - skills/queue/templates/reopen  # transient mutation only
 ---
 
 ## Problem
