@@ -139,3 +139,4 @@ other.
   104-108 chars where the file otherwise wraps at ~100, *because* holding a phrase on one line is
   what stretched them. A line longer than its own file's wrap width is a cheaper detector than
   re-grepping every phrase.
+- 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park (develop 0091): the wrap hazard **inverts** for a negative assertion — a phrase straddling a break reads as already absent, so an "is it gone?" check passes vacuously. `tests/by-hand-lock.test.sh` matches over whitespace-folded section text; state the negative half beside the `CLAUDE.md` *Tests* warning, or adopt the fold in the shared window helpers (0063).

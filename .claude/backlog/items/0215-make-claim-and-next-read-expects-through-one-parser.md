@@ -69,3 +69,4 @@ gives `expects:`/`touches:` none, so the writers — `queue` and `design` hand-o
   entries naming the same defect. 0096 covers two other defects in these fields (unresolved paths, a
   wrong-block edit anchor) and is not this; 0103 asks whether the scripts may share a sourced file, which
   FR1 may want — check its state before choosing how to share the parser.
+- 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park (develop 0182): `touches: "*"` as an inline scalar reads through `next`'s `fm_list` as `none declared`, so an exclusive claim collides with nothing; only the block form registers. 0145 (done) made `close`/`handoff` read both forms; `next` was not in its scope. Same one-parser fix.

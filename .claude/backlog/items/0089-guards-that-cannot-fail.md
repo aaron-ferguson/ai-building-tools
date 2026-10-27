@@ -225,4 +225,4 @@ Found while verifying `0085` (pointer: `tests/cost-by-category.test.sh`, item `0
   - **Suggest `queue` split this row** (only `queue` may): one row per class above (AC1 `case
     "$out"`, FR2 numeric needles, FR1 whole-file, FR5 guard), each a sitting, with FR5 `blocked_by`
     the other three. As one `l` it has now been claimed once and released partly done.
-
+- 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park, two more guards that cannot fail: (1) `tests/handoff.test.sh` ~line 371, `assert_no_item_line "the column-0 entry is gone" '- src/two.ts'` — the helper runs `grep -Fxq "$2"` with no `--`, so a pattern starting with `-` is an option, grep exits 2 and the helper reads it as absent (stray `grep: invalid option --` at baseline 811130d); fix `grep -Fxq -- "$2"` in it and `assert_item_line`. (2) `tests/backlog-location.test.sh` 0182 AC9: deleting the sentence carrying `before migrating it` left 48 passed; assert that phrase, not `install`.

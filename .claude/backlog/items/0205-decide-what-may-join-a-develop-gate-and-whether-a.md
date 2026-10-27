@@ -39,3 +39,4 @@ row tagged related holds the gate (exit 6) until its outcome.
 - Gate composition was last changed by 0178 (`gate_max_rows`) and 0188 (design beside develop).
 
 ## Notes & decisions
+- 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park (run-20261025T164527Z): `--drive --scope` filters design rows by confirmed scope but not develop leads — it named unconfirmed `develop 0196` twice while confirmed 0169/0046 were takeable, and the first gate pulled in unconfirmed 0177 and pushed 0169/0046 out at `gate_max_rows`. Candidate: pick the lead from in-scope rows first and refuse off-scope joiners, as design already does.

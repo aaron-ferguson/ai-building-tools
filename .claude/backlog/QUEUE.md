@@ -109,6 +109,10 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0210 | Resume a waiting row through a script once its person has answered | develop | ready |  |
 | 0211 | Make a backlog script refuse when it is running from the templates directory | develop | ready |  |
 | 0212 | Stop --drive dispatching develop beside a design session holding one of its files | develop | ready |  |
+| 0217 | Stop a note written below the last AC from changing that AC's digest | queue | ready |  |
+| 0218 | Give verify the four dirty-tree cases 0054 carried in its notes and did not build | queue | ready |  |
+| 0219 | Make reopen leave a ticket that verify can close when it reopens a develop self-close | queue | ready |  |
+| 0220 | Make --drive name one verify session for rows developed together in one gate | queue | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in

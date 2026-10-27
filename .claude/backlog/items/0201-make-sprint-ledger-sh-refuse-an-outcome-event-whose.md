@@ -39,3 +39,4 @@ stage's fields sit — so the nested shape is a reasonable reading of the prose 
 - Not yet read: `record`'s parsing code in `tools/sprint-ledger.sh`. `queue` specifies FRs from it.
 
 ## Notes & decisions
+- 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park: the same nested-`outcome` shape recurred in run-20261025T164527Z (ledger read `CLOSED none` / `FINDINGS parked 0` for a run that closed 5 and parked 3, exit 0). Second independent occurrence; caught by eye before commit.
