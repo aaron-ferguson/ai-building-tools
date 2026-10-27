@@ -110,6 +110,20 @@ echo "AC8 — no apostrophe closes an embedded awk program early, template and i
 # AC2 is the whole ticket and the convention in references/CONCURRENCY.md already asks that these
 # programs carry no prose comments. Neither shape exists in the five scripts today. A future
 # legitimate trailing awk comment trips this: move it above the assignment, where it belongs.
+#
+# Two more clauses, for an apostrophe at the HEAD of a body line (0139). There it sits exactly where
+# a real terminator sits, with no `#` before it, so neither test above can fire, `sh -n` accepts the
+# file, and it re-pairs to EOF: measured on 2026-10-25, 20 such mutants in `close` broke it under a
+# green guard. What gives it away is the rest of its line, which is awk text where a terminator has
+# shell. So:
+#   after — the closing line of a multi-line region carries, after its quote, nothing, a `)`
+#           straight after the quote, or whitespace and then a `"`. Every real terminator in the
+#           scripts takes one of those forms: `'`, `}')"`, `' "$item")"`, `' "$QUEUE" > "$tmp"`.
+#   head  — no line strictly inside a multi-line region begins, bar whitespace, with `"` or `)`.
+#           Those are the only body lines an apostrophe at their head would turn into a terminator
+#           `after` allows, so this keeps `after` exact.
+# What stays uncaught is an apostrophe alone on a blank body line: it is byte-identical to a bare
+# terminator. Each hit prints its kind, the line the region opened on, the line, and its text.
 early_close() {
   awk '
     BEGIN { Q = "\047"; state = 0; depth = 0; hd = "" }
@@ -133,6 +147,7 @@ early_close() {
     }
     {
       if (hd != "") { t = $0; sub(/^[ \t]+/, "", t); if (t == hd) hd = ""; next }
+      head_bad = (state == 1 && NR != sq_line && $0 ~ /^[ \t]*[")]/)
       i = 1; n = length($0)
       while (i <= n) {
         c = substr($0, i, 1)
@@ -141,7 +156,12 @@ early_close() {
             state = 0
             seg = substr($0, (NR == sq_line ? sq_start : 1), i - (NR == sq_line ? sq_start : 1))
             if ((NR != sq_line && substr($0, 1, i-1) !~ /^[ \t)}\]]*$/) || awk_comment(seg)) {
-              printf "%d\t%d\t%s\n", sq_line, NR, $0
+              printf "early\t%d\t%d\t%s\n", sq_line, NR, $0
+              exit
+            }
+            rest = substr($0, i+1)
+            if (NR != sq_line && rest !~ /^[ \t]*$/ && rest !~ /^\)/ && rest !~ /^[ \t]+"/) {
+              printf "after\t%d\t%d\t%s\n", sq_line, NR, $0
               exit
             }
           }
@@ -161,6 +181,10 @@ early_close() {
         if (c == "\"") { state = 0; i++; continue }
         i++
       }
+      if (head_bad && state == 1 && sq_line < NR) {
+        printf "head\t%d\t%d\t%s\n", sq_line, NR, $0
+        exit
+      }
       if (state == 0 && match($0, /<<-?["\047]?[A-Za-z_][A-Za-z0-9_]*/)) {
         d = substr($0, RSTART, RLENGTH); sub(/^<<-?["\047]?/, "", d); hd = d
       }
@@ -178,10 +202,15 @@ for s in $SCRIPTS; do
     if [ -z "$hit" ]; then
       ok "$label closes every embedded awk program at its own terminator"
     else
-      opened="$(printf '%s' "$hit" | cut -f1)"
-      at="$(printf '%s' "$hit" | cut -f2)"
-      text="$(printf '%s' "$hit" | cut -f3)"
-      bad "$s has a quote defect, not a divergence — the awk program opened at $label:$opened is closed early by a quote on line $at: $text — prose inside these single-quoted programs takes no apostrophe (references/CONCURRENCY.md, 'The five scripts')"
+      kind="$(printf '%s' "$hit" | cut -f1)"
+      opened="$(printf '%s' "$hit" | cut -f2)"
+      at="$(printf '%s' "$hit" | cut -f3)"
+      text="$(printf '%s' "$hit" | cut -f4-)"
+      case "$kind" in
+        head)  bad "$s has a quote hazard, not a divergence — line $at, inside the awk program opened at $label:$opened, is a body line beginning with \" or ): $text — a body line may not begin with \" or ), so rewrap or reorder it (references/CONCURRENCY.md, 'The five scripts')" ;;
+        after) bad "$s has a quote defect, not a divergence — the awk program opened at $label:$opened is closed by a quote on line $at with awk text after it: $text — a terminator is followed only by ), whitespace and a double-quoted argument, or nothing; an apostrophe at the head of a body line looks like this (references/CONCURRENCY.md, 'The five scripts')" ;;
+        *)     bad "$s has a quote defect, not a divergence — the awk program opened at $label:$opened is closed early by a quote on line $at: $text — prose inside these single-quoted programs takes no apostrophe (references/CONCURRENCY.md, 'The five scripts')" ;;
+      esac
     fi
   done
 done
@@ -246,6 +275,18 @@ else
     ok "and gives the quoting as its reason"
   else
     bad "the rule is stated without its reason — it is the shell quoting, not style"
+  fi
+  # 0139 FR4: the terminator rule the `after` and `head` clauses enforce, and the one shape they
+  # cannot see, are stated where the scan is described.
+  if printf '%s' "$SECTION" | grep -qF 'carries only `)` or double-quoted arguments after the quote'; then
+    ok "the five-scripts section states what may follow a terminator"
+  else
+    bad "references/CONCURRENCY.md, 'The five scripts', does not state that a closing line carries only ) or double-quoted arguments after the quote"
+  fi
+  if printf '%s' "$SECTION" | grep -qF 'An apostrophe alone on a blank line inside a program is not caught'; then
+    ok "and names the blank-line apostrophe as the shape the scan does not catch"
+  else
+    bad "references/CONCURRENCY.md, 'The five scripts', does not name the blank-line apostrophe as uncaught"
   fi
 fi
 

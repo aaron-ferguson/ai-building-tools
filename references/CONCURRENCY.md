@@ -312,4 +312,9 @@ multi-line region must close at the start of a line, and a region closing on its
 must not do so after a `#`. `sh -n` alone is not enough — where the shell happens to re-pair the
 quotes the file stays valid `/bin/sh` and only `awk` sees a truncated program, which is how two
 mutations of `close`'s `ac_counts` block left the guard green while `close.test.sh` failed 83 and
-then 86 cases.
+then 86 cases. The scan also reads what follows a terminator:
+**the closing line of a multi-line program carries only `)` or double-quoted arguments after the quote**,
+so an apostrophe at the head of a body line, which leaves awk text there, is reported, and no body
+line may begin with `"` or `)`, the two heads that would let one pass (0139).
+**An apostrophe alone on a blank line inside a program is not caught**: it is byte-identical to a
+bare terminator.
