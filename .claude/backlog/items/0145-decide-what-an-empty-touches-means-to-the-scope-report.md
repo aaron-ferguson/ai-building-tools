@@ -2,8 +2,8 @@
 id: "0145"
 title: Decide what an empty touches means to the scope report, and record it where the field is read
 type: debt
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: m
 created: 2026-09-09
@@ -24,20 +24,9 @@ expects:
   - tests/handoff.test.sh
   - tests/claim.test.sh
 ac_digest: AC1=d17c382c AC2=2d4130ed AC3=d3afa06b AC4=90afc7eb AC5=8f6b7035 AC6=65bde2f6 AC7=06419276 AC8=11c26142
-claimed_by: "9c30"
-claimed_at: 2026-10-27T02:16:30Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/close
-  - skills/queue/templates/handoff
-  - skills/queue/templates/claim
-  - skills/queue/templates/item.md
-  - .claude/backlog/close
-  - .claude/backlog/handoff
-  - .claude/backlog/claim
-  - references/CONCURRENCY.md
-  - tests/close.test.sh
-  - tests/handoff.test.sh
-  - tests/claim.test.sh
 ---
 
 ## Problem
@@ -184,3 +173,43 @@ whole subject is that field meaning one thing.
   - *Criteria accounting:* the ticket arrived with no FRs or ACs. All of FR1–FR6 and AC1–AC8 are new.
     `qa_level: verify` and the missing `close_by` stand: this is a script change with
     fixture-testable criteria, closed by `verify`.
+
+- **2026-10-26 (develop, token 9c30)** — Built in 3976882 (templates, item.md, CONCURRENCY.md,
+  tests, CHANGELOG) and f875d73 (installed `.claude/backlog/{claim,close,handoff}`, byte-identical:
+  `tests/backlog-scripts-installed.test.sh` 53 passed). Whole suite at f875d73: every file 0 failed.
+  - **FR1/FR2/FR6:** the early return is gone. `declared_touches` now prints `*` for an inline
+    `touches: "*"` (or `'*'` / `*`) and normalises a quoted `"*"` list entry. Before this change it
+    dropped the inline value, so inline read as empty and the list entry was a literal `"*"`.
+    `scope_note` short-circuits to the exclusive-claim line, then counts only the range commits whose
+    subject carries `[token]` or the id as a word (`names_this_ticket`). It lists files per counted
+    commit and appends the `<n> commits … were not counted` line when n > 0. The block is still
+    byte-identical in `close` and `handoff`: the existing 0106 drift check is green.
+  - **Ordering choice:** the exclusive-claim branch sits after the claim-commit lookup, so a claim
+    with no claim commit still gets no report. That matches 0106's "no range, no report".
+  - **FR5:** `claim` now says "`<stage>` writes only its item and row, which this claim already holds,
+    so touches: stays empty — the release will report any other path the pass's commits change".
+    The existing `does not build` assertion still holds.
+  - **AC5** is guarded too, in `tests/close.test.sh` (`0145 AC5`): the phrase is in the three
+    templates, and in CONCURRENCY.md inside *The working tree is shared too*.
+  - **Clause table and mutations, all run** on the committed templates, mutated in both `close` and
+    `handoff`, then restored with `git restore` (status empty afterwards):
+
+    | AC clause | Guard | Mutation | close / handoff |
+    |---|---|---|---|
+    | AC1 empty touches: → `touched but undeclared: src/undeclared.ts` | 0145 AC1 cases | early return restored | 4 / 4 failed |
+    | AC2 bookkeeping-only → `nothing declared, … only backlog bookkeeping` | 0145 AC2 cases | message blanked | 1 / 1 failed |
+    | AC2 no `touched but undeclared` line | same | early return (also covers it) | as AC1 |
+    | AC3 inline `"*"` → exclusive line | 0145 AC3 inline | inline parse removed | 2 / 2 failed |
+    | AC3 list `"*"` → exclusive line, no undeclared/untouched | 0145 AC3 list | list normalisation removed | 3 / 3 failed |
+    | AC3 exclusive line printed | both shapes | exclusive branch disabled | 2 / 2 failed |
+    | AC8 other session's item not named | 0145 AC8 | every commit counted | 3 / 3 failed |
+    | AC8 `1 commits since the claim name neither` | 0145 AC8 | count line suppressed | 1 / 1 failed |
+    | AC6 `touches: stays empty`, not `to what <stage> will write` | `tests/claim.test.sh` 0145 AC6 (verify, design) | the pre-change template | 6 failed (the red before the fix) |
+    | AC4 populated cases unchanged | existing 0106/0144 cases | (not mutated: no assertion text edited) | green |
+    | AC5 phrase in four places | `0145 AC5` | reasoned: removing the phrase fails the `grep -qF` | — |
+    | AC7 installed byte-identical | `tests/backlog-scripts-installed.test.sh` | reasoned: any byte difference reds it | — |
+
+  - **Not this ticket:** `next`'s `fm_list` still reads an inline `touches: "*"` as no scope (a
+    FINDINGS entry from 2026-10-26 already parks this; the TAKE loop is Out of scope here). A
+    pre-existing unfalsifiable assertion in `tests/handoff.test.sh` (`grep` given `- src/two.ts` as
+    an option) is parked in FINDINGS.md (85e576f).
