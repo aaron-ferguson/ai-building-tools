@@ -219,3 +219,29 @@ Three separate failures of the same by-hand write, all of them silent.
   scope* line changes; ACs were all unticked. Back to `next: develop`: no FR has code yet, and
   develop's re-check at `7551285` found FR1, FR2 and FR4 still current. `0126` and the `queue`
   Step 2 disagreement stay as develop recorded them — notes, not blockers.
+
+- **2026-10-27 (develop, token 22bc) — built.** Commits `fbe361a` (FR1, FR5), `19987b9` (FR2–FR4).
+  Guard: `tests/by-hand-lock.test.sh` (23 cases), registered in `README.md`'s suite block, which
+  `tests/citations.test.sh` requires. Park sentence in all six skills, cited not restated:
+  **"The append takes the backlog lock**, being a write inside the backlog directory
+  (`CONCURRENCY.md`, *Lock every write to the backlog directory*)."
+  **Mechanism that surprised:** the guard first matched line by line, and AC5's negative case read
+  **green against today's file** — the red-making input says "Fold it into the" / "boundary commit"
+  across a wrap. Same for AC4's `three ways a by-hand` / `lock leaks`. The guard now matches over
+  whitespace-folded section text (the header says why), plus a separate line-based case for AC2's
+  "on a single line". `CLAUDE.md`'s line-based warning is about positives going missing; for a
+  negative it inverts into a vacuous pass.
+  **Clause table, all RUN** (each mutation on committed files, restored in the same call, tree clean
+  after, guard back to 23/0):
+  | AC | clause | mutation | guard case that reddened |
+  |---|---|---|---|
+  | AC1 | design's park step names the lock | delete the two-line sentence from `skills/design/SKILL.md` | AC1 design ×2, naming the file |
+  | AC2 | `never through a variable` on one line | drop the phrase | AC2 ×2 |
+  | AC3 | check happens **before** the release | `before` → `after` | AC3 ordering + "never after it" |
+  | AC4 | entry for commit-fails/release-succeeds | delete the entry | AC4 entry present |
+  | AC4 | INCIDENTS lead-in states no count | restore `Four things bite` | AC4 INCIDENTS no count |
+  | AC4 | CONCURRENCY.md states no count | restore `three ways a by-hand lock` | AC4 CONCURRENCY no count |
+  | AC5 | 001 does not fold the append into the boundary commit | restore `Fold it into the` / `boundary commit` across the wrap | AC5 fold gone |
+  AC6: `citations` 51/0, `skill-size` 45/0, `reference-size` 15/0; whole suite green.
+  **Not done here, still open:** the `design` Step 4 by-hand write site (retro note above) — a write
+  site, not an omitted lock, so `0048`'s; and `queue` Step 2's "all unlocked" sentence, untouched.
