@@ -2,8 +2,8 @@
 id: "0065"
 title: Name stream editors in the rule against rewriting QUEUE.md
 type: bug
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-25
@@ -15,8 +15,8 @@ expects:
   - references/CONCURRENCY.md
   - references/CONCURRENCY-INCIDENTS.md
   - tests/citations.test.sh
-claimed_by: "c7ec"
-claimed_at: 2026-10-27T23:03:45Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
