@@ -59,8 +59,14 @@ trap cleanup INT TERM
 # --- assertions -------------------------------------------------------------------------------
 # The same reporting shape as tests/claim.test.sh and tests/handoff.test.sh: what each assertion
 # matched against is printed on FAIL always, and on a pass only under SHOW_MATCHED.
+# copy-begin: saw-prefix
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 saw()         { printf '%s\n' "$1" | sed '1s/^/         saw: /; 1!s/^/              /'; }
+# copy-end: saw-prefix
+# copy-begin: saw-on-pass
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 saw_on_pass() { [ -n "${SHOW_MATCHED:-}" ] && saw "$1"; return 0; }
+# copy-end: saw-on-pass
 
 ok()  { PASS=$((PASS + 1)); echo "  ok   — $1"; }
 bad() { FAIL=$((FAIL + 1)); echo "  FAIL — $1"; }

@@ -140,17 +140,26 @@ printf 'reopen %s\n%s\n' "$ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK/held-by
 trap 'rm -rf "$LOCK"' EXIT INT TERM
 
 # --- tables, by column name --------------------------------------------------------------------
+# copy-begin: header-of
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 header_of() {
   awk -F'|' '/^\|/ {
     for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
   }' "$1"
 }
+# copy-end: header-of
+# copy-begin: column-in
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 column_in() {
   printf '%s' "$1" | awk -F'|' -v want="$2" '{
     for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
   }'
 }
+# copy-end: column-in
+# copy-begin: read-cell
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 read_cell() { printf '%s' "$1" | awk -F'|' -v c="$2" '{ v = $c; gsub(/^ +| +$/, "", v); print v }'; }
+# copy-end: read-cell
 row_in() {
   awk -F'|' -v id="$2" -v c="$3" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$1"
 }
@@ -175,8 +184,11 @@ D_ID="$(column_in "$DHEAD" ID)"
 D_TITLE="$(column_in "$DHEAD" Title)"
 
 # --- frontmatter readers -----------------------------------------------------------------------
-# YAML's comment rule, as awk source text; `close`, `handoff` and `next` carry this same block and
-# the scripts are separate files by install contract. `"\047"` is an apostrophe.
+# YAML's comment rule, as awk source text; every other template that reads frontmatter carries this
+# same block, declared by the markers below, and the scripts are separate files by install contract.
+# `"\047"` is an apostrophe.
+# copy-begin: decomment
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 DECOMMENT='
 function decomment(s,   i, ch, quote, out, start) {
   sub(/^[ \t]+/, "", s)
@@ -194,7 +206,10 @@ function decomment(s,   i, ch, quote, out, start) {
   return out
 }
 '
+# copy-end: decomment
 
+# copy-begin: fm-value
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 fm_value() {
   awk -v key="$2" "$DECOMMENT"'
     NR == 1 && /^---$/ { fm = 1; next }
@@ -204,9 +219,14 @@ fm_value() {
     }
   ' "$1"
 }
+# copy-end: fm-value
 
 # Both list forms, inline and block — `close`'s parser, so the two answer "what blocks this?" alike.
+# `[ -n "$1" ]` serves `close`'s and `next`'s callers; the one call here never passes an empty path.
+# copy-begin: fm-list
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 fm_list() {
+  [ -n "$1" ] || return 0
   awk -v key="$2" "$DECOMMENT"'
     NR == 1 && /^---$/ { fm = 1; next }
     fm && /^---$/ { exit }
@@ -216,6 +236,8 @@ fm_list() {
       if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
       inside = 1; next
     }
+    # A comment on its own line is skipped rather than ending the block: falling through to the
+    # `exit` below would silently truncate the list at the note.
     inside && /^[ \t]*#/ { next }
     inside && /^  *- / {
       sub(/^ *- */, "")
@@ -226,6 +248,7 @@ fm_list() {
     inside { exit }
   ' "$1"
 }
+# copy-end: fm-list
 
 # --- re-read everything under the lock ---------------------------------------------------------
 item_status="$(fm_value "$item" status)"

@@ -295,10 +295,16 @@ run_close() { (cd "$FIX" && "$BL/close" "$@" 2>&1); }
 # one run to see what a case that stayed green matched instead — the question this harness could
 # not answer before, so each sweep hand-built a fixture outside the suite to ask it.
 #
-# tests/next.test.sh, tests/close.test.sh and tests/claim.test.sh each carry this pair, because a
-# suite here is self-contained and sources nothing (`CLAUDE.md`). Change one, change all three.
+# Many suites carry this pair, because a suite here is self-contained and sources nothing
+# (`CLAUDE.md`); the markers declare both lines as copies.
+# copy-begin: saw-prefix
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 saw()         { printf '%s\n' "$1" | sed '1s/^/         saw: /; 1!s/^/              /'; }
+# copy-end: saw-prefix
+# copy-begin: saw-on-pass
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 saw_on_pass() { [ -n "${SHOW_MATCHED:-}" ] && saw "$1"; return 0; }
+# copy-end: saw-on-pass
 
 ok()  { PASS=$((PASS + 1)); echo "  ok   — $1"; }
 bad() { FAIL=$((FAIL + 1)); echo "  FAIL — $1"; }
@@ -1216,34 +1222,9 @@ else
 fi
 
 # --- 0106 FR3 — the duplicated block has not drifted ------------------------------------------
-# `close` and `handoff` carry the scope comparison verbatim: a backlog script is a separate file by
-# install contract and sources nothing, so a shared implementation is a copy. A copy is only safe
-# while something notices it diverging — the comment saying "change one, change both" is the rule,
-# and this is the check. Byte-for-byte, because a difference in the awk reader is exactly the kind
-# that reads correctly in both files and answers differently.
-echo "0106 FR3 — close and handoff carry the same scope block, byte for byte"
-extract_block() {
-  awk '/^# --- the declared scope against what the commits actually changed/ { f = 1 }
-       f { print }
-       f && /^scope_note$/ { exit }' "$1"
-}
-close_block="$(extract_block "$CLOSE_SRC")"
-handoff_block="$(extract_block "$ROOT/skills/queue/templates/handoff")"
-if [ -z "$close_block" ]; then
-  bad "close carries the scope block"
-elif [ "$close_block" = "$handoff_block" ]; then
-  ok "close and handoff carry an identical scope block"
-  saw_on_pass "$(printf '%s\n' "$close_block" | wc -l) lines, identical"
-else
-  bad "close and handoff carry an identical scope block"
-  # No process substitution: this suite is /bin/sh, and `<(...)` is a bash extension that would
-  # make the FAILURE branch itself fail — reporting a syntax error where the finding should be.
-  cb="$(mktemp)"; hb="$(mktemp)"
-  printf '%s\n' "$close_block"   > "$cb"
-  printf '%s\n' "$handoff_block" > "$hb"
-  saw "$(diff "$cb" "$hb" || true)"
-  rm -f "$cb" "$hb"
-fi
+# `close` and `handoff` carry the scope comparison verbatim, as the declared copy `scope-block`.
+# Its byte-for-byte comparison lives in tests/declared-copies.test.sh with every other declared
+# copy (0146 FR5): one copy, one guard.
 
 # --- 0090 FR1 — touches: is cleared in the flush-left form too ---------------------------------
 # The skiplist required leading whitespace, so a legal same-indentation block sequence survived the

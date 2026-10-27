@@ -46,7 +46,10 @@ BL=".backlog"
 
 ok()  { PASS=$((PASS + 1)); echo "  ok   — $1"; }
 bad() { FAIL=$((FAIL + 1)); echo "  FAIL — $1"; }
-saw() { printf '%s\n' "$1" | sed '1s/^/         saw: /; 1!s/^/              /'; }
+# copy-begin: saw-prefix
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+saw()         { printf '%s\n' "$1" | sed '1s/^/         saw: /; 1!s/^/              /'; }
+# copy-end: saw-prefix
 
 # --- fixture: the templates, and only the templates -------------------------------------------
 FIX="$(mktemp -d)"

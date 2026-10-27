@@ -181,16 +181,22 @@ printf 'close %s by %s\n%s\n' "$ID" "$TOKEN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > 
 trap 'rm -rf "$LOCK"' EXIT INT TERM
 
 # --- resolve the columns by name, under the lock ----------------------------------------------
+# copy-begin: header-of
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 header_of() {
   awk -F'|' '/^\|/ {
     for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
   }' "$1"
 }
+# copy-end: header-of
+# copy-begin: column-in
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 column_in() {
   printf '%s' "$1" | awk -F'|' -v want="$2" '{
     for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
   }'
 }
+# copy-end: column-in
 
 QHEAD="$(header_of "$QUEUE")"
 [ -n "$QHEAD" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
@@ -211,7 +217,10 @@ Q_TITLE="$(column_in "$QHEAD" Title)"
 Q_NEXT="$(column_in "$QHEAD" Next)"
 Q_STATUS="$(column_in "$QHEAD" Status)"
 
+# copy-begin: read-cell
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 read_cell() { printf '%s' "$1" | awk -F'|' -v c="$2" '{ v = $c; gsub(/^ +| +$/, "", v); print v }'; }
+# copy-end: read-cell
 
 # --- re-read the row under the lock -----------------------------------------------------------
 row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
@@ -228,9 +237,9 @@ item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
 item_rel="items/$(basename "$item")"
 
 # YAML's comment rule, as awk source text injected into both readers below. awk has no include, so
-# a shared implementation is a string rather than a file; `next` and `handoff` carry this same block
-# for their own readers, and the scripts are separate files by install contract
-# (`tests/backlog-scripts-installed.test.sh` AC2). Change one, change all three.
+# a shared implementation is a string rather than a file; every other template that reads
+# frontmatter carries this same block for its own readers, and the scripts are separate files by
+# install contract (`tests/backlog-scripts-installed.test.sh` AC2). The markers below declare it.
 #
 # It applies to SCALARS as much as to lists: `develop` Step 1 invites an inline annotation, and an
 # annotated `claimed_by: "f0c3" # mine` used to come back as `f0c3" # mine` — which this script then
@@ -241,6 +250,8 @@ item_rel="items/$(basename "$item")"
 #   - in YAML a `#` only opens a comment at the start of a value or after whitespace, so `a#b`
 #     unquoted is one token too.
 # `"\047"` is an apostrophe — this block is single-quoted shell.
+# copy-begin: decomment
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 DECOMMENT='
 function decomment(s,   i, ch, quote, out, start) {
   sub(/^[ \t]+/, "", s)
@@ -258,7 +269,10 @@ function decomment(s,   i, ch, quote, out, start) {
   return out
 }
 '
+# copy-end: decomment
 
+# copy-begin: fm-value
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 fm_value() {
   awk -v key="$2" "$DECOMMENT"'
     NR == 1 && /^---$/ { fm = 1; next }
@@ -268,12 +282,15 @@ fm_value() {
     }
   ' "$1"
 }
+# copy-end: fm-value
 
 # One frontmatter LIST, flattened to a space-separated line: inline `["0010"]` or a block of `- `
 # entries. `fm_value` returns only what sits after the colon on the key's own line, so it read the
 # block form as empty — the reconcile's `case` missed, and closing 0028 left 0029 blocked in both
 # the item and the row while reporting no reconcile at all. `next` has read both forms since 0031;
 # this is that parser, so the two scripts answer "what blocks this?" identically (0044 FR1).
+# copy-begin: fm-list
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 fm_list() {
   [ -n "$1" ] || return 0
   awk -v key="$2" "$DECOMMENT"'
@@ -297,6 +314,7 @@ fm_list() {
     inside { exit }
   ' "$1"
 }
+# copy-end: fm-list
 
 held_by="$(fm_value "$item" claimed_by)"
 [ -n "$held_by" ] || {
@@ -311,6 +329,8 @@ held_by="$(fm_value "$item" claimed_by)"
 }
 
 
+# copy-begin: scope-block
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 # --- the declared scope against what the commits actually changed (0106 FR3) -------------------
 # `touches:` can name a file for an edit that never happens, and nothing notices: 0039's re-entry
 # declared `.claude-plugin/plugin.json` for a version bump that never occurred. An unused
@@ -345,7 +365,7 @@ held_by="$(fm_value "$item" claimed_by)"
 # **This block is duplicated verbatim in `close` and `handoff`** — the two stages that release a
 # claim, and so the two that can compare the field before it is cleared. A backlog script is a
 # separate file by install contract (`tests/backlog-scripts-installed.test.sh`) and sources
-# nothing, so a shared implementation is a copy. Change one, change both.
+# nothing, so a shared implementation is a copy — declared by the markers around this block.
 SCOPE_NOTE=""
 
 # The `touches:` entries, decommented. `#` opens a comment only at the start of a value or after
@@ -477,6 +497,7 @@ scope: $skipped commits since the claim name neither $ID nor [$TOKEN] and were n
   return 0
 }
 scope_note
+# copy-end: scope-block
 
 item_type="$(fm_value "$item" type)"
 item_qa="$(fm_value "$item" qa_level)"

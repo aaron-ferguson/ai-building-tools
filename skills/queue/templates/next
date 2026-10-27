@@ -578,16 +578,16 @@ name_row="$(awk -F'|' '/^\|/ {
 }' "$QUEUE")"
 [ -n "$name_row" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
 
-column_named() {
+name_row_column() {
   printf '%s' "$name_row" | awk -F'|' -v want="$1" '{
     for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
   }'
 }
 
-ID="$(column_named ID)"
-TITLE="$(column_named Title)"
-NEXT="$(column_named Next)"
-STATUS="$(column_named Status)"
+ID="$(name_row_column ID)"
+TITLE="$(name_row_column Title)"
+NEXT="$(name_row_column Next)"
+STATUS="$(name_row_column Status)"
 
 # Routing is impossible without these three, and a missing column reads as empty on every row —
 # which presents as "nothing is takeable" rather than as a broken parser. That is the same failure
@@ -624,9 +624,9 @@ all_ids() { rows | awk -F'|' -v n="$ID" '{ v = $n; gsub(/^ +| +$/, "", v); print
 item_for() { ls "$DIR/items/$1-"*.md 2>/dev/null | head -1 || true; }
 
 # YAML's comment rule, as awk source text injected into every frontmatter reader below. awk has no
-# include, so a shared implementation is a string rather than a file; `close` carries this same
-# block for its own two readers, and the two scripts are separate files by install contract
-# (`tests/backlog-scripts-installed.test.sh` AC2). Change one, change both.
+# include, so a shared implementation is a string rather than a file; every other template that
+# reads frontmatter carries this same block, declared by the markers below, and the scripts are
+# separate files by install contract (`tests/backlog-scripts-installed.test.sh` AC2).
 #
 # It applies to SCALARS as much as to lists, and that asymmetry was the defect: 0031 taught the
 # list reader to strip comments while `fm` kept returning `aa11" # mine` for an annotated token —
@@ -640,6 +640,8 @@ item_for() { ls "$DIR/items/$1-"*.md 2>/dev/null | head -1 || true; }
 # Hence: a quote only quotes when it is the value's first character (mid-value it is a literal, so
 # `it's/a/path.md` keeps its apostrophe), and a `#` only cuts when it opens the value or follows a
 # space or tab. `"\047"` is that apostrophe — this block is single-quoted shell.
+# copy-begin: decomment
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 DECOMMENT='
 function decomment(s,   i, ch, quote, out, start) {
   sub(/^[ \t]+/, "", s)
@@ -657,6 +659,7 @@ function decomment(s,   i, ch, quote, out, start) {
   return out
 }
 '
+# copy-end: decomment
 
 # One scalar out of an item's frontmatter.
 fm() {
@@ -675,6 +678,8 @@ fm() {
 # cosmetic: these lists are what the scope-overlap check compares, so prose in the list reads as a
 # claimed path and a trailing space makes a real collision compare unequal — it fails open, and both
 # windows land in one file. `decomment` is defined once, above.
+# copy-begin: fm-list
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 fm_list() {
   [ -n "$1" ] || return 0
   awk -v key="$2" "$DECOMMENT"'
@@ -686,8 +691,8 @@ fm_list() {
       if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
       inside = 1; next
     }
-    # A comment on its own line is skipped rather than ending the block. Falling through to the
-    # `exit` below would silently truncate the list at the note, which is worse than printing it.
+    # A comment on its own line is skipped rather than ending the block: falling through to the
+    # `exit` below would silently truncate the list at the note.
     inside && /^[ \t]*#/ { next }
     inside && /^  *- / {
       sub(/^ *- */, "")
@@ -698,6 +703,7 @@ fm_list() {
     inside { exit }
   ' "$1"
 }
+# copy-end: fm-list
 
 # An entry in `blocked_by` is OPEN unless the ticket it names is done. A named ticket with no item
 # file is open and said so out loud: a blocker nobody can find is not a blocker anybody cleared.

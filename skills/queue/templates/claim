@@ -160,11 +160,14 @@ header="$(awk -F'|' '/^\|/ {
 }' "$QUEUE")"
 [ -n "$header" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
 
+# copy-begin: column-named
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 column_named() {
   printf '%s' "$header" | awk -F'|' -v want="$1" '{
     for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
   }'
 }
+# copy-end: column-named
 
 ID_COL="$(column_named ID)"
 STATUS_COL="$(column_named Status)"

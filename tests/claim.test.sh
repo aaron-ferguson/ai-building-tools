@@ -94,10 +94,16 @@ run_claim() { (cd "$FIX" && .backlog/claim "$1" tok0 2>&1); }
 # one run to see what a case that stayed green matched instead — the question this harness could
 # not answer before, so each sweep hand-built a fixture outside the suite to ask it.
 #
-# tests/next.test.sh, tests/close.test.sh and tests/claim.test.sh each carry this pair, because a
-# suite here is self-contained and sources nothing (`CLAUDE.md`). Change one, change all three.
+# Many suites carry this pair, because a suite here is self-contained and sources nothing
+# (`CLAUDE.md`); the markers declare both lines as copies.
+# copy-begin: saw-prefix
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 saw()         { printf '%s\n' "$1" | sed '1s/^/         saw: /; 1!s/^/              /'; }
+# copy-end: saw-prefix
+# copy-begin: saw-on-pass
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 saw_on_pass() { [ -n "${SHOW_MATCHED:-}" ] && saw "$1"; return 0; }
+# copy-end: saw-on-pass
 
 ok()   { PASS=$((PASS + 1)); echo "  ok   — $1"; }
 bad()  { FAIL=$((FAIL + 1)); echo "  FAIL — $1"; }

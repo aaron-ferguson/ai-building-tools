@@ -319,6 +319,7 @@ tests/backlog-location.test.sh           # .backlog/ and the legacy .claude/back
 tests/close-by.test.sh                   # close_by's two branches in develop, and verify's review level
 tests/cost-by-category.test.sh           # the by-category cost measurement
 tests/cross-cutting-change.test.sh       # a change touching every file takes the exclusive claim
+tests/declared-copies.test.sh            # every copy-begin/copy-end block matches its copies; no template helper is copied undeclared
 tests/design-hold.test.sh                # design holds its row while it reasons over it
 tests/falsifiable-acs.test.sh            # the falsifiability rules in queue and verify, and the shared clause table
 tests/findings-buffer.test.sh            # what the findings gate counts and what each sweeper does with the buffer

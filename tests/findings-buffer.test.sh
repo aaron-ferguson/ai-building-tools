@@ -62,7 +62,10 @@ saw() {
   [ "$n" -gt "$SAW_LINES" ] && printf '         | ... (%s lines in the window)\n' "$n"
   return 0
 }
+# copy-begin: saw-on-pass
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 saw_on_pass() { [ -n "${SHOW_MATCHED:-}" ] && saw "$1"; return 0; }
+# copy-end: saw-on-pass
 
 # window <file> <start-fixed-string> <end-regex> — from the line holding the opening phrase to the
 # line before the next match of the end pattern. Empty when the opening phrase is gone, which every

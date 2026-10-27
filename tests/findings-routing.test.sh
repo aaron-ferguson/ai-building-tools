@@ -91,7 +91,10 @@ saw() {
   [ "$n" -gt "$SAW_LINES" ] && printf '         | ... (%s lines in the window)\n' "$n"
   return 0
 }
+# copy-begin: saw-on-pass
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 saw_on_pass() { [ -n "${SHOW_MATCHED:-}" ] && saw "$1"; return 0; }
+# copy-end: saw-on-pass
 
 # window <file> <heading-substring> — from the `##` heading holding that text to the line before
 # the next `##` heading. Empty when the heading is gone, which every case reports rather than

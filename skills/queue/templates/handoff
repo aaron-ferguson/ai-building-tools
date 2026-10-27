@@ -175,11 +175,14 @@ header="$(awk -F'|' '/^\|/ {
 }' "$QUEUE")"
 [ -n "$header" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
 
+# copy-begin: column-named
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 column_named() {
   printf '%s' "$header" | awk -F'|' -v want="$1" '{
     for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
   }'
 }
+# copy-end: column-named
 
 missing=""
 for want in ID Next Status; do
@@ -196,7 +199,10 @@ Q_ID="$(column_named ID)"
 Q_NEXT="$(column_named Next)"
 Q_STATUS="$(column_named Status)"
 
+# copy-begin: read-cell
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 read_cell() { printf '%s' "$1" | awk -F'|' -v c="$2" '{ v = $c; gsub(/^ +| +$/, "", v); print v }'; }
+# copy-end: read-cell
 
 # --- re-read the row under the lock ------------------------------------------------------------
 row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
@@ -209,13 +215,15 @@ row_status="$(read_cell "$row" "$Q_STATUS")"
 item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
 [ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
 
-# YAML's comment rule, as awk source text. `close` and `next` carry this same block for their own
-# readers; awk has no include, and the scripts are separate files by install contract
-# (tests/backlog-scripts-installed.test.sh AC2). Change one, change all three. It applies to
+# YAML's comment rule, as awk source text. Every other template that reads frontmatter carries this
+# same block, declared by the markers below; awk has no include, and the scripts are separate files
+# by install contract (tests/backlog-scripts-installed.test.sh AC2). It applies to
 # SCALARS as much as to lists: `develop` Step 1 invites an inline annotation, and an annotated
 # `claimed_by: "f0c3" # mine` read naively comes back as `f0c3" # mine`, refusing the holder's own
 # hand-off. `sub(/#.*/, "")` is the obvious form and it is wrong twice — see close for both.
 # `"\047"` is an apostrophe: this block is single-quoted shell.
+# copy-begin: decomment
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 DECOMMENT='
 function decomment(s,   i, ch, quote, out, start) {
   sub(/^[ \t]+/, "", s)
@@ -233,7 +241,10 @@ function decomment(s,   i, ch, quote, out, start) {
   return out
 }
 '
+# copy-end: decomment
 
+# copy-begin: fm-value
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 fm_value() {
   awk -v key="$2" "$DECOMMENT"'
     NR == 1 && /^---$/ { fm = 1; next }
@@ -243,6 +254,7 @@ fm_value() {
     }
   ' "$1"
 }
+# copy-end: fm-value
 
 # Presence, scoped to the frontmatter. `grep -q "^key:"` is not this: a line starting `touches:`
 # anywhere in the body satisfies it, and the key the edit needs is still absent.
@@ -300,6 +312,8 @@ item_status="$(fm_value "$item" status)"
   exit 1
 }
 
+# copy-begin: scope-block
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 # --- the declared scope against what the commits actually changed (0106 FR3) -------------------
 # `touches:` can name a file for an edit that never happens, and nothing notices: 0039's re-entry
 # declared `.claude-plugin/plugin.json` for a version bump that never occurred. An unused
@@ -334,7 +348,7 @@ item_status="$(fm_value "$item" status)"
 # **This block is duplicated verbatim in `close` and `handoff`** — the two stages that release a
 # claim, and so the two that can compare the field before it is cleared. A backlog script is a
 # separate file by install contract (`tests/backlog-scripts-installed.test.sh`) and sources
-# nothing, so a shared implementation is a copy. Change one, change both.
+# nothing, so a shared implementation is a copy — declared by the markers around this block.
 SCOPE_NOTE=""
 
 # The `touches:` entries, decommented. `#` opens a comment only at the start of a value or after
@@ -466,6 +480,7 @@ scope: $skipped commits since the claim name neither $ID nor [$TOKEN] and were n
   return 0
 }
 scope_note
+# copy-end: scope-block
 
 # --- build both files aside, and read them back before either is moved into place --------------
 # The whole point: the 0087 defect was an edit that did not apply and a commit that proceeded
