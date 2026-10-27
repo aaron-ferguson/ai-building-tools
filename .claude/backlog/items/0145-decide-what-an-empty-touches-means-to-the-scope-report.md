@@ -213,3 +213,33 @@ whole subject is that field meaning one thing.
     FINDINGS entry from 2026-10-26 already parks this; the TAKE loop is Out of scope here). A
     pre-existing unfalsifiable assertion in `tests/handoff.test.sh` (`grep` given `- src/two.ts` as
     an option) is parked in FINDINGS.md (85e576f).
+
+## QA evidence
+
+**2026-10-26 (verify, token d31d) — PASS.** Level `verify` (frontmatter; the item has no QA plan prose, so no drift).
+Conventions: ../ai-building-conventions (resolved from `.claude/backlog/config.yml` `conventions.path`)
+Commands: `tests/close.test.sh` → `304 passed, 0 failed`; `tests/handoff.test.sh` → `151 passed, 0 failed` (plus the pre-existing stray `grep` usage line on stderr, already parked at 85e576f); `tests/claim.test.sh` → `106 passed, 0 failed`; `tests/backlog-scripts-installed.test.sh` → `53 passed, 0 failed`. Whole suite per file (`for t in tests/*.test.sh; do "$t" || exit 1; done`, each file run so every file reports) at f1cd907, whose non-backlog tree equals the verified HEAD 72b6a26: 39 files, every one rc=0. No lint or typecheck configured. `ac_digest` matched.
+Tree: `git status --porcelain` at Step 2 showed only this session's untracked `.verify-scratch/`; the same at verdict time. Intersection with the evidence set is empty → not advisory.
+Mutations ran in a detached worktree at 72b6a26 via `.verify-scratch/sweep2.py` (not committed). Each had a non-empty diff and was restored by path. The control was green before and after on all four files, and worktree status was empty at the end. Copy executed: the repo templates in the worktree, plus the installed `.claude/backlog/*` copies for AC7. Live corroboration: this session's own `close 0172` and `close 0182`, both on an empty `touches:`, printed `scope: nothing declared, and the commits since the claim changed only backlog bookkeeping`, and `claim` printed `touches: stays empty`.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | empty `touches:` → `touched but undeclared: src/undeclared.ts`, `close` **and** `handoff` | the 0106 early return `[ -n "$declared" ] || return 0` restored in both | red: close 300/4 failed, handoff `FAIL — names the path as undeclared` |
+| AC1 | per script | early return in `handoff` only; in `close` only | red in each script's own suite |
+| AC2 | bookkeeping-only line | message blanked | red, both suites (`says only bookkeeping changed`) |
+| AC2 | no `touched but undeclared` line | bookkeeping exclusion removed | red, both (`and names nothing as undeclared`) |
+| AC3 | inline `"*"` → exclusive line | inline parse removed | red, both (`inline: says the exclusive claim covers every path`) |
+| AC3 | list `"*"` → exclusive line, no undeclared or untouched | list normalisation removed | red, both (3 failed each) |
+| AC3 | exclusive line printed | exclusive branch disabled | red, both shapes in both suites |
+| AC3 | neither `undeclared` nor `untouched` | exclusive branch falls through to the diff | red, both (`names nothing undeclared`) |
+| AC4 | existing populated cases pass unchanged | 3976882 deletes no line of `tests/close.test.sh` or `tests/handoff.test.sh` (`git show … | grep '^-[^-]'` empty); both suites green | pass |
+| AC5 | phrase in `close`, `handoff`, `item.md`, CONCURRENCY.md *The working tree is shared too* | phrase replaced in each of the four, separately | red, each (`… the phrase is missing or wrapped` / `missing, wrapped or moved`) |
+| AC6 | `touches: stays empty`, not `to what <stage> will write`, for design **and** verify | message reverted; reverted for design only | red: 6 failed; 4 failed |
+| AC7 | installed `close`, `handoff`, `claim` byte-identical | one-byte edit to each installed copy | red, each (`has diverged from skills/queue/templates/…`) |
+| AC8 | names `src/mine.ts` | id not recognised (token only) | red, both (`names this ticket's path as undeclared`) |
+| AC8 | does not name the other item | every commit counted | red, both (`does not name another session's item`) |
+| AC8 | `1 commits since the claim name neither` | count line suppressed | red, both (`counts the commit it left out`) |
+| NFR Testing | AC1–3, AC6 new cases, seen red before the fix | the pre-fix behaviour (early return; old claim message) restored → red, as above | pass |
+| NFR Documentation | decision beside every reader (FR3, FR4) | read: `close`/`handoff` comment above `scope_note` names both readings and `"*"`; `item.md` `touches:` comment; CONCURRENCY.md sentence beside empty-is-held; AC5 guards hold | pass |
+
+Always-on pass (CONVENTIONS_CORE): no secrets, no company material, no log or egress change; the reports are stdout only. Step 4, newly reachable: none. The report is a note, not a gate, and no refusal changed.
