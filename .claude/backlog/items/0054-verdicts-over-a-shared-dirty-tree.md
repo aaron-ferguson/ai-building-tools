@@ -2,8 +2,8 @@
 id: "0054"
 title: Give develop and verify a rule for a result taken over a shared dirty tree
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 size: m
 created: 2026-08-25
@@ -16,9 +16,10 @@ expects:
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
   - tests/citations.test.sh
-claimed_by: "11fc"
-claimed_at: 2026-10-27T06:49:01Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -87,20 +88,20 @@ because the verifier happened to re-run the suite at the end.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/develop/SKILL.md` Step 5, when read, then it requires reading
+- [x] AC1 — Given `skills/develop/SKILL.md` Step 5, when read, then it requires reading
   `git status` before believing a full-suite result.
-- [ ] AC2 — Given that step, when read, then it names another session's uncommitted work, another
+- [x] AC2 — Given that step, when read, then it names another session's uncommitted work, another
   session's deliberate red, and a moving measurement as causes distinct from falsified and exposed.
-- [ ] AC3 — Given that step, when read, then it names the worktree-at-your-last-commit remedy.
-- [ ] AC4 — Given that step, when read, then it requires a machine-measuring ticket to pin and
+- [x] AC3 — Given that step, when read, then it names the worktree-at-your-last-commit remedy.
+- [x] AC4 — Given that step, when read, then it requires a machine-measuring ticket to pin and
   record its snapshot.
-- [ ] AC5 — Given the handoff instruction in `skills/develop/SKILL.md`, when read, then it requires
+- [x] AC5 — Given the handoff instruction in `skills/develop/SKILL.md`, when read, then it requires
   the session's own paths to be committed first.
-- [ ] AC6 — Given `skills/verify/SKILL.md` Step 2, when read, then it points at AC5's requirement
+- [x] AC6 — Given `skills/verify/SKILL.md` Step 2, when read, then it points at AC5's requirement
   from the receiving side.
-- [ ] AC7 — Given `references/CONCURRENCY.md` *The working tree is shared too*, when read, then it
+- [x] AC7 — Given `references/CONCURRENCY.md` *The working tree is shared too*, when read, then it
   states that a `touches:` collision warns neither session.
-- [ ] AC8 — Given every citation added, when `tests/citations.test.sh` runs, then each resolves.
+- [x] AC8 — Given every citation added, when `tests/citations.test.sh` runs, then each resolves.
 
 ## QA plan
 
@@ -220,3 +221,61 @@ because the verifier happened to re-run the suite at the end.
 - Whole suite green after the last commit, `git status --porcelain` empty before and after.
 - **A wrapped phrase bit twice in this build** ("a tree that exists", "records the pin" straddled
   line breaks) — exactly the `CLAUDE.md` *Tests* warning; caught by the guard red, fixed by rewrap.
+
+## QA evidence
+
+Verify 2026-10-27 (token 11fc), `qa_level: verify`. **PASS.**
+
+Conventions: ../ai-building-conventions (resolved from `.claude/backlog/config.yml` `conventions.path`; `CONVENTIONS_CORE.md` present)
+
+Commands run, verbatim: `tests/shared-dirty-tree.test.sh`, `tests/citations.test.sh`, `tests/skill-size.test.sh`, then
+`commands.unit_by_file` as the per-file form of `for t in tests/*.test.sh; do "$t" || true; done` (each file's tally printed). No `lint`/`typecheck` configured.
+
+- `./next --ac-digest 0054 --check` → `ac_digest absent — unverifiable` (no stamp on this item; literal checks below read the on-disk text).
+- Copy executed: the verify skill running was the installed 0.9.43 cache; the subject is the repo copy at `12e779a`, which is the authority.
+- Tree: `git status --porcelain` empty at Step 2 and empty after the last evidence command → dirty set empty, intersection empty, **not advisory**.
+
+### Clause table and mutations (run by this pass, in a throwaway worktree at `12e779a` with the conventions directory symlinked beside it; removed the same turn)
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | Given: *in Step 5* | paragraph moved from Step 5 to the end of Step 4 | RED 13/6 |
+| AC1 | qualifier: *before believing a full-suite result* | before → after | RED 13/6 |
+| AC1 | object: *git status* | `git status --porcelain` → "the log" | RED 18/1 |
+| AC2 | another session's uncommitted work | cause text removed | RED 18/1 |
+| AC2 | another session's deliberate red | cause text removed | RED 18/1 |
+| AC2 | a moving measurement | cause text removed | RED 18/1 |
+| AC2 | *distinct from falsified and exposed* | "— falsified or exposed —" removed | RED 18/1 |
+| AC3 | worktree at your last commit | → "worktree at HEAD" | RED 15/4 |
+| AC4 | machine-measuring ticket | "measurement of the machine it runs on" → "measurement" | RED 16/3 |
+| AC4 | pin | "pins its snapshot" → "notes" | RED 18/1 |
+| AC4 | record | "records the pin" → "keeps" | RED 18/1 |
+| FR3 | evidence carried into the hand-off | → "mentioned in" | RED 18/1 |
+| AC5 | *own paths* | "lists none of your own paths" → "lists nothing" | RED 18/1 |
+| AC5 | the whole hand-off check | sentence deleted | RED 17/2 |
+| AC6 | verify Step 2 points at AC5 | pointer phrase replaced | RED 18/1 |
+| AC7 | touches collision warns neither session | → "is rare" | RED 18/1 |
+| AC8 | each added citation resolves | `*The working tree is shared too*` → `*… shared also*` | `tests/citations.test.sh` RED 50/1 |
+
+Every mutation's diff was non-empty (script asserted changed content before running); worktree `git status --porcelain` empty after restore; control: `tests/shared-dirty-tree.test.sh` 19 passed, 0 failed; `tests/citations.test.sh` 51 passed, 0 failed.
+**Reasoned, not run:** AC6's and AC7's Given (*in verify Step 2* / *in The working tree is shared too*) — the guard's `section()` extraction scopes both, so text moved out of the section cannot match.
+
+### Evidence table
+
+| Row | How checked | Result |
+|---|---|---|
+| AC1 | `tests/shared-dirty-tree.test.sh` AC1 block, paragraph scoped inside `skills/develop/SKILL.md` Step 5; mutations above | PASS |
+| AC2 | same file, AC2 block; three causes mutated individually | PASS |
+| AC3 | AC3 block (also asserts *Worth its cost* and the conventions-directory siting) | PASS |
+| AC4 | AC4 block | PASS |
+| AC5 | AC5 block, scoped to *Then stop, in this order* item 5 in Step 5 | PASS |
+| AC6 | AC6 block, scoped to `skills/verify/SKILL.md` Step 2 | PASS |
+| AC7 | AC7 block, scoped to `references/CONCURRENCY.md` *The working tree is shared too* | PASS |
+| AC8 | `tests/citations.test.sh` `51 passed, 0 failed`; mutation red | PASS |
+| NFR Documentation | Rules cite `CONCURRENCY.md` *The working tree is shared too* / *A second checkout never writes the backlog* rather than restating; checked against `documentation-conventions.md`; resolution guarded by `tests/citations.test.sh` | PASS |
+| NFR Progressive delivery | Prose skills ship via the version bump and install (`tools/release`); release note written with this close. No runtime surface to flag; guarded by the release chain, not by a test of this ticket — **unguarded by this ticket's tests** | PASS (unguarded) |
+| Always-on core | No secrets, no company material, repo-relative paths; `tests/measurement.test.sh` (privacy) `143 passed, 0 failed` | PASS |
+| Size | `tests/skill-size.test.sh` `45 passed, 0 failed` | PASS |
+| Whole suite | per-file run: all 42 files exit 0 (e.g. `tests/next.test.sh` `575 passed, 0 failed`, `tests/sprint.test.sh` `386 passed, 0 failed, 0 skipped`, `tests/shared-dirty-tree.test.sh` `19 passed, 0 failed`) | PASS |
+
+Develop's note that the AC1 Given mutation was "reasoned, not run" is now discharged: this pass ran it, and it reddened.
