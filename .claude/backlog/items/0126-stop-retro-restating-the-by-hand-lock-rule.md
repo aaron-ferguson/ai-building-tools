@@ -3,7 +3,7 @@ id: "0126"
 title: Stop retro restating the by-hand lock rule it drifted from
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: develop
 qa_manual:
@@ -16,9 +16,11 @@ relates: ["0048", "0091"]
 expects:
   - skills/retro/SKILL.md
   - tests/retro-lock-citation.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "3b05"
+claimed_at: 2026-10-27T18:03:42Z
 touches:
+  - skills/retro/SKILL.md
+  - tests/retro-lock-citation.test.sh
 ---
 
 ## Problem
