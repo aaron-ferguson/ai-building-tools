@@ -146,6 +146,9 @@ awk 'index($0, "### The file-scope shapes that were rejected") == 1 { f = 1; pri
 present "AC6 — sub-file scope rejected" '**Sub-file scope** —'
 present "AC6 — worktree per session rejected" '**A worktree per session** —'
 present "AC6 — rank against the held set rejected" '**Ranking against the held set** —'
+present "AC6 — sub-file scope's reason" 'so a section claim is unenforceable'
+present "AC6 — worktree per session's reason" 'Whether `develop` runs in parallel at all is `0137`'
+present "AC6 — ranking against the held set's reason" 'would build rank-2 work ahead of the head'
 
 echo
 echo "$PASS passed, $FAIL failed"
