@@ -3,7 +3,7 @@ id: "0054"
 title: Give develop and verify a rule for a result taken over a shared dirty tree
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-25
@@ -16,9 +16,13 @@ expects:
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
   - tests/citations.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "8705"
+claimed_at: 2026-10-27T06:40:09Z
 touches:
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - references/CONCURRENCY.md
+  - tests/citations.test.sh
 ---
 
 ## Problem
