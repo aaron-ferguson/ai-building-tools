@@ -38,7 +38,9 @@ In this order, whatever the file — `QUEUE.md`, `RANKING.md`, `items/*.md`, `FI
 2. **On the legacy path, `python3` is the route that has landed every time** — `open(p, "w")` or
    `shutil.copyfile` for a file, `os.makedirs` for the lock — because the refusal is keyed on the
    `.claude/backlog/` segment and the check cannot see inside an interpreter. Heredocs and `cp`
-   into place were each refused there. The fix is `./migrate`, not a better fallback.
+   into place were each refused there. The fix is `./migrate`, not a better fallback. **A scratch
+   file avoids `.git/` as well** — the harness refuses it as a sensitive path exactly as it does
+   `.claude/`; a gitignored file at the repo root landed.
 3. **A lock release never ends on "refused".** A stranded lock blocks every claim and close in the
    repo: fall back to `python3 -c 'import shutil; shutil.rmtree("<abs path>/.lock")'`, and if that
    is refused too, the stage's escalation names the held lock path.

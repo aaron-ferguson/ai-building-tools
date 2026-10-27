@@ -151,6 +151,10 @@ This step is most of the skill's value.
    Until then, read every criterion line against the `- [ ] ACn — ` form yourself.
    **Re-read `qa_level` and `close_by` against the criteria you just wrote**: `queue` predicted both
    before any existed, and this is the only stage that learns what they should be.
+   **Cross-check the criteria against each other and the tree**: read every AC's prohibition against
+   every FR, and run any detector an FR specifies over the tree before an AC requires the tree green.
+   An allowlist forbidding what an FR required (0182) and a detector never run on paper (0146) each
+   bounced a row from `develop`.
    **Where you wrote or changed criteria, last of all**:
    write `ac_digest:` from `./next --ac-digest <id>` into the frontmatter — the author's stamp,
    which `close` and `--drift` refuse criteria against, so it rides in the same commit (0195).

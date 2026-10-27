@@ -403,7 +403,9 @@ bumps. You have just read the ACs and the evidence, which makes this the cheapes
 exists. Voice it as what a session running these skills will do differently, in plain language,
 leading with the behaviour: the ticket ID never leads, and may follow in parentheses as provenance.
 **A ticket with no observable change gets no note** — close it without `--note`, because a padded
-entry is noise every release then carries.
+entry is noise every release then carries. **A note `develop` already wrote** under `## Unreleased`,
+because the ticket's criteria required it before the close, **is the note**: check it and close
+without `--note`, or the entry lands twice.
 
 By hand, under the lock, committed before you release it — the fallback where the script is not
 installed:

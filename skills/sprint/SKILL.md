@@ -326,6 +326,8 @@ exits `4` on drift** — so a row disagreeing with its own item reaches this loo
 decides* rather than as *nothing takeable*, and the report names the same rows and classes the
 by-hand mode names. A `3` therefore means the queue is consistent AND spent; before item `0142` it
 meant only the second, and a drifted backlog read to a driver as a finished one.
+**A `4` on a row a running design session holds is that session mid-write** — it adds an AC before
+re-stamping `ac_digest:`. Wait for its outcome and re-call with `--completed` before escalating.
 
 **The dispatch unit is a gate, not a row.** `--drive` prints the whole gate — the topmost takeable
 row plus every other takeable row sharing its `expects:` scope or its parent slice, capped at
@@ -345,6 +347,9 @@ comes back carries one entry per ticket with its own verdict, **never one verdic
 several ids**.
 **A stage must not self-certify** — that is the whole reason there are two stages, and a supervisor
 that reads a green and closes the ticket has become the self-certification it was avoiding.
+**A `close_by: develop` item is the declared exception, not that case:** its develop outcome reports
+`closed` (0086). Read the item's `close_by:` before dispatching a re-verify over it — one such
+re-verify cost a floor, and `./close` then refused it.
 
 **Stay answerable while a stage runs, and do not poll.** The user can ask what is happening,
 redirect the run to a specific ticket, hold it or stop it at any point. Answer from the run log and
@@ -802,7 +807,9 @@ the work is local and unpushed and no other session starts while one waits, so t
 picks it back up. Log a `limit_hit` event carrying the reset time the message names, wait for the
 reset or for the person to say tokens are back, then log `resumed` and dispatch
 `claude -p --resume <session-id>` with the same schema, flags and `--model "$RUN_MODEL"`, capped at what that session
-has left. Every resume re-pays the session's context floor — a cost of being interrupted, not of
+has left. **The resume prompt names what to check, never what is held:** a session limited before
+its claim left no claim and a clean tree, so the prompt asks it to read the row's `claimed_by:` and
+`git status` first. Every resume re-pays the session's context floor — a cost of being interrupted, not of
 scope — so the cap excludes it: `tools/harvest-usage.sh <transcript-dir> --legs <session-id> --run
 <run-log> --stage-cap <cap>` prints its `CAP`, the stage cap less the spend net of `repaid` (each
 resumed leg's first priced turn) plus `repay_next` (the largest first turn so far), and the

@@ -6,13 +6,17 @@ whoever installs this plugin: the sessions that run it, and the people who drive
 **What to do:** update the plugin install and start a new session, since skills resolve once at
 session start. An entry says so where anything more is needed.
 
-Each entry is written by the `verify` session that closed its ticket, through `./close --note`, and
-leads with the behaviour; a ticket number in parentheses is provenance. `tools/release --bump` moves
+Each entry is written by the `verify` session that closed its ticket, through `./close --note` — or
+by `develop` where the ticket's criteria require the note before the close, and then verify passes
+no `--note` — and leads with the behaviour; a ticket number in parentheses is provenance. `tools/release --bump` moves
 `## Unreleased` under the version it bumps. Each version ends with `### Did not change`, written by
 the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- `sprint` reads an item's `close_by:` before re-verifying a ticket its develop session closed: a `close_by: develop` close is the declared exception, not self-certification. It waits out a drift exit on a row a running design session holds, and a resume prompt asks the session to check its claim and tree rather than asserting them.
+- `design` cross-checks the criteria it writes against each other and the tree before handing off: no AC may forbid what an FR requires, and a detector an FR specifies is run over the tree before an AC requires the tree green.
+- `verify` closes without `--note` when `develop` already wrote the ticket's note under `## Unreleased` because the criteria required it before the close.
 - `tests/backlog-scripts-installed.test.sh` now fails when an embedded awk program's closing line carries anything after its quote but a `)`, whitespace and a double-quoted argument, or nothing, and when a line inside such a program begins with `"` or `)`. An apostrophe pasted at the head of an awk body line used to break `close` under a green guard; rewrap a body line that trips the second rule (0139).
 - A helper copied between backlog scripts or test suites is now a declared copy, wrapped in `# copy-begin: <name>` / `# copy-end: <name>` lines in place of the old "Change one, change N" comments. A session editing a marked block must edit every copy: `tests/declared-copies.test.sh` reds on any copy that differs and says where they all are, and it also reds on a function defined in two or more script templates with any definition outside a marked block. `next`'s header-reading helper is renamed `name_row_column`, since it is not a copy of `claim`'s and `handoff`'s `column_named` (0146).
 - `close` and `handoff` now report scope on a claim whose `touches:` is empty, which is the normal shape for a `verify` or `design` pass: every path the pass changed outside backlog bookkeeping is named as undeclared, or the report says only bookkeeping changed. `touches: "*"`, inline or as a list entry, prints as the exclusive claim covering every path. Only commits naming the ticket id or carrying its `[token]` are counted, and the report says how many others it left out. `claim` now tells a non-building stage that `touches:` stays empty rather than asking it to fill the field (0145).
