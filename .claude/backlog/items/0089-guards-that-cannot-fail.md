@@ -247,3 +247,48 @@ Found while verifying `0085` (pointer: `tests/cost-by-category.test.sh`, item `0
     "$out"`, FR2 numeric needles, FR1 whole-file, FR5 guard), each a sitting, with FR5 `blocked_by`
     the other three. As one `l` it has now been claimed once and released partly done.
 - 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park, two more guards that cannot fail: (1) `tests/handoff.test.sh` ~line 371, `assert_no_item_line "the column-0 entry is gone" '- src/two.ts'` — the helper runs `grep -Fxq "$2"` with no `--`, so a pattern starting with `-` is an option, grep exits 2 and the helper reads it as absent (stray `grep: invalid option --` at baseline 811130d); fix `grep -Fxq -- "$2"` in it and `assert_item_line`. (2) `tests/backlog-location.test.sh` 0182 AC9: deleting the sentence carrying `before migrating it` left 48 passed; assert that phrase, not `install`.
+- **2026-10-27 — develop (612d): a second slice, then handed to `queue` over AC1.** Commits
+  `1a71387`, `d0c5372`. Every mutation below was **run**, on the subject, restored in the same
+  call, with a control run green after it.
+  - **`tests/handoff.test.sh` — `assert_item_line`, `assert_no_item_line` and the QUEUE.md line
+    helper passed `"$2"` to `grep -Fxq` with no `--`** (the 2026-10-06 and 2026-10-27 instances).
+    Fixed to `grep -Fxq -- "$2"`. Mutation: `skills/queue/templates/handoff`'s skiplist
+    `/^[ \t]*- /` → `/^[ \t]+- /` (column-0 entries survive). Fixed guard: `FAIL — the column-0
+    entry is gone`. The HEAD~1 copy under the same mutation printed `grep: invalid option --` and
+    left that case `ok`. (It is defended twice: `exits 0` reds under the mutation in both copies,
+    the read-back refusing the hand-off — so the old case was not the only net, but it could not
+    fail.)
+  - **`tests/backlog-location.test.sh` 0182 AC9 — `install` re-anchored to `before migrating
+    it`**, and the 0221 fixture `NOTE_FULL` given the phrase. Mutation: `CHANGELOG.md`'s sentence
+    `**Install this release on every machine that works a repo before migrating it** — … — and
+    check` reduced to `Check`. New guard: `FAIL 0182 AC9 — the 0182 entry does not name before
+    migrating it`, 56/1. HEAD~1 copy: 57/0 — `install` was satisfied by "installed beside the others".
+  - **`tests/backlog-scripts-installed.test.sh` — `SCRIPTS=` derived** as the union of executables
+    in `skills/queue/templates/` and `.claude/backlog/`, and `tests/handoff.test.sh`'s literal
+    pin on `SCRIPTS="next claim close handoff` replaced by asserting the handoff template is
+    executable (the derivation's input). Mutations: template `reopen` moved away → 3 FAIL (`cannot
+    parse`, `cannot scan`, `cannot diff`), 52/3; installed `reopen` moved away → 5 FAIL. **Not
+    covered, reasoned and run:** `chmod -x` on a template stays 55/0 — the installed copy keeps it
+    in the union and no check asserts a template's mode. New coverage, so out of this row's scope.
+  - **Examined so far, now across both slices:** `sprint` (six `case "$out"`), `cost-by-category`
+    (AC2 only), `handoff` (the line helpers), `backlog-location` (AC9), `backlog-scripts-installed`
+    (`SCRIPTS=`). `external-feedback` and `reference-size` read, not changed (see below).
+  - **AC1 is wrong as written — proposed for `queue`, not edited.** It requires *every* `case
+    "$out"` hit to be against a single extracted line. The remaining hits (now 78: `citations` 18,
+    `reporting` 16, `last-line` 10, `skill-size` 9, `money-in-skill-prose` 8, `reference-size` 5,
+    `abort-announce` 3, `declared-copies` 3, `external-feedback` 3, `item-nfr-red` 2,
+    `scaffold-close` 1) include **absence** assertions — `external-feedback.test.sh:156`
+    `*EXTERNAL-FEEDBACK*) bad`, `reference-size.test.sh:234` `*"references/RECORDED.md"*) bad` —
+    which are correct *only* over the whole output; narrowing them to one line makes them weaker,
+    the opposite of this row's outcome. Most presence needles there are a complete path or line from
+    a fixture-fed guard printing a few lines, not text the subject prints unconditionally.
+    Proposed AC1: *"Given the sweep is complete, when `grep -n 'case \"\$out\"' tests/*.test.sh`
+    is run, then every presence needle is either a complete line the subject prints (or a field
+    extracted from one) or a phrase the subject prints only on the asserted condition, and every
+    absence needle is matched over the whole output. Red if any presence needle is satisfied by
+    text the subject prints unconditionally or is a substring of another value the same output
+    carries."*
+  - **And the split the 2026-10-25 slice suggested still stands** — this is the second session to
+    release the row partly done. One row per class (AC1 `case "$out"` under the corrected text, FR2
+    numeric needles, FR1 whole-file, FR5 guard `blocked_by` the other three) is a sitting each.
+  - Whole suite run file-by-file at `d0c5372`, clean tree: no file red.
