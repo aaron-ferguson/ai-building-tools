@@ -2,8 +2,8 @@
 id: "0172"
 title: Decide how a script refusal and the skill that must satisfy it reach a session together
 type: debt
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 close_by: verify
 size: s
@@ -16,13 +16,10 @@ expects:
   - skills/develop/SKILL.md
   - tests/close.test.sh
   - CHANGELOG.md
-claimed_by: "8ca7"
-claimed_at: 2026-10-27T02:03:54Z
+claimed_by:
+claimed_at:
 ac_digest: AC1=ae637e8d AC2=207697c6 AC3=c92a6850 AC4=3e7acf23 AC5=6b52b421 AC6=2f8b9f5e
 touches:
-  - skills/develop/SKILL.md
-  - tests/close.test.sh
-  - CHANGELOG.md
 ---
 
 ## Problem
@@ -123,3 +120,28 @@ design.
     is set explicitly. `size` drops m → s, since it is one rule, one guard and one note.
     `expects:` now names the files a build touches: `skills/retro/SKILL.md` and
     `skills/queue/templates/close` are dropped, and nothing in either changes.
+
+- **2026-10-26 (develop, token 8ca7)** — Built in 9b133a1, plus a440bd9 listing the new suite in README.md's guard block (`tests/citations.test.sh` 0046 reds without it). Whole suite: every file 0 failed after a440bd9. The rule is one paragraph of four lines in
+  `skills/develop/SKILL.md` Step 4, after *Work FR by FR*; its first line carries the anchor
+  `a refusal that arrives before its skill`. The guard is new: `tests/self-sufficient-refusal.test.sh`,
+  scoped to the text between `## Step 4` and `## Step 5`, asserting the anchor matches exactly one line
+  and that the rule's paragraph carries each AC2 clause as a one-line phrase. No backlog script changed:
+  FR1/FR2 bind future tickets, and `0160`'s refusal is the prior art (AC4: `tests/close.test.sh`
+  `ok — names the line it wants`, 281 passed).
+  - Clause table (AC text → guard phrase → mutation):
+
+    | AC clause | Guard phrase | Mutation |
+    |---|---|---|
+    | AC1/AC3 exactly one line matches the anchor | `a refusal that arrives before its skill`, count = 1 | anchor line deleted → `matches 0 lines of Step 4`, 0 passed 8 failed; restored → 8 passed (**run**) |
+    | AC2 names what is missing | `names what is missing` | **reasoned**: deleting it reds `present`, same mechanism as the run row |
+    | AC2 names the fix | `names the fix` | reasoned, as above |
+    | AC2 refuses before writing | `before anything is written` | reasoned, as above |
+    | AC2 FR2 test requirement | `runs the script into the refusal`, `stderr` | reasoned, as above |
+    | AC2 cites `0160` | `` `0160` `` | reasoned, as above |
+    | AC2 scope (script templates) | `skills/queue/templates/` | reasoned, as above |
+
+  - AC2 is a reading; the phrase guards only keep the words present, not their sense.
+  - `tests/skill-size.test.sh` stays green: develop grew ~520 bytes, under its argued-at 50,862 + 5,000.
+  - Self-inflicted, recovered: the first commit refused on the untracked new test (`pathspec did not
+    match`), and a `;` in the chain let `git restore -- skills/develop/SKILL.md` run anyway, deleting the
+    uncommitted rule. Exactly Step 5's documented trap; re-applied, then `git add` and committed. No new finding.
