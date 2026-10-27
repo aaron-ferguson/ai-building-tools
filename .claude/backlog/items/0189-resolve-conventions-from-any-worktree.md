@@ -64,3 +64,18 @@ tally, and removes the worktree in the same run. Proved red against the current 
 - 2026-09-25 — filed by retro from verify 0180's finding (token eb65). Of the two fixes the finding
   offered, this row takes the resolution fix. It removes the hazard for every caller, where a named
   location would only instruct one caller.
+- 2026-10-27 — develop (token 0e85), built in 22f6966. `conventions_dir` now resolves a relative
+  path against `main_worktree_of <root>`: the parent of `git rev-parse --path-format=absolute
+  --git-common-dir` when `<root>` is the top of a git worktree, else `<root>` itself — so every
+  authored fixture (temp dirs, not repos) resolves exactly as before. In the checkout the common
+  dir is `.git`, whose parent is the checkout, so FR2 holds by construction.
+- **QA-plan substitution.** The plan asks for a guard that runs the *whole file* inside the worktree
+  and compares tallies. Written that way the nested run re-enters the same case (recursion), and runs
+  HEAD's copy of the guard rather than the one under test. The guard instead drives
+  `conventions_audit` — the only location-dependent check — on a real detached worktree under
+  `$FIX` (a `mktemp -d`), and requires its SKIP/COUNT lines to equal the checkout's.
+- Evidence (run): before the fix, the new case red — `FAIL 0189 AC1 — the temp-directory worktree
+  resolved no conventions directory: SKIP  no conventions directory resolved from config.yml`,
+  `51 passed, 1 failed`. After: checkout `52 passed, 0 failed`; whole file run inside a detached
+  worktree under `mktemp -d` at 22f6966: `52 passed, 0 failed` (AC1). AC2: the 51 pre-existing
+  checks in the checkout pass unchanged. Whole suite green at 22f6966, tree clean.
