@@ -215,3 +215,34 @@ Each carries a comment saying to change them together, which is a rule with noth
   FR3 and FR4 rewritten; FR1, FR2, FR5–FR7 unchanged. `qa_level: verify` and no `close_by`
   re-read and kept: AC7 is still a mutation a verifying session should run itself. `size: m` kept;
   the renames and the two `fm_list` edits are small beside the marker lines.
+
+- **2026-10-27 (develop, token 6580) — built.** Commit 18ddee8. Whole suite green after it.
+  **Marker placement:** each block opens with `# copy-begin: <name>` and, as its first line inside,
+  `# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is
+  identical.` — FR1's neighbour comment sits *inside* the block so it is itself held identical,
+  carries no count, and every begin has one even where two blocks are back to back (`saw-prefix`
+  then `saw-on-pass`). Comments *above* a block stay per-file: `fm-list` and `decomment` wrap the
+  function / assignment only, so `next`'s longer explanation of `fm_list` and each script's own
+  `DECOMMENT` rationale are unchanged except for their copy counts. `scope-block` runs from its
+  `# --- the declared scope …` header to the `scope_note` call, the same span 0106's
+  `extract_block` compared.
+  **Normalisations, all behaviour-neutral:** `fm_list` in `next` (one inner comment's wording) and
+  `reopen` (adds `[ -n "$1" ] || return 0` and the inner comment — its one call never passes an
+  empty path, per the design note; a comment above `reopen`'s copy now says so); and
+  `tests/scaffold-close.test.sh`'s `saw` had one space after `saw()` where the other six carry the
+  aligned padding — whitespace before `{` only, so it was padded and marked rather than left as an
+  undeclared seventh copy.
+  **Installed copies re-copied:** `.claude/backlog/{claim,close,handoff,next,reopen}` from the
+  templates, which `backlog-scripts-installed` requires; README's guard block gained the new suite,
+  which `citations` (0046) requires. Both reds were expected consequences, not surprises.
+  **Mutations (run, against a scratch mirror of the tree with the suite's scanner edited):** byte
+  comparison disabled → 2 FAIL (AC1, AC7 cases); lone-copy check disabled → 1 (AC3); unclosed check
+  disabled → 1 (AC2); FR3 disabled → 2 (AC4 two-unmarked and third-unmarked); FR3 ignoring markers
+  → 15 (repo tree + AC4 marked case). **Pre-change tree (run):** the suite given a `git archive` of
+  the tree before 18ddee8 reds with 9 undeclared-function findings, one per shared helper name.
+  The suite's no-argument run builds its own fixtures for AC1–AC4 and AC7 and invokes itself with a
+  root, so the ACs' CLI form is what is exercised; AC7 is also there for a verifier to re-run by hand.
+  Marker lines in the suite are built from variables (`BEGIN_X`), never literal, so the suite does
+  not read its own fixtures as markers when it scans `tests/`.
+  **Write path:** a heredoc append to this file was refused as a sensitive-file edit; this note was
+  appended with `python3` instead.
