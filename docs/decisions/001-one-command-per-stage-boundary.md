@@ -76,8 +76,10 @@ protocol budget `MEASUREMENT.md` sets**, and no smaller decomposition reaches it
 - **`--touches` must never default to `expects:`.** `queue` writes `expects:` (predicted, from the
   code); `develop` writes `touches:` (actual, checked, **never copied**). A flag that copied one to
   the other would delete the reason there are two fields.
-- **The `FINDINGS.md` append stays a turn.** It is content nothing else can author. Fold it into the
-  boundary commit where the shell invocation allows; do not fold it into a script.
+- **The `FINDINGS.md` append stays a turn.** It is content nothing else can author. Neither
+  `./handoff` nor `./close` commits `FINDINGS.md`, so it cannot ride along: write and commit it, by
+  pathspec, before the boundary commit, since after it the row is takeable. Do not fold it into a
+  script.
 
 ### FR3 — the lock
 

@@ -37,7 +37,7 @@ moment, so a genuine holder will be gone. Still held, then read `held-by`:
 Always release with `rm -rf` in the turn you took it, including on the path where you decide *not* to
 make the change. A script releases on its failure paths via a `trap`.
 
-**Four things bite a by-hand lock, and all four fail silently.**
+**These bite a by-hand lock, and every one of them fails silently.**
 
 - **Resolve `$BACKLOG` to an absolute path.** A `trap 'rm -rf "$BACKLOG/.lock"' EXIT` resolves against
   the shell's cwd *at trap time*, so a sequence that `cd`s to the repo root — the natural shape, since
@@ -59,6 +59,15 @@ make the change. A script releases on its failure paths via a `trap`.
   above prescribes, stranding the lock and blocking every claim and close until a person clears it
   (2026-09-21). `sed -i` differs the same way and warns nobody. Pipe the sequence into `/bin/sh -s`,
   which is what cleared it, rather than pasting it into the tool's own shell.
+- **The commit fails while the release succeeds.** Every entry above is the lock outliving the turn;
+  this is the lock released over a commit that never happened. Landing two items in one invocation, a
+  session built `paths` in a loop and wrote `git commit -m … -- $paths`. zsh does not word-split an
+  unquoted parameter, so git received one argument of two space-joined paths and refused with
+  *"pathspec … did not match any file(s)"*. The `rm -rf` on the next line released the lock anyway,
+  leaving both item files edited and `FINDINGS.md` drained, uncommitted, in a shared tree — the
+  uncommitted-claim failure, arriving from a direction the lock cannot see (`0091`, 2026-09-05). The
+  scripts are immune, committing their own fixed paths. The rule it added — literal pathspecs, and
+  `git status` clean before the release — is in *Lock every write to the backlog directory*.
 
 ### A scope overlap — rule: *The working tree is shared too*
 

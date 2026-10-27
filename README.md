@@ -315,6 +315,7 @@ tests/abort-announce.test.sh             # every suite says ABORTED with its cou
 tests/ac-digest.test.sh                  # ./next --ac-digest, the --drift class it feeds, and close refusing a changed contract
 tests/backlog-scripts-installed.test.sh  # this repo's installed backlog scripts still match their templates
 tests/citations.test.sh                  # cited CONCURRENCY.md rules and conventions files resolve, and this block names every suite
+tests/by-hand-lock.test.sh               # a by-hand backlog write takes the lock and proves its commit before releasing
 tests/backlog-location.test.sh           # .backlog/ and the legacy .claude/backlog/, ./migrate, the refused-write section
 tests/close-by.test.sh                   # close_by's two branches in develop, and verify's review level
 tests/cost-by-category.test.sh           # the by-category cost measurement

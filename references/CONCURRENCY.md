@@ -258,14 +258,19 @@ same turn" means the same shell invocation**: a session gets a fresh shell per t
 holding nothing. It is invisible — the sequence reads exactly like a correct lock and every step
 succeeds. Run the whole sequence in one call, or drop the trap and `rm -rf` explicitly at the end.
 **If you are writing a lock by hand rather than calling `./claim` or `./close`, read
-`CONCURRENCY-INCIDENTS.md` first, not after it goes wrong**: it carries three ways a by-hand lock
+`CONCURRENCY-INCIDENTS.md` first, not after it goes wrong**: it carries the ways a by-hand lock
 leaks silently, and this one was written down seven days before a session rediscovered it, because
 nothing sends you there until you already have trouble. It guards a two-second
 operation, never an implementation.
 
+**The commit inside a by-hand lock names every pathspec literally, never through a variable**, and
+`git status --porcelain -- <those paths>` is confirmed clean before the release, never after it.
+zsh does not word-split `$paths`, so `git commit -- $paths` refuses one space-joined path, the
+`rm -rf` on the next line releases anyway, and the edits sit uncommitted in a shared tree.
+
 **The lock is `.backlog/.lock/`, a directory, because `mkdir` is atomic on POSIX.** Put `$CLAIM`
 and a UTC timestamp in `.lock/held-by`, so a busy lock says who holds it; release with `rm -rf` at an
-**absolute** path, never commit it. **Snippet, the busy/stale paths, and the three ways a by-hand lock
+**absolute** path, never commit it. **Snippet, the busy/stale paths, and the ways a by-hand lock
 leaks silently: `CONCURRENCY-INCIDENTS.md`.**
 
 ## Claim tokens
