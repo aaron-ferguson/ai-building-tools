@@ -2,8 +2,8 @@
 id: "0146"
 title: Decide when a required duplication earns a drift guard, and guard the copies that qualify
 type: debt
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 size: m
 created: 2026-09-09
@@ -18,9 +18,10 @@ expects:
   - tests
   - CHANGELOG.md
 ac_digest: AC1=5fbfaaac AC2=c1acc8f1 AC3=9050975f AC4=7f2b0a4c AC5=0cdf1869 AC6=a6cbfedc AC7=727df98e AC8=b99456d7 AC9=c672124b AC10=6ca44f82
-claimed_by: "1fc2"
-claimed_at: 2026-10-27T05:42:19Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -83,33 +84,33 @@ Each carries a comment saying to change them together, which is a rule with noth
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given an authored fixture tree with two files carrying `# copy-begin: x` blocks that
+- [x] AC1 — Given an authored fixture tree with two files carrying `# copy-begin: x` blocks that
   differ in one character, when `tests/declared-copies.test.sh <fixture-root>` runs, then it exits
   non-zero and its output names `x`, both files and the differing line.
-- [ ] AC2 — Given a fixture with a `# copy-begin: x` and no `# copy-end: x`, when the suite runs on
+- [x] AC2 — Given a fixture with a `# copy-begin: x` and no `# copy-end: x`, when the suite runs on
   it, then it exits non-zero naming the unclosed block and its file.
-- [ ] AC3 — Given a fixture where name `x` is marked in exactly one file, when the suite runs on it,
+- [x] AC3 — Given a fixture where name `x` is marked in exactly one file, when the suite runs on it,
   then it exits non-zero saying `x` has one copy.
-- [ ] AC4 — Given a fixture whose `skills/queue/templates/` holds two files each defining
+- [x] AC4 — Given a fixture whose `skills/queue/templates/` holds two files each defining
   `helper() {` outside any marked block, when the suite runs on it, then it exits non-zero naming
   `helper` and both files; given the same two definitions inside identical marked blocks, it
   passes; and given those two marked files plus a third defining `helper() {` unmarked, it exits
   non-zero naming `helper` and the third file.
-- [ ] AC5 — Given the repo tree, when the suite runs with no argument, then it exits 0 and reports
+- [x] AC5 — Given the repo tree, when the suite runs with no argument, then it exits 0 and reports
   the blocks `decomment` (four copies), `fm-value` (three), `fm-list` (three), `read-cell` (three),
   `column-in` (two), `header-of` (two), `column-named` (two), `scope-block` (two), `saw-on-pass`
   and `saw-prefix` (each at least two).
-- [ ] AC6 — Given the repo tree, when `grep -rn 'Change one, change' skills tests` runs, then it
+- [x] AC6 — Given the repo tree, when `grep -rn 'Change one, change' skills tests` runs, then it
   prints nothing.
-- [ ] AC7 — Given a copy of the repo tree with one character changed inside the `scope-block` copy
+- [x] AC7 — Given a copy of the repo tree with one character changed inside the `scope-block` copy
   in `skills/queue/templates/handoff` only, when the suite runs on that copy, then it exits non-zero
   naming `scope-block` — the drift `close.test.sh`'s removed 0106 FR3 case used to catch.
-- [ ] AC8 — Given the suite's source, when `grep -n '\.claude/backlog' tests/declared-copies.test.sh`
+- [x] AC8 — Given the suite's source, when `grep -n '\.claude/backlog' tests/declared-copies.test.sh`
   runs, then no line reads from that path (a comment explaining FR6 is the only permitted match).
-- [ ] AC9 — Given the full suite (`for t in tests/*.test.sh; do "$t" || exit 1; done`), when it
+- [x] AC9 — Given the full suite (`for t in tests/*.test.sh; do "$t" || exit 1; done`), when it
   runs after the change, then every file passes, `tests/abort-announce.test.sh` included for the new
   file.
-- [ ] AC10 — Given the repo tree, when `grep -n 'column_named' skills/queue/templates/next` runs,
+- [x] AC10 — Given the repo tree, when `grep -n 'column_named' skills/queue/templates/next` runs,
   then it prints nothing, and `grep -c 'name_row_column' skills/queue/templates/next` prints the
   count of definitions plus calls that `column_named` had before the change (five at 3242dd7).
 
