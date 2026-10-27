@@ -24,11 +24,10 @@ claimed_at: 2026-10-27T20:16:44Z
 touches:
   - references/CONCURRENCY.md
   - references/CONCURRENCY-INCIDENTS.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
   - CLAUDE.md
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
+  - tests/shared-dirty-tree.test.sh
 ac_digest: AC1=4628a33e AC2=0f12239c AC3=59be2e64 AC4=fff4269d AC5=168c1e58 AC6=59b75fbe AC7=29421536 AC8=5df1dc6b
 ---
 
