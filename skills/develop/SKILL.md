@@ -488,9 +488,9 @@ causes of a red sit outside that fork, and none is yours to fix:
 **The remedy is a run in a throwaway worktree at your own last commit** — a verdict about
 a tree that exists, where the checkout is a file set nobody committed. Worth its cost whenever the dirty set
 intersects what the suite reads; with `git status` clean the checkout already is that tree. Site it
-so whatever the suite resolves outside the repo still resolves — `node_modules` in an app, and here
-the conventions directory, which `config.yml` resolves against the parent, so a worktree elsewhere
-reds `tests/citations.test.sh` on where it was put (0189).
+so whatever the suite resolves outside the repo still resolves — `node_modules` in an app, and the
+conventions directory wherever `config.yml` resolves it against the parent: a worktree put elsewhere
+reds a citations guard on where it stands, not on what it holds (0189).
 It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the backlog*).
 
 **A red the tree is supposed to have is attributed with evidence**, carried into the hand-off rather
