@@ -28,7 +28,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
 | 0126 | Stop retro restating the by-hand lock rule it drifted from | develop | ready |  |
 | 0092 | Prove claim and close hold the lock through their commit | develop | ready |  |
-| 0054 | Give develop and verify a rule for a result taken over a shared dirty tree | verify | ready |  |
+| 0054 | Give develop and verify a rule for a result taken over a shared dirty tree | verify | in-progress |  |
 | 0065 | Name stream editors in the rule against rewriting QUEUE.md | develop | ready |  |
 | 0050 | Decide how file scope works when the prose files are the product | design | ready |  |
 | 0093 | Give develop and verify a working recipe for a before-and-after suite comparison | develop | ready |  |
