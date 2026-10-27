@@ -1983,7 +1983,7 @@ else
   bad "0134 AC4 — the report does not name tickets designed this run as available for the next sprint"
 fi
 if says "$SKILL" "$DSEC" 'disjoint' && says "$SKILL" "$DSEC" '0050'; then
-  ok "FR6 — the permission rests on disjoint file kinds and cites 0050 as the open general question"
+  ok "FR6 — the permission rests on disjoint file kinds and cites 0050, which settled the general question"
 else
   bad "0134 FR6 — the section does not state the disjoint-files reason and cite 0050"
 fi

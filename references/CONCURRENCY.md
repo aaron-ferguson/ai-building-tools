@@ -66,8 +66,9 @@ One staging area per repository, no lock, no token: any session can commit what 
 ### A pathspec is necessary but **not sufficient**
 
 It limits the commit to the paths you name, **not to the changes you made** — their edits to those
-paths go too, and **nothing you do prevents it**. Prefer single-writer files; **the shared ones are
-more than the queue** — the project's own docs are written by every session.
+paths go too, and **nothing you do prevents it**. **The shared files are more than the queue** —
+the project's own docs are written by every session — so where a file cannot have a single writer, the
+session is the single writer instead (*The working tree is shared too*).
 
 ## The working tree is shared too
 
@@ -76,7 +77,7 @@ in one component, unwarned.
 
 - **Compare your candidate's `expects:` against every `in-progress` `touches:` before claiming.**
   Overlap means pick differently: take the next clear `ready` row, name the one you stepped over. All
-  rows collide → nothing is developable right now.
+  rows collide → the designed wait below.
 - **`queue` writes `expects:`** (predicted, code open); **`develop` writes `touches:` on claim**
   (actual, checked against the code). Why two fields: `CONCURRENCY-INCIDENTS.md`.
 - **The claim writes `touches:`, not the session afterwards** — `./claim` seeds it from `expects:`
@@ -95,7 +96,23 @@ in one component, unwarned.
 - **A `touches:` collision warns neither session.** The field is read when a session *chooses*, and
   nothing re-reads it when someone later edits a held file: a rewrite forty minutes after a committed
   `touches:` turned the holder's own guard red, and surfaced only because its verifier re-ran the suite.
-  Declaring it reserves nothing; it advises the next chooser (preventing the collision is 0050).
+  Declaring it reserves nothing; it advises the next chooser. Preventing the collision is the next
+  rule's job (0050).
+- **The file stays the unit of scope;
+  where a file cannot have one writer, the session does.** In a repo whose prose files are the
+  product, every ticket about the tooling touches the tooling's prose, so
+  rows sharing a file are worked by one session — one develop gate (`--drive` joins rows by shared
+  file), or hand-driven, one after another. `develop` is
+  serialised in this repo by design until `0137` decides otherwise.
+- **Every takeable row at a stage colliding is
+  a designed wait, not a failure.** The session must
+  claim nothing; report each holder's id, token and shared paths as `./next` prints them; then stop,
+  or take work at another stage that collides with nothing.
+  Never edit a held file to get unstuck, and never rewrite another row's `touches:`.
+- **A file held at `verify` takes the same taking rule, and a stricter editing one:** a `develop`
+  session already under way
+  does not open or widen `touches:` into a file a live `verify` claim holds — it waits for the close,
+  because that collision corrupts a verdict where a `develop` one only conflicts a commit.
 - **`verify` derives *advisory*** from the dirty paths that intersect the evidence its verdict rested
   on — dirty **under test**, not dirty anywhere. Empty intersection: a plain PASS that closes.
 - **At `qa_level: e2e` that intersection can never be empty**, because the runner builds and serves

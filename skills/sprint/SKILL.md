@@ -371,7 +371,8 @@ enforces it: a design row naming a file a running develop session touches is ste
 `NOTE`, and a develop gate naming a file a running design session names exits `6` and waits for it
 rather than being stepped over, which would build rank-2 work ahead of the head. Design beside design
 or verify never conflicts. Parallel develop fails the token fact, which is why `0137` declines it, and
-how file scope works when the prose files are the product is `0050`'s open question, not settled here.
+where the prose files are the product `0050` settled file scope as one session per shared file
+(`CONCURRENCY.md`, *The working tree is shared too*).
 
 **`DISPATCH  design <id>` on an in-scope row is a dispatch, not a halt.** Design is autonomous
 work, so `--drive` routes it rather than escalating. Given `--scope`, a design row outside the

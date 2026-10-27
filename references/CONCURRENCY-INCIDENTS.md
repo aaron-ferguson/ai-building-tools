@@ -230,6 +230,26 @@ read; it was repaired in the next commit. The rule then named `Write` and read-r
 reader took it as covering only those, so three later multi-row inserts went through `awk` to a temp
 file, each guarded by a diff check invented on the spot. That check is now the rule's safe shape.
 
+### The file-scope shapes that were rejected — rule: *The working tree is shared too*
+
+On 2026-08-25 the whole `develop` stage stalled twice on different file pairs: 0034 held
+`skills/verify/SKILL.md` and `CONCURRENCY.md` and every takeable row collided with one or the other,
+and 0038, held at `verify`, held the only files the one takeable `develop` row needed. Overlap
+chains, so any starting row reached the whole stage. Four shapes were weighed (0050); the chosen one
+keeps the file as the unit and makes the session the single writer. The other three, and why not:
+
+- **Sub-file scope** — a section or heading as the unit. A pathspec commit carries every change to
+  the path, so a section claim is unenforceable without a staging change no git primitive offers;
+  and some fixes need a unit *larger* than a file — a comment shared byte-identically by three suites
+  can only be fixed by a session holding all three — which a smaller unit makes worse.
+- **A worktree per session** — merge afterwards. Whether `develop` runs in parallel at all is `0137`'s
+  question, not a file-scope answer; backlog writes are refused from a linked worktree; and prose
+  merges conflict at the paragraph, where line-based guards then break. A worktree stays a read-only
+  place to pin a verdict to a commit.
+- **Ranking against the held set** — let held files reorder the queue. Rank is absolute and a join
+  decides batching, never selection; the held set already shapes takeability and gate membership,
+  and letting it reorder rank would build rank-2 work ahead of the head.
+
 ### The rename that no mechanism could see — rule: *A change that touches every file takes an exclusive claim*
 
 Renaming the container ticket type effort → project (`267d13f`, 2026-08-23) touched **30 files**:

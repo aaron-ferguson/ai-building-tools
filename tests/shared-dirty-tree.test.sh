@@ -117,6 +117,36 @@ echo "0054 AC7 — CONCURRENCY.md says a touches: collision warns neither sessio
 section "$CON" '## The working tree is shared too'
 present "the limitation is stated in the named rule" 'collision warns neither session'
 
+# 0050 — where the prose files are the product, a file cannot have one writer, so the session is
+# the single writer. Every phrase sits on one source line (CLAUDE.md, *Tests*).
+echo "0050 FR1/AC4 — the file stays the unit of scope and rows sharing one go to one session"
+section "$CON" '## The working tree is shared too'
+present "FR1 — the settled rule is stated in the section" 'where a file cannot have one writer, the session does'
+present "AC4 — rows sharing a file are worked by one session" 'rows sharing a file are worked by one session'
+present "FR1 — develop is serialised here until 0137 says otherwise" 'serialised in this repo by design until `0137` decides otherwise'
+echo "0050 FR2/AC1 — every takeable row colliding is a designed wait"
+present "AC1 — the outcome is named as designed" 'a designed wait, not a failure'
+present "AC1 — the session claims nothing and reports the holders" 'claim nothing; report each holder'
+present "FR2 — and never edits a held file to get unstuck" 'Never edit a held file to get unstuck'
+echo "0050 FR3/AC2 — a verify-held file is not opened or widened into mid-session"
+present "AC2 — the same taking rule, and a stricter editing one" 'A file held at `verify` takes the same taking rule, and a stricter editing one'
+present "AC2 — develop does not open or widen into a verify-held file" 'does not open or widen `touches:` into a file a live `verify` claim holds'
+echo "0050 AC4/AC5 — the old preference and the open question are gone"
+if grep -qF 'Prefer single-writer files' "$CON"; then bad "AC4 — CONCURRENCY.md still says Prefer single-writer files"; else ok "AC4 — Prefer single-writer files is gone from CONCURRENCY.md"; fi
+section "$ROOT/skills/sprint/SKILL.md" '## Design beside other stages'
+if grep -qF 'open question' "$SCOPE"; then bad "AC5 — sprint's Design beside other stages still calls 0050 an open question"; else ok "AC5 — sprint's Design beside other stages no longer calls 0050 open"; fi
+present "AC5 — and still cites 0050" '`0050`'
+section "$CON" '## The working tree is shared too'
+if grep -qF 'preventing the collision is 0050)' "$SCOPE"; then bad "AC5 — CONCURRENCY.md still describes preventing the collision as 0050's open work"; else ok "AC5 — CONCURRENCY.md no longer leaves the collision to 0050"; fi
+echo "0050 AC3 — CLAUDE.md Concurrency names the section holding the rule"
+section "$ROOT/CLAUDE.md" '## Concurrency'
+present "AC3 — names the section" '`references/CONCURRENCY.md`, *The working tree is shared too*'
+echo "0050 AC6 — the rejected shapes are recorded with their reasons"
+awk 'index($0, "### The file-scope shapes that were rejected") == 1 { f = 1; print; next } f && /^#/ { exit } f { print }' "$ROOT/references/CONCURRENCY-INCIDENTS.md" > "$SCOPE"
+present "AC6 — sub-file scope rejected" '**Sub-file scope** —'
+present "AC6 — worktree per session rejected" '**A worktree per session** —'
+present "AC6 — rank against the held set rejected" '**Ranking against the held set** —'
+
 echo
 echo "$PASS passed, $FAIL failed"
 TALLIED=1

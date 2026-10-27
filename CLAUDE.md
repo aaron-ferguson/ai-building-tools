@@ -64,4 +64,6 @@ it does (0169).
 Several sessions work this backlog at once. `references/CONCURRENCY.md` governs every write;
 `.claude/backlog/{claim,close,next}` are the scripts that make claims durable. In a plugin repo the
 skill and reference files **are** the product, so they are structurally multi-writer and the
-file-scope rule is weaker here than it reads.
+file-scope rule is weaker here than it reads. What holds instead is one session per shared file, a
+designed wait when every row collides, and no opening a `verify`-held file mid-session:
+`references/CONCURRENCY.md`, *The working tree is shared too*.
