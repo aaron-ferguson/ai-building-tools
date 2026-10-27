@@ -88,3 +88,25 @@ whose commit-inside-the-lock is their entire reason for existing.
   There is nothing to decide, only to copy correctly.
 - Kept separate from `0090` deliberately. `0090` changes the three scripts' behaviour; this changes
   only what the suite can see, and is takeable while `0090` is blocked on `0082`.
+
+- 2026-10-27 — develop (token 2043), built in `86ba8a6`. A pre-commit hook in each fixture repo,
+  byte-identical to `tests/handoff.test.sh`'s (FR4), writes `held`/`released` to `.lock-witness`;
+  the case compares the file for **equality** with `held` (not a substring — `0089`'s class) and
+  names `.backlog/.lock` when it fails. Fixture ids `9470` (claim) and `9471` (close), placed last
+  before each tally; every `scaffold` is a fresh `mktemp -d` repo, so no hook survives into a
+  later case (AC3). FR1's path reads `.claude/backlog/.lock/`; the fixtures are `.backlog/`, as
+  handoff's are — the scripts resolve whichever exists.
+- **The scripts release by `trap 'rm -rf "$LOCK"' EXIT`, so there is no `rm` to move.** AC1/AC2's
+  mutation was therefore an **insertion** of `rm -rf "$LOCK"` on the line immediately before the
+  commit, at its indentation: `skills/queue/templates/claim` before `  until git -C "$DIR" commit -q
+  -m "Claim $ID …`, `skills/queue/templates/close` before `until git -C "$DIR" commit -q -m "Close
+  $ID …`. Run, restored in the same call, control green after:
+  - claim: `FAIL — 0092 — the lock (.backlog/.lock) was not held when claim's commit ran: the
+    witness read released`, **107 passed, 1 failed** — the only red (AC1, AC4).
+  - close: `FAIL — 0092 — the lock (.backlog/.lock) was not held when close's commit ran: the
+    witness read released`, **304 passed, 1 failed** — the only red (AC2, AC4).
+  - Red-making input (run): the HEAD~1 copies of both suites under the same mutations read
+    **106 passed, 0 failed** and **303 passed, 0 failed**.
+  - Unmutated: claim 108/0, close 305/0 (AC3). No red found in either script, so nothing to report
+    as a separate ticket.
+- Whole suite run file-by-file at `86ba8a6`, clean tree: no file red.
