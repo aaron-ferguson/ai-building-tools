@@ -99,3 +99,34 @@ session reading the rule literally at close time does the wrong thing.
 - Sized `s` deliberately: this is two paragraphs and a pointer. It is Tier 2 rather than Tier 5
   because the failure it prevents destroys a verdict, and the window it fires in is the one where
   the session has no budget left to work anything out.
+
+- **2026-10-27 (develop, token 4229) — built.** Commit `a001b73`. Guard: eight cases appended to
+  `tests/by-hand-lock.test.sh` (built in the same gate for `0091`), scoped to the *A busy or stale
+  lock* section and to `verify` Step 5.
+  **FR2's destination, and why it is not a new mechanism:** every backlog write takes the lock
+  (`CONCURRENCY.md`, *Lock every write to the backlog directory*, no exemptions, item files named),
+  so a verdict cannot be *committed* anywhere in the backlog while the lock is live. It does not
+  need to be: `verify` Step 7 already writes the evidence table into the held item's
+  `## QA evidence` **before** the close, so at a busy lock it exists on disk under the session's
+  token. The procedure says so, keeps retrying to the 5-minute staleness line (after which the
+  existing stale path applies), and — if the session must end first — reports the row as
+  `in-progress` with the close owed and the evidence uncommitted. **Residual risk for verify/the
+  author to weigh:** that uncommitted section is one `git stash` from gone. Committing a held item
+  outside the lock would close it, and would be a lock exemption, which is a decision this session
+  did not take. `verify`'s rejection of a *banked* verdict (0034) is respected: the evidence is a
+  record for the session that owes the close, not a tick a later session may close on.
+  **Citation (FR5):** `CONCURRENCY-INCIDENTS.md` section titles are not resolvable by
+  `tests/citations.test.sh`, which resolves against `CONCURRENCY.md` headings only, so `verify`
+  cites the section by its rule name — `` `CONCURRENCY-INCIDENTS.md`, rule *Lock every write to the
+  backlog directory* `` — plus the phrase "busy lock at close".
+  **Clause table, all RUN** (committed files, restored in the same call, 31/0 after):
+  | AC | clause | mutation | red case |
+  |---|---|---|---|
+  | AC1 | names the close-time case, retries not stops | drop "retry rather than stop" | AC1 |
+  | AC2 | says where the verdict goes | replace "stays in the item you hold" | AC2 |
+  | AC3 | claim-time report and stop present | "Report it to the user and stop." → "Continue." | AC3 report/stop |
+  | AC3 | still says not to break the lock | "**Do not break it.**" → "Break it." | AC3 do-not-break |
+  | FR3 | told apart by what is held, not the script | reword the distinction | FR3 |
+  | AC4 | verify Step 5 points by the rule name | delete the pointer | AC4 |
+  | AC5 | the citation resolves | rename the cited rule in verify | `citations.test.sh` names the unresolved rule |
+  Whole suite green after.
