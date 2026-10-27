@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0172 | Decide how a script refusal and the skill that must satisfy it reach a session together | debt | verify | 2026-10-27 | [items/0172-decide-how-a-script-refusal-and-the-skill.md](items/0172-decide-how-a-script-refusal-and-the-skill.md) |
 | 0175 | Decide what identifies a sprint across a suspension, and which mechanisms key off it | debt | unit | 2026-10-27 | [items/0175-decide-what-identifies-a-sprint-across-a.md](items/0175-decide-what-identifies-a-sprint-across-a.md) |
 | 0183 | Decide what checks that an NFR row's named guard can actually red on that requirement | bug | unit | 2026-10-26 | [items/0183-guard-that-an-nfr-row-names-a-guard-that-can-red.md](items/0183-guard-that-an-nfr-row-names-a-guard-that-can-red.md) |
 | 0190 | Re-argue the sprint skill's size exemption against its current size, or relocate | bug | unit | 2026-10-26 | [items/0190-reargue-or-relocate-the-sprint-size-exemption.md](items/0190-reargue-or-relocate-the-sprint-size-exemption.md) |

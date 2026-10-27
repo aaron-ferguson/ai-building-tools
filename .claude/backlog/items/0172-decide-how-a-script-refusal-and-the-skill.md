@@ -2,8 +2,8 @@
 id: "0172"
 title: Decide how a script refusal and the skill that must satisfy it reach a session together
 type: debt
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: verify
 size: s
@@ -16,10 +16,11 @@ expects:
   - skills/develop/SKILL.md
   - tests/close.test.sh
   - CHANGELOG.md
-claimed_by: "3ad9"
-claimed_at: 2026-10-27T02:39:07Z
+claimed_by:
+claimed_at:
 ac_digest: AC1=ae637e8d AC2=207697c6 AC3=c92a6850 AC4=3e7acf23 AC5=6b52b421 AC6=2f8b9f5e
 touches:
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -58,12 +59,12 @@ design.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/develop/SKILL.md`, when the text between `## Step 4` and `## Step 5` is grepped for `a refusal that arrives before its skill`, then exactly one line matches.
-- [ ] AC2 — Given that rule, when read, then it states all three of FR1's requirements (names what is missing, names the fix, refuses before writing) and FR2's test requirement, and cites `0160` as the case it generalises.
-- [ ] AC3 — Given the suite, when the anchor phrase is deleted from `skills/develop/SKILL.md`, then a test in `tests/` fails naming it; when restored, it passes — both runs recorded in QA evidence.
-- [ ] AC4 — Given `tests/close.test.sh`, when run, then the `0160` AC3 assertion `names the line it wants` passes (the prior art FR2 cites still holds).
-- [ ] AC5 — Given `CHANGELOG.md`, when `## Unreleased` is read, then one note names the develop rule for self-sufficient refusals.
-- [ ] AC6 — Given the whole suite (`for t in tests/*.test.sh; do "$t" || exit 1; done`), when run, then it is green, including `tests/skill-size.test.sh`.
+- [x] AC1 — Given `skills/develop/SKILL.md`, when the text between `## Step 4` and `## Step 5` is grepped for `a refusal that arrives before its skill`, then exactly one line matches.
+- [x] AC2 — Given that rule, when read, then it states all three of FR1's requirements (names what is missing, names the fix, refuses before writing) and FR2's test requirement, and cites `0160` as the case it generalises.
+- [x] AC3 — Given the suite, when the anchor phrase is deleted from `skills/develop/SKILL.md`, then a test in `tests/` fails naming it; when restored, it passes — both runs recorded in QA evidence.
+- [x] AC4 — Given `tests/close.test.sh`, when run, then the `0160` AC3 assertion `names the line it wants` passes (the prior art FR2 cites still holds).
+- [x] AC5 — Given `CHANGELOG.md`, when `## Unreleased` is read, then one note names the develop rule for self-sufficient refusals.
+- [x] AC6 — Given the whole suite (`for t in tests/*.test.sh; do "$t" || exit 1; done`), when run, then it is green, including `tests/skill-size.test.sh`.
 
 ## QA plan
 
