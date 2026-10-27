@@ -23,6 +23,7 @@ the release session, because only a whole-release view can say it.
 - The skill-size guard now fails when a skill already recorded as over the size goal grows more than 5,000 bytes past the size its reason was argued at. The fix is to re-argue the reason at the new size, or relocate content. The sprint skill's reason has been re-argued at its current size. (0190)
 - Verify records an NFR row as unguarded, never ticked, when its named check stays green under a mutation of the requirement; the item template says a filename alone is not a How it would red answer; and a new guard, tests/item-nfr-red.test.sh, fails any open item whose filled NFR row leaves that cell empty or a bare file reference (0183).
 - A sprint that is interrupted and resumed now keeps its run id. Step 1 retakes the supervisor's own marker at any age and logs `supervisor_resumed`. A run whose stale marker is taken over is ended once, as `superseded`. The resume cap gives back the re-paid context floor, read from `harvest-usage.sh --legs`. `sprint-ledger.sh record` replaces the run's block instead of appending a second one (0175).
+- Every skill's park step now says the FINDINGS.md append takes the backlog lock, and a by-hand lock's commit must name its paths literally and confirm `git status` clean before releasing (0091).
 
 ## 0.9.43 — 2026-10-25
 

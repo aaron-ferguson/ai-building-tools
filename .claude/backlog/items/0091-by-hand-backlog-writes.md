@@ -2,8 +2,8 @@
 id: "0091"
 title: Make a by-hand backlog write take the lock and prove its commit landed
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 ac_digest: AC1=5ff73aa9 AC2=ff53688f AC3=b8925e9b AC4=80636787 AC5=f8468659 AC6=692d4ad4
 size: m
@@ -23,9 +23,10 @@ expects:
   - skills/queue/SKILL.md
   - docs/decisions/001-one-command-per-stage-boundary.md
   - tests/citations.test.sh
-claimed_by: "febb"
-claimed_at: 2026-10-27T06:22:56Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -87,26 +88,26 @@ Three separate failures of the same by-hand write, all of them silent.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the six skill files, when FR5's guard runs, then it reports `0 failed`. Red-making
+- [x] AC1 — Given the six skill files, when FR5's guard runs, then it reports `0 failed`. Red-making
   change: deleting the lock sentence from `skills/design/SKILL.md`'s park step — the guard names
   that file and fails.
-- [ ] AC2 — Given `references/CONCURRENCY.md`, when it is searched for the literal phrase
+- [x] AC2 — Given `references/CONCURRENCY.md`, when it is searched for the literal phrase
   `never through a variable`, then it is found on a single line. Red before this item: the phrase is
   absent.
-- [ ] AC3 — Given `references/CONCURRENCY.md`, when it is searched for the phrase describing the
+- [x] AC3 — Given `references/CONCURRENCY.md`, when it is searched for the phrase describing the
   pre-release status check, then the rule states the check happens **before** the release. Red-making
   mutation: moving the word `before` to `after` — the guard asserting the ordering reddens.
-- [ ] AC4 — Given `references/CONCURRENCY-INCIDENTS.md`, when its list of things that bite a
+- [x] AC4 — Given `references/CONCURRENCY-INCIDENTS.md`, when its list of things that bite a
   by-hand lock is read, then it carries an entry for a commit that fails while the release
   succeeds, and neither that list's lead-in nor `references/CONCURRENCY.md` states how many ways a
   by-hand lock leaks or bites (no number word — `three`, `four`, `five` — directly before
   `ways a by-hand lock` or `things bite a by-hand lock`). Red-making mutations: deleting that entry
   — the guard asserting its presence reddens; and today's files, which say `Four things bite` and
   `three ways a by-hand lock` — the count assertion reddens.
-- [ ] AC5 — Given `docs/decisions/001-one-command-per-stage-boundary.md`, when the `FINDINGS.md`
+- [x] AC5 — Given `docs/decisions/001-one-command-per-stage-boundary.md`, when the `FINDINGS.md`
   clause is read, then it does not instruct folding the append into the boundary commit. Red-making
   input: today's file, which does.
-- [ ] AC6 — Given all six skills after FR1, when `tests/citations.test.sh` and the reference and
+- [x] AC6 — Given all six skills after FR1, when `tests/citations.test.sh` and the reference and
   skill size gates run, then each reports `0 failed`. Red if the added sentences push a file past
   its goal without a recorded reason.
 
@@ -234,3 +235,54 @@ Three separate failures of the same by-hand write, all of them silent.
   AC6: `citations` 51/0, `skill-size` 45/0, `reference-size` 15/0; whole suite green.
   **Not done here, still open:** the `design` Step 4 by-hand write site (retro note above) — a write
   site, not an omitted lock, so `0048`'s; and `queue` Step 2's "all unlocked" sentence, untouched.
+
+## QA evidence
+
+**2026-10-27 (verify, token febb) — PASS.** HEAD `d0306cb`; `git status --porcelain` empty at Step 2
+(only this pass's own `.qa-scratch/` afterwards), so no dirty set and no advisory intersection.
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`), at `qa_level: verify`
+plus the QA plan's four named guards run individually.
+`./next --ac-digest 0091 --check` → `0091: ac_digest matches`.
+Copy executed: the repo copy is the subject. The installed 0.9.43 skills differ from `skills/`
+(unreleased), so this session's own `verify` instructions predate FR1.
+
+Suite: 41 files, every tally `0 failed`. Named guards, pasted:
+`tests/by-hand-lock.test.sh: 31 passed, 0 failed` · `tests/citations.test.sh: 51 passed, 0 failed` ·
+`tests/skill-size.test.sh: 45 passed, 0 failed` · `tests/reference-size.test.sh: 15 passed, 0 failed`.
+
+**Clause table and mutations, all run in this pass** (committed files, applied by
+`.qa-scratch/mut.py`, which refuses a substitution that matched nothing, checks the diff is
+non-empty, and restores by the mutated path only; control run green after every one):
+
+| AC | clause | mutation | result |
+|---|---|---|---|
+| AC1 | Given the six skill files (plural) | delete the lock sentence from `skills/design/SKILL.md`, then separately from `skills/queue/SKILL.md` | 29/2 each, both FAILs name the mutated file |
+| AC1 | guard reports `0 failed` | control | 31/0 |
+| AC2 | `never through a variable` is found | replace phrase | 29/2 |
+| AC2 | on a single line | wrap the phrase across two lines | 30/1 "not on one line" |
+| AC3 | check happens **before** the release | `confirmed clean before the release, never after it` → `confirmed clean after the release` | 29/2 (ordering + "never after it") |
+| AC4 | entry for a commit failing while the release succeeds | delete the entry | 30/1 |
+| AC4 | INCIDENTS lead-in states no count | `These bite` → `Five things bite` | 30/1 |
+| AC4 | `CONCURRENCY.md` states no count (first pointer) | `the ways` → `three ways a by-hand lock` | 30/1 |
+| AC4 | `CONCURRENCY.md` second pointer, across a wrap | `the four` / `ways a by-hand lock` on separate lines | 30/1 |
+| AC5 | 001 does not instruct folding the append | reinsert `Fold it into the` / `boundary commit` across a wrap | 30/1 |
+| AC6 | `tests/citations.test.sh` reports `0 failed` over the new citations | misname the cited rule in `skills/prototype/SKILL.md`'s park step | 50/1, names the file and the unresolved rule |
+| AC6 | skill size gate: red past goal without a reason | inflate `skills/design/SKILL.md` by 20 KB | 44/1, names the overage |
+| AC6 | reference size gate: red past goal without a reason | inflating `references/CONCURRENCY.md` by 20 KB stayed 15/0, **by design**: it carries a recorded over-goal reason (0028). Removing that reason instead | 14/1, names the overage |
+
+Literal read: the six park steps carry the sentence and cite rather than restate; `CONCURRENCY.md`
+carries the rule, `CONCURRENCY-INCIDENTS.md` the observed sequence; 001 now says the append is
+committed before the boundary commit.
+
+| NFR | check | result |
+|---|---|---|
+| Documentation: incident as a story, rule in `CONCURRENCY.md` | read against `documentation-conventions.md`: the entry gives the observed sequence (loop-built `$paths`, zsh no word-split, git refusal, `rm -rf` released anyway) and points to the rule, while `CONCURRENCY.md` states the rule in two sentences | holds. **Unguarded as to shape**: the guard pins that the entry is present, not that it stays a story |
+| Always-on (`CONVENTIONS_CORE.md`) | test written with the change; no secrets or company material (public repo); evidence paths repo-relative | holds |
+| Newly reachable | prose only, so no new route, permission or endpoint | none |
+
+Evidence set: `skills/{design,develop,prototype,queue,retro,verify}/SKILL.md`,
+`references/CONCURRENCY.md`, `references/CONCURRENCY-INCIDENTS.md`,
+`docs/decisions/001-one-command-per-stage-boundary.md`, `tests/by-hand-lock.test.sh`,
+`tests/citations.test.sh`, `tests/skill-size.test.sh`, `tests/reference-size.test.sh`. Intersection
+with the Step 2 dirty set (empty): empty.

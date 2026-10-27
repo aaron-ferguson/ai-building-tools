@@ -27,7 +27,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
 | 0126 | Stop retro restating the by-hand lock rule it drifted from | develop | ready |  |
-| 0091 | Make a by-hand backlog write take the lock and prove its commit landed | verify | in-progress |  |
 | 0092 | Prove claim and close hold the lock through their commit | develop | ready |  |
 | 0047 | Give the busy-lock procedure a close-time path | verify | in-progress |  |
 | 0054 | Give develop and verify a rule for a result taken over a shared dirty tree | develop | ready |  |
