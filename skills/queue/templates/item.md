@@ -97,6 +97,9 @@ claimed_at:
 # it on claim by verifying `expects:` against the code, clears it on close or release, and widens
 # it the moment the work reaches further. Unlike `expects:`, being wrong here costs two sessions
 # in one file, which has no merge protocol behind it. It warns, it does not lock.
+# Empty reads two ways by reader: as *held* to a session deciding what to take, and to the
+# release-time scope report an empty touches: means nothing declared, so every path the pass
+# changed is named. `touches: "*"` is the exclusive claim and covers every path (0145).
 touches:
 ---
 

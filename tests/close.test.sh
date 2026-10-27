@@ -1126,6 +1126,95 @@ assert_rc "exits 0" "$rc" 0 "$out"
 refute_contains "no declared-vs-actual line is printed" "$out" 'declared but untouched'
 refute_contains "and none of the agreeing line either" "$out" 'commits since the claim agree'
 
+# --- 0145 — an empty touches: means nothing declared to the report; "*" covers every path -----
+# The report returned early on an empty field, so the stage that does most of the closing — a
+# verify claim, which 0106 FR2 leaves empty — got no report at all, and a QA pass that edited code
+# closed in silence. Fixture ids are 94xx so no case reads as a real backlog row.
+# set_touches <id> <replacement> — the `touches:` key and its list replaced by <replacement>, which
+# awk unescapes, so `touches:\n  - "*"` writes two lines.
+set_touches() {
+  f="$FIX/$BL/items/$1-fixture.md"
+  awk -v repl="$2" '/^touches:/ { print repl; skip = 1; next } skip && /^  - / { next } { skip = 0; print }' "$f" > "$f.tmp"
+  mv "$f.tmp" "$f"
+}
+
+echo "0145 AC1 — an empty touches: names every path the pass changed as undeclared"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 9451 | Empty scope | verify | in-progress | 0000 |'
+mkitem 9451 verify in-progress '"ab12"' '[]'
+set_touches 9451 'touches:'
+commit_fixture
+git -C "$FIX" commit -q --allow-empty -m "Claim 9451 [ab12]"
+mkdir -p "$FIX/src"
+printf 'never declared\n' > "$FIX/src/undeclared.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Fix 9451 [ab12]"
+out="$(run_close 9451 ab12)" && rc=0 || rc=$?
+assert_rc "the close still succeeds" "$rc" 0 "$out"
+assert_contains "names the path as undeclared" "$out" 'scope: touched but undeclared: src/undeclared.ts'
+
+echo "0145 AC2 — an empty touches: over bookkeeping-only commits says so"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 9452 | Bookkeeping only | verify | in-progress | 0000 |'
+mkitem 9452 verify in-progress '"ab12"' '[]'
+set_touches 9452 'touches:'
+commit_fixture
+git -C "$FIX" commit -q --allow-empty -m "Claim 9452 [ab12]"
+printf -- '- a QA note\n' >> "$FIX/$BL/items/9452-fixture.md"
+printf '\n' >> "$FIX/$BL/QUEUE.md"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Record 9452 QA evidence [ab12]"
+out="$(run_close 9452 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "says only bookkeeping changed" "$out" 'scope: nothing declared, and the commits since the claim changed only backlog bookkeeping'
+refute_contains "and names nothing as undeclared" "$out" 'touched but undeclared'
+
+echo "0145 AC3 — touches: \"*\", inline or as a list entry, covers every path"
+for shape in inline list; do
+  scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 9453 | Exclusive | verify | in-progress | 0000 |'
+  mkitem 9453 verify in-progress '"ab12"' '[]'
+  case "$shape" in
+    inline) set_touches 9453 'touches: "*"' ;;
+    list)   set_touches 9453 'touches:\n  - "*"' ;;
+  esac
+  commit_fixture
+  git -C "$FIX" commit -q --allow-empty -m "Claim 9453 [ab12]"
+  mkdir -p "$FIX/src"
+  printf 'a\n' > "$FIX/src/a.ts"
+  git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Rename everything (9453)"
+  out="$(run_close 9453 ab12)" && rc=0 || rc=$?
+  assert_rc "$shape: exits 0" "$rc" 0 "$out"
+  assert_contains "$shape: says the exclusive claim covers every path" "$out" 'scope: exclusive claim — touches: "*" covers every path'
+  refute_contains "$shape: names nothing undeclared" "$out" 'undeclared'
+  refute_contains "$shape: names nothing untouched" "$out" 'untouched'
+  assert_line "$shape: touches: is cleared" 'touches:' items/9453-fixture.md
+done
+
+echo "0145 AC8 — only commits naming the ticket or its token are counted"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 9455 | Shared branch | verify | in-progress | 0000 |'
+mkitem 9455 verify in-progress '"ab12"' '[]'
+set_touches 9455 'touches:'
+commit_fixture
+git -C "$FIX" commit -q --allow-empty -m "Claim 9455 [ab12]"
+mkdir -p "$FIX/src"
+printf 'mine\n' > "$FIX/src/mine.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Fix it (9455)"
+printf 'another session\n' > "$FIX/$BL/items/9876-other.md"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Claim 9876 [abcd]"
+out="$(run_close 9455 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "names this ticket's path as undeclared" "$out" 'touched but undeclared: src/mine.ts'
+refute_contains "does not name another session's item" "$out" '9876-other.md'
+assert_contains "counts the commit it left out" "$out" '1 commits since the claim name neither'
+
+echo "0145 AC5 — the decision is written where the field is read"
+for rel in skills/queue/templates/close skills/queue/templates/handoff skills/queue/templates/item.md; do
+  if grep -qF 'empty touches: means nothing declared' "$ROOT/$rel"; then ok "$rel says an empty touches: means nothing declared"; else
+    bad "$rel says an empty touches: means nothing declared — the phrase is missing or wrapped"; fi
+done
+if awk '/^## The working tree is shared too/ { f = 1; next } f && /^## / { exit } f' "$ROOT/references/CONCURRENCY.md" \
+     | grep -qF 'empty touches: means nothing declared'; then
+  ok "CONCURRENCY.md says so in *The working tree is shared too*"
+else
+  bad "CONCURRENCY.md says so in *The working tree is shared too* — the phrase is missing, wrapped or moved"
+fi
+
 # --- 0106 FR3 — the duplicated block has not drifted ------------------------------------------
 # `close` and `handoff` carry the scope comparison verbatim: a backlog script is a separate file by
 # install contract and sources nothing, so a shared implementation is a copy. A copy is only safe

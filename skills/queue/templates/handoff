@@ -320,6 +320,17 @@ item_status="$(fm_value "$item" status)"
 # written by these scripts on every ticket and are declared by none, so reporting them would put a
 # guaranteed false positive on every close and teach the reader to skip the whole note.
 #
+# **An empty touches: means nothing declared** to this report (0145), so every path the pass changed
+# outside the bookkeeping is named as undeclared. That is a different question from the one
+# `references/CONCURRENCY.md` answers when it reads an empty `touches:` on an in-progress row as
+# *held*: that reading serves a session choosing what to take, where assuming the files are held is
+# the safe default; this one serves the release, where silence would hide a QA pass that edited
+# code. `touches: "*"`, inline or as a list entry, is the exclusive claim and covers every path.
+#
+# Only commits whose subject carries `[<token>]` or names the id as a word are counted (0145 FR6):
+# the range is `claim^..HEAD` on a shared branch, so it also holds other sessions' work. What is left
+# out is counted aloud rather than dropped silently.
+#
 # **This block is duplicated verbatim in `close` and `handoff`** — the two stages that release a
 # claim, and so the two that can compare the field before it is cleared. A backlog script is a
 # separate file by install contract (`tests/backlog-scripts-installed.test.sh`) and sources
@@ -335,13 +346,20 @@ declared_touches() {
   awk '
     NR == 1 && /^---$/ { fm = 1; next }
     fm && /^---$/      { exit }
-    fm && /^touches:/  { intou = 1; next }
+    fm && /^touches:/  {
+      v = $0
+      sub(/^touches:[ \t]*/, "", v)
+      sub(/[ \t]+#.*$/, "", v)
+      if (v == "\"*\"" || v == "\047*\047" || v == "*") print "*"
+      intou = 1; next
+    }
     intou && /^[ \t]*$/ { next }
     intou && /^[ \t]*#/ { next }
     intou && /^[ \t]*- / {
       sub(/^[ \t]*- */, "")
       sub(/[ \t]+#.*$/, "")
       sub(/[ \t]+$/, "")
+      if ($0 == "\"*\"" || $0 == "\047*\047") $0 = "*"
       if ($0 != "") print
       next
     }
@@ -349,12 +367,18 @@ declared_touches() {
   ' "$1"
 }
 
+# names_this_ticket <subject> — whether a commit subject carries this pass's token or the id as a
+# word: `(0145)`, `0145's` and `Claim 0145 [ab12]` count, `10145` does not.
+names_this_ticket() {
+  case "$1" in *"[$TOKEN]"*) return 0 ;; esac
+  printf '%s\n' "$1" | grep -Eq "(^|[^0-9A-Za-z])$ID([^0-9A-Za-z]|\$)"
+}
+
 scope_note() {
   git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || return 0
   git -C "$DIR" rev-parse -q --verify HEAD >/dev/null 2>&1 || return 0
 
   declared="$(declared_touches "$item")"
-  [ -n "$declared" ] || return 0
 
   # Oldest first: a token can appear on several commits, and the claim is the first of them.
   #
@@ -375,7 +399,27 @@ scope_note() {
   else
     range="HEAD"
   fi
-  actual="$(git -C "$DIR" log --root --format= --name-only "$range" | grep . | sort -u || true)"
+
+  if printf '%s\n' "$declared" | grep -qx '\*'; then
+    SCOPE_NOTE='scope: exclusive claim — touches: "*" covers every path'
+    return 0
+  fi
+
+  counted=""
+  skipped=0
+  subjects="$(git -C "$DIR" log --format='%H %s' "$range")"
+  while read -r sha subject; do
+    [ -n "$sha" ] || continue
+    if names_this_ticket "$subject"; then counted="$counted $sha"; else skipped=$((skipped + 1)); fi
+  done <<SUBJECTS
+$subjects
+SUBJECTS
+  actual=""
+  for sha in $counted; do
+    actual="$actual
+$(git -C "$DIR" log --root -1 --format= --name-only "$sha")"
+  done
+  actual="$(printf '%s\n' "$actual" | grep . | sort -u || true)"
 
   prefix="$(git -C "$DIR" rev-parse --show-prefix)"
   bookkeeping="${prefix}QUEUE.md ${prefix}DONE.md ${prefix}FINDINGS.md ${prefix}items/$(basename "$item")"
@@ -406,15 +450,19 @@ scope_note() {
     [ "$hit" -eq 1 ] || untouched="$untouched $d"
   done
 
-  if [ -z "$undeclared" ] && [ -z "$untouched" ]; then
+  if [ -z "$declared" ] && [ -z "$undeclared" ]; then
+    SCOPE_NOTE="scope: nothing declared, and the commits since the claim changed only backlog bookkeeping"
+  elif [ -z "$undeclared" ] && [ -z "$untouched" ]; then
     SCOPE_NOTE="scope: touches: and the commits since the claim agree"
-    return 0
-  fi
-  [ -z "$untouched" ]  || SCOPE_NOTE="scope: declared but untouched:$untouched"
-  [ -z "$undeclared" ] || SCOPE_NOTE="${SCOPE_NOTE:+$SCOPE_NOTE
+  else
+    [ -z "$untouched" ]  || SCOPE_NOTE="scope: declared but untouched:$untouched"
+    [ -z "$undeclared" ] || SCOPE_NOTE="${SCOPE_NOTE:+$SCOPE_NOTE
 }scope: touched but undeclared:$undeclared"
-  SCOPE_NOTE="$SCOPE_NOTE
+    SCOPE_NOTE="$SCOPE_NOTE
 scope: a note, not a gate — widen or narrow the field on the next ticket, never this one"
+  fi
+  [ "$skipped" -eq 0 ] || SCOPE_NOTE="$SCOPE_NOTE
+scope: $skipped commits since the claim name neither $ID nor [$TOKEN] and were not counted"
   return 0
 }
 scope_note

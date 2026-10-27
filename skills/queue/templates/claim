@@ -429,7 +429,9 @@ if [ -n "$existing_touches" ]; then
   echo "widen it in $item the moment your work reaches further"
 elif [ "$SEED" -eq 0 ]; then
   echo "touches: is not seeded from expects:, because '$stage' does not build — a build scope here"
-  echo "would reserve files this stage never opens. Set it in $item to what $stage will write"
+  echo "would reserve files this stage never opens. $stage writes only its item and row, which this"
+  echo "claim already holds, so touches: stays empty — the release will report any other path the"
+  echo "pass's commits change (0145)"
 elif [ "${N_EXPECTS:-0}" -gt 0 ]; then
   echo "touches: is set provisionally from expects: ($N_EXPECTS paths) — NARROW it in $item to"
   echo "what you will actually open, and widen it the moment the work reaches further"

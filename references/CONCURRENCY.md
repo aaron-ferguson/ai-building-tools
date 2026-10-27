@@ -87,7 +87,9 @@ in one component, unwarned.
   suboptimal pick this pair of fields exists to avoid.
 - **Widen `touches:` as the work reaches further**, and read an **empty `touches:` on an `in-progress`
   row as *its files are held*** — silence is not permission. That is a statement about file scope; who
-  holds the *row* is the item's token alone (*A stage writes only the ticket it holds*).
+  holds the *row* is the item's token alone (*A stage writes only the ticket it holds*). That reading answers
+  a session choosing what to take; the release-time scope report answers what this pass changed,
+  and to it an empty touches: means nothing declared (0145).
 - **`verify` derives *advisory*** from the dirty paths that intersect the evidence its verdict rested
   on — dirty **under test**, not dirty anywhere. Empty intersection: a plain PASS that closes.
 - **At `qa_level: e2e` that intersection can never be empty**, because the runner builds and serves

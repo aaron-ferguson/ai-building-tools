@@ -563,6 +563,73 @@ assert_rc "exits 0" "$rc" 0 "$out"
 assert_not_contains "no declared-vs-actual line" "$out" 'declared but untouched'
 assert_not_contains "and no agreeing line either" "$out" 'commits since the claim agree'
 
+# --- 0145 — the hand-off reads an empty touches: and "*" the way close does ------------------
+# The same block, so the same four cases; asserted here too because the byte-for-byte comparison in
+# tests/close.test.sh proves only that the two copies match. Fixture ids are 94xx.
+set_touches() {
+  f="$FIX/.backlog/items/$1-fixture.md"
+  awk -v repl="$2" '/^touches:/ { print repl; skip = 1; next } skip && /^  - / { next } { skip = 0; print }' "$f" > "$f.tmp"
+  mv "$f.tmp" "$f"
+  git -C "$FIX" add -A && git -C "$FIX" commit -q -m "fixture touches"
+}
+
+echo "0145 AC1 — an empty touches: names every path the pass changed as undeclared"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 9461 | Empty scope | develop | in-progress | 0000 |' 9461 develop in-progress tok0
+set_touches 9461 'touches:'
+git -C "$FIX" commit -q --allow-empty -m "Claim 9461 [tok0]"
+mkdir -p "$FIX/src"
+printf 'never declared\n' > "$FIX/src/undeclared.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Fix 9461 [tok0]"
+out="$(run_handoff 9461 tok0 verify)" && rc=0 || rc=$?
+assert_rc "the hand-off still succeeds" "$rc" 0 "$out"
+assert_contains "names the path as undeclared" "$out" 'scope: touched but undeclared: src/undeclared.ts'
+
+echo "0145 AC2 — an empty touches: over bookkeeping-only commits says so"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 9462 | Bookkeeping only | develop | in-progress | 0000 |' 9462 develop in-progress tok0
+set_touches 9462 'touches:'
+git -C "$FIX" commit -q --allow-empty -m "Claim 9462 [tok0]"
+printf -- '- a note\n' >> "$FIX/.backlog/items/9462-fixture.md"
+printf '\n' >> "$FIX/.backlog/QUEUE.md"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Note 9462 [tok0]"
+out="$(run_handoff 9462 tok0 verify)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "says only bookkeeping changed" "$out" 'scope: nothing declared, and the commits since the claim changed only backlog bookkeeping'
+assert_not_contains "and names nothing as undeclared" "$out" 'touched but undeclared'
+
+echo "0145 AC3 — touches: \"*\", inline or as a list entry, covers every path"
+for shape in inline list; do
+  scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 9463 | Exclusive | develop | in-progress | 0000 |' 9463 develop in-progress tok0
+  case "$shape" in
+    inline) set_touches 9463 'touches: "*"' ;;
+    list)   set_touches 9463 'touches:\n  - "*"' ;;
+  esac
+  git -C "$FIX" commit -q --allow-empty -m "Claim 9463 [tok0]"
+  mkdir -p "$FIX/src"
+  printf 'a\n' > "$FIX/src/a.ts"
+  git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Rename everything (9463)"
+  out="$(run_handoff 9463 tok0 verify)" && rc=0 || rc=$?
+  assert_rc "$shape: exits 0" "$rc" 0 "$out"
+  assert_contains "$shape: says the exclusive claim covers every path" "$out" 'scope: exclusive claim — touches: "*" covers every path'
+  assert_not_contains "$shape: names nothing undeclared" "$out" 'undeclared'
+  assert_not_contains "$shape: names nothing untouched" "$out" 'untouched'
+  assert_item_line "$shape: touches: is cleared" 'touches:'
+done
+
+echo "0145 AC8 — only commits naming the ticket or its token are counted"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 9465 | Shared branch | develop | in-progress | 0000 |' 9465 develop in-progress tok0
+set_touches 9465 'touches:'
+git -C "$FIX" commit -q --allow-empty -m "Claim 9465 [tok0]"
+mkdir -p "$FIX/src"
+printf 'mine\n' > "$FIX/src/mine.ts"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Fix it (9465)"
+printf 'another session\n' > "$FIX/.backlog/items/9876-other.md"
+git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Claim 9876 [abcd]"
+out="$(run_handoff 9465 tok0 verify)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "names this ticket's path as undeclared" "$out" 'touched but undeclared: src/mine.ts'
+assert_not_contains "does not name another session's item" "$out" '9876-other.md'
+assert_contains "counts the commit it left out" "$out" '1 commits since the claim name neither'
+
 # --- 0090 AC4 — handoff refuses a foreign uncommitted row rather than carrying it ---------------
 # `handoff` detected that its commit would carry another session's uncommitted rows, printed a
 # WARNING, and committed anyway. A pathspec limits a commit to paths and never to authorship

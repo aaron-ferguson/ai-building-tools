@@ -357,6 +357,21 @@ assert_contains "the report names the stage it declined to seed for" "$out" 'ver
 assert_contains "the report says why, not just that" "$out" 'does not build'
 assert_not_contains "does not claim a provisional scope was written" "$out" 'set provisionally from expects:'
 
+# --- 0145 AC6 — a stage that does not build is told touches: stays empty ------------------------
+# The message used to say "Set it to what <stage> will write", while the design skill never asks a
+# session to set the field and the empty-is-held ownership rule would then hold every file. A
+# non-building claim already owns the only paths it writes, its item and its row.
+for stage in verify design; do
+  echo "0145 AC6 — a row at next: $stage is told touches: stays empty"
+  scaffold "$FIVE_HEAD" "$FIVE_SEP" "| 0013 | Not a build | $stage | ready | 0000 |" 0013 'expects:
+  - src/alpha.ts'
+  out="$(run_claim 0013)" && rc=0 || rc=$?
+  assert_rc "exits 0" "$rc" 0 "$out"
+  assert_contains "says touches: stays empty" "$out" 'touches: stays empty'
+  assert_contains "says the release reports any other path" "$out" 'the release will report'
+  assert_not_contains "no longer asks for what $stage will write" "$out" "to what $stage will write"
+done
+
 echo "0106 AC3 — develop is still seeded, so the stage test is a test and not a switch-off"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0012 | To build | develop | ready | 0000 |' 0012 'expects:
   - src/alpha.ts'
