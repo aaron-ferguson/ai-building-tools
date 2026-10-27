@@ -485,3 +485,21 @@ DESIGN 0139 session 837b66a2 concurrent: predicted USD 2.32 (MEASUREMENT.md per-
 DESIGN 0146 session 0f9a5a51 sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-10-27T18:39:35Z) observed USD 0.81 (harvest-usage.sh over 1 session id(s) @ 2026-10-27T18:39:35Z)
 FINDINGS parked 0 (run-20261025T215324Z.jsonl outcome events @ 2026-10-27T18:39:35Z)
 RETRO consumed 0 produced 0 (run-20261025T215324Z.jsonl outcome events @ 2026-10-27T18:39:35Z)
+
+## sprint run-20261027T185815Z -- ended 2026-10-27T19:04:53Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 5 | 0 | confirmed scope @ 2026-10-27T19:04:59Z |
+| wall_clock_min | 1128 | not measured | LEDGER.md 10 recorded sprint(s) over 59 ticket(s), 1 excluded (no ticket count), 6 predate the tail split, actual from run-20261027T185815Z.jsonl event timestamps |
+| tokens | 32148862 | 0 | LEDGER.md 10 recorded sprint(s) over 59 ticket(s), 1 excluded (no ticket count), 6 predate the tail split |
+| usd | 25.11 | 0.00 | LEDGER.md 10 recorded sprint(s) over 59 ticket(s), 1 excluded (no ticket count), 6 predate the tail split |
+| tail_tokens | no prior | 0 | harvest-usage.sh over 0 session id(s) @ 2026-10-27T19:04:59Z |
+| tail_usd | no prior | 0.00 | harvest-usage.sh over 0 session id(s) @ 2026-10-27T19:04:59Z |
+
+| Window | Stage | Elapsed min | Context tokens | USD |
+|---|---|---|---|---|
+WINDOWS elapsed is first to last turn per transcript and excludes start-up (harvest-usage.sh --by-session over 0 session id(s) @ 2026-10-27T19:04:59Z)
+CLOSED none (run-20261027T185815Z.jsonl outcome events @ 2026-10-27T19:04:59Z)
+
+FINDINGS parked 0 (run-20261027T185815Z.jsonl outcome events @ 2026-10-27T19:04:59Z)
