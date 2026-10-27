@@ -2,10 +2,10 @@
 id: "0126"
 title: Stop retro restating the by-hand lock rule it drifted from
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
-close_by: develop
+close_by: verify
 qa_manual:
 size: s
 created: 2026-09-09
@@ -16,9 +16,10 @@ relates: ["0048", "0091"]
 expects:
   - skills/retro/SKILL.md
   - tests/retro-lock-citation.test.sh
-claimed_by: "fa1b"
-claimed_at: 2026-10-27T18:18:11Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -64,21 +65,21 @@ reads as correct on its own.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/retro/SKILL.md` Step 4's lock paragraph, when `tests/retro-lock-citation.test.sh`
+- [x] AC1 — Given `skills/retro/SKILL.md` Step 4's lock paragraph, when `tests/retro-lock-citation.test.sh`
   searches that window for the literal `one shell invocation`, then it is not found. Red-making
   input: today's file, which carries the phrase at line 225.
-- [ ] AC2 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it names
+- [x] AC2 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it names
   `CONCURRENCY.md` and the section title `Lock every write to the backlog directory`. Red-making
   mutation: deleting the section title from the citation, leaving the bare filename.
-- [ ] AC3 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it
+- [x] AC3 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it
   contains neither of the reference's two permitted forms — no `in one call` and no `drop the trap`.
   Red-making mutation: pasting `or drop the trap and rm -rf explicitly at the end` into the
   paragraph, which is the plausible cheap fix this item rejects.
-- [ ] AC4 — Given a fixture carrying every asserted phrase **outside** Step 4's window, when
+- [x] AC4 — Given a fixture carrying every asserted phrase **outside** Step 4's window, when
   `tests/retro-lock-citation.test.sh` runs against it, then it fails — proving the scoping in FR3 is
   real and not a file-wide grep wearing a window's name. Red-making input: widening the guard's
   window to the whole file, which turns that fixture green.
-- [ ] AC5 — Given the edited skill, when `tests/citations.test.sh` and `tests/skill-size.test.sh`
+- [x] AC5 — Given the edited skill, when `tests/citations.test.sh` and `tests/skill-size.test.sh`
   run, then each reports `0 failed`. Red-making change: citing a section title that does not exist
   in `CONCURRENCY.md`.
 
@@ -98,6 +99,50 @@ reads as correct on its own.
 - `CONCURRENCY.md` itself, which already states both forms correctly.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+Independent verify, token fa1b, 2026-10-27, after `./reopen` (the 02150de close was self-certified by
+develop session 3b05). Subject: working tree at `8c8d609` (built in `c625f6b`), clean at Step 2 and at
+verdict — dirty set empty, so the intersection with the evidence set is empty: **not advisory**.
+
+Conventions: ../ai-building-conventions
+
+Level: `qa_level: verify` (frontmatter; the QA plan agrees). Commands run, verbatim, individually as
+the QA plan requires: `tests/retro-lock-citation.test.sh`, `tests/citations.test.sh`,
+`tests/skill-size.test.sh`. No lint/typecheck is configured for this repo.
+`./next --ac-digest 0126 --check`: `ac_digest absent — unverifiable`.
+Copy executed: the repo copy is the subject (a skill change is not live until released); the guards
+read `skills/retro/SKILL.md` in this checkout.
+
+Tallies, pasted: `13 passed, 0 failed` · `51 passed, 0 failed` · `45 passed, 0 failed`.
+
+Clause table and mutations — every one run by this session on the committed real file (not the
+guard's own fixtures), restored by path, control green after:
+
+| AC | Clause | Mutation (applied to the real file) | Result |
+|---|---|---|---|
+| AC1 | Step 4 window lacks `one shell invocation` | appended `Read, write, commit and release in **one shell invocation**.` to the paragraph | red: `FAIL AC1 — no 'one shell invocation'` (12/1) |
+| AC2 | window names `CONCURRENCY.md` | moved the whole lock paragraph from Step 4 to Step 3 | red: `FAIL AC2 — names CONCURRENCY.md` (+4 more, 8/5) |
+| AC2 | window names `Lock every write to the backlog directory` | deleted the title, bare filename left | red: `FAIL AC2 — names the section title` (12/1) |
+| AC3 | no `drop the trap` | pasted ``Or drop the trap and `rm -rf` explicitly at the end.`` | red: `FAIL AC3 — no 'drop the trap'` (12/1) |
+| AC3 | no `in one call` | pasted `Run the whole sequence in one call.` | red: `FAIL AC3 — no 'in one call'` (12/1) |
+| AC4 | a fixture with every phrase outside Step 4 fails | widened the guard's `window()` to `cat` the whole file | red: `FAIL AC4 — … the fixture satisfied every case` (and FR3; 11/2) |
+| AC5 | `citations` and `skill-size` 0 failed | cited `*Lock every by-hand write*` in the skill | citations red: `cites "Lock every by-hand write", which is not a rule in CONCURRENCY.md` (50/1) |
+| FR2 | the three retro-only phrases are in Step 4 | the paragraph moved to Step 3 (above) | red on all three FR2 cases |
+
+Control after restore: `13 passed, 0 failed` · `51 passed, 0 failed` · `45 passed, 0 failed`;
+`git status --porcelain` empty.
+
+NFR — Documentation: holds and is guarded. The by-hand forms live only in
+`references/CONCURRENCY.md` (line 263); Step 4 cites that section and AC3's guard reds on either form
+reappearing; `references/CONCURRENCY-INCIDENTS.md` exists and is cited. The one other
+`one shell invocation` in `references/CONCURRENCY.md:122` is a different rule, out of scope.
+Always-on pass (`CONVENTIONS_CORE.md`): prose and test change only; no secrets, no company material,
+no new reachable state; the guard copies the abort-announce block and the declared `saw-on-pass` copy.
+
+Evidence set: `skills/retro/SKILL.md`, `tests/retro-lock-citation.test.sh`, `tests/citations.test.sh`,
+`tests/skill-size.test.sh`, `references/CONCURRENCY.md`, `references/CONCURRENCY-INCIDENTS.md`, `README.md`.
+
+**PASS.**
 
 ## Notes & decisions
 
@@ -136,3 +181,4 @@ reads as correct on its own.
 - The notes append was refused as a sensitive-file edit via heredoc; written to /tmp and appended
   with python per the dispatch prompt's fallback.
 - 2026-10-27 — **Reopened to verify** by `./reopen`: closed by its own develop session (02150de) without an independent verify; re-verifying
+- 2026-10-27 (verify, token fa1b) — `close_by` set from `develop` to `verify`: a person ruled that this ticket closes on an independent verify, `./reopen` left the field at `develop`, and `./close` refused this session on it. Verified PASS independently; see *QA evidence*.

@@ -26,6 +26,7 @@ the release session, because only a whole-release view can say it.
 - Every skill's park step now says the FINDINGS.md append takes the backlog lock, and a by-hand lock's commit must name its paths literally and confirm `git status` clean before releasing (0091).
 - At a busy lock during a close, verify now keeps retrying instead of stopping, holding its evidence in the item's QA evidence section until the lock clears or goes stale (0047).
 - When a whole-suite result comes back, `develop` now reads `git status --porcelain` before trusting it. It names three causes of a red that are not the session's own: another session's uncommitted work, another session's deliberate red, and a measurement that moved mid-run. The fix it names is a run in a throwaway worktree at the session's own last commit. A red the tree is supposed to have is handed on with evidence, and a ticket that measures the machine records the snapshot it pinned. Before handing off, `develop` confirms none of its own paths are still uncommitted, and `verify` Step 2 points back at that rule. `CONCURRENCY.md` now says plainly that a `touches:` collision warns neither session (0054).
+- A retro session now takes the by-hand backlog lock in whichever form `references/CONCURRENCY.md` permits, including holding it across several reviewable calls, instead of being told the whole write must be one shell invocation (0126).
 
 ## 0.9.43 — 2026-10-25
 
