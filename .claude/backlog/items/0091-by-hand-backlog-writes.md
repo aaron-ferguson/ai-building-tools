@@ -175,3 +175,28 @@ Three separate failures of the same by-hand write, all of them silent.
   Neither `touches:` nor the claim appears anywhere in `design`'s SKILL.md. This is a *write site*
   and not only an omitted lock, so it may belong to `0048` rather than here; recorded on this ticket
   because the session that claims it is the first to be in a position to say which.
+
+- **2026-10-27 (develop, token 5dc5) — STOPPED before building: AC4's count is stale.** No code
+  written. `references/CONCURRENCY-INCIDENTS.md`, *A busy or stale lock*, already reads **"Four
+  things bite a by-hand lock"** with four bullets — the fourth, *The snippet is `sh`, and an agent's
+  Bash tool runs zsh* (the unmatched-glob strand, 2026-09-21), landed after this item was captured.
+  Adding FR3's word-split incident makes **five**, so AC4 ("names four, the fourth being a commit
+  that fails while the release succeeds"; mutation "returns the count to three") cannot be met
+  without deleting a real entry. **Proposed AC4:** "Given `references/CONCURRENCY-INCIDENTS.md`,
+  when its list of things that bite a by-hand lock is read, then it names five, one of them a
+  commit that fails while the release succeeds. Red-making mutation: deleting that entry, which
+  returns the count to four." Better still, count-free: "…then it carries an entry for a commit
+  that fails while the release succeeds; red-making mutation: deleting that entry."
+  **Same staleness in prose this ticket would touch:** `references/CONCURRENCY.md` says "three ways
+  a by-hand lock leaks" twice (lines 261 and 268) against the four already listed; FR2's edit should
+  make both count-free rather than move the number again.
+  **Re-checked and still current at HEAD 7551285:** the six park steps (`develop` Step 7, `verify`
+  Step 6, `design` Step 5, `prototype` Step 8, `queue` Step 7, `retro` Step 6) carry an identical
+  paragraph and none names the lock (FR1); `never through a variable` appears nowhere in
+  `references/` (FR2); `docs/decisions/001` lines 79–80 still say "Fold it into the boundary
+  commit" (FR4). The paths are now `.backlog/` (0182). **Not a blocker, for queue to weigh:**
+  `0126` (one row above) is still open and rewrites `retro`'s restated lock rule; FR1 asks for a
+  citation rather than a restatement, so it does not collide, but the queue note above asked that
+  it be read first. And the 2026-09-09 `queue` Step 2 vs `CONCURRENCY.md` disagreement (item,
+  ranking, row "all unlocked") is still in `queue/SKILL.md:204-205`; it concerns those writes, not
+  `FINDINGS.md`, which `CONCURRENCY.md` names explicitly, so FR1 is specifiable without settling it.
