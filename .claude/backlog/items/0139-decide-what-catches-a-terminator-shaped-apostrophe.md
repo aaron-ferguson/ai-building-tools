@@ -2,8 +2,8 @@
 id: "0139"
 title: Decide what catches an apostrophe that lands where a legitimate awk terminator goes
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 ac_digest: AC1=6d585035 AC2=03a5c1bf AC3=2949833a AC4=1badbf48 AC5=5e27d9fe AC6=5cd77fe3
@@ -17,9 +17,10 @@ relates: ["0077", "0089"]
 expects:
   - tests/backlog-scripts-installed.test.sh   # the AC8 scanner
   - references/CONCURRENCY.md                 # The five scripts
-claimed_by: "9a6f"
-claimed_at: 2026-10-27T05:50:07Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-27
 ---
 ## Problem
 
@@ -85,12 +86,12 @@ lookahead. See *Notes & decisions* for the measurement and what was rejected.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/queue/templates/close` with a bare `'` inserted at column 0 of the first body line of the `ac_counts` program (line 479 on 2026-10-25, `  /^## / { in_ac = ...`), in both copies, when `tests/backlog-scripts-installed.test.sh` runs, then it fails naming `close`, the line the program opened on and the line the quote closed it on; restored by the path mutated, it passes.
-- [ ] AC2 — Given the same insertion after the line's leading whitespace instead of at column 0, when the suite runs, then it fails the same way.
-- [ ] AC3 — Given every line strictly inside every multi-line single-quoted region of all five templates, with a `'` inserted at column 0 and, separately, after leading whitespace, when each mutant is checked by `sh -n` plus the AC8 scanner, then none passes both — the sweep is recorded in the QA evidence with its total and its count of misses, which is zero.
-- [ ] AC4 — Given the five unmutated templates and their installed copies, when the suite runs, then FR1 and FR2 report nothing and the file is green.
-- [ ] AC5 — Given a program body line in one copy changed to begin with `"` (after whitespace), when the suite runs, then it fails naming that line as a body line that may not begin with `"` or `)`; restored, it passes.
-- [ ] AC6 — Given `references/CONCURRENCY.md`, *The five scripts*, when it is read, then it states that the closing line of a multi-line program carries only `)` or double-quoted arguments after the quote, and names the blank-line apostrophe as the shape the scan does not catch; and a guard in `tests/backlog-scripts-installed.test.sh` reds when either statement is removed.
+- [x] AC1 — Given `skills/queue/templates/close` with a bare `'` inserted at column 0 of the first body line of the `ac_counts` program (line 479 on 2026-10-25, `  /^## / { in_ac = ...`), in both copies, when `tests/backlog-scripts-installed.test.sh` runs, then it fails naming `close`, the line the program opened on and the line the quote closed it on; restored by the path mutated, it passes.
+- [x] AC2 — Given the same insertion after the line's leading whitespace instead of at column 0, when the suite runs, then it fails the same way.
+- [x] AC3 — Given every line strictly inside every multi-line single-quoted region of all five templates, with a `'` inserted at column 0 and, separately, after leading whitespace, when each mutant is checked by `sh -n` plus the AC8 scanner, then none passes both — the sweep is recorded in the QA evidence with its total and its count of misses, which is zero.
+- [x] AC4 — Given the five unmutated templates and their installed copies, when the suite runs, then FR1 and FR2 report nothing and the file is green.
+- [x] AC5 — Given a program body line in one copy changed to begin with `"` (after whitespace), when the suite runs, then it fails naming that line as a body line that may not begin with `"` or `)`; restored, it passes.
+- [x] AC6 — Given `references/CONCURRENCY.md`, *The five scripts*, when it is read, then it states that the closing line of a multi-line program carries only `)` or double-quoted arguments after the quote, and names the blank-line apostrophe as the shape the scan does not catch; and a guard in `tests/backlog-scripts-installed.test.sh` reds when either statement is removed.
 
 ## QA plan
 

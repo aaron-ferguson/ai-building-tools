@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | bug | unit | 2026-10-27 | [items/0139-decide-what-catches-a-terminator-shaped-apostrophe.md](items/0139-decide-what-catches-a-terminator-shaped-apostrophe.md) |
 | 0146 | Decide when a required duplication earns a drift guard | debt | verify | 2026-10-27 | [items/0146-when-a-copy-earns-a-drift-guard.md](items/0146-when-a-copy-earns-a-drift-guard.md) |
 | 0145 | Decide what an empty touches means to the scope report | debt | verify | 2026-10-27 | [items/0145-decide-what-an-empty-touches-means-to-the-scope-report.md](items/0145-decide-what-an-empty-touches-means-to-the-scope-report.md) |
 | 0182 | Name the write mechanism that works for each backlog file, the lock included, where every stage reads it | bug | verify | 2026-10-27 | [items/0182-name-the-permitted-write-mechanism-per-backlog-file.md](items/0182-name-the-permitted-write-mechanism-per-backlog-file.md) |
