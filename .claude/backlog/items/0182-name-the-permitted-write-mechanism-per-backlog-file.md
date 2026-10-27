@@ -2,8 +2,8 @@
 id: "0182"
 title: Name the write mechanism that works for each backlog file, the lock included, where every stage reads it
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: verify
 ac_digest: AC1=61582456 AC2=17c866ac AC3=1b77b10e AC4=027c306a AC5=b97f8cf9 AC6=6249bb7e AC7=6df4dbb3 AC8=9fbc9516 AC9=b54a046f AC10=d0d0b2b8
@@ -33,9 +33,10 @@ expects:
   - references/TRACKER.md
   - tests/backlog-location.test.sh
   - CHANGELOG.md
-claimed_by: "bd5c"
-claimed_at: 2026-10-27T02:45:24Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -281,16 +282,16 @@ independent session was refused the same way and **splitting the call cleared it
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture repo with only `.backlog/`, when `claim`, `handoff`, `close`, `next` and `reopen` are run from it, then each behaves as it does today and none prints the legacy line.
-- [ ] AC2 — Given a fixture repo with only `.claude/backlog/`, when any of those scripts is run, then it works and prints exactly one stderr line naming `./migrate` and `2026-12-31`.
-- [ ] AC3 — Given a fixture repo holding both `.backlog/` and `.claude/backlog/`, when `./next` is run from either, then it exits non-zero naming both paths and writes nothing.
-- [ ] AC4 — Given a legacy fixture with no lock, no `.active/` and no foreign claim, when `./migrate` runs, then `.backlog/` holds the tree, `.claude/backlog/` is gone, the root `.gitignore` names `.backlog/` paths, `git log -1 --name-status` shows one commit containing only those renames and the `.gitignore` change, and a second run exits 0 saying the repo is already migrated.
-- [ ] AC5 — Given a legacy fixture with, in turn, a held lock, a row claimed by another token, an `.active/` marker, and a pre-existing `.backlog/`, when `./migrate` runs, then it exits non-zero naming that cause and `git status --porcelain` is empty.
-- [ ] AC6 — Given `references/CONCURRENCY.md`, when its *When a backlog write is refused* section is read, then it carries split-first, the legacy `python3` route, the lock-release rule that never ends on refused, and the quote-the-exact-commands rule, each guarded by a phrase on one line in `tests/backlog-location.test.sh`.
-- [ ] AC7 — Given `skills/**` and `references/**` after the change, when grepped for `.claude/backlog`, then the only hits are in *Where the backlog lives*, the FR4 legacy clause, `skills/queue/templates/migrate`, one location block that is byte-identical in each of `claim`, `close`, `handoff`, `next` and `reopen`, and `next`'s tools-repo buffer lookup (FR2). A test asserts that allowlist, asserts the five blocks are identical and carry the same date as *Where the backlog lives*, and goes red on a new hit anywhere else, on one block differing, or on the dates disagreeing.
-- [ ] AC8 — Given `skills/sprint/SKILL.md` Step 3, when read, then it cites *When a backlog write is refused* and no longer says to `cp` a backlog file into place.
-- [ ] AC9 — Given `CHANGELOG.md` `## Unreleased`, when read, then it names the move to `.backlog/`, `./migrate`, the 2026-12-31 legacy end and the install-before-migrate order.
-- [ ] AC10 — Given the existing `tests/*.test.sh`, when the suite is run after fixtures are moved to `.backlog/`, then every file tallies green, and at least one existing script test still runs against a legacy fixture.
+- [x] AC1 — Given a fixture repo with only `.backlog/`, when `claim`, `handoff`, `close`, `next` and `reopen` are run from it, then each behaves as it does today and none prints the legacy line.
+- [x] AC2 — Given a fixture repo with only `.claude/backlog/`, when any of those scripts is run, then it works and prints exactly one stderr line naming `./migrate` and `2026-12-31`.
+- [x] AC3 — Given a fixture repo holding both `.backlog/` and `.claude/backlog/`, when `./next` is run from either, then it exits non-zero naming both paths and writes nothing.
+- [x] AC4 — Given a legacy fixture with no lock, no `.active/` and no foreign claim, when `./migrate` runs, then `.backlog/` holds the tree, `.claude/backlog/` is gone, the root `.gitignore` names `.backlog/` paths, `git log -1 --name-status` shows one commit containing only those renames and the `.gitignore` change, and a second run exits 0 saying the repo is already migrated.
+- [x] AC5 — Given a legacy fixture with, in turn, a held lock, a row claimed by another token, an `.active/` marker, and a pre-existing `.backlog/`, when `./migrate` runs, then it exits non-zero naming that cause and `git status --porcelain` is empty.
+- [x] AC6 — Given `references/CONCURRENCY.md`, when its *When a backlog write is refused* section is read, then it carries split-first, the legacy `python3` route, the lock-release rule that never ends on refused, and the quote-the-exact-commands rule, each guarded by a phrase on one line in `tests/backlog-location.test.sh`.
+- [x] AC7 — Given `skills/**` and `references/**` after the change, when grepped for `.claude/backlog`, then the only hits are in *Where the backlog lives*, the FR4 legacy clause, `skills/queue/templates/migrate`, one location block that is byte-identical in each of `claim`, `close`, `handoff`, `next` and `reopen`, and `next`'s tools-repo buffer lookup (FR2). A test asserts that allowlist, asserts the five blocks are identical and carry the same date as *Where the backlog lives*, and goes red on a new hit anywhere else, on one block differing, or on the dates disagreeing.
+- [x] AC8 — Given `skills/sprint/SKILL.md` Step 3, when read, then it cites *When a backlog write is refused* and no longer says to `cp` a backlog file into place.
+- [x] AC9 — Given `CHANGELOG.md` `## Unreleased`, when read, then it names the move to `.backlog/`, `./migrate`, the 2026-12-31 legacy end and the install-before-migrate order.
+- [x] AC10 — Given the existing `tests/*.test.sh`, when the suite is run after fixtures are moved to `.backlog/`, then every file tallies green, and at least one existing script test still runs against a legacy fixture.
 
 ## QA evidence
 
