@@ -2,8 +2,8 @@
 id: "0126"
 title: Stop retro restating the by-hand lock rule it drifted from
 type: bug
-next:
-status: done
+next: verify
+status: ready
 qa_level: verify
 close_by: develop
 qa_manual:
@@ -19,7 +19,6 @@ expects:
 claimed_by:
 claimed_at:
 touches:
-closed: 2026-10-27
 ---
 
 ## Problem
@@ -65,21 +64,21 @@ reads as correct on its own.
 
 ## Acceptance criteria
 
-- [x] AC1 — Given `skills/retro/SKILL.md` Step 4's lock paragraph, when `tests/retro-lock-citation.test.sh`
+- [ ] AC1 — Given `skills/retro/SKILL.md` Step 4's lock paragraph, when `tests/retro-lock-citation.test.sh`
   searches that window for the literal `one shell invocation`, then it is not found. Red-making
   input: today's file, which carries the phrase at line 225.
-- [x] AC2 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it names
+- [ ] AC2 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it names
   `CONCURRENCY.md` and the section title `Lock every write to the backlog directory`. Red-making
   mutation: deleting the section title from the citation, leaving the bare filename.
-- [x] AC3 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it
+- [ ] AC3 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it
   contains neither of the reference's two permitted forms — no `in one call` and no `drop the trap`.
   Red-making mutation: pasting `or drop the trap and rm -rf explicitly at the end` into the
   paragraph, which is the plausible cheap fix this item rejects.
-- [x] AC4 — Given a fixture carrying every asserted phrase **outside** Step 4's window, when
+- [ ] AC4 — Given a fixture carrying every asserted phrase **outside** Step 4's window, when
   `tests/retro-lock-citation.test.sh` runs against it, then it fails — proving the scoping in FR3 is
   real and not a file-wide grep wearing a window's name. Red-making input: widening the guard's
   window to the whole file, which turns that fixture green.
-- [x] AC5 — Given the edited skill, when `tests/citations.test.sh` and `tests/skill-size.test.sh`
+- [ ] AC5 — Given the edited skill, when `tests/citations.test.sh` and `tests/skill-size.test.sh`
   run, then each reports `0 failed`. Red-making change: citing a section title that does not exist
   in `CONCURRENCY.md`.
 
@@ -136,3 +135,4 @@ reads as correct on its own.
   | FR3 | heading gone is a named failure | `FR3 — an empty window is a named failure` | probe deleting Step 4's heading | red |
 - The notes append was refused as a sensitive-file edit via heredoc; written to /tmp and appended
   with python per the dispatch prompt's fallback.
+- 2026-10-27 — **Reopened to verify** by `./reopen`: closed by its own develop session (02150de) without an independent verify; re-verifying
