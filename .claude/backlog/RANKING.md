@@ -449,3 +449,13 @@ run-20261024T195310Z. Above 0177 by the prerequisite rule: both rewrite retro St
 behind-the-remote paragraph, and 0216's answer decides how much of 0177's text survives. It does not
 block 0177, whose FRs hold either way. Below 0195 and 0196, which are integrity and scaffold defects
 every project inherits; 0216 costs a second pass, never a wrong close.
+
+## 2026-10-27 - 0221 placed at row 1, above 0189
+
+**0221** (the 0182 release-note guard asserts `## Unreleased`, which every release empties) goes to
+row 1, above **0189**, at the request of sprint run-20261027T185815Z, which found it. Tier 1: the
+whole suite has been red since `b63e23c`. Every `develop` and `verify` session reads that red on
+someone else's account, and `tools/release` step 5 uses the same suite as its gate, so no release
+can ship until it is fixed. It beats 0189, which is Tier 2 with a blast radius of one worktree
+layout. A fixed baseline is also a prerequisite: until it lands, no row below it can show a clean
+before-and-after.
