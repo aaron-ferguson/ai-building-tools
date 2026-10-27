@@ -35,7 +35,8 @@ touches:
   - skills/prototype/SKILL.md
   - skills/queue/SKILL.md
   - docs/decisions/001-one-command-per-stage-boundary.md
-  - tests/citations.test.sh
+  - tests/by-hand-lock.test.sh   # new: FR5's guard, plus AC2-AC5's greps
+  - skills/design/SKILL.md, skills/develop/SKILL.md   # transient: AC1 mutation, restored in one turn
 ---
 
 ## Problem
