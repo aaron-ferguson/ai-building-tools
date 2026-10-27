@@ -226,9 +226,23 @@ audit() {
 # 0052 — conventions filenames resolve in the conventions directory
 # ---------------------------------------------------------------------------
 
-# conventions_dir <root> — the conventions path from config.yml, resolved against the root. Prints
-# nothing when the key or the directory is absent, which conventions_audit reports by name rather
+# conventions_dir <root> — the conventions path from config.yml, resolved against the main
+# worktree's root (0189): config.yml's path is relative to where the checkout sits, and a linked
+# worktree can sit anywhere. A root git does not know as a worktree top — every authored fixture —
+# resolves against itself. Prints nothing when the key or the directory is absent, which conventions_audit reports by name rather
 # than skipping silently: a check that quietly stops running is the failure this suite exists for.
+# main_worktree_of <root> — the main worktree's root when <root> is the top of a git worktree,
+# otherwise <root> itself. Matching the top keeps a fixture nested in some repo resolving locally.
+main_worktree_of() {
+  top="$(git -C "$1" rev-parse --show-toplevel 2>/dev/null || true)"
+  if [ -n "$top" ] && [ "$(CDPATH= cd -- "$top" && pwd -P)" = "$(CDPATH= cd -- "$1" && pwd -P)" ]; then
+    common="$(git -C "$1" rev-parse --path-format=absolute --git-common-dir)"
+    dirname -- "$common"
+  else
+    printf '%s\n' "$1"
+  fi
+}
+
 conventions_dir() {
   root="${1:?conventions_dir needs a tree root}"
   cfg="$(backlog_of "$root")/config.yml"
@@ -239,7 +253,8 @@ conventions_dir() {
   [ -n "$rel" ] || return 0
   case "$rel" in
     /*) [ -d "$rel" ] && printf '%s\n' "$rel" ;;
-    *)  [ -d "$root/$rel" ] && (CDPATH= cd -- "$root/$rel" && pwd) ;;
+    *)  base="$(main_worktree_of "$root")"
+        [ -d "$base/$rel" ] && (CDPATH= cd -- "$base/$rel" && pwd) ;;
   esac
   return 0
 }
@@ -496,6 +511,27 @@ case "$dir" in
   */conv) ok "another block's path: key is not mistaken for the conventions one" ;;
   *) bad "0052 FR7 — conventions_dir returned \"${dir:-<nothing>}\", not the conv directory" ;;
 esac
+
+# 0189 — a worktree is not always a sibling of the checkout. A relative conventions.path resolved
+# from a worktree under a temp directory pointed nowhere, so a baseline run there reported a red no
+# ticket owned. The case drives conventions_audit on a REAL detached worktree rather than re-running
+# this file inside it: a nested run would recurse into this case, and would run HEAD's copy of the
+# guard rather than the one under test.
+echo "0189 AC1 — a worktree under a temp directory resolves the same conventions as the checkout"
+# Under $FIX, so an abort mid-case still deletes it; git then lists the registration as prunable.
+WT="$FIX/wt"
+if git -C "$ROOT" worktree add --quiet --detach "$WT" HEAD >/dev/null 2>&1; then
+  here="$(conventions_audit "$ROOT" | grep -E '^(SKIP|COUNT) ' || true)"
+  there="$(conventions_audit "$WT" | grep -E '^(SKIP|COUNT) ' || true)"
+  case "$there" in
+    *'SKIP '*) bad "0189 AC1 — the temp-directory worktree resolved no conventions directory: $there" ;;
+    "$here") ok "a temp-directory worktree reports the checkout's conventions tally — ${there#COUNT }" ;;
+    *) bad "0189 AC1 — the worktree reported \"$there\" where the checkout reported \"$here\"" ;;
+  esac
+  git -C "$ROOT" worktree remove --force "$WT" >/dev/null 2>&1 || bad "0189 — could not remove the worktree at $WT"
+else
+  bad "0189 AC1 — could not create a detached worktree at $WT"
+fi
 
 # ---------------------------------------------------------------------------
 # 0105 — item-ID citations resolve to a ticket that exists
