@@ -317,6 +317,7 @@ tests/backlog-scripts-installed.test.sh  # this repo's installed backlog scripts
 tests/citations.test.sh                  # cited CONCURRENCY.md rules and conventions files resolve, and this block names every suite
 tests/by-hand-lock.test.sh               # a by-hand backlog write takes the lock and proves its commit; a busy lock at close keeps the verdict
 tests/backlog-location.test.sh           # .backlog/ and the legacy .claude/backlog/, ./migrate, the refused-write section
+tests/changelog-entry-guards.test.sh     # no test reads the repo changelog's Unreleased section; a note is found by its entry
 tests/close-by.test.sh                   # close_by's two branches in develop, and verify's review level
 tests/cost-by-category.test.sh           # the by-category cost measurement
 tests/cross-cutting-change.test.sh       # a change touching every file takes the exclusive claim
