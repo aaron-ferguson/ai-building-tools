@@ -20,6 +20,7 @@ expects:
 claimed_by: "c250"
 claimed_at: 2026-10-27T03:51:37Z
 touches:
+  - CHANGELOG.md
   - tests/backlog-scripts-installed.test.sh   # the AC8 scanner
   - references/CONCURRENCY.md                 # The five scripts
 ---
@@ -152,3 +153,24 @@ lookahead. See *Notes & decisions* for the measurement and what was rejected.
 - **Criteria accounting:** the item arrived with no FRs or ACs; FR1–FR4 and AC1–AC6 are new.
   `qa_level` moves `verify` → `unit` as the QA plan anticipated; `close_by: verify` is set
   explicitly because AC3 is evidence to be read.
+
+- **2026-10-27 (develop, token c250) — built.** Commit 56eff72; whole suite green after it.
+  FR1 is the `after` clause and FR2 the `head` clause in `early_close`; both report through the
+  existing AC8 loop with their own message, the scanner now printing a kind before the opened line,
+  the line and its text. AC4: 55 passed, 0 failed on the clean tree.
+  **All run, in a `git archive` mirror under `/tmp`, never the templates in place:** AC1 (column 0 of
+  `close:570`, the `ac_counts` body's first line — 479 at design, moved by 0146's markers) → 2 FAIL,
+  `close` named with `:569` opened and line 570; restored → green. AC2 (after the indent) → same 2
+  FAIL. AC5 (`  "x" in_ac {` at `close:571`, template only) → the `head` FAIL naming line 571 (plus
+  the expected divergence FAIL); restored → green. AC6: deleting either `CONCURRENCY.md` statement
+  → 1 FAIL each. `head` disabled in the scanner → the AC5 mutant goes green, so the clause is
+  load-bearing; `after` is shown load-bearing by the control sweep below.
+  **AC3 sweep (run):** `/tmp/0139sweep/sweep.sh` lifts `early_close` out of the test file, derives
+  the region list from the same scanner with its reports turned into a region print, and inserts
+  `'` at column 0 and after leading whitespace of every line strictly inside every multi-line
+  region of all six templates (`migrate` included, as `SCRIPTS` lists it). **total=1200,
+  misses=0.** Control: the same harness over the pre-change scanner gives **total=1200,
+  misses=20**, all in `close`'s `ac_counts` and `rc_counts` bodies — the design pass's 20; the
+  total grew from 1,162 because the templates grew since. The harness is not committed; its
+  shape is the one this note and the design note describe.
+  Added a CHANGELOG line: a session editing a script will see the new reds.
