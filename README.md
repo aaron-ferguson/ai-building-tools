@@ -339,6 +339,7 @@ tests/reopen.test.sh                     # ./reopen — a done ticket back to ve
 tests/retro-tool-edit.test.sh            # retro runs the target repo's suite before committing a tool edit
 tests/scaffold-close.test.sh             # a backlog scaffolded from the queue templates alone can close a ticket
 tests/self-sufficient-refusal.test.sh    # develop requires a script refusal that precedes its skill to explain itself
+tests/shared-dirty-tree.test.sh         # a suite result over a shared dirty tree is attributed before it is believed
 tests/sprint-ledger.test.sh              # the sprint estimate ledger
 tests/sprint.test.sh                     # the sprint skill and the stage outcome schema
 tests/transient-mutation.test.sh         # develop declares a file it breaks on purpose and restores

@@ -475,6 +475,33 @@ allowed to *break*. A `unit` ticket changing a shared default can leave the brow
 pass QA, because nothing on its path ever started a browser — that happened, and it was two tickets
 before anything ran them. Handing a red tree to a QA session spends that session on a diagnosis you already had the context for.
 
+**Read `git status --porcelain` before believing any whole-suite result**, red or green. The fork
+below — falsified or exposed — assumes the tree is a state that exists as a commit, and where several
+sessions share a checkout it often is not (`CONCURRENCY.md`, *The working tree is shared too*). Three
+causes of a red sit outside that fork, and none is yours to fix:
+- another session's uncommitted work — two runners once went red, then green on three immediate
+  re-runs with nothing re-rolled, because ~30 files were mid-rename in the shared tree;
+- another session's deliberate red — its failing tests written and its implementation not yet;
+- a measurement whose subject moved mid-run — a harvest of a live transcript store counted 30
+  sessions, then 31, because another window opened one.
+
+**The remedy is a run in a throwaway worktree at your own last commit** — a verdict about
+a tree that exists, where the checkout is a file set nobody committed. Worth its cost whenever the dirty set
+intersects what the suite reads; with `git status` clean the checkout already is that tree. Site it
+so whatever the suite resolves outside the repo still resolves — `node_modules` in an app, and here
+the conventions directory, which `config.yml` resolves against the parent, so a worktree elsewhere
+reds `tests/citations.test.sh` on where it was put (0189).
+It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the backlog*).
+
+**A red the tree is supposed to have is attributed with evidence**, carried into the hand-off rather
+than asserted in a sentence: "not mine" is the one claim the next `verify` cannot check. Write into
+*Notes & decisions* what it can — the owning row and its token, the path's `git status` line, and the
+worktree run at your commit, green.
+
+**A ticket whose output is a measurement of the machine it runs on pins its snapshot and
+records the pin** — copy the source, or fix a cut-off (a timestamp, a count, a SHA) and write it into the notes —
+so the figure `verify` re-derives is the figure you produced, not the machine an hour later.
+
 **Red in a file this ticket never touched:** find out whose it is before touching anything
 (`git log -1 -- <path>`, the in-progress rows). Another session's red is theirs to fix and yours to
 report. If the tree is too entangled to judge, run it in a throwaway worktree (`git worktree add`) and
@@ -558,6 +585,8 @@ for a live run before starting one (`pgrep -f '<runner> <run-subcommand>'`, e.g.
 background `until` loop on the worker process is clean and costs nothing, where the obvious fallback — a
 throwaway worktree — needs its own `node_modules` and is not actually cheap. Neither this skill nor
 `CONCURRENCY.md` names which session yields, so the rule is simply that the one arriving second waits.
+Against a session running mutation batches `pgrep` reads clear in every gap between runs, so the
+condition to wait for is no runner **and** a clean `git status`, sustained over several samples.
 
 ### Then stop, in this order
 
@@ -621,7 +650,9 @@ that field's own raise-only rule below does not reach it by implication.** Lower
    nothing this stage still owes may be written after the hand-off, because from that commit the row
    is takeable and `./claim` will grant it — a stage that released first once left a row claimable for
    29 seconds while it was still committing to it. Findings, notes and cost go in before, or into the
-   same commit.
+   same commit. **Then confirm `git status --porcelain` lists none of your own paths** before the
+   hand-off: `e604703` handed a ticket to `verify` with two words of its own subject file still in
+   the tree, so that pass opened advisory before it ran anything.
 6. **Mirror the state if a tracker is configured** — transition to its in-review equivalent, comment
    the commit SHAs. Failure is logged in the notes, never a blocker. A network call is not a write to
    the row, so it may follow the release.

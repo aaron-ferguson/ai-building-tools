@@ -90,6 +90,10 @@ in one component, unwarned.
   holds the *row* is the item's token alone (*A stage writes only the ticket it holds*). That reading answers
   a session choosing what to take; the release-time scope report answers what this pass changed,
   and to it an empty touches: means nothing declared (0145).
+- **A `touches:` collision warns neither session.** The field is read when a session *chooses*, and
+  nothing re-reads it when someone later edits a held file: a rewrite forty minutes after a committed
+  `touches:` turned the holder's own guard red, and surfaced only because its verifier re-ran the suite.
+  Declaring it reserves nothing; it advises the next chooser (preventing the collision is 0050).
 - **`verify` derives *advisory*** from the dirty paths that intersect the evidence its verdict rested
   on — dirty **under test**, not dirty anywhere. Empty intersection: a plain PASS that closes.
 - **At `qa_level: e2e` that intersection can never be empty**, because the runner builds and serves

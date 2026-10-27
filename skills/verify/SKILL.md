@@ -142,6 +142,9 @@ It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the b
   ticket writes without a claim — `retro` does so by design, editing skills and conventions mid-pass —
   so the row-and-token check reads perfectly clean while the tree is not. `git status` is the authority
   here and the row is not; a clean queue is not evidence about the tree.
+- **Dirty paths inside *this* ticket's own scope** are the previous stage's, not a second window's:
+  `develop` requires its own paths committed before the hand-off (Step 5, *Then stop, in this order*).
+  Commit nothing on its behalf; record them in the dirty set and name the hand-off defect in the verdict.
 
 **And check which *copy* you are executing, when the change under test is a skill or a plugin file.**
 Skills run from the pinned install under `~/.claude/plugins/cache/<plugin>/<version>/`, not from this
