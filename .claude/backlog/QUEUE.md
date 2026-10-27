@@ -24,7 +24,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0172 | Decide how a script refusal and the skill that must satisfy it reach a session together | develop | ready |  |
-| 0182 | Name the write mechanism that works for each backlog file, the lock included, where every stage reads it | verify | in-progress |  |
+| 0182 | Name the write mechanism that works for each backlog file, the lock included, where every stage reads it | develop | ready |  |
 | 0189 | Make the citations guard resolve the conventions path from a worktree outside the checkout's parent | develop | ready |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
 | 0145 | Decide what an empty touches means to the scope report | develop | ready |  |
