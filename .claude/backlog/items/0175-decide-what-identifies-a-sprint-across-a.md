@@ -2,8 +2,8 @@
 id: "0175"
 title: Decide what identifies a sprint across a suspension, and which mechanisms key off it
 type: debt
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: l
@@ -19,9 +19,10 @@ expects:
   - tools/harvest-usage.sh
   - tests/sprint.test.sh
   - tests/sprint-ledger.test.sh
-claimed_by: "3358"
-claimed_at: 2026-10-27T00:57:29Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -139,28 +140,28 @@ exactly as it subtracts `limit_hit`→`resumed` windows.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a run-log fixture where session S has an original leg (first turn USD 0.40) and two
+- [x] AC1 — Given a run-log fixture where session S has an original leg (first turn USD 0.40) and two
   `resumed` legs (first turns USD 1.10 and 1.30), harvested spend 12.00 and stage cap 12.00, when the
   Step 7 cap is computed via `harvest-usage.sh --legs`, then it is 12.00 − (12.00 − 2.40) + 1.30 = 3.70.
   Red: today's rule gives 0.00.
-- [ ] AC2 — Given a fixture with one unpriced leg of S, when the cap is computed, then the full stage
+- [x] AC2 — Given a fixture with one unpriced leg of S, when the cap is computed, then the full stage
   cap is used and the `resumed` event names `cap_basis: "unpriced"`.
-- [ ] AC3 — Given `held-by` naming run id R stamped 10 hours ago and a supervisor whose `RUN_ID` is R,
+- [x] AC3 — Given `held-by` naming run id R stamped 10 hours ago and a supervisor whose `RUN_ID` is R,
   when Step 1's busy branch runs, then it retakes the marker, rewrites the timestamp, and logs
   `supervisor_resumed` with `suspended_at` equal to the old stamp. Red: reported as stale and taken
   over.
-- [ ] AC4 — Given the same marker and a supervisor whose `RUN_ID` is not R, when Step 1 runs, then
+- [x] AC4 — Given the same marker and a supervisor whose `RUN_ID` is not R, when Step 1 runs, then
   0153's stale-takeover path runs unchanged and R's log gains exactly one `sprint_ended` with
   `reason: "superseded"` and `by` naming the new run.
-- [ ] AC5 — Given R's log already holding `sprint_ended`, when a supervisor is asked to resume R, then
+- [x] AC5 — Given R's log already holding `sprint_ended`, when a supervisor is asked to resume R, then
   it refuses and dispatches nothing.
-- [ ] AC6 — Given a `runs/` fixture where one log carries two `sprint_ended` events after date D,
+- [x] AC6 — Given a `runs/` fixture where one log carries two `sprint_ended` events after date D,
   when `./next` computes `sprints_since D`, then it counts 1. (Guards the existing behaviour FR5
   relies on.)
-- [ ] AC7 — Given a `LEDGER.md` with blocks for runs A and B, when `record` runs twice for B with
+- [x] AC7 — Given a `LEDGER.md` with blocks for runs A and B, when `record` runs twice for B with
   different actuals, then the file holds exactly one `## sprint B` block carrying the second call's
   figures and A's block is byte-identical. Red: two B blocks.
-- [ ] AC8 — Given `skills/sprint/SKILL.md`, when grepped, then Step 1 names the run id format and the
+- [x] AC8 — Given `skills/sprint/SKILL.md`, when grepped, then Step 1 names the run id format and the
   own-run-id check before the age check, Step 6 names `sprint_ended`'s three reasons and that `record`
   replaces its own block, and Step 7 names `repaid` and `repay_next`.
 
