@@ -145,3 +145,27 @@ design.
   - Self-inflicted, recovered: the first commit refused on the untracked new test (`pathspec did not
     match`), and a `;` in the chain let `git restore -- skills/develop/SKILL.md` run anyway, deleting the
     uncommitted rule. Exactly Step 5's documented trap; re-applied, then `git add` and committed. No new finding.
+
+## QA evidence
+
+**2026-10-26 (verify, token 3ad9) — PASS.** Level `verify` (frontmatter; the QA plan agrees).
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || exit 1; done`, run per file so every file reports — 39 files, every one rc=0 (`tests/self-sufficient-refusal.test.sh` 8 passed, 0 failed; `tests/close.test.sh` 304 passed, 0 failed; `tests/skill-size.test.sh` 45 passed, 0 failed).
+Tree: `git status --porcelain` empty at Step 2; the verdict-time capture showed only this pass's own scratch output. Intersection with the evidence set is empty → not advisory. Copy executed: the repo copy of `skills/develop/SKILL.md` is the subject; this verify session ran from the 0.9.43 install.
+`ac_digest` matched (`./next --ac-digest 0172 --check`).
+
+| AC | Clause | How checked | Result |
+|---|---|---|---|
+| AC1 | exactly one line of Step 4 matches the anchor | `awk` Step 4→5 piped to `grep -c` → `1`; mutation: anchor line duplicated → `matches 2 lines of Step 4 … expected exactly 1`, 7 passed 1 failed | pass |
+| AC2 | names what is missing | read; mutation `names what is missing`→`names a gap` → FAIL `the refusal names what is missing` | pass |
+| AC2 | names the fix | read; mutation of the first occurrence stayed green — the phrase survives in `asserts stderr names the fix` in the same paragraph, so the gap test finds no gap | pass |
+| AC2 | refuses before writing | read; mutation → FAIL `the refusal fires before anything is written` | pass |
+| AC2 | FR2 test requirement | read (`runs the script into the refusal and asserts stderr names the fix`); mutation → FAIL `the ticket's test runs the script into the refusal` | pass |
+| AC2 | cites `0160` | read; mutation removing `` `0160` `` → FAIL `it cites 0160` | pass |
+| AC3 | delete → a test fails naming it; restore → passes | anchor replaced: `FAIL — 'a refusal that arrives before its skill' matches 0 lines of Step 4 in skills/develop/SKILL.md, expected exactly 1`, 0 passed 8 failed; `git restore -- skills/develop/SKILL.md` → 8 passed, 0 failed | pass |
+| AC4 | `names the line it wants` passes | `tests/close.test.sh` → `ok   — names the line it wants`, 304 passed, 0 failed | pass |
+| AC5 | one Unreleased note names the rule | `CHANGELOG.md` line 17, under `## Unreleased` (line 14), before `## 0.9.43` | pass |
+| AC6 | whole suite green incl. skill-size | 39 files rc=0 | pass |
+| NFR Size | ≤ 4 lines; skill-size green | rule is lines 15–18 of Step 4 (four lines); `tests/skill-size.test.sh` 45 passed | pass |
+
+AC2 is a reading: the phrase guards keep the words present, not their sense; read and judged to state FR1 (a)(b)(c), FR2 and the `0160` citation. Always-on pass (CONVENTIONS_CORE): prose-only change plus a self-contained guard; no secrets, no company material, no log/egress change. Written via a scratch file and `cp` because a direct write to the item was refused.
