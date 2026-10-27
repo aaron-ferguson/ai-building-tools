@@ -2,8 +2,8 @@
 id: "0221"
 title: Make the 0182 release-note guard find its entry wherever a release moves it
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -17,9 +17,10 @@ expects:
   - tests/backlog-location.test.sh
   - tests/changelog-entry-guards.test.sh
 ac_digest: AC1=de3ed1a3 AC2=22a6488f AC3=2abe7175 AC4=e8829718 AC5=b2c730d4 AC6=6e862a51
-claimed_by: "94b1"
-claimed_at: 2026-10-27T19:23:13Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -89,12 +90,12 @@ surface, no schema, no dependency. A release note for it is `tools/release`'s co
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given HEAD's `CHANGELOG.md`, with `## Unreleased` empty and the 0182 entry under `## 0.9.44`, when `tests/backlog-location.test.sh` runs, then it exits 0 and its AC9 lines report all five phrases found. Red: the file as it stands at `b63e23c` (5 failed).
-- [ ] AC2 — Given two fixture CHANGELOGs built inside `tests/backlog-location.test.sh`, one with the 0182-shaped entry under `## Unreleased` and one with it under `## 9.9.9 — 2099-01-01`, when the AC9 function runs against each, then both pass. Red: restoring `section … "Unreleased"` as the locator reds the version-heading fixture.
-- [ ] AC3 — Given a fixture whose 0182-shaped entry lacks one of the five phrases, and a **different** entry in the same fixture that does carry it, when the AC9 function runs, then it fails and names that phrase, once for each of the five phrases in turn. Red: a locator that searches the whole file instead of one entry stays green, because the phrase sits in the other entry.
-- [ ] AC4 — Given a fixture with no matching entry, and another with two, when the AC9 function runs, then each fails and its message says "no entry" or "more than one entry" respectively. Red: dropping the count check makes the two-entry fixture pass.
-- [ ] AC5 — Given a fixture tests directory holding one file with the line `UNREL="$(section "$ROOT/CHANGELOG.md" "Unreleased")"`, when `tests/changelog-entry-guards.test.sh` scans it, then it fails and names that `file:line`. Given the repo's real `tests/` after the fix, it passes. Red: the fixture line itself, which is the form `b63e23c` broke.
-- [ ] AC6 — Given the new guard file, when `tests/abort-announce.test.sh` runs, then it passes with that file counted. Red: deleting the abort block from the new file.
+- [x] AC1 — Given HEAD's `CHANGELOG.md`, with `## Unreleased` empty and the 0182 entry under `## 0.9.44`, when `tests/backlog-location.test.sh` runs, then it exits 0 and its AC9 lines report all five phrases found. Red: the file as it stands at `b63e23c` (5 failed).
+- [x] AC2 — Given two fixture CHANGELOGs built inside `tests/backlog-location.test.sh`, one with the 0182-shaped entry under `## Unreleased` and one with it under `## 9.9.9 — 2099-01-01`, when the AC9 function runs against each, then both pass. Red: restoring `section … "Unreleased"` as the locator reds the version-heading fixture.
+- [x] AC3 — Given a fixture whose 0182-shaped entry lacks one of the five phrases, and a **different** entry in the same fixture that does carry it, when the AC9 function runs, then it fails and names that phrase, once for each of the five phrases in turn. Red: a locator that searches the whole file instead of one entry stays green, because the phrase sits in the other entry.
+- [x] AC4 — Given a fixture with no matching entry, and another with two, when the AC9 function runs, then each fails and its message says "no entry" or "more than one entry" respectively. Red: dropping the count check makes the two-entry fixture pass.
+- [x] AC5 — Given a fixture tests directory holding one file with the line `UNREL="$(section "$ROOT/CHANGELOG.md" "Unreleased")"`, when `tests/changelog-entry-guards.test.sh` scans it, then it fails and names that `file:line`. Given the repo's real `tests/` after the fix, it passes. Red: the fixture line itself, which is the form `b63e23c` broke.
+- [x] AC6 — Given the new guard file, when `tests/abort-announce.test.sh` runs, then it passes with that file counted. Red: deleting the abort block from the new file.
 
 ## QA plan
 
@@ -117,6 +118,37 @@ surface, no schema, no dependency. A release note for it is `tools/release`'s co
 - `tools/release`'s promotion behaviour. It is correct and guarded by 0041 AC13.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**PASS** — 2026-10-27, verify token 94b1, at `d947cc2` (build `bbae59c`, claim on top). Executed
+copy: the repo checkout's `tests/` (test-only change; no skill file under test).
+
+Conventions: ../ai-building-conventions
+
+Level `unit`, run as `config.yml` `commands.unit_by_file`, verbatim:
+`for t in tests/*.test.sh; do "$t" || true; done` — 44 files, every one ending `N passed, 0 failed`.
+`ac_digest`: `./next --ac-digest 0221 --check` → `0221: ac_digest matches`.
+Tree: `git status --porcelain` empty at Step 2 and at the fresh capture after the last check, apart
+from this pass's own scratch dir (removed). Dirty set empty → intersection empty → not advisory.
+
+Clause table: develop's, in *Notes & decisions*, reused unchanged; no table omission found.
+
+| AC | Checked by | Mutation (committed file, restored by path) | Result |
+|---|---|---|---|
+| AC1 | `tests/backlog-location.test.sh` at HEAD against the real `CHANGELOG.md` (0182 entry under `## 0.9.44`; `CHANGELOG.md` unchanged since `b63e23c`) | file replaced by `b63e23c`'s copy | green: five `ok the 0182 entry names …`, `57 passed, 0 failed`; red: `43 passed, 5 failed`, the five `## Unreleased does not name …` lines |
+| AC2 | `cl-unreleased.md` / `cl-versioned.md` cases | awk locator collects entries only under a `## …Unreleased` heading | `FAIL 0221 AC2 — cl-versioned.md fails`, real-file AC9 red; `47 passed, 6 failed` |
+| AC3 | `cl-lacks.md` loop over `NOTE_PHRASES` | (a) locator := whole file as one entry; (b) phrase loop `break`s after the first phrase; (c) `missing` message drops the phrase | (a) all five `an entry lacking <phrase> passes because another entry names it`, `50 passed, 7 failed`; (b) the three non-locator phrases red, `50 passed, 3 failed` (the two locator phrases fail as "no entry names both …", which names them); (c) three `fails without naming it`, `54 passed, 3 failed` |
+| AC4 | `cl-none.md` / `cl-two.md` | (a) `-gt 1` check disabled; (b) `-eq 0` check disabled | (a) `two matching entries passes`, `56 passed, 1 failed`; (b) `no matching entry fails without saying "no entry"`, `56 passed, 1 failed` |
+| AC5 | `tests/changelog-entry-guards.test.sh` self-test (fixture `tests/broken.test.sh:3`) and real-`tests/` scan | (a) scan skips every line; (b) hit printed without `NR`; (c) `$ROOT` branch removed; (d) `b63e23c`'s `UNREL=…section "$ROOT/CHANGELOG.md" "Unreleased"` line inserted into `tests/backlog-location.test.sh` | (a) `4 passed, 5 failed`; (b) `fails without naming tests/broken.test.sh:3`, `8 passed, 1 failed`; (c) `6 passed, 3 failed`; (d) `FAIL 0221 FR4 — tests/backlog-location.test.sh:359: UNREL=…`, `8 passed, 1 failed` |
+| AC6 | `tests/abort-announce.test.sh` lists `tests/changelog-entry-guards.test.sh` in its per-file checks | abort block (`TALLIED=""` … `trap announce_abort EXIT`) deleted from the new file | `311 passed, 3 failed`, all three naming the new file; control `314 passed, 0 failed` |
+
+Controls after all mutations: `tests/backlog-location.test.sh` `57 passed, 0 failed`;
+`tests/changelog-entry-guards.test.sh` `9 passed, 0 failed`; `tests/citations.test.sh`
+`51 passed, 0 failed`; `tests/abort-announce.test.sh` `314 passed, 0 failed`.
+
+NFRs: none declared, and correctly so — test-only change, no input, data, surface or dependency.
+Always-on pass (`CONVENTIONS_CORE.md`): commits atomic and by pathspec; out-of-scope `CHANGELOG.md`
+untouched (`git diff --stat b63e23c HEAD -- CHANGELOG.md` empty). No release note: no session
+behaviour changes beyond the suite going green.
 
 ## Notes & decisions
 
