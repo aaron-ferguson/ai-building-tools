@@ -3,7 +3,7 @@ id: "0091"
 title: Make a by-hand backlog write take the lock and prove its commit landed
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: verify
 ac_digest: AC1=5ff73aa9 AC2=ff53688f AC3=b8925e9b AC4=80636787 AC5=f8468659 AC6=692d4ad4
 size: m
@@ -23,8 +23,8 @@ expects:
   - skills/queue/SKILL.md
   - docs/decisions/001-one-command-per-stage-boundary.md
   - tests/citations.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "febb"
+claimed_at: 2026-10-27T06:22:56Z
 touches:
 ---
 
