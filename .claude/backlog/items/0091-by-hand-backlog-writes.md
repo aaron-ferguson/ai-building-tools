@@ -2,8 +2,8 @@
 id: "0091"
 title: Make a by-hand backlog write take the lock and prove its commit landed
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 ac_digest: AC1=5ff73aa9 AC2=ff53688f AC3=b8925e9b AC4=80636787 AC5=f8468659 AC6=692d4ad4
 size: m
@@ -23,20 +23,9 @@ expects:
   - skills/queue/SKILL.md
   - docs/decisions/001-one-command-per-stage-boundary.md
   - tests/citations.test.sh
-claimed_by: "22bc"
-claimed_at: 2026-10-27T06:05:44Z
+claimed_by:
+claimed_at:
 touches:
-  - references/CONCURRENCY.md
-  - references/CONCURRENCY-INCIDENTS.md
-  - skills/retro/SKILL.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/design/SKILL.md
-  - skills/prototype/SKILL.md
-  - skills/queue/SKILL.md
-  - docs/decisions/001-one-command-per-stage-boundary.md
-  - tests/by-hand-lock.test.sh   # new: FR5's guard, plus AC2-AC5's greps
-  - skills/design/SKILL.md, skills/develop/SKILL.md   # transient: AC1 mutation, restored in one turn
 ---
 
 ## Problem
