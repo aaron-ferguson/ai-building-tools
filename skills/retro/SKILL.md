@@ -290,12 +290,10 @@ If a destination check changed your mind about *where* something goes, say so be
 the disagreement the user is most likely to have.
 
 **Take the backlog lock for every write inside `.backlog/`.** Draining `FINDINGS.md` and
-appending to an item are both inside the boundary, and `retro` holds no claim token that would make its
-writes visible otherwise. Read, write, commit and release in **one shell invocation** — a session gets a
-fresh shell per tool call, so a `trap ... EXIT` releases the lock the moment that call returns and every
-later call runs holding nothing, which reads exactly like a correct lock. See
-`references/CONCURRENCY.md` *Lock every write to the backlog directory*, and `CONCURRENCY-INCIDENTS.md`
-before writing one by hand.
+appending to an unheld item are both inside the boundary, and `retro` holds no claim token, so the lock
+is the only thing that makes its writes visible to another session. The forms a by-hand lock may take
+are `references/CONCURRENCY.md` *Lock every write to the backlog directory*, and only there; read
+it, and `CONCURRENCY-INCIDENTS.md`, before writing one.
 
 **Every entry you read gets one of four dispositions — landed, absorbed, filed or dropped — and
 `FINDINGS.md` is the home of none of them.** The buffer surfaces a lesson; it never keeps one.

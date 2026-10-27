@@ -336,6 +336,7 @@ tests/qa-level-once.test.sh              # the QA level is written in one place 
 tests/release.test.sh                    # tools/release verifies the install against the pushed commit
 tests/remote-anchor.test.sh              # a session editing a tool repo anchors to the remote first
 tests/reopen.test.sh                     # ./reopen — a done ticket back to verify, ACs unticked, dependents re-blocked
+tests/retro-lock-citation.test.sh        # retro Step 4 cites the by-hand lock forms, never restates them
 tests/retro-tool-edit.test.sh            # retro runs the target repo's suite before committing a tool edit
 tests/scaffold-close.test.sh             # a backlog scaffolded from the queue templates alone can close a ticket
 tests/self-sufficient-refusal.test.sh    # develop requires a script refusal that precedes its skill to explain itself

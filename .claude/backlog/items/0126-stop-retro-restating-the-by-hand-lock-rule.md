@@ -20,7 +20,8 @@ claimed_by: "3b05"
 claimed_at: 2026-10-27T18:03:42Z
 touches:
   - skills/retro/SKILL.md
-  - tests/retro-lock-citation.test.sh
+  - tests/retro-lock-citation.test.sh  # new
+  - README.md  # guard block lists every tests/*.test.sh (0046)
 ---
 
 ## Problem
