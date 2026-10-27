@@ -668,6 +668,8 @@ behaved unexpectedly, a scaffolding step you had to invent.
 **An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
 entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
 uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
+**The append takes the backlog lock**, being a write inside the backlog directory
+(`CONCURRENCY.md`, *Lock every write to the backlog directory*).
 
 **Route it by subject, not by where you are standing** — a finding about a skill, a reference file, a
 backlog script or a convention belongs in that repo's buffer, not this project's. The destinations, how
