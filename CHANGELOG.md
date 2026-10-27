@@ -14,6 +14,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+## 0.9.44 — 2026-10-27
+
 - `sprint` reads an item's `close_by:` before re-verifying a ticket its develop session closed: a `close_by: develop` close is the declared exception, not self-certification. It waits out a drift exit on a row a running design session holds, and a resume prompt asks the session to check its claim and tree rather than asserting them.
 - `design` cross-checks the criteria it writes against each other and the tree before handing off: no AC may forbid what an FR requires, and a detector an FR specifies is run over the tree before an AC requires the tree green.
 - `verify` closes without `--note` when `develop` already wrote the ticket's note under `## Unreleased` because the criteria required it before the close.
