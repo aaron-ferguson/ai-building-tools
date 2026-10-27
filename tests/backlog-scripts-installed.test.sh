@@ -40,10 +40,16 @@ trap announce_abort EXIT
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 BACKLOG="$ROOT/.claude/backlog"
 TEMPLATES="$ROOT/skills/queue/templates"
-SCRIPTS="next claim close handoff reopen migrate"
 
 [ -d "$BACKLOG" ]   || { echo "no backlog at $BACKLOG" >&2; exit 2; }
 [ -d "$TEMPLATES" ] || { echo "no templates at $TEMPLATES" >&2; exit 2; }
+
+# The scripts are every executable on EITHER side, derived rather than listed (0089): a hardcoded
+# list let `reopen` drop out of every check below with the suite green, 45 checks falling to 37.
+# The union is the point — a script missing from one side is still in the list, and reds there.
+executables_in() { for f in "$1"/*; do [ -f "$f" ] && [ -x "$f" ] && basename "$f"; done; return 0; }
+SCRIPTS="$( { executables_in "$TEMPLATES"; executables_in "$BACKLOG"; } | sort -u | tr '\n' ' ')"
+[ -n "$SCRIPTS" ] || { echo "no executable script found in $TEMPLATES or $BACKLOG" >&2; exit 2; }
 
 PASS=0
 FAIL=0

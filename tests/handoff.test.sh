@@ -512,11 +512,10 @@ if sh -n "$HANDOFF_SRC" 2>/dev/null; then ok "sh -n passes on the template"; els
   bad "sh -n failed on $HANDOFF_SRC"; fi
 if [ "$(head -n 1 "$HANDOFF_SRC")" = "#!/bin/sh" ]; then ok "declares #!/bin/sh"; else
   bad "does not declare #!/bin/sh"; fi
-# The byte-identical install is tests/backlog-scripts-installed.test.sh's gate; assert here only
-# that it has been told about the fourth script, since a guard that lists three cannot see a
-# fourth diverge.
-assert_contains "the install guard covers handoff" \
-  "$(cat "$ROOT/tests/backlog-scripts-installed.test.sh")" 'SCRIPTS="next claim close handoff'
+# The byte-identical install is tests/backlog-scripts-installed.test.sh's gate, which checks every
+# executable template (0089); assert here only that this one is executable, so the gate sees it.
+if [ -x "$HANDOFF_SRC" ]; then ok "the template is executable, so the install guard covers it"; else
+  bad "the template is not executable, so the install guard does not check it"; fi
 
 # --- AC6 — develop and verify name the script and keep the fallback -----------------------------
 echo "AC6 — both stages name ./handoff as the supported path, and keep the by-hand fallback"
