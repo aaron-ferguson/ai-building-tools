@@ -26,7 +26,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0189 | Make the citations guard resolve the conventions path from a worktree outside the checkout's parent | develop | ready |  |
 | 0089 | Sweep the guards for assertions that cannot fail | develop | ready |  |
 | 0146 | Decide when a required duplication earns a drift guard | verify | ready |  |
-| 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | develop | in-progress |  |
+| 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | verify | ready |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
 | 0126 | Stop retro restating the by-hand lock rule it drifted from | develop | ready |  |
 | 0091 | Make a by-hand backlog write take the lock and prove its commit landed | develop | ready |  |
