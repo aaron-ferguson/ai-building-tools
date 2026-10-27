@@ -229,3 +229,31 @@ each is a test the chosen shape has to pass.
   its item and row (`skills/queue/templates/next:847`); the collision walk itself ignores it, so it
   stalls nothing mechanically — parked in `FINDINGS.md`.
 - `qa_level: unit` re-read and kept; no `close_by` override — the closing stage stays `verify`.
+- 2026-10-27 — develop (token a557), built in `c41610d` and `5ffbbbf`.
+  - **FR1** — *The working tree is shared too* gains three bullets after *A `touches:` collision
+    warns neither session*: one session per shared file (`--drive` gate or one after another,
+    `develop` serialised until `0137`); FR2's designed wait; FR3's `verify`-held editing rule. The
+    first bullet's "All rows collide → nothing is developable right now" now points at the
+    designed wait. *A pathspec is necessary but not sufficient* drops "Prefer single-writer files"
+    for "where a file cannot have a single writer, the session is the single writer instead".
+  - **FR4** — CONCURRENCY.md's "(preventing the collision is 0050)" now reads "Preventing the
+    collision is the next rule's job (0050)"; sprint's *Design beside other stages* says `0050`
+    *settled* file scope, citing the rule, with the `disjoint` sentence untouched. sprint.test.sh's
+    0134 FR6 `ok` label, which called 0050 "the open general question", reworded (label only;
+    the `says` assertions unchanged). FR5 — CLAUDE.md *Concurrency* names the section.
+    FR6 — CONCURRENCY-INCIDENTS.md, *The file-scope shapes that were rejected*, with each reason.
+  - **FR7 guard: `tests/shared-dirty-tree.test.sh`** (its subject already includes this section),
+    using its `section`/`present` helpers; each phrase on one source line, which is why some of the
+    new bullets wrap short. Red before the prose: 20 passed, 15 failed. AC4 and AC5's absences are
+    asserted over the whole file / section on purpose — absence is only meaningful there.
+  - **AC7 mutation sweep (run)**, one mutation at a time on the subject, restored in the same
+    call, control 38/0 after. Each reddened exactly one case: removing or rewording each of the
+    eight FR1–FR3 phrases (`where a file cannot have one writer, the session does`, `rows sharing a
+    file are worked by one session`, `serialised in this repo by design until \`0137\` decides
+    otherwise`, `a designed wait, not a failure`, `claim nothing; report each holder`, `Never edit a
+    held file to get unstuck`, the `verify`-held lead-in, `does not open or widen \`touches:\` …`);
+    re-inserting `Prefer single-writer files` (AC4); re-inserting `open question` and `preventing
+    the collision is 0050` (AC5, each its own case); deleting sprint's `` `0050` `` (AC5 cite);
+    CLAUDE.md's section name (AC3); each of the three rejected-shape labels and, added after a
+    gap was noticed in the first sweep, each shape's reason phrase (AC6 — "each with its reason").
+  - AC8: whole suite run file-by-file at `5ffbbbf`, clean tree: no file red.
