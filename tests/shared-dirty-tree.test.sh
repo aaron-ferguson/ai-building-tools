@@ -49,8 +49,9 @@ ok()  { PASS=$((PASS + 1)); printf '  ok   — %s\n' "$1"; }
 bad() { FAIL=$((FAIL + 1)); printf '  FAIL — %s\n' "$1"; }
 
 SCOPE="$(mktemp)"
-trap 'announce_abort rm -f "$SCOPE"' EXIT
-trap 'rm -f "$SCOPE"' INT TERM
+STEP5="$(mktemp)"
+trap 'announce_abort rm -f "$SCOPE" "$STEP5"' EXIT
+trap 'rm -f "$SCOPE" "$STEP5"' INT TERM
 
 # The paragraph whose first matching line contains $2, ending on its own blank line rather than on a
 # line count — a count is a guess at how long the prose is and goes wrong silently (0032).
@@ -71,8 +72,11 @@ present() {
   fi
 }
 
+# Every develop rule is asserted inside Step 5 — AC1's Given — so prose moved to another step reds.
+awk 'index($0, "## Step 5") == 1 { f = 1 } f && /^## Step 6/ { exit } f { print }' "$DEV" > "$STEP5"
+
 echo "0054 AC1 — develop Step 5 requires git status before a full-suite result is believed"
-para "$DEV" 'before believing any whole-suite result'
+para "$STEP5" 'before believing any whole-suite result'
 present "the rule has a paragraph of its own" 'before believing any whole-suite result'
 present "and it names the command" 'git status --porcelain'
 
@@ -83,25 +87,25 @@ present "another session's deliberate red" "another session's deliberate red"
 present "a measurement whose subject moved" 'a measurement whose subject moved'
 
 echo "0054 AC3 — it names the worktree-at-your-last-commit remedy, and when it pays"
-para "$DEV" 'worktree at your own last commit'
+para "$STEP5" 'worktree at your own last commit'
 present "the remedy has a paragraph" 'worktree at your own last commit'
 present "it says why: a verdict about a tree that exists" 'a tree that exists'
 present "it says when it is worth the cost" 'Worth its cost'
 present "it names the conventions directory as what the worktree needs here" 'conventions directory'
 
 echo "0054 FR3 — a red the tree is supposed to have carries its evidence into the hand-off"
-para "$DEV" 'supposed to have is attributed with evidence'
+para "$STEP5" 'supposed to have is attributed with evidence'
 present "the case is named" 'supposed to have is attributed with evidence'
 present "the evidence travels with the ticket" 'carried into the hand-off'
 
 echo "0054 AC4 — a machine-measuring ticket pins and records its snapshot"
-para "$DEV" 'measurement of the machine it runs on'
+para "$STEP5" 'measurement of the machine it runs on'
 present "the case is named" 'measurement of the machine it runs on'
 present "the snapshot is pinned" 'pins its snapshot'
 present "and the pin is recorded" 'records the pin'
 
 echo "0054 AC5 — develop's hand-off requires the session's own paths committed first"
-para "$DEV" 'Commit the code by pathspec in or before that same step'
+para "$STEP5" 'Commit the code by pathspec in or before that same step'
 present "the hand-off step names the check" 'git status --porcelain'
 present "and scopes it to the session's own paths" 'none of your own paths'
 
