@@ -2,8 +2,8 @@
 id: "0146"
 title: Decide when a required duplication earns a drift guard, and guard the copies that qualify
 type: debt
-next: design
-status: in-progress
+next: develop
+status: ready
 qa_level: verify
 size: m
 created: 2026-09-09
@@ -18,8 +18,8 @@ expects:
   - tests
   - CHANGELOG.md
 ac_digest: AC1=5fbfaaac AC2=c1acc8f1 AC3=9050975f AC4=7f2b0a4c AC5=0cdf1869 AC6=a6cbfedc AC7=727df98e AC8=b99456d7 AC9=c672124b AC10=6ca44f82
-claimed_by: "c8d5"
-claimed_at: 2026-10-27T03:30:46Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
