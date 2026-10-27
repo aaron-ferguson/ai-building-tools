@@ -235,3 +235,41 @@ Each carries a comment saying to change them together, which is a rule with noth
   not read its own fixtures as markers when it scans `tests/`.
   **Write path:** a heredoc append to this file was refused as a sensitive-file edit; this note was
   appended with `python3` instead.
+
+- **2026-10-27 (verify, token 1fc2) — PASS.** Tree clean at capture (HEAD 0212aba, the claim; build
+  at 18ddee8). The dispatch said to resume an existing claim with uncommitted edits, but neither existed —
+  the interrupted turn had only read the item — so this pass claimed fresh. Gap published, not papered
+  over: mutating the comparison loop to check only copies 1 and 2 (`k <= 2`) leaves the suite's
+  self-run green, because no fixture has three copies where only the third drifts. FR2's "any copy"
+  holds today (a hand-built three-copy fixture reds on the third) but nothing guards it permanently.
+  No AC names more than two differing copies, so this is not an AC gap.
+
+## QA evidence
+
+Conventions: ../ai-building-conventions
+Level: `qa_level: verify` (frontmatter; no prose disagreement). Commands run, verbatim:
+`tests/declared-copies.test.sh [<root>]` and `for t in tests/*.test.sh; do "$t" || true; done` (unit_by_file
+form, each file's exit status recorded). Copy executed: the repo checkout (the change is a test suite and
+templates, which the suites copy from `skills/queue/templates/`). `./next --ac-digest 0146 --check` →
+`ac_digest matches`. Dirty set at Step 2: empty, so the intersection is empty and the verdict is not advisory.
+
+| AC | How checked | Result |
+|---|---|---|
+| AC1 | Own fixture: `alpha`/`beta` blocks `x` differing in one character, CLI run | exit 1, `block x differs between skills/queue/templates/alpha:3 and skills/queue/templates/beta:3`, both lines printed. Mutation `a != b` → `0 && …` reds the self-run's AC1 and AC7 cases (21/2) |
+| AC2 | Own fixture: begin without end in `alpha` | exit 1, `block x opened at skills/queue/templates/alpha:1 has no copy-end`. Mutation silencing `close_file`'s printf reds the self-run (22/1) |
+| AC3 | Own fixture: `x` marked in one file | exit 1, `block x has one copy, in skills/queue/templates/alpha`. Mutation `count < 2` → `< 1` reds (22/1) |
+| AC4 | Own fixtures: two unmarked `helper() {` → exit 1 naming helper and both files; same in identical marked blocks → exit 0; plus a third unmarked `gamma` → exit 1, `outside a marked block in skills/queue/templates/gamma` only | pass. Mutations: FR3 off → 21/2; record unmarked only on first definition → third-unmarked case reds (22/1); ignore markers → 19/4; drop template scope → repo tree reds (21/2) |
+| AC5 | Suite on `git archive HEAD` copy of `skills tests` | exit 0, 10 blocks: decomment 4, fm-value 3, fm-list 3, read-cell 3, column-in 2, header-of 2, column-named 2, scope-block 2, saw-on-pass 14, saw-prefix 7 |
+| AC6 | `grep -rn 'Change one, change' skills tests` | no output, rc=1 |
+| AC7 | Same archive copy; `declared_touches` → `declared_touchez` inside handoff's scope-block only (diff confirmed, line 359) | exit 1, `block scope-block differs between skills/queue/templates/close:376 and skills/queue/templates/handoff:359`; restored → 10 passed, 0 failed |
+| AC8 | `grep -n '\.claude/backlog' tests/declared-copies.test.sh` | no output |
+| AC9 | unit_by_file run, per-file exit codes | 40 files, every `rc=0`; `abort-announce.test.sh: 286 passed, 0 failed`, including the three `tests/declared-copies.test.sh` announce-block cases; `declared-copies: 23 passed, 0 failed` |
+| AC10 | `grep -n 'column_named' skills/queue/templates/next`; `grep -c 'name_row_column' …`; `git show 3242dd7:… \| grep -c column_named` | no output; 5; 5 |
+
+Mutations were run against a scratch copy of the suite inside a scratch mirror of the tree. Each diff
+was confirmed non-empty, and a control run returned `23 passed, 0 failed`. **Unguarded:** FR2's
+plural "any copy … to the others". Narrowing the comparison to the first pair (`k <= 2`) stays
+green at 23/0.
+FR5: `tests/close.test.sh`'s 0106 FR3 case is now a three-line pointer comment. FR7: present in `CHANGELOG.md`
+`## Unreleased`. NFRs: none declared. Always-on pass: the change is test and comment lines plus two renames. It adds no
+secret, input path or log field.
