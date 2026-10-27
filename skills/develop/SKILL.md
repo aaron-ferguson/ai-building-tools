@@ -445,6 +445,11 @@ trip when guessed at, and they come in threes; one file read costs less than the
 Work FR by FR, committing each logical unit as it completes rather than one commit at the end, in the
 conventions' commit format, referencing the ticket ID.
 
+**Make a refusal that arrives before its skill self-sufficient**: a refusal added to `skills/queue/templates/*`
+binds the next session, the skill change satisfying it only after a release. Its stderr names what is missing
+and names the fix, actionable without the skill, and it refuses before anything is written; the ticket's test
+runs the script into the refusal and asserts stderr names the fix — `0160`'s `names the line it wants`.
+
 **Every commit contains this session's work and nothing else**, per `CONCURRENCY.md`, *The git index
 is shared* — read it there rather than trusting a summary here. One thing is worth repeating:
 **`git add <paths> && git commit` is not a substitute for a pathspec**, since `git commit` writes the
