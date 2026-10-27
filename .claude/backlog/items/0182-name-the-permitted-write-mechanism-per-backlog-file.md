@@ -2,8 +2,8 @@
 id: "0182"
 title: Name the write mechanism that works for each backlog file, the lock included, where every stage reads it
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 close_by: verify
 ac_digest: AC1=61582456 AC2=17c866ac AC3=1b77b10e AC4=027c306a AC5=b97f8cf9 AC6=6249bb7e AC7=6df4dbb3 AC8=9fbc9516 AC9=b54a046f AC10=d0d0b2b8
@@ -33,15 +33,9 @@ expects:
   - references/TRACKER.md
   - tests/backlog-location.test.sh
   - CHANGELOG.md
-claimed_by: "8083"
-claimed_at: 2026-10-27T02:10:31Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/backlog-location.test.sh
-  - skills/queue/templates/claim  # transient mutation only: export dropped to prove the guard red, restored
-  - skills/queue/templates/close  # transient mutation only
-  - skills/queue/templates/handoff  # transient mutation only
-  - skills/queue/templates/next  # transient mutation only
-  - skills/queue/templates/reopen  # transient mutation only
 ---
 
 ## Problem
@@ -227,6 +221,25 @@ independent session was refused the same way and **splitting the call cleared it
   block. It must not set the variable by hand. No product code changes: the block is correct.
   Also unguarded, though no AC names it: `next`'s legacy tools-repo `FINDINGS.md` fallback (FR2's
   second site), which develop also flagged. Leave it for the person to decide, not develop.
+
+- **2026-10-26 (develop, token 8083) — AC2 nested-call guard added; no product code changed.**
+  The person's escalation answer asked to fix the double line and guard the export. **The double
+  line is not present at HEAD:** on a scratch legacy fixture with a stale `ac_digest:`, `close 0001
+  ab12` printed the legacy line once with the block as committed and twice with `export
+  BACKLOG_LEGACY_NOTED` removed from that fixture's `close` (run). So the block is correct, as
+  verify said, and the fix is the guard. Built in 135bc09. Whole suite at 135bc09: every file 0 failed.
+  - **Guard:** `tests/backlog-location.test.sh`, after the existing by-hand case: a legacy fixture
+    whose item carries `ac_digest: AC1=00000000` and one AC is claimed, handed to verify and claimed
+    again with token `ab12`. Then `close` itself runs with `BACKLOG_LEGACY_NOTED` unset and is
+    refused at the digest check. That check is reached only through the nested
+    `"$DIR/next" --ac-digest --check` call. The guard asserts a non-zero exit, `ac_digest differs`
+    in stderr, and exactly one legacy line in stderr. It never sets the variable.
+  - **Mutation (run):** `export BACKLOG_LEGACY_NOTED` was deleted from all five templates (they
+    stay byte-identical, so AC7 holds) → `47 passed, 1 failed`; the one failure is the new case,
+    `2 legacy line(s) in stderr`. After restoring → `48 passed, 0 failed`; `git status` on
+    `skills/queue/templates` was empty.
+  - Still unguarded and left for the person, as verify directed: `next`'s legacy tools-repo
+    `FINDINGS.md` fallback (FR2's second site).
 
 ## Requirements
 
