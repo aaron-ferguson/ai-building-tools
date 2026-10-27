@@ -17,7 +17,7 @@ expects:
   - skills/queue/templates
   - tests
   - CHANGELOG.md
-ac_digest: AC1=5fbfaaac AC2=c1acc8f1 AC3=9050975f AC4=56e774ba AC5=8f2742d6 AC6=a6cbfedc AC7=727df98e AC8=b99456d7 AC9=c672124b
+ac_digest: AC1=5fbfaaac AC2=c1acc8f1 AC3=9050975f AC4=7f2b0a4c AC5=0cdf1869 AC6=a6cbfedc AC7=727df98e AC8=b99456d7 AC9=c672124b AC10=6ca44f82
 claimed_by: "c8d5"
 claimed_at: 2026-10-27T03:30:46Z
 touches:
@@ -54,16 +54,25 @@ Each carries a comment saying to change them together, which is a rule with noth
   copies; any copy of a name is not byte-identical, between its markers, to the others. A red names
   the block, both files and the first differing line.
 - **FR3** — The same suite reds when a shell function name is defined (`name() {` at line start) in
-  two or more files under `skills/queue/templates/` outside a marked block — the detector for an
-  undeclared copy, which is how `reopen` came to carry `DECOMMENT` and `fm_value` unannounced.
-  Scoped to templates only: every test file defines `ok`, `bad` and `assert_*` by design.
-- **FR4** — Every duplication this row enumerates is declared under FR1: `decomment` (the
-  `DECOMMENT=` assignment in `next`, `close`, `handoff`, `reopen`), `fm-value` (`close`,
-  `handoff`, `reopen`), `fm-list` where its copies are identical (a differing copy is reported in
-  *Notes & decisions*, not normalised), `scope-block` (`close`, `handoff`), `saw-on-pass` (the
-  `saw_on_pass` line in every test file carrying it) and `saw-prefix` (the one-line
-  `saw: `-prefix `saw` in every test file carrying it). The `SAW_LINES` window `saw` variants are
-  distinct helpers, not copies, and stay unmarked.
+  two or more files under `skills/queue/templates/` and **any one** of those definitions sits outside
+  a marked block — the detector for an undeclared copy, which is how `reopen` came to carry
+  `DECOMMENT` and `fm_value` unannounced. "Any one", not "two or more unmarked": a third copy pasted
+  unmarked beside two marked ones is exactly the `reopen` case. Scoped to templates only: every test
+  file defines `ok`, `bad` and `assert_*` by design.
+- **FR4** — Every duplication in the templates is declared under FR1. Blocks and their copies:
+  `decomment` (the `DECOMMENT=` assignment in `next`, `close`, `handoff`, `reopen`), `fm-value`
+  (`close`, `handoff`, `reopen`), `fm-list` (`close`, `next`, `reopen`), `read-cell` (`close`,
+  `handoff`, `reopen`), `column-in` and `header-of` (`close`, `reopen`), `column-named` (`claim`,
+  `handoff`), `scope-block` (`close`, `handoff`; it already holds `declared_touches`,
+  `names_this_ticket` and `scope_note`), `saw-on-pass` (the `saw_on_pass` line in every test file
+  carrying it) and `saw-prefix` (the one-line `saw: `-prefix `saw` in every test file carrying it).
+  The `SAW_LINES` window `saw` variants are distinct helpers, not copies, and stay unmarked.
+  - **`fm_list` is normalised to `close`'s copy** (its `[ -n "$1" ] || return 0` first line and its
+    comment wording) in `next` and `reopen`, then marked. Normalising is permitted only where it is
+    behaviour-neutral at every call site, and the item's *Notes & decisions* says why (2026-10-26).
+  - **`next`'s `column_named` is renamed `name_row_column`** at its definition and every call: it
+    reads `$name_row` where the `claim`/`handoff` copies read `$header`, so it is a distinct helper
+    sharing a name, and under FR3 a shared name is a declared copy.
 - **FR5** — `tests/close.test.sh`'s *0106 FR3* byte-comparison case is removed, its comment
   pointing at the new suite: one copy, one guard.
 - **FR6** — The suite reads no path under `.claude/backlog/`. It compares blocks across *different
@@ -83,11 +92,13 @@ Each carries a comment saying to change them together, which is a rule with noth
   then it exits non-zero saying `x` has one copy.
 - [ ] AC4 — Given a fixture whose `skills/queue/templates/` holds two files each defining
   `helper() {` outside any marked block, when the suite runs on it, then it exits non-zero naming
-  `helper` and both files; and given the same two definitions inside identical marked blocks, it
-  passes.
+  `helper` and both files; given the same two definitions inside identical marked blocks, it
+  passes; and given those two marked files plus a third defining `helper() {` unmarked, it exits
+  non-zero naming `helper` and the third file.
 - [ ] AC5 — Given the repo tree, when the suite runs with no argument, then it exits 0 and reports
-  the blocks `decomment`, `fm-value`, `scope-block`, `saw-on-pass` and `saw-prefix` each with at
-  least two copies (`decomment` four, `scope-block` two).
+  the blocks `decomment` (four copies), `fm-value` (three), `fm-list` (three), `read-cell` (three),
+  `column-in` (two), `header-of` (two), `column-named` (two), `scope-block` (two), `saw-on-pass`
+  and `saw-prefix` (each at least two).
 - [ ] AC6 — Given the repo tree, when `grep -rn 'Change one, change' skills tests` runs, then it
   prints nothing.
 - [ ] AC7 — Given a copy of the repo tree with one character changed inside the `scope-block` copy
@@ -98,42 +109,9 @@ Each carries a comment saying to change them together, which is a rule with noth
 - [ ] AC9 — Given the full suite (`for t in tests/*.test.sh; do "$t" || exit 1; done`), when it
   runs after the change, then every file passes, `tests/abort-announce.test.sh` included for the new
   file.
-
-## Open design question
-
-**FR3, FR4 and AC5 cannot all hold for `fm_list`, so the tree cannot be green as specified.**
-Checked at HEAD cd66ca3 (develop, token e36d) by hashing every function body defined in more than
-one `skills/queue/templates/` file:
-
-| function | copies | identical? |
-|---|---|---|
-| `fm_list` | `close`, `next`, `reopen` | **no, all three differ.** `close` and `next` differ only in a two-line comment's wording. `reopen` lacks `close`'s first line `[ -n "$1" ] \|\| return 0` and the comment |
-| `column_named` | `claim`, `handoff`, `next` | `claim` = `handoff`; `next` reads `$name_row` where the others read `$header`, a real local difference |
-| `fm_value`, `read_cell` | `close`, `handoff`, `reopen` | yes |
-| `column_in`, `header_of` | `close`, `reopen` | yes |
-| `declared_touches`, `names_this_ticket`, `scope_note` | `close`, `handoff` | yes (inside the scope block) |
-
-FR4 says `fm-list` is declared only "where its copies are identical", and a differing copy "is
-reported in *Notes & decisions*, not normalised". No two `fm_list` copies are identical, so none
-gets marked. FR3 then reds on `fm_list`, which is defined outside a marked block in three
-templates. AC5 requires the suite to exit 0 on the repo, so as written the build fails its own
-criterion. The design note re-verified the four enumerated text blocks, but `fm_list` was not
-among them.
-
-**The decision owed, one of:**
-1. **Normalise `close`/`next` (comment wording only) and mark them `fm-list`.** `reopen` then
-   stays alone and unmarked, and FR3 does not red. This contradicts FR4's "not normalised", though
-   the change is to a comment and not to behaviour.
-2. **Also normalise `reopen`**, adding the `[ -n "$1" ] || return 0` guard. That is a behaviour
-   change in `reopen`, and it might be the silent drift this row exists to catch. Is it a defect,
-   or a deliberate local difference?
-3. **Narrow FR3**, e.g. an allowlist of names that are known to differ. That reintroduces a
-   per-name exception the decision rejected for comparisons.
-
-Also unasked: FR3 forces markers on `column_in`, `header_of`, `read_cell` and `column_named`
-(`claim` + `handoff`), which FR4 does not enumerate. Develop would read FR4 as a floor and mark
-them, but the AC5 block list would then be incomplete as a description of the repo.
-No code was written for this ticket.
+- [ ] AC10 — Given the repo tree, when `grep -n 'column_named' skills/queue/templates/next` runs,
+  then it prints nothing, and `grep -c 'name_row_column' skills/queue/templates/next` prints the
+  count of definitions plus calls that `column_named` had before the change (five at 3242dd7).
 
 ## Out of scope
 
@@ -194,3 +172,35 @@ No code was written for this ticket.
   `fm_list`.** See *Open design question*. Routed to `design` (`/design 0146`). No code was
   written. The hashes were taken at cd66ca3, after 0145 added `names_this_ticket` to the scope
   block.
+
+- **2026-10-26 (design, token c8d5) — decided: option 2, normalise all three `fm_list` copies and
+  mark them; mark every helper FR3 forces; tighten FR3.** Re-verified at HEAD 3242dd7.
+  **`reopen`'s missing guard is an omission, not a defect and not a deliberate difference.**
+  `reopen`'s only call, `for b in $(fm_list "$dep" blocked_by)`, runs after
+  `[ -f "$dep" ] && [ "$dep" != "$item" ] || continue`, so `$1` is never empty there and adding
+  `[ -n "$1" ] || return 0` changes nothing `reopen` does (the guard is in `close`/`next` since
+  88e3701, per `git log -S`; it serves their callers, which pass `$(item_for …)` and can be empty). The
+  `close`/`next` difference is two comment lines' wording. So FR4's "not normalised" is amended
+  rather than broken: its point was not to change behaviour quietly under cover of a guard, and
+  normalisation here is shown behaviour-neutral, which is now FR4's condition for it.
+  Rejected: **option 1** (normalise `close`/`next` only) leaves `reopen` unmarked beside two
+  marked copies, which the tightened FR3 reds on, and which is the very "copy nobody announced"
+  this row exists for. **Option 3** (an allowlist) is a per-name exception, already rejected for
+  comparisons on 2026-10-25.
+  **The unasked half.** Every function defined in two or more templates at 3242dd7: `column_in`,
+  `header_of` (`close`, `reopen`); `read_cell`, `fm_value` (`close`, `handoff`, `reopen`);
+  `fm_list` (`close`, `next`, `reopen`); `column_named` (`claim`, `handoff`, `next`); and
+  `declared_touches`, `names_this_ticket`, `scope_note` (`close`, `handoff`, inside the scope
+  block). All but `fm_list` and `next`'s `column_named` hash identical across their copies.
+  FR4 now enumerates every one, so FR4 is the full list and not a floor, and AC5 describes the
+  repo. `next`'s `column_named` reads `$name_row`, not `$header`: a real local difference, so it is
+  renamed rather than marked or normalised.
+  **FR3 tightened** from "two or more files define it outside a block" to "it is defined in two or
+  more files and any one definition is outside a block". The old wording would pass `next`'s
+  unmarked `column_named` beside two marked copies, and would equally pass a fourth `DECOMMENT`
+  reader pasted unmarked; the new wording forces the rename.
+  **Criteria accounting:** confirmed unchanged AC1–AC3, AC6–AC9; changed AC4 (adds the
+  third-unmarked-copy case) and AC5 (full block list with counts); added AC10 (the rename).
+  FR3 and FR4 rewritten; FR1, FR2, FR5–FR7 unchanged. `qa_level: verify` and no `close_by`
+  re-read and kept: AC7 is still a mutation a verifying session should run itself. `size: m` kept;
+  the renames and the two `fm_list` edits are small beside the marker lines.
