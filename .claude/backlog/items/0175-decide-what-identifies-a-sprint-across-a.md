@@ -226,3 +226,60 @@ exactly as it subtracts `limit_hit`→`resumed` windows.
   | AC7 one B block | always append | red |
   | AC7 A byte-identical (and C, separators) | don't back off over C's leading blank | red after the tightening; green before it (gap found and closed) |
   | AC8 greps | — | each red before the prose was written |
+
+- **2026-10-26 (verify, token 3358)** — PASS; evidence below. One FR1 qualifier is noted unguarded
+  there ("the largest first-priced-turn cost"). That qualifier is outside AC1's wording, so it does
+  not hold the close.
+
+## QA evidence
+
+Conventions: ../ai-building-conventions (resolved from `.claude/backlog/config.yml` `conventions.path`)
+
+Level: `unit` (frontmatter; no drift; the item has no `**Level:**` prose). The command ran as
+`commands.unit_by_file`, verbatim, at 65d0bd7 (the code under test is 9337f11 + 4613e4a + bc7fc36):
+`for t in tests/*.test.sh; do "$t" || true; done`. All 38 files tallied 0 failed, including
+`tests/sprint-ledger.test.sh: 200 passed, 0 failed`, `tests/sprint.test.sh: 386 passed, 0 failed,
+0 skipped` and `tests/next.test.sh: 575 passed, 0 failed`. No lint or typecheck is configured.
+
+Tree: `git status --porcelain` was empty at Step 2 and empty again after the last check, so the
+dirty set is empty, the intersection is empty, and the verdict is not advisory. Every mutation ran
+in a detached worktree at 65d0bd7, which kept them out of the shared checkout. Each was applied by
+an exact single-occurrence replace and checked with a non-empty `git diff --stat`. Each file was
+restored by path, and the worktree's status was empty at the end.
+
+Clause table, with every mutation re-run by this pass:
+
+| AC | Clause | Mutation (file) | Result |
+|---|---|---|---|
+| AC1 | cap = stage − (spent − repaid) + repay_next = 3.70 | drop `+ repay_next` (`tools/harvest-usage.sh`) | red: cap 2.40 |
+| AC1 | `− (spent − repaid)` | `− spent` | red: cap 1.30 |
+| AC1 | "via `harvest-usage.sh --legs`" | Step 7 `--legs <session-id> --run` → `--per-leg` | red |
+| AC1/FR1 | repay_next is the *largest* first turn | `max(...)` → last leg's first turn | **green**. The fixture's last leg is also its largest, so FR1's "largest" is unguarded. The phrase is not in AC1, so this is not a gap under the gap test |
+| AC2 | one unpriced leg → full stage cap | unpriced check → `if False` | red |
+| AC2 | resumed event names `cap_basis: "unpriced"` | Step 7 phrase replaced | red |
+| AC3 | Given: own run id, 10 h old | own-id branch → `if false` | red (also AC8/FR4 ordering) |
+| AC3 | rewrites the timestamp | skip the `held-by` write on own retake | red |
+| AC3 | `supervisor_resumed` with `suspended_at` = old stamp | suspended_at ← `$NOW` | red |
+| AC4 | 0153's path unchanged: fresh marker refused | age check → `true` | red |
+| AC4 | exactly one `sprint_ended`, `reason: "superseded"` | reason → `stopped` | red |
+| AC4 | `by` naming the new run | by ← `$held_run` | red |
+| AC4/FR6 | exactly one, never a second | drop the `grep -qs … \|\|` guard | red |
+| AC5 | refuses and dispatches nothing | drop the ended-run refusal line | red |
+| AC5 | Step 1 says "dispatches nothing" | phrase replaced | red |
+| AC6 | a log with two `sprint_ended` events counts 1 (two events that differ in `at` and reason) | `skills/queue/templates/next` counts events per log | red, 573/2 |
+| AC7 | exactly one `## sprint B` block | always append (`tools/sprint-ledger.sh`) | red |
+| AC7 | carrying the second call's figures | return early when the block exists | red |
+| AC7 | A byte-identical | replace to EOF; drop the blank-line back-off | red, both |
+| AC8 | Step 1 run id format, reuses id/log, `/sprint resume <run-id>` | each phrase replaced in Step 1 | red, each |
+| AC8 | own-run-id check before the age check | (the AC3 own-id mutation) | red, line-order assertion |
+| AC8 | Step 6 `completed` / `stopped` / `superseded`, never at a suspension | each replaced in Step 6 | red, each |
+| AC8 | Step 6 replaces its own block / the latest call wins | each replaced separately | red, each |
+| AC8 | Step 7 `repaid` / `repay_next` | each replaced in Step 7 | red, each |
+
+NFRs: the item has no NFR table. Always-on pass (`CONVENTIONS_CORE.md`): the new harvest output
+stays inside the aggregate-figures character set, and its privacy sentinel case is green. The new
+`supervisor_resumed` event goes to the gitignored local run log. No secrets, and no company
+material. The step-1 block reads its config, refuses before it writes, and fails loudly.
+
+Copy executed: the repo copy (worktree at 65d0bd7). The installed plugin is 0.9.43, which does not
+carry this change.
