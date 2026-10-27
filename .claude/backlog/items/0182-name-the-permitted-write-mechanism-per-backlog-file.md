@@ -205,6 +205,23 @@ independent session was refused the same way and **splitting the call cleared it
     tools repo's `FINDINGS.md`, which is FR2's second allowed site (reasoned, not run). Verify
     should treat both as unguarded until a guard exists.
 
+- **2026-10-26 (verify, token 1166) — FAIL, on AC2 only; every other AC passed its mutation.**
+  **AC2's "exactly one stderr line" is unguarded on the one path where a script runs another.**
+  Dropping `export BACKLOG_LEGACY_NOTED` from the location block in all five templates (they stay
+  byte-identical, so AC7 holds) leaves the whole suite green, but the outcome breaks. On a legacy
+  fixture whose item carries a stale `ac_digest`, `./.claude/backlog/close 0001 ab12` printed the
+  legacy line **2** times (1 with the export in place). `close` runs `"$DIR/next" --ac-digest …
+  --check 2>&1` and echoes that output when it refuses. The existing AC2 nested case is
+  `BACKLOG_LEGACY_NOTED=1 ./.claude/backlog/next`: it sets the variable by hand, so it measures
+  the guard on the print and never the export. Develop's build note named this gap, reasoned but
+  not run, and this pass ran it.
+  **Constraint for develop:** add a guard that runs `close` itself on a legacy fixture, along a
+  path that reaches its nested `next` call. The guard must count exactly one legacy line in
+  `close`'s stderr, and it must go red when `export BACKLOG_LEGACY_NOTED` is removed from the
+  block. It must not set the variable by hand. No product code changes: the block is correct.
+  Also unguarded, though no AC names it: `next`'s legacy tools-repo `FINDINGS.md` fallback (FR2's
+  second site), which develop also flagged. Leave it for the person to decide, not develop.
+
 ## Requirements
 
 - **FR1 — Where the backlog lives.** `references/CONCURRENCY.md` gains a section *Where the backlog
@@ -255,3 +272,49 @@ independent session was refused the same way and **splitting the call cleared it
 - [ ] AC8 — Given `skills/sprint/SKILL.md` Step 3, when read, then it cites *When a backlog write is refused* and no longer says to `cp` a backlog file into place.
 - [ ] AC9 — Given `CHANGELOG.md` `## Unreleased`, when read, then it names the move to `.backlog/`, `./migrate`, the 2026-12-31 legacy end and the install-before-migrate order.
 - [ ] AC10 — Given the existing `tests/*.test.sh`, when the suite is run after fixtures are moved to `.backlog/`, then every file tallies green, and at least one existing script test still runs against a legacy fixture.
+
+## QA evidence
+
+Conventions: ../ai-building-conventions (resolved from `.claude/backlog/config.yml` `conventions.path`)
+
+**FAIL: AC2.** Every other AC passed with a red mutation. The verdict is not advisory: the tree was
+clean at Step 2 and after the last check, so the intersection is empty.
+
+Level: `verify` (frontmatter; the item has no `**Level:**` prose, so no drift). Ran
+`tests/backlog-location.test.sh`, which is the scripted assertion the ACs name: `47 passed, 0
+failed`. AC10 also needed the whole suite, run as `commands.unit_by_file` verbatim (`for t in
+tests/*.test.sh; do "$t" || true; done`) at 65d0bd7: all 38 files tallied 0 failed. No lint or
+typecheck is configured. Every mutation ran in a detached worktree at 65d0bd7, with a non-empty
+diff each time. Each file was restored by path, and the worktree's status was empty at the end.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | none prints the legacy line at `.backlog/` | the note prints unconditionally (5 templates) | red, 5 scripts |
+| AC1 | each behaves as it does today | `.backlog/` resolves ROOT as `../..` | red (AC3 cases) |
+| AC1 | (reopen, close) as today | `reopen` / `close` exit 1 only at `.backlog/` | red: `tests/ac-digest.test.sh`, `tests/backlog-location.test.sh`, plus `tests/close.test.sh` 139 failed for close |
+| AC2 | works and prints one line naming `./migrate` and `2026-12-31` | note removed; `./migrate` dropped; date changed | red, each |
+| AC2 | exactly one line, nested call | ignore `BACKLOG_LEGACY_NOTED` | red |
+| AC2 | **exactly one line, nested call through `close`** | **drop `export BACKLOG_LEGACY_NOTED`** | **GREEN, whole suite. Outcome broken: `close` on a stale-digest legacy fixture printed 2 legacy lines. UNVERIFIED** |
+| AC3 | exits non-zero naming both paths, writes nothing | refusal off; names one path | red, both |
+| AC4 | `.gitignore` names `.backlog/` | skip the rewrite | red |
+| AC4 | one commit | split it into two commits | red |
+| AC4 | lock released / runs moved | lock left held | red |
+| AC4 | a second run exits 0, already migrated | second run refuses | red |
+| AC5 | held lock / foreign claim / `.active/` / pre-existing `.backlog/` | each check removed | red, each (the lock case reds on the cause it names: the later `mkdir` still refuses) |
+| AC6 | four phrases on one line | each phrase replaced | red, each |
+| AC7 | red on a new hit anywhere else | `.claude/backlog` added to `skills/develop/SKILL.md` | red |
+| AC7 | red when one block differs | `handoff` block edited | red |
+| AC7 | red when the dates disagree | block date changed; section date changed | red, both |
+| AC8 | cites the section; no `cp` into place | citation removed; "`cp` it into place" restored | red, both |
+| AC9 | `.backlog/`, `./migrate`, 2026-12-31, install, `tools/release verify` | each replaced in `## Unreleased` | red, each |
+| AC10 | every file tallies green; one script test on a legacy fixture | the suite run above; `tests/reopen.test.sh` line 93 `BL()` is `.claude/backlog` | holds |
+
+NFRs: the item has no NFR table. Always-on pass: no secrets and no company material. Scripts
+refuse before they write (AC3, AC5). Step 4, newly reachable: in a repo that is installed but not
+yet migrated, a fenced `.backlog/` block run verbatim creates `.backlog/`, and every script then
+refuses with "two backlogs". `references/CONCURRENCY.md` *Where the backlog lives* covers this
+explicitly (read `.backlog/` as `.claude/backlog/` until migrated). The failure is loud, not
+silent, so it is noted here and does not hold the ticket.
+
+Copy executed: the repo templates (worktree at 65d0bd7). The installed plugin is 0.9.43, which
+predates this change.
