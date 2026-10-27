@@ -2,8 +2,8 @@
 id: "0047"
 title: Give the busy-lock procedure a close-time path
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: verify
 size: s
 created: 2026-08-25
@@ -15,13 +15,9 @@ expects:
   - references/CONCURRENCY-INCIDENTS.md
   - skills/verify/SKILL.md
   - tests/citations.test.sh
-claimed_by: "4229"
-claimed_at: 2026-10-27T06:14:09Z
+claimed_by:
+claimed_at:
 touches:
-  - references/CONCURRENCY-INCIDENTS.md
-  - skills/verify/SKILL.md
-  - tests/by-hand-lock.test.sh
-  - README.md
 ---
 
 ## Problem
