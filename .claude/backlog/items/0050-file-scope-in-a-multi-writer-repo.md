@@ -3,7 +3,7 @@ id: "0050"
 title: Decide how file scope works when the prose files are the product
 type: chore
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -17,8 +17,8 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - CLAUDE.md
-claimed_by:
-claimed_at:
+claimed_by: "6a6a"
+claimed_at: 2026-10-27T19:42:41Z
 touches:
 ---
 
