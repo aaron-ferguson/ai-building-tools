@@ -22,7 +22,7 @@ touches:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - references/CONCURRENCY.md
-  - tests/citations.test.sh
+  - tests/shared-dirty-tree.test.sh   # new
 ---
 
 ## Problem
