@@ -159,6 +159,30 @@ if (cd "$OLD" && BACKLOG_LEGACY_NOTED=1 ./.claude/backlog/next develop 2>&1) | g
 else
   ok "a nested call, under the exported note, prints no second legacy line"
 fi
+# The case above sets the variable by hand, so it proves `next` honours the note and never that the
+# block EXPORTS it: dropping `export BACKLOG_LEGACY_NOTED` left the whole suite green while `close`
+# printed the line twice (0182 verify, token 1166). So `close` itself is driven, without the
+# variable, into its nested `"$DIR/next" --ac-digest --check` call — a stale `ac_digest:` is the
+# cheapest refusal that reaches it — and the legacy lines in its stderr are counted.
+NEST="$WORK/nest"
+mk_repo "$NEST" .claude/backlog
+NEST_ITEM="$NEST/.claude/backlog/items/0001-fixture.md"
+awk '/^qa_level:/ { print; print "ac_digest: AC1=00000000"; next }
+     /^## Notes & decisions/ { print "## Acceptance criteria"; print ""; print "- [ ] AC1 — Given a fixture, when it is closed, then it closes."; print "" }
+     { print }' "$NEST_ITEM" > "$WORK/nest-item" && cat "$WORK/nest-item" > "$NEST_ITEM"
+git -C "$NEST" add .claude/backlog/items
+git -C "$NEST" commit -q -m "stale digest"
+run_in "$NEST" .claude/backlog claim 0001 ab12
+run_in "$NEST" .claude/backlog handoff 0001 ab12 verify
+run_in "$NEST" .claude/backlog claim 0001 ab12
+unset BACKLOG_LEGACY_NOTED
+run_in "$NEST" .claude/backlog close 0001 ab12
+n="$(legacy_lines)"
+if [ "$RC" -ne 0 ] && printf '%s\n' "$ERR" | grep -qF 'ac_digest differs' && [ "$n" = 1 ]; then
+  ok "close, through its nested next call, prints exactly one legacy line"
+else
+  bad "0182 AC2 — close on a stale-digest legacy fixture: exit $RC, $n legacy line(s) in stderr, expected 1 and the ac_digest refusal: $ERR"
+fi
 
 echo "AC3 — a repo holding both locations is refused from either, and nothing is written"
 BOTH="$WORK/both"
