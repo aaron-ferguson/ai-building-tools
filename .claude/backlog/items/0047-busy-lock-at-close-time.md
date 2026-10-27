@@ -20,7 +20,8 @@ claimed_at: 2026-10-27T06:14:09Z
 touches:
   - references/CONCURRENCY-INCIDENTS.md
   - skills/verify/SKILL.md
-  - tests/citations.test.sh
+  - tests/by-hand-lock.test.sh
+  - README.md
 ---
 
 ## Problem
