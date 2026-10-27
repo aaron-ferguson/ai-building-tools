@@ -2,9 +2,10 @@
 id: "0091"
 title: Make a by-hand backlog write take the lock and prove its commit landed
 type: bug
-next: queue
+next: develop
 status: ready
 qa_level: verify
+ac_digest: AC1=5ff73aa9 AC2=ff53688f AC3=b8925e9b AC4=80636787 AC5=f8468659 AC6=692d4ad4
 size: m
 created: 2026-09-05
 source: agent
@@ -67,9 +68,11 @@ Three separate failures of the same by-hand write, all of them silent.
 - FR2 — `CONCURRENCY.md`'s by-hand-lock rule requires two things of the commit inside the lock:
   **every pathspec named literally, never through a variable**, and **`git status` confirmed clean
   for those paths before the release**, not after.
-- FR3 — `CONCURRENCY-INCIDENTS.md` gains the zsh word-split incident as a fourth way a by-hand lock
-  leaks — the first that is about the commit failing while the release succeeds, rather than about
-  the lock outliving the turn.
+- FR3 — `CONCURRENCY-INCIDENTS.md` gains the zsh word-split incident as an entry in its list of
+  things that bite a by-hand lock — the first that is about the commit failing while the release
+  succeeds, rather than about the lock outliving the turn. The list's lead-in and both of
+  `CONCURRENCY.md`'s pointers to it (*"three ways a by-hand lock leaks"*) stop carrying a count, so
+  the next entry added does not stale three sentences in two files.
 - FR4 — `docs/decisions/001` FR2's *"fold it into the boundary commit"* clause is corrected to match
   what the scripts actually commit, and says the append precedes the boundary commit.
 - FR5 — A guard asserts FR1 across all six skills: the park section of each names the lock. This is
@@ -93,9 +96,13 @@ Three separate failures of the same by-hand write, all of them silent.
 - [ ] AC3 — Given `references/CONCURRENCY.md`, when it is searched for the phrase describing the
   pre-release status check, then the rule states the check happens **before** the release. Red-making
   mutation: moving the word `before` to `after` — the guard asserting the ordering reddens.
-- [ ] AC4 — Given `references/CONCURRENCY-INCIDENTS.md`, when its list of ways a by-hand lock leaks
-  is read, then it names four, the fourth being a commit that fails while the release succeeds.
-  Red-making mutation: deleting that entry, which returns the count to three.
+- [ ] AC4 — Given `references/CONCURRENCY-INCIDENTS.md`, when its list of things that bite a
+  by-hand lock is read, then it carries an entry for a commit that fails while the release
+  succeeds, and neither that list's lead-in nor `references/CONCURRENCY.md` states how many ways a
+  by-hand lock leaks or bites (no number word — `three`, `four`, `five` — directly before
+  `ways a by-hand lock` or `things bite a by-hand lock`). Red-making mutations: deleting that entry
+  — the guard asserting its presence reddens; and today's files, which say `Four things bite` and
+  `three ways a by-hand lock` — the count assertion reddens.
 - [ ] AC5 — Given `docs/decisions/001-one-command-per-stage-boundary.md`, when the `FINDINGS.md`
   clause is read, then it does not instruct folding the append into the boundary commit. Red-making
   input: today's file, which does.
@@ -190,3 +197,14 @@ Three separate failures of the same by-hand write, all of them silent.
   it be read first. And the 2026-09-09 `queue` Step 2 vs `CONCURRENCY.md` disagreement (item,
   ranking, row "all unlocked") is still in `queue/SKILL.md:204-205`; it concerns those writes, not
   `FINDINGS.md`, which `CONCURRENCY.md` names explicitly, so FR1 is specifiable without settling it.
+
+- **2026-10-27 (queue, re-specified on a person's escalation answer)** — Adopted develop's
+  count-free AC4 rather than the "names five" variant: a count over a list this ticket does not own
+  is the cardinality shape `queue` Step 2 warns against, and it went stale once already between
+  capture and claim. FR3 widened to make the list's lead-in and `CONCURRENCY.md`'s two pointers
+  (lines 261, 268) count-free, which develop flagged as the same staleness in prose this ticket
+  already edits; AC4 now asserts that too, so the widening is checked rather than merely written.
+  `size` stays `m` — three sentence edits in files FR2/FR3 already open. No other AC, FR or *Out of
+  scope* line changes; ACs were all unticked. Back to `next: develop`: no FR has code yet, and
+  develop's re-check at `7551285` found FR1, FR2 and FR4 still current. `0126` and the `queue`
+  Step 2 disagreement stay as develop recorded them — notes, not blockers.
