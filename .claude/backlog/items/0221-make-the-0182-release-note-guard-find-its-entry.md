@@ -2,8 +2,8 @@
 id: "0221"
 title: Make the 0182 release-note guard find its entry wherever a release moves it
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -17,12 +17,9 @@ expects:
   - tests/backlog-location.test.sh
   - tests/changelog-entry-guards.test.sh
 ac_digest: AC1=de3ed1a3 AC2=22a6488f AC3=2abe7175 AC4=e8829718 AC5=b2c730d4 AC6=6e862a51
-claimed_by: "f7e4"
-claimed_at: 2026-10-27T19:08:39Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/backlog-location.test.sh   # also mutated and restored, transiently, for AC2-AC5 reds
-  - tests/changelog-entry-guards.test.sh   # new; also mutated transiently for the AC6 red
-  - README.md   # the guard block tests/citations.test.sh (0046) checks names every suite
 ---
 
 ## Problem
