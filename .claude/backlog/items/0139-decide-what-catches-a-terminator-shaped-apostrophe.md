@@ -171,3 +171,46 @@ lookahead. See *Notes & decisions* for the measurement and what was rejected.
   total grew from 1,162 because the templates grew since. The harness is not committed; its
   shape is the one this note and the design note describe.
   Added a CHANGELOG line: a session editing a script will see the new reds.
+
+## QA evidence
+
+Verified 2026-10-27 by `verify` (token 9a6f) at `qa_level: unit`, against HEAD (a descendant of build commit 56eff72).
+
+Conventions: ../ai-building-conventions
+
+Command (config.yml `commands.unit_by_file`, the reporting form of `commands.unit`): `for t in tests/*.test.sh; do "$t" || true; done`. All 40 files reported `0 failed`, and `tests/backlog-scripts-installed.test.sh` reported `55 passed, 0 failed`. No lint or typecheck is configured. The repo checkout ran (tests and templates). The change is a test clause and a reference paragraph, so no installed-skill copy is under test.
+
+Dirty set at Step 2: empty. At verdict, only this pass's own scratch directory (`.qa-0139/`, since removed) was dirty. Intersection with the evidence set: empty, so the verdict is not advisory.
+
+`ac_digest`: `./next --ac-digest 0139 --check` → `0139: ac_digest matches`.
+
+All mutations ran in a `git archive HEAD` mirror under `.qa-0139/m/`, never on the templates in place. Each was restored by the path mutated, followed by a control run.
+
+### Clause table
+
+| AC | Clause | Guard / mutation | Result |
+|---|---|---|---|
+| AC1 | Given `close`, `'` at column 0 of the first `ac_counts` body line (now 570), in both copies | `570s/^/'/` on `skills/queue/templates/close` and `.claude/backlog/close` | `53 passed, 2 failed`; both FAILs name `close`, `:569` opened, line 570 |
+| AC1 | fails naming `close`, the opened line, the closed line | message text read off the FAIL lines | present in both |
+| AC1 | restored, it passes | control | `55 passed, 0 failed` |
+| AC1 | could it be red without the change | same mutant against the pre-change test file `56eff72^` | `53 passed, 0 failed`, so the new clause is what catches it; `sh -n` accepts the mutant |
+| AC1 | `after` clause load-bearing | `after` report bypassed with `next;` in the mirror test, plus the AC1 mutant | `55 passed, 0 failed` (goes green: the clause is necessary) |
+| AC2 | `'` after the leading whitespace, same line, both copies | `570s/^  /  '/` | `53 passed, 2 failed`, same message; control `55 passed, 0 failed` |
+| AC3 | every line strictly inside every multi-line region of all templates, `'` at col 0 and, separately, after whitespace | `.qa-0139/sweep.sh`: scanner lifted verbatim from the test file; region list from the same scanner printing each multi-line region at its close; six templates, `migrate` included | `SWEEP-DONE scanner=new.awk total=1200 misses=0` |
+| AC3 | the sweep can miss (control) | same harness, scanner from `56eff72^` | `SWEEP-DONE scanner=old.awk total=1200 misses=20`: `close:570–574` and `close:824–828`, col0 and indent each |
+| AC4 | the unmutated templates and installed copies report nothing, and the file is green | full suite run above; scanner run directly over each clean template prints nothing | `55 passed, 0 failed` |
+| AC5 | a body line in one copy begins with `"` after whitespace | `571s/^  in_ac {/  "x" in_ac {/` on `.claude/backlog/close` only | `head` FAIL naming line 571, "a body line may not begin with " or )", plus the expected divergence FAIL; control `55 passed, 0 failed` |
+| AC5 | `head` clause load-bearing | `head_bad = 0` in the mirror test, plus the AC5 mutant | only the divergence FAIL remains (`54 passed, 1 failed`); the `head` report is gone |
+| AC5 | FR2's `)` head, beyond the AC | `  ) in_ac {` at 571 | `head` FAIL naming line 571 |
+| AC6 | CONCURRENCY.md states that the closing line carries only `)` or double-quoted args | phrase replaced in the mirror | `54 passed, 1 failed` naming the missing statement; control green |
+| AC6 | names the blank-line apostrophe as uncaught | phrase replaced in the mirror | `54 passed, 1 failed`; control green |
+
+### NFRs
+
+| Row | Check | Result |
+|---|---|---|
+| Testing | the `close:288` (now `close:570`) column-0 mutation reddens the guard and is restored by path | holds (AC1 rows) |
+| Dependencies | 56eff72 touches only `tests/backlog-scripts-installed.test.sh` and `references/CONCURRENCY.md`, using `sh`/`awk` already required | holds; unguarded (true today, but no test pins it) |
+| Documentation | stated once in `references/CONCURRENCY.md`, *The five scripts*; the rejected shapes are recorded in *Notes & decisions* | holds; the statement is guarded by AC6, and the rejection record is prose only. Drift: the row names "*The four scripts*" but the section is titled *five* |
+
+Always-on pass (`CONVENTIONS_CORE.md`): no secrets and no company material. Test-first is shown by the `56eff72^` control. There is no auth, UI, log or egress change, so no security, accessibility or privacy pass is owed.
