@@ -202,6 +202,17 @@ W5="$(window "$VERIFY" '## Step 5 — Act on the verdict')"
 in_window "AC4 — Step 5 cites the procedure's file" "$W5" '`CONCURRENCY-INCIDENTS.md`, rule *Lock every write to the backlog directory*'
 in_window "AC4 — and names the close-time case it meets" "$W5" 'busy lock at close'
 
+# 0065 — the rule against rewriting QUEUE.md by hand names the technique that actually did damage:
+# an in-place stream edit, which neither "Write" nor "read-rebuild-write" reads as covering.
+echo "0065 — Never rewrite QUEUE.md by hand names stream editors, temp-file rewrites, the exception and a safe shape"
+W65="$(window "$CONC" 'Never rewrite `QUEUE.md` by hand')"
+in_window "AC1 — names in-place stream editing as prohibited" "$W65" 'never an in-place stream edit — `sed -i`, `perl -i`'
+in_window "AC2 — names a whole-file rewrite through a temp file as the same class" "$W65" 'a whole-file rewrite through a temp file'
+in_window "AC3 — states the exception in terms that apply to another script" "$W65" 'one process holding the lock across the whole rebuild and its commit'
+in_window "AC4 — states the safe shape for an unavoidable multi-row rewrite" "$W65" 'keep it only if the diff is exactly the intended change'
+I65="$(window "$INCID" 'rule: *Never rewrite `QUEUE.md` by hand*')"
+in_window "FR4 — the incident and its only signal are in CONCURRENCY-INCIDENTS.md" "$I65" 'the diffstat'
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 TALLIED=1
 [ "$FAIL" -eq 0 ]

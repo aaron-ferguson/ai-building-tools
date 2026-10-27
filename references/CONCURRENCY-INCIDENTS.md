@@ -221,6 +221,15 @@ erroring. The failure was safe but silent, and a reader would conclude the backl
 than that the parser was wrong. `./next` now refuses a table shape it cannot parse; that is why
 "refuse rather than guess" is stated as a property of both scripts.
 
+### The stream edit that deleted every blank line — rule: *Never rewrite `QUEUE.md` by hand*
+
+Closing 0030 without the scripts, a stray `perl -i -ne` with an unset variable expanded its match to
+`"\n"` and deleted **every blank line in `QUEUE.md`**. The row removal beside it was correct, so the
+only signal was the diffstat — 14 deletions for a one-row close — which nothing requires anyone to
+read; it was repaired in the next commit. The rule then named `Write` and read-rebuild-write, and a
+reader took it as covering only those, so three later multi-row inserts went through `awk` to a temp
+file, each guarded by a diff check invented on the spot. That check is now the rule's safe shape.
+
 ### The rename that no mechanism could see — rule: *A change that touches every file takes an exclusive claim*
 
 Renaming the container ticket type effort → project (`267d13f`, 2026-08-23) touched **30 files**:
