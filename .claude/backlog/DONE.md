@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0047 | Give the busy-lock procedure a close-time path | bug | verify | 2026-10-27 | [items/0047-busy-lock-at-close-time.md](items/0047-busy-lock-at-close-time.md) |
 | 0091 | Make a by-hand backlog write take the lock and prove its commit landed | bug | verify | 2026-10-27 | [items/0091-by-hand-backlog-writes.md](items/0091-by-hand-backlog-writes.md) |
 | 0139 | Decide what catches an apostrophe that lands where a legitimate awk terminator goes | bug | unit | 2026-10-27 | [items/0139-decide-what-catches-a-terminator-shaped-apostrophe.md](items/0139-decide-what-catches-a-terminator-shaped-apostrophe.md) |
 | 0146 | Decide when a required duplication earns a drift guard | debt | verify | 2026-10-27 | [items/0146-when-a-copy-earns-a-drift-guard.md](items/0146-when-a-copy-earns-a-drift-guard.md) |

@@ -2,8 +2,8 @@
 id: "0047"
 title: Give the busy-lock procedure a close-time path
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 size: s
 created: 2026-08-25
@@ -15,9 +15,10 @@ expects:
   - references/CONCURRENCY-INCIDENTS.md
   - skills/verify/SKILL.md
   - tests/citations.test.sh
-claimed_by: "9ff7"
-claimed_at: 2026-10-27T06:22:59Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -59,15 +60,15 @@ session reading the rule literally at close time does the wrong thing.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `references/CONCURRENCY-INCIDENTS.md` *A busy or stale lock*, when read, then it
+- [x] AC1 — Given `references/CONCURRENCY-INCIDENTS.md` *A busy or stale lock*, when read, then it
   names the close-time case and says the session retries rather than stopping.
-- [ ] AC2 — Given the same section, when read, then it says where a verdict goes if the lock is
+- [x] AC2 — Given the same section, when read, then it says where a verdict goes if the lock is
   still held after the retry.
-- [ ] AC3 — Given the same section, when read, then the under-5-minutes claim-time instruction to
+- [x] AC3 — Given the same section, when read, then the under-5-minutes claim-time instruction to
   report and stop is still present and still says not to break the lock.
-- [ ] AC4 — Given `skills/verify/SKILL.md` Step 5, when read, then it points at that section by the
+- [x] AC4 — Given `skills/verify/SKILL.md` Step 5, when read, then it points at that section by the
   rule name.
-- [ ] AC5 — Given `tests/citations.test.sh`, when it runs, then the citation added by AC4 resolves.
+- [x] AC5 — Given `tests/citations.test.sh`, when it runs, then the citation added by AC4 resolves.
 
 ## QA plan
 
@@ -126,3 +127,55 @@ session reading the rule literally at close time does the wrong thing.
   | AC4 | verify Step 5 points by the rule name | delete the pointer | AC4 |
   | AC5 | the citation resolves | rename the cited rule in verify | `citations.test.sh` names the unresolved rule |
   Whole suite green after.
+
+## QA evidence
+
+**2026-10-27 (verify, token 9ff7) — PASS.** Verified after 0091 closed (`bee8c79`), on a clean
+committed tree; Step 2's `git status --porcelain` was empty (only this pass's own `.qa-scratch/`
+afterwards), so no dirty set and no advisory intersection.
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`), at `qa_level: verify`.
+`./next --ac-digest 0047 --check` → `ac_digest absent — unverifiable` (the item carries no stamp).
+Copy executed: the repo copy is the subject. The installed 0.9.43 `skills/verify/SKILL.md` lacks the
+Step 5 pointer (unreleased).
+
+Suite: 41 files, every tally `0 failed`. Named guards, pasted:
+`tests/by-hand-lock.test.sh: 31 passed, 0 failed` · `tests/citations.test.sh: 51 passed, 0 failed`.
+
+Literal read: *A busy or stale lock* (`references/CONCURRENCY-INCIDENTS.md`) carries **At close
+time, retry rather than stop**, separates the two cases by what is held, and puts the verdict in the
+held item's `## QA evidence`. The claim-time block (`Under 5 minutes` … `Report it to the user and
+stop. **Do not break it.**`) is byte-identical to `f802cd0`, checked by diff. `skills/verify/SKILL.md`
+Step 5 cites `` `CONCURRENCY-INCIDENTS.md`, rule *Lock every write to the backlog directory* ``, the
+section's own `rule:` heading. Its claim that `./close` exits on a busy lock holds (`close:176`).
+
+**Clause table and mutations, all run in this pass** (committed files, `.qa-scratch/mut.py`:
+refuses a substitution that matched nothing, checks the diff is non-empty, restores by the mutated
+path; control 31/0 and 51/0 after):
+
+| AC | clause | mutation | result |
+|---|---|---|---|
+| AC1 | Given the *A busy or stale lock* section (scoped) | move the close-time paragraph into *A scope overlap* | 27/4 (AC1, AC2 ×2, FR3) |
+| AC1 | names the close-time case, retries rather than stopping | `retry rather than stop` → `stop` | 30/1 |
+| AC2 | says where the verdict goes | `stays in the item you hold, in its ## QA evidence table` → `is discarded` | 29/2 |
+| AC3 | claim-time report and stop still present | `Report it to the user and stop.` → `Continue.` | 30/1 |
+| AC3 | still says not to break the lock | `**Do not break it.**` → `Break it.` | 30/1 |
+| AC3 | qualifier: the *under-5-minutes* case | `**Under 5 minutes**` → `**Under 50 minutes**` | **31/0, mutation-silent.** Not a gap under Step 3's gap test: "under 5 minutes" still occurs in the section ("a lock under 5 minutes old is still never broken"). The threshold itself is out of scope here |
+| FR3 | told apart by what is held, not by the script | drop `by what you are holding,` | 30/1 |
+| AC4 | Step 5 points at the section by rule name | delete the pointer | 29/2 |
+| AC4 | in **Step 5** (scope) | move the pointer to Step 6 | 29/2 |
+| AC5 | the citation resolves under `tests/citations.test.sh` | misname the cited rule | 50/1, names `skills/verify/SKILL.md` and the unresolved rule |
+
+| NFR | check | result |
+|---|---|---|
+| Documentation: procedure in `CONCURRENCY-INCIDENTS.md`, rule statement does not grow | `git diff f802cd0 a001b73 --stat` touches no `references/CONCURRENCY.md` | holds. **Unguarded**: nothing reds if the rule file grows. `reference-size` passes it on a recorded reason with no bound (parked in `FINDINGS.md`, `3d5b9bf`) |
+| Always-on (`CONVENTIONS_CORE.md`) | guard written with the change; no secrets or company material; paths repo-relative | holds |
+| Newly reachable | prose only, so no new route or permission | none |
+
+Residual risk carried from the build notes, not a failed AC: while a close waits, the evidence in
+`## QA evidence` is uncommitted and one `git stash` from gone. AC2 asks only that the section *says
+where* the verdict goes, which it does.
+
+Evidence set: `references/CONCURRENCY-INCIDENTS.md`, `skills/verify/SKILL.md`,
+`tests/by-hand-lock.test.sh`, `tests/citations.test.sh`, `.claude/backlog/close`. Intersection with
+the Step 2 dirty set (empty): empty.

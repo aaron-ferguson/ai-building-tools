@@ -24,6 +24,7 @@ the release session, because only a whole-release view can say it.
 - Verify records an NFR row as unguarded, never ticked, when its named check stays green under a mutation of the requirement; the item template says a filename alone is not a How it would red answer; and a new guard, tests/item-nfr-red.test.sh, fails any open item whose filled NFR row leaves that cell empty or a bare file reference (0183).
 - A sprint that is interrupted and resumed now keeps its run id. Step 1 retakes the supervisor's own marker at any age and logs `supervisor_resumed`. A run whose stale marker is taken over is ended once, as `superseded`. The resume cap gives back the re-paid context floor, read from `harvest-usage.sh --legs`. `sprint-ledger.sh record` replaces the run's block instead of appending a second one (0175).
 - Every skill's park step now says the FINDINGS.md append takes the backlog lock, and a by-hand lock's commit must name its paths literally and confirm `git status` clean before releasing (0091).
+- At a busy lock during a close, verify now keeps retrying instead of stopping, holding its evidence in the item's QA evidence section until the lock clears or goes stale (0047).
 
 ## 0.9.43 — 2026-10-25
 
