@@ -102,3 +102,22 @@ form.
 - Sized `s`. It is Tier 2 rather than Tier 5 because the damage it prevents is silent — a correct
   row removal alongside an incorrect whole-file edit, where the only signal was a diffstat nobody is
   required to read.
+- 2026-10-27 — develop (token 7c03), built in `8f391fd`. *Never rewrite `QUEUE.md` by hand* now
+  names `sed -i`/`perl -i` and the temp-file rewrite as one class with `Write` and
+  read-rebuild-write (FR1), states the exception as *one process holding the lock across the whole
+  rebuild and its commit* (FR2), and gives the safe shape — under the lock, to a temp file, kept
+  only if the diff is exactly the intended change (FR3). The 0030 narrative is a new
+  `CONCURRENCY-INCIDENTS.md` entry, *The stream edit that deleted every blank line* (FR4). Rule
+  name unchanged, so its four citations still resolve (FR5; `tests/citations.test.sh` 52/0).
+- **Guards: `tests/by-hand-lock.test.sh`, one case per AC1–AC4 plus FR4**, each scoped to its
+  section with the file's own `window`/`in_window` helpers and each phrase on one source line
+  (the QA plan's "scoped to the named rule's section"). Placed there, not in a new file, because
+  that suite's subject is by-hand backlog writes. Red before the prose: 31 passed, 5 failed.
+- **Mutation sweep (run), on the subject, restored in the same call** — deleting or rewording each
+  guarded phrase reddened exactly its own case and nothing else: AC1 `never an in-place stream edit
+  — \`sed -i\`, \`perl -i\`` → `never an in-place edit`; AC2 `a whole-file rewrite through a temp
+  file` → `a temp file`; AC3 → the old `holding the lock while they rebuild`; AC4 `keep it only if
+  the diff is exactly the intended change` → `keep it`; FR4 `the diffstat` → `the commit`, and the
+  heading's `rule: *Never rewrite …*` renamed (window empty, reported). Control 36/0.
+- AC6: `tests/reference-size.test.sh` 15/0 — both files already carry recorded justifications.
+- Whole suite run file-by-file at `8f391fd`, clean tree: no file red.
