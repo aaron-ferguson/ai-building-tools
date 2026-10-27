@@ -118,7 +118,7 @@ assert_eq() {
 
 assert_row() {
   table="$(sed -n '/^|/p' "$FIX/.backlog/QUEUE.md")"
-  if grep -Fxq "$2" "$FIX/.backlog/QUEUE.md"; then
+  if grep -Fxq -- "$2" "$FIX/.backlog/QUEUE.md"; then
     ok "$1"; saw_on_pass "$table"
   else
     bad "$1"; echo "         expected row: $2"; saw "$table"
@@ -127,7 +127,7 @@ assert_row() {
 
 assert_item_line() {
   body="$(cat "$FIX/.backlog/items/$ID_UNDER_TEST-fixture.md")"
-  if printf '%s\n' "$body" | grep -Fxq "$2"; then
+  if printf '%s\n' "$body" | grep -Fxq -- "$2"; then
     ok "$1"; saw_on_pass "$body"
   else
     bad "$1"; echo "         expected line: $2"; saw "$body"
@@ -136,7 +136,7 @@ assert_item_line() {
 
 assert_no_item_line() {
   body="$(cat "$FIX/.backlog/items/$ID_UNDER_TEST-fixture.md")"
-  if printf '%s\n' "$body" | grep -Fxq "$2"; then
+  if printf '%s\n' "$body" | grep -Fxq -- "$2"; then
     bad "$1"; echo "         expected NO line: $2"; saw "$body"
   else
     ok "$1"; saw_on_pass "$body"

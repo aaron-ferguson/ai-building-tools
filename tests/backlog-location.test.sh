@@ -358,7 +358,9 @@ fi
 # locator passes only until the first release after its ticket closes (0221).
 NOTE_LOCATOR_A='`.backlog/`'
 NOTE_LOCATOR_B='`./migrate`'
-NOTE_PHRASES='`.backlog/`|`./migrate`|2026-12-31|install|`tools/release verify`'
+# The install-order phrase is `before migrating it`, not `install`: the entry also says `./migrate` is
+# "installed beside the others", so `install` stayed found with the ordering sentence deleted (0089).
+NOTE_PHRASES='`.backlog/`|`./migrate`|2026-12-31|before migrating it|`tools/release verify`'
 
 # entries_naming_0182 <changelog> — each top-level `- ` entry under any `## ` heading that names both
 # locators, one per line, its continuation lines joined on with a space.
@@ -402,7 +404,7 @@ EOF
 
 echo "0221 — the AC9 check locates its entry by content, against fixture CHANGELOGs"
 NOTE_FULL='- The backlog moves to `.backlog/`; run `./migrate`. The legacy path works until 2026-12-31.
-  Update the install first, and confirm it with `tools/release verify`.'
+  Update the install first, before migrating it, and confirm it with `tools/release verify`.'
 # note_without <phrase> — the full fixture entry with every occurrence of that phrase removed.
 note_without() { printf '%s\n' "$NOTE_FULL" | awk -v p="$1" '{ while ((i = index($0, p)) > 0) $0 = substr($0, 1, i - 1) substr($0, i + length(p)); print }'; }
 OTHER_ENTRY='- An unrelated fixture entry.'
