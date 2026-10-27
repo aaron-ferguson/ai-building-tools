@@ -52,3 +52,4 @@ which entries, what is expired unprocessed, and why a sweeper removes only what 
 normal state of this file is empty, and **if it has grown, that is itself the finding**.
 
 ---
+- 2026-10-27 (design 0050) — `./next develop`'s CLAIMED FILES block tells a reader to "assume held" the `expects:` of a row held at `next: design` (`skills/queue/templates/next:847`, `declared_scope`), though `./claim` says a design hold keeps `touches:` empty because design writes only its item and row; the collision walk ignores it, so the advice contradicts the walk rather than stalling anything. Wants a row: skip predicted scope for a design-held row.

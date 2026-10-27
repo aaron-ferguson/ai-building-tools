@@ -17,9 +17,12 @@ expects:
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
   - CLAUDE.md
+  - skills/sprint/SKILL.md
+  - tests/sprint.test.sh
 claimed_by: "6a6a"
 claimed_at: 2026-10-27T19:42:41Z
 touches:
+ac_digest: AC1=4628a33e AC2=0f12239c AC3=59be2e64 AC4=fff4269d AC5=168c1e58 AC6=59b75fbe AC7=29421536 AC8=5df1dc6b
 ---
 
 ## Problem
@@ -54,35 +57,33 @@ This is now the repo's normal operating mode rather than an incident, which is w
 debt and into something that gets more expensive every day: every ticket about the tooling touches
 the tooling's prose, so the collision rate rises with the very work meant to reduce it.
 
-## Open design question
-
-- **Question:** What replaces "prefer single-writer files" in a repo whose prose files are the
-  product? The shapes worth weighing: **accept it** and state that this repo serialises `develop`,
-  making the stall a designed outcome rather than a surprise; **make the unit of scope smaller than
-  a file** — a section, a heading — and solve the pathspec problem that today makes that unsafe;
-  **isolate the tree** so concurrent sessions work in separate worktrees and merge, which the
-  `verify` batching note already reaches for; or **rank against the held set** so the queue orders
-  work to avoid collisions rather than discovering them at claim time.
-- **Why it blocks specification:** each shape has entirely different acceptance criteria — a
-  documented serialisation is prose; a sub-file scope is a change to `touches:`, to `./next` and to
-  how commits are staged; worktrees are a change to every stage skill's opening step. And the
-  answer determines whether the `verify`-claim case is the same rule or a stricter one, since a
-  corrupted verdict is a worse failure than a commit conflict and nothing currently says so.
-- **Settle it with:** `/design` — the inputs are the concurrency rules, git's staging behaviour and
-  this repo's own collision history. Nothing needs to be seen.
-
 ## Functional requirements
 
-Written after the design question is settled. What is fixed regardless:
-
-- FR1 — `references/CONCURRENCY.md` states what a session does when every takeable row at its stage
-  collides, rather than leaving "prefer single-writer files" as the only guidance in a repo where
-  it cannot be followed.
-- FR2 — The rule distinguishes a collision with a live **`verify`** claim from a collision with a
-  `develop` claim, or states explicitly that it does not, since the first corrupts a verdict and
-  the second conflicts a commit.
-- FR3 — `CLAUDE.md`'s *Concurrency* section, which currently records the weakness with no remedy,
-  points at the settled rule.
+- FR1 — `references/CONCURRENCY.md`, *The working tree is shared too*, replaces "Prefer
+  single-writer files" (in *A pathspec is necessary but not sufficient*) with the settled rule:
+  **the file stays the unit of scope, and where a file cannot have one writer, the session does** —
+  rows sharing a file are worked by one session, as one develop gate (`--drive` already joins rows
+  by shared file) or, hand-driven, one after another. `develop` is serialised in this repo by
+  design until `0137` decides otherwise.
+- FR2 — The same section states the outcome when every takeable row at a stage collides: **a
+  designed wait, not a failure.** Claim nothing; report each holder's id, token and shared paths as
+  `./next` prints them; stop, or take work at another stage that collides with nothing. Never edit a
+  held file to get unstuck, and never rewrite another row's `touches:`.
+- FR3 — The same section states that a collision with a row held at **`verify`** follows the same
+  taking rule **and a stricter editing one**: a `develop` session already in progress does not open
+  or widen `touches:` into a file a live `verify` claim holds — it waits for the close — because
+  that collision corrupts a verdict where a `develop` one only conflicts a commit.
+- FR4 — The bullet ending "(preventing the collision is 0050)" and `skills/sprint/SKILL.md`'s
+  *Design beside other stages* ("`0050`'s open question, not settled here") stop describing the
+  question as open and point at the settled rule, still citing `0050` and keeping `disjoint` on its
+  own line so `tests/sprint.test.sh`'s 0134 FR6 guard (`says … '0050'`, `says … 'disjoint'`)
+  stays green.
+- FR5 — `CLAUDE.md` *Concurrency* points at the settled rule by section name, rather than only
+  recording that the file-scope rule is weaker here.
+- FR6 — `references/CONCURRENCY-INCIDENTS.md` records the rejected shapes and why (see *Notes &
+  decisions*, 2026-10-27), so the question is not re-derived when it is reopened.
+- FR7 — A section-scoped guard asserts FR1–FR3's phrases. Every asserted phrase sits on one source
+  line (CLAUDE.md, *Tests*: rewrapping a guarded paragraph breaks `grep`).
 
 ## Non-functional requirements
 
@@ -92,23 +93,23 @@ Written after the design question is settled. What is fixed regardless:
 
 ## Acceptance criteria
 
-Cannot be written until the design question is settled. These hold regardless:
-
-- [ ] AC1 — Given `references/CONCURRENCY.md`, when read, then it states an outcome for the case
-  where every takeable row at a stage collides with a held scope.
-- [ ] AC2 — Given the same file, when read, then a collision with a row held at `verify` is either
-  given its own rule or explicitly stated to follow the same one.
-- [ ] AC3 — Given `CLAUDE.md` *Concurrency*, when read, then it points at that rule rather than
-  only recording that the file-scope rule is weak here.
+- [ ] AC1 — Given `references/CONCURRENCY.md`, *The working tree is shared too*, when read, then it states that when every takeable row at a stage collides the session claims nothing, reports the holders, and waits — and that this is a designed outcome.
+- [ ] AC2 — Given the same section, when read, then a collision with a row held at `verify` follows the same taking rule and additionally forbids a `develop` session opening or widening into a `verify`-held file mid-session.
+- [ ] AC3 — Given `CLAUDE.md` *Concurrency*, when read, then it names the section holding the settled rule rather than only recording that the file-scope rule is weak here.
+- [ ] AC4 — Given `references/CONCURRENCY.md`, when grepped for `Prefer single-writer files`, then nothing matches, and the section states that rows sharing a file are worked by one session.
+- [ ] AC5 — Given `references/CONCURRENCY.md` and `skills/sprint/SKILL.md` *Design beside other stages*, when read, then neither describes `0050` as an open question, and `tests/sprint.test.sh` passes.
+- [ ] AC6 — Given `references/CONCURRENCY-INCIDENTS.md`, when read, then it records sub-file scope, worktree-per-session and rank-against-the-held-set as rejected, each with its reason.
+- [ ] AC7 — Given the guard FR7 names, when any one asserted phrase is removed from the section, then the guard reds, and restored, it greens.
+- [ ] AC8 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` is run at the closing commit, then every file passes.
 
 ## QA plan
 
-- **Level:** unit — provisional, argued across the candidate placements: a prose answer is `verify`
-  with a named scripted assertion, a `./next` or `touches:` answer is `unit`, and this project's
-  `unit` command runs every `tests/*.test.sh`, so `unit` subsumes both.
-- **Why this level:** the level is the same across every candidate shape.
-- **Specific checks:** settled by the design pass. Any grep over prose must match a phrase short
-  enough to sit on one source line, and must be scoped to the section rather than the document.
+- **Level:** unit — this project's unit command runs every `tests/*.test.sh`, which carries the new
+  section-scoped guard and `tests/sprint.test.sh`'s existing 0134 FR6 guard.
+- **Why this level:** the answer is prose plus a guard; no script changes.
+- **Specific checks:** AC7 by mutation (remove one phrase, confirm red, restore by path, confirm
+  green). AC5 by running `tests/sprint.test.sh`. AC4 by `grep -c 'Prefer single-writer files'
+  references/CONCURRENCY.md` returning 0.
 
 ## Out of scope
 
@@ -190,3 +191,35 @@ each is a test the chosen shape has to pass.
   **remote's** `plugin.json` (`0075`, after a hand-picked version collided), so a hand-bump both
   re-introduces that defect and still needs the push approval the chain opens with. `touches:` naming
   `.claude-plugin/plugin.json` invited three sessions in a row to record not having done it.
+- **2026-10-27 — DECIDED (design pass, sprint run-20261027T185815Z).** *Chosen:* keep the file as
+  the unit of scope and make the **session**, not the file, the single writer: rows sharing a file
+  go to one session (one develop gate), a stage where every takeable row collides is a designed
+  wait, and a `verify`-held file is not opened mid-session by `develop`. Re-verified against the
+  tree today rather than the August narrative: `./next` already walks past colliding rows across
+  every stage and prints a distinct all-collide line (`skills/queue/templates/next:1967`, from
+  0045); `--drive` already joins rows by shared file into one gate (`skills/sprint/SKILL.md`,
+  *Design beside other stages* and gate rules); and parallel `develop` is declined pending `0137`
+  (still `next: design`). So most of the mechanism has landed under other tickets and what is
+  missing is the **rule** that says these together are the answer — the stall the Problem
+  describes is now the designed outcome, stated, rather than a surprise.
+- *Rejected — sub-file scope (section/heading).* A pathspec commit carries every change to the
+  path, so a section claim is unenforceable without a staging change no git primitive offers;
+  and the 2026-08-30 finding shows the unit some fixes need is **larger** than a file (a comment
+  shared by three suites), which a smaller unit makes worse.
+- *Rejected — worktree per session, merge after.* That is `0137`'s question (whether `develop` may
+  run in parallel at all), not a file-scope answer; backlog writes are refused from a linked
+  worktree (*A second checkout never writes the backlog*); and prose merges conflict at the
+  paragraph, where line-based guards then break. Worktrees stay what they are today: a read-only
+  place to pin a verdict to a commit.
+- *Rejected — rank against the held set.* Rank is absolute (`develop`, *On size*) and a join
+  decides batching, never selection (`sprint`, 0178). The held set already shapes takeability and
+  gate membership; letting it reorder rank would build rank-2 work ahead of the head.
+- *Confirmed, not changed:* AC1–AC3 (reworded to the settled rule). *Added:* AC4–AC8. FR2's
+  question is answered "stricter": the same taking rule, plus a no-edit rule for `verify`-held files.
+- *Accommodated from the 2026-09-07 notes:* the transient-mutation hold is `0106` (done) plus
+  `verify`'s one-ticket-at-a-time ordering; the version bump stays a release act and is out of
+  this ticket. *Observed today, not in scope:* `./next`'s CLAIMED FILES block tells a reader to
+  "assume held" the `expects:` of a row held at `next: design`, though a design session writes only
+  its item and row (`skills/queue/templates/next:847`); the collision walk itself ignores it, so it
+  stalls nothing mechanically — parked in `FINDINGS.md`.
+- `qa_level: unit` re-read and kept; no `close_by` override — the closing stage stays `verify`.
