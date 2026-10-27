@@ -2,8 +2,8 @@
 id: "0089"
 title: Sweep the guards for assertions that cannot fail
 type: bug
-next: develop
-status: in-progress
+next: queue
+status: ready
 qa_level: unit
 size: l
 created: 2026-09-05
@@ -33,30 +33,9 @@ expects:
   - tests/reporting.test.sh
   - tests/retro-tool-edit.test.sh
   - tests/skill-size.test.sh
-claimed_by: "612d"
-claimed_at: 2026-10-27T19:51:52Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/backlog-scripts-installed.test.sh
-  - tests/batching.test.sh
-  - tests/citations.test.sh
-  - tests/claim.test.sh
-  - tests/close.test.sh
-  - tests/cost-by-category.test.sh
-  - tests/external-feedback.test.sh
-  - tests/falsifiable-acs.test.sh
-  - tests/floor-probe.test.sh
-  - tests/graph-fields.test.sh
-  - tests/handoff.test.sh
-  - tests/last-line.test.sh
-  - tests/measurement.test.sh
-  - tests/money-in-skill-prose.test.sh
-  - tests/next.test.sh
-  - tests/qa-level-once.test.sh
-  - tests/reference-size.test.sh
-  - tests/release.test.sh
-  - tests/reporting.test.sh
-  - tests/retro-tool-edit.test.sh
-  - tests/skill-size.test.sh
 ---
 
 ## Problem

@@ -24,7 +24,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
 | 0189 | Make the citations guard resolve the conventions path from a worktree outside the checkout's parent | verify | ready |  |
-| 0089 | Sweep the guards for assertions that cannot fail | develop | in-progress |  |
+| 0089 | Sweep the guards for assertions that cannot fail | queue | ready |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
 | 0092 | Prove claim and close hold the lock through their commit | develop | ready |  |
 | 0065 | Name stream editors in the rule against rewriting QUEUE.md | develop | ready |  |
