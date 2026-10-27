@@ -3,7 +3,7 @@ id: "0145"
 title: Decide what an empty touches means to the scope report, and record it where the field is read
 type: debt
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-09-09
@@ -24,9 +24,20 @@ expects:
   - tests/handoff.test.sh
   - tests/claim.test.sh
 ac_digest: AC1=d17c382c AC2=2d4130ed AC3=d3afa06b AC4=90afc7eb AC5=8f6b7035 AC6=65bde2f6 AC7=06419276 AC8=11c26142
-claimed_by:
-claimed_at:
+claimed_by: "9c30"
+claimed_at: 2026-10-27T02:16:30Z
 touches:
+  - skills/queue/templates/close
+  - skills/queue/templates/handoff
+  - skills/queue/templates/claim
+  - skills/queue/templates/item.md
+  - .claude/backlog/close
+  - .claude/backlog/handoff
+  - .claude/backlog/claim
+  - references/CONCURRENCY.md
+  - tests/close.test.sh
+  - tests/handoff.test.sh
+  - tests/claim.test.sh
 ---
 
 ## Problem
