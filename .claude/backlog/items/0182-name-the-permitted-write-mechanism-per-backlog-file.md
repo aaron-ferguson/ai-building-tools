@@ -337,3 +337,44 @@ silent, so it is noted here and does not hold the ticket.
 
 Copy executed: the repo templates (worktree at 65d0bd7). The installed plugin is 0.9.43, which
 predates this change.
+
+### Round 3 — 2026-10-26 (verify, token bd5c) — PASS
+
+Conventions: ../ai-building-conventions (resolved from `.claude/backlog/config.yml` `conventions.path`)
+Level: `verify` (frontmatter; no `**Level:**` prose, so no drift). Commands: `tests/backlog-location.test.sh` → `48 passed, 0 failed`; whole suite per file (`for t in tests/*.test.sh; do "$t" || exit 1; done`, each file run so every file reports) at f1cd907, which differs from the verified HEAD d747a0b only under `.claude/backlog/`: 39 files, every one rc=0. No lint or typecheck configured. `ac_digest` matched.
+Tree: `git status --porcelain` at Step 2 showed only this session's untracked scratch (`.verify-scratch/`, `verify-0172-suite.out`); the same at verdict time. Intersection with the evidence set is empty → not advisory.
+Every mutation ran in a detached worktree at d747a0b, by `.verify-scratch/sweep.py` (not committed) plus five by hand. Each had a non-empty diff, was restored by path, and the control was `48 passed, 0 failed` before and after, with worktree status empty at the end. Copy executed: the repo templates in the worktree; the installed plugin is 0.9.43, which predates this change. Clause table reused from round 2, extended with the per-item (*each*, *either*) rows.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | none prints the legacy line at `.backlog/` | note unconditional in 5 templates | red, 6 failed |
+| AC1 | *each* script (per-item) | only `reopen` prints a note at `.backlog/` | red: `reopen at .backlog/: … 1 legacy line(s)` |
+| AC1 | behaves as today | `.backlog/` resolves ROOT as `../..` | red (AC3 cases) |
+| AC1 | behaves as today | `next` exits 1 at `.backlog/` only | red: `next at .backlog/: exit 1 … TAKE 0` |
+| AC2 | prints one line | note removed | red, 7 failed |
+| AC2 | names `./migrate` / `2026-12-31` | `./migrate` dropped; block date changed | red, each |
+| AC2 | **exactly one line through `close`'s nested `next`** (round 2's FAIL) | **`export BACKLOG_LEGACY_NOTED` dropped from all 5** | **red: `close on a stale-digest legacy fixture: exit 1, 2 legacy line(s) in stderr, expected 1`, 47 passed 1 failed** |
+| AC2 | exactly one, nested | note ignores `BACKLOG_LEGACY_NOTED` | red, 2 failed |
+| AC2 | *each* script (per-item) | only `handoff` prints the line twice | red: `handoff at .claude/backlog/: … 2 legacy line(s)` |
+| AC2 | works | `claim` exits 1 at legacy only | red |
+| AC3 | exits non-zero | refusal's `exit 1` removed | red, 3 failed |
+| AC3 | naming both paths | message names one path | red, both sides |
+| AC3 | from *either* | refused only from `.backlog/` | red: `from .claude/backlog: exit 0` |
+| AC3 | writes nothing | `next` makes `.lock` before the block | red, 7 failed |
+| AC4 | `.gitignore` names `.backlog/` | rewrite skipped | red |
+| AC4 | only renames and `.gitignore` | extra file added to the commit | red: `entries outside renames and .gitignore: A extra` |
+| AC4 | second run exits 0 | `exit 1` on already-migrated | red |
+| AC4 | saying already migrated | message changed | red |
+| AC5 | held lock / foreign claim / `.active/` / pre-existing `.backlog/` | each check removed | red, each (the lock case reds on its message: the later `mkdir` refuses with `the lock was taken while checking`) |
+| AC5 | `git status --porcelain` empty | `refuse()` touches a stray file | red, all four |
+| AC6 | four phrases, one line each | each phrase replaced (split-first by hand: capital `Split`, guard is `-i`) | red, each |
+| AC7 | red on a new hit elsewhere | hit added to `skills/develop/SKILL.md`, to `references/TRACKER.md`, and to `next` outside the block | red, each |
+| AC7 | red on one block differing | `handoff` block edited | red |
+| AC7 | red on the dates disagreeing | block date changed; section date changed | red, both |
+| AC8 | cites the section | citation removed | red |
+| AC8 | no `cp` into place | "heredoc, else `cp` it into place" restored into Step 3 | red |
+| AC9 | `.backlog/`, `./migrate`, `2026-12-31`, `tools/release verify` | each replaced in `## Unreleased` | red, each |
+| AC9 | the install-before-migrate order | the sentence "Install this release on every machine … before migrating it" replaced | **green: unguarded.** The guard's `install` matches "installed beside the others" in the same entry. AC9 is a reading AC and the order is stated (`CHANGELOG.md` `## Unreleased`, the 0182 entry), so it passes on the reading; the gap is published, not papered over |
+| AC10 | every file tallies green; one script test on a legacy fixture | 39 files rc=0; `tests/reopen.test.sh` line 93 `BL()` is `$FIX/.claude/backlog` | holds |
+
+NFRs: none declared. Always-on pass: no secrets, no company material, and the scripts refuse before writing (AC3, AC5). Still unguarded and named by no AC: `next`'s legacy tools-repo `FINDINGS.md` fallback (FR2's second site), left for the person as round 2 directed. The QA evidence was written via a scratch file and `cp` because a heredoc append into the item was refused this session; `cp` from a repo-local scratch path landed.
