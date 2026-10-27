@@ -1522,6 +1522,32 @@ case "$README_FLAT" in
 esac
 
 echo
+# --- 0092 — the lock is held THROUGH the commit, not merely around the edit ---------------------
+# `CONCURRENCY.md`, *Lock every write to the backlog directory*: the lock covers the read, the write
+# AND the commit. Releasing it just before the commit leaves every other observable identical —
+# right files, a landed commit, no lock left — so only a witness at commit time tells the two apart.
+# The pre-commit hook is the one tests/handoff.test.sh installs; each scaffold is a fresh repo, so
+# the hook never outlives this case.
+echo "0092 FR2 — close holds the lock at the moment its commit runs"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 9471 | Locked through | verify | in-progress | 0000 |'
+mkitem 9471 verify in-progress '"ab12"' '[]'
+commit_fixture
+cat > "$FIX/.git/hooks/pre-commit" <<'HOOK'
+#!/bin/sh
+if [ -d "$(git rev-parse --show-toplevel)/.backlog/.lock" ]; then
+  echo held > "$(git rev-parse --show-toplevel)/.lock-witness"
+else
+  echo released > "$(git rev-parse --show-toplevel)/.lock-witness"
+fi
+exit 0
+HOOK
+chmod +x "$FIX/.git/hooks/pre-commit"
+out="$(run_close 9471 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+witness="$(cat "$FIX/.lock-witness" 2>/dev/null || echo MISSING)"
+if [ "$witness" = held ]; then ok "the lock was held when the commit ran"; else
+  bad "0092 — the lock (.backlog/.lock) was not held when close's commit ran: the witness read $witness"; fi
+
 echo "$PASS passed, $FAIL failed"
 TALLIED=1
 [ "$FAIL" -eq 0 ] || exit 1
