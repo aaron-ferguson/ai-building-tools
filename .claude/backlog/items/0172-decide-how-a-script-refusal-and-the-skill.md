@@ -3,7 +3,7 @@ id: "0172"
 title: Decide how a script refusal and the skill that must satisfy it reach a session together
 type: debt
 next: develop
-status: ready
+status: in-progress
 qa_level: verify
 close_by: verify
 size: s
@@ -16,10 +16,13 @@ expects:
   - skills/develop/SKILL.md
   - tests/close.test.sh
   - CHANGELOG.md
-claimed_by:
-claimed_at:
+claimed_by: "8ca7"
+claimed_at: 2026-10-27T02:03:54Z
 ac_digest: AC1=ae637e8d AC2=207697c6 AC3=c92a6850 AC4=3e7acf23 AC5=6b52b421 AC6=2f8b9f5e
 touches:
+  - skills/develop/SKILL.md
+  - tests/close.test.sh
+  - CHANGELOG.md
 ---
 
 ## Problem
