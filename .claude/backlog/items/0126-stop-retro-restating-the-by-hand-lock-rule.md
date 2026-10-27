@@ -2,8 +2,8 @@
 id: "0126"
 title: Stop retro restating the by-hand lock rule it drifted from
 type: bug
-next: develop
-status: in-progress
+next:
+status: done
 qa_level: verify
 close_by: develop
 qa_manual:
@@ -16,12 +16,10 @@ relates: ["0048", "0091"]
 expects:
   - skills/retro/SKILL.md
   - tests/retro-lock-citation.test.sh
-claimed_by: "3b05"
-claimed_at: 2026-10-27T18:03:42Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/retro/SKILL.md
-  - tests/retro-lock-citation.test.sh  # new
-  - README.md  # guard block lists every tests/*.test.sh (0046)
+closed: 2026-10-27
 ---
 
 ## Problem
@@ -67,21 +65,21 @@ reads as correct on its own.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/retro/SKILL.md` Step 4's lock paragraph, when `tests/retro-lock-citation.test.sh`
+- [x] AC1 — Given `skills/retro/SKILL.md` Step 4's lock paragraph, when `tests/retro-lock-citation.test.sh`
   searches that window for the literal `one shell invocation`, then it is not found. Red-making
   input: today's file, which carries the phrase at line 225.
-- [ ] AC2 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it names
+- [x] AC2 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it names
   `CONCURRENCY.md` and the section title `Lock every write to the backlog directory`. Red-making
   mutation: deleting the section title from the citation, leaving the bare filename.
-- [ ] AC3 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it
+- [x] AC3 — Given the same window, when `tests/retro-lock-citation.test.sh` reads it, then it
   contains neither of the reference's two permitted forms — no `in one call` and no `drop the trap`.
   Red-making mutation: pasting `or drop the trap and rm -rf explicitly at the end` into the
   paragraph, which is the plausible cheap fix this item rejects.
-- [ ] AC4 — Given a fixture carrying every asserted phrase **outside** Step 4's window, when
+- [x] AC4 — Given a fixture carrying every asserted phrase **outside** Step 4's window, when
   `tests/retro-lock-citation.test.sh` runs against it, then it fails — proving the scoping in FR3 is
   real and not a file-wide grep wearing a window's name. Red-making input: widening the guard's
   window to the whole file, which turns that fixture green.
-- [ ] AC5 — Given the edited skill, when `tests/citations.test.sh` and `tests/skill-size.test.sh`
+- [x] AC5 — Given the edited skill, when `tests/citations.test.sh` and `tests/skill-size.test.sh`
   run, then each reports `0 failed`. Red-making change: citing a section title that does not exist
   in `CONCURRENCY.md`.
 
@@ -114,3 +112,27 @@ reads as correct on its own.
   red first; none is a reading.
 - 2026-09-09 (queue, from `FINDINGS.md` parked the same day) — line numbers were current at the
   park date; re-read the source rather than trusting them.
+- 2026-10-27 (develop, token 3b05) — **Built in c625f6b.** Step 4's lock paragraph now names only
+  what is true of `retro` (no claim token; draining `FINDINGS.md` and appending to an unheld item are
+  inside the boundary) and cites `references/CONCURRENCY.md` *Lock every write to the backlog
+  directory* as the only home of the by-hand forms. The trap rationale went with the restatement —
+  it is the reference's reason, and keeping it beside a citation would be the half-copy again.
+- `README.md` joined `touches:`: `tests/citations.test.sh` case 0046 reds unless the README guard
+  block lists every `tests/*.test.sh`, which the ticket's `expects:` did not foresee.
+- The guard's cases live in one `check()` so the AC4 probes run the *same* assertions against each
+  fixture in a subshell, rather than a paraphrase of them. Every probe must red.
+- **Clause table (run, not reasoned — each red-making input below was executed):**
+
+  | AC | Clause | Guard case | Red-making input | Result |
+  |---|---|---|---|---|
+  | AC1 | Step 4 window lacks `one shell invocation` | `AC1 — no 'one shell invocation'` | pre-fix file (red at first run); probe re-inserting the sentence | red |
+  | AC2 | names `CONCURRENCY.md` | `AC2 — names CONCURRENCY.md` | — (asserted positively) | green on fix |
+  | AC2 | names `Lock every write to the backlog directory` | `AC2 — names the section title` | probe deleting the title, bare filename left | red |
+  | AC3 | no `in one call` | `AC3 — no 'in one call'` | — | green on fix |
+  | AC3 | no `drop the trap` | `AC3 — no 'drop the trap'` | probe pasting `Or drop the trap and rm -rf explicitly at the end.` | red |
+  | AC4 | every phrase outside Step 4 fails | `AC4 — the phrases in a neighbouring step leave the guard red` | fixture with all phrases in Step 3 | red (as required) |
+  | AC5 | `citations` and `skill-size` 0 failed | those files | citing `*Lock every by-hand write*` in the skill | citations red 1, restored |
+  | FR2 | `holds no claim token`, ``Draining `FINDINGS.md` ``, `appending to an unheld item` | `FR2 — …` | pre-fix file lacked `unheld item` (red at first run) | red→green |
+  | FR3 | heading gone is a named failure | `FR3 — an empty window is a named failure` | probe deleting Step 4's heading | red |
+- The notes append was refused as a sensitive-file edit via heredoc; written to /tmp and appended
+  with python per the dispatch prompt's fallback.

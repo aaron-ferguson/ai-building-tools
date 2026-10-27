@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0126 | Stop retro restating the by-hand lock rule it drifted from | bug | verify | 2026-10-27 | [items/0126-stop-retro-restating-the-by-hand-lock-rule.md](items/0126-stop-retro-restating-the-by-hand-lock-rule.md) |
 | 0054 | Give develop and verify a rule for a result taken over a shared dirty tree | bug | verify | 2026-10-27 | [items/0054-verdicts-over-a-shared-dirty-tree.md](items/0054-verdicts-over-a-shared-dirty-tree.md) |
 | 0047 | Give the busy-lock procedure a close-time path | bug | verify | 2026-10-27 | [items/0047-busy-lock-at-close-time.md](items/0047-busy-lock-at-close-time.md) |
 | 0091 | Make a by-hand backlog write take the lock and prove its commit landed | bug | verify | 2026-10-27 | [items/0091-by-hand-backlog-writes.md](items/0091-by-hand-backlog-writes.md) |
