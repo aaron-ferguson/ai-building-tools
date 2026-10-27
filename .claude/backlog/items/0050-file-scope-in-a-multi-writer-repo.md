@@ -251,3 +251,87 @@ each is a test the chosen shape has to pass.
     CLAUDE.md's section name (AC3); each of the three rejected-shape labels and, added after a
     gap was noticed in the first sweep, each shape's reason phrase (AC6 — "each with its reason").
   - AC8: whole suite run file-by-file at `5ffbbbf`, clean tree: no file red.
+- **2026-10-27 — verify (token b127), FAIL → `develop`. The prose is right; four clause rows have
+  no guard.** The build notes carry no clause table, and every mutation in the AC7 sweep was a
+  guarded phrase, so the sweep could only redden. Each mutation below was applied to
+  `references/CONCURRENCY.md`, landed (non-empty diff), and left `tests/shared-dirty-tree.test.sh`
+  at 38/0. Gap test, whitespace-tolerant, over *The working tree is shared too*:
+  1. **AC1 Given, "when every takeable row at a stage collides":** `**Every takeable row at a stage
+     colliding is` → `**One row colliding is` stays green. The phrase occurred once and then zero
+     times. The guard asserts the outcome and never the condition it applies to.
+  2. **AC2 subject, "a `develop` session":** `stricter editing one:** a \`develop\`` → `a \`queue\``
+     stays green. The phrase occurred once and then zero times. It straddles a line break
+     (`a \`develop\`` / `session already under way`), so no line-based guard can assert it as it
+     stands.
+  3. **AC2 qualifier, "mid-session":** `session already under way` → `session before it claims`
+     stays green. That inverts the rule, which would then forbid nothing mid-session. "mid-session"
+     is not in the prose, so no guard can assert the AC's word.
+  4. **AC5, "neither [CONCURRENCY.md] describes `0050` as an open question":** inserting
+     `(0050, still an open question)` into the section stays green. The CONCURRENCY.md half of AC5
+     asserts only the absence of one historical string, `preventing the collision is 0050)`, and
+     only within one section, while the AC names the whole file.
+  **The constraint:** rows 1–3 each need a guard in `tests/shared-dirty-tree.test.sh`'s 0050 block
+  that reds under that mutation. Rejoin the AC2 sentence so that `a \`develop\` session` and the
+  mid-session qualifier sit on one source line, and reword the prose to the AC's words where it only
+  paraphrases them ("already under way" for "mid-session"), per `develop`'s gap-test rule (0180).
+  Row 4 needs an absence assertion over the whole of `references/CONCURRENCY.md`: no line naming
+  `0050` also says `open`. Write the clause table into the build notes this time.
+
+## QA evidence
+
+Conventions: ../ai-building-conventions
+Level: `qa_level: unit`, which runs `commands.unit` as configured. There is no lint or typecheck.
+The batch ran in the reporting form so that every file reports:
+`for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`) at `7a4451a`, with
+`git status --porcelain` empty in the same call. Every one of the 44 files printed
+`passed, 0 failed` and none printed `ABORTED`, so the fail-fast form `commands.unit` would also have
+exited 0 at this tree (AC8). Mutations were run with `python3 .verify-scratch/mutate.py` (scratch,
+not committed), each restored by path and checked with `git diff --quiet -- <path>`.
+`ac_digest matches` (`./next --ac-digest 0050 --check`).
+Dirty set at Step 2: empty. Evidence set: `references/CONCURRENCY.md`,
+`references/CONCURRENCY-INCIDENTS.md`, `CLAUDE.md`, `skills/sprint/SKILL.md`,
+`tests/shared-dirty-tree.test.sh`, `tests/sprint.test.sh`, the whole `tests/` suite (AC8).
+Intersection: empty, so the label is not advisory.
+
+**Clause table**
+
+| AC | Row | Mutation | Result |
+|---|---|---|---|
+| AC1 | Given: every takeable row at a stage collides | `Every takeable row at a stage colliding is` → `One row colliding is` | **GREEN 38/0 — gap** |
+| AC1 | predicate: claims nothing | `claim nothing; report each holder` → `claim the top row; …` | RED 37/1 |
+| AC1 | predicate: reports the holders | → `claim nothing; ignore each holder` | RED 37/1 |
+| AC1 | predicate: waits, as a designed outcome | `a designed wait, not a failure` → `a failure` | RED 37/1 |
+| AC2 | Given: a collision with a row held at `verify` | `A file held at \`verify\`` → `` `design` `` | RED 37/1 |
+| AC2 | predicate: follows the same taking rule | `the same taking rule` → `a looser taking rule` | RED 37/1 |
+| AC2 | predicate: forbids opening or widening into the file | `does not open or widen` → `may open or widen` | RED 37/1 |
+| AC2 | subject: a `develop` session | `a \`develop\`` → `a \`queue\`` | **GREEN 38/0 — gap** |
+| AC2 | qualifier: mid-session | `already under way` → `before it claims` | **GREEN 38/0 — gap** |
+| AC3 | `CLAUDE.md` names the section | drop `, *The working tree is shared too*` | RED 37/1 |
+| AC4 | no `Prefer single-writer files` | re-inserted | RED 37/1 |
+| AC4 | rows sharing a file are worked by one session | `one session` → `any session` | RED 37/1 |
+| AC5 | CONCURRENCY.md: no open-question description | insert `(0050, still an open question)` | **GREEN 38/0 — gap** |
+| AC5 | CONCURRENCY.md: old phrase gone | re-insert `(preventing the collision is 0050).` | RED 37/1 |
+| AC5 | sprint section: no open question | `` `0050` settled `` → `` `0050`'s open question `` | RED 37/1 |
+| AC5 | sprint section: still cites `0050` | delete the `` `0050` `` cite | RED 37/1 |
+| AC5 | `tests/sprint.test.sh` passes | 0 failed in the suite run | PASS |
+| AC6 | sub-file scope label / reason | each mutated separately | RED 37/1, RED 37/1 |
+| AC6 | worktree per session label / reason | each mutated separately | RED 37/1, RED 37/1 |
+| AC6 | rank against the held set label / reason | each mutated separately | RED 37/1, RED 37/1 |
+| FR1 | `where a file cannot have one writer, the session does` | → `anything goes` | RED 37/1 |
+| FR1 | serialised until `0137` | → `parallel in this repo` | RED 37/1 |
+| FR2 | `Never edit a held file to get unstuck` | → `Edit a held file …` | RED 37/1 |
+
+Control after the sweep: `tests/shared-dirty-tree.test.sh` 38 passed, 0 failed.
+
+| Check | How | Result |
+|---|---|---|
+| AC1 | outcome guarded; the Given condition is unguarded | **FAIL — gap 1** |
+| AC2 | Given and predicates guarded; the subject and "mid-session" are unguarded | **FAIL — gaps 2, 3** |
+| AC3 | guard case, mutation-proved | PASS |
+| AC4 | `grep -c 'Prefer single-writer files' references/CONCURRENCY.md` returns 0; both halves mutation-proved | PASS |
+| AC5 | the sprint half is guarded; the CONCURRENCY.md half asserts one string in one section, not the AC | **FAIL — gap 4** |
+| AC6 | all six labels and reasons mutation-proved | PASS |
+| AC7 | depends on the gaps above: removing the Given or the subject phrase does not red the guard | **FAIL** (rows 1–3) |
+| AC8 | 44 files, each `passed, 0 failed` | PASS |
+| NFR Documentation | rejected shapes recorded with reasons, guarded by the AC6 cases | holds, guarded |
+| Always-on (`CONVENTIONS_CORE.md`) | prose and guard change, commits carry the trailer, no company material | holds |

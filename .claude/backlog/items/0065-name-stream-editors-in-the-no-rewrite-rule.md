@@ -118,3 +118,72 @@ form.
   heading's `rule: *Never rewrite …*` renamed (window empty, reported). Control 36/0.
 - AC6: `tests/reference-size.test.sh` 15/0 — both files already carry recorded justifications.
 - Whole suite run file-by-file at `8f391fd`, clean tree: no file red.
+- **2026-10-27 — verify (token c7ec), FAIL → `develop`. The prose is right; five clause rows have
+  no guard.** The build notes carry no clause table, so the sweep mutated only the guard's own
+  phrases, which `develop`'s *A mutation sweep enumerates from the AC text* rule names as covering
+  nothing new. Each mutation below was applied to `references/CONCURRENCY.md`, landed (non-empty
+  diff), left `tests/by-hand-lock.test.sh` at 36/0, and removed the AC's phrase from the section
+  (gap test, whitespace-tolerant):
+  1. **AC2 predicate:** `— and never` before `**a whole-file rewrite through a temp file**` →
+     `— but allow`. The temp-file rewrite is now *permitted* and the guard stays green, because its
+     phrase omits the prohibition.
+  2. **AC2 "the same class":** dropping `: one class` stays green. The AC says "same class" and the
+     prose says "one class", so no guard can assert the AC's words.
+  3. **AC3 "in terms that would apply to another":** deleting `**An exception is a script, never a
+     technique** —` and `, and another would need the same` stays green.
+  4. **AC4 "under the lock":** `is made under the lock to a temp file:` → `is made to a temp file:`
+     stays green.
+  5. **AC4 "unavoidable multi-row":** `**A multi-row rewrite by hand that cannot be avoided**` →
+     `**A rewrite by hand**` stays green.
+  **The constraint:** every row above needs a guard in `tests/by-hand-lock.test.sh`'s 0065 block,
+  scoped to the rule's section, that reds under that mutation. Where the prose only paraphrases the
+  AC (rows 2 and 3: "one class" for "same class", nothing at all for "apply to another"), reword the
+  prose to the AC's words in this round, per `develop`'s gap-test rule (0180). Each asserted phrase
+  goes on one source line. Write the clause table into the build notes this time.
+
+## QA evidence
+
+Conventions: ../ai-building-conventions
+Level: `qa_level: verify` (scripted assertions named by the QA plan). There is no lint or
+typecheck configured. Commands run:
+`for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`, every file reporting)
+at `7a4451a`, with `git status --porcelain` empty in the same call. Mutations were run with
+`python3 .verify-scratch/mutate.py` (scratch, not committed), each restored by path and checked with
+`git diff --quiet -- <path>`.
+`ac_digest absent — unverifiable` (`./next --ac-digest 0065 --check`).
+Dirty set at Step 2: empty. Evidence set: `references/CONCURRENCY.md`,
+`references/CONCURRENCY-INCIDENTS.md`, `tests/by-hand-lock.test.sh`, `tests/citations.test.sh`,
+`tests/reference-size.test.sh`. Intersection: empty, so the label is not advisory.
+
+**Clause table**
+
+| AC | Row | Mutation | Result |
+|---|---|---|---|
+| AC1 | Given: the *Never rewrite `QUEUE.md` by hand* section | (the guard's `window`; an empty window reds by construction) | — |
+| AC1 | predicate + object: names in-place stream editing as prohibited | `never an in-place stream edit` → `an in-place stream edit is fine` | RED 35/1 |
+| AC2 | object: a whole-file rewrite through a temp file | → `a temp-file rewrite` | RED 35/1 |
+| AC2 | predicate: named as prohibited (`and never`) | `— and never` → `— but allow` | **GREEN 36/0 — gap** |
+| AC2 | "as the same class" | drop `: one class` | **GREEN 36/0 — gap** |
+| AC3 | predicate: what makes the scripts the exception | `one process holding the lock across the whole rebuild and its commit` → `being the two scripts` | RED 35/1 |
+| AC3 | qualifier: in terms that would apply to another | delete `An exception is a script, never a technique` + `another would need the same` | **GREEN 36/0 — gap** |
+| AC4 | predicate/object: a safe shape is stated | `keep it only if the diff is exactly the intended change` → `keep it` | RED 35/1 |
+| AC4 | qualifier: under the lock | `is made under the lock to a temp file` → `is made to a temp file` | **GREEN 36/0 — gap** |
+| AC4 | qualifier: unavoidable multi-row rewrite | `A multi-row rewrite by hand that cannot be avoided` → `A rewrite by hand` | **GREEN 36/0 — gap** |
+| AC5 | every citation of the rule resolves | heading renamed `## Never hand-edit the queue` | RED, `tests/citations.test.sh` 51/5 |
+| AC6 | both files within goal or justified | `tests/reference-size.test.sh`'s `references/CONCURRENCY.md` justification case retargeted | RED 14/1 ("25705 bytes, over the 6057 goal") |
+| FR4 | incident and its diffstat are in `CONCURRENCY-INCIDENTS.md` | `only signal was the diffstat` → `only signal was the commit` | RED 35/1 |
+
+Controls after the sweep: `tests/by-hand-lock.test.sh` 36 passed, 0 failed;
+`tests/citations.test.sh` 52 passed, 0 failed; `tests/reference-size.test.sh` 15 passed, 0 failed.
+
+| Check | How | Result |
+|---|---|---|
+| AC1 | `tests/by-hand-lock.test.sh` AC1 case, mutation-proved | PASS |
+| AC2 | object guarded; the predicate and "same class" are unguarded | **FAIL — gaps 1, 2** |
+| AC3 | predicate guarded; the qualifier is unguarded | **FAIL — gap 3** |
+| AC4 | predicate guarded; "under the lock" and "multi-row" unguarded | **FAIL — gaps 4, 5** |
+| AC5 | `tests/citations.test.sh` 52 passed, 0 failed; reds on rename | PASS |
+| AC6 | `tests/reference-size.test.sh` 15 passed, 0 failed; reds without the justification | PASS |
+| NFR Documentation | the narrative is in `CONCURRENCY-INCIDENTS.md`, and the FR4 guard reds on it. "The failure in one clause" holds on reading and is unguarded | holds; one half unguarded |
+| Suite | 44 files, each `passed, 0 failed` (`commands.unit_by_file`) | green |
+| Always-on (`CONVENTIONS_CORE.md`) | prose-only change, commits carry the trailer, no secrets or company material | holds |
