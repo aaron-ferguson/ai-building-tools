@@ -459,3 +459,12 @@ someone else's account, and `tools/release` step 5 uses the same suite as its ga
 can ship until it is fixed. It beats 0189, which is Tier 2 with a blast radius of one worktree
 layout. A fixed baseline is also a prerequisite: until it lands, no row below it can show a clean
 before-and-after.
+
+## 2026-10-27 - 0089 split; 0222, 0223 and 0224 placed directly below it
+
+`0089` keeps its rank: a re-specify does not move a row. Its three children go immediately under
+it, in the order they should land — `0222` (numeric needles) and `0223` (whole-file and
+section-scoped guards) are the same tier and sweep as `0089`, separated by capture order; `0224`
+(the standing guard, at `design`) goes last because it reds the tree until the three sweeps close,
+and a prerequisite outranks its dependent. Kept together rather than ranked independently: they are
+one class of defect, and splitting them across the queue would scatter the evidence `0089` carries.

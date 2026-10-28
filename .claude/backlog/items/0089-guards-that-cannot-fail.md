@@ -1,41 +1,33 @@
 ---
 id: "0089"
-title: Sweep the guards for assertions that cannot fail
+title: Re-anchor the case "$out" guards that cannot fail
 type: bug
-next: queue
+next: develop
 status: ready
 qa_level: unit
-size: l
+size: m
 created: 2026-09-05
 source: agent
 parent:
 blocked_by: []
-relates: ["0052", "0063"]
+relates: ["0052", "0063", "0222", "0223", "0224"]
 expects:
-  - tests/backlog-scripts-installed.test.sh
-  - tests/batching.test.sh
   - tests/citations.test.sh
-  - tests/claim.test.sh
-  - tests/close.test.sh
-  - tests/cost-by-category.test.sh
-  - tests/external-feedback.test.sh
-  - tests/falsifiable-acs.test.sh
-  - tests/floor-probe.test.sh
-  - tests/graph-fields.test.sh
-  - tests/handoff.test.sh
-  - tests/last-line.test.sh
-  - tests/measurement.test.sh
-  - tests/money-in-skill-prose.test.sh
-  - tests/next.test.sh
-  - tests/qa-level-once.test.sh
-  - tests/reference-size.test.sh
-  - tests/release.test.sh
   - tests/reporting.test.sh
-  - tests/retro-tool-edit.test.sh
+  - tests/last-line.test.sh
   - tests/skill-size.test.sh
+  - tests/money-in-skill-prose.test.sh
+  - tests/reference-size.test.sh
+  - tests/abort-announce.test.sh
+  - tests/declared-copies.test.sh
+  - tests/external-feedback.test.sh
+  - tests/item-nfr-red.test.sh
+  - tests/scaffold-close.test.sh
+  - tests/cost-by-category.test.sh
 claimed_by:
 claimed_at:
 touches:
+ac_digest: AC1=80aa6a19 AC2=5f92027e AC3=cee5c2a0 AC4=74c1ed2c AC5=f5ee516c
 ---
 
 ## Problem
@@ -61,20 +53,23 @@ Found while verifying `0085` (pointer: `tests/cost-by-category.test.sh`, item `0
 
 ## Functional requirements
 
-- FR1 — Every assertion in `tests/*.test.sh` that matches against a command's **whole captured
-  output** or a **whole file** is re-anchored to the specific line, element or claim it is about,
-  or is deleted with its reason recorded in this item's *Notes & decisions*.
-- FR2 — Every assertion whose needle is a **substring of another value the same output carries** is
-  re-anchored so the two cannot be confused. `10000` inside `100000` is the worked instance; the
-  sweep looks for the class.
+This row is the `case "$out"` class of the sweep. The other three classes are their own rows, split
+out on 2026-10-27: numeric needles under any other subject (`0222`), whole-file and section-scoped
+prose guards plus the named helper instances (`0223`), and the standing guard (`0224`).
+
+- FR1 — Every hit of `grep -n 'case "\$out"' tests/*.test.sh` is examined. Each **presence** needle
+  is left as, or re-anchored to, a complete line the subject prints, a field extracted from one, or
+  a phrase the subject prints only on the asserted condition — or is deleted with its reason
+  recorded in *Notes & decisions*. Each **absence** needle stays matched over the whole output:
+  narrowing it to one line weakens it.
+- FR2 — Within those hits, a presence needle that is a substring of another value the same output
+  carries (`10000` inside `100000`) is re-anchored so the two cannot be confused.
 - FR3 — Each re-anchored assertion is **mutation-proved**: the sweep records, per file, the change
   applied to the subject under test that turned the assertion red, and that it went green again on
   revert. An assertion for which no such mutation can be found is not re-anchored — it is deleted.
-- FR4 — The sweep is driven **from a loop over all 21 files**, not by reading for the next
-  instance, and the list of files examined is recorded so a later reader can tell an examined-clean
-  file from an unexamined one.
-- FR5 — A guard implements FR1 and FR2 as a standing rule: a new test file added to `tests/` is
-  checked for whole-output and whole-file matching, so the class cannot return silently.
+- FR4 — The sweep is driven from the FR1 grep, not by reading for the next instance, and the list
+  of files and hits examined is recorded, so a later reader can tell an examined-clean hit from an
+  unexamined one.
 
 ## Non-functional requirements
 
@@ -85,19 +80,21 @@ Found while verifying `0085` (pointer: `tests/cost-by-category.test.sh`, item `0
 ## Acceptance criteria
 
 - [ ] AC1 — Given the sweep is complete, when `grep -n 'case "\$out"' tests/*.test.sh` is run, then
-  every remaining hit is against a variable holding a **single extracted line or field**, not a
-  whole command's output. Red if any hit matches a variable assigned from an unfiltered command
-  substitution.
+  every presence needle is either a complete line the subject prints (or a field extracted from one)
+  or a phrase the subject prints only on the asserted condition, and every absence needle is matched
+  over the whole output. Red if any presence needle is satisfied by text the subject prints
+  unconditionally or is a substring of another value the same output carries — or if an absence
+  needle such as `tests/external-feedback.test.sh`'s `*EXTERNAL-FEEDBACK*) bad` is narrowed to a
+  single extracted line.
 - [ ] AC2 — Given `tests/cost-by-category.test.sh`, when the figure the AC10-shaped assertion tests
   is changed in the subject from `10000` to `9999`, then that assertion goes **red**. Red-making
-  input: today's code, where the assertion passes with the figure absent because `100000` contains
-  it.
+  input: the pre-`df07072` code, where the assertion passed with the figure absent because `100000`
+  contains it.
 - [ ] AC3 — Given each file the sweep re-anchored, when this item's *Notes & decisions* is read,
   then it names for that file the mutation applied and the assertion that went red under it. Red if
   any re-anchored file has no such entry.
-- [ ] AC4 — Given a new file `tests/zz-whole-output.test.sh` that matches a substring against a
-  whole command's output, when the suite is run, then FR5's guard **fails and names that file**.
-  Red if the guard passes, or if it fails without naming the file.
+- [ ] AC4 — Given the FR1 grep, when this item's *Notes & decisions* is read, then every file the
+  grep hits is listed as examined. Red if a file the grep hits is absent from that list.
 - [ ] AC5 — Given the whole suite after the sweep, when `for t in tests/*.test.sh; do "$t" || true;
   done` is run against an unmodified tree, then every file reports `0 failed`. Red if any assertion
   was re-anchored onto a claim the code does not actually make.
@@ -119,8 +116,25 @@ Found while verifying `0085` (pointer: `tests/cost-by-category.test.sh`, item `0
 - Writing new coverage. This sweep fixes assertions that cannot fail; it does not add assertions
   for behaviour nothing checks.
 - `skills/**` prose. The defect is in the guards, not in the rules they guard.
+- Numeric needles under any subject other than `"$out"` (`0222`), whole-file and section-scoped
+  guards and the helper instances named below (`0223`), and FR5's standing guard (`0224`).
 
 ## Notes & decisions
+
+- **2026-10-27 — re-specified by `queue` (sprint run-20261027T185815Z, on the person's answer to
+  the escalation).** The code at `d0c5372` is right and stays: both slices' re-anchors are
+  mutation-proved below and the suite is green there. What changed is the contract. **AC1 rewritten**
+  to the text the 612d slice proposed, with its absence clause made able to red: the old AC1
+  demanded every `case "$out"` hit be over a single extracted line, which would have narrowed the
+  whole-output absence assertions and weakened them. **Split**, as both develop sessions
+  recommended, one row per class: this row keeps the `case "$out"` class and its history; FR2's
+  numeric needles under every other subject are `0222`; FR1's whole-file and section-scoped class,
+  plus the helper instances the retro notes below name, is `0223`; FR5's standing guard is `0224`,
+  which goes to `design` because what a guard can mechanically refuse, now that whole-output absence
+  and complete-line presence are both legitimate, is a decision rather than a reading. Old AC4 (the
+  `zz-whole-output` fixture) moved with FR5 to `0224`; new AC4 is FR4's examined-list check. `size`
+  drops to `m`: 78 hits across 11 files at `d0c5372`, most of them complete lines already. Routed
+  to `develop`: the criteria are now writable and no FR waits on a decision. All ACs unticked.
 
 - Routed to `develop` rather than `design`: the corrective shape is already named by
   `testing-conventions.md` and demonstrated in this repo, so no decision blocks the criteria.
