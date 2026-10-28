@@ -206,10 +206,17 @@ in_window "AC4 — and names the close-time case it meets" "$W5" 'busy lock at c
 # an in-place stream edit, which neither "Write" nor "read-rebuild-write" reads as covering.
 echo "0065 — Never rewrite QUEUE.md by hand names stream editors, temp-file rewrites, the exception and a safe shape"
 W65="$(window "$CONC" 'Never rewrite `QUEUE.md` by hand')"
-in_window "AC1 — names in-place stream editing as prohibited" "$W65" 'never an in-place stream edit — `sed -i`, `perl -i`'
-in_window "AC2 — names a whole-file rewrite through a temp file as the same class" "$W65" 'a whole-file rewrite through a temp file'
-in_window "AC3 — states the exception in terms that apply to another script" "$W65" 'one process holding the lock across the whole rebuild and its commit'
-in_window "AC4 — states the safe shape for an unavoidable multi-row rewrite" "$W65" 'keep it only if the diff is exactly the intended change'
+# One case per clause of each AC (0065 verify, gaps 1-5): every phrase is the AC's own words where the
+# AC has words to assert, and sits on one source line of the section.
+in_window "AC1 — names in-place stream editing as prohibited" "$W65" 'never in-place stream editing — `sed -i`, `perl -i`'
+in_window "AC2 — names a whole-file rewrite through a temp file as prohibited" "$W65" 'never a whole-file rewrite through a temp file'
+in_window "AC2 — and as the same class" "$W65" 'the same class as `Write`'
+in_window "AC3 — states what makes the scripts the exception" "$W65" 'one process holding the lock across the whole rebuild and its commit'
+in_window "AC3 — names the two scripts as the exception" "$W65" '`./close` are the exception'
+in_window "AC3 — in terms that would apply to another (the qualifier)" "$W65" 'in terms that would apply to another:'
+in_window "AC4 — a safe shape for an unavoidable multi-row rewrite under the lock" "$W65" 'safe shape for an unavoidable multi-row rewrite under the lock'
+in_window "AC4 — the shape: kept only if the diff is exactly the intended change" "$W65" 'keep it only if the diff is exactly the intended change'
+in_window "AC4 — the shape: abandoned otherwise" "$W65" 'and abandon it otherwise'
 I65="$(window "$INCID" 'rule: *Never rewrite `QUEUE.md` by hand*')"
 in_window "FR4 — the incident and its only signal are in CONCURRENCY-INCIDENTS.md" "$I65" 'the diffstat'
 

@@ -254,15 +254,16 @@ same three entries.
 ## Never rewrite `QUEUE.md` by hand
 
 `Edit` the one row you are changing. Never `Write`, never read-rebuild-write,
-**never an in-place stream edit — `sed -i`, `perl -i`** — and never
-**a whole-file rewrite through a temp file** (`awk … > tmp && mv`): one class. A full-file write from a
-copy read a minute ago clobbers every row touched since, with no conflict and no error; a stream
-editor is worse, since one wrong pattern rewrites every line where `Edit` refuses a non-unique match.
-Hence **no `#` column** — renumbering *is* that rewrite. Different rows need no coordination.
+**never in-place stream editing — `sed -i`, `perl -i`** — and
+**never a whole-file rewrite through a temp file** (`awk … > tmp && mv`), the same class as `Write`.
+A full-file write from a copy read a minute ago clobbers every row touched since, with no conflict
+and no error; a stream editor is worse, since one wrong pattern rewrites every line where `Edit`
+refuses a non-unique match. Hence **no `#` column** — renumbering *is* that rewrite. Different rows
+need no coordination.
 
-**An exception is a script, never a technique** — `./claim` and `./close` earn it as
-one process holding the lock across the whole rebuild and its commit, and another would need the same.
-**A multi-row rewrite by hand that cannot be avoided** is made under the lock to a temp file:
+**An exception is a script, never a technique.** `./claim` and `./close` are the exception
+in terms that would apply to another: one process holding the lock across the whole rebuild and its commit.
+**The safe shape for an unavoidable multi-row rewrite under the lock:** write it to a temp file,
 keep it only if the diff is exactly the intended change, nothing removed that was not meant to be,
 and abandon it otherwise. Incident: `CONCURRENCY-INCIDENTS.md`.
 
