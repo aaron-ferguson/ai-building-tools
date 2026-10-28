@@ -297,3 +297,84 @@ prose guards plus the named helper instances (`0223`), and the standing guard (`
     release the row partly done. One row per class (AC1 `case "$out"` under the corrected text, FR2
     numeric needles, FR1 whole-file, FR5 guard `blocked_by` the other three) is a sitting each.
   - Whole suite run file-by-file at `d0c5372`, clean tree: no file red.
+- **2026-10-27 — develop (8dbb), against the re-specified ACs.** Commit `b7de8e7`. Driven from the
+  FR1 grep (FR4): `grep -n 'case "\$out"' tests/*.test.sh` at `c6b8483` hit **78 times in 11
+  files**. Every hit was opened with its arms and classified; two were re-anchored, none deleted.
+  - **Examined (AC4), every file the grep hits, with its classification:**
+    - `tests/abort-announce.test.sh` (3: 119, 149, 156) — clean. 120 is the complete ABORTED line,
+      its count bounded by `: ` and ` failed`; 150 is an absence over the whole output; 151's
+      `3 passed, $fails failed` is the fixture's own tally line, bounded by ` failed`, and the
+      `*ABORTED*` arm ahead of it stops an ABORTED line satisfying it; 157 `cleanup ran` is printed
+      only when the fixture's trap runs its cleanup.
+    - `tests/citations.test.sh` (18: 392, 402, 412, 423, 433, 444, 471, 479, 489, 500, 692, 701,
+      711, 721, 733, 743, 752, 762) — clean. Each presence needle is a whole `FAIL`/`INFO`/`SKIP`/
+      `COUNT` line, or a `cites "<name>", which is not a rule` / `cites item 0404, which is in no
+      table` phrase printed only when that citation fails; `COUNT 1 ids, 1 cited` has both figures
+      bounded by fixed text; 711 is an equality. 412, 444, 471, 701, 743 open with whole-output
+      absence arms (`FAIL `, the narrative phrase), left whole-output (FR1).
+    - `tests/declared-copies.test.sh` (3: 159, 173, 230) — clean. 159 is `expect_red`'s loop: its
+      eight call sites (185–254) pass fixture-specific strings the guard prints only in the FAIL
+      line for that fixture — run on the AC7 fixture, `skills/queue/templates/handoff` appears
+      only in `FAIL — block scope-block differs between …close:369 and …handoff:352`. 173's
+      `<name>: N copies, identical` is the `ok   — ` line's field, the count bounded by `: ` and
+      ` copies`. 230 is an absence.
+    - `tests/external-feedback.test.sh` (3: 134, 153, 155) — clean. The guard prints nothing on a
+      clean tree (the `""` arm), so the fixture path appears only when reported; 156's
+      `*EXTERNAL-FEEDBACK*) bad` stays whole-output (FR1, AC1's named example).
+    - `tests/item-nfr-red.test.sh` (2: 172, 180) — clean; each needle is the report line for its
+      fixture item and dimension.
+    - `tests/last-line.test.sh` (10: 225, 234, 236, 247, 257, 267, 277, 287, 297, 307) — clean.
+      Each presence needle is a whole `FAIL  <file> …` line for the one mutated fixture file; 225
+      and 236 are whole-output absences.
+    - `tests/money-in-skill-prose.test.sh` (8: 170, 179, 181, 192, 202, 213, 223, 232) — clean.
+      Whole `FAIL  <file>:3 carries a $ before a digit` lines; 170, 181, 223 absences; 232's two
+      fragments are the one line `FAIL  <root>/skills does not exist`.
+    - `tests/reference-size.test.sh` (5: 176, 178, 221, 231, 233) — **176 re-anchored (FR2)**, the
+      rest clean: 179's relocation phrase and 221's `remove its stale justification` are printed
+      only in the over-goal and stale branches of `offenders`; 232 a fixture path printed only
+      when reported; 234 an absence.
+    - `tests/reporting.test.sh` (16: 341, 350, 352, 363, 373, 383, 393, 403, 413, 423, 433, 443,
+      453, 463, 475, 485) — clean. Whole `FAIL` lines or their prefix up to `at line`, each printed
+      only for its fixture's defect; `routes 5 kinds` / `routes 3 kinds` are bounded by `routes `
+      and ` kinds`; 341 and 352 absences.
+    - `tests/scaffold-close.test.sh` (1: 104) — clean; an absence (`left blank`), whole-output.
+    - `tests/skill-size.test.sh` (9: 252, 262, 267, 307, 315, 331, 341, 352, 354) — **252
+      re-anchored (FR2)**, the rest clean: 263/268/316 are phrases only the over-goal / stale
+      branches print; 308/332/342 pair the fixture's path with the branch's own remedy phrase, and
+      each fixture holds one file, so both fragments come from its one line; 332's `$want` figures
+      are bounded by `is `/` bytes, `/` past the `; 353 a path, 355 an absence.
+  - **Re-anchored (AC3), each mutation run on the subject — the file's own `offenders()` — in a
+    scratch copy `tests/.mut-<name>.test.sh` (hidden, so no concurrent `tests/*.test.sh` glob
+    reaches it), removed in the same call:**
+    - `tests/skill-size.test.sh:253` — `… over the $GOAL goal by 500` → `… by 500 — `. FR2: `by 500`
+      is a substring of `by 5000`. Mutation: the overage `$((bytes - GOAL))` → `$((bytes - GOAL))0`
+      (prints `by 5000`). New guard: `FAIL AC4 — reported something else: skills/padded/SKILL.md
+      is 20690 bytes, over the 20190 goal by 5000 — …`. Same mutation on the `HEAD~1` copy: 45
+      passed, 0 failed — the old needle could not see it. Unmutated: 45/0.
+    - `tests/reference-size.test.sh:177` — same re-anchor, same mutation. New guard: `FAIL AC2 —
+      reported something else: references/PADDED.md is 6557 bytes, over the 6057 goal by 5000 — …`.
+      `HEAD~1` copy under it: 15/0. Unmutated: 15/0.
+  - **AC2 (run again this session, in `tests/.mut-cbc.test.sh`).** `turnb 2 110000` → `109999`
+    makes protocol's appended figure 9999: `FAIL AC10 — protocol reports a marginal footprint of
+    9999, not the 10000 it appended`, 27/2; control 29/0. Red-making input: `df07072`'s copy, whose
+    `case "$OUT" in *10000*)` was removed in `66a440c`, with its fixture's rises set to 9999
+    (`turn 2/3/4` at 109999/119998/129997) — `ok a marginal footprint of 10000 per turn is
+    reported`, 10/0: green with the figure absent, because `100000` still prints.
+  - **Clause table** (AC text → evidence; all run unless marked):
+
+    | AC | Clause | Evidence |
+    |---|---|---|
+    | AC1 | Given the sweep is complete, the FR1 grep is run | 78 hits, 11 files, listed above |
+    | AC1 | every presence needle is a complete line / field / phrase printed only on the condition | per-file classification above (reasoned per hit; the two exceptions re-anchored) |
+    | AC1 | red if satisfied by text printed unconditionally | none found; `handoff` path checked by running the AC7 fixture |
+    | AC1 | red if a substring of another value the same output carries | skill-size 253, reference-size 177 — mutated ×10, old green, new red |
+    | AC1 | every absence needle matched over the whole output; red if narrowed to one line | no absence arm touched; `external-feedback.test.sh:156` unchanged |
+    | AC2 | 10000 → 9999 in the subject reds the AC10-shaped assertion | 27/2, control 29/0 |
+    | AC2 | red-making input: pre-`df07072` code passed with the figure absent | `df07072` copy, rises 9999, 10/0 |
+    | AC3 | each re-anchored file names its mutation and the red assertion | both entries above |
+    | AC4 | every file the grep hits is listed as examined | 11 of 11 above |
+    | AC5 | whole suite, file-by-file, unmodified tree, every file `0 failed` | below |
+  - **AC5:** whole suite file-by-file at `b7de8e7`, `git status --porcelain` clean but for this
+    note's scratch file (untracked, read by no suite): 44 files, every one `0 failed`.
+  - `qa_level: unit` kept; `close_by` absent, so `verify` closes it. Out of scope, untouched: the
+    uppercase `case "$OUT"` hits elsewhere in `cost-by-category.test.sh` (not FR1's grep; `0222`/`0223`).
