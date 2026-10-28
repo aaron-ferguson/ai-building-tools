@@ -28,7 +28,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0223 | Re-anchor whole-file and section-scoped prose guards that cannot fail | develop | ready |  |
 | 0224 | Guard tests/ against assertions that cannot fail | design | ready |  |
 | 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
-| 0092 | Prove claim and close hold the lock through their commit | verify | ready |  |
+| 0092 | Prove claim and close hold the lock through their commit | verify | in-progress |  |
 | 0065 | Name stream editors in the rule against rewriting QUEUE.md | develop | ready |  |
 | 0050 | Decide how file scope works when the prose files are the product | develop | ready |  |
 | 0093 | Give develop and verify a working recipe for a before-and-after suite comparison | develop | ready |  |

@@ -3,7 +3,7 @@ id: "0092"
 title: Prove claim and close hold the lock through their commit
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: s
 created: 2026-09-05
@@ -15,8 +15,8 @@ expects:
   - tests/claim.test.sh
   - tests/close.test.sh
   - tests/handoff.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "2fb6"
+claimed_at: 2026-10-28T02:14:15Z
 touches:
 ---
 
