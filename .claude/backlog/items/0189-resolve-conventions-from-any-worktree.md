@@ -3,7 +3,7 @@ id: "0189"
 title: Make the citations guard resolve the conventions path from a worktree outside the checkout's parent
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: s
@@ -14,8 +14,8 @@ blocked_by: []
 relates: ["0180", "0083"]
 expects:
   - tests/citations.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "c480"
+claimed_at: 2026-10-28T01:51:53Z
 touches:
 ---
 
