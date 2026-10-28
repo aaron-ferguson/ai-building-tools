@@ -196,8 +196,8 @@ STEP4='## Step 4 — Write it, and empty what you processed'
 END4='^## Step 5'
 W4C="$(window "$RETRO" "$STEP4" "$END4")"
 
-echo "b9a5ee0 AC1 — the step that empties the buffer names four terminal dispositions"
-in_window "AC1 — the four dispositions are named together" "$W4C" 'landed, absorbed, filed or dropped'
+echo "b9a5ee0 AC1 — the step that empties the buffer names five terminal dispositions"
+in_window "AC1 — the five dispositions are named together" "$W4C" 'landed, absorbed, filed, held or dropped'
 in_window "AC1 — and every one removes the entry"          "$W4C" 'no entry survives the pass that read it'
 
 echo "b9a5ee0 AC2 — landing now is the default, and the test against filing is stated"

@@ -549,6 +549,9 @@ treatment.
 neither waiting for the other. **An entry that is both is taken by both**, so nothing has to be
 classified at the moment of noticing.
 
+**File only confirmed work** — the confirmation test is `retro` Step 4's *Filed*. An unconfirmed
+unit of work is left for `retro` to hold in `FINDINGS-HELD.md`, which this sweep never reads.
+
 For each entry that is a unit of work:
 
 1. **Do the Step 2 work properly.** A parked line is one sentence and a pointer: no FRs, no NFR

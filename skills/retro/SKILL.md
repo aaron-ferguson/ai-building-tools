@@ -295,7 +295,7 @@ is the only thing that makes its writes visible to another session. The forms a 
 are `references/CONCURRENCY.md` *Lock every write to the backlog directory*, and only there; read
 it, and `CONCURRENCY-INCIDENTS.md`, before writing one.
 
-**Every entry you read gets one of four dispositions — landed, absorbed, filed or dropped — and
+**Every entry you read gets one of five dispositions — landed, absorbed, filed, held or dropped — and
 `FINDINGS.md` is the home of none of them.** The buffer surfaces a lesson; it never keeps one.
 
 - **Landed** — written into the file that governs it, this session. Report the path.
@@ -303,10 +303,18 @@ it, and `CONCURRENCY-INCIDENTS.md`, before writing one.
   **names the row and appends** one dated line to its *Notes & decisions*, so the session that claims
   it does not re-derive what you established.
 - **Filed** — the lesson needs work that does not exist yet, so write the row now while it is fresh.
+  **Only with confirmation from a real project**: the entry was observed in a project that uses these
+  tools to build something, or it matches a held entry from one, or the user asked for it. A
+  finding from the tools working on themselves is *held*, never filed: unconfirmed, it turned 83%
+  of this toolkit's own backlog into upkeep that no product needed (the 2026-10-27 triage).
   **A pure unit of work is filed, not handed back**: you have paid to understand it and `queue` would
   pay again. Beyond what this pass can specify, defer it per Step 1 rather than leave it unmarked.
   **The id is minted per `queue` Step 2**, never read off `next_id` alone — one written from the
   counter collided with a row created the same day.
+- **Held** — real work, unconfirmed. Move the entry unchanged to `.backlog/FINDINGS-HELD.md`,
+  creating it with a one-line header if absent. A separate file and not a section, because sessions
+  append to both ends of `FINDINGS.md`. Nothing reviews, counts or expires it; a pass greps it only
+  for a held entry that a new, confirmed finding matches, then files the two together.
 - **Dropped** — stale, or an observation that cannot answer Step 1's question. Record the reason.
 
 **Land it now unless the change cannot be complete in this session** — a rule this project would
@@ -314,7 +322,7 @@ demand a new guard for, or anything touching code. Half-landing strands the row 
 other half and leaves it reading as stale.
 
 **Then empty what you read**, and commit in the same turn, by pathspec:
-**no entry survives the pass that read it**. Your own Step 6 parks are the next pass's input rather
+**no entry survives the pass that read it** — a held entry leaves for `FINDINGS-HELD.md`. Your own Step 6 parks are the next pass's input rather
 than residue left by this one, which is why a healthy buffer is rarely empty and never stale.
 
 ---
