@@ -143,6 +143,46 @@ form.
   AC (rows 2 and 3: "one class" for "same class", nothing at all for "apply to another"), reword the
   prose to the AC's words in this round, per `develop`'s gap-test rule (0180). Each asserted phrase
   goes on one source line. Write the clause table into the build notes this time.
+- **2026-10-27 — develop (fe71), re-developed against verify's gaps 1–5.** Commit `69b5856`.
+  The rule now uses the ACs' own words, each asserted phrase on one source line:
+  `**never in-place stream editing — 'sed -i', 'perl -i'**` (AC1, was "an in-place stream
+  edit"); `**never a whole-file rewrite through a temp file** (…), the same class as 'Write'` (AC2
+  — the prohibition and "same class" were the unguarded gaps 1–2); `**An exception is a script,
+  never a technique.** './claim' and './close' are the exception` / `in terms that would apply
+  to another: one process holding the lock across the whole rebuild and its commit.` (AC3, gap 3);
+  `**The safe shape for an unavoidable multi-row rewrite under the lock:** write it to a temp file,
+  keep it only if the diff is exactly the intended change, … and abandon it otherwise.` (AC4, gaps
+  4–5). `tests/by-hand-lock.test.sh`'s 0065 block grows from 4+1 to 9+1 cases, one per clause.
+  New guards against the `HEAD~1` prose (scratch copy, restored): 35 passed, 6 failed — every new
+  phrase red. `in_window` flattens whitespace, but every phrase is on one line anyway (CLAUDE.md).
+  - **Clause table** — every mutation **run** by `/tmp/dev-fe71/sweep.py` on the committed subject,
+    restored by `git checkout --` in the same call; "gone" is the gap test (the AC's phrase no
+    longer in the flattened section). Control after: 41/0, porcelain clean.
+
+    | AC | Row (AC words) | Mutation | Result |
+    |---|---|---|---|
+    | AC1 | Given: *Never rewrite 'QUEUE.md' by hand* | heading → '## Never hand-edit the queue' | RED 32/9 (window empty) |
+    | AC1 | predicate: names … as prohibited | '**never in-place stream editing' → '**allow …' | RED 40/1, gone |
+    | AC1 | object: in-place stream editing | → 'in-place editing' | RED 40/1, gone |
+    | AC2 | object: a whole-file rewrite through a temp file | → 'a temp-file rewrite' | RED 40/1, gone |
+    | AC2 | predicate (gap 1): named as prohibited | '**never a whole-file' → '**allow a whole-file' | RED 40/1, gone |
+    | AC2 | "as the same class" (gap 2) | drop ', the same class as 'Write'' | RED 40/1, gone |
+    | AC3 | predicate: what makes the scripts an exception | 'one process holding the lock … commit' → 'being the two scripts' | RED 40/1 |
+    | AC3 | subject: the two scripts | ''./claim' and './close' are the exception' → 'They are the exception' | RED 40/1 |
+    | AC3 | qualifier (gap 3): in terms that would apply to another | delete the lead sentence and 'in terms that would apply to another:' → 'because of' | RED 40/1, gone |
+    | AC4 | object: a safe shape | 'The safe shape for' → 'A shape for' | RED 40/1, gone |
+    | AC4 | qualifier (gap 4): under the lock | 'rewrite under the lock:' → 'rewrite:' | RED 40/1, gone |
+    | AC4 | qualifier (gap 5): unavoidable multi-row rewrite | 'an unavoidable multi-row rewrite' → 'a rewrite' | RED 40/1, gone |
+    | AC4 | shape: kept only if the diff is exactly the intended change | → 'keep it' | RED 40/1 |
+    | AC4 | shape: abandoned otherwise | → 'and keep it otherwise' | RED 40/1 |
+    | AC5 | every citation of this rule resolves | heading renamed, 'tests/citations.test.sh' | RED 51/5; control 52/0 |
+    | AC6 | both files within goal or justified | not re-run: unchanged this round, verify's row stands (reasoned) | 'tests/reference-size.test.sh' 15/0 |
+    | FR4 | the incident's diffstat in 'CONCURRENCY-INCIDENTS.md' | 'the diffstat' → 'the commit' | RED 40/1 |
+
+    AC4's three qualifier rows red the one case asserting 'safe shape for an unavoidable multi-row
+    rewrite under the lock' — the AC's own words, so a mutation of any of them reds it.
+  - Whole suite file-by-file at `69b5856` (only this item dirty): 44 files, every one `0 failed`.
+    `qa_level: verify` kept; no `close_by`, so `verify` closes it.
 
 ## QA evidence
 
