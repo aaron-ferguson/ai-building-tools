@@ -2,8 +2,8 @@
 id: "0050"
 title: Decide how file scope works when the prose files are the product
 type: chore
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -19,10 +19,11 @@ expects:
   - CLAUDE.md
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by: "e281"
-claimed_at: 2026-10-28T02:54:34Z
+claimed_by:
+claimed_at:
 touches:
 ac_digest: AC1=4628a33e AC2=0f12239c AC3=59be2e64 AC4=fff4269d AC5=168c1e58 AC6=59b75fbe AC7=29421536 AC8=5df1dc6b
+closed: 2026-10-28
 ---
 
 ## Problem
@@ -93,14 +94,14 @@ the tooling's prose, so the collision rate rises with the very work meant to red
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `references/CONCURRENCY.md`, *The working tree is shared too*, when read, then it states that when every takeable row at a stage collides the session claims nothing, reports the holders, and waits — and that this is a designed outcome.
-- [ ] AC2 — Given the same section, when read, then a collision with a row held at `verify` follows the same taking rule and additionally forbids a `develop` session opening or widening into a `verify`-held file mid-session.
-- [ ] AC3 — Given `CLAUDE.md` *Concurrency*, when read, then it names the section holding the settled rule rather than only recording that the file-scope rule is weak here.
-- [ ] AC4 — Given `references/CONCURRENCY.md`, when grepped for `Prefer single-writer files`, then nothing matches, and the section states that rows sharing a file are worked by one session.
-- [ ] AC5 — Given `references/CONCURRENCY.md` and `skills/sprint/SKILL.md` *Design beside other stages*, when read, then neither describes `0050` as an open question, and `tests/sprint.test.sh` passes.
-- [ ] AC6 — Given `references/CONCURRENCY-INCIDENTS.md`, when read, then it records sub-file scope, worktree-per-session and rank-against-the-held-set as rejected, each with its reason.
-- [ ] AC7 — Given the guard FR7 names, when any one asserted phrase is removed from the section, then the guard reds, and restored, it greens.
-- [ ] AC8 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` is run at the closing commit, then every file passes.
+- [x] AC1 — Given `references/CONCURRENCY.md`, *The working tree is shared too*, when read, then it states that when every takeable row at a stage collides the session claims nothing, reports the holders, and waits — and that this is a designed outcome.
+- [x] AC2 — Given the same section, when read, then a collision with a row held at `verify` follows the same taking rule and additionally forbids a `develop` session opening or widening into a `verify`-held file mid-session.
+- [x] AC3 — Given `CLAUDE.md` *Concurrency*, when read, then it names the section holding the settled rule rather than only recording that the file-scope rule is weak here.
+- [x] AC4 — Given `references/CONCURRENCY.md`, when grepped for `Prefer single-writer files`, then nothing matches, and the section states that rows sharing a file are worked by one session.
+- [x] AC5 — Given `references/CONCURRENCY.md` and `skills/sprint/SKILL.md` *Design beside other stages*, when read, then neither describes `0050` as an open question, and `tests/sprint.test.sh` passes.
+- [x] AC6 — Given `references/CONCURRENCY-INCIDENTS.md`, when read, then it records sub-file scope, worktree-per-session and rank-against-the-held-set as rejected, each with its reason.
+- [x] AC7 — Given the guard FR7 names, when any one asserted phrase is removed from the section, then the guard reds, and restored, it greens.
+- [x] AC8 — Given the whole suite, when `for t in tests/*.test.sh; do "$t" || exit 1; done` is run at the closing commit, then every file passes.
 
 ## QA plan
 
@@ -328,7 +329,86 @@ each is a test the chosen shape has to pass.
   - AC8: whole suite file-by-file at `64a4db7` (only this item dirty): 44 files, every one `0 failed`.
     `qa_level: unit` kept; no `close_by`, so `verify` closes it.
 
+- **2026-10-27 — verify (token e281), re-verify: PASS.** Every gap the b127 round named (1–4) now reddens its own case in `tests/shared-dirty-tree.test.sh`; one residual published — an open-question description wrapped across a line break escapes the line-level whole-file absence (`0063`'s class). Clause table under *QA evidence*.
+
 ## QA evidence
+
+### 2026-10-27 — verify (token e281), re-verify after the b127 FAIL: PASS
+
+Conventions: ../ai-building-conventions
+Level: `qa_level: unit`, `commands.unit` as configured; no lint or typecheck configured. Commands
+run, verbatim: `git status --porcelain; for t in tests/*.test.sh; do "$t" || true; done`
+(`commands.unit_by_file`) at `4fedb0f` — porcelain empty, all 44 files `0 failed`; and for AC8 the
+configured fail-fast line `for t in tests/*.test.sh; do "$t" || exit 1; done` at `920b437` (the
+HEAD this close builds on; the intervening commits are backlog-only) — exit 0, 44 files
+`passed, 0 failed`. Mutations: `python3 .verify-scratch/mutate.py .verify-scratch/m0050.json`
+(scratch, not committed): each applied to the committed file, landing confirmed by a non-empty
+`git diff`, `tests/shared-dirty-tree.test.sh` run, then restored by `git checkout -- <that path>`
+and checked with `git diff --quiet`.
+`ac_digest matches` (`./next --ac-digest 0050 --check`).
+Dirty set at Step 2: empty. Evidence set: `references/CONCURRENCY.md`,
+`references/CONCURRENCY-INCIDENTS.md`, `CLAUDE.md`, `skills/sprint/SKILL.md`,
+`tests/shared-dirty-tree.test.sh`, `tests/sprint.test.sh`, the whole `tests/` suite (AC8). Fresh
+capture after the last check: empty but for this session's untracked `.verify-scratch/`.
+Intersection: empty, so not advisory.
+
+**Clause table** — the b127 round's rows, reused, plus develop 5884's finer rows; "gone" is the gap
+test (the AC's phrase no longer in the file, whitespace-tolerant, case-insensitive).
+
+| AC | Row | Mutation (on the subject) | Result |
+|---|---|---|---|
+| AC1 | Given: *The working tree is shared too* | heading → `## The tree is shared` | RED 30/12 |
+| AC1 | condition: when every takeable row at a stage collides (b127 gap 1) | → `when one row collides` | RED 40/2, gone |
+| AC1 | claims nothing | `The session claims nothing,` → `… claims the top row,` | RED 41/1 |
+| AC1 | reports the holders | → `ignores the holders` | RED 41/1, gone |
+| AC1 | and waits | `— and waits:` → `— and proceeds:` | RED 41/1, gone |
+| AC1 | a designed outcome | `is a designed outcome:` → `is an outcome:` | RED 41/1, gone |
+| AC1/FR2 | a designed wait, not a failure | → `a failure.` | RED 41/1, gone |
+| AC2 | Given: a collision with a row held at `verify` | `` `verify` `` → `` `design` `` | RED 41/1, gone |
+| AC2 | follows the same taking rule | → `a looser taking rule` | RED 41/1, gone |
+| AC2 | subject: a `develop` session (b127 gap 2) | → a `queue` session | RED 41/1 |
+| AC2 | qualifier: mid-session (b127 gap 3) | → `before it claims` | RED 41/1, gone |
+| AC2 | forbids opening or widening | `does not open or widen` → `may open or widen` | RED 41/1 |
+| AC2 | object: into a `verify`-held file | → `into a file` | RED 41/1, gone |
+| AC3 | `CLAUDE.md` names the section | drop `, *The working tree is shared too*` | RED 41/1 |
+| AC4 | nothing matches `Prefer single-writer files` | re-inserted after `(0050).` | RED 41/1 |
+| AC4 | rows sharing a file are worked by one session | `one session` → `any session` | RED 41/1, gone |
+| AC5 | CONCURRENCY.md whole file: no line names `0050` as open (b127 gap 4) | insert `(0050, still an open question)` in *Never rewrite `QUEUE.md` by hand* | RED 41/1 |
+| AC5 | same, the description wrapped across a line break | insert `(0050, still an` / `open question)` | **GREEN 42/0 — residual, published** |
+| AC5 | CONCURRENCY.md: the old phrase | `(0050).` → `(preventing the collision is 0050).` | RED 41/1 |
+| AC5 | sprint *Design beside other stages*: not open | `` `0050` settled file scope `` → `` `0050`'s open question is file scope `` | RED 41/1 |
+| AC5 | sprint: still cites `0050` | delete the cite | RED 41/1 |
+| AC5 | `tests/sprint.test.sh` passes | unmutated suite run | 386 passed, 0 failed, 0 skipped |
+| AC6 | sub-file scope: label, reason | each mutated separately | RED 41/1, RED 41/1 |
+| AC6 | worktree per session: label, reason | each mutated separately | RED 41/1, RED 41/1 |
+| AC6 | ranking against the held set: label, reason | each mutated separately | RED 41/1, RED 41/1 |
+| AC7 | any asserted phrase removed reds; restored greens | every row above; control 42 passed, 0 failed | holds |
+| AC8 | the whole suite at the closing commit | fail-fast `commands.unit` | exit 0 |
+| FR1 | where a file cannot have one writer, the session does | → `anything goes` | RED 41/1 |
+| FR1 | serialised until `0137` | → `parallel in this repo` | RED 41/1 |
+| FR2 | Never edit a held file to get unstuck | → `Edit a held file …` | RED 41/1 |
+
+**The one green row is published, not a fail.** b127's constraint for gap 4 was a line-level
+absence — *no line naming `0050` also says `open`* — and it is met (the single-line insertion reds).
+A description wrapped across a line break escapes it, as the guard's own comment records; that is the
+line-based-matching limit every guard in this repo shares (`CLAUDE.md`, *Tests*), whose general fix is
+`0063`'s rewrap-survival matcher. The file as read today carries no such description on any reading.
+
+| Check | How | Result |
+|---|---|---|
+| AC1 | condition, all four predicates and "designed outcome" mutation-proved | PASS |
+| AC2 | Given, taking rule, subject, mid-session, prohibition and object mutation-proved | PASS |
+| AC3 | guard case, mutation-proved | PASS |
+| AC4 | `grep -c 'Prefer single-writer files' references/CONCURRENCY.md` → 0; both halves mutation-proved | PASS |
+| AC5 | sprint half and CONCURRENCY.md whole-file half mutation-proved; `tests/sprint.test.sh` 386/0; wrapped form a published residual | PASS |
+| AC6 | three labels and three reasons mutation-proved | PASS |
+| AC7 | every asserted phrase reds on removal; control green | PASS |
+| AC8 | fail-fast unit command exit 0 | PASS |
+| NFR Documentation | rejected shapes recorded with reasons in `references/CONCURRENCY-INCIDENTS.md`, guarded by the AC6 cases | holds, guarded |
+| Newly reachable | prose and guard change; no route, permission or action made reachable | none |
+| Always-on (`CONVENTIONS_CORE.md`) | `c41610d`, `5ffbbbf`, `64a4db7` carry the trailer; no secrets or company material | holds |
+
+### Prior round — verify (token b127): FAIL
 
 Conventions: ../ai-building-conventions
 Level: `qa_level: unit`, which runs `commands.unit` as configured. There is no lint or typecheck.

@@ -16,6 +16,7 @@ the release session, because only a whole-release view can say it.
 
 - The citations guard now resolves the conventions path from the main checkout, so running the suite in a worktree outside the checkout's parent directory (a temp directory, say) no longer reports a conventions red that no ticket owns (0189).
 - The rule against rewriting `QUEUE.md` by hand now names in-place stream editing (`sed -i`, `perl -i`) and whole-file rewrites through a temp file as the same prohibited class as `Write`, says a script is an exception only by being one process holding the lock across the rebuild and its commit, and gives the safe shape for an unavoidable multi-row rewrite under the lock: keep it only if the diff is exactly the intended change, abandon it otherwise (0065).
+- Where a file cannot have one writer, the session is the single writer: rows sharing a file are worked by one session (one develop gate, or one after another), a stage where every takeable row collides is a designed wait — claim nothing, report the holders, stop or take non-colliding work at another stage — and a `develop` session never opens or widens `touches:` into a `verify`-held file mid-session (`references/CONCURRENCY.md`, *The working tree is shared too*; 0050).
 
 ## 0.9.44 — 2026-10-27
 
