@@ -104,14 +104,14 @@ in one component, unwarned.
   rows sharing a file are worked by one session — one develop gate (`--drive` joins rows by shared
   file), or hand-driven, one after another. `develop` is
   serialised in this repo by design until `0137` decides otherwise.
-- **Every takeable row at a stage colliding is
-  a designed wait, not a failure.** The session must
-  claim nothing; report each holder's id, token and shared paths as `./next` prints them; then stop,
-  or take work at another stage that collides with nothing.
+- **The stall when every takeable row at a stage collides is a designed outcome:**
+  a designed wait, not a failure. The session claims nothing, reports the holders — each one's id,
+  token and shared paths as `./next` prints them — and waits: it stops, or takes work at another
+  stage that collides with nothing.
   Never edit a held file to get unstuck, and never rewrite another row's `touches:`.
-- **A file held at `verify` takes the same taking rule, and a stricter editing one:** a `develop`
-  session already under way
-  does not open or widen `touches:` into a file a live `verify` claim holds — it waits for the close,
+- **A collision with a row held at `verify` follows the same taking rule, and a stricter editing one:**
+  mid-session, a `develop` session does not open or widen `touches:` into a `verify`-held file —
+  one a live `verify` claim holds; it waits for the close,
   because that collision corrupts a verdict where a `develop` one only conflicts a commit.
 - **`verify` derives *advisory*** from the dirty paths that intersect the evidence its verdict rested
   on — dirty **under test**, not dirty anywhere. Empty intersection: a plain PASS that closes.

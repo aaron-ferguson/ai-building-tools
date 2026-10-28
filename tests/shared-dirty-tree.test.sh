@@ -125,12 +125,17 @@ present "FR1 — the settled rule is stated in the section" 'where a file cannot
 present "AC4 — rows sharing a file are worked by one session" 'rows sharing a file are worked by one session'
 present "FR1 — develop is serialised here until 0137 says otherwise" 'serialised in this repo by design until `0137` decides otherwise'
 echo "0050 FR2/AC1 — every takeable row colliding is a designed wait"
-present "AC1 — the outcome is named as designed" 'a designed wait, not a failure'
-present "AC1 — the session claims nothing and reports the holders" 'claim nothing; report each holder'
+# Each AC clause is asserted in the AC's own words (0050 verify, gaps 1-3): the condition, not only
+# the outcome, and the subject and its mid-session qualifier on the one line that carries them.
+present "AC1 — the condition: when every takeable row at a stage collides" 'when every takeable row at a stage collides'
+present "AC1 — the outcome is named as designed" 'when every takeable row at a stage collides is a designed outcome'
+present "AC1 — a designed wait, not a failure" 'a designed wait, not a failure'
+present "AC1 — the session claims nothing and reports the holders" 'The session claims nothing, reports the holders'
+present "AC1 — and waits" '— and waits:'
 present "FR2 — and never edits a held file to get unstuck" 'Never edit a held file to get unstuck'
 echo "0050 FR3/AC2 — a verify-held file is not opened or widened into mid-session"
-present "AC2 — the same taking rule, and a stricter editing one" 'A file held at `verify` takes the same taking rule, and a stricter editing one'
-present "AC2 — develop does not open or widen into a verify-held file" 'does not open or widen `touches:` into a file a live `verify` claim holds'
+present "AC2 — a collision with a row held at verify follows the same taking rule, and a stricter editing one" 'A collision with a row held at `verify` follows the same taking rule, and a stricter editing one'
+present "AC2 — mid-session, a develop session does not open or widen into a verify-held file" 'mid-session, a `develop` session does not open or widen `touches:` into a `verify`-held file'
 echo "0050 AC4/AC5 — the old preference and the open question are gone"
 if grep -qF 'Prefer single-writer files' "$CON"; then bad "AC4 — CONCURRENCY.md still says Prefer single-writer files"; else ok "AC4 — Prefer single-writer files is gone from CONCURRENCY.md"; fi
 section "$ROOT/skills/sprint/SKILL.md" '## Design beside other stages'
@@ -138,6 +143,9 @@ if grep -qF 'open question' "$SCOPE"; then bad "AC5 — sprint's Design beside o
 present "AC5 — and still cites 0050" '`0050`'
 section "$CON" '## The working tree is shared too'
 if grep -qF 'preventing the collision is 0050)' "$SCOPE"; then bad "AC5 — CONCURRENCY.md still describes preventing the collision as 0050's open work"; else ok "AC5 — CONCURRENCY.md no longer leaves the collision to 0050"; fi
+# AC5 names the whole file, so the absence is asserted over all of it (0050 verify, gap 4): no line
+# naming 0050 also calls anything open. Line-based, so a description wrapped across a break escapes.
+if grep -F '0050' "$CON" | grep -qiw 'open'; then bad "AC5 — a line of CONCURRENCY.md names 0050 as open: $(grep -F '0050' "$CON" | grep -iw 'open' | head -1)"; else ok "AC5 — no line of CONCURRENCY.md names 0050 as open"; fi
 echo "0050 AC3 — CLAUDE.md Concurrency names the section holding the rule"
 section "$ROOT/CLAUDE.md" '## Concurrency'
 present "AC3 — names the section" '`references/CONCURRENCY.md`, *The working tree is shared too*'
