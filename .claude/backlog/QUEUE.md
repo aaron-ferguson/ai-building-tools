@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0089 | Re-anchor the case "$out" guards that cannot fail | verify | ready |  |
+| 0089 | Re-anchor the case "$out" guards that cannot fail | verify | in-progress |  |
 | 0222 | Re-anchor numeric needles a larger figure can satisfy | develop | ready |  |
 | 0223 | Re-anchor whole-file and section-scoped prose guards that cannot fail | develop | ready |  |
 | 0224 | Guard tests/ against assertions that cannot fail | design | ready |  |
