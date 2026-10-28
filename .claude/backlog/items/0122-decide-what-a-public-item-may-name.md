@@ -2,8 +2,8 @@
 id: "0122"
 title: Decide whether a mention of the privacy rule may name the thing the rule forbids
 type: bug
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -82,3 +82,4 @@ pattern.
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-08 and deferred once by this retro
   before being filed properly. The item list above was current at the park date; re-read the tree.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Neighbouring case: a fixture name spelled in an item's reproduction block becomes tracked content, so the privacy guard's clean-tree case matched the ticket describing it (0148). Rule if it recurs: a name-shaped fixture is assembled in the test and never spelled in the item.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-09 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

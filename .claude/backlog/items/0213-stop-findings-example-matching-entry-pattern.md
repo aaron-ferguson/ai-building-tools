@@ -2,8 +2,8 @@
 id: "0213"
 title: Stop the findings header's own example matching the entry pattern it tells readers to use
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: s
@@ -89,3 +89,4 @@ Confirmed at `e94ae36`: line 32 of the template matches, and so does line 32 of 
   `develop`: no surface and no open decision.
 - Ranked directly above 0100, which covers the same file. It sits higher on tie-breaker 4 (smaller and
   more certain): one line in one file, plus a guard.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

@@ -2,8 +2,8 @@
 id: "0211"
 title: Make a backlog script refuse when it is running from the templates directory
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: s
@@ -45,3 +45,4 @@ AetherWorks commit `789d6b6`).
 
 - Filed by retro 2026-10-17 (AetherWorks run-20261017T193821Z). Refusing was chosen over printing
   which `QUEUE.md` was read: a printed path is one more line a supervisor can read past.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

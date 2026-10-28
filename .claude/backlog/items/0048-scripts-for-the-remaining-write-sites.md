@@ -2,8 +2,8 @@
 id: "0048"
 title: Decide which remaining backlog write sites become scripts
 type: chore
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -161,3 +161,4 @@ rather than `next: develop`. AC1 is fixed regardless:
   `RANKING.md` question is the design call — but it is a candidate site the open question does not
   currently list, and `0056`'s Step 4 needs the same path for a `design` pass that claims a row and
   must give it back.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-08-25 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

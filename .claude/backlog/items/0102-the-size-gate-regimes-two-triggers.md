@@ -2,8 +2,8 @@
 id: "0102"
 title: Decide what happens when the size-gate regime's two deferred triggers fire
 type: debt
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: s
 created: 2026-09-05
@@ -98,3 +98,4 @@ decided carries an expiry condition.*
 - Ranked Tier 5. Nothing is degrading; what is accruing is only the chance that the answer is given
   at a red by someone who did not intend to give it.
 - 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park, two holes in the size gates: (1) verify 0091: `tests/reference-size.test.sh` has no argued-at bound — inflating `references/CONCURRENCY.md` by 20 KB stayed `15 passed`; 0190 gave the skill gate that bound (argued-at size + MARGIN) and the reference gate did not get it, so neither over-goal reference has any ceiling. (2) design 0190: the skill gate's 0035 AC4/FR6 byte-count loop still omits `skills/retro/SKILL.md`, and develop/queue reasons stand at their build-commit sizes, not re-argued (develop ~54 KB, queue ~49 KB on 2026-10-27).
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

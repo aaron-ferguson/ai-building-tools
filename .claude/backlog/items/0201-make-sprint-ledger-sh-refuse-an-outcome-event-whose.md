@@ -2,8 +2,8 @@
 id: "0201"
 title: Make sprint-ledger.sh refuse an outcome event whose stage fields are nested rather than flat
 type: bug
-next: queue
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -40,3 +40,4 @@ stage's fields sit — so the nested shape is a reasonable reading of the prose 
 
 ## Notes & decisions
 - 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park: the same nested-`outcome` shape recurred in run-20261025T164527Z (ledger read `CLOSED none` / `FINDINGS parked 0` for a run that closed 5 and parked 3, exit 0). Second independent occurrence; caught by eye before commit.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

@@ -2,8 +2,8 @@
 id: "0125"
 title: Pin the citation enumeration to its decision record so widening one cannot leave the other stale
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -82,3 +82,4 @@ Changing what `close` accepts. Sweeping other guards (`0089`).
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-09 and deferred once by this retro
   before being filed properly. The entry noted this is the same shape as a `queue`/`close`
   near-verbatim pair flagged 2026-09-08 and still open.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

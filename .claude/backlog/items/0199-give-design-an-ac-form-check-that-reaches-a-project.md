@@ -2,8 +2,8 @@
 id: "0199"
 title: Make the AC form check that design Step 4 names read the consuming project's items
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -54,3 +54,4 @@ Unit: the configured suite.
 ## Notes & decisions
 
 - 2026-10-09 — Filed by retro from the tools `FINDINGS.md` entry of 2026-10-09.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

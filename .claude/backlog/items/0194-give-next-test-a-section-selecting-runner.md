@@ -2,8 +2,8 @@
 id: "0194"
 title: Give tests/next.test.sh a runner that selects one ticket's sections
 type: chore
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: s
@@ -46,3 +46,4 @@ hand each time. `config.yml`'s `commands` comment says only to redirect rather t
 ## Notes & decisions
 
 - **2026-10-06 (retro, run-20261004T232135Z tail).** Filed from FINDINGS.md (verify 0187/0188/0174/0041).
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

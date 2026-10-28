@@ -2,8 +2,8 @@
 id: "0007"
 title: Replace the Owner column with claim directories
 type: chore
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: l
 created: 2026-08-18
@@ -286,3 +286,4 @@ cross-clone coordination. Jira owns assignment for team work (0004).
   looked — the reader change is a substitution — but because settling the question added FR9's
   two-commit sequence and five fixture-driven ACs (AC7–AC11) to a ticket that already carried two
   script conversions and four prose corrections. Rank is untouched; `size` feeds tie-breaker 4 only.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Superseded by work that landed another way: QUEUE.md already has a Parent column and no Owner column, `next` reads `parent:` and `blocked_by:`, and claims are frontmatter tokens.

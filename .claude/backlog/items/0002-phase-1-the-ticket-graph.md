@@ -3,7 +3,7 @@ id: "0002"
 title: Phase 1 — the ticket graph
 type: feature
 next:
-status: active
+status: withdrawn
 created: 2026-08-18
 parent: "0001"
 ships: together
@@ -43,3 +43,4 @@ The readiness gate, `measure`, rollup close, and anything Jira. Those are 0003 a
 
 - Doing 0007 before 0006 means the reader is written once against the final column set rather than
   learning to parse an `Owner` column that is about to be deleted.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Every child still open was withdrawn in the 2026-10-27 triage; the children already closed stand.

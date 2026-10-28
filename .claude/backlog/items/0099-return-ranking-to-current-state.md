@@ -2,8 +2,8 @@
 id: "0099"
 title: Return RANKING.md to current state only
 type: debt
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: s
 created: 2026-09-05
@@ -91,3 +91,4 @@ and this one is read at exactly the moment its numbers are load-bearing — a re
   missing is that nothing enforces it, which FR4 supplies.
 - FR3 is the reason this is worth doing at all rather than just editing the number: a hand-maintained
   count in a file read once a week is a fact that is wrong most of the time.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-05 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

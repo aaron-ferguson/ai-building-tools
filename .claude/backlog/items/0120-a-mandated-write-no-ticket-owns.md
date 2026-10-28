@@ -2,8 +2,8 @@
 id: "0120"
 title: Decide how a write no ticket can own appears to the file-scope check
 type: bug
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -83,3 +83,4 @@ What `touches:` means elsewhere (`0106`). Whether a by-hand write takes the lock
 
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-07 and deferred once by this same
   retro before being filed properly. The reproduction is verbatim above; both collisions were real.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-09 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

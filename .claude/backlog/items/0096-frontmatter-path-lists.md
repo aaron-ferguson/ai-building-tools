@@ -2,8 +2,8 @@
 id: "0096"
 title: Make the frontmatter path lists checkable to read and safe to edit
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: m
 created: 2026-09-05
@@ -110,3 +110,4 @@ Two independent defects in the same two frontmatter fields, `expects:` and `touc
   home for FR1 follows from a settled contract rather than an open one.
 - Filed as one ticket because both defects are in the same two fields and the same template comment
   block, and a session fixing either is already reading the other.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-05 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

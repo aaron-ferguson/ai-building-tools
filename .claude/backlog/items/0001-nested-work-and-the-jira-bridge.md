@@ -3,7 +3,7 @@ id: "0001"
 title: Nested work and the Jira bridge
 type: feature
 next:
-status: active
+status: withdrawn
 created: 2026-08-18
 parent:
 ships: independently
@@ -109,3 +109,4 @@ At 2026-10-17, all five must hold:
   and already defines one-way mirroring. Phase 3 extends it in place rather than shadowing it;
   see 0004. Two documents describing one mechanism is how the mechanism drifts.
 - Design plan: https://claude.ai/code/artifact/b339b7f0-3dec-41ec-a819-97a7a5953634
+- 2026-10-28 — **Withdrawn in the backlog triage.** Every child still open was withdrawn in the 2026-10-27 triage; the children already closed stand.

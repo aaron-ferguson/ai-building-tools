@@ -2,8 +2,8 @@
 id: "0049"
 title: Decide what a claim token guarantees and what enforces it
 type: chore
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -136,3 +136,4 @@ Cannot be written until the design question is settled. These two hold regardles
   question — **may a session step over a stale `in-progress` row's file scope, and who may land an
   abandoned release** — sits between this ticket and 0050; the *who may land it* half is this
   ticket's, since it is a statement about what the token guarantees once its holder is gone.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-08-25 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

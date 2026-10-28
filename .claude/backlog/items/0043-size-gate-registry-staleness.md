@@ -2,8 +2,8 @@
 id: "0043"
 title: Make the two size gates fail on a registry entry that no longer resolves
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -125,3 +125,4 @@ Two more citations in the same two files that nothing checks resolve:
   contradicting change*); the mechanical check is this ticket's to specify, and the honest version is
   probably that a justification names sections and the gate asserts those sections are still the
   large ones.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

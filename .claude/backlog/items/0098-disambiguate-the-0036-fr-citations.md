@@ -2,8 +2,8 @@
 id: "0098"
 title: Disambiguate the FR citations the 0036 split left behind
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: s
 created: 2026-09-05
@@ -87,3 +87,4 @@ reference to an FR number in the `0036`/`0039` pair needs saying which ticket's 
 - FR2 exists because the obvious fix — rewrite every `0036 FR` citation — would red `0074` AC7,
   which is another ticket's guard. `queue` Step 2's rule about checking absence assertions against
   the guards already shipped is what caught it.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

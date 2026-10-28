@@ -2,8 +2,8 @@
 id: "0218"
 title: Give verify the four dirty-tree cases 0054 carried in its notes and did not build
 type: chore
-next: queue
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -33,3 +33,4 @@ Filed by retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md par
 - (4) A backgrounded mutation sweep must run in a worktree: its `git checkout` lands on the foreground's uncommitted edits.
 
 ## Notes & decisions
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

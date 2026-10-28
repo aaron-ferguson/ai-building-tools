@@ -2,8 +2,8 @@
 id: "0222"
 title: Re-anchor numeric needles a larger figure can satisfy
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: m
 created: 2026-10-27
@@ -101,3 +101,4 @@ recommended one row per class. The evidence that motivates it is `0089`'s *Notes
 read it before claiming rather than re-deriving it. Routed to `develop`: the corrective shape is named by
   `testing-conventions.md` and demonstrated in `4766607`, so no decision blocks the criteria.
   Ranked directly below `0089`: same tier and the same sweep, `0089` first by capture order.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

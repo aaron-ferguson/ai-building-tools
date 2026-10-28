@@ -2,8 +2,8 @@
 id: "0206"
 title: Decide whether a verify bounce carrying a precise test-only constraint routes back to develop
 type: chore
-next: queue
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -37,3 +37,4 @@ the re-develop with verify's constraint in its prompt cost USD 1.02 and passed (
 - One instance, with an explicit owner authorisation for that run.
 
 ## Notes & decisions
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

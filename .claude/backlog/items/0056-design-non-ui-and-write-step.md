@@ -2,8 +2,8 @@
 id: "0056"
 title: Give design a non-UI reading list and complete its write step
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: m
 created: 2026-08-25
@@ -177,3 +177,4 @@ happens or where a decision's consequences go when they land outside the ticket.
   behind this ticket's other seven FRs. FR3 (Step 4 cites the lock) stays here; build them knowing
   `0150` rewrites the same Step 4 paragraph.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Also for design's reading list: `relates:` is written once, so tickets that later block on this one are invisible from inside it — 0132 and 0137 governed 0059's answer and nothing sent design to `grep -l '"0059"' items/*.md`. One reverse-edge grep where the contract is read.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-08-25 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

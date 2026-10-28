@@ -2,8 +2,8 @@
 id: "0202"
 title: Name a liveness check for a dispatched stage that works from a backgrounded call in sprint
 type: bug
-next: queue
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -39,3 +39,4 @@ supervisor improvises one.
 - One observation from one run; why `kill -0` failed (sandbox, pid namespace) is not established.
 
 ## Notes & decisions
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

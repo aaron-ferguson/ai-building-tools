@@ -2,8 +2,8 @@
 id: "0117"
 title: Stop the item-ID citation matcher reading file modes and clock times as citations
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -84,3 +84,4 @@ means **a citation stops being checked the moment its row is closed**.
 - 2026-09-09 (retro) — filed from two `FINDINGS.md` entries parked 2026-09-08 during `0105`'s
   verification. Both were verified by mutation at the time and left uncovered per `verify` Step 3
   rather than papered over. Expect FR2 to redden on existing content; that is the point.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

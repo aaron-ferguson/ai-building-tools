@@ -2,8 +2,8 @@
 id: "0167"
 title: Refuse a malformed tail-cap argument by name instead of tracing back
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: develop
 qa_manual:
@@ -73,3 +73,4 @@ Validating `estimate` and `record` arguments.
   `tests/sprint-ledger.test.sh`.
 
 - 2026-10-24 — Absorbed by retro (second leg of AetherWorks run-20261024T195310Z's tail): the SKILL side of this is landed at ec5458e: sprint Step 6's snippet passed the whole `./next --findings` line (`FINDINGS  15 entries; …`) to `--findings`, which is how a malformed value reached the parser in AetherWorks run-20261018T191111Z. The snippet now extracts the count. No guard executes that snippet yet; verify's *the guard must execute the snippet* applies if this item adds one.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-17 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

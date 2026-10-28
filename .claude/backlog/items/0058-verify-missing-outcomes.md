@@ -2,8 +2,8 @@
 id: "0058"
 title: Give verify the outcomes its steps assume can never happen
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: m
 created: 2026-08-25
@@ -152,3 +152,4 @@ Two more Step 1 outcomes, both neighbours of FR1 and neither covered by it.
   name.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Five more outcomes with no written branch: Step 7 says the advisory label comes from Step 2's capture while requiring a verdict-time capture (verify 0052); a ticket green on its own contract but carrying a whole-suite AC blocked by another ticket's committed red (verify 0045 vs 0135, opposite verdicts a day apart); a blocker whose NFR requires release before the dependent unblocks, which `./close` reconciles immediately (verify 0150); a single-line mutation staying green through redundancy rather than a gap — widen to every line that can make the AC true before publishing it (verify 0133); and a send-back names an instance where the defect class was visible, so `harvest()`'s sibling fabrication survived 0135's bounce — ask for the class beside the instance.
 - 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park (verify 0195/0216/0110): a dispatch named three tickets from three separate develop gates as one verify batch; the batch rule covers only a develop gate's membership, not a user-named set. Handled as three sequential single-ticket passes, one claim, evidence table and close each. A fifth missing outcome for this row.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-08-25 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

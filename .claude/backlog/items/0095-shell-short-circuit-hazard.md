@@ -2,8 +2,8 @@
 id: "0095"
 title: Hoist the shell short-circuit hazard where a guard author will read it
 type: debt
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: s
 created: 2026-09-05
@@ -104,3 +104,4 @@ by the next one.
   note stays under `CLAUDE.md`'s `## Tests` heading, whose subject is guard authoring, or whether that
   section becomes a short shell-hazards note carrying both this and the `set -e` short-circuit. FR2's
   one-copy rule applies either way.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

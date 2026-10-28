@@ -2,8 +2,8 @@
 id: "0203"
 title: Decide where the one model pricing table lives that cost-by-category.sh and harvest-usage.sh both read
 type: bug
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -37,3 +37,4 @@ shells out to `harvest-usage.sh` for prices, as `sprint-ledger.sh` already does;
 because it reuses a pattern already in the repo. Acceptance criteria follow the decision.
 
 ## Notes & decisions
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

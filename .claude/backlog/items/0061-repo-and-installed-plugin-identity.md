@@ -2,8 +2,8 @@
 id: "0061"
 title: Decide how a session learns the installed plugin differs from this repo
 type: chore
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -173,3 +173,4 @@ Cannot be written until the design question is settled. These hold regardless:
   the `0.9.15` cache directory is empty, and the `0.9.14` directory still differs in eight files —
   so a stale directory sitting beside a current one is the normal state, not a fault, and any guard
   built on "the cache differs from the repo" has to name **which** directory it means.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-08-25 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

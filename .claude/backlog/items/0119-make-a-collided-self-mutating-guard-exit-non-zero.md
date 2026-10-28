@@ -2,8 +2,8 @@
 id: "0119"
 title: Make a collided self-mutating guard exit non-zero instead of silently printing no tally
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -75,3 +75,4 @@ Sweeping other guards for the same shape — that is `0089`. Changing what `hand
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-08. The collision was found while
   verifying an unrelated ticket, which is why the entry records the exact failing read-back string.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Same contract, other failure: `tests/cross-cutting-change.test.sh:190` indents its tally (`printf '\n  %s passed, %s failed\n'`), so a batch grep on `^[0-9]+ passed` reports the one green file as the no-tally shape `verify` Step 3 treats as red (verify 0142). The tally line is a machine interface and nothing asserts its format.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

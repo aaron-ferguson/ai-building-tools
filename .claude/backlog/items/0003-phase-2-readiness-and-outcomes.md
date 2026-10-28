@@ -2,8 +2,8 @@
 id: "0003"
 title: Phase 2 — the readiness gate and outcome reviews
 type: feature
-next: develop
-status: blocked
+next:
+status: withdrawn
 qa_level: verify
 size: l
 created: 2026-08-18
@@ -78,3 +78,4 @@ Anything Jira-writing. The gate *reads* the rubrics; pushing tickets is 0004.
      ones.
 - Gaps 1, 2 and 4 are candidates for `ai-building-conventions` (true without Jira); 3 and 5 are
   rubric trigger changes. Either way that is a change in another repo — sequence it before 0004.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Withdrawn by the user: daily use of the toolkit is the evidence it works, and `measurement-conventions.md` already requires a declared outcome for product work.

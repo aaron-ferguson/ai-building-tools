@@ -2,8 +2,8 @@
 id: "0063"
 title: Give the prose guards a matcher that survives a rewrap
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -150,3 +150,4 @@ true when they were written; **this is that row**, and both are filed here rathe
   notation rather than a matcher. If it is not taken here it wants its own `design` row, and saying
   so is cheaper than letting it sit unowned a fourth time.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** A NEGATIVE prose assertion whose phrase straddles a wrap is green on arrival and proves nothing, where a positive one reds loudly (3 instances in one session on 0060, `tests/findings-buffer.test.sh`). Whatever matcher this ships should report an absence assertion whose phrase occurs nowhere even unwrapped.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

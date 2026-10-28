@@ -2,8 +2,8 @@
 id: "0121"
 title: Make claim write the timestamp CONCURRENCY.md requires in held-by
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -80,3 +80,4 @@ What a reader should *do* with the age (`0047`). Whether the lock covers the com
 
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-08. Line numbers were current at
   the park date; re-read the source rather than trusting them.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-09 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

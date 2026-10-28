@@ -2,8 +2,8 @@
 id: "0181"
 title: Decide whether stage outcomes carry a registered code that guards match instead of English
 type: feature
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: l
@@ -52,3 +52,4 @@ broken twice was never enforceable as prose".
 
 - 2026-09-23 — filed by retro (session edf44941-de11-48ca-92b8-093a50099f9b) from a FINDINGS entry
   recording the author's proposal (sprint supervisor, run-20260920T222013Z).
+- 2026-10-28 — **Withdrawn in the backlog triage.** Withdrawn by the user: guards will no longer match English prose, so registered codes for them to match are moot.

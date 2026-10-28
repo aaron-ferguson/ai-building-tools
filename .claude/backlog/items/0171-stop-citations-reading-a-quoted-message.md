@@ -2,8 +2,8 @@
 id: "0171"
 title: Stop the citation guard reading an italic-quoted CLI message as a rule name
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: develop
 qa_manual:
@@ -72,3 +72,4 @@ different shape, so it is related rather than absorbed.
   about what it saw; the edit was reworded to drop the italics, which is an author working around a
   guard rather than the guard improving the text. Quoting a tool's own message is a normal thing for
   these skills to do, so the defect costs an edit every time it recurs.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

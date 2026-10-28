@@ -2,8 +2,8 @@
 id: "0116"
 title: Give queue Step 0 a resolution order instead of a scaffold instruction
 type: bug
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -90,3 +90,4 @@ not settled here. Anything about which buffers a sweep reads (`0111`).
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-07. The verbatim reproduction is in
   that entry: invoked from `/Documents/AI`, Step 0's literal instruction is to create a backlog in
   an untracked directory above four real ones.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-09 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

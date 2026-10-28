@@ -2,8 +2,8 @@
 id: "0207"
 title: Decide whether the queue tail runs when the retro filed every work entry
 type: chore
-next: queue
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -37,3 +37,4 @@ Filed by retro 2026-10-10 (tail of quantum-catan run-20261010T212209Z) from this
   what makes the queue tail redundant on a small buffer.
 
 ## Notes & decisions
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

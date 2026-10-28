@@ -2,8 +2,8 @@
 id: "0193"
 title: Stop the awk-quote scanner flagging a single-quoted shell string that starts with a hash
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: xs
@@ -37,3 +37,4 @@ double-quoting the printf, so the scanner still misfires on the next script that
 ## Notes & decisions
 
 - **2026-10-06 (retro, run-20261004T232135Z tail).** Filed from FINDINGS.md (develop 9b67).
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

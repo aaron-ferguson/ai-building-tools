@@ -2,8 +2,8 @@
 id: "0197"
 title: Make tools/release refuse a behaviour-changing bump with no Did not change section
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -57,3 +57,4 @@ Unit: the configured suite, with the release script run against a fixture repo, 
 ## Notes & decisions
 
 - 2026-10-09 — Filed by retro from the tools `FINDINGS.md` entry of 2026-10-07.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

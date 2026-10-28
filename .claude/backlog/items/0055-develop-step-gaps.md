@@ -2,8 +2,8 @@
 id: "0055"
 title: Fill the develop steps that have no case for what now happens routinely
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: l
 created: 2026-08-25
@@ -181,3 +181,4 @@ file second** — the claim is two seconds and the item file is the expensive re
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Two more develop cases: the probe Step 2 prescribes for an external tool's interface is also what separates a refusal from a measurement (0135: missing dir exits 2, empty dir exits 0 with 0.00); and the hand-back-to-design branch says release the claim, but the checks reaching it run before any claim exists and `./handoff` requires a token (0134) — say to claim first, or give handoff an unclaimed path. Also: re-entry after a send-back should sweep the enclosing function for siblings of the named defect.
 
 - 2026-10-24 — Absorbed by retro (second leg of AetherWorks run-20261024T195310Z's tail): a consumer develop session ran seven BSD-`sed` mutations (`\&\&`, `\[` patterns) that matched nothing; every run was green and would have been tabled as seven survivors. `testing-conventions.md` already says confirm the mutation landed by diffing and run a no-op control, so this is reach, not a missing rule: this item's Step 5 mutation-validity gap is where develop should cite that half. The working fix was a replace script asserting `count(old) == 1` before each run, restoring in a `finally`, capturing stderr with stdout.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-08-25 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

@@ -2,8 +2,8 @@
 id: "0103"
 title: Decide whether the backlog scripts may share a sourced file
 type: debt
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: m
 created: 2026-09-05
@@ -95,3 +95,4 @@ expiry condition.*
   permits, and that is a decision with two coherent answers.
 - `size: m` because the *yes* branch changes the scaffold step, the guard and a migration story for
   backlogs this repo does not own; the *no* branch is small. Sized for the expensive branch.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-05 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

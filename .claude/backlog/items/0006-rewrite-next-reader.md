@@ -2,8 +2,8 @@
 id: "0006"
 title: Rewrite next to parse by header name and walk ancestors
 type: chore
-next: develop
-status: blocked
+next:
+status: withdrawn
 qa_level: verify
 size: m
 created: 2026-08-18
@@ -137,3 +137,4 @@ this ticket owns.
   difference, and changes no reader's behaviour at read time — the test that removed `Type`, `Size`,
   `QA` and `Item`. The real need underneath it was seeing the dependency *shape*, and FR4 `--tree`
   and FR5 `--check` already cover it.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Superseded by work that landed another way: QUEUE.md already has a Parent column and no Owner column, `next` reads `parent:` and `blocked_by:`, and claims are frontmatter tokens.

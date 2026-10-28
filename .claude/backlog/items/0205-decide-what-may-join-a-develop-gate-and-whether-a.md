@@ -2,8 +2,8 @@
 id: "0205"
 title: Decide what may join a develop gate, and whether a related design row in flight holds it
 type: chore
-next: queue
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -40,3 +40,4 @@ row tagged related holds the gate (exit 6) until its outcome.
 
 ## Notes & decisions
 - 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park (run-20261025T164527Z): `--drive --scope` filters design rows by confirmed scope but not develop leads — it named unconfirmed `develop 0196` twice while confirmed 0169/0046 were takeable, and the first gate pulled in unconfirmed 0177 and pushed 0169/0046 out at `gate_max_rows`. Candidate: pick the lead from in-scope rows first and refuse off-scope joiners, as design already does.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

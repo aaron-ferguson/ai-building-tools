@@ -23,65 +23,16 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0222 | Re-anchor numeric needles a larger figure can satisfy | develop | ready |  |
-| 0223 | Re-anchor whole-file and section-scoped prose guards that cannot fail | develop | ready |  |
-| 0224 | Guard tests/ against assertions that cannot fail | design | ready |  |
-| 0108 | Guard the code conventions this repo's suite does not check | develop | ready |  |
-| 0093 | Give develop and verify a working recipe for a before-and-after suite comparison | develop | ready |  |
-| 0094 | Record why a claimed row was put back | develop | ready |  |
-| 0055 | Fill the develop steps that have no case for what now happens routinely | develop | ready |  |
-| 0058 | Give verify the outcomes its steps assume can never happen | develop | ready |  |
-| 0127 | Say that a deferral is licensed by understanding and never by writing | develop | ready |  |
-| 0056 | Give design a non-UI reading list and complete its write step | develop | ready |  |
 | 0064 | Make a stage skill say which copy of it is running | develop | ready |  |
-| 0062 | Let a ticket's contract express a removal and cover its own prose | develop | ready |  |
-| 0048 | Decide which remaining backlog write sites become scripts | design | ready |  |
-| 0057 | Add the queue operations that exist in practice and not in the skill | develop | ready |  |
-| 0049 | Decide what a claim token guarantees and what enforces it | design | ready |  |
-| 0061 | Decide how a session learns the installed plugin differs from this repo | design | ready |  |
 | 0066 | Fix the three places the backlog scripts answer the wrong question | develop | ready |  |
-| 0141 | Make a drift line say a frontmatter key is absent instead of printing an empty value | develop | ready |  |
-| 0063 | Give the prose guards a matcher that survives a rewrap | develop | ready |  |
-| 0181 | Decide whether stage outcomes carry a registered code that guards match instead of English | design | ready |  |
-| 0112 | Hoist the line-wrap hazard to the session editing prose, not only the one writing a guard | develop | ready |  |
-| 0096 | Make the frontmatter path lists checkable to read and safe to edit | develop | ready |  |
 | 0215 | Make claim and next read expects and touches through one parser that refuses or accepts the comma form | develop | ready |  |
-| 0095 | Hoist the shell short-circuit hazard where a guard author will read it | develop | ready |  |
-| 0043 | Make the two size gates fail on a registry entry that no longer resolves | develop | ready |  |
-| 0007 | Replace the Owner column with claim directories | develop | ready | 0002 |
-| 0006 | Rewrite next to parse by header name and walk ancestors | develop | blocked | 0002 |
-| 0008 | Add the graph rules to queue, develop, and verify | develop | blocked | 0002 |
-| 0003 | Phase 2 — the readiness gate and outcome reviews | develop | blocked | 0001 |
-| 0004 | Phase 3 — extend tracker mirroring with hierarchy and standards | develop | blocked | 0001 |
-| 0213 | Stop the findings header's own example matching the entry pattern it tells readers to use | develop | ready |  |
-| 0100 | Give the two findings markers a greppable form and count them | develop | ready |  |
-| 0101 | Say what a capture session does when only some repos resolve conventions | develop | ready |  |
 | 0214 | Add a profile-declared gate that a stage refuses to pass without its artifact | design | ready |  |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
 | 0071 | Add a decision-map mode for work too large or too foggy for one project ticket | design | ready |  |
 | 0138 | Decide whether idea capture is a lighter-weight skill than queue's Add, and what triggers it | design | ready |  |
-| 0072 | Archive an escalated prototype on its own branch instead of leaving it only in the working tree | develop | ready |  |
-| 0113 | Give retro's release chain and its one-line report a form for a pass that edited several repos | develop | ready |  |
-| 0097 | Record what a transcript cannot say about thinking tokens | develop | ready |  |
-| 0103 | Decide whether the backlog scripts may share a sourced file | design | ready |  |
-| 0099 | Return RANKING.md to current state only | develop | ready |  |
-| 0102 | Decide what happens when the size-gate regime's two deferred triggers fire | design | ready |  |
-| 0098 | Disambiguate the FR citations the 0036 split left behind | develop | ready |  |
-| 0109 | Give a human-reported source a resolvable form | develop | ready |  |
-| 0116 | Give queue Step 0 a resolution order instead of a scaffold instruction | design | ready |  |
-| 0117 | Stop the item-ID citation matcher reading file modes and clock times as citations | develop | ready |  |
-| 0171 | Stop the citation guard reading an italic-quoted CLI message as a rule name | develop | ready |  |
 | 0118 | Run the privacy guard where a sweep commits, not only where a suite runs | develop | ready |  |
-| 0119 | Make a collided self-mutating guard exit non-zero instead of silently printing no tally | develop | ready |  |
-| 0120 | Decide how a write no ticket can own appears to the file-scope check | design | ready |  |
-| 0121 | Make claim write the timestamp CONCURRENCY.md requires in held-by | develop | ready |  |
-| 0122 | Decide whether a mention of the privacy rule may name the thing the rule forbids | design | ready |  |
-| 0123 | Give queue a rule for withdrawing a criterion, as it has for withdrawing an id | develop | ready |  |
-| 0124 | Split the stop-rather-than-guess refusal out of the conventions ladder that instances it | design | ready |  |
-| 0125 | Pin the citation enumeration to its decision record so widening one cannot leave the other stale | develop | ready |  |
 | 0164 | Record active and elapsed time and interruptions in the sprint ledger, and estimate them | develop | ready |  |
-| 0167 | Refuse a malformed tail-cap argument by name instead of tracing back | develop | ready |  |
 | 0170 | Stop the marker heartbeat leaving an orphaned sleep child | develop | ready |  |
 | 0137 | Decide whether two develop sessions may run at once, and in what isolation | design | ready | 0128 |
 | 0149 | Audit sprint efficiency — suite-check dedup, per-agent overhead, and model tiering | design | ready | 0128 |
@@ -89,26 +40,10 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0156 | Let handoff record a blocker without leaving drift that stops a driver | develop | ready |  |
 | 0157 | Make release verify compare the install against the released commit | develop | ready |  |
 | 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | verify | ready |  |
-| 0193 | Stop the awk-quote scanner flagging a single-quoted shell string that starts with a hash | develop | ready |  |
-| 0194 | Give tests/next.test.sh a runner that selects one ticket's sections | develop | ready |  |
-| 0199 | Make the AC form check that design Step 4 names read the consuming project's items | develop | ready |  |
-| 0197 | Make tools/release refuse a behaviour-changing bump with no Did not change section | develop | ready |  |
-| 0198 | Decide how verify names the pattern behind a surviving mutation and what an FR-level survivor means | design | ready |  |
-| 0200 | Decide where queue puts an owner decision that blocks several tickets and builds nothing | design | ready |  |
-| 0201 | Make sprint-ledger.sh refuse an outcome event whose stage fields are nested rather than flat | queue | ready |  |
-| 0202 | Name a liveness check for a dispatched stage that works from a backgrounded call in sprint | queue | ready |  |
-| 0203 | Decide where the one model pricing table lives that cost-by-category.sh and harvest-usage.sh both read | design | ready |  |
 | 0204 | Route a queue completion that re-specifies a waiting row to develop instead of exiting 4 | queue | ready |  |
-| 0205 | Decide what may join a develop gate, and whether a related design row in flight holds it | queue | ready |  |
-| 0206 | Decide whether a verify bounce carrying a precise test-only constraint routes back to develop | queue | ready |  |
-| 0207 | Decide whether the queue tail runs when the retro filed every work entry | queue | ready |  |
 | 0208 | Make the prototype template's render keep focus and play enter animations once | queue | ready |  |
-| 0209 | Let item-ac-form check a named item, whatever its stage and wherever it lives | develop | ready |  |
-| 0210 | Resume a waiting row through a script once its person has answered | develop | ready |  |
-| 0211 | Make a backlog script refuse when it is running from the templates directory | develop | ready |  |
 | 0212 | Stop --drive dispatching develop beside a design session holding one of its files | develop | ready |  |
 | 0217 | Stop a note written below the last AC from changing that AC's digest | queue | ready |  |
-| 0218 | Give verify the four dirty-tree cases 0054 carried in its notes and did not build | queue | ready |  |
 | 0219 | Make reopen leave a ticket that verify can close when it reopens a develop self-close | queue | ready |  |
 | 0220 | Make --drive name one verify session for rows developed together in one gate | queue | ready |  |
 

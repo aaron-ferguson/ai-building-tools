@@ -2,8 +2,8 @@
 id: "0008"
 title: Add the graph rules to queue, develop, and verify
 type: chore
-next: develop
-status: blocked
+next:
+status: withdrawn
 qa_level: verify
 size: m
 created: 2026-08-18
@@ -83,3 +83,4 @@ The readiness gate and anything about owners of declared triggers — that is 00
 here would make this ticket the whole design.
 
 ## Notes & decisions
+- 2026-10-28 — **Withdrawn in the backlog triage.** Superseded by work that landed another way: QUEUE.md already has a Parent column and no Owner column, `next` reads `parent:` and `blocked_by:`, and claims are frontmatter tokens.

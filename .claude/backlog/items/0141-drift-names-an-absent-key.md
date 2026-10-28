@@ -2,8 +2,8 @@
 id: "0141"
 title: Make a drift line say a frontmatter key is absent instead of printing an empty value
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: s
 created: 2026-09-09
@@ -123,3 +123,4 @@ case where empty is a legitimate, meaningful value and must keep reading as one.
   was written to prevent, arriving one level in, so the remedy is the one that ticket already chose.
 - **Routed to `develop`, not `design`.** One remedy, and `0115` already settled the precedence rule
   the new branch has to sit inside. Nothing is undecided.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-09 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

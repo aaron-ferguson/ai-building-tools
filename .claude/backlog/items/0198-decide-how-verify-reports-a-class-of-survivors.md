@@ -2,8 +2,8 @@
 id: "0198"
 title: Decide how verify names the pattern behind a surviving mutation and what an FR-level survivor means
 type: feature
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -51,3 +51,4 @@ To be written by design.
 
 - 2026-10-09 — Filed by retro, merging two tools `FINDINGS.md` entries (2026-10-07, 2026-10-08) that
   share one cause. quantum-catan 0009 is the follow-up the PASS reading produced.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

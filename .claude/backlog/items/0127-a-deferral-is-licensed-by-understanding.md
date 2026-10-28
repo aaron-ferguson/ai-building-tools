@@ -2,8 +2,8 @@
 id: "0127"
 title: Say that a deferral is licensed by understanding and never by writing
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: develop
 qa_manual:
@@ -114,3 +114,4 @@ could not finish **understanding**, never one it could not finish **writing up**
 - `close_by: develop` because every criterion is a scoped grep the build session commits and proves
   red first; none is a reading.
 - 2026-09-09 (queue, from `FINDINGS.md` parked the same day).
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-09 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

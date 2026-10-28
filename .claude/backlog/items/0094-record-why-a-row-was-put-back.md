@@ -2,8 +2,8 @@
 id: "0094"
 title: Record why a claimed row was put back
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: s
 created: 2026-09-05
@@ -101,3 +101,4 @@ orientation cost the one-skill-per-session batching rule exists to avoid.
   names explicitly as a `develop` case — the contract is the argument list and the code decides it.
 - FR2's asymmetry is the whole design: making the reason unconditional taxes every ordinary hand-off
   to catch the rare release, and a required field people fill with "done" records nothing.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-05 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

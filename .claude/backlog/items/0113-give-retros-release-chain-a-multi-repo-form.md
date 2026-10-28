@@ -2,8 +2,8 @@
 id: "0113"
 title: Give retro's release chain and its one-line report a form for a pass that edited several repos
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: s
 created: 2026-09-07
@@ -117,3 +117,4 @@ the session resolves it by abandoning the one-line rule.
   `release.test.sh`'s assertions about the script's presence and about `CLAUDE.md` naming it.
   **Nothing guards retro's report line.** So this is a new guard, not an edit to one.
 - Captured from `FINDINGS.md` 2026-09-07.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-07 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

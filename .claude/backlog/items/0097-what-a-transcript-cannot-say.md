@@ -2,8 +2,8 @@
 id: "0097"
 title: Record what a transcript cannot say about thinking tokens
 type: debt
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: s
 created: 2026-09-05
@@ -93,3 +93,4 @@ as one of the things that would change the order of this whole backlog.
 - Ranked above the other Tier 5 rows on tie-breaker 3, knowledge freshness: the residual method is
   reconstructable today from `0074`'s working and would have to be re-derived in a month, and the
   2026-10-31 run is the reader who needs it.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-05 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

@@ -2,8 +2,8 @@
 id: "0109"
 title: Give a human-reported source a resolvable form
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 qa_manual:
 size: s
@@ -93,3 +93,4 @@ requirement derived from it turns out to be ambiguous.
 - 2026-09-07 — Filed by `retro` from an entry parked in the `ai-building-conventions` buffer on
   2026-08-26, because the gap is in `queue`'s template and this is where that template lives. The
   reporting person's name is deliberately omitted: this repo is public and `company: none`.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-07 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

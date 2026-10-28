@@ -2,8 +2,8 @@
 id: "0124"
 title: Split the stop-rather-than-guess refusal out of the conventions ladder that instances it
 type: debt
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -84,3 +84,4 @@ Any change to what the conventions ladder itself resolves.
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-08 and deferred once by this retro
   before being filed properly. `0116`, filed the same day, is the fourth call site and puts this
   change out of scope like the others.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-09 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

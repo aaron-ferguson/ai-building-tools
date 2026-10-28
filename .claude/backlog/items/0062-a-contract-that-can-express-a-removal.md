@@ -2,8 +2,8 @@
 id: "0062"
 title: Let a ticket's contract express a removal and cover its own prose
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: m
 created: 2026-08-25
@@ -106,3 +106,4 @@ of it.
   a competing shape worth weighing.
 - FR5 is the smallest and the one that made 0034 hardest to read: the fence and the FRs disagreed,
   and the only thing that said so was an AC nobody reaches until the work is done.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-08-25 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

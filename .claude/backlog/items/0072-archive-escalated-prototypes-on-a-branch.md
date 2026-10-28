@@ -2,8 +2,8 @@
 id: "0072"
 title: Archive an escalated prototype on its own branch instead of leaving it only in the working tree
 type: feature
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: s
 created: 2026-08-26
@@ -89,3 +89,4 @@ rather than being deleted or left to rot in an unrelated commit.
   primary source, not a demo to delete" in spirit (the field-reference doc, the one-document-
   across-levels rule) — this ticket just gives that principle a place to physically live once the
   working tree moves on.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-08-26 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

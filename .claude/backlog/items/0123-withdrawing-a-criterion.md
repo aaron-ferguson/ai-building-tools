@@ -2,8 +2,8 @@
 id: "0123"
 title: Give queue a rule for withdrawing a criterion, as it has for withdrawing an id
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -81,3 +81,4 @@ Renumbering anything in `0081`. Whether an FR list can express a removal (`0062`
 - 2026-09-09 (retro) — filed from `FINDINGS.md`, parked 2026-09-08 and deferred once by this retro
   before being filed properly.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Concrete instance: 0147 dropped AC5 and kept AC6's number, reasoning from the id-withdrawal rule, so its evidence and notes still resolve. `close` ticks by line form, so a gap is harmless — the rule this ticket writes should say keep the gap.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-09 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

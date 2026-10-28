@@ -2,8 +2,8 @@
 id: "0057"
 title: Add the queue operations that exist in practice and not in the skill
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: l
 created: 2026-08-25
@@ -211,3 +211,4 @@ ones already specified.
     capture front door produces exactly this never-ranked case on promotion.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** A fourth operation practised and unwritten: withdrawing a duplicate design question. 0060 and 0080 asked the same question with neither in `relates:`, `./next design` offered the narrower one, and three sessions wrote that a queue pass should withdraw 0080; `design` finally did, which its Step 4 does not name. A duplicate-question check at capture for rows routed to `design`.
 - **2026-10-17 (retro, absorbed from FINDINGS.md).** The re-rank operation recurred at scale: an AetherWorks direction change moved ~35 of 52 rows, and the session rebuilt the table under the lock in one shell call (as `./claim` does), asserting the row set unchanged and each row's bytes kept (AetherWorks `f03e84f`). A `rerank` script taking an id order is the sanctioned shape the finding proposed.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-08-25 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

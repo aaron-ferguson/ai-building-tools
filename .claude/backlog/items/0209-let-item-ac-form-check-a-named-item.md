@@ -2,8 +2,8 @@
 id: "0209"
 title: Let item-ac-form check a named item, whatever its stage and wherever it lives
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: s
@@ -53,3 +53,4 @@ makes the check runnable as the step intends.
 ## Notes & decisions
 
 - Filed by retro 2026-10-17 (AetherWorks run-20261017T193821Z) from two findings entries, one per buffer.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

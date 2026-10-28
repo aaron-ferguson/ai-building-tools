@@ -2,8 +2,8 @@
 id: "0004"
 title: Phase 3 — extend tracker mirroring with hierarchy and company ticket standards
 type: feature
-next: develop
-status: blocked
+next:
+status: withdrawn
 qa_level: verify
 size: l
 created: 2026-08-18
@@ -92,3 +92,4 @@ work; the local claim mechanism (0007) covers the single-machine case.
   start at discovery, not delivery: `epic.md` makes a missing discovery link Major, so the first
   push will correctly refuse an epic with no CTD idea behind it. That is the gate working.
 - **2026-08-19** — This project is `routing.default: local`, so phase 3 cannot be tested here.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Withdrawn by the user: tracker mirroring with company ticket standards serves company use, and this repo is `company: none`.

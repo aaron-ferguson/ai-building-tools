@@ -2,8 +2,8 @@
 id: "0200"
 title: Decide where queue puts an owner decision that blocks several tickets and builds nothing
 type: feature
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -42,3 +42,4 @@ To be written by design.
 
 - 2026-10-09 — Filed by retro from the tools `FINDINGS.md` entry of 2026-10-08.
 - 2026-10-10 — Absorbed by retro (tail of quantum-catan run-20261010T212209Z): a second instance with a different gap: quantum-catan 0031, a `waiting` owner-decision ticket ruled "nothing to build", had no scripted exit (`./close` needs `next: verify`, a token and tickable ACs) and was closed by hand under the lock against DONE.md's "never edited by hand" (quantum-catan commit 89d71a9). The design should name the close path as well as the home.
+- 2026-10-28 — **Withdrawn in the backlog triage.** A one-time edge case from this repo's own sessions, not confirmed by a real project; under the 2026-10-27 findings rule it stays a held finding rather than a row. Reopen on confirmation.

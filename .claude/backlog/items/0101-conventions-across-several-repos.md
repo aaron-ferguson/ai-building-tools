@@ -2,8 +2,8 @@
 id: "0101"
 title: Say what a capture session does when only some repos resolve conventions
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: s
 created: 2026-09-05
@@ -96,3 +96,4 @@ repo a session is standing in (`0078`).
 - Routed to `develop`: `CONVENTIONS.md` already fails closed per repo, and the batch case is that
   rule applied per repo rather than a new policy. Reading it any other way makes one unwired repo
   block three wired ones, which the fail-closed argument does not support.
+- 2026-10-28 — **Withdrawn in the backlog triage.** Ready since 2026-09-05 and never pulled: a single occurrence from this repo working on itself, not confirmed by a project that uses these tools. Reopen on a confirming finding from one.

@@ -2,8 +2,8 @@
 id: "0108"
 title: Guard the code conventions this repo's suite does not check
 type: debt
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 qa_manual:
 size: s
@@ -90,3 +90,4 @@ file.
   note: the rule was in force, findable, and a principle, and a reviewer still had to be the one to
   catch it.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** `CONVENTIONS_CORE.md`'s *use types* is a principle, and all four `tools/*.sh` (`sprint-ledger`, `harvest-usage`, `classify-turns`, `cost-by-category`) are `sh` wrapping an untyped inline `python3` heredoc. 0135's verify rejected calling it a preference and declined retyping one tool. Either the set is owed type hints or the conventions repo says this shape is outside the principle — one decision for all four (develop 0135).
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.

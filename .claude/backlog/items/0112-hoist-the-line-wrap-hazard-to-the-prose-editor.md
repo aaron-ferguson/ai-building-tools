@@ -2,8 +2,8 @@
 id: "0112"
 title: Hoist the line-wrap hazard to the session editing prose, not only the one writing a guard
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: s
 created: 2026-09-07
@@ -140,3 +140,4 @@ other.
   what stretched them. A line longer than its own file's wrap width is a cheaper detector than
   re-grepping every phrase.
 - 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park (develop 0091): the wrap hazard **inverts** for a negative assertion — a phrase straddling a break reads as already absent, so an "is it gone?" check passes vacuously. `tests/by-hand-lock.test.sh` matches over whitespace-folded section text; state the negative half beside the `CLAUDE.md` *Tests* warning, or adopt the fold in the shared window helpers (0063).
+- 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.
