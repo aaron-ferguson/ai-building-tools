@@ -2,8 +2,8 @@
 id: "0089"
 title: Re-anchor the case "$out" guards that cannot fail
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-09-05
@@ -24,21 +24,9 @@ expects:
   - tests/item-nfr-red.test.sh
   - tests/scaffold-close.test.sh
   - tests/cost-by-category.test.sh
-claimed_by: "8dbb"
-claimed_at: 2026-10-28T02:29:33Z
+claimed_by:
+claimed_at:
 touches:
-  - tests/citations.test.sh
-  - tests/reporting.test.sh
-  - tests/last-line.test.sh
-  - tests/skill-size.test.sh
-  - tests/money-in-skill-prose.test.sh
-  - tests/reference-size.test.sh
-  - tests/abort-announce.test.sh
-  - tests/declared-copies.test.sh
-  - tests/external-feedback.test.sh
-  - tests/item-nfr-red.test.sh
-  - tests/scaffold-close.test.sh
-  - tests/cost-by-category.test.sh
 ac_digest: AC1=80aa6a19 AC2=5f92027e AC3=cee5c2a0 AC4=74c1ed2c AC5=f5ee516c
 ---
 
