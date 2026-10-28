@@ -2,8 +2,8 @@
 id: "0092"
 title: Prove claim and close hold the lock through their commit
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: s
 created: 2026-09-05
@@ -15,9 +15,10 @@ expects:
   - tests/claim.test.sh
   - tests/close.test.sh
   - tests/handoff.test.sh
-claimed_by: "2fb6"
-claimed_at: 2026-10-28T02:14:15Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-28
 ---
 
 ## Problem
@@ -53,15 +54,15 @@ whose commit-inside-the-lock is their entire reason for existing.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `skills/queue/templates/claim` with its `rm -rf "$LOCK"` moved to immediately
+- [x] AC1 — Given `skills/queue/templates/claim` with its `rm -rf "$LOCK"` moved to immediately
   before the `git commit`, when `tests/claim.test.sh` runs, then the new case **fails** and names the
   lock. Red-making input: today's suite, where that mutation passes.
-- [ ] AC2 — Given the same mutation applied to `close`, when `tests/close.test.sh` runs, then its new
+- [x] AC2 — Given the same mutation applied to `close`, when `tests/close.test.sh` runs, then its new
   case fails. Red-making input: today's suite, where it passes.
-- [ ] AC3 — Given the unmutated scripts, when `tests/claim.test.sh` and `tests/close.test.sh` run,
+- [x] AC3 — Given the unmutated scripts, when `tests/claim.test.sh` and `tests/close.test.sh` run,
   then each reports `0 failed`. Red if the hook fires on a commit the script does not make, or if the
   fixture leaves the hook installed for a later case that commits outside the lock.
-- [ ] AC4 — Given this item's *Notes & decisions* after the work, when it is read, then it records
+- [x] AC4 — Given this item's *Notes & decisions* after the work, when it is read, then it records
   the exact mutation used for AC1 and AC2 and that each reddened only the new case. Red if either
   entry is absent.
 
@@ -107,3 +108,38 @@ whose commit-inside-the-lock is their entire reason for existing.
   - Unmutated: claim 108/0, close 305/0 (AC3). No red found in either script, so nothing to report
     as a separate ticket.
 - Whole suite run file-by-file at `86ba8a6`, clean tree: no file red.
+
+## QA evidence
+
+Verify, 2026-10-27, token `2fb6`, at `d493f16` plus the claim commit. Sprint run-20261027T185815Z.
+
+Conventions: ../ai-building-conventions
+Command (`commands.unit`, as configured): `for t in tests/*.test.sh; do "$t" || exit 1; done`
+— exit 0, all 44 files reported `0 failed` (claim `108 passed, 0 failed`; close `305 passed, 0 failed`).
+Copy executed: the repo templates (`skills/queue/templates/{claim,close}`), which both suites copy
+into each fixture; the installed plugin copy plays no part.
+Tree: `git status --porcelain` empty at Step 2; the post-evidence capture showed only this pass's own
+scratch directory (since removed). Dirty set ∩ evidence set = ∅ — not advisory.
+`ac_digest absent — unverifiable` (`./next --ac-digest 0092 --check`).
+
+Clause table: AC1 Given *claim with the lock release moved immediately before the `git commit`* /
+predicate *claim.test.sh runs* / outcome *the new case fails and names the lock* / red-making input
+*today's suite passes under it*. AC2 the same over close. AC3 Given *unmodified scripts* / outcome
+*each reports `0 failed`* / reds *hook fires on a commit the script does not make*; *hook left
+installed for a later case*. AC4 Given *Notes & decisions* / objects *the exact mutation for AC1 and
+AC2*; *that each reddened only the new case*.
+
+| Row | How checked (re-run this pass) | Result |
+|---|---|---|
+| AC1 | Inserted `  rm -rf "$LOCK"` immediately before `until git -C "$DIR" commit -q -m "Claim …` in `skills/queue/templates/claim` (diff: 1 insertion), ran `tests/claim.test.sh`, then the pre-`86ba8a6` copy of the suite under the same mutation; restored by path | `FAIL — 0092 — the lock (.backlog/.lock) was not held when claim's commit ran: the witness read released`, `107 passed, 1 failed`, the only red. Old suite: `106 passed, 0 failed`. PASS |
+| AC2 | Same insertion before `until git -C "$DIR" commit -q -m "Close …` in `skills/queue/templates/close`, ran `tests/close.test.sh`, then the pre-`86ba8a6` copy | `FAIL — 0092 — … close's commit ran: the witness read released`, `304 passed, 1 failed`, the only red. Old suite: `303 passed, 0 failed`. PASS |
+| AC3 | Control after restore: `108 passed, 0 failed` / `305 passed, 0 failed`. Hook-on-another-commit red: mutated each script's commit to `until true \|\| …` (no commit made) — witness read `MISSING`, case red (claim `104 passed, 4 failed`, close `291 passed, 14 failed`), so only the script's own commit can credit it. Persistence: both `scaffold`s `mktemp -d` a fresh repo, and each case is the last before the tally | PASS |
+| AC4 | Read *Notes & decisions*: exact inserted line and anchor for both scripts, and "the only red" for each | PASS |
+| FR4 | Hook body extracted from `tests/{handoff,claim,close}.test.sh` and hashed: all three `3746fa25…` | PASS |
+| NFR Documentation | Mutation and result recorded in this item, per `documentation-conventions.md` | PASS — guarded only by AC4's read |
+| Core always-on | Test-only diff (`tests/claim.test.sh`, `tests/close.test.sh`); no secrets, no new log or egress, scripts untouched (Out of scope honoured) | PASS |
+
+Drift, not a fail: AC1's Given reads "with its `rm -rf "$LOCK"` moved", but both scripts release via
+`trap … EXIT` and carry no `rm` to move; the inserted release is FR3's "moving the lock release above
+the commit", the property the AC names. FR1 names `.claude/backlog/.lock/`; the fixtures use
+`.backlog/`, as handoff's do.

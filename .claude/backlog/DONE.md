@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0092 | Prove claim and close hold the lock through their commit | bug | unit | 2026-10-28 | [items/0092-prove-the-lock-covers-the-commit.md](items/0092-prove-the-lock-covers-the-commit.md) |
 | 0189 | Make the citations guard resolve the conventions path from a worktree outside the checkout's parent | bug | unit | 2026-10-28 | [items/0189-resolve-conventions-from-any-worktree.md](items/0189-resolve-conventions-from-any-worktree.md) |
 | 0221 | Make the 0182 release-note guard find its entry wherever a release moves it | bug | unit | 2026-10-27 | [items/0221-make-the-0182-release-note-guard-find-its-entry.md](items/0221-make-the-0182-release-note-guard-find-its-entry.md) |
 | 0126 | Stop retro restating the by-hand lock rule it drifted from | bug | verify | 2026-10-27 | [items/0126-stop-retro-restating-the-by-hand-lock-rule.md](items/0126-stop-retro-restating-the-by-hand-lock-rule.md) |
