@@ -14,6 +14,9 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- `retro` has a fifth disposition, *held*: a finding that needs work but has not been confirmed by a project that uses these tools moves to `.backlog/FINDINGS-HELD.md` instead of becoming a row. Nothing counts, reviews or expires that file; a later pass greps it when a confirmed finding matches and files the two together. Both `retro` and `queue`'s findings sweep now file a row only on that confirmation, or when the user asks.
+- This repo's own sessions no longer add guards that grep prose: a rule that must hold exactly goes in a script that refuses, and an existing prose guard that reds on a correct rewording is deleted rather than re-anchored (`CLAUDE.md`, *Tests*; `testing-conventions.md`).
+
 ## 0.9.46 — 2026-10-31
 
 - prototype now starts generic and loads the company profile once the work is clearly a company project, then settles a Step 0 before drawing anything: the base product (or none, for a net-new idea), design system, product needs, tech stack, release phase, scope, and the tickets the prototype must match.

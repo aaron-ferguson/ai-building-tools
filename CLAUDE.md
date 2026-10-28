@@ -46,7 +46,22 @@ Two consequences, and both have cost real work:
   behaviour a session will now see differently, and pass `--no-behaviour-change` only when the
   release changes none.
 
+## Where toolkit work comes from
+
+This repo runs its own skills on itself, so every friction it notices is about itself, and a
+backlog fed only by that grows without end: on 2026-10-27, 83% of tickets were agent- or
+retro-filed and the triage withdrew 67 of them. So a finding from this repo's own sessions is
+**held** (`retro` Step 4), not filed, until a project that uses these tools to build something
+confirms it, or the user asks. v1 is the capability rows the triage kept (0069, 0070, 0071,
+0214); work outside v1 and outside a confirmed finding needs a stated reason.
+
 ## Tests
+
+**No new guard greps prose.** Natural language is vague by nature, and a matcher over it grows its
+own defect classes faster than it catches regressions: needles a larger figure satisfies, phrases a
+rewrap splits, absences nothing can assert. A rule that must hold exactly goes in a script that
+refuses when it is broken, with a behaviour test; anything else stays prose, unguarded. An existing
+prose guard that reds on a correct rewording is deleted, not re-anchored.
 
 No test runner. The suite is `tests/*.test.sh`, each self-contained and printing its own tally:
 `for t in tests/*.test.sh; do "$t" || exit 1; done`. Every guard greps prose, which is why
