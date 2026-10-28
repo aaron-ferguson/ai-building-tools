@@ -283,6 +283,57 @@ each is a test the chosen shape has to pass.
   paraphrases them ("already under way" for "mid-session"), per `develop`'s gap-test rule (0180).
   Row 4 needs an absence assertion over the whole of `references/CONCURRENCY.md`: no line naming
   `0050` also says `open`. Write the clause table into the build notes this time.
+- **2026-10-27 — develop (5884), re-developed against verify's gaps 1–4.** Commit `64a4db7`.
+  The two bullets now use the ACs' own words, each asserted phrase on one source line:
+  `**The stall when every takeable row at a stage collides is a designed outcome:**` / `a designed
+  wait, not a failure. The session claims nothing, reports the holders — …` / `… — and waits: it
+  stops, or takes work at another stage …` (AC1; gap 1 was the unguarded condition, and "claims
+  nothing, reports the holders", "waits" and "designed outcome" were paraphrased before);
+  `**A collision with a row held at 'verify' follows the same taking rule, and a stricter editing
+  one:**` / `mid-session, a 'develop' session does not open or widen 'touches:' into a
+  'verify'-held file —` (AC2; gaps 2–3: the subject straddled a line break and "mid-session" was
+  "already under way"). Gap 4: a whole-file absence, *no line of `references/CONCURRENCY.md` naming
+  `0050` also says `open`* (`grep -F 0050 | grep -iw open`) — line-based, so a description wrapped
+  across a break escapes it; recorded in the guard's comment. Guards in
+  `tests/shared-dirty-tree.test.sh`'s 0050 block, written first: 36 passed, 6 failed against the
+  `HEAD~1` prose; 42/0 after. The old case on `does not open or widen 'touches:' into a file a live
+  'verify' claim holds` is replaced by the one carrying the AC's words.
+  - **Clause table** — every mutation **run** by `/tmp/dev-fe71/sweep.py` on the committed subject
+    against `tests/shared-dirty-tree.test.sh`, restored by `git checkout --` in the same call;
+    "gone" is the gap test over the flattened section. Control after: 42/0, porcelain clean.
+
+    | AC | Row (AC words) | Mutation | Result |
+    |---|---|---|---|
+    | AC1 | Given: *The working tree is shared too* | heading → `## The tree is shared` | RED 30/12 |
+    | AC1 | condition (gap 1): when every takeable row at a stage collides | → `when one row collides` | RED 40/2, gone |
+    | AC1 | claims nothing | → `claims the top row` | RED 41/1, gone |
+    | AC1 | reports the holders | → `ignores the holders` | RED 41/1, gone |
+    | AC1 | and waits | `— and waits:` → `— and proceeds:` | RED 41/1, gone |
+    | AC1 | a designed outcome | `is a designed outcome:` → `is an outcome:` | RED 41/1, gone |
+    | AC1 | (FR2) a designed wait, not a failure | → `a failure` | RED 41/1, gone |
+    | AC2 | a collision with a row held at `verify` | `verify` → `design` | RED 41/1, gone |
+    | AC2 | follows the same taking rule | → `a looser taking rule` | RED 41/1, gone |
+    | AC2 | subject (gap 2): a `develop` session | → a `queue` session | RED 41/1, gone |
+    | AC2 | qualifier (gap 3): mid-session | → `before it claims` | RED 41/1, gone |
+    | AC2 | forbids opening or widening | `does not open or widen` → `may open or widen` | RED 41/1 |
+    | AC2 | object: into a `verify`-held file | → `into a file` | RED 41/1, gone |
+    | AC3 | `CLAUDE.md` names the section | drop `, *The working tree is shared too*` | RED 41/1 |
+    | AC4 | nothing matches `Prefer single-writer files` | re-inserted after `(0050).` | RED 41/1 |
+    | AC4 | rows sharing a file are worked by one session | `one session` → `any session` | RED 41/1 |
+    | AC5 | CONCURRENCY.md (whole file, gap 4): not `0050` as open | insert `(0050, still an open question)` in *Never rewrite `QUEUE.md` by hand* | RED 41/1 |
+    | AC5 | CONCURRENCY.md: the old phrase | `(0050).` → `(preventing the collision is 0050).` | RED 41/1 |
+    | AC5 | sprint *Design beside other stages*: not open | `` `0050` settled `` → `` `0050`'s open question `` | RED 41/1 |
+    | AC5 | sprint: still cites `0050` | delete the cite | RED 41/1 |
+    | AC5 | `tests/sprint.test.sh` passes | unmutated run | 386/0 |
+    | AC6 | sub-file scope: label, reason | each mutated separately | RED 41/1, RED 41/1 |
+    | AC6 | worktree per session: label, reason | each mutated separately | RED 41/1, RED 41/1 |
+    | AC6 | rank against the held set: label, reason | each mutated separately | RED 41/1, RED 41/1 |
+    | AC7 | any asserted phrase removed reds; restored greens | every row above; control 42/0 | holds |
+    | FR1 | where a file cannot have one writer, the session does | → `anything goes` | RED 41/1 |
+    | FR1 | serialised until `0137` | → `parallel in this repo` | RED 41/1 |
+    | FR2 | Never edit a held file to get unstuck | → `Edit a held file …` | RED 41/1 |
+  - AC8: whole suite file-by-file at `64a4db7` (only this item dirty): 44 files, every one `0 failed`.
+    `qa_level: unit` kept; no `close_by`, so `verify` closes it.
 
 ## QA evidence
 
