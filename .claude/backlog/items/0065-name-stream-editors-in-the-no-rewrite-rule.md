@@ -2,8 +2,8 @@
 id: "0065"
 title: Name stream editors in the rule against rewriting QUEUE.md
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: verify
 size: s
 created: 2026-08-25
@@ -15,9 +15,10 @@ expects:
   - references/CONCURRENCY.md
   - references/CONCURRENCY-INCIDENTS.md
   - tests/citations.test.sh
-claimed_by: "4922"
-claimed_at: 2026-10-28T02:54:33Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-28
 ---
 
 ## Problem
@@ -63,17 +64,17 @@ form.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `references/CONCURRENCY.md` *Never rewrite `QUEUE.md` by hand*, when read, then
+- [x] AC1 — Given `references/CONCURRENCY.md` *Never rewrite `QUEUE.md` by hand*, when read, then
   it names in-place stream editing as prohibited.
-- [ ] AC2 — Given the same rule, when read, then it names a whole-file rewrite through a temp file
+- [x] AC2 — Given the same rule, when read, then it names a whole-file rewrite through a temp file
   as the same class.
-- [ ] AC3 — Given the same rule, when read, then it states what makes the two scripts an exception
+- [x] AC3 — Given the same rule, when read, then it states what makes the two scripts an exception
   in terms that would apply to another.
-- [ ] AC4 — Given `references/CONCURRENCY.md` or `CONCURRENCY-INCIDENTS.md`, when read, then a safe
+- [x] AC4 — Given `references/CONCURRENCY.md` or `CONCURRENCY-INCIDENTS.md`, when read, then a safe
   shape for an unavoidable multi-row rewrite under the lock is stated.
-- [ ] AC5 — Given `tests/citations.test.sh`, when it runs, then every citation of this rule
+- [x] AC5 — Given `tests/citations.test.sh`, when it runs, then every citation of this rule
   resolves.
-- [ ] AC6 — Given `tests/reference-size.test.sh`, when it runs, then both files are within their
+- [x] AC6 — Given `tests/reference-size.test.sh`, when it runs, then both files are within their
   goals or carry a recorded justification.
 
 ## QA plan
@@ -181,7 +182,68 @@ form.
   - Whole suite file-by-file at `69b5856` (only this item dirty): 44 files, every one `0 failed`.
     `qa_level: verify` kept; no `close_by`, so `verify` closes it.
 
+- **2026-10-27 — verify (token 4922), re-verify: PASS.** Every gap the c7ec round named (1–5) now reddens its own case in `tests/by-hand-lock.test.sh`; the full clause table and controls are under *QA evidence*.
+
 ## QA evidence
+
+### 2026-10-27 — verify (token 4922), re-verify after the c7ec FAIL: PASS
+
+Conventions: ../ai-building-conventions
+Level: `qa_level: verify`; no lint or typecheck configured. Commands run, verbatim:
+`git status --porcelain; for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`,
+every file reporting) at `4fedb0f` — porcelain empty, all 44 files `0 failed`. Mutations:
+`python3 .verify-scratch/mutate.py .verify-scratch/m0065.json` and `m0065b.json` (scratch, not
+committed): each applied to the committed file, landing confirmed by a non-empty `git diff`, the
+guard run, then restored by `git checkout -- <that path>` and checked with `git diff --quiet`.
+`ac_digest absent — unverifiable` (`./next --ac-digest 0065 --check`).
+Dirty set at Step 2: empty. Evidence set: `references/CONCURRENCY.md`,
+`references/CONCURRENCY-INCIDENTS.md`, `tests/by-hand-lock.test.sh`, `tests/citations.test.sh`,
+`tests/reference-size.test.sh`. Fresh capture after the last check: empty but for this session's
+untracked `.verify-scratch/`. Intersection: empty — not advisory.
+
+**Clause table** — the c7ec round's rows, reused, plus develop fe71's finer rows; "gone" is the gap
+test (the AC's phrase no longer in the file, whitespace-tolerant, case-insensitive).
+
+| AC | Row | Mutation (on the subject) | Result |
+|---|---|---|---|
+| AC1 | Given: *Never rewrite `QUEUE.md` by hand* | heading → `## Never hand-edit the queue` | RED 32/9 (window empty) |
+| AC1 | predicate: names … as prohibited | `**never in-place stream editing` → `**allow …` | RED 40/1, gone |
+| AC1 | object: in-place stream editing | → `in-place editing` | RED 40/1, gone |
+| AC2 | object: a whole-file rewrite through a temp file | → `a temp-file rewrite` | RED 40/1, gone |
+| AC2 | predicate (c7ec gap 1) | `**never a whole-file rewrite` → `**allow …` | RED 40/1 |
+| AC2 | "the same class" (c7ec gap 2) | drop `, the same class as 'Write'` | RED 40/1, gone |
+| AC3 | predicate: what makes the scripts the exception | `one process holding the lock … its commit` → `being the two scripts` | RED 40/1 |
+| AC3 | subject: the two scripts | `` `./claim` and `./close` are the exception `` → `They are the exception` | RED 40/1 |
+| AC3 | qualifier: in terms that would apply to another (c7ec gap 3) | `in terms that would apply to another: one process` → `because of one process` | RED 40/1, gone |
+| AC4 | object: a safe shape | `**The safe shape for an` → `**A shape for an` | RED 40/1, gone |
+| AC4 | qualifier: under the lock (c7ec gap 4) | `multi-row rewrite under the lock:**` → `multi-row rewrite:**` | RED 40/1 |
+| AC4 | qualifier: unavoidable multi-row (c7ec gap 5) | `for an unavoidable multi-row rewrite` → `for a rewrite` | RED 40/1, gone |
+| AC4 | qualifier: unavoidable, alone | `for an unavoidable multi-row` → `for a multi-row` | RED 40/1, gone |
+| AC4 | shape: kept only if the diff is exactly the intended change | → `keep it` | RED 40/1 |
+| AC4 | shape: abandoned otherwise | → `and keep it otherwise` | RED 40/1 |
+| AC5 | every citation of the rule resolves | heading renamed, run `tests/citations.test.sh` | RED 51/5 |
+| AC6 | CONCURRENCY.md within goal or justified | its justification case in `tests/reference-size.test.sh` retargeted | RED 14/1 (25823 bytes over 6057) |
+| AC6 | CONCURRENCY-INCIDENTS.md within goal or justified | same, for that file | RED 14/1 (20000 bytes over 6057) |
+| FR4 | the incident's diffstat is in `CONCURRENCY-INCIDENTS.md` | `only signal was the diffstat` → `… the commit` | RED 40/1 |
+
+Controls after the sweep: `tests/by-hand-lock.test.sh` 41 passed, 0 failed;
+`tests/citations.test.sh` 52 passed, 0 failed; `tests/reference-size.test.sh` 15 passed, 0 failed.
+Every c7ec gap (1–5) now reddens its own case.
+
+| Check | How | Result |
+|---|---|---|
+| AC1 | `tests/by-hand-lock.test.sh` 0065 AC1 case; Given, predicate, object each mutation-proved | PASS |
+| AC2 | object, predicate and "same class" each mutation-proved | PASS |
+| AC3 | predicate, subject and qualifier each mutation-proved | PASS |
+| AC4 | safe shape, "under the lock", "unavoidable multi-row", both halves of the shape mutation-proved | PASS |
+| AC5 | `tests/citations.test.sh` 52 passed, 0 failed; reds 51/5 on a rename | PASS |
+| AC6 | `tests/reference-size.test.sh` 15 passed, 0 failed; reds without either justification | PASS |
+| NFR Documentation | narrative in `CONCURRENCY-INCIDENTS.md`, guarded by the FR4 case; "the failure in one clause" holds on reading (`a stream editor is worse, since one wrong pattern rewrites every line`) and is **unguarded** | holds; one half unguarded |
+| Newly reachable | prose-only change; no route, permission or action made reachable | none |
+| Suite | 44 files, each `passed, 0 failed` (`commands.unit_by_file`) | green |
+| Always-on (`CONVENTIONS_CORE.md`) | prose and guard change; `8f391fd`, `69b5856` carry the trailer; no secrets or company material | holds |
+
+### Prior round — verify (token c7ec): FAIL
 
 Conventions: ../ai-building-conventions
 Level: `qa_level: verify` (scripted assertions named by the QA plan). There is no lint or
