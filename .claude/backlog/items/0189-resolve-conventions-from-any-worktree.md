@@ -2,8 +2,8 @@
 id: "0189"
 title: Make the citations guard resolve the conventions path from a worktree outside the checkout's parent
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: s
@@ -14,9 +14,10 @@ blocked_by: []
 relates: ["0180", "0083"]
 expects:
   - tests/citations.test.sh
-claimed_by: "c480"
-claimed_at: 2026-10-28T01:51:53Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-10-28
 ---
 
 ## Problem
@@ -45,9 +46,9 @@ therefore reports a red that no ticket owns, and *repair first* then mints a row
 
 ## Acceptance criteria
 
-- [ ] **AC1** — Given a detached worktree created under a temp directory, `tests/citations.test.sh` run
+- [x] **AC1** — Given a detached worktree created under a temp directory, `tests/citations.test.sh` run
   there reports the same tally as in the checkout.
-- [ ] **AC2** — Given the checkout, the tally is unchanged from before the fix.
+- [x] **AC2** — Given the checkout, the tally is unchanged from before the fix.
 
 ## QA plan
 
@@ -78,3 +79,42 @@ tally, and removes the worktree in the same run. Proved red against the current 
   `51 passed, 1 failed`. After: checkout `52 passed, 0 failed`; whole file run inside a detached
   worktree under `mktemp -d` at 22f6966: `52 passed, 0 failed` (AC1). AC2: the 51 pre-existing
   checks in the checkout pass unchanged. Whole suite green at 22f6966, tree clean.
+
+## QA evidence
+
+verify, token c480, 2026-10-27, at fff95d9 (build 22f6966). **PASS.**
+
+Conventions: ../ai-building-conventions
+Level: `qa_level: unit` (frontmatter; the QA plan agrees). Command, verbatim from `commands.unit_by_file`:
+`for t in tests/*.test.sh; do "$t" || true; done` — 44 files, every one `0 failed`;
+`tests/citations.test.sh: 52 passed, 0 failed`. Copy executed: the repo copy of `tests/citations.test.sh`
+(a test, not a skill, so the plugin install is not in play). `ac_digest absent — unverifiable`
+(`./next --ac-digest 0189 --check`).
+
+Tree: `git status --porcelain` empty at Step 2 and again after the last check, so the dirty set is
+empty and the intersection with the evidence set is empty — not advisory.
+
+Clause table (no prior table in the build notes; this one is the first):
+
+| AC | Clause | Row |
+|---|---|---|
+| AC1 | Given | a detached worktree created under a temp directory |
+| AC1 | predicate | `tests/citations.test.sh` run there reports |
+| AC1 | object | the same tally as in the checkout |
+| AC2 | Given | the checkout |
+| AC2 | predicate / object | the tally is unchanged from before the fix |
+
+| Check | How | Result |
+|---|---|---|
+| AC1 | Literally: `git worktree add --detach` under `mktemp -d` at HEAD, ran `tests/citations.test.sh` there | `52 passed, 0 failed`, identical to the checkout's `52 passed, 0 failed` ✓ |
+| AC1 mutation (AC altitude) | in that worktree's own copy, `base="$(main_worktree_of "$root")"` → `base="$root"` (diff 1+/1-) | `FAIL no conventions directory resolved from config.yml`, `FAIL 0189 AC1 — the temp-directory worktree resolved no conventions directory`, `50 passed, 2 failed`; restored by path → `52 passed, 0 failed` |
+| AC1 permanent guard | the same mutation in the checkout's `tests/citations.test.sh` | `FAIL 0189 AC1 — …`, `51 passed, 1 failed`; restored by path, control `52 passed, 0 failed` |
+| AC2 | checkout, HEAD copy vs the pre-fix copy (`git show 22f6966^:tests/citations.test.sh`), `ok` lines diffed | pre `51 passed, 0 failed`, post `52 passed, 0 failed`; `every conventions filename resolves — 36 mentions, 36 checked` on both; the only other differing line is `every item-ID citation resolves — 219 ids, 291 cited` → `292 cited`, the new code citing 0189 itself, not a resolution change ✓ |
+| AC2 mutation | `dirname -- "$common"` → `dirname -- "$(dirname -- "$common")"` (breaks the checkout's own resolution) | `FAIL no conventions directory resolved from config.yml` plus the 0189 case, `50 passed, 2 failed`; restored, `52 passed, 0 failed` |
+| NFR Testing | the row's own red: the guard run from a temp-directory worktree against the reverted resolution | reddens (AC1 mutation row above) — guarded, not merely true ✓ |
+| Always-on (`CONVENTIONS_CORE.md`) | diff read: no secrets, nothing written outside the repo, the worktree is removed under `$FIX` in the same run | holds |
+
+Notes: develop's QA-plan substitution (driving `conventions_audit` in the worktree rather than
+re-running the whole file) is sound — the literal whole-file run above covers what it skips.
+Cosmetic: in `tests/citations.test.sh` the `conventions_dir` header comment now sits above
+`main_worktree_of`'s, so the two functions' comments read stacked; no behaviour rests on it.

@@ -14,6 +14,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- The citations guard now resolves the conventions path from the main checkout, so running the suite in a worktree outside the checkout's parent directory (a temp directory, say) no longer reports a conventions red that no ticket owns (0189).
+
 ## 0.9.44 — 2026-10-27
 
 - `sprint` reads an item's `close_by:` before re-verifying a ticket its develop session closed: a `close_by: develop` close is the declared exception, not self-certification. It waits out a drift exit on a row a running design session holds, and a resume prompt asks the session to check its claim and tree rather than asserting them.
