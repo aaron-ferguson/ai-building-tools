@@ -3,7 +3,7 @@ id: "0050"
 title: Decide how file scope works when the prose files are the product
 type: chore
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -19,8 +19,8 @@ expects:
   - CLAUDE.md
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "e281"
+claimed_at: 2026-10-28T02:54:34Z
 touches:
 ac_digest: AC1=4628a33e AC2=0f12239c AC3=59be2e64 AC4=fff4269d AC5=168c1e58 AC6=59b75fbe AC7=29421536 AC8=5df1dc6b
 ---
