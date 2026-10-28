@@ -2,8 +2,8 @@
 id: "0089"
 title: Re-anchor the case "$out" guards that cannot fail
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-09-05
@@ -24,10 +24,11 @@ expects:
   - tests/item-nfr-red.test.sh
   - tests/scaffold-close.test.sh
   - tests/cost-by-category.test.sh
-claimed_by: "a38d"
-claimed_at: 2026-10-28T02:54:29Z
+claimed_by:
+claimed_at:
 touches:
 ac_digest: AC1=80aa6a19 AC2=5f92027e AC3=cee5c2a0 AC4=74c1ed2c AC5=f5ee516c
+closed: 2026-10-28
 ---
 
 ## Problem
@@ -79,23 +80,23 @@ prose guards plus the named helper instances (`0223`), and the standing guard (`
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given the sweep is complete, when `grep -n 'case "\$out"' tests/*.test.sh` is run, then
+- [x] AC1 — Given the sweep is complete, when `grep -n 'case "\$out"' tests/*.test.sh` is run, then
   every presence needle is either a complete line the subject prints (or a field extracted from one)
   or a phrase the subject prints only on the asserted condition, and every absence needle is matched
   over the whole output. Red if any presence needle is satisfied by text the subject prints
   unconditionally or is a substring of another value the same output carries — or if an absence
   needle such as `tests/external-feedback.test.sh`'s `*EXTERNAL-FEEDBACK*) bad` is narrowed to a
   single extracted line.
-- [ ] AC2 — Given `tests/cost-by-category.test.sh`, when the figure the AC10-shaped assertion tests
+- [x] AC2 — Given `tests/cost-by-category.test.sh`, when the figure the AC10-shaped assertion tests
   is changed in the subject from `10000` to `9999`, then that assertion goes **red**. Red-making
   input: the pre-`df07072` code, where the assertion passed with the figure absent because `100000`
   contains it.
-- [ ] AC3 — Given each file the sweep re-anchored, when this item's *Notes & decisions* is read,
+- [x] AC3 — Given each file the sweep re-anchored, when this item's *Notes & decisions* is read,
   then it names for that file the mutation applied and the assertion that went red under it. Red if
   any re-anchored file has no such entry.
-- [ ] AC4 — Given the FR1 grep, when this item's *Notes & decisions* is read, then every file the
+- [x] AC4 — Given the FR1 grep, when this item's *Notes & decisions* is read, then every file the
   grep hits is listed as examined. Red if a file the grep hits is absent from that list.
-- [ ] AC5 — Given the whole suite after the sweep, when `for t in tests/*.test.sh; do "$t" || true;
+- [x] AC5 — Given the whole suite after the sweep, when `for t in tests/*.test.sh; do "$t" || true;
   done` is run against an unmodified tree, then every file reports `0 failed`. Red if any assertion
   was re-anchored onto a claim the code does not actually make.
 
@@ -366,3 +367,54 @@ prose guards plus the named helper instances (`0223`), and the standing guard (`
     note's scratch file (untracked, read by no suite): 44 files, every one `0 failed`.
   - `qa_level: unit` kept; `close_by` absent, so `verify` closes it. Out of scope, untouched: the
     uppercase `case "$OUT"` hits elsewhere in `cost-by-category.test.sh` (not FR1's grep; `0222`/`0223`).
+- **2026-10-27 — verify (token a38d): PASS.** Every AC re-checked from this session's own runs; table under *QA evidence*.
+
+## QA evidence
+
+### 2026-10-27 — verify (token a38d): PASS
+
+Conventions: ../ai-building-conventions
+Level: `qa_level: unit`, `commands.unit` as configured; no lint or typecheck configured. Run in the
+reporting form so every file reports, verbatim: `git status --porcelain; for t in tests/*.test.sh;
+do "$t" || true; done` (`commands.unit_by_file`) at `4fedb0f` — porcelain empty, all 44 files
+`0 failed`. Mutations were run on scratch copies `tests/.mut-<name>.test.sh` (hidden, so no
+`tests/*.test.sh` glob collects them; the subject of the size guards is each file's own
+`offenders()`), each removed in the same call, with `git status --porcelain` clean afterwards.
+`ac_digest matches` (`./next --ac-digest 0089 --check`).
+Dirty set at Step 2: empty. Evidence set: the 11 files the FR1 grep hits (listed under AC4),
+`tests/cost-by-category.test.sh`, and the whole `tests/` suite (AC5). Fresh capture after the last
+check: empty but for this session's untracked `.verify-scratch/`. Intersection: empty — not advisory.
+
+**FR1 grep, re-run:** `grep -n 'case "\$out"' tests/*.test.sh` → 78 hits in 11 files
+(`abort-announce` 3, `citations` 18, `declared-copies` 3, `external-feedback` 3, `item-nfr-red` 2,
+`last-line` 10, `money-in-skill-prose` 8, `reference-size` 5, `reporting` 16, `scaffold-close` 1,
+`skill-size` 9), matching develop 8dbb's list exactly.
+
+**Clause table** — develop 8dbb's rows, reused; every result below was run in this session.
+
+| AC | Row | How checked | Result |
+|---|---|---|---|
+| AC1 | Given the sweep is complete, the FR1 grep is run | grep re-run | 78 hits / 11 files |
+| AC1 | every presence needle is a complete line, a field, or a phrase printed only on the condition | every hit's arms read again; branch-only phrases confirmed at their `echo` sites (`skill-size.test.sh:187/191/194`, `reference-size.test.sh:114/117`); numeric needles bounded by fixed text on both sides (`tally: 1 passed`, `md 2 times`, `routes 5 kinds`, `: N copies`) | holds |
+| AC1 | red if satisfied by text printed unconditionally | spot mutation: `skill-size` over-goal branch drops `$RELOCATE` → 263 and 268 both red (43/2); `citations.test.sh:213` `which is not a rule` → `which is fine` → 393 and 403 red (50/2) | RED, as classified |
+| AC1 | red if a substring of another value the same output carries | overage `$((bytes - GOAL))` → `…0` (prints `by 5000`): `skill-size` 44/1, `reference-size` 14/1; the same mutation on each `b7de8e7~1` copy stays 45/0 and 15/0; controls 45/0, 15/0 | RED; old needles green |
+| AC1 | every absence needle matched over the whole output; red if one is narrowed | each absence arm's `out=` read back: all 15 are the subject's whole output (`mentions`, `offenders`, `audit`, `item_audit`, `conventions_audit`, `close … 2>&1`, the fixture's `2>&1`); `external-feedback.test.sh:156` `*EXTERNAL-FEEDBACK*) bad` unchanged; `b7de8e7` touches only the two presence needles | holds |
+| AC2 | the figure 10000 → 9999 in the subject reds the AC10-shaped assertion | `turnb 2 110000` → `109999`: `FAIL AC10 — protocol reports a marginal footprint of 9999, not the 10000 it appended`, 27/2; control 29/0 | RED |
+| AC2 | red-making input: pre-`df07072` code passed with the figure absent | `df07072`'s copy, rises set to 9999 (turns 2–4 at 109999/119998/129997): `ok a marginal footprint of 10000 per turn is reported`, 10/0 | green with figure absent — confirmed |
+| AC3 | each re-anchored file names its mutation and the red assertion | *Notes & decisions* read: `sprint` (4766607), `handoff`, `backlog-location`, `backlog-scripts-installed` (1a71387/d0c5372), `skill-size`, `reference-size` (b7de8e7), `cost-by-category` (AC2) — each with its mutation and the case that reddened | holds |
+| AC4 | every file the grep hits is listed as examined | 11 of 11 in develop 8dbb's *Examined* list | holds |
+| AC5 | whole suite, file-by-file, unmodified tree, every file `0 failed` | `commands.unit_by_file` at `4fedb0f` | 44 files, `0 failed` |
+
+| Check | How | Result |
+|---|---|---|
+| AC1 | every hit re-read, both red clauses mutation-proved, absence arms checked whole-output | PASS |
+| AC2 | mutation red 27/2; red-making input green 10/0 | PASS |
+| AC3 | notes name mutation and red assertion for every re-anchored file | PASS |
+| AC4 | 11 of 11 files listed | PASS |
+| AC5 | 44 files `0 failed` | PASS |
+| NFR Documentation | per-file mutation evidence written into the notes slice by slice (2026-10-25, two on 2026-10-27), dated as it ran; holds on reading, **unguarded** (no check could red on it) | holds; unguarded |
+| Newly reachable | test-only change; nothing made reachable | none |
+| Always-on (`CONVENTIONS_CORE.md`) | `4766607`, `1a71387`, `d0c5372`, `b7de8e7` carry the trailer; no secrets or company material | holds |
+
+No release note: the change is to the guards only, and no session running these skills behaves
+differently.
