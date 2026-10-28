@@ -173,8 +173,9 @@ echo "AC2 — an unrecorded file over the goal fails, named, with its overage in
 rm -rf "$FIX/references"; mkdir -p "$FIX/references"
 pad "$FIX/references/PADDED.md" $((GOAL + 500))
 out="$(offenders "$FIX" justification)"
+# The trailing " — " bounds the overage: "by 500" alone is a substring of "by 5000" (0089 FR2).
 case "$out" in
-  *"references/PADDED.md is $((GOAL + 500)) bytes, over the $GOAL goal by 500"*)
+  *"references/PADDED.md is $((GOAL + 500)) bytes, over the $GOAL goal by 500 — "*)
     case "$out" in
       *"relocate detail only some runs need to a pointer file"*)
         ok "unrecorded file over the goal reported with its overage, relocation named first" ;;

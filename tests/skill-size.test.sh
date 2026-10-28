@@ -249,8 +249,9 @@ echo "AC4 — an unrecorded file over the goal fails, named, with its overage"
 rm -rf "$FIX/skills"; mkdir -p "$FIX/skills/padded"
 pad "$FIX/skills/padded/SKILL.md" $((GOAL + 500))
 out="$(offenders "$FIX" justification argued_at)"
+# The trailing " — " bounds the overage: "by 500" alone is a substring of "by 5000" (0089 FR2).
 case "$out" in
-  *"skills/padded/SKILL.md is $((GOAL + 500)) bytes, over the $GOAL goal by 500"*)
+  *"skills/padded/SKILL.md is $((GOAL + 500)) bytes, over the $GOAL goal by 500 — "*)
     ok "unrecorded file over the goal reported with its overage" ;;
   "") bad "AC4 — file over the goal was NOT reported; the guard is wired to nothing" ;;
   *)  bad "AC4 — reported something else: $out" ;;
