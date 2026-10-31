@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: Build a prototype of a feature at whichever fidelity level is wanted right now — a quick Mermaid flow diagram, a self-contained clickable HTML mockup, or a real mocked-out component wired into a configured app workspace. Works from a ticket key or an ad-hoc feature idea pasted inline — no ticket required. Trigger whenever the user wants to visualize a flow, sketch a screen, mock something up, show stakeholders a clickable demo before engineering builds it, or turn a ticket or idea into something clickable — including "sketch this out", "mock this up", "show me what this would look like", "make this clickable", or "build a quick prototype of X". Produces something to LOOK at; for a design question that needs an answer rather than an artifact, that is a different job.
+description: Build a prototype of a feature at whichever fidelity level is wanted right now — a quick Mermaid flow diagram, a self-contained clickable HTML mockup, or a real mocked-out component in the base product's own stack. Starts from an existing product's current screens when there is one, or net new when there isn't. Works from a ticket key or an ad-hoc feature idea pasted inline — no ticket required. Trigger whenever the user wants to visualize a flow, sketch a screen, mock something up, show stakeholders a clickable demo before engineering builds it, or turn a ticket or idea into something clickable — including "sketch this out", "mock this up", "show me what this would look like", "make this clickable", or "build a quick prototype of X". Produces something to LOOK at; for a design question that needs an answer rather than an artifact, that is a different job.
 ---
 
 # Prototype
@@ -15,15 +15,17 @@ is relaxed** — the rigour is all in the 15% that was output.
 
 ## Configuration
 
-This skill carries no company or workspace specifics. Anything environment-shaped — the ticket system, the
-design system, the app a level-3 build lands in — comes from the context config the project declares:
-`CLAUDE.md` names `company: <name>` and the path to that config directory; read `tools.yml` there. Keys
-used: `ticket_source`, `design_system`, `prototype`.
+This skill carries no company or workspace specifics, and **starts generic**. Once the work is clearly for
+a company's project — the project's `CLAUDE.md` names `company: <name>`, or the user names a company
+product — load that company's profile and its context config (`tools.yml` in the declared config
+directory) before Step 1, fail-closed: a declared company whose config is missing is a stop, never a
+fallback to generic. Keys used: `ticket_source`, `design_system`, `prototype`, `products`.
 
 **What works without config, and what stops.**
 
 | Capability | Needs | If absent |
 |---|---|---|
+| Base product | `products`, or the user's answer | ask; **"none" is a valid answer** for a net-new idea |
 | Level 1 (diagram) | nothing | works |
 | Level 2 (clickable HTML) | nothing | works, on the template's placeholder palette — say so |
 | Design-system fidelity | `design_system` | keep the placeholder tokens and say they are placeholders |
@@ -53,8 +55,9 @@ The levels trade speed for realism, and picking wrong wastes their time in both 
    and wired so tabs, buttons, forms and navigation actually respond (in-memory, nothing persists, nothing
    calls out). No server, no build — double-click to open. Right for stakeholder demos and gut-checking
    that a flow *feels* right before committing engineering time.
-3. **Mocked-out real solution** — an actual component in the workspace named by `prototype.root`, built
-   from the real components in its catalog and run with the configured serve command. Right for
+3. **Mocked-out real solution** — an actual component in the base product's own stack, in the workspace
+   its config names (`products.<name>.prototype_root`, else `prototype.root`), built from its real
+   components and run with its serve command. Right for
    engineering handoff, or when it must look and behave byte-for-byte like what will ship.
 
 ## Design system
@@ -76,6 +79,50 @@ rather than invented colors or guessed styling.
 the notes. Levels 2 and 3 each say where the tokens go, in Step 5.
 
 **If the MCP is configured but unavailable this session, fall back to the template tokens and say so.**
+
+## Step 0: Settle the starting point
+
+Settle these before anything is drawn, say them back in one short block, and name them again in the report.
+Starting in the wrong place is the costliest mistake this skill can make: a polished prototype built off the
+wrong product, or off a stale copy of the right one, is work that gets redone.
+
+- **Base product** — the product, repo and branch the prototype starts from (`products.<name>` in the
+  company config, else ask), or **none** for a net-new idea. Once named, stay on it: start from its current
+  screens, shell and patterns on the branch named, and change only what tests the idea at hand.
+- **Design system** — whether one applies (`design_system`, and its `reference_url` if configured).
+- **Product needs** — what the product's repo and config require: data rules (synthetic only, say), an
+  accessibility target, its breakpoints and shell, its UI rules files.
+- **Tech stack** — for level 3, the base product's stack (`products.<name>.stack`), never a default.
+- **Release phase** — build for the phase being decided now. Don't prototype a later phase until the
+  current one is settled; if later-phase work already exists, keep it apart, on its own branch and
+  prototype, rather than marked inside this one.
+- **Scope** — which screens or modules are in. A whole module may be out: stub it visibly (a disabled
+  nav item saying where it lives) and spend nothing more on it. What is in gets built thoroughly.
+- **Tickets it must match** — list them in a comment at the top of the prototype.
+
+## How every level is built
+
+- **Mobile first.** Every in-scope screen works on a phone (390 px) and a desktop, following the base
+  product's responsive pattern — its shell, its breakpoints, how it turns a strip that won't fit into a
+  picker. Check there is no sideways scrolling at several widths, not just one.
+- **Nothing without a reason.** No text, formatting or element earns a place unless it does a job: clean is
+  clearer than cluttered. A heading that repeats the step, helper text under a self-explaining field and a
+  tag a filter already conveys all fail this.
+- **The design system first.** Its tokens, components and patterns, then the base product's own. Departing
+  from either, or from the product's UI rules, is fine when the idea needs it — **never silently**: name the
+  rule and who owns it (the product or the design system) in the ticket, and hold the product build until
+  they agree. A departure that works is a candidate design-system change, which is a good outcome.
+- **Research before proposing a pattern change,** and cite the sources in the ticket: the aim is lasting
+  software, not a clever mockup.
+- **The prototype and the tickets move in lock step.** Every acceptance criterion is built; everything the
+  prototype does is in a criterion, along with the technical detail, business decisions and release notes
+  the full build needs; what the prototype cannot show by its nature is listed by name in the ticket. Update
+  both in the same change, so nothing is lost between a good prototype and the build.
+- **Light and fast by default.** Build what answers the next question. Pressure-testing — large data
+  volumes, load, rare states — is sometimes that question, but **ask before doing it**.
+- **Say where the host stops, in place.** When the place a prototype runs can't do something real (open a
+  print dialog, download a file), keep the real control, explain the limit beside it, and say in the ticket
+  how to try it properly, so a limit is never mistaken for a bug.
 
 ## Step 1: Get the input
 
@@ -174,6 +221,11 @@ Tell the user: "Open `prototypes/[slug]/diagram.html` in your browser to view th
 
 ### Level 2 — Clickable HTML prototype
 
+**Say first whether it has a starting point.** **From a base product**, the starting point is that
+product: copy its current shell, breakpoints, tokens, components and screen patterns from the branch Step 0
+named (or the product's existing prototype file, where one is kept), and change only what tests the idea.
+The template below is not the start, and its drawer and placeholder palette do not apply. **Net new**:
+
 Copy `assets/prototype-template.html` to `prototypes/[slug]/prototype.html` and **edit the copy** — it already has the design tokens, light/dark theming, a compact single-row topbar, a small client-side router, the persistent left **drawer** of administrative controls, and reference `list`/`detail` views showing the click-through pattern. Don't rewrite the boilerplate. **A prototype built before a template default was added does not retroactively get it** — copy the blocks forward.
 
 **The rule of thumb for the drawer**: anything about running the prototype *as a tool* belongs in it — swapping mock data volume, saving/loading a scenario, theme. Anything part of the *feature being demoed* belongs in the main content, however administrative it looks: a filter bar, a status legend that is part of the screen, a form's own field. A stakeholder must see and use those without hunting through a drawer.
@@ -194,9 +246,20 @@ From there:
 - **No decorative emoji anywhere** — not in labels, pills, cells or toasts. These are demoed to clients, and pictorial emoji read as unpolished; plain text does the same job more credibly ("Save" not "💾 Save"). The exception is monochrome near-universal glyphs functioning as icons: `✕`, `▸`/`▾`, small single-color inline SVGs.
 - The template's token block holds **neutral placeholders**, not anyone's brand. With a design system configured, replace it with real tokens and `check-contrast` any colored-text-on-tint pairing; without one, keep the placeholders and say plainly the colors aren't the brand's. **Never swap in guessed "official" colors.**
 
+**Saved state:** a prototype that keeps its state in browser storage versions the storage key and bumps
+it whenever its starting data changes, or an old save breaks the new build; two prototypes that can open
+from the same origin (as local files) each get their own key. **Verify** before reporting: click through
+every acceptance criterion with a script, screenshot each screen at phone and desktop widths, and check
+for sideways scrolling. **Published to a link**, republish to the same link on every change, and say
+plainly when the link is private and must be shared before others can open it.
+
 Tell the user: "Open `prototypes/[slug]/prototype.html` in your browser — it's fully clickable, no server needed." Then generate the field reference doc below.
 
-### Level 3 — Mocked-out Angular solution
+### Level 3 — Mocked-out real solution
+
+Built in the base product's stack, in the workspace its config names; **no workspace configured for that
+product is a stop** that names the missing block. The steps below are the shape; the files, route and
+build follow the stack (the Angular paths shown are one product's).
 
 **a. Read the catalog and query the design system** — `<prototype.root>/<prototype.component_catalog>` for
 what is wired into the workspace, and the design-system MCP for authoritative props, usage and tokens
@@ -330,8 +393,9 @@ sometimes described at length in a message and never by its path. What belongs o
 belongs on disk is `references/REPORTING.md` at the plugin root.
 
 The instance that bites this stage: **the artifact is the deliverable and the path to it is the
-report** — a prototype narrated in prose is a prototype nobody opened. Name the level built, the file,
-and the question the user is being asked to look at and answer.
+report** — a prototype narrated in prose is a prototype nobody opened. Name the level built, the base
+product (or "none") and phase it started from, the file, and the question the user is being asked to look
+at and answer.
 
 **End on the hand-off line, the very last thing printed:**
 
