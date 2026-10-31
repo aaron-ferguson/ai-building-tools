@@ -82,9 +82,8 @@ the notes. Levels 2 and 3 each say where the tokens go, in Step 5.
 
 ## Step 0: Settle the starting point
 
-Settle these before anything is drawn, say them back in one short block, and name them again in the report.
-Starting in the wrong place is the costliest mistake this skill can make: a polished prototype built off the
-wrong product, or off a stale copy of the right one, is work that gets redone.
+Settle these before anything is drawn, say them back in one short block, and name them in the report. A
+polished prototype built off the wrong product, or a stale copy of the right one, is work redone.
 
 - **Base product** — the product, repo and branch the prototype starts from (`products.<name>` in the
   company config, else ask), or **none** for a net-new idea. Once named, stay on it: start from its current
@@ -104,25 +103,22 @@ wrong product, or off a stale copy of the right one, is work that gets redone.
 
 - **Mobile first.** Every in-scope screen works on a phone (390 px) and a desktop, following the base
   product's responsive pattern — its shell, its breakpoints, how it turns a strip that won't fit into a
-  picker. Check there is no sideways scrolling at several widths, not just one.
+  picker. Check for sideways scrolling at several widths.
 - **Nothing without a reason.** No text, formatting or element earns a place unless it does a job: clean is
-  clearer than cluttered. A heading that repeats the step, helper text under a self-explaining field and a
-  tag a filter already conveys all fail this.
+  clearer than cluttered.
 - **The design system first.** Its tokens, components and patterns, then the base product's own. Departing
   from either, or from the product's UI rules, is fine when the idea needs it — **never silently**: name the
   rule and who owns it (the product or the design system) in the ticket, and hold the product build until
   they agree. A departure that works is a candidate design-system change, which is a good outcome.
-- **Research before proposing a pattern change,** and cite the sources in the ticket: the aim is lasting
-  software, not a clever mockup.
+- **Research before proposing a pattern change,** and cite the sources in the ticket.
 - **The prototype and the tickets move in lock step.** Every acceptance criterion is built; everything the
   prototype does is in a criterion, along with the technical detail, business decisions and release notes
-  the full build needs; what the prototype cannot show by its nature is listed by name in the ticket. Update
-  both in the same change, so nothing is lost between a good prototype and the build.
+  the full build needs; what it cannot show by its nature is listed by name in the ticket. Update both in
+  the same change.
 - **Light and fast by default.** Build what answers the next question. Pressure-testing — large data
   volumes, load, rare states — is sometimes that question, but **ask before doing it**.
-- **Say where the host stops, in place.** When the place a prototype runs can't do something real (open a
-  print dialog, download a file), keep the real control, explain the limit beside it, and say in the ticket
-  how to try it properly, so a limit is never mistaken for a bug.
+- **Say where the host stops, in place.** Where the host can't do something real (a print dialog, a
+  download), keep the control, explain the limit beside it, and say in the ticket how to try it.
 
 ## Step 1: Get the input
 
@@ -251,7 +247,7 @@ it whenever its starting data changes, or an old save breaks the new build; two 
 from the same origin (as local files) each get their own key. **Verify** before reporting: click through
 every acceptance criterion with a script, screenshot each screen at phone and desktop widths, and check
 for sideways scrolling. **Published to a link**, republish to the same link on every change, and say
-plainly when the link is private and must be shared before others can open it.
+when the link is private and must be shared first.
 
 Tell the user: "Open `prototypes/[slug]/prototype.html` in your browser — it's fully clickable, no server needed." Then generate the field reference doc below.
 
