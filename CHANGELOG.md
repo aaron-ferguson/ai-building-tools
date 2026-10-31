@@ -14,6 +14,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+## 0.9.46 — 2026-10-31
+
 - prototype now starts generic and loads the company profile once the work is clearly a company project, then settles a Step 0 before drawing anything: the base product (or none, for a net-new idea), design system, product needs, tech stack, release phase, scope, and the tickets the prototype must match.
 - prototype now builds every level mobile-first with nothing on screen without a reason, uses the design system first, calls out any departure from it or from the product's rules in the ticket, keeps the prototype and its tickets in lock step, and asks before pressure-testing load or volume.
 - prototype level 2 now says whether it starts from a base product (copying that product's shell and patterns) or net new (the template); level 3 builds in the base product's own stack rather than assuming Angular.
