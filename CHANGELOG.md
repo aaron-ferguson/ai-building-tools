@@ -14,6 +14,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+## 0.9.47 — 2026-11-01
+
 - `retro` has a fifth disposition, *held*: a finding that needs work but has not been confirmed by a project that uses these tools moves to `.backlog/FINDINGS-HELD.md` instead of becoming a row. Nothing counts, reviews or expires that file; a later pass greps it when a confirmed finding matches and files the two together. Both `retro` and `queue`'s findings sweep now file a row only on that confirmation, or when the user asks.
 - This repo's own sessions no longer add guards that grep prose: a rule that must hold exactly goes in a script that refuses, and an existing prose guard that reds on a correct rewording is deleted rather than re-anchored (`CLAUDE.md`, *Tests*; `testing-conventions.md`).
 
