@@ -26,6 +26,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0064 | Make a stage skill say which copy of it is running | develop | ready |  |
 | 0066 | Fix the three places the backlog scripts answer the wrong question | develop | ready |  |
 | 0215 | Make claim and next read expects and touches through one parser that refuses or accepts the comma form | develop | ready |  |
+| 0225 | Make claim write an empty touches key when it has nothing to seed | develop | ready |  |
 | 0214 | Add a profile-declared gate that a stage refuses to pass without its artifact | design | ready |  |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
@@ -41,6 +42,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0157 | Make release verify compare the install against the released commit | develop | ready |  |
 | 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | verify | ready |  |
 | 0204 | Route a queue completion that re-specifies a waiting row to develop instead of exiting 4 | queue | ready |  |
+| 0226 | Decide whether --drive steps over an out-of-scope waiting or queue row, and which exit wins | design | ready |  |
 | 0208 | Make the prototype template's render keep focus and play enter animations once | queue | ready |  |
 | 0212 | Stop --drive dispatching develop beside a design session holding one of its files | develop | ready |  |
 | 0217 | Stop a note written below the last AC from changing that AC's digest | queue | ready |  |
