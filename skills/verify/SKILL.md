@@ -206,6 +206,11 @@ reads whatever text is on disk, so it cannot see a criterion that moved; a diges
 write the named `ACn` into *Notes & decisions* and `./handoff <id> <token> queue` (Step 5's branch).
 It never passes a criterion whose text the author did not write, however right the new text is.
 An absent stamp is not a match: record `ac_digest absent — unverifiable` in the QA evidence (0195).
+**`unknown stage: --ac-digest` is not an absent stamp — it is a backlog running stale copies of the
+scripts.** Re-sync them per `queue`, *A backlog that already exists can still be missing the scripts*,
+then run the check; only a refused re-sync records `unverifiable`. Recording it instead let two verify
+sessions in one AetherWorks run proceed without a check the project could not run, while the sync rule that
+fixes it lived only in a skill neither session loaded.
 
 Walk each AC and record how you verified it — which test, which behaviour, which screenshot — **and
 where**: the repo paths that verification read or executed, the files asserted over, the fixture, the

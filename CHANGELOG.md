@@ -14,6 +14,9 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- `verify` re-syncs a backlog's stale scripts when `./next` answers `unknown stage: --ac-digest`, rather than recording the digest as unverifiable and passing.
+- `sprint` validates the last stdout line opening `{` rather than the whole stream, so a CLI warning printed ahead of the outcome (the sign-in expiry notice) no longer reads as a failed stage, and relays that warning to the person. Dispatch helpers live under `.backlog/runs/` beside the captures, so a paused run can still dispatch.
+
 ## 0.9.47 — 2026-11-01
 
 - `retro` has a fifth disposition, *held*: a finding that needs work but has not been confirmed by a project that uses these tools moves to `.backlog/FINDINGS-HELD.md` instead of becoming a row. Nothing counts, reviews or expires that file; a later pass greps it when a confirmed finding matches and files the two together. Both `retro` and `queue`'s findings sweep now file a row only on that confirmation, or when the user asks.

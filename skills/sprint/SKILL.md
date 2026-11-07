@@ -477,7 +477,9 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
 - **Capture stdout beside the run log**, as `.backlog/runs/<run-id>.<session-id>.out`, which
   must outlive the supervisor: run-20260913T222409Z captured into the supervising session's
   scratchpad, the harness withdrew that directory mid-run, and the outcome survived only because the
-  file was already open.
+  file was already open. **The same holds for any dispatch helper you write** — keep it under
+  `.backlog/runs/` too: run-20261101T172121Z kept one in the scratchpad, paused five days on an
+  escalation, and the next dispatch exited 127 with nothing started.
 - **In a run whose baseline red was waived, every stage prompt quotes it** as "baseline red at
   <sha>, not yours", with the `baseline_red` case list from `scope_confirmed`. Without it each stage
   re-separates a waived red from its own by hand, which is the cost the waiver exists to remove.
@@ -540,7 +542,11 @@ replace the tooling it is running on; it acquires none of that beyond the cycle 
 
 Stdout is a single JSON object satisfying `skills/sprint/outcome.schema.json`, or the stage
 failed. That object is **all you read**: not the transcript, not the skill file, not any other
-output of that process. The envelope carries the stage, the session id, the commits, the cost, the
+output of that process. **Validate the last stdout line that opens `{`, not the whole stream**: the
+CLI prints its own warnings ahead of the object, and one — *"Warning: this sign-in ends between …"* —
+`< /dev/null` cannot prevent; a whole-stream `json.loads` read a schema-valid stage as failed in
+run-20261101T172121Z. That warning also predicts every later dispatch failing, so relay it to the
+person. A CLI line is not the stage's prose; the rule below against parsing prose still holds. The envelope carries the stage, the session id, the commits, the cost, the
 findings-parked count, which conventions resolved, and an escalation or null; the array carries one
 entry per ticket, each with its id, verdict, resulting `next:` and `status:`, and a pointer to where
 its detail landed.
