@@ -17,6 +17,7 @@ expects:
 claimed_by:
 claimed_at:
 touches:
+ac_digest: AC1=b0076e9c AC2=44e22bdb AC3=d118762d
 ---
 
 ## Problem
