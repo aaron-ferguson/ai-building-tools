@@ -90,3 +90,4 @@ Confirmed at `e94ae36`: line 32 of the template matches, and so does line 32 of 
 - Ranked directly above 0100, which covers the same file. It sits higher on tie-breaker 4 (smaller and
   more certain): one line in one file, plus a guard.
 - 2026-10-28 — **Withdrawn in the backlog triage.** A guard over a guard's wording. The 2026-10-27 triage stopped adding prose-matching guards: a rule that must hold exactly moves into a script that refuses, so re-anchoring this class is no longer the fix. Reopen if a real project hits the defect.
+- 2026-11-06 (queue sweep) — the defect hit a real project again, in the AetherWorks copy of the header, which this ticket's scope cannot reach. Not reopened: the reader-side fix is filed as 0227.

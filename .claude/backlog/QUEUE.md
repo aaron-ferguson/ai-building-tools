@@ -27,6 +27,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0066 | Fix the three places the backlog scripts answer the wrong question | develop | ready |  |
 | 0215 | Make claim and next read expects and touches through one parser that refuses or accepts the comma form | develop | ready |  |
 | 0225 | Make claim write an empty touches key when it has nothing to seed | develop | ready |  |
+| 0227 | Make next list the findings entries so no drain matches a buffer's header by hand | develop | ready |  |
 | 0214 | Add a profile-declared gate that a stage refuses to pass without its artifact | design | ready |  |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |

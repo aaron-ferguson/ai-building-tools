@@ -53,4 +53,3 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
-- 2026-11-06 — **The FINDINGS.md template's own format example matches the entry regex.** `skills/queue/templates/FINDINGS.md:32` is a fenced `- 2026-09-05 [->0060] — ...` line, so every project seeded from it carries a header line that `^- (\*\*)?20[0-9]{2}-` counts as an entry; `./next --findings` excludes it, but a retro draining by that regex (as retro Step 4 and the header itself describe) found 3 entries in a 2-entry AetherWorks buffer and would have truncated the header had it not asserted the count. Wants the example un-matchable (e.g. indented) or the skills to name the `---` separator as where entries start. (pointer: sprint run-20261101T172121Z retro tail)

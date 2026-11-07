@@ -468,3 +468,7 @@ section-scoped guards) are the same tier and sweep as `0089`, separated by captu
 (the standing guard, at `design`) goes last because it reds the tree until the three sweeps close,
 and a prerequisite outranks its dependent. Kept together rather than ranked independently: they are
 one class of defect, and splitting them across the queue would scatter the evidence `0089` carries.
+
+## 2026-11-06 - 0227 placed directly below 0225
+
+`0227` (a `./next` listing of findings entries) is a script-correctness fix to `next` of the same class and size as `0215` and `0225` above it: Tier 2, a defect every scaffolded buffer inherits, which has twice nearly truncated a header during a drain. Below `0225` on tie-breaker 5 (capture order); above `0214` and the design rows because it is `s`, certain and needs no decision.
