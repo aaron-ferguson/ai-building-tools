@@ -53,3 +53,4 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
+- 2026-11-06 — **prototype's level-3 stop has no correct answer when the base product is the repo the skill runs in.** AetherWorks 0027 required real-component fidelity on `src/ui/screens/HowToPlay.tsx`; with no `prototype:` block the config table says stop, though nothing would be invented (ticket pins the file, stack is the repo's). Proceeded on a throwaway branch instead; the skill could say "a ticket-pinned path in the current repo stands in for `prototype.root`". (pointer: skills/prototype/SKILL.md Configuration table + Step 5 path rule; AetherWorks item 0027)
