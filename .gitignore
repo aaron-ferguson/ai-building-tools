@@ -1,11 +1,11 @@
 .DS_Store
 *.log
-.claude/backlog/.lock/
-.claude/backlog/claims/
+.tickets/.lock/
+.tickets/claims/
 # Sprint run logs, stage captures and the single-instance marker: machine-local provenance, never
 # committed (0185). The captures are unfiltered stage output and this repo is public; LEDGER.md is
 # the committed record. A committed marker would make every clone report a supervisor driving it.
-.claude/backlog/runs/
+.tickets/runs/
 
 # Machine-local list of internal organisation and client names (0143). NEVER COMMITTED:
 # the names are the secret, so a committed enumeration would be the leak the guard exists to
