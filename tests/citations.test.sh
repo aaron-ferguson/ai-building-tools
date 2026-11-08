@@ -828,7 +828,7 @@ says "FR2 — and says the file stays as the record" \
   "$(flat_section "$IT" '# Whether anything can act at all' '^status:')" 'the id is burned'
 
 echo "0105 NFR — both config.yml next_id comments say the counter only rises, and what a withdrawal does"
-for cfg in "$ROOT/skills/queue/templates/config.yml" "$ROOT/.claude/backlog/config.yml"; do
+for cfg in "$ROOT/skills/queue/templates/config.yml" "$ROOT/.tickets/config.yml"; do
   rel="${cfg#$ROOT/}"
   body="$(flat_section "$cfg" '# Monotonic' '^next_id:')"
   says "NFR — $rel says the counter only rises"        "$body" 'only ever rises'

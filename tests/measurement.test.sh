@@ -49,7 +49,7 @@ HARVEST="$ROOT/tools/harvest-usage.sh"
 DEV="$ROOT/skills/develop/SKILL.md"
 VER="$ROOT/skills/verify/SKILL.md"
 RME="$ROOT/README.md"
-PROJECT="$ROOT/.claude/backlog/items/0009-one-skill-per-session.md"
+PROJECT="$ROOT/.tickets/items/0009-one-skill-per-session.md"
 
 # README's `modelled` count BEFORE this ticket, measured 2026-08-23. The assertion is that the
 # count went DOWN: a stale "modelled" left in place next to a new observed figure is the quiet

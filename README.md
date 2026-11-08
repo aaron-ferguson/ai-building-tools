@@ -215,9 +215,10 @@ over it.
 Add `.tickets/.lock/` to `.gitignore`.
 
 **A backlog from an earlier release lives at `.claude/backlog/`**, where Claude Code refuses writes
-as a sensitive file. It keeps working until 2026-12-31; once this release is installed on every
-machine that works the repo, run `.claude/backlog/migrate` to move it (`references/CONCURRENCY.md`,
-*Where the backlog lives*).
+as a sensitive file, **or at `.backlog/`**, the name 0.9.44 to 0.9.47 used. Either keeps working
+until 2026-12-31; once this release is installed on every machine that works the repo, run its
+`migrate` (`.claude/backlog/migrate` or `.backlog/migrate`) to move it to `.tickets/`
+(`references/CONCURRENCY.md`, *Where the backlog lives*).
 
 **Release notes land in `CHANGELOG.md` at the project root.** `verify` closes a ticket with
 `./close <id> <token> --note "<text>"`, which appends the note under `## Unreleased` in the close's

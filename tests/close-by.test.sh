@@ -240,7 +240,7 @@ has "AC11 — both values in qa_level"   "$ITEM" 'qa_level: verify | review | un
 has "AC11 — and close_by is its own key, not a value inside qa_level" "$ITEM" 'close_by: verify | develop'
 
 echo "AC11 — this repo's own config carries NO review: block, which is what AC6 and AC11 rest on"
-if grep -q '^review:' "$ROOT/.claude/backlog/config.yml"; then
+if grep -q '^review:' "$ROOT/.tickets/config.yml"; then
   bad "AC11 — a review: block was added to THIS project's config; AC6 and AC11 both rest on its absence"
 else
   ok "AC11 — no review: block in this project's config"

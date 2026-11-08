@@ -56,10 +56,10 @@ trap announce_abort EXIT
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 TOOL="$ROOT/tools/sprint-ledger.sh"
 HARVEST="$ROOT/tools/harvest-usage.sh"
-LEDGER="$ROOT/.claude/backlog/LEDGER.md"
+LEDGER="$ROOT/.tickets/LEDGER.md"
 SKILL="$ROOT/skills/sprint/SKILL.md"
 MEAS="$ROOT/MEASUREMENT.md"
-CONF="$ROOT/.claude/backlog/config.yml"
+CONF="$ROOT/.tickets/config.yml"
 
 PASS=0
 FAIL=0

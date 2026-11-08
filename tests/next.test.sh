@@ -1879,7 +1879,7 @@ assert_eq "CONCURRENCY.md owns the definition" \
   "$(cited "$conc" 'the one place \*held\* is defined')" cited
 assert_eq "and says no reader offers a held row" \
   "$(cited "$conc" 'No reader offers a held row')" cited
-for copy in "$ROOT/skills/queue/templates/next" "$ROOT/.claude/backlog/next"; do
+for copy in "$ROOT/skills/queue/templates/next" "$ROOT/.tickets/next"; do
   assert_eq "$copy restates no definition"      "$(grep -c 'non-empty' "$copy" || true)" 0
   assert_eq "$copy cites the section instead" \
     "$(cited "$copy" 'A stage writes only the ticket it holds')" cited
@@ -2776,7 +2776,7 @@ for bad_cap in x 0; do
 done
 
 echo "0178 AC11 — both config.yml copies carry the cap at its default"
-for cfg in "$ROOT/skills/queue/templates/config.yml" "$ROOT/.claude/backlog/config.yml"; do
+for cfg in "$ROOT/skills/queue/templates/config.yml" "$ROOT/.tickets/config.yml"; do
   if grep -q '^gate_max_rows: 5' "$cfg"; then ok "${cfg#"$ROOT"/} has gate_max_rows: 5"
   else bad "${cfg#"$ROOT"/} has no '^gate_max_rows: 5' line"; fi
 done

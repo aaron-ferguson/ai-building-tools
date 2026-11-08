@@ -20,7 +20,7 @@ carries in full. Give any figure added here the same two things: the source it w
 the stamp it was true at.
 
 **Every figure here is an actual, and that is a limit rather than an oversight.** What a sprint was
-*estimated* to cost, against what it did, lives in `.claude/backlog/LEDGER.md` — written before the
+*estimated* to cost, against what it did, lives in `.tickets/LEDGER.md` — written before the
 work and scored after it by `tools/sprint-ledger.sh`. This record is the **prior** that ledger falls
 back to while it is empty; once it holds a sprint, it is the better source, and it is the only one
 for elapsed wall-clock, which nothing here measures.

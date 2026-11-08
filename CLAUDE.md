@@ -13,7 +13,7 @@ backlog scripts they drive. **This repo is public.**
 
 `company: none` is not a default — it is the constraint. This repo is public, so **no company
 material reaches it**: no court, case or client data, no internal names, no company profile.
-`.claude/backlog/config.yml` carries the same rule as `routing.company: none`, and a ticket that
+`.tickets/config.yml` carries the same rule as `routing.company: none`, and a ticket that
 would need a company profile does not belong here.
 
 `release: released` because other machines install this plugin and this project's own sessions run
@@ -77,7 +77,7 @@ it does (0169).
 ## Concurrency
 
 Several sessions work this backlog at once. `references/CONCURRENCY.md` governs every write;
-`.claude/backlog/{claim,close,next}` are the scripts that make claims durable. In a plugin repo the
+`.tickets/{claim,close,next}` are the scripts that make claims durable. In a plugin repo the
 skill and reference files **are** the product, so they are structurally multi-writer and the
 file-scope rule is weaker here than it reads. What holds instead is one session per shared file, a
 designed wait when every row collides, and no opening a `verify`-held file mid-session:

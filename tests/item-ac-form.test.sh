@@ -43,7 +43,7 @@ announce_abort() {
 trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-ITEMS="$ROOT/.claude/backlog/items"
+ITEMS="$ROOT/.tickets/items"
 [ -d "$ITEMS" ] || { echo "no items directory at $ITEMS" >&2; exit 2; }
 
 PASS=0

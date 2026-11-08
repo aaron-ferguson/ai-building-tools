@@ -829,7 +829,7 @@ echo "AC16 — a killed supervisor leaves a backlog a hand-driven session can pi
 # hand-driven session is OFFERED, and only the script can answer that.
 BL="$FIX/bl/.tickets"
 mkdir -p "$BL/items"
-cp "$ROOT/.claude/backlog/next" "$BL/next" 2>/dev/null || true
+cp "$ROOT/.tickets/next" "$BL/next" 2>/dev/null || true
 cat > "$BL/config.yml" <<'CFG'
 project: fixture
 conventions:
@@ -1323,7 +1323,7 @@ else
   bad "AC25 — the escalation does not join the lock to the run log; the holder is then unnameable"
 fi
 
-if awk '/^lock_stale_seconds:/ { print $2 }' "$ROOT/.claude/backlog/config.yml" | grep -qE '^[0-9]+$'; then
+if awk '/^lock_stale_seconds:/ { print $2 }' "$ROOT/.tickets/config.yml" | grep -qE '^[0-9]+$'; then
   ok "config.yml carries lock_stale_seconds as a whole number"
 else
   bad "AC25 — config.yml has no lock_stale_seconds; the age is a number inside a skill, which is the one place FR15 says it must not be"
@@ -1375,7 +1375,7 @@ derivation() {
   ' "$1" | tr -s ' '
 }
 
-CFG="$ROOT/.claude/backlog/config.yml"
+CFG="$ROOT/.tickets/config.yml"
 if grep -q '^stage_budget_usd:' "$CFG"; then
   ok "config.yml carries the per-stage spend cap"
 else
@@ -1737,7 +1737,7 @@ comment_above() {
   ' "$1"
 }
 
-for cfg in "$ROOT/.claude/backlog/config.yml" "$ROOT/skills/queue/templates/config.yml"; do
+for cfg in "$ROOT/.tickets/config.yml" "$ROOT/skills/queue/templates/config.yml"; do
   cfgname="${cfg#$ROOT/}"
   for key in findings_threshold findings_max_sprints; do
     if awk -v k="$key" '$0 ~ "^" k ":" { found = 1 } END { exit !found }' "$cfg"; then
@@ -2289,7 +2289,7 @@ else
   bad "0153 AC2 — held-by was not refreshed during the dispatch, or kept changing after the block killed the heartbeat"
 fi
 BEAT_SLEEP="$(printf '%s' "$HEARTBEAT" | sed -n 's/.*sleep \([0-9][0-9]*\).*/\1/p' | head -1)"
-STALE_AGE="$(awk '/^lock_stale_seconds:/ { print $2 }' "$ROOT/.claude/backlog/config.yml")"
+STALE_AGE="$(awk '/^lock_stale_seconds:/ { print $2 }' "$ROOT/.tickets/config.yml")"
 if [ -n "$BEAT_SLEEP" ] && [ -n "$STALE_AGE" ] && [ $((BEAT_SLEEP * 5)) -le "$STALE_AGE" ]; then
   ok "the heartbeat interval (${BEAT_SLEEP}s) fits at least five times inside lock_stale_seconds (${STALE_AGE}s)"
 else
@@ -2722,7 +2722,7 @@ fi
 # each scoped to the section a session reads at that moment, so removing any one phrase reds
 # exactly one line (AC1's "removing any one of them turns it red").
 PROPOSAL="The proposal — what a person confirms before any stage runs"
-CONFIG="$ROOT/.claude/backlog/config.yml"
+CONFIG="$ROOT/.tickets/config.yml"
 echo "0180 AC1 — Step 1 runs the unit suite at HEAD in a throwaway worktree, before the proposal"
 guard_says "$SKILL" "Step 1" 'the baseline' \
   "0180 AC1 — Step 1 names the baseline check" \
@@ -2976,9 +2976,11 @@ else
       tests|.git) continue ;;
       .claude)
         copy_into "$CHILDROOT/.claude" "$ROOT"/.claude/settings*.json
-        for sub in "$ROOT"/.claude/backlog/*; do
+        continue ;;
+      .tickets)
+        for sub in "$ROOT"/.tickets/*; do
           case "$(basename "$sub")" in runs) continue ;; esac
-          copy_into "$CHILDROOT/.claude/backlog" "$sub"
+          copy_into "$CHILDROOT/.tickets" "$sub"
         done
         continue ;;
     esac
@@ -3131,19 +3133,19 @@ fi
 if [ "$(git -C "$ROOT" rev-parse --is-inside-work-tree 2>/dev/null)" != true ]; then
   skip "0185 AC3 — $ROOT is not a git work tree, so what git ignores and tracks here cannot be asked"
 else
-  if git -C "$ROOT" check-ignore -q .claude/backlog/runs/run-X.jsonl && \
-     grep -qx '\.claude/backlog/runs/' "$ROOT/.gitignore"; then
+  if git -C "$ROOT" check-ignore -q .tickets/runs/run-X.jsonl && \
+     grep -qx '\.tickets/runs/' "$ROOT/.gitignore"; then
     ok "this repo ignores .tickets/runs/ whole"
   else
     bad "0185 AC3 — .tickets/runs/ is not ignored whole by this repo's .gitignore"
   fi
-  if [ -z "$(git -C "$ROOT" ls-files .claude/backlog/runs)" ]; then
+  if [ -z "$(git -C "$ROOT" ls-files .tickets/runs)" ]; then
     ok "nothing under runs/ is tracked"
   else
-    bad "0185 AC3 — files under .claude/backlog/runs are tracked: $(git -C "$ROOT" ls-files .claude/backlog/runs | tr '\n' ' ')"
+    bad "0185 AC3 — files under .tickets/runs are tracked: $(git -C "$ROOT" ls-files .tickets/runs | tr '\n' ' ')"
   fi
 fi
-if grep -qx '\.claude/backlog/runs/\.active/' "$ROOT/.gitignore" || grep -qF 'the run logs beside it' "$ROOT/.gitignore"; then
+if grep -qx '\.tickets/runs/\.active/' "$ROOT/.gitignore" || grep -qF 'the run logs beside it' "$ROOT/.gitignore"; then
   bad "0185 AC3 — .gitignore still carries the .active/-only line or the comment implying the run logs are for commit"
 elif grep -qF 'machine-local' "$ROOT/.gitignore" && grep -qF 'LEDGER.md' "$ROOT/.gitignore"; then
   ok ".gitignore's comment says runs/ is machine-local and the ledger is the committed record"

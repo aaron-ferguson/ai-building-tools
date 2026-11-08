@@ -38,7 +38,7 @@ announce_abort() {
 trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-BACKLOG="$ROOT/.claude/backlog"
+BACKLOG="$ROOT/.tickets"
 TEMPLATES="$ROOT/skills/queue/templates"
 
 [ -d "$BACKLOG" ]   || { echo "no backlog at $BACKLOG" >&2; exit 2; }
@@ -233,10 +233,10 @@ for s in $SCRIPTS; do
 done
 
 echo "AC6 — a transient lock cannot be committed"
-if grep -qF '.claude/backlog/.lock/' "$ROOT/.gitignore"; then
-  ok ".claude/backlog/.lock/ is ignored (this repo has not migrated, 0182)"
+if grep -qF '.tickets/.lock/' "$ROOT/.gitignore"; then
+  ok ".tickets/.lock/ is ignored"
 else
-  bad ".gitignore does not ignore .claude/backlog/.lock/"
+  bad ".gitignore does not ignore .tickets/.lock/"
 fi
 
 echo "NFR — the copies add no dependency beyond this machine's /bin/sh"
