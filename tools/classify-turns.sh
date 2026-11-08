@@ -53,7 +53,7 @@ PRECEDENCE = ("work", "mechanism", "orientation", "other")
 
 # The backlog protocol and the git bookkeeping around it, read or written either way.
 MECHANISM = re.compile(r"""
-      backlog/(claim|close|next|hand)   # the scripts that make a claim durable
+      (backlog|tickets)/(claim|close|next|hand)   # the scripts that make a claim durable
     | \./(claim|close|next)\b
     | \.lock\b
     | (queue|done|findings|ranking|ranking-history|scheduled)\.md
@@ -65,7 +65,7 @@ MECHANISM = re.compile(r"""
 # its own aim a reduction: the backlog protocol and the git bookkeeping around it are two
 # different fixes. First match wins, in the order written.
 MECHANISM_PARTS = (
-    ("backlog script", re.compile(r"backlog/(claim|close|next|hand)|\./(claim|close|next)\b", re.I)),
+    ("backlog script", re.compile(r"(backlog|tickets)/(claim|close|next|hand)|\./(claim|close|next)\b", re.I)),
     ("lock",           re.compile(r"\.lock\b", re.I)),
     ("queue file",     re.compile(r"queue\.md", re.I)),
     ("other backlog",  re.compile(r"(done|findings|ranking|ranking-history|scheduled)\.md|config\.yml", re.I)),
@@ -91,7 +91,7 @@ ORIENT = re.compile(r"""
       skill\.md
     | conventions
     | templates?/
-    | backlog/items
+    | (backlog|tickets)/items
     | references/
     | (readme|claude|measurement|source|license)\.md
     | plugin\.json | marketplace\.json

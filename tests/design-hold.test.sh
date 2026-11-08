@@ -11,7 +11,7 @@
 # No script changed for this: `claim`, `next` and `handoff` already accept a `next: design` row.
 # The behavioural cases pin that they go on doing so; the prose cases pin that the skill tells a
 # design session to use them. The fixture scripts come from skills/queue/templates, the copy every
-# install scaffolds from, never from .backlog.
+# install scaffolds from, never from .tickets.
 #
 # Each prose grep is scoped to its step's section and matches a phrase short enough to sit on one
 # line — `grep` is line-based, so an asserted phrase that straddles a rewrap cannot match (CLAUDE.md).
@@ -39,7 +39,7 @@ trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 SKILL="$ROOT/skills/design/SKILL.md"
-# The harness runs the TEMPLATE copy below, never .backlog/<script>: a mutation applied to
+# The harness runs the TEMPLATE copy below, never .tickets/<script>: a mutation applied to
 # the installed copy lands a real diff and reddens nothing.
 CLAIM_SRC="$ROOT/skills/queue/templates/claim"
 NEXT_SRC="$ROOT/skills/queue/templates/next"
@@ -119,7 +119,7 @@ DESIGN_ID=0001
 DEVELOP_ID=0002
 
 add_ticket() {
-  cat > "$FIX/.backlog/items/$1-fixture.md" <<ITEM
+  cat > "$FIX/.tickets/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
 title: Fixture $1
@@ -146,7 +146,7 @@ ITEM
 scaffold() {
   cleanup
   FIX="$(mktemp -d)"
-  mkdir -p "$FIX/.backlog/items"
+  mkdir -p "$FIX/.tickets/items"
   git -C "$FIX" init -q
   git -C "$FIX" config user.email test@example.invalid
   git -C "$FIX" config user.name "design-hold test"
@@ -157,21 +157,21 @@ scaffold() {
     printf '|------|-------|------|--------|--------|\n'
     printf '| %s | A design row | design | ready |  |\n' "$DESIGN_ID"
     printf '| %s | A develop row | develop | ready |  |\n' "$DEVELOP_ID"
-  } > "$FIX/.backlog/QUEUE.md"
+  } > "$FIX/.tickets/QUEUE.md"
   add_ticket "$DESIGN_ID" design
   add_ticket "$DEVELOP_ID" develop
 
   for s in claim next handoff; do
-    cp "$ROOT/skills/queue/templates/$s" "$FIX/.backlog/$s"
-    chmod +x "$FIX/.backlog/$s"
+    cp "$ROOT/skills/queue/templates/$s" "$FIX/.tickets/$s"
+    chmod +x "$FIX/.tickets/$s"
   done
   git -C "$FIX" add -A
   git -C "$FIX" commit -q -m "fixture"
 }
 
-backlog() { (cd "$FIX" && ".backlog/$@" 2>&1); }
-design_row() { grep "^| $DESIGN_ID |" "$FIX/.backlog/QUEUE.md" || true; }
-design_item_line() { grep "^$1:" "$FIX/.backlog/items/$DESIGN_ID-fixture.md" || true; }
+backlog() { (cd "$FIX" && ".tickets/$@" 2>&1); }
+design_row() { grep "^| $DESIGN_ID |" "$FIX/.tickets/QUEUE.md" || true; }
+design_item_line() { grep "^$1:" "$FIX/.tickets/items/$DESIGN_ID-fixture.md" || true; }
 
 # --- AC1 — Step 1 names ./claim ------------------------------------------------------------------
 echo "AC1 — Step 1 takes the row with ./claim"

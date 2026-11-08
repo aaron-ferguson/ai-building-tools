@@ -52,7 +52,7 @@ CATEGORIES = ("mechanism", "orientation", "work", "narration", "other")
 PRECEDENCE = ("work", "mechanism", "orientation", "other")
 
 MECHANISM = re.compile(r"""
-      backlog/(claim|close|next|hand)
+      (backlog|tickets)/(claim|close|next|hand)
     | \./(claim|close|next)\b
     | \.lock\b
     | (queue|done|findings|ranking|ranking-history|scheduled)\.md
@@ -64,7 +64,7 @@ MECHANISM = re.compile(r"""
 # are two different fixes, and only the first is this backlog's cost to remove.
 GIT_ONLY = re.compile(r"git\s+", re.I)
 BACKLOG  = re.compile(r"""
-      backlog/(claim|close|next|hand)
+      (backlog|tickets)/(claim|close|next|hand)
     | \./(claim|close|next)\b
     | \.lock\b
     | (queue|done|findings|ranking|ranking-history|scheduled)\.md
@@ -83,7 +83,7 @@ ORIENT = re.compile(r"""
       skill\.md
     | conventions
     | templates?/
-    | backlog/items
+    | (backlog|tickets)/items
     | references/
     | (readme|claude|measurement|source|license)\.md
     | plugin\.json | marketplace\.json

@@ -44,7 +44,7 @@ announce_abort() {
 trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-# The harness runs the TEMPLATE copy below, never .backlog/<script>: a mutation applied to
+# The harness runs the TEMPLATE copy below, never .tickets/<script>: a mutation applied to
 # the installed copy lands a real diff and reddens nothing.
 HANDOFF_SRC="$ROOT/skills/queue/templates/handoff"
 NEXT_SRC="$ROOT/skills/queue/templates/next"
@@ -117,8 +117,8 @@ assert_eq() {
 }
 
 assert_row() {
-  table="$(sed -n '/^|/p' "$FIX/.backlog/QUEUE.md")"
-  if grep -Fxq -- "$2" "$FIX/.backlog/QUEUE.md"; then
+  table="$(sed -n '/^|/p' "$FIX/.tickets/QUEUE.md")"
+  if grep -Fxq -- "$2" "$FIX/.tickets/QUEUE.md"; then
     ok "$1"; saw_on_pass "$table"
   else
     bad "$1"; echo "         expected row: $2"; saw "$table"
@@ -126,7 +126,7 @@ assert_row() {
 }
 
 assert_item_line() {
-  body="$(cat "$FIX/.backlog/items/$ID_UNDER_TEST-fixture.md")"
+  body="$(cat "$FIX/.tickets/items/$ID_UNDER_TEST-fixture.md")"
   if printf '%s\n' "$body" | grep -Fxq -- "$2"; then
     ok "$1"; saw_on_pass "$body"
   else
@@ -135,7 +135,7 @@ assert_item_line() {
 }
 
 assert_no_item_line() {
-  body="$(cat "$FIX/.backlog/items/$ID_UNDER_TEST-fixture.md")"
+  body="$(cat "$FIX/.tickets/items/$ID_UNDER_TEST-fixture.md")"
   if printf '%s\n' "$body" | grep -Fxq -- "$2"; then
     bad "$1"; echo "         expected NO line: $2"; saw "$body"
   else
@@ -145,7 +145,7 @@ assert_no_item_line() {
 
 # A refusal that edits half a file and then exits non-zero satisfies "refuses"; it does not
 # satisfy "changes nothing". Fingerprint every backlog file, not just the two the script writes.
-fingerprint() { find "$FIX/.backlog" -type f ! -path '*/.lock/*' | sort | xargs cksum; }
+fingerprint() { find "$FIX/.tickets" -type f ! -path '*/.lock/*' | sort | xargs cksum; }
 
 assert_unchanged() {
   if [ "$2" = "$(fingerprint)" ]; then ok "$1"; else
@@ -160,7 +160,7 @@ scaffold() {
   cleanup
   FIX="$(mktemp -d)"
   ID_UNDER_TEST="$4"
-  mkdir -p "$FIX/.backlog/items"
+  mkdir -p "$FIX/.tickets/items"
   git -C "$FIX" init -q
   git -C "$FIX" config user.email test@example.invalid
   git -C "$FIX" config user.name "handoff test"
@@ -168,12 +168,12 @@ scaffold() {
   {
     printf '# Backlog\n\n'
     printf '%s\n%s\n%s\n' "$1" "$2" "$3"
-  } > "$FIX/.backlog/QUEUE.md"
+  } > "$FIX/.tickets/QUEUE.md"
 
   by=""
   [ -z "$7" ] || by="\"$7\""
 
-  cat > "$FIX/.backlog/items/$4-fixture.md" <<ITEM
+  cat > "$FIX/.tickets/items/$4-fixture.md" <<ITEM
 ---
 id: "$4"
 title: Fixture
@@ -196,14 +196,14 @@ touches:
 A fixture.
 ITEM
 
-  cp "$HANDOFF_SRC" "$FIX/.backlog/handoff"
-  chmod +x "$FIX/.backlog/handoff"
-  [ ! -f "$NEXT_SRC" ] || { cp "$NEXT_SRC" "$FIX/.backlog/next"; chmod +x "$FIX/.backlog/next"; }
+  cp "$HANDOFF_SRC" "$FIX/.tickets/handoff"
+  chmod +x "$FIX/.tickets/handoff"
+  [ ! -f "$NEXT_SRC" ] || { cp "$NEXT_SRC" "$FIX/.tickets/next"; chmod +x "$FIX/.tickets/next"; }
   git -C "$FIX" add -A
   git -C "$FIX" commit -q -m "fixture"
 }
 
-run_handoff() { (cd "$FIX" && .backlog/handoff "$@" 2>&1); }
+run_handoff() { (cd "$FIX" && .tickets/handoff "$@" 2>&1); }
 
 FIVE_HEAD='| ID | Title | Next | Status | Parent |'
 FIVE_SEP='|------|-------|------|--------|--------|'
@@ -223,7 +223,7 @@ assert_no_item_line "the touches: list entries are gone" '  - src/two.ts'
 assert_item_line "expects: is left alone" '  - src/one.ts'
 assert_contains "the hand-off is committed" "$(git -C "$FIX" log -1 --format=%s)" 'Hand off 0001 to verify [tok0]'
 assert_contains "nothing is left uncommitted" "clean$(git -C "$FIX" status --porcelain)" 'clean'
-assert_not_contains "the lock is released" "$(ls -a "$FIX/.backlog")" '.lock'
+assert_not_contains "the lock is released" "$(ls -a "$FIX/.tickets")" '.lock'
 
 # --- NFR (Git) — the commit carries the Co-Authored-By trailer ---------------------------------
 # `git-conventions.md` *Co-authorship* asks for the trailer on **all** AI-assisted commits, and a
@@ -315,8 +315,8 @@ assert_unchanged "the backlog is untouched" "$before"
 # `tok0" # mine`, refusing the holder's own hand-off. `close` carries the same decommenter.
 echo "AC3 — a YAML comment on claimed_by: does not refuse the holder"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0009 | Annotated | develop | in-progress | 0000 |' 0009 develop in-progress tok0
-sed 's/^claimed_by: "tok0"$/claimed_by: "tok0" # mine/' "$FIX/.backlog/items/0009-fixture.md" > "$FIX/x" && mv "$FIX/x" "$FIX/.backlog/items/0009-fixture.md"
-git -C "$FIX" commit -q -m annotate -- .backlog/items/0009-fixture.md
+sed 's/^claimed_by: "tok0"$/claimed_by: "tok0" # mine/' "$FIX/.tickets/items/0009-fixture.md" > "$FIX/x" && mv "$FIX/x" "$FIX/.tickets/items/0009-fixture.md"
+git -C "$FIX" commit -q -m annotate -- .tickets/items/0009-fixture.md
 out="$(run_handoff 0009 tok0 verify)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "the row moved" '| 0009 | Annotated | verify | ready | 0000 |'
@@ -355,8 +355,8 @@ assert_unchanged "the backlog is untouched" "$before"
 # back and fail rather than commit a half-applied hand-off.
 echo "FR2 — an item missing one of the five keys fails and commits nothing"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0013 | No next key | develop | in-progress | 0000 |' 0013 develop in-progress tok0
-grep -v '^next: develop$' "$FIX/.backlog/items/0013-fixture.md" > "$FIX/x" && mv "$FIX/x" "$FIX/.backlog/items/0013-fixture.md"
-git -C "$FIX" commit -q -m "drop next:" -- .backlog/items/0013-fixture.md
+grep -v '^next: develop$' "$FIX/.tickets/items/0013-fixture.md" > "$FIX/x" && mv "$FIX/x" "$FIX/.tickets/items/0013-fixture.md"
+git -C "$FIX" commit -q -m "drop next:" -- .tickets/items/0013-fixture.md
 before="$(fingerprint)"
 out="$(run_handoff 0013 tok0 verify)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
@@ -370,8 +370,8 @@ assert_contains "no commit was made" "$(git -C "$FIX" log -1 --format=%s)" 'drop
 # and still reserves two files, which `CONCURRENCY.md` says the other window must read as held.
 echo "FR2 — touches: entries written at column 0 are cleared too"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0018 | Flat list | develop | in-progress | 0000 |' 0018 develop in-progress tok0
-sed 's/^  - src\/two.ts$/- src\/two.ts/' "$FIX/.backlog/items/0018-fixture.md" > "$FIX/x" && mv "$FIX/x" "$FIX/.backlog/items/0018-fixture.md"
-git -C "$FIX" commit -q -m flatten -- .backlog/items/0018-fixture.md
+sed 's/^  - src\/two.ts$/- src\/two.ts/' "$FIX/.tickets/items/0018-fixture.md" > "$FIX/x" && mv "$FIX/x" "$FIX/.tickets/items/0018-fixture.md"
+git -C "$FIX" commit -q -m flatten -- .tickets/items/0018-fixture.md
 out="$(run_handoff 0018 tok0 verify)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_no_item_line "the column-0 entry is gone" '- src/two.ts'
@@ -386,14 +386,14 @@ assert_no_item_line "the column-0 entry is gone" '- src/two.ts'
 echo "FR2 — an editor that silently skips a field is caught by the read-back, not committed"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0019 | Read back | develop | in-progress | 0000 |' 0019 develop in-progress tok0
 sed 's|if ($0 ~ /\^status:/)     { print "status: " st;  next }|if (0) { next }|' \
-  "$FIX/.backlog/handoff" > "$FIX/broken" && mv "$FIX/broken" "$FIX/.backlog/handoff"
-chmod +x "$FIX/.backlog/handoff"
-if grep -q 'if (0) { next }' "$FIX/.backlog/handoff"; then
+  "$FIX/.tickets/handoff" > "$FIX/broken" && mv "$FIX/broken" "$FIX/.tickets/handoff"
+chmod +x "$FIX/.tickets/handoff"
+if grep -q 'if (0) { next }' "$FIX/.tickets/handoff"; then
   ok "the mutation landed in the copy the harness runs"
 else
   bad "the mutation did not apply — the case below proves nothing"
 fi
-git -C "$FIX" commit -q -m "break the editor" -- .backlog/handoff
+git -C "$FIX" commit -q -m "break the editor" -- .tickets/handoff
 before="$(fingerprint)"
 out="$(run_handoff 0019 tok0 verify)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
@@ -407,11 +407,11 @@ assert_contains "no hand-off was committed" "$(git -C "$FIX" log -1 --format=%s)
 # field is missing, and the other blames the script.
 echo "FR2 — a key that exists only in the body is reported as missing from the frontmatter"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0021 | Body key | develop | in-progress | 0000 |' 0021 develop in-progress tok0
-ITEM21="$FIX/.backlog/items/0021-fixture.md"
+ITEM21="$FIX/.tickets/items/0021-fixture.md"
 grep -v '^touches:$' "$ITEM21" | grep -v '^  - src/two.ts$' | sed 's|^  - src/one.ts$||' > "$FIX/x"
 printf '\ntouches: mentioned in prose, not a key\n' >> "$FIX/x"
 mv "$FIX/x" "$ITEM21"
-git -C "$FIX" commit -q -m "body key" -- .backlog/items/0021-fixture.md
+git -C "$FIX" commit -q -m "body key" -- .tickets/items/0021-fixture.md
 before="$(fingerprint)"
 out="$(run_handoff 0021 tok0 verify)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
@@ -425,14 +425,14 @@ assert_unchanged "the backlog is untouched" "$before"
 echo "FR2 — an editor that empties touches: but leaves its entries is caught"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0022 | Stale scope | develop | in-progress | 0000 |' 0022 develop in-progress tok0
 sed 's|if (skiplist && $0 ~ /\^\[ .t\]\*- /) { next }|if (0) { next }|' \
-  "$FIX/.backlog/handoff" > "$FIX/broken" && mv "$FIX/broken" "$FIX/.backlog/handoff"
-chmod +x "$FIX/.backlog/handoff"
-if grep -q 'if (0) { next }' "$FIX/.backlog/handoff"; then
+  "$FIX/.tickets/handoff" > "$FIX/broken" && mv "$FIX/broken" "$FIX/.tickets/handoff"
+chmod +x "$FIX/.tickets/handoff"
+if grep -q 'if (0) { next }' "$FIX/.tickets/handoff"; then
   ok "the mutation landed in the copy the harness runs"
 else
   bad "the mutation did not apply — the case below proves nothing"
 fi
-git -C "$FIX" commit -q -m "break the skiplist" -- .backlog/handoff
+git -C "$FIX" commit -q -m "break the skiplist" -- .tickets/handoff
 before="$(fingerprint)"
 out="$(run_handoff 0022 tok0 verify)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
@@ -448,7 +448,7 @@ echo "FR1 — the lock is still held at the moment the commit runs"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0020 | Locked through | develop | in-progress | 0000 |' 0020 develop in-progress tok0
 cat > "$FIX/.git/hooks/pre-commit" <<'HOOK'
 #!/bin/sh
-if [ -d "$(git rev-parse --show-toplevel)/.backlog/.lock" ]; then
+if [ -d "$(git rev-parse --show-toplevel)/.tickets/.lock" ]; then
   echo held > "$(git rev-parse --show-toplevel)/.lock-witness"
 else
   echo released > "$(git rev-parse --show-toplevel)/.lock-witness"
@@ -459,7 +459,7 @@ chmod +x "$FIX/.git/hooks/pre-commit"
 out="$(run_handoff 0020 tok0 verify)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_contains "the lock was held when the commit ran" "$(cat "$FIX/.lock-witness" 2>/dev/null || echo MISSING)" 'held'
-assert_not_contains "the lock does not survive the run" "$(ls -a "$FIX/.backlog")" '.lock'
+assert_not_contains "the lock does not survive the run" "$(ls -a "$FIX/.tickets")" '.lock'
 
 # --- FR1 — column order is not a contract ------------------------------------------------------
 echo "FR1 — a reordered table hands off by column name, not by index"
@@ -471,14 +471,14 @@ assert_row "the Next and Status cells are the ones that changed" '| ready | 0014
 # --- FR1 — the lock ----------------------------------------------------------------------------
 echo "FR1 — a busy lock is reported as the script's stderr, not stepped over"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0015 | Locked out | develop | in-progress | 0000 |' 0015 develop in-progress tok0
-mkdir "$FIX/.backlog/.lock"
-echo "close 0099 by ffff" > "$FIX/.backlog/.lock/held-by"
+mkdir "$FIX/.tickets/.lock"
+echo "close 0099 by ffff" > "$FIX/.tickets/.lock/held-by"
 before="$(fingerprint)"
 out="$(run_handoff 0015 tok0 verify)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "says who holds the lock" "$out" 'ffff'
 assert_unchanged "the backlog is untouched" "$before"
-rm -rf "$FIX/.backlog/.lock"
+rm -rf "$FIX/.tickets/.lock"
 
 # --- usage -------------------------------------------------------------------------------------
 echo "FR1 — a missing argument is a usage error, not a guess"
@@ -496,10 +496,10 @@ assert_unchanged "the backlog is untouched" "$before"
 # about was the one state it could not see. Under that same mutation the pair now reds.
 echo "AC4 — ./next --drift exits zero for the row after a hand-off"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0017 | Drift free | develop | in-progress | 0000 |' 0017 develop in-progress tok0
-if [ -f "$FIX/.backlog/next" ]; then
+if [ -f "$FIX/.tickets/next" ]; then
   out="$(run_handoff 0017 tok0 verify)" && rc=0 || rc=$?
   assert_rc "the hand-off succeeds" "$rc" 0 "$out"
-  drift="$( (cd "$FIX" && .backlog/next --drift 2>&1) )" && drc=0 || drc=$?
+  drift="$( (cd "$FIX" && .tickets/next --drift 2>&1) )" && drc=0 || drc=$?
   assert_rc "--drift exits zero" "$drc" 0 "$drift"
   assert_not_contains "no DRIFT line names the row" "$drift" '0017'
 else
@@ -521,9 +521,9 @@ if [ -x "$HANDOFF_SRC" ]; then ok "the template is executable, so the install gu
 echo "AC6 — both stages name ./handoff as the supported path, and keep the by-hand fallback"
 DEV="$(cat "$ROOT/skills/develop/SKILL.md")"
 VER="$(cat "$ROOT/skills/verify/SKILL.md")"
-assert_contains "develop names the command" "$DEV" '.backlog/handoff'
+assert_contains "develop names the command" "$DEV" '.tickets/handoff'
 assert_contains "develop keeps a by-hand fallback" "$DEV" 'By hand'
-assert_contains "verify names the command" "$VER" '.backlog/handoff'
+assert_contains "verify names the command" "$VER" '.tickets/handoff'
 assert_contains "verify keeps a by-hand fallback" "$VER" 'By hand'
 
 # --- AC7 / FR4 — the release is the stage's final act -------------------------------------------
@@ -572,7 +572,7 @@ assert_not_contains "and no agreeing line either" "$out" 'commits since the clai
 # The same block, so the same four cases; asserted here too because the byte-for-byte comparison in
 # tests/close.test.sh proves only that the two copies match. Fixture ids are 94xx.
 set_touches() {
-  f="$FIX/.backlog/items/$1-fixture.md"
+  f="$FIX/.tickets/items/$1-fixture.md"
   awk -v repl="$2" '/^touches:/ { print repl; skip = 1; next } skip && /^  - / { next } { skip = 0; print }' "$f" > "$f.tmp"
   mv "$f.tmp" "$f"
   git -C "$FIX" add -A && git -C "$FIX" commit -q -m "fixture touches"
@@ -593,8 +593,8 @@ echo "0145 AC2 — an empty touches: over bookkeeping-only commits says so"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 9462 | Bookkeeping only | develop | in-progress | 0000 |' 9462 develop in-progress tok0
 set_touches 9462 'touches:'
 git -C "$FIX" commit -q --allow-empty -m "Claim 9462 [tok0]"
-printf -- '- a note\n' >> "$FIX/.backlog/items/9462-fixture.md"
-printf '\n' >> "$FIX/.backlog/QUEUE.md"
+printf -- '- a note\n' >> "$FIX/.tickets/items/9462-fixture.md"
+printf '\n' >> "$FIX/.tickets/QUEUE.md"
 git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Note 9462 [tok0]"
 out="$(run_handoff 9462 tok0 verify)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
@@ -627,7 +627,7 @@ git -C "$FIX" commit -q --allow-empty -m "Claim 9465 [tok0]"
 mkdir -p "$FIX/src"
 printf 'mine\n' > "$FIX/src/mine.ts"
 git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Fix it (9465)"
-printf 'another session\n' > "$FIX/.backlog/items/9876-other.md"
+printf 'another session\n' > "$FIX/.tickets/items/9876-other.md"
 git -C "$FIX" add -A && git -C "$FIX" commit -q -m "Claim 9876 [abcd]"
 out="$(run_handoff 9465 tok0 verify)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
@@ -647,9 +647,9 @@ assert_contains "counts the commit it left out" "$out" '1 commits since the clai
 # (`testing-conventions.md`).
 echo "0090 AC4 — a foreign uncommitted QUEUE.md row is refused, not warned about"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0090 | Built it | develop | in-progress | 0000 |' 0090 develop in-progress ab12
-printf '| 0091 | Another session mid-edit | develop | in-progress | 0000 |\n' >> "$FIX/.backlog/QUEUE.md"
+printf '| 0091 | Another session mid-edit | develop | in-progress | 0000 |\n' >> "$FIX/.tickets/QUEUE.md"
 before_head="$(git -C "$FIX" rev-parse HEAD)"
-before_queue="$(cat "$FIX/.backlog/QUEUE.md")"
+before_queue="$(cat "$FIX/.tickets/QUEUE.md")"
 out="$(run_handoff 0090 ab12 verify)" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "says it is refusing, not warning"  "$out" 'refusing to hand off'
@@ -657,11 +657,11 @@ assert_contains "names the cause"                   "$out" 'uncommitted'
 assert_contains "names the row it would have carried" "$out" '0091 | Another session mid-edit'
 assert_contains "says nothing was changed"          "$out" 'nothing was changed'
 assert_not_contains "does not warn and carry on"    "$out" 'WARNING'
-assert_eq "QUEUE.md is byte-identical"     "$(cat "$FIX/.backlog/QUEUE.md")" "$before_queue"
+assert_eq "QUEUE.md is byte-identical"     "$(cat "$FIX/.tickets/QUEUE.md")" "$before_queue"
 assert_eq "nothing was committed"          "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
 assert_item_line "the item still holds its claim" 'claimed_by: "ab12"'
 assert_item_line "and is still at develop"        'next: develop'
-if [ -d "$FIX/.backlog/.lock" ]; then bad "the lock does not exist afterwards"; else ok "the lock does not exist afterwards"; fi
+if [ -d "$FIX/.tickets/.lock" ]; then bad "the lock does not exist afterwards"; else ok "the lock does not exist afterwards"; fi
 
 # --- 0144 AC2 — handoff's anchor narrows with close's ------------------------------------------
 # The same bare token grep, in the copy of the block `close` carries verbatim. Asserted here as well
@@ -695,15 +695,15 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0036 | Worktree row | develop | in-progress
 WT="$FIX.wt"
 git -C "$FIX" worktree add -q --detach "$WT"
 before_head="$(git -C "$WT" rev-parse HEAD)"
-before_sums="$(find "$WT/.backlog" -type f | sort | xargs cksum)"
-out="$( (cd "$WT" && .backlog/handoff 0036 tok0 verify) 2>&1 )" && rc=0 || rc=$?
+before_sums="$(find "$WT/.tickets" -type f | sort | xargs cksum)"
+out="$( (cd "$WT" && .tickets/handoff 0036 tok0 verify) 2>&1 )" && rc=0 || rc=$?
 assert_rc_nonzero "exits non-zero" "$rc" "$out"
 assert_contains "names a linked worktree" "$out" 'linked worktree'
 assert_contains "cites CONCURRENCY.md" "$out" 'CONCURRENCY.md'
 assert_contains "names the primary checkout to run from" "$out" "$(cd "$FIX" && pwd -P)"
 assert_eq "no commit lands on the worktree's HEAD" "$(git -C "$WT" rev-parse HEAD)" "$before_head"
 assert_eq "the worktree's backlog is byte-identical" \
-  "$(find "$WT/.backlog" -type f | sort | xargs cksum)" "$before_sums"
+  "$(find "$WT/.tickets" -type f | sort | xargs cksum)" "$before_sums"
 
 # --- result -------------------------------------------------------------------------------------
 echo

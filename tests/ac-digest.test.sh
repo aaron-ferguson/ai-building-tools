@@ -49,7 +49,7 @@ cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
 trap 'announce_abort cleanup' EXIT
 trap cleanup INT TERM
 
-BL=".backlog"
+BL=".tickets"
 
 # --- fixture ----------------------------------------------------------------------------------
 # scaffold <row…> — each row is "<id> <next> <status>"; every row gets an item via mkitem.

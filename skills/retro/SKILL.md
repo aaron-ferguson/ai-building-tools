@@ -67,7 +67,7 @@ sessions recorded, not the decisions taken in them** — a choice the user alrea
 
 ## Step 1 — Read the buffer
 
-`.backlog/FINDINGS.md` is the input. Sessions parked these as they hit them,
+`.tickets/FINDINGS.md` is the input. Sessions parked these as they hit them,
 which is cheaper and more reliable than reconstructing them afterwards — the context was hot at the time,
 and a parked entry survives compaction, an interrupted session, and the gap between sessions.
 
@@ -75,8 +75,8 @@ and a parked entry survives compaction, an interrupted session, and the gap betw
 stands in a workspace root rather than a project root — which is where these sessions start, and is
 what made the 2026-09-07 pass sweep four sibling backlogs it was never told to touch.
 
-1. **The git repository root** containing the working directory — its `.backlog/FINDINGS.md`.
-2. **The nearest `.backlog/` at or above the working directory**, for a backlog that does not
+1. **The git repository root** containing the working directory — its `.tickets/FINDINGS.md`.
+2. **The nearest `.tickets/` at or above the working directory**, for a backlog that does not
    sit at its own repo root.
 3. **Nothing resolved → stop**, and report every directory searched. That is
    `references/CONVENTIONS.md` rung 3's refusal, cited rather than restated so the two cannot drift.
@@ -289,7 +289,7 @@ the rule prevents, not the reasoning that convinced you of it.
 If a destination check changed your mind about *where* something goes, say so before writing — that is
 the disagreement the user is most likely to have.
 
-**Take the backlog lock for every write inside `.backlog/`.** Draining `FINDINGS.md` and
+**Take the backlog lock for every write inside `.tickets/`.** Draining `FINDINGS.md` and
 appending to an unheld item are both inside the boundary, and `retro` holds no claim token, so the lock
 is the only thing that makes its writes visible to another session. The forms a by-hand lock may take
 are `references/CONCURRENCY.md` *Lock every write to the backlog directory*, and only there; read
@@ -311,7 +311,7 @@ it, and `CONCURRENCY-INCIDENTS.md`, before writing one.
   pay again. Beyond what this pass can specify, defer it per Step 1 rather than leave it unmarked.
   **The id is minted per `queue` Step 2**, never read off `next_id` alone — one written from the
   counter collided with a row created the same day.
-- **Held** — real work, unconfirmed. Move the entry unchanged to `.backlog/FINDINGS-HELD.md`,
+- **Held** — real work, unconfirmed. Move the entry unchanged to `.tickets/FINDINGS-HELD.md`,
   creating it with a one-line header if absent. A separate file and not a section, because sessions
   append to both ends of `FINDINGS.md`. Nothing reviews, counts or expires it; a pass greps it only
   for a held entry that a new, confirmed finding matches, then files the two together.
@@ -390,7 +390,7 @@ sessions it was written for.
 
 ## Step 6 — Park what surprised you
 
-Before reporting, park what surprised you in `.backlog/FINDINGS.md` — one dated line, while the
+Before reporting, park what surprised you in `.tickets/FINDINGS.md` — one dated line, while the
 context is still hot.
 
 Triggers: **a template or skill step that had no correct answer for your case**, a configured command that

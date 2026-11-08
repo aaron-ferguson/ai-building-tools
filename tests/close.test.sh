@@ -37,7 +37,7 @@ announce_abort() {
 trap announce_abort EXIT
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-# The harness runs the TEMPLATE copy below, never .backlog/<script>: a mutation applied to
+# The harness runs the TEMPLATE copy below, never .tickets/<script>: a mutation applied to
 # the installed copy lands a real diff and reddens nothing.
 CLOSE_SRC="$ROOT/skills/queue/templates/close"
 [ -f "$CLOSE_SRC" ] || { echo "no close script at $CLOSE_SRC" >&2; exit 2; }
@@ -50,7 +50,7 @@ cleanup() { [ -n "$FIX" ] && rm -rf "$FIX" "$FIX.wt"; return 0; }
 trap 'announce_abort cleanup' EXIT
 trap cleanup INT TERM
 
-BL=".backlog"
+BL=".tickets"
 
 # --- fixture ----------------------------------------------------------------------------------
 # scaffold <header> <separator> <rows…>  — one argument per data row.
@@ -1534,7 +1534,7 @@ mkitem 9471 verify in-progress '"ab12"' '[]'
 commit_fixture
 cat > "$FIX/.git/hooks/pre-commit" <<'HOOK'
 #!/bin/sh
-if [ -d "$(git rev-parse --show-toplevel)/.backlog/.lock" ]; then
+if [ -d "$(git rev-parse --show-toplevel)/.tickets/.lock" ]; then
   echo held > "$(git rev-parse --show-toplevel)/.lock-witness"
 else
   echo released > "$(git rev-parse --show-toplevel)/.lock-witness"
@@ -1546,7 +1546,7 @@ out="$(run_close 9471 ab12)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 witness="$(cat "$FIX/.lock-witness" 2>/dev/null || echo MISSING)"
 if [ "$witness" = held ]; then ok "the lock was held when the commit ran"; else
-  bad "0092 — the lock (.backlog/.lock) was not held when close's commit ran: the witness read $witness"; fi
+  bad "0092 — the lock (.tickets/.lock) was not held when close's commit ran: the witness read $witness"; fi
 
 echo "$PASS passed, $FAIL failed"
 TALLIED=1

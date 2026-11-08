@@ -15,7 +15,8 @@ the release session, because only a whole-release view can say it.
 ## Unreleased
 
 - `verify` re-syncs a backlog's stale scripts when `./next` answers `unknown stage: --ac-digest`, rather than recording the digest as unverifiable and passing.
-- `sprint` validates the last stdout line opening `{` rather than the whole stream, so a CLI warning printed ahead of the outcome (the sign-in expiry notice) no longer reads as a failed stage, and relays that warning to the person. Dispatch helpers live under `.backlog/runs/` beside the captures, so a paused run can still dispatch.
+- `sprint` validates the last stdout line opening `{` rather than the whole stream, so a CLI warning printed ahead of the outcome (the sign-in expiry notice) no longer reads as a failed stage, and relays that warning to the person. Dispatch helpers live under `.tickets/runs/` beside the captures, so a paused run can still dispatch.
+- The ticket directory is `.tickets/` at the repo root, named for the whole ticket system it holds — the backlog is `QUEUE.md` inside it. `.backlog` (0.9.44 to 0.9.47) is now a second legacy location beside `.claude/backlog/`: the scripts work at either until 2026-12-31, printing one stderr line naming that location and `./migrate`, and refuse a repo holding more than one. `./migrate` moves either to `.tickets/` as one commit, and no longer counts a `claimed_by:` left on a `done`, `withdrawn` or `rejected` item as a claim. `next` resolves a tools repo's findings buffer at `.tickets/` first. **Install this release on every machine that works a repo before migrating it**, and check with `tools/release verify` (0228).
 
 ## 0.9.47 — 2026-11-01
 

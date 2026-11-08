@@ -7,7 +7,7 @@ description: >
   "work the backlog", "keep going until it's done", "run the loop", "drive it", "supervise this",
   "do the next few tickets", "run develop then verify", "run a sprint", or invokes /sprint. Also use
   when the user is about to hand-drive several cycles and would rather watch than type. Reads
-  .backlog/ — created by the queue skill. NOT for building one ticket, which is /develop,
+  .tickets/ — created by the queue skill. NOT for building one ticket, which is /develop,
   and NOT for deciding anything: a design question, a push, a release and a narrowed contract are
   all escalations to the user, never automation.
 ---
@@ -119,17 +119,17 @@ resumed conversation turns one interrupted sprint into two (0175). Pass `$RUN_ID
 
 ```sh
 # step-1-marker
-RUNS=.backlog/runs; HELD=$RUNS/.active/held-by; NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+RUNS=.tickets/runs; HELD=$RUNS/.active/held-by; NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 grep -qs '"sprint_ended"' "$RUNS/$RUN_ID.jsonl" && { echo "refused: $RUN_ID has ended"; exit 1; }
-mkdir -p .backlog/runs                       # the parent, which a fresh backlog lacks
-[ -f .backlog/runs/.gitignore ] || printf '*\n' > .backlog/runs/.gitignore
-if ! mkdir .backlog/runs/.active 2>/dev/null; then
+mkdir -p .tickets/runs                       # the parent, which a fresh backlog lacks
+[ -f .tickets/runs/.gitignore ] || printf '*\n' > .tickets/runs/.gitignore
+if ! mkdir .tickets/runs/.active 2>/dev/null; then
   read -r held_run held_at < "$HELD" && [ -n "$held_at" ] || { echo "busy: no held-by yet"; exit 1; }
   if [ "$held_run" = "$RUN_ID" ]; then             # our own run, suspended: retake at any age
     printf '{"event":"supervisor_resumed","run":"%s","at":"%s","suspended_at":"%s","resumed_at":"%s"}\n' \
       "$RUN_ID" "$NOW" "$held_at" "$NOW" >> "$RUNS/$RUN_ID.jsonl"
   else
-    stale=$(sed -n 's/^lock_stale_seconds: *//p' .backlog/config.yml)
+    stale=$(sed -n 's/^lock_stale_seconds: *//p' .tickets/config.yml)
     then_s=$(date -u -j -f %Y-%m-%dT%H:%M:%SZ "$held_at" +%s 2>/dev/null || date -u -d "$held_at" +%s)
     age=$(( $(date -u +%s) - then_s ))
     [ "$age" -gt "$stale" ] || { echo "busy: $held_run, heartbeat ${age}s ago"; exit 1; }
@@ -213,12 +213,12 @@ The proposal states, all of it from that one call:
 - **An estimate in real-world time, tokens and dollars.** One call produces it:
 
   ```sh
-  tools/sprint-ledger.sh estimate --ledger .backlog/LEDGER.md \
-    --measurement MEASUREMENT.md --config .backlog/config.yml \
+  tools/sprint-ledger.sh estimate --ledger .tickets/LEDGER.md \
+    --measurement MEASUREMENT.md --config .tickets/config.yml \
     --tickets <n> --develop-gates <n> --verify-sessions <n>
   ```
 
-  It derives each figure from `.backlog/LEDGER.md`'s recorded actuals where the ledger holds
+  It derives each figure from `.tickets/LEDGER.md`'s recorded actuals where the ledger holds
   any, and from `MEASUREMENT.md`'s per-skill table and `config.yml`'s gate model where it holds
   none — so the estimate improves as the ledger fills instead of staying the first guess forever.
   Quote no figure from here, which would be a cache of another file. **A figure with no prior is
@@ -255,7 +255,7 @@ tickets nobody chose — and it is a decision a person can only make if they are
 
 **Three answers, and two of them are not yes.** Confirm it · **amend** it, where the rule above says
 what the amendment leaves behind · or **decline**, which ends the run with no stage session and
-releases the marker: remove `.backlog/runs/.active`, exactly as the end of a run does.
+releases the marker: remove `.tickets/runs/.active`, exactly as the end of a run does.
 
 **A red baseline blocks the proposal. It does not end the run** — ending it sends a person to fix
 the red by hand, which is how `da524ce` landed under `0176`'s claim with no row. The proposal then
@@ -292,7 +292,7 @@ loses it is the first stage killing the supervisor that had not written it down 
 One call decides everything:
 
 ```sh
-.backlog/next --drive --completed <stage>[:<id>] --started <id> --started <id> \
+.tickets/next --drive --completed <stage>[:<id>] --started <id> --started <id> \
   --scope <id> --scope <id>
 ```
 
@@ -421,7 +421,7 @@ for line in open(sys.argv[1]):
             state[tid] = "closed"
 for tid in sorted(state):
     print(state[tid], tid)
-' ".backlog/runs/$RUN_ID.jsonl"
+' ".tickets/runs/$RUN_ID.jsonl"
 ```
 
 ---
@@ -474,11 +474,11 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
   then prints *"Warning: no stdin data received in 3s"* **into the stream you are parsing as
   JSON** — so a perfectly good stage reads as one that failed the schema, and Step 4 escalates on
   it. Redirect stdin on every dispatch, the probe included.
-- **Capture stdout beside the run log**, as `.backlog/runs/<run-id>.<session-id>.out`, which
+- **Capture stdout beside the run log**, as `.tickets/runs/<run-id>.<session-id>.out`, which
   must outlive the supervisor: run-20260913T222409Z captured into the supervising session's
   scratchpad, the harness withdrew that directory mid-run, and the outcome survived only because the
   file was already open. **The same holds for any dispatch helper you write** — keep it under
-  `.backlog/runs/` too: run-20261101T172121Z kept one in the scratchpad, paused five days on an
+  `.tickets/runs/` too: run-20261101T172121Z kept one in the scratchpad, paused five days on an
   escalation, and the next dispatch exited 127 with nothing started.
 - **In a run whose baseline red was waived, every stage prompt quotes it** as "baseline red at
   <sha>, not yours", with the `baseline_red` case list from `scope_confirmed`. Without it each stage
@@ -505,7 +505,7 @@ live run to a second supervisor. Run the dispatch inside the same Bash call as t
 ```sh
 beat() {
   while kill -0 "$$" 2>/dev/null; do
-    printf '%s %s\n' "$RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .backlog/runs/.active/held-by
+    printf '%s %s\n' "$RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .tickets/runs/.active/held-by
     sleep 60
   done
 }
@@ -596,7 +596,7 @@ real cause, AC1, was only in the item's Notes.
 
 ## Step 5 — The run log
 
-**One JSON line per event, appended as it happens, under `.backlog/runs/<run-id>.jsonl`.**
+**One JSON line per event, appended as it happens, under `.tickets/runs/<run-id>.jsonl`.**
 The confirmed scope as one `scope_confirmed` event, then every stage started, every outcome, every
 gate decision and every escalation, each with a UTC timestamp and the run id. A design `dispatch`
 and its `outcome` carry `stage` and its ticket id in `tickets`, which is what the ledger pairs a
@@ -652,7 +652,7 @@ next action does not change at all; what is lost is the record, not the position
 **`runs/` is machine-local and never committed — logs, captures and hand-written files alike — and `LEDGER.md` is the committed record.**
 Nothing under it is ever screened for publication, because nothing under it is published: the captures are unfiltered stage output.
 
-**`.backlog/LEDGER.md` is the opposite, and the two are not interchangeable.** The log is
+**`.tickets/LEDGER.md` is the opposite, and the two are not interchangeable.** The log is
 per-run, uncommitted and deletable; the ledger is one committed row per sprint pairing what the run
 was estimated to cost with what it did, and deleting it sends every future estimate back to being a
 guess. `tools/sprint-ledger.sh` derives the ledger's actuals **from this log** — wall-clock from the
@@ -728,9 +728,9 @@ cap. Compute the cap from the rule in `config.yml`'s `TAIL SCALING` comment:
 
 ```sh
 findings="$(./next --findings | sed -n '1s/^FINDINGS *\([0-9]*\).*/\1/p')"   # the count, not the whole line
-threshold="$(sed -n 's/^findings_threshold: *//p' .backlog/config.yml)"
-retro_base="$(grep -A30 'stage_budget_usd:' .backlog/config.yml | grep -E '^\s+retro:' | sed 's/.*retro: *//' | cut -d'#' -f1 | tr -d ' \t')"
-queue_base="$(grep -A30 'stage_budget_usd:' .backlog/config.yml | grep -E '^\s+queue:' | sed 's/.*queue: *//' | cut -d'#' -f1 | tr -d ' \t')"
+threshold="$(sed -n 's/^findings_threshold: *//p' .tickets/config.yml)"
+retro_base="$(grep -A30 'stage_budget_usd:' .tickets/config.yml | grep -E '^\s+retro:' | sed 's/.*retro: *//' | cut -d'#' -f1 | tr -d ' \t')"
+queue_base="$(grep -A30 'stage_budget_usd:' .tickets/config.yml | grep -E '^\s+queue:' | sed 's/.*queue: *//' | cut -d'#' -f1 | tr -d ' \t')"
 retro_cap="$(tools/sprint-ledger.sh tail-cap --findings "$findings" --threshold "$threshold" --base-cap "$retro_base")"
 queue_cap="$(tools/sprint-ledger.sh tail-cap --findings "$findings" --threshold "$threshold" --base-cap "$queue_base")"
 ```
@@ -740,9 +740,9 @@ Pass `$retro_cap` and `$queue_cap` as `--max-budget-usd` when dispatching each t
 **Score the estimate before the run ends, in the same turn as the ending event.** One call:
 
 ```sh
-tools/sprint-ledger.sh record --ledger .backlog/LEDGER.md \
-  --run .backlog/runs/<run-id>.jsonl --transcripts <transcript-dir> \
-  --measurement MEASUREMENT.md --config .backlog/config.yml \
+tools/sprint-ledger.sh record --ledger .tickets/LEDGER.md \
+  --run .tickets/runs/<run-id>.jsonl --transcripts <transcript-dir> \
+  --measurement MEASUREMENT.md --config .tickets/config.yml \
   --estimate-tickets <n> --estimate-wall <n|no-prior> \
   --estimate-tokens <n> --estimate-usd <n> --estimate-source '<the source line>'
 ```
@@ -795,9 +795,9 @@ the **directory**, never from `held-by`: `claim` writes no timestamp there where
 `handoff` both do, so the commonest holder is the one a timestamp read cannot see.
 
 ```sh
-LOCK=.backlog/.lock
+LOCK=.tickets/.lock
 [ -d "$LOCK" ] || exit 0
-stale=$(sed -n 's/^lock_stale_seconds: *//p' .backlog/config.yml)
+stale=$(sed -n 's/^lock_stale_seconds: *//p' .tickets/config.yml)
 mtime=$(stat -f %m "$LOCK" 2>/dev/null || stat -c %Y "$LOCK")
 age=$(( $(date -u +%s) - mtime ))
 [ "$age" -gt "$stale" ] && echo "aged $age" || echo "fresh $age"
@@ -886,7 +886,7 @@ root. Three things it cannot say, because they are specific to a run rather than
   outcomes alone omits the one cost this skill adds and reports a win that is partly unmeasured
   overhead.
 - **The bound, as three figures rather than a ratio.** `tools/harvest-usage.sh <transcript-dir>
-  --run .backlog/runs/<run-id>.jsonl` prints the per-turn **floor**, the per-cycle
+  --run .tickets/runs/<run-id>.jsonl` prints the per-turn **floor**, the per-cycle
   **growth** as an absolute number, and **turns per cycle** against the budget in the section
   above. A ratio of supervisor to stage spend cannot go red — a longer run improves it while the
   supervisor gets steadily worse — which is why none of the three is one. All three land in the
@@ -901,7 +901,7 @@ root. Three things it cannot say, because they are specific to a run rather than
 
 **Every ticket the report names is a link**, in this report and every escalation or proposal before
 it: the item's path from the repo root, with `:<line>` of the AC where an AC is named —
-`.backlog/items/0032-stop-the-monte-carlo-odds-tests-timing-out.md:57` for 0032 AC2 — which
+`.tickets/items/0032-stop-the-monte-carlo-odds-tests-timing-out.md:57` for 0032 AC2 — which
 the terminal opens on a click. A bare id sends the person searching for the file to read the
 criterion the report is asking them to judge (the user's request, 2026-10-10).
 

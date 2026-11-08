@@ -42,7 +42,7 @@ cleanup() { [ -n "$FIX" ] && rm -rf "$FIX"; return 0; }
 trap 'announce_abort cleanup' EXIT
 trap cleanup INT TERM
 
-BL=".backlog"
+BL=".tickets"
 
 ok()  { PASS=$((PASS + 1)); echo "  ok   — $1"; }
 bad() { FAIL=$((FAIL + 1)); echo "  FAIL — $1"; }

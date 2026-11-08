@@ -117,9 +117,9 @@ rule_definitions() {
   # than two.
 }
 
-# backlog_of <root> — the tree's backlog directory: `.backlog/`, or the legacy `.claude/backlog/`
+# backlog_of <root> — the tree's backlog directory: `.tickets/`, or the legacy `.claude/backlog/`
 # a repo not yet migrated still uses, this one included (0182).
-backlog_of() { if [ -d "$1/.backlog" ]; then printf '%s' "$1/.backlog"; else printf '%s' "$1/.claude/backlog"; fi; }
+backlog_of() { if [ -d "$1/.tickets" ]; then printf '%s' "$1/.tickets"; else printf '%s' "$1/.claude/backlog"; fi; }
 
 # cited_files <root> — every file that cites by name, per FR2.
 cited_files() {
@@ -350,7 +350,7 @@ FIX="$(mktemp -d)"
 mkfix() {
   dir="${1:?mkfix needs a target directory}"
   rm -rf "$dir"
-  mkdir -p "$dir/references" "$dir/skills/develop" "$dir/skills/queue/templates" "$dir/.backlog"
+  mkdir -p "$dir/references" "$dir/skills/develop" "$dir/skills/queue/templates" "$dir/.tickets"
   cat > "$dir/references/CONCURRENCY.md" <<'FIXTURE'
 # Fixture protocol
 
@@ -458,9 +458,9 @@ esac
 mkconvfix() {
   dir="${1:?mkconvfix needs a target directory}"
   rm -rf "$dir"
-  mkdir -p "$dir/references" "$dir/skills/develop" "$dir/.backlog" "$dir/conv"
+  mkdir -p "$dir/references" "$dir/skills/develop" "$dir/.tickets" "$dir/conv"
   printf '# fixture convention\n' > "$dir/conv/testing-conventions.md"
-  printf 'conventions:\n  path: conv\n' > "$dir/.backlog/config.yml"
+  printf 'conventions:\n  path: conv\n' > "$dir/.tickets/config.yml"
   printf '# Fixture skill\n\nTDD always (`testing-conventions.md`).\n' \
     > "$dir/skills/develop/SKILL.md"
 }
@@ -494,7 +494,7 @@ esac
 
 echo "0052 AC6 — a conventions directory that no longer resolves is named, never skipped silently"
 mkconvfix "$FIX/c"
-mutate "$FIX/c/.backlog/config.yml" 's/path: conv/path: gone/' \
+mutate "$FIX/c/.tickets/config.yml" 's/path: conv/path: gone/' \
   "point the conventions path at a directory that does not exist"
 out="$(conventions_audit "$FIX/c")"
 case "$out" in
@@ -505,7 +505,7 @@ esac
 
 echo "0052 FR7 — the conventions path is read from its own block, not from any path: key"
 mkconvfix "$FIX/c"
-printf 'tracker:\n  path: wrong\n' >> "$FIX/c/.backlog/config.yml"
+printf 'tracker:\n  path: wrong\n' >> "$FIX/c/.tickets/config.yml"
 dir="$(conventions_dir "$FIX/c")"
 case "$dir" in
   */conv) ok "another block's path: key is not mistaken for the conventions one" ;;
@@ -666,10 +666,10 @@ mkidfix() {
   dir="${1:?mkidfix needs a target directory}"
   rm -rf "$dir"
   mkdir -p "$dir/references" "$dir/skills/develop" "$dir/skills/queue/templates" \
-           "$dir/.backlog/items" "$dir/tests"
-  printf -- '---\nid: "0007"\n---\n' > "$dir/.backlog/items/0007-a-fixture-ticket.md"
+           "$dir/.tickets/items" "$dir/tests"
+  printf -- '---\nid: "0007"\n---\n' > "$dir/.tickets/items/0007-a-fixture-ticket.md"
   printf '| ID | Title |\n|----|-------|\n| 0007 | A fixture ticket |\n' \
-    > "$dir/.backlog/QUEUE.md"
+    > "$dir/.tickets/QUEUE.md"
   printf '# Fixture protocol\n\n## The first fixture rule\n\nBody.\n' \
     > "$dir/references/CONCURRENCY.md"
   cat > "$dir/tests/fixture.test.sh" <<'IDFIXTURE'
@@ -738,7 +738,7 @@ esac
 
 echo "0105 FR3 — an id recorded only in a table, with no item file, still resolves"
 mkidfix "$FIX/i"
-rm -f "$FIX/i/.backlog/items/0007-a-fixture-ticket.md"
+rm -f "$FIX/i/.tickets/items/0007-a-fixture-ticket.md"
 out="$(item_audit "$FIX/i")"
 case "$out" in
   *'FAIL '*) bad "0105 FR3 — a table row alone did not resolve the id: $out" ;;
@@ -757,7 +757,7 @@ esac
 
 echo "0105 FR3 — zero known ids is a defect, not a clean tree"
 mkidfix "$FIX/i"
-rm -f "$FIX/i/.backlog/items/0007-a-fixture-ticket.md" "$FIX/i/.backlog/QUEUE.md"
+rm -f "$FIX/i/.tickets/items/0007-a-fixture-ticket.md" "$FIX/i/.tickets/QUEUE.md"
 out="$(item_audit "$FIX/i")"
 case "$out" in
   *'FAIL  no ticket ids extracted'*)

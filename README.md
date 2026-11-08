@@ -146,7 +146,7 @@ wire it up instead.
 ## Requirements
 
 **Every skill but one needs nothing beyond the harness it already runs in.** The skills are
-markdown, the backlog is text, and the scripts under `.backlog/` and the guards in `tests/`
+markdown, the backlog is text, and the scripts under `.tickets/` and the guards in `tests/`
 are POSIX `sh` with `grep`, `awk` and `python3` — all of which a machine running Claude Code
 already has.
 
@@ -182,7 +182,7 @@ prescribes, so most projects already have it):
 @../ai-building-conventions/CONVENTIONS_CORE.md
 ```
 
-**Option B — `.backlog/config.yml`**, once the backlog exists:
+**Option B — `.tickets/config.yml`**, once the backlog exists:
 
 ```yaml
 conventions:
@@ -190,7 +190,7 @@ conventions:
 ```
 
 Then say *"queue this: <the thing>"* in any project. `/queue` scaffolds
-`.backlog/` on first use, reading your real test commands out of `package.json` (or
+`.tickets/` on first use, reading your real test commands out of `package.json` (or
 `Makefile`, `pyproject.toml`) rather than guessing.
 
 ---
@@ -198,7 +198,7 @@ Then say *"queue this: <the thing>"* in any project. `/queue` scaffolds
 ## What lands in your project
 
 ```
-.backlog/
+.tickets/
   config.yml     project settings, next_id, conventions path, test commands
   QUEUE.md       the stack rank — line order IS the rank
   DONE.md        completed items, newest first
@@ -212,7 +212,7 @@ if the skills are unavailable, or you just want to reorder something by hand, no
 behind tooling. That's deliberate: the queue file is the product, and the skills are a wrapper
 over it.
 
-Add `.backlog/.lock/` to `.gitignore`.
+Add `.tickets/.lock/` to `.gitignore`.
 
 **A backlog from an earlier release lives at `.claude/backlog/`**, where Claude Code refuses writes
 as a sensitive file. It keeps working until 2026-12-31; once this release is installed on every
@@ -274,7 +274,7 @@ Two things are worth knowing before planning a lot of work with it:
   87%. Tier by blast radius and detection latency — and never by dropping a principle, which is the
   one thing that does not get cheaper.
 
-**What one run delivered and cost** is the sprint's block in `.backlog/LEDGER.md`, which
+**What one run delivered and cost** is the sprint's block in `.tickets/LEDGER.md`, which
 `tools/sprint-ledger.sh record` writes from the run log: one row per context window with its elapsed
 minutes, context and dollars, the tickets the run closed with each one's `DONE.md` title and the
 verdict that closed it, and cost per closed ticket beside
@@ -316,7 +316,7 @@ tests/ac-digest.test.sh                  # ./next --ac-digest, the --drift class
 tests/backlog-scripts-installed.test.sh  # this repo's installed backlog scripts still match their templates
 tests/citations.test.sh                  # cited CONCURRENCY.md rules and conventions files resolve, and this block names every suite
 tests/by-hand-lock.test.sh               # a by-hand backlog write takes the lock and proves its commit; a busy lock at close keeps the verdict
-tests/backlog-location.test.sh           # .backlog/ and the legacy .claude/backlog/, ./migrate, the refused-write section
+tests/backlog-location.test.sh           # .tickets/ and both legacy locations, ./migrate, the refused-write section
 tests/changelog-entry-guards.test.sh     # no test reads the repo changelog's Unreleased section; a note is found by its entry
 tests/close-by.test.sh                   # close_by's two branches in develop, and verify's review level
 tests/cost-by-category.test.sh           # the by-category cost measurement

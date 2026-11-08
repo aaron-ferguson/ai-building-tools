@@ -93,9 +93,9 @@ fi
 
 echo "the ledger file exists and is the one the skill names"
 if [ -f "$LEDGER" ]; then
-  ok ".backlog/LEDGER.md is committed"
+  ok ".tickets/LEDGER.md is committed"
 else
-  bad "no ledger at .backlog/LEDGER.md"
+  bad "no ledger at .tickets/LEDGER.md"
 fi
 
 # --- the fixtures -----------------------------------------------------------------------------

@@ -11,22 +11,26 @@ conflict**; read it then, or to argue with a rule. **Part 1 applies everywhere, 
 
 ## Where the backlog lives
 
-**`.backlog/` at the repo root.** `.claude/backlog/` is the **legacy** location: the harness refuses
-writes under any `.claude` path segment as a "sensitive file", whatever the command or permission,
-and every stage writing there improvised a route around it while holding the lock (0182). **A repo
-holding both is refused rather than guessed at** — every script exits naming both paths.
+**`.tickets/` at the repo root**, named for the whole ticket system it holds — items, the done log,
+findings, the ledger and the scripts — of which the backlog, `QUEUE.md`, is one part (0228). Two
+locations are **legacy**: `.claude/backlog/`, because the harness refuses writes under any `.claude`
+path segment as a "sensitive file", whatever the command or permission, and every stage writing
+there improvised a route around it while holding the lock (0182); and `.backlog/`, the name 0182
+gave the directory before 0228 renamed it. **A repo holding more than one is refused rather than
+guessed at** — every script exits naming each path it found.
 
-- **The legacy location keeps working until 2026-12-31.** Each script run there prints one stderr
-  line naming `./migrate` and that date; the scripts' own copy of the date sits in their shared
-  location block, which `tests/backlog-location.test.sh` holds equal to this one.
-- **In a repo not yet migrated, read every `.backlog/` a skill or reference names as
-  `.claude/backlog/`** — the paths in fenced blocks included.
-- **`./migrate`, run from `.claude/backlog/`, moves it** as one commit, and refuses, changing
-  nothing, while the lock, a foreign claim or a sprint marker is held, or `.backlog/` exists. It is
+- **Both legacy locations keep working until 2026-12-31.** Each script run at one prints one stderr
+  line naming that location, `./migrate`, `.tickets/` and that date; the scripts' own copy of the date
+  sits in their shared location block, which `tests/backlog-location.test.sh` holds equal to this one.
+- **In a repo not yet migrated, read every `.tickets/` a skill or reference names as the legacy
+  location it has** — the paths in fenced blocks included.
+- **`./migrate`, run from either legacy location, moves it to `.tickets/`** as one commit, and
+  refuses, changing nothing, while the lock, a foreign claim or a sprint marker is held, or
+  `.tickets/` exists. A token left on a `done`, `withdrawn` or `rejected` item is not a claim. It is
   *A change that touches every file*, so it runs only when nothing else is held.
-- **No repo is migrated until the release carrying `./migrate` is installed on every machine that
-  works it**, and `tools/release verify` is the check: a skill installed before that release looks
-  only at `.claude/backlog/`, so it finds no backlog in a migrated repo.
+- **No repo is migrated until the release carrying that `./migrate` is installed on every machine
+  that works it**, and `tools/release verify` is the check: a skill installed before that release
+  does not look at `.tickets/`, so it finds no backlog in a migrated repo.
 
 ## When a backlog write is refused
 
@@ -142,7 +146,7 @@ when every one of these holds, checked and acted on under the backlog lock in on
 
 - a clean working tree — `git status --porcelain` prints nothing;
 - ahead of nothing — `git rev-list --count @{u}..HEAD` is `0`;
-- every incoming path under `.backlog/` — `git diff --name-only HEAD @{u}`;
+- every incoming path under `.tickets/` — `git diff --name-only HEAD @{u}`;
 - the merge is `git merge --ff-only @{u}`, never a rebase or a merge commit.
 
 Any precondition failing leaves the stop exactly as the stage states it. **Reported, never silent:**
@@ -300,7 +304,7 @@ operation, never an implementation.
 zsh does not word-split `$paths`, so `git commit -- $paths` refuses one space-joined path, the
 `rm -rf` on the next line releases anyway, and the edits sit uncommitted in a shared tree.
 
-**The lock is `.backlog/.lock/`, a directory, because `mkdir` is atomic on POSIX.** Put `$CLAIM`
+**The lock is `.tickets/.lock/`, a directory, because `mkdir` is atomic on POSIX.** Put `$CLAIM`
 and a UTC timestamp in `.lock/held-by`, so a busy lock says who holds it; release with `rm -rf` at an
 **absolute** path, never commit it. **Snippet, the busy/stale paths, and the ways a by-hand lock
 leaks silently: `CONCURRENCY-INCIDENTS.md`.**
