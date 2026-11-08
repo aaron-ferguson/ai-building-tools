@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0228 | Name the backlog directory .tickets/, since it holds the whole ticket system | chore | unit | 2026-11-08 | [items/0228-name-the-backlog-directory-tickets.md](items/0228-name-the-backlog-directory-tickets.md) |
 | 0089 | Re-anchor the case "$out" guards that cannot fail | bug | unit | 2026-10-28 | [items/0089-guards-that-cannot-fail.md](items/0089-guards-that-cannot-fail.md) |
 | 0050 | Decide how file scope works when the prose files are the product | chore | unit | 2026-10-28 | [items/0050-file-scope-in-a-multi-writer-repo.md](items/0050-file-scope-in-a-multi-writer-repo.md) |
 | 0065 | Name stream editors in the rule against rewriting QUEUE.md | bug | verify | 2026-10-28 | [items/0065-name-stream-editors-in-the-no-rewrite-rule.md](items/0065-name-stream-editors-in-the-no-rewrite-rule.md) |

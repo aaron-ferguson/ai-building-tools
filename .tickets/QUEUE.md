@@ -23,7 +23,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0228 | Name the backlog directory .tickets/, since it holds the whole ticket system | develop | in-progress |  |
 | 0064 | Make a stage skill say which copy of it is running | develop | ready |  |
 | 0066 | Fix the three places the backlog scripts answer the wrong question | develop | ready |  |
 | 0215 | Make claim and next read expects and touches through one parser that refuses or accepts the comma form | develop | ready |  |

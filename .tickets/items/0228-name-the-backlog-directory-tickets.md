@@ -2,8 +2,8 @@
 id: "0228"
 title: Name the backlog directory .tickets/, since it holds the whole ticket system
 type: chore
-next: develop
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: develop
 ac_digest: AC1=ce84c7de AC2=50684fa3 AC3=d2573f62 AC4=0f47f1ae AC5=d1dd4bfd AC6=cdf7449d
@@ -15,10 +15,10 @@ blocked_by: []
 relates: ["0182"]
 expects:
   - "*"
-claimed_by: "t228"
-claimed_at: 2026-11-08T23:09:22Z
+claimed_by:
+claimed_at:
 touches:
-  - "*"
+closed: 2026-11-08
 ---
 
 ## Problem
@@ -62,9 +62,9 @@ AetherWorks), so `.backlog/` becomes a second legacy location rather than vanish
 
 All in `tests/backlog-location.test.sh`.
 
-- [ ] AC1 — Given a fixture at `.tickets/`, when every script runs, then each works and none prints the legacy line. — `tests/backlog-location.test.sh`
-- [ ] AC2 — Given a fixture at `.claude/backlog/` or at `.backlog/`, when every script runs, then each works and prints exactly one legacy line naming that path, `./migrate`, `.tickets/` and 2026-12-31. — `tests/backlog-location.test.sh`
-- [ ] AC3 — Given a repo holding any two of the three locations, when a script runs from either, then it exits non-zero naming both and writes nothing. — `tests/backlog-location.test.sh`
-- [ ] AC4 — Given a fixture at `.claude/backlog/` or at `.backlog/`, when `migrate` runs, then `.tickets/` holds the tree in one commit carrying only the renames and `.gitignore`, and a second run says it is already migrated. — `tests/backlog-location.test.sh`
-- [ ] AC5 — Given a pre-existing `.tickets/`, when `migrate` runs, then it refuses changing nothing; given an item `status: done` with `claimed_by:` set, when `migrate` runs, then it proceeds. — `tests/backlog-location.test.sh`
-- [ ] AC6 — Given a tools root whose buffer is at `.tickets/FINDINGS.md`, when `next --findings` runs with that `tools.path`, then it counts that buffer. — `tests/backlog-location.test.sh`
+- [x] AC1 — Given a fixture at `.tickets/`, when every script runs, then each works and none prints the legacy line. — `tests/backlog-location.test.sh`
+- [x] AC2 — Given a fixture at `.claude/backlog/` or at `.backlog/`, when every script runs, then each works and prints exactly one legacy line naming that path, `./migrate`, `.tickets/` and 2026-12-31. — `tests/backlog-location.test.sh`
+- [x] AC3 — Given a repo holding any two of the three locations, when a script runs from either, then it exits non-zero naming both and writes nothing. — `tests/backlog-location.test.sh`
+- [x] AC4 — Given a fixture at `.claude/backlog/` or at `.backlog/`, when `migrate` runs, then `.tickets/` holds the tree in one commit carrying only the renames and `.gitignore`, and a second run says it is already migrated. — `tests/backlog-location.test.sh`
+- [x] AC5 — Given a pre-existing `.tickets/`, when `migrate` runs, then it refuses changing nothing; given an item `status: done` with `claimed_by:` set, when `migrate` runs, then it proceeds. — `tests/backlog-location.test.sh`
+- [x] AC6 — Given a tools root whose buffer is at `.tickets/FINDINGS.md`, when `next --findings` runs with that `tools.path`, then it counts that buffer. — `tests/backlog-location.test.sh`
