@@ -28,6 +28,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0215 | Make claim and next read expects and touches through one parser that refuses or accepts the comma form | develop | ready |  |
 | 0225 | Make claim write an empty touches key when it has nothing to seed | develop | ready |  |
 | 0227 | Make next list the findings entries so no drain matches a buffer's header by hand | develop | ready |  |
+| 0229 | Make next --drift report a closed item that still carries a claim token | develop | ready |  |
 | 0214 | Add a profile-declared gate that a stage refuses to pass without its artifact | design | ready |  |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
@@ -49,6 +50,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0217 | Stop a note written below the last AC from changing that AC's digest | queue | ready |  |
 | 0219 | Make reopen leave a ticket that verify can close when it reopens a develop self-close | queue | ready |  |
 | 0220 | Make --drive name one verify session for rows developed together in one gate | queue | ready |  |
+| 0230 | Make next say the queue is empty instead of printing a blank ROW 1 | develop | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in

@@ -472,3 +472,7 @@ one class of defect, and splitting them across the queue would scatter the evide
 ## 2026-11-06 - 0227 placed directly below 0225
 
 `0227` (a `./next` listing of findings entries) is a script-correctness fix to `next` of the same class and size as `0215` and `0225` above it: Tier 2, a defect every scaffolded buffer inherits, which has twice nearly truncated a header during a drain. Below `0225` on tie-breaker 5 (capture order); above `0214` and the design rows because it is `s`, certain and needs no decision.
+
+## 2026-11-08 - 0229 placed directly below 0227; 0230 at the bottom
+
+`0229` (a `--drift` class for a closed item keeping its claim token) is a `next` correctness fix of the same class and size as `0227` above it, and turns a warning `develop` carries as prose into a check. Tier 4, not 2: the stale tokens come only from by-hand closes that predate `close`, and one repo holds them, so nothing new accrues. Below `0227` on capture order; above `0214` and the design rows because it is `s`, certain and needs no decision. `0230` (a blank `ROW 1:` on an empty queue) is Tier 5 polish, cosmetic on a state only a new project's queue reaches, and beats no row above it.
