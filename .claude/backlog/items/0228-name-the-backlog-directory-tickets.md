@@ -3,7 +3,7 @@ id: "0228"
 title: Name the backlog directory .tickets/, since it holds the whole ticket system
 type: chore
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: develop
 ac_digest: AC1=58463572 AC2=a7b9b9b5 AC3=cd1abc8a AC4=155352b5 AC5=53da32f0 AC6=55d17add
@@ -15,9 +15,10 @@ blocked_by: []
 relates: ["0182"]
 expects:
   - "*"
-claimed_by:
-claimed_at:
+claimed_by: "t228"
+claimed_at: 2026-11-08T23:09:22Z
 touches:
+  - "*"
 ---
 
 ## Problem
