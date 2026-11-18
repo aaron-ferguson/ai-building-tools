@@ -1298,6 +1298,44 @@ if [ -s "$agecheck" ] && grep -q 'lock_stale_seconds' "$agecheck"; then
   else
     bad "AC25 — the prescribed check spoke about a lock that does not exist: [$out]"
   fi
+
+  # 0232 — THE SAME BLOCK UNDER THE OTHER PLATFORM'S stat. The host run above proves only the stat
+  # this machine has; the shipped form passed on macOS and errored on every Linux box. The shim
+  # implements what BSD stat does with the forms the block could use, and nothing more: `-f %m
+  # <path>` prints the epoch mtime, any other option is illegal (exit 1, usage on stderr, NOTHING
+  # on stdout). It reads the real mtime through the host stat, whichever that is. PATH holds only
+  # the shim and the tools the block may use, so a block reaching for gdate/perl/python reds here.
+  BSDBIN="$FIX/bsd-bin"; mkdir -p "$BSDBIN"
+  HOSTSTAT="$(command -v stat)"
+  cat > "$BSDBIN/stat" <<SHIM
+#!/bin/sh
+if [ "\$1" = "-f" ] && [ "\$2" = "%m" ] && [ \$# -eq 3 ]; then
+  "$HOSTSTAT" -c %Y "\$3" 2>/dev/null || "$HOSTSTAT" -f %m "\$3"
+  exit
+fi
+echo "stat: illegal option -- \${1#-}" >&2
+echo "usage: stat [-FLnq] [-f format | -l | -r | -s | -x] [-t timefmt] [file ...]" >&2
+exit 1
+SHIM
+  chmod +x "$BSDBIN/stat"
+  for tool in sh date sed; do ln -s "$(command -v "$tool")" "$BSDBIN/$tool"; done
+  out="$( cd "$AGED" && PATH="$BSDBIN" sh "$agecheck" 2>&1 || true )"
+  if printf '%s' "$out" | grep -Eq '^aged [0-9]+$'; then
+    ok "0232 AC3 — under a BSD-semantics stat the aged lock is classified aged with a bare integer age"
+  else
+    bad "0232 AC3 — under a BSD-semantics stat the aged lock did not print 'aged <n>'; it printed [$out]"
+  fi
+  out="$( cd "$FRESH" && PATH="$BSDBIN" sh "$agecheck" 2>&1 || true )"
+  if printf '%s' "$out" | grep -Eq '^fresh [0-9]+$'; then
+    ok "0232 AC3 — under a BSD-semantics stat the fresh lock is classified fresh with a bare integer age"
+  else
+    bad "0232 AC3 — under a BSD-semantics stat the fresh lock did not print 'fresh <n>'; it printed [$out]"
+  fi
+  if grep -Eq 'perl|python|gdate' "$agecheck"; then
+    bad "0232 NFR — the lock-age block reaches for perl/python/gdate; it must use only sh and the platform stat"
+  else
+    ok "0232 NFR — the lock-age block uses no tool beyond sh and the platform stat"
+  fi
 else
   bad "AC25 — the skill prescribes no runnable lock-age check naming lock_stale_seconds; the age is then a session's guess"
   bad "AC25 — an aged lock is unclassifiable without that check"

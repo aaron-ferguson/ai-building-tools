@@ -798,7 +798,7 @@ the **directory**, never from `held-by`: `claim` writes no timestamp there where
 LOCK=.tickets/.lock
 [ -d "$LOCK" ] || exit 0
 stale=$(sed -n 's/^lock_stale_seconds: *//p' .tickets/config.yml)
-mtime=$(stat -f %m "$LOCK" 2>/dev/null || stat -c %Y "$LOCK")
+mtime=$(stat -c %Y "$LOCK" 2>/dev/null || stat -f %m "$LOCK")
 age=$(( $(date -u +%s) - mtime ))
 [ "$age" -gt "$stale" ] && echo "aged $age" || echo "fresh $age"
 ```
