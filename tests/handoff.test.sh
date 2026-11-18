@@ -705,6 +705,144 @@ assert_eq "no commit lands on the worktree's HEAD" "$(git -C "$WT" rev-parse HEA
 assert_eq "the worktree's backlog is byte-identical" \
   "$(find "$WT/.tickets" -type f | sort | xargs cksum)" "$before_sums"
 
+# --- 0231 S1 — a sliced ticket ends a leg with --slice ---------------------------------------
+# A ticket carrying `## Progress` is worked in legs, each one or more consecutive slices; the leg
+# runs from the slice after the last ticked one up to the slice `--slice` names. Every assertion is
+# on the resulting file, never on whether an edit ran, for the reason this suite's header gives.
+#
+# sliced <id> <stage> <token> <slice:> <progress lines…> — the scaffold's item, plus a `slice:`
+# key and a `## Progress` section, with the two `touches:` paths real tracked files and one
+# tracked file the item does not declare.
+sliced() {
+  sl_id="$1"; sl_stage="$2"; sl_tok="$3"; sl_slice="$4"; shift 4
+  scaffold "$FIVE_HEAD" "$FIVE_SEP" "| $sl_id | Sliced row | $sl_stage | in-progress | 0000 |" "$sl_id" "$sl_stage" in-progress "$sl_tok"
+  f="$FIX/.tickets/items/$sl_id-fixture.md"
+  awk -v sl="$sl_slice" 'NR > 1 && /^---$/ && !done { print "slice: " sl; done = 1 } { print }' "$f" > "$f.tmp"
+  mv "$f.tmp" "$f"
+  { printf '\n## Progress\n\n'; for l in "$@"; do printf '%s\n' "$l"; done
+    printf '\n## Acceptance criteria\n\n- [ ] AC1 — first\n- [ ] AC2 — second\n'; } >> "$f"
+  mkdir -p "$FIX/src"
+  printf 'one\n' > "$FIX/src/one.ts"; printf 'two\n' > "$FIX/src/two.ts"; printf 'other\n' > "$FIX/src/other.ts"
+  git -C "$FIX" add -A && git -C "$FIX" commit -q -m "sliced fixture"
+}
+
+# The state a QA session leaves by claiming the row: what ./claim writes, done by hand in a fixture.
+claim_fixture() {
+  f="$FIX/.tickets/items/$ID_UNDER_TEST-fixture.md"
+  awk -v t="$1" '
+    NR > 1 && /^---$/ && !done { done = 1 }
+    !done && /^status:/     { print "status: in-progress"; next }
+    !done && /^claimed_by:/ { print "claimed_by: \"" t "\""; next }
+    { print }' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  q="$FIX/.tickets/QUEUE.md"
+  sed "s/^\(| $ID_UNDER_TEST |.*| [a-z]* | \)ready\( |.*\)$/\1in-progress\2/" "$q" > "$q.tmp" && mv "$q.tmp" "$q"
+  git -C "$FIX" commit -q -am "Claim $ID_UNDER_TEST [$1]"
+}
+
+S_NONE='- [ ] S1 — the scaffolding — discharges none'
+S_AC1='- [ ] S2 — the first behaviour — discharges AC1'
+S_AC2='- [ ] S3 — the second behaviour — discharges AC2'
+
+echo "0231 AC1 — develop -> develop --slice ticks the leg, sets slice: and releases the claim"
+sliced 0901 develop tok0 '' "$S_NONE" "$S_AC1" "$S_AC2"
+out="$(run_handoff 0901 tok0 develop --slice S1)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_item_line "S1 is ticked" '- [x] S1 — the scaffolding — discharges none'
+assert_item_line "S2 is not ticked" "$S_AC1"
+assert_item_line "slice: names S1" 'slice: S1'
+assert_item_line "claimed_by: is cleared" 'claimed_by:'
+assert_item_line "next: is develop" 'next: develop'
+assert_item_line "status: is ready" 'status: ready'
+assert_row "the row reads develop | ready" '| 0901 | Sliced row | develop | ready | 0000 |'
+assert_contains "the leg lands in the hand-off commit" "$(git -C "$FIX" log -1 --format=%s)" 'Hand off 0901 to develop [tok0]'
+assert_contains "nothing is left uncommitted" "clean$(git -C "$FIX" status --porcelain)" 'clean'
+
+echo "0231 AC2 — a dirty touches: path refuses --slice and changes nothing; a foreign dirty path does not"
+sliced 0902 develop tok0 '' "$S_NONE" "$S_AC1" "$S_AC2"
+printf 'half-written\n' >> "$FIX/src/one.ts"
+before="$(fingerprint)"; before_head="$(git -C "$FIX" rev-parse HEAD)"
+out="$(run_handoff 0902 tok0 develop --slice S1)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the dirty touches: path" "$out" 'src/one.ts'
+assert_unchanged "the item and the row are byte-identical" "$before"
+assert_eq "git log is unchanged" "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
+assert_not_contains "the lock is released" "$(ls -a "$FIX/.tickets")" '.lock'
+git -C "$FIX" checkout -q -- src/one.ts
+printf 'another session\n' >> "$FIX/src/other.ts"
+out="$(run_handoff 0902 tok0 develop --slice S1)" && rc=0 || rc=$?
+assert_rc "a dirty path outside touches: does not refuse" "$rc" 0 "$out"
+assert_item_line "and the leg is ticked" '- [x] S1 — the scaffolding — discharges none'
+
+echo "0231 AC3 — a leg discharging an AC goes to verify, and only a verify pass ticks it"
+sliced 0903 develop tok0 '' "$S_NONE" "$S_AC1" "$S_AC2"
+before="$(fingerprint)"
+out="$(run_handoff 0903 tok0 develop --slice S2)" && rc=0 || rc=$?
+assert_rc_nonzero "develop -> develop over an AC-discharging slice exits non-zero" "$rc" "$out"
+assert_contains "names verify" "$out" 'verify'
+assert_contains "names the slice that discharges an AC" "$out" 'S2'
+assert_unchanged "and changes nothing" "$before"
+out="$(run_handoff 0903 tok0 verify --slice S2)" && rc=0 || rc=$?
+assert_rc "develop -> verify --slice S2 exits 0" "$rc" 0 "$out"
+assert_item_line "slice: names S2" 'slice: S2'
+assert_item_line "S1 is not ticked" "$S_NONE"
+assert_item_line "S2 is not ticked" "$S_AC1"
+assert_item_line "next: is verify" 'next: verify'
+claim_fixture tok1
+out="$(run_handoff 0903 tok1 develop --slice S2)" && rc=0 || rc=$?
+assert_rc "verify -> develop --slice S2 (the leg passed) exits 0" "$rc" 0 "$out"
+assert_item_line "S1 is ticked" '- [x] S1 — the scaffolding — discharges none'
+assert_item_line "S2 is ticked" '- [x] S2 — the first behaviour — discharges AC1'
+assert_item_line "S3 is not ticked" "$S_AC2"
+assert_item_line "slice: still names S2" 'slice: S2'
+# The fail bounce: the same verify state, handed back with no --slice.
+sliced 0904 verify tok1 S2 "$S_NONE" "$S_AC1" "$S_AC2"
+out="$(run_handoff 0904 tok1 develop)" && rc=0 || rc=$?
+assert_rc "verify -> develop with no --slice (the fail bounce) exits 0" "$rc" 0 "$out"
+assert_item_line "S1 is not ticked" "$S_NONE"
+assert_item_line "S2 is not ticked" "$S_AC1"
+assert_item_line "slice: still names S2" 'slice: S2'
+# A verify pass names the leg verify was handed, never another.
+sliced 0905 verify tok1 S2 "$S_NONE" "$S_AC1" "$S_AC2"
+before="$(fingerprint)"
+out="$(run_handoff 0905 tok1 develop --slice S3)" && rc=0 || rc=$?
+assert_rc_nonzero "verify -> develop --slice naming a slice other than slice: exits non-zero" "$rc" "$out"
+assert_contains "names the slice verify was handed" "$out" 'slice: S2'
+assert_unchanged "and changes nothing" "$before"
+
+echo "0231 AC4 — a leg holding an unspecified slice refuses naming design"
+sliced 0906 develop tok0 '' "$S_NONE" '- [ ] S2 — not yet sharp enough — unspecified' "$S_AC2"
+before="$(fingerprint)"
+for dest in develop verify; do
+  out="$(run_handoff 0906 tok0 "$dest" --slice S2)" && rc=0 || rc=$?
+  assert_rc_nonzero "develop -> $dest --slice S2 exits non-zero" "$rc" "$out"
+  assert_contains "names design ($dest)" "$out" 'design'
+  assert_contains "names the unspecified slice ($dest)" "$out" 'S2'
+  assert_unchanged "and changes nothing ($dest)" "$before"
+done
+
+echo "0231 FR4 — an unknown slice, and a slice already ticked, are refused"
+sliced 0907 develop tok0 S1 '- [x] S1 — the scaffolding — discharges none' "$S_AC1" "$S_AC2"
+before="$(fingerprint)"
+out="$(run_handoff 0907 tok0 verify --slice S9)" && rc=0 || rc=$?
+assert_rc_nonzero "an unknown slice exits non-zero" "$rc" "$out"
+assert_contains "names the unknown slice" "$out" 'S9'
+assert_unchanged "and changes nothing" "$before"
+out="$(run_handoff 0907 tok0 develop --slice S1)" && rc=0 || rc=$?
+assert_rc_nonzero "a slice already ticked exits non-zero" "$rc" "$out"
+assert_contains "says it is ticked" "$out" 'ticked'
+assert_unchanged "and changes nothing" "$before"
+out="$(run_handoff 0907 tok0 verify --slice)" && rc=0 || rc=$?
+assert_rc_nonzero "--slice with no value exits non-zero" "$rc" "$out"
+assert_unchanged "and changes nothing" "$before"
+
+echo "0231 FR1 — a ticket with no ## Progress refuses --slice and hands off as before without it"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0908 | Unsliced | develop | in-progress | 0000 |' 0908 develop in-progress tok0
+before="$(fingerprint)"
+out="$(run_handoff 0908 tok0 verify --slice S1)" && rc=0 || rc=$?
+assert_rc_nonzero "--slice on an unsliced ticket exits non-zero" "$rc" "$out"
+assert_contains "names the missing section" "$out" '## Progress'
+assert_unchanged "and changes nothing" "$before"
+
 # --- result -------------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

@@ -1548,6 +1548,63 @@ witness="$(cat "$FIX/.lock-witness" 2>/dev/null || echo MISSING)"
 if [ "$witness" = held ]; then ok "the lock was held when the commit ran"; else
   bad "0092 — the lock (.tickets/.lock) was not held when close's commit ran: the witness read $witness"; fi
 
+# --- 0231 AC5 — close on a sliced ticket -------------------------------------------------------
+# A sliced ticket is closed by the verify of its closing leg: the slices after the last ticked one,
+# up to the one `slice:` names, which must be the last slice. Every earlier slice was ticked by its
+# own leg; one that is not is a leg nobody verified, and closing over it would record it as done.
+# mkitem_sliced <id> <slice:> <progress lines…>
+mkitem_sliced() {
+  ms_id="$1"; ms_slice="$2"; shift 2
+  mkitem "$ms_id" verify in-progress '"ab12"' '[]'
+  f="$FIX/$BL/items/$ms_id-fixture.md"
+  awk -v sl="$ms_slice" 'NR > 1 && /^---$/ && !done { print "slice: " sl; done = 1 } { print }' "$f" > "$f.tmp"
+  { cat "$f.tmp"; printf '## Progress\n\n'; for l in "$@"; do printf '%s\n' "$l"; done; } > "$f"
+  rm -f "$f.tmp"
+}
+
+echo "0231 AC5 — close refuses a sliced ticket while a slice before its closing leg is unticked"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0231 | A sliced row | verify | in-progress | 0000 |'
+mkitem_sliced 0231 S3 '- [ ] S1 — the scaffolding — discharges none' \
+  '- [x] S2 — the first behaviour — discharges AC1' '- [ ] S3 — the second behaviour — discharges AC2'
+commit_fixture
+before_head="$(git -C "$FIX" rev-parse HEAD)"
+before_item="$(cat "$FIX/$BL/items/0231-fixture.md")"
+out="$(run_close 0231 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the unticked earlier slice" "$out" 'S1'
+assert_eq "the item is unchanged" "$(cat "$FIX/$BL/items/0231-fixture.md")" "$before_item"
+assert_eq "nothing is committed" "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
+assert_clean "the tree is clean"
+assert_no_lock "the lock is released"
+
+echo "0231 AC5 — with every earlier slice ticked, close ticks the closing leg in the close commit"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0232 | A sliced row | verify | in-progress | 0000 |'
+mkitem_sliced 0232 S3 '- [x] S1 — the scaffolding — discharges none' \
+  '- [ ] S2 — the first behaviour — discharges AC1' '- [ ] S3 — the second behaviour — discharges AC2'
+commit_fixture
+out="$(run_close 0232 ab12)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+item="$(cat "$FIX/$BL/items/0232-fixture.md")"
+assert_contains "S2, in the closing leg, is ticked" "$item" '- [x] S2 — the first behaviour'
+assert_contains "S3, in the closing leg, is ticked" "$item" '- [x] S3 — the second behaviour'
+assert_contains "the ACs are ticked" "$item" '- [x] AC2'
+assert_contains "the item is done" "$item" 'status: done'
+assert_contains "in the close commit" "$(git -C "$FIX" log -1 --format=%s)" 'Close 0232 [ab12]'
+assert_eq "and the close commit is the only one since the fixture" \
+  "$(git -C "$FIX" rev-list --count HEAD)" 2
+
+echo "0231 FR6 — close refuses a sliced ticket whose verified leg is not the last"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0233 | A sliced row | verify | in-progress | 0000 |'
+mkitem_sliced 0233 S2 '- [x] S1 — the scaffolding — discharges none' \
+  '- [ ] S2 — the first behaviour — discharges AC1' '- [ ] S3 — the second behaviour — discharges AC2'
+commit_fixture
+before_head="$(git -C "$FIX" rev-parse HEAD)"
+out="$(run_close 0233 ab12)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the slice still to come" "$out" 'S3'
+assert_eq "nothing is committed" "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
+assert_clean "the tree is clean"
+
 echo "$PASS passed, $FAIL failed"
 TALLIED=1
 [ "$FAIL" -eq 0 ] || exit 1

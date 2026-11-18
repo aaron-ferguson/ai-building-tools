@@ -101,6 +101,11 @@ claimed_at:
 # release-time scope report an empty touches: means nothing declared, so every path the pass
 # changed is named. `touches: "*"` is the exclusive claim and covers every path (0145).
 touches:
+# ONLY on a sliced ticket — one carrying `## Progress` below. The last slice of the most recent
+# leg: written by `./handoff --slice S<n>` and by nothing else, in the same commit as the hand-off.
+# With the ticked state of that slice it tells a leg verify passed (ticked) from one it bounced
+# (unticked), which `next --drive` routes differently. Empty until the first leg ends.
+slice:
 ---
 
 ## Problem
@@ -213,6 +218,31 @@ A struck bullet, `- ~~ACn …~~`, is the plain-bullet shape `./close` misreads, 
 
 - [ ] AC1 —
 - [ ] AC2 —
+
+## Progress  *(only on a ticket worked across several sessions)*
+
+**One outcome is one ticket, even across many sessions**; its slices are worked in order, each about
+one develop session's work (`product-definition-conventions.md` → "Slice Vertically and Thinly").
+A ticket that fits one session has no `## Progress` and behaves exactly as one always has — delete
+this section.
+
+One line per slice, in order, each ending in exactly one of three forms:
+
+    - [ ] S1 — <what lands> — discharges none
+    - [ ] S2 — <what lands> — discharges AC1, AC2
+    - [ ] S3 — <what lands> — unspecified
+
+- **Every AC is named by exactly one slice**, the one where it first becomes true.
+- **`unspecified`** is a slice in scope but not yet sharp enough to give ACs. When it is next, the
+  ticket goes to `design`, which gives it ACs and re-stamps `ac_digest`; `./handoff --slice` refuses
+  a leg holding one. Work ruled out stays in *Out of scope*, so unsharp and ruled-out stay distinct.
+- **A leg is one or more consecutive slices**, ended by `./handoff <id> <token> <stage> --slice S<n>`,
+  which also writes `slice:` above. A leg discharging no AC goes develop → develop and is ticked
+  then; one discharging an AC goes to `verify`, and is ticked only when verify passes it
+  (`./handoff … develop --slice S<n>`). `./close` ticks the closing leg and refuses while an earlier
+  slice is unticked.
+- **Ticked slices are history.** `develop` may re-split or re-order unticked slices, with a dated
+  line in *Notes & decisions*, and never changes an AC in doing so.
 
 ## QA plan
 

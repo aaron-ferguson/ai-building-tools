@@ -604,6 +604,70 @@ if [ "$ac_bullets" -eq 0 ] && [ "$ac_content" -gt 0 ]; then
   exit 1
 fi
 
+# copy-begin: progress-slices
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+# --- the slices of a sliced ticket (0231 FR1) ---------------------------------------------------
+# One line per slice of the item's `## Progress` section, in file order:
+#   <position> <name> <ticked 0|1> <kind>
+# where kind is `ac` (discharges at least one AC), `none` (discharges none) or `unspecified`.
+# A slice line is `- [ ] S<n> — <what lands> — discharges AC<a>, AC<b>`, with `— discharges none`
+# or `— unspecified` as its last field instead; the kind is read from that last field alone, so
+# the text of what lands may say anything. A line whose last field is none of the three is kind
+# `ac` — refusing a develop -> develop over it is the safe misreading, skipping a verify is not.
+progress_slices() {
+  awk '
+    /^## / { inp = ($0 == "## Progress"); next }
+    inp && /^- \[[ xX]\] S[0-9]+[ \t]/ {
+      t = (substr($0, 4, 1) != " ")
+      name = $0; sub(/^- \[[ xX]\] /, "", name); sub(/[ \t].*$/, "", name)
+      last = $0; sub(/^.* — /, "", last); sub(/[ \t]+$/, "", last)
+      if (last == "unspecified") k = "unspecified"
+      else if (last == "discharges none") k = "none"
+      else k = "ac"
+      print ++n, name, t, k
+    }
+  ' "$1"
+}
+
+# has_progress <item> — whether the item has a `## Progress` heading at all.
+has_progress() { grep -qx '## Progress' "$1"; }
+
+# last_ticked_position <slices> — the position of the last ticked slice, 0 when none is.
+last_ticked_position() { printf '%s\n' "$1" | awk '$3 == 1 { p = $1 } END { print p + 0 }'; }
+# copy-end: progress-slices
+
+# --- the seventh refusal: a sliced ticket closed over a leg nobody verified (0231 FR6) ----------
+# A ticket carrying `## Progress` is closed by the verify of its CLOSING LEG: the slices after the
+# last ticked one, up to the one `slice:` names, which must be the last slice. Every slice before
+# that leg was ticked by its own leg passing (handoff --slice); one still unticked is a leg that
+# was never verified, and closing over it would record it as done. Counted BEFORE anything is
+# written, so the refusal leaves the tree as it found it. A ticket with no `## Progress` is
+# single-leg and passes straight through.
+CLOSING_LEG=""
+if has_progress "$item"; then
+  slices="$(progress_slices "$item")"
+  if [ -n "$slices" ]; then
+    closing="$(fm_value "$item" slice)"
+    final="$(printf '%s\n' "$slices" | awk 'END { print $2 }')"
+    [ "$closing" = "$final" ] || {
+      echo "refusing to close $ID: it is sliced, and the leg verify was handed ends at slice: ${closing:-<empty>}," >&2
+      echo "not at its last slice $final — slices after it are still to come:" >&2
+      printf '%s\n' "$slices" | awk -v s="$closing" 'go { printf "  %s\n", $2 } $2 == s { go = 1 } s == "" && $3 == 0 { printf "  %s\n", $2 }' >&2
+      echo "a mid-ticket verify passes its leg with ./handoff $ID $TOKEN develop --slice ${closing:-S<n>}; nothing was changed" >&2
+      exit 1
+    }
+    last="$(last_ticked_position "$slices")"
+    gaps="$(printf '%s\n' "$slices" | awk -v a="$last" '$1 <= a && $3 == 0 { printf "%s%s", sep, $2; sep = " " }')"
+    [ -z "$gaps" ] || {
+      echo "refusing to close $ID: slice(s) before its closing leg are unticked: $gaps" >&2
+      echo "each earlier slice is ticked by its own leg passing, so an unticked one is a leg nobody" >&2
+      echo "verified — work it, or hand it to queue to re-plan; nothing was ticked, moved or committed" >&2
+      exit 1
+    }
+    CLOSING_LEG="$(printf '%s\n' "$slices" | awk -v a="$last" '$1 > a { printf "%s%s", sep, $2; sep = " " }')"
+  fi
+fi
+
 # --- the criteria the author agreed, against the criteria on disk (0195) -----------------------
 # `verify` checks criteria literally against whatever text is on disk, so a criterion rewritten by
 # the stage being held to it passes as edited and the contract moves without its author. The
@@ -862,7 +926,7 @@ fi
 # `touches:` is cleared with its list entries: a closed ticket that keeps reserving files reads as
 # held to the other window (CONCURRENCY.md, 'The working tree is shared too').
 tmp="$(mktemp)"
-awk -v today="$TODAY" '
+awk -v today="$TODAY" -v leg=" $CLOSING_LEG " '
   NR == 1 && /^---$/ { fm = 1; print; next }
   fm && /^---$/ {
     if (!closed_seen) print "closed: " today
@@ -882,8 +946,13 @@ awk -v today="$TODAY" '
     skiplist = 0
     print; next
   }
-  /^## / { in_ac = ($0 ~ /^## Acceptance criteria/) }
+  /^## / { in_ac = ($0 ~ /^## Acceptance criteria/); inp = ($0 == "## Progress") }
   in_ac && /^- \[ \]/ { sub(/^- \[ \]/, "- [x]") }
+  # The slices of the closing leg, ticked in the same commit as the ACs (0231 FR6).
+  inp && /^- \[ \] S[0-9]+[ \t]/ {
+    name = $0; sub(/^- \[ \] /, "", name); sub(/[ \t].*$/, "", name)
+    if (index(leg, " " name " ")) sub(/^- \[ \]/, "- [x]")
+  }
   { print }
 ' "$item" > "$tmp"
 mv "$tmp" "$item"
