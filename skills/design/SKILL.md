@@ -127,6 +127,17 @@ early costs cents; one that assembles the full argument and *then* asks has alre
 a direction that may be rejected in one line. Lead with what you would do and why, then the one thing
 that would change it.
 
+**Unattended — no one can be asked — you prepare a person's decision and never make it.** Where the
+answer turns on taste, or is an architecture or security choice (`coding-conventions.md` → *What Not to
+Delegate to AI*), and a `/sprint` dispatched you or the session is otherwise unwatched: run the spikes,
+read the code, lay out the options and recommend one — most of a decision's cost needs no person — then
+write it as the decision brief `templates/item.md` lays out in `## Waiting on` (Outcome, Where it
+stands, What needs you, two or more Options with pros, cons and what would have to be true, the
+Recommendation, What to do, If no answer). Release with `./handoff <id> <token> design waiting`, which
+refuses a brief missing a part, and report verdict `blocked`. **Never record the decision** — no
+*Notes & decisions* answer, no FRs or ACs written to it, no `ac_digest` — because a recommendation the
+person never saw would then read as one they agreed. Fact-turning questions you still decide.
+
 ---
 
 ## Step 4 — Record it, or it will be re-litigated
@@ -155,6 +166,9 @@ This step is most of the skill's value.
    every FR, and run any detector an FR specifies over the tree before an AC requires the tree green.
    An allowlist forbidding what an FR required (0182) and a detector never run on paper (0146) each
    bounced a row from `develop`.
+   **On a sliced ticket sent here by an `unspecified` slice** (`templates/item.md`, `## Progress`), the
+   criteria you write are that slice's: name them on its line in place of `unspecified`, so every AC
+   still sits on exactly one slice.
    **Where you wrote or changed criteria, last of all**:
    write `ac_digest:` from `./next --ac-digest <id>` into the frontmatter — the author's stamp,
    which `close` and `--drift` refuse criteria against, so it rides in the same commit (0195).
@@ -167,7 +181,7 @@ This step is most of the skill's value.
 yours, and two sessions in one item file has no merge protocol behind it.
 
 **It has to be *seen* rather than decided** — write the ask into the ticket's `## Waiting on` section
-(what must be looked at, who can look), release with `./handoff <id> <token> design waiting`, and stop;
+as the decision brief `templates/item.md` lays out (what must be looked at goes under *What to do*), release with `./handoff <id> <token> design waiting`, and stop;
 `./next --waiting` surfaces it without anyone opening the ticket. Still do not invoke `/prototype`.
 
 **Stopped without deciding** — the answer rests on a fact nobody has, or the pass ends early — release
