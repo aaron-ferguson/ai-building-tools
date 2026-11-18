@@ -829,12 +829,20 @@ held_by() {
 }
 
 # The first line of an item's `## Waiting on` section — the question, without opening the ticket.
+#
+# A section written as the FR14 decision brief (0231) opens on `### Outcome`, so its first line is a
+# heading and carries nothing a person can answer. Where the brief has `### What needs you`, the
+# first line under it is the question; otherwise the section's first line, as before.
 waiting_on() {
   [ -n "$1" ] || return 0
   awk '
     /^## Waiting on/ { inside = 1; next }
     inside && /^## / { exit }
-    inside && NF { print; exit }
+    inside && first == "" && NF { first = $0 }
+    inside && /^### What needs you/ { need = 1; next }
+    need && /^#/ { need = 0 }
+    need && NF { print; found = 1; exit }
+    END { if (!found && first != "") print first }
   ' "$1"
 }
 
@@ -1589,13 +1597,19 @@ if [ "${1:-}" = "--drive" ]; then
   }
 
   # gate_wait <gate ids> — prints "<design id> <shared paths>" for the first running design session
-  # whose `expects:` the gate's `expects:` meets; answers 1 where there is none. The gate WAITS rather
-  # than being stepped over, because stepping over the head would build rank-2 work ahead of it.
+  # whose `touches:` or `expects:` the gate's `expects:` meets; answers 1 where there is none. The
+  # gate WAITS rather than being stepped over, because stepping over the head would build rank-2 work
+  # ahead of it.
+  #
+  # BOTH of the design row's lists (0231 FR10, absorbing 0212). `expects:` is what capture predicted
+  # and `touches:` is what the claiming session declared, and a design pass that widens its reading
+  # after it claimed records the new file only in `touches:` — `expects:` alone missed it.
   gate_wait() {
     gw_scope=""
     for gw_id in $1; do gw_scope="$gw_scope $(fm_list "$(item_for "$gw_id")" expects)"; done
     for gw_id in $(running_at design); do
-      gw_shared="$(paths_shared "$(fm_list "$(item_for "$gw_id")" expects)" "$gw_scope")"
+      gw_it="$(item_for "$gw_id")"
+      gw_shared="$(paths_shared "$(fm_list "$gw_it" touches) $(fm_list "$gw_it" expects)" "$gw_scope")"
       if [ -n "$gw_shared" ]; then printf '%s %s' "$gw_id" "${gw_shared% }"; return 0; fi
     done
     return 1
@@ -1802,9 +1816,18 @@ if [ "${1:-}" = "--drive" ]; then
     return 1
   }
 
-  # One leg of one sliced ticket. The findings gate applies as it does to any develop dispatch.
+  # wait_on_design <develop ids> — exits 6 where a running design session holds a file they expect.
+  wait_on_design() {
+    if wd_wait="$(gate_wait "$1")"; then
+      decide "$WAIT" "WAIT      develop $1 names ${wd_wait#* }, which design ${wd_wait%% *} is reading — wait for its outcome, then call again with --completed"
+    fi
+  }
+
+  # One leg of one sliced ticket. The findings gate applies as it does to any develop dispatch, and
+  # so does the held-design-file wait (0231 FR10): a leg is a gate of one.
   dispatch_leg() {
     PROPOSE_STAGE="develop"; PROPOSE_IDS="$1"
+    wait_on_design "$1"
     findings_gate gate
     decide "$DISPATCH" "DISPATCH  develop $1"
   }
@@ -1872,7 +1895,12 @@ if [ "${1:-}" = "--drive" ]; then
         lnext="$(field "$lrow" "$NEXT")"
         lstatus="$(field "$lrow" "$STATUS")"
         lblockers="$(open_blockers_of "$lid")"
-        if [ "$lstatus" = "waiting" ]; then
+        if [ "$lstatus" = "waiting" ] && [ -n "$SCOPE" ]; then
+          # 0231 FR9 (0226): given a confirmed scope, a row left waiting halts the run only when
+          # nothing else in scope is takeable. The rank walk decides that, and escalates if so.
+          printf 'NOTE      %s is waiting on a person after %s — the rank walk decides whether other in-scope work goes ahead\n' \
+            "$lid" "$lstage"
+        elif [ "$lstatus" = "waiting" ]; then
           decide "$ESCALATE" "ESCALATE  $lid is waiting on a person after $lstage — only they can clear it
           $(waiting_on "$(item_for "$lid")")"
         elif [ "$lstatus" = "in-progress" ]; then
@@ -1904,6 +1932,9 @@ if [ "${1:-}" = "--drive" ]; then
         elif [ "$lstage" = "verify" ] && [ "$lnext" = "develop" ]; then
           decide "$ESCALATE" "ESCALATE  $lid bounced from verify back to next: develop — verify already decided whether the build or the contract was wrong, and re-developing blind spends a stage session rediscovering it"
         elif [ "$lnext" = "$lstage" ]; then
+          # 0231 FR10 (0212): a develop session that found its files held by a running design stood
+          # down and left the row as it was. That is the wait re-entered, not a loop.
+          if [ "$lstage" = develop ] && [ "$lstatus" = ready ]; then wait_on_design "$lid"; fi
           decide "$ESCALATE" "ESCALATE  $lid is still at next: $lstage after a completed $lstage — same ticket, same stage, with an outcome in between"
         elif [ "$lstage" = "design" ] && [ "$lstatus" = "ready" ]; then
           # `--completed design:<id>` and the row has moved on — to develop, or anywhere the
@@ -1923,6 +1954,9 @@ if [ "${1:-}" = "--drive" ]; then
   fi
 
   # --- otherwise, walk the rank ---------------------------------------------------------------
+  # WAITED is the first in-scope waiting row the walk stepped over (0231 FR9). If the walk then
+  # dispatches nothing, that row is what the run is stopped on, ahead of the findings tail.
+  WAITED=""
   # Line order is the rank and the rank is absolute, so the first row anything can act on decides.
   # `blocked` and `in-progress` are the two the rank legitimately steps over — nobody can act on
   # either and no person is being asked for anything. Everything else dispatches or stops.
@@ -1945,6 +1979,21 @@ if [ "${1:-}" = "--drive" ]; then
     if rhold="$(held_by "$id")"; then
       printf 'NOTE      %s is held by %s — another session holds it; stepping over it\n' "$id" "$rhold"
       continue
+    fi
+    # 0231 FR9 (absorbing 0226). Given --scope, a waiting row the scope does not name is stepped
+    # over, as an out-of-scope design row is; an in-scope one is stepped over while other in-scope
+    # work is takeable, and remembered so the walk escalates on it if nothing is dispatched. With
+    # no --scope there is no confirmed scope to be inside, and the row stops the walk as before.
+    if [ "$rstatus" = "waiting" ] && [ -n "$SCOPE" ]; then
+      if ! contains_word "$id" "$SCOPE"; then
+        printf 'NOTE      %s is waiting on a person outside the confirmed scope — stepping over it\n' "$id"
+        continue
+      fi
+      if scope_live; then
+        printf 'NOTE      %s is waiting on a person — other in-scope work is takeable; stepping over it\n' "$id"
+        [ -n "$WAITED" ] || WAITED="$id"
+        continue
+      fi
     fi
     if [ "$rstatus" = "waiting" ]; then
       decide "$ESCALATE" "ESCALATE  $id is waiting on a person and outranks everything below it
@@ -1985,6 +2034,10 @@ if [ "${1:-}" = "--drive" ]; then
         fi
         decide "$ESCALATE" "ESCALATE  $id is at next: design / $rstatus, which no routing rule covers" ;;
       queue)
+        if [ -n "$SCOPE" ] && ! contains_word "$id" "$SCOPE"; then
+          printf 'NOTE      %s is at next: queue outside the confirmed scope — stepping over it\n' "$id"
+          continue
+        fi
         decide "$ESCALATE" "ESCALATE  $id is at next: queue — it has no acceptance criteria to build against, and specifying it is a person's call" ;;
       verify)
         # Batched only where this run developed it (0132 AC2): a row nobody here built is one
@@ -2026,9 +2079,7 @@ if [ "${1:-}" = "--drive" ]; then
         fi
         gate="$(gate_from "$id" "$(takeable_develop)" "$GATE_MAX_ROWS")"
         PROPOSE_STAGE="develop"; PROPOSE_IDS="$gate"
-        if gwait="$(gate_wait "$gate")"; then
-          decide "$WAIT" "WAIT      develop $gate names ${gwait#* }, which design ${gwait%% *} is reading — wait for its outcome, then call again with --completed"
-        fi
+        wait_on_design "$gate"
         findings_gate gate
         decide "$DISPATCH" "DISPATCH  develop $gate" ;;
       *)
@@ -2037,6 +2088,10 @@ if [ "${1:-}" = "--drive" ]; then
   done
   # 0168 FR3/FR4: the run is out of work, so the deferral is over — whether the scope finished or
   # there was none to confirm. The gate decides here or it never runs at all.
+  if [ -n "$WAITED" ]; then
+    decide "$ESCALATE" "ESCALATE  $WAITED is waiting on a person and nothing else in the confirmed scope could be dispatched
+          $(waiting_on "$(item_for "$WAITED")")"
+  fi
   findings_gate complete
   decide "$RUN_COMPLETE" "COMPLETE  nothing takeable at develop — every row is done, blocked, or held by another session"
 fi

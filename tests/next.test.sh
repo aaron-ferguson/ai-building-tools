@@ -3520,6 +3520,170 @@ seal
 out="$(run_next --drive --completed develop:0931 --started 0932 --started 0933 --started 0934)" && rc=0 || rc=$?
 assert_eq "the gate's batch leaves the leg out"      "$(dispatch_line "$out")" 'DISPATCH  verify 0931 0932 0933'
 
+# --- 0231 S4 — waiting and out-of-scope rows, and the held design file ------------------------
+# FR9 (absorbing 0226) and FR10 (absorbing 0212). FR9's "in-scope" presupposes a confirmed scope:
+# with no --scope, a waiting row still stops the walk exactly as 0038 AC9 and 0188 AC3 assert.
+
+# A `## Waiting on` carrying the FR14 brief, every subsection and two options. `next` does not read
+# its shape (S5's `handoff` does); AC10 names a complete brief, so the fixture carries one.
+waiting_brief() {
+  append_section "$1" '## Waiting on
+
+### Outcome
+Retention that legal can sign.
+### Where it stands
+Everything else in scope keeps running.
+### What needs you
+Does legal accept the shorter retention window?
+### Options
+#### Option A — accept
+Pros, cons, and what would have to be true.
+#### Option B — keep the long window
+Pros, cons, and what would have to be true.
+### Recommendation
+Option A.
+### What to do
+Reply A or B; resume with /sprint.
+### If no answer
+This row waits; nothing else does.'
+}
+
+echo "0231 AC10 — an in-scope waiting row is stepped over while other in-scope work is takeable"
+scaffold
+add_row 0941 'Waits on a person' design  waiting ''
+add_row 0942 'In-scope develop'  develop ready   ''
+add_ticket 0941 design  waiting '[]' '' a/one.md
+add_ticket 0942 develop ready   '[]' '' b/two.md
+waiting_brief 0941
+seal
+out="$(run_next --drive --scope 0941 --scope 0942)" && rc=0 || rc=$?
+assert_rc           "exits 0 — dispatch"                     "$rc" 0 "$out"
+assert_contains     "a NOTE names the waiting row"           "$(first_line "$out" 'NOTE      0941')" 'waiting on a person'
+assert_eq           "and the develop row is dispatched"      "$(dispatch_line "$out")" 'DISPATCH  develop 0942'
+assert_not_contains "nothing escalates"                      "$out" 'ESCALATE'
+
+echo "0231 AC10 — with the waiting row the only in-scope work, exit 4"
+out="$(run_next --drive --scope 0941)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"                     "$rc" 4 "$out"
+assert_contains     "on the waiting row"                     "$out" 'ESCALATE  0941'
+assert_contains     "carrying its question"                  "$out" 'shorter retention window'
+assert_not_contains "and dispatches nothing"                 "$out" 'DISPATCH'
+
+echo "0231 FR9 — a stage that leaves its row waiting does not halt a scope with other work"
+out="$(run_next --drive --completed design:0941 --scope 0941 --scope 0942)" && rc=0 || rc=$?
+assert_rc           "exits 0 — dispatch"                     "$rc" 0 "$out"
+assert_eq           "the other in-scope row is dispatched"   "$(dispatch_line "$out")" 'DISPATCH  develop 0942'
+out="$(run_next --drive --completed design:0941 --scope 0941)" && rc=0 || rc=$?
+assert_rc           "and alone in scope it escalates"        "$rc" 4 "$out"
+
+echo "0231 FR9 — a waiting row that is in scope but ranked below in-scope work does not stop it"
+scaffold
+add_row 0942 'In-scope develop'  develop ready   ''
+add_row 0941 'Waits on a person' develop waiting ''
+add_ticket 0942 develop ready   '[]' '' b/two.md
+add_ticket 0941 develop waiting '[]' '' a/one.md
+seal
+out="$(run_next --drive --scope 0941 --scope 0942)" && rc=0 || rc=$?
+assert_eq           "rank 1 is dispatched"                   "$(dispatch_line "$out")" 'DISPATCH  develop 0942'
+
+echo "0231 AC11 — out-of-scope waiting and next: queue rows above a finished scope: NOTE, exit 5"
+scaffold
+set_threshold 8
+add_row 0951 'Waits, out of scope'       develop waiting ''
+add_row 0952 'Needs specifying, outside' queue   ready   ''
+add_ticket 0951 develop waiting '[]' '' a/one.md
+add_ticket 0952 queue   ready   '[]' '' b/two.md
+add_done 0953
+eight_findings
+seal
+out="$(run_next --drive --scope 0953)" && rc=0 || rc=$?
+assert_rc           "exits 5 — the findings gate"            "$rc" 5 "$out"
+assert_contains     "the waiting row is stepped over"        "$(first_line "$out" 'NOTE      0951')" 'outside the confirmed scope'
+assert_contains     "the queue row is stepped over"          "$(first_line "$out" 'NOTE      0952')" 'outside the confirmed scope'
+assert_contains     "and the tail is dispatched"             "$out" 'DISPATCH  retro, then queue'
+assert_not_contains "no escalation masks it"                 "$out" 'ESCALATE'
+
+echo "0231 AC11 — an IN-scope next: queue row still escalates"
+out="$(run_next --drive --scope 0952)" && rc=0 || rc=$?
+assert_rc           "exits 4"                                "$rc" 4 "$out"
+assert_contains     "on the queue row"                       "$out" 'ESCALATE  0952'
+
+# A design session holding a file in `touches:` that its `expects:` never predicted — the shape 0212
+# names: the design pass widened its reading after it claimed.
+# add_design_holding <id> <expects path> <touches path>
+add_design_holding() {
+  cat > "$FIX/.tickets/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: design
+status: in-progress
+qa_level: unit
+size: s
+parent: ""
+blocked_by: []
+expects:
+  - $2
+claimed_by: "fx61"
+claimed_at: 2026-09-09T00:00:00Z
+touches:
+  - $3
+---
+
+## Problem
+ITEM
+}
+
+echo "0231 AC12 — a develop row expecting a file a design session holds in touches: waits, exit 6"
+for held in f/held.md g/other.md; do
+  scaffold
+  add_row 0961 'A design in progress' design  in-progress ''
+  add_row 0962 'The develop head'     develop ready       ''
+  add_design_holding 0961 x/read.md "$held"
+  add_ticket 0962 develop ready '[]' '' f/held.md
+  seal
+  out="$(run_next --drive)" && rc=0 || rc=$?
+  if [ "$held" = f/held.md ]; then
+    assert_rc           "exits 6 — wait"                   "$rc" 6 "$out"
+    wline="$(first_line "$out" 'WAIT      ')"
+    assert_contains     "the WAIT line names the design"   "$wline" '0961'
+    assert_contains     "and the file"                     "$wline" 'f/held.md'
+    assert_not_contains "no DISPATCH for the develop row"  "$out" 'DISPATCH'
+  else
+    assert_rc           "with disjoint files it exits 0"   "$rc" 0 "$out"
+    assert_eq           "and dispatches the develop row"   "$(dispatch_line "$out")" 'DISPATCH  develop 0962'
+  fi
+done
+
+echo "0231 AC12 — a develop that left its row unchanged while the design still holds the file waits"
+scaffold
+add_row 0961 'A design in progress' design  in-progress ''
+add_row 0962 'The develop head'     develop ready       ''
+add_design_holding 0961 x/read.md f/held.md
+add_ticket 0962 develop ready '[]' '' f/held.md
+seal
+out="$(run_next --drive --completed develop:0962)" && rc=0 || rc=$?
+assert_rc           "exits 6, not 4"                         "$rc" 6 "$out"
+assert_contains     "naming the design"                      "$(first_line "$out" 'WAIT      ')" '0961'
+assert_not_contains "not the loop escalation"                "$out" 'same ticket, same stage'
+add_design_holding 0961 x/read.md g/other.md
+seal
+out="$(run_next --drive --completed develop:0962)" && rc=0 || rc=$?
+assert_rc           "with the file released it is the loop again" "$rc" 4 "$out"
+
+echo "0231 FR10 — a sliced ticket's next leg waits on a held design file too"
+scaffold
+add_row 0961 'A design in progress' design  in-progress ''
+add_row 0963 'Sliced'               develop ready       ''
+add_design_holding 0961 x/read.md f/held.md
+add_sliced 0963 develop ready S1 f/held.md '- [x] S1 — groundwork — discharges none
+- [ ] S2 — the behaviour — discharges AC1'
+fixture_handed_off_from 0963 develop
+out="$(run_next --drive --completed develop:0963)" && rc=0 || rc=$?
+assert_rc           "exits 6 — wait"                         "$rc" 6 "$out"
+assert_contains     "the WAIT line names the leg"            "$(first_line "$out" 'WAIT      ')" '0963'
+assert_not_contains "and dispatches nothing"                 "$out" 'DISPATCH'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
