@@ -2,8 +2,8 @@
 id: "0231"
 title: Drive one outcome ticket across slice sessions unattended
 type: feature
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,10 +15,11 @@ blocked_by: []
 relates: ["0071", "0149", "0220", "0226", "0212", "0137", "0128", "0204"]
 expects: [skills/sprint/SKILL.md, skills/sprint/outcome.schema.json, tools/validate-json-schema.py, skills/design/SKILL.md, skills/develop/SKILL.md, skills/verify/SKILL.md, skills/queue/SKILL.md, skills/queue/templates/item.md, skills/queue/templates/next, skills/queue/templates/handoff, skills/queue/templates/claim, skills/queue/templates/close, skills/queue/templates/config.yml, references/CONCURRENCY.md, tests/next.test.sh, tests/handoff.test.sh, tests/batching.test.sh, tests/close.test.sh, tests/sprint-ledger.test.sh, tools/sprint-ledger.sh, README.md, CHANGELOG.md]
 ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=414ddd39 AC7=6caf69d4 AC8=1295a15c AC9=1dab5f85 AC10=865d23ca AC11=63334335 AC12=570dc5d8 AC13=ccc5aeaa AC14=6cd4e5b9 AC15=aca1f25c AC16=e3a5e129 AC17=06b1bf5e
-claimed_by: "ba9e"
-claimed_at: 2026-11-18T16:38:18Z
+claimed_by:
+claimed_at:
 touches:
 slice: S6
+closed: 2026-11-18
 ---
 
 ## Problem
@@ -201,23 +202,23 @@ design pass's set. Absorbs 0212, 0220, 0226 and 0071, each withdrawn with a poin
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture item with three slices where S1 discharges none, when `handoff <id> <token> develop --slice S1` runs, then the item shows S1 ticked, `slice: S1`, `claimed_by:` empty, `next: develop`, `status: ready` (`tests/handoff.test.sh`).
-- [ ] AC2 — Given the same fixture with a path from the item's `touches:` modified, when `handoff --slice S1` runs, then it exits non-zero naming that path, and the item, the row and `git log` are unchanged; and given a dirty path not in `touches:`, then it succeeds (`tests/handoff.test.sh`).
-- [ ] AC3 — Given a fixture where S1 discharges none and S2 discharges an AC, when `handoff develop --slice S2` runs, then it refuses naming `verify`; when `handoff verify --slice S2` runs, then `slice: S2` and neither slice is ticked; when verify then runs `handoff develop --slice S2`, then S1 and S2 are both ticked; and when verify instead hands back without `--slice`, then neither is ticked (`tests/handoff.test.sh`).
-- [ ] AC4 — Given a fixture whose leg contains a slice marked `unspecified`, when `handoff --slice` covers it, then it refuses naming `design` and changes nothing (`tests/handoff.test.sh`).
-- [ ] AC5 — Given a sliced fixture whose closing leg is the one `slice:` names and an earlier slice is unticked, when `close` runs, then it refuses naming the unticked slice; and with every earlier slice ticked, then it closes and ticks the closing leg's slices in the close commit (`tests/close.test.sh`).
-- [ ] AC6 — Given `outcome.schema.json` and `tools/validate-json-schema.py`, then a `progressed` outcome with `slice: {done: S1, next: S2}` validates, one with `progressed` and no `slice.next` fails, and an existing `built` outcome with no `slice` still validates (a new `tests/outcome-schema.test.sh`).
-- [ ] AC7 — Given the AC1 and AC3 fixtures, when `next --drive` runs with `--completed develop:<id>` after the develop → develop hand-off, then it prints `DISPATCH  develop <id>`; after the develop → verify hand-off, `DISPATCH  verify <id>` naming that ticket alone; with `--completed verify:<id>` after the pass, `DISPATCH  develop <id>`; and after the fail, exit 4 with the bounce escalation (`tests/next.test.sh`).
-- [ ] AC8 — Given ticket A with S1 and S2 ticked and S3 unticked at `develop / ready`, and ticket B at `develop / ready` ranked above it, when `next --drive --completed develop:A --scope A --scope B` runs, then it dispatches `develop A`, not B (`tests/next.test.sh`).
-- [ ] AC9 — Given three rows developed in one gate, all at `verify / ready`, all in `--started`, when `--drive --completed develop:<lead>` runs, then one `DISPATCH  verify` line names all three; red if any is named in a separate session (`tests/next.test.sh`).
-- [ ] AC10 — Given an in-scope `design / waiting` row with a complete brief and an in-scope `develop / ready` row, when `--drive` runs, then it prints a `NOTE` naming the waiting row, dispatches the develop row and exits 0; and with the waiting row as the only in-scope work, then it exits 4 (`tests/next.test.sh`).
-- [ ] AC11 — Given an out-of-scope `waiting` row and an out-of-scope `next: queue` row ranked above a finished scope, with `FINDINGS.md` past `findings_threshold`, when `--drive` runs, then both are stepped over with a `NOTE` and it exits 5 (`tests/next.test.sh`).
-- [ ] AC12 — Given design row A in-progress with file F in `touches:` and develop row B expecting F, when `--drive` runs, then it exits 6 naming A and prints no `DISPATCH` for B; with A's files disjoint, then it dispatches B; and with B unchanged after `--completed develop:B` while A still holds F, then it exits 6, not 4 (`tests/next.test.sh`).
-- [ ] AC13 — Given a fixture item whose `## Waiting on` lacks `### If no answer`, or has one `#### Option`, when `handoff <id> <token> design waiting` runs, then it refuses naming the missing part and changes nothing; and given every subsection with two options, then it succeeds (`tests/handoff.test.sh`).
-- [ ] AC14 — Given a fixture run log whose `scope_confirmed` carries a budget and deadline, when `tools/sprint-ledger.sh envelope` runs with the outcomes so far leaving less than the next stage's estimate, then it prints `STOP` naming budget or time and exits non-zero; with enough left, `CONTINUE` and exit 0; and with no ledger prior, it uses the stage cap and says so (`tests/sprint-ledger.test.sh`).
-- [ ] AC15 — Given `tests/batching.test.sh`, then its gate cases pass unchanged, so gate batching still holds for unsliced rows (`tests/batching.test.sh`).
-- [ ] AC16 — Given the full suite `for t in tests/*.test.sh; do "$t" || exit 1; done`, then it exits 0 with no existing case edited to pass.
-- [ ] AC17 — Given the changed skill files, when `verify` reads them, then: `templates/item.md` documents `## Progress`, `slice:`, `unspecified` and the FR14 brief; `develop` carries FR3's leg rule citing `MEASUREMENT.md`; `verify` carries FR5's per-leg cadence; `design` Step 3 carries the unattended prepare-and-wait case and the clause that it never records the decision; `sprint` carries the envelope proposal (FR12), the FR14 notification, and a Step 8 still listing push, bump, install and restart as per-action approvals; `queue` carries Merge, amend-first and the bounded wait (FR16–FR18); `CONCURRENCY.md` carries FR18's reasoning. Read, not grepped (`CLAUDE.md`, *Tests*).
+- [x] AC1 — Given a fixture item with three slices where S1 discharges none, when `handoff <id> <token> develop --slice S1` runs, then the item shows S1 ticked, `slice: S1`, `claimed_by:` empty, `next: develop`, `status: ready` (`tests/handoff.test.sh`).
+- [x] AC2 — Given the same fixture with a path from the item's `touches:` modified, when `handoff --slice S1` runs, then it exits non-zero naming that path, and the item, the row and `git log` are unchanged; and given a dirty path not in `touches:`, then it succeeds (`tests/handoff.test.sh`).
+- [x] AC3 — Given a fixture where S1 discharges none and S2 discharges an AC, when `handoff develop --slice S2` runs, then it refuses naming `verify`; when `handoff verify --slice S2` runs, then `slice: S2` and neither slice is ticked; when verify then runs `handoff develop --slice S2`, then S1 and S2 are both ticked; and when verify instead hands back without `--slice`, then neither is ticked (`tests/handoff.test.sh`).
+- [x] AC4 — Given a fixture whose leg contains a slice marked `unspecified`, when `handoff --slice` covers it, then it refuses naming `design` and changes nothing (`tests/handoff.test.sh`).
+- [x] AC5 — Given a sliced fixture whose closing leg is the one `slice:` names and an earlier slice is unticked, when `close` runs, then it refuses naming the unticked slice; and with every earlier slice ticked, then it closes and ticks the closing leg's slices in the close commit (`tests/close.test.sh`).
+- [x] AC6 — Given `outcome.schema.json` and `tools/validate-json-schema.py`, then a `progressed` outcome with `slice: {done: S1, next: S2}` validates, one with `progressed` and no `slice.next` fails, and an existing `built` outcome with no `slice` still validates (a new `tests/outcome-schema.test.sh`).
+- [x] AC7 — Given the AC1 and AC3 fixtures, when `next --drive` runs with `--completed develop:<id>` after the develop → develop hand-off, then it prints `DISPATCH  develop <id>`; after the develop → verify hand-off, `DISPATCH  verify <id>` naming that ticket alone; with `--completed verify:<id>` after the pass, `DISPATCH  develop <id>`; and after the fail, exit 4 with the bounce escalation (`tests/next.test.sh`).
+- [x] AC8 — Given ticket A with S1 and S2 ticked and S3 unticked at `develop / ready`, and ticket B at `develop / ready` ranked above it, when `next --drive --completed develop:A --scope A --scope B` runs, then it dispatches `develop A`, not B (`tests/next.test.sh`).
+- [x] AC9 — Given three rows developed in one gate, all at `verify / ready`, all in `--started`, when `--drive --completed develop:<lead>` runs, then one `DISPATCH  verify` line names all three; red if any is named in a separate session (`tests/next.test.sh`).
+- [x] AC10 — Given an in-scope `design / waiting` row with a complete brief and an in-scope `develop / ready` row, when `--drive` runs, then it prints a `NOTE` naming the waiting row, dispatches the develop row and exits 0; and with the waiting row as the only in-scope work, then it exits 4 (`tests/next.test.sh`).
+- [x] AC11 — Given an out-of-scope `waiting` row and an out-of-scope `next: queue` row ranked above a finished scope, with `FINDINGS.md` past `findings_threshold`, when `--drive` runs, then both are stepped over with a `NOTE` and it exits 5 (`tests/next.test.sh`).
+- [x] AC12 — Given design row A in-progress with file F in `touches:` and develop row B expecting F, when `--drive` runs, then it exits 6 naming A and prints no `DISPATCH` for B; with A's files disjoint, then it dispatches B; and with B unchanged after `--completed develop:B` while A still holds F, then it exits 6, not 4 (`tests/next.test.sh`).
+- [x] AC13 — Given a fixture item whose `## Waiting on` lacks `### If no answer`, or has one `#### Option`, when `handoff <id> <token> design waiting` runs, then it refuses naming the missing part and changes nothing; and given every subsection with two options, then it succeeds (`tests/handoff.test.sh`).
+- [x] AC14 — Given a fixture run log whose `scope_confirmed` carries a budget and deadline, when `tools/sprint-ledger.sh envelope` runs with the outcomes so far leaving less than the next stage's estimate, then it prints `STOP` naming budget or time and exits non-zero; with enough left, `CONTINUE` and exit 0; and with no ledger prior, it uses the stage cap and says so (`tests/sprint-ledger.test.sh`).
+- [x] AC15 — Given `tests/batching.test.sh`, then its gate cases pass unchanged, so gate batching still holds for unsliced rows (`tests/batching.test.sh`).
+- [x] AC16 — Given the full suite `for t in tests/*.test.sh; do "$t" || exit 1; done`, then it exits 0 with no existing case edited to pass.
+- [x] AC17 — Given the changed skill files, when `verify` reads them, then: `templates/item.md` documents `## Progress`, `slice:`, `unspecified` and the FR14 brief; `develop` carries FR3's leg rule citing `MEASUREMENT.md`; `verify` carries FR5's per-leg cadence; `design` Step 3 carries the unattended prepare-and-wait case and the clause that it never records the decision; `sprint` carries the envelope proposal (FR12), the FR14 notification, and a Step 8 still listing push, bump, install and restart as per-action approvals; `queue` carries Merge, amend-first and the bounded wait (FR16–FR18); `CONCURRENCY.md` carries FR18's reasoning. Read, not grepped (`CLAUDE.md`, *Tests*).
 
 ## Progress
 
@@ -229,7 +230,7 @@ hand.
 - [x] S3 — `--drive` leg routing, started-first, and one verify session per gate or leg (0220) — discharges AC7, AC8, AC9, AC15
 - [x] S4 — `--drive` waiting and out-of-scope rows, exit precedence (0226), and the held-design-file wait (0212) — discharges AC10, AC11, AC12
 - [x] S5 — the decision brief enforced by `handoff`, and the `envelope` check — discharges AC13, AC14
-- [ ] S6 — skill, template and reference prose for develop, verify, design, sprint, queue and CONCURRENCY; README; CHANGELOG — discharges AC16, AC17
+- [x] S6 — skill, template and reference prose for develop, verify, design, sprint, queue and CONCURRENCY; README; CHANGELOG — discharges AC16, AC17
 
 ## QA plan
 
@@ -571,6 +572,113 @@ away (`&& grep -q '^## Waiting on' "$item"` removed) reddens `tests/handoff.test
 S6's (AC17), not this leg's. Newly reachable: unchanged from b5c7; the re-entry is test-only.
 Evidence set: `skills/queue/templates/handoff`, `.tickets/handoff`, `tools/sprint-ledger.sh`,
 `tests/handoff.test.sh`, `tests/sprint-ledger.test.sh`, `tests/declared-copies.test.sh`, `tests/*.test.sh`.
+
+### Leg S6 — closing verify (ba9e), 2026-11-18: PASS, closing
+
+Closing leg per FR5: S6's ACs (AC16, AC17) literally, the whole suite, and every earlier AC
+re-confirmed on the current tree, because closing ticks all seventeen.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`), each file's exit
+captured. Subject: `783b539` (claim over `28c6795`; S6 = `55ac883`, `8ec83f0`, `1b826c8`, `e70b168`,
+`7efcba1`, `c1223d0`, `1a17811`, `6931ff6`, `b661e88`, `19f76e4`). Copy executed: the repo's templates
+(`HANDOFF_SRC`, `CLOSE_SRC`, `NEXT_SRC`), `tools/sprint-ledger.sh`, `tools/validate-json-schema.py`;
+the `.tickets/` copies are byte-identical (`tests/declared-copies.test.sh` 23/0). AC17's skill prose
+was read in the repo copy, not the installed 0.9.48, which predates it.
+`./next --ac-digest 0231 --check` → `0231: ac_digest matches`.
+Tree: `git status --porcelain` was empty at Step 2 and after the last check. Dirty set empty, advisory
+intersection empty. Lint and typecheck are not configured.
+
+Suite: 45 files, 45 `EXIT 0`. Tallies: `tests/handoff.test.sh` `250 passed, 0 failed`;
+`tests/close.test.sh` `322 passed, 0 failed`; `tests/next.test.sh` `635 passed, 0 failed`;
+`tests/outcome-schema.test.sh` `12 passed, 0 failed`; `tests/sprint-ledger.test.sh` `229 passed, 0 failed`;
+`tests/batching.test.sh` `39 passed, 0 failed`; `tests/sprint.test.sh` `388 passed, 0 failed, 0 skipped`.
+
+**Earlier ACs, re-confirmed at HEAD.** `handoff` gained S5's brief check after S1 was verified, and
+`next` gained S4 after S3 was verified, so the earlier legs' mutation results describe older bytes.
+This pass re-ran one mutation per AC, aimed at what the AC claims. The clause division is the earlier
+legs' tables above, unchanged. Each mutation ran in its own detached worktree at `783b539`, through a
+script that required the pattern exactly once, confirmed a non-empty `git diff --stat`, ran the owning
+test file, restored by path and confirmed the worktree clean (all 18 `clean=[0]`). The control is the
+suite above, at the same SHA. Worktrees removed.
+
+| AC | Claim mutated | Mutation | Result |
+|---|---|---|---|
+| AC1, AC3 | the leg's slices are ticked | `handoff`: leg-tick `sub()` guarded by `if (0)` | red, 238/12 |
+| AC2 | dirty `touches:` path refused | `handoff`: `[ -z "$dirty" ] \|\|` → `true \|\|` | red, 245/5 |
+| AC3 | develop → develop refuses a leg discharging an AC | `handoff`: `$4 == "ac"` → `"XX"` | red, 242/8 |
+| AC4 | `unspecified` slice refused | `handoff`: `$4 == "unspecified"` → `"XX"` | red, 244/6 |
+| AC5 | close refuses an earlier unticked slice | `close`: gap test `$3 == 0` → `9` | red, 318/4 |
+| AC5 | close ticks the closing leg | `close`: closing-leg `sub()` guarded by `if (0)` | red, 320/2 |
+| AC6 | `progressed` requires `slice.next` | schema `if`: `["progressed"]` → `["nothing"]` | red, 10/2 |
+| AC7 | a clean leg dispatches the next leg | `next`: leg arm's `leg_state = clean` → `false` | red, 628/7 |
+| AC8 | a started sliced ticket goes before rank | `next`: `started_leg` call → `false` | red, 632/3 |
+| AC9 | one `DISPATCH verify` line for the gate | `next`: `completed_batch` returns the lead alone | red, 632/3 |
+| AC10 | an in-scope waiting row is stepped over | `next`: `scope_live` in the waiting branch → `false` | red, 625/10 |
+| AC11 | out-of-scope `queue` row stepped over | `next`: its scope test → `false` | red, 629/6 |
+| AC11 | out-of-scope `waiting` row stepped over | `next`: its scope test → `false` | red, 629/6 |
+| AC12 | held design file → exit 6 | `next`: `gate_wait`'s `[ -n "$gw_shared" ]` → `false` | red, 621/14 |
+| AC13 | incomplete brief refused | `handoff`: `[ -z "$brief_gaps" ] \|\|` → `true \|\|` | red, 212/38 |
+| AC14 | STOP names budget | `sprint-ledger.sh`: `budget:` → `over:` | red, 228/1 |
+| AC15 | unsliced gate batching | `next`: `gate_admits` → `false`, run against `tests/batching.test.sh` | **green, 39/0**: that file guards prose only, as S3's verify recorded |
+| AC15 | (same mutation, against the behaviour) | as above, run against `tests/next.test.sh` | red, 602/33 (`FAIL — dispatches all three as one gate`) |
+
+AC15 read literally: `tests/batching.test.sh` is unchanged across the ticket (`git diff 730bcab~1 HEAD`
+lists nothing for it) and passes 39/0. The unsliced gate behaviour it names is held by
+`tests/next.test.sh`, which reddens under the batching mutation. No mutation of the AC's claim stayed
+green against the guard of that claim, so the gap test has nothing to report.
+
+**AC16.** The whole suite exits 0 (above). Every test line this ticket removed was checked
+(`git diff 730bcab~1 HEAD -- tests/`). The `tests/release.test.sh` lines and the `tests/sprint.test.sh`
+0232 block belong to 0233/0232, not to this ticket. The one removal that is this ticket's is
+`tests/sprint.test.sh`'s *Scope size* case (`7efcba1`), which was **deleted, not edited to pass**. It
+asserted the proposal's `at least three tickets` floor. FR12 replaces that floor by name, and
+`CLAUDE.md` (*Tests*) requires a prose guard that reds on correct wording to be deleted, not
+re-anchored. No assertion of behaviour this ticket promised to keep was weakened. Pass.
+
+**AC17, read, not grepped** (S6 diff `55ac883~1..19f76e4`, plus the files as they stand):
+- [x] `skills/queue/templates/item.md`: `## Progress` with `discharges` / `none` / `unspecified`
+  slice lines and `slice:` (frontmatter comment). `## Waiting on` is the seven-part brief, with two
+  `#### Option` entries and the refusal stated.
+- [x] `skills/develop/SKILL.md` Step 5, *A sliced ticket is worked a leg at a time*: commit per
+  slice; continue only on shared open files and below the 28.5-turn break-even, citing `MEASUREMENT.md`
+  (its FAIL re-entry pricing, line 440); never meter spend; `--slice` endings; `PROGRESSED` line.
+- [x] `skills/verify/SKILL.md` Step 5, *A sliced ticket is verified once per leg*: the leg's ACs plus
+  the whole suite, tick no AC, pass → `develop --slice`, fail without, the closing leg checks every AC.
+- [x] `skills/design/SKILL.md` Step 3, *Unattended*: spikes, brief, `design waiting`, verdict `blocked`,
+  and **Never record the decision**, which also rules out FRs, ACs and `ac_digest`.
+- [x] `skills/sprint/SKILL.md`: the envelope proposal (budget, end time, defaults, refusal of an
+  envelope below one leg plus verify, `scope_confirmed` fields) in *The proposal*; the envelope check
+  before every dispatch, leg routing and the FR14 notification in Step 2; the waiting step-over in
+  Step 6; Step 8's first bullet still reads *never pushes, bumps a version, installs, or restarts*
+  without per-action approval, and its design bullet carries FR15.
+- [x] `skills/queue/SKILL.md`: the Merge row and *Merging tickets into one outcome* (FR17); *Amend
+  first* in Step 2 (FR16, with FR1's slice guidance); the Amend bullet's bounded wait (FR18).
+- [x] `references/CONCURRENCY.md`, *A stage writes only the ticket it holds*: FR18's reasoning (one
+  writer per item file, `ac_digest` refusal, a wait of at most one leg).
+
+**NFRs.** Security holds by reading: the Step 8 push/bump/install/restart bullet is unchanged, and
+design never records a decision. It is **unguarded**, as the row declares: prose, and no prose
+guards here. Compatibility holds: existing cases pass, the brief check applies only to a new
+`handoff … waiting` over a `## Waiting on` (S5's verify mutated that scope and saw it red), and
+unsliced routing is held by the AC15 mutation above. Documentation holds by reading: ten `CHANGELOG.md`
+`## Unreleased` entries, one per behaviour, and README rows for queue, design, develop, verify and
+sprint. The prose itself is unguarded; `tools/release` guards only an empty `## Unreleased`.
+Always-on core pass: S6 is prose, a CHANGELOG and a README; it adds no prose guard, no secret and
+nothing from a company.
+
+**Not run: the QA plan's dry `/sprint`** against a scratch four-slice backlog. It is a journey through
+real `claude -p` dispatches. At the declared `qa_level: unit`, only `commands.unit` is run, so it sits
+above the level and no earlier leg ran it either. Each mechanism it would watch is held by a fixture
+AC above; the journey across them is not observed.
+
+Newly reachable (Step 4): `--drive` now dispatches develop on a clean leg and steps over waiting rows.
+Both are bounded by S3/S4's verified guards. Design may now leave a row `waiting` unattended, which
+narrows what is reachable. Nothing adds a route to push, release or destructive action.
+Evidence set: `skills/queue/templates/{handoff,close,next,item.md}`, `.tickets/{handoff,close,next}`,
+`skills/sprint/outcome.schema.json`, `tools/validate-json-schema.py`, `tools/sprint-ledger.sh`,
+`skills/{develop,verify,design,sprint,queue}/SKILL.md`, `references/CONCURRENCY.md`, `README.md`,
+`CHANGELOG.md`, `MEASUREMENT.md`, `tests/*.test.sh`.
 
 ## Notes & decisions
 
