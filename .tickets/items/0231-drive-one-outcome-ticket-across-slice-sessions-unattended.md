@@ -2,8 +2,8 @@
 id: "0231"
 title: Drive one outcome ticket across slice sessions unattended
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,8 +15,8 @@ blocked_by: []
 relates: ["0071", "0149", "0220", "0226", "0212", "0137", "0128", "0204"]
 expects: [skills/sprint/SKILL.md, skills/sprint/outcome.schema.json, tools/validate-json-schema.py, skills/design/SKILL.md, skills/develop/SKILL.md, skills/verify/SKILL.md, skills/queue/SKILL.md, skills/queue/templates/item.md, skills/queue/templates/next, skills/queue/templates/handoff, skills/queue/templates/claim, skills/queue/templates/close, skills/queue/templates/config.yml, references/CONCURRENCY.md, tests/next.test.sh, tests/handoff.test.sh, tests/batching.test.sh, tests/close.test.sh, tests/sprint-ledger.test.sh, tools/sprint-ledger.sh, README.md, CHANGELOG.md]
 ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=414ddd39 AC7=6caf69d4 AC8=1295a15c AC9=1dab5f85 AC10=865d23ca AC11=63334335 AC12=570dc5d8 AC13=ccc5aeaa AC14=6cd4e5b9 AC15=aca1f25c AC16=e3a5e129 AC17=06b1bf5e
-claimed_by: "2a45"
-claimed_at: 2026-11-18T15:01:54Z
+claimed_by:
+claimed_at:
 touches:
 slice: S3
 ---
@@ -226,7 +226,7 @@ hand.
 
 - [x] S1 — item shape, `handoff --slice` legs, the dirty-`touches:` refusal and `close` on sliced tickets — discharges AC1, AC2, AC3, AC4, AC5
 - [x] S2 — `progressed` in the outcome schema and validator support for the conditional — discharges AC6
-- [ ] S3 — `--drive` leg routing, started-first, and one verify session per gate or leg (0220) — discharges AC7, AC8, AC9, AC15
+- [x] S3 — `--drive` leg routing, started-first, and one verify session per gate or leg (0220) — discharges AC7, AC8, AC9, AC15
 - [ ] S4 — `--drive` waiting and out-of-scope rows, exit precedence (0226), and the held-design-file wait (0212) — discharges AC10, AC11, AC12
 - [ ] S5 — the decision brief enforced by `handoff`, and the `envelope` check — discharges AC13, AC14
 - [ ] S6 — skill, template and reference prose for develop, verify, design, sprint, queue and CONCURRENCY; README; CHANGELOG — discharges AC16, AC17
