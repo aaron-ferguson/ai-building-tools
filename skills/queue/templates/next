@@ -377,6 +377,12 @@ usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --fi
                      Given --scope, a takeable design row the scope does not name is stepped over
                      with a NOTE, and every in-scope design row is dispatched before any develop
                      gate: design first, then build.
+                     Given --scope, an in-scope waiting row is stepped over with a NOTE while other
+                     in-scope work is takeable (exit 4 only when none is), and an out-of-scope
+                     waiting or next: queue row is stepped over with a NOTE, never masking exit 5.
+                     A ticket carrying ## Progress is its own dispatch unit, one leg per session:
+                     after `handoff --slice` the next leg's develop or the leg's verify is
+                     dispatched rather than escalated, and a started sliced ticket is finished first.
                      --propose describes the dispatch a person is being asked to approve — how many
                      tickets, which, a line of work each, and what holds the gate together — and is
                      for the ONE call a run makes before its first stage. Opt-in because every later
@@ -402,7 +408,7 @@ empty stage — the two mean different things to whoever reads them.
 
 --drive spends a code per outcome, and they are the contract: 0 dispatch this · 3 run complete,
 nothing takeable · 4 escalate, a person decides, drift included · 5 the findings gate is reached,
-dispatch retro · 6 wait, the develop gate names a file a design session in progress also names;
+dispatch retro · 6 wait, the develop gate or leg names a file a design session in progress also names in touches: or expects:;
 wait for that session's outcome, then call again. A design row naming a file a develop session in
 progress touches is stepped over instead; design beside design or verify never conflicts. 1 (drift, malformed) and 2 (usage error) mean what they mean everywhere else —
 --drive reports drift on 4 rather than on 1 because what it has found is a decision for a person,
