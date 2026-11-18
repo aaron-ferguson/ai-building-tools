@@ -478,3 +478,52 @@ Evidence set: `skills/queue/templates/handoff`, `skills/queue/templates/close`, 
 - 2026-11-18 — **verify (0a93), leg S1: PASS.** AC1–AC5 checked literally, and each clause was
   mutated red by this pass (*QA evidence*, Leg S1). The full suite is green at `0918f6c`. Handed back with
   `--slice S1` so S1 ticks; no AC ticked. Next leg: S2.
+- 2026-11-18 — **develop (c41b), leg S2: built, handed to verify with `--slice S2`.** Commits
+  `6bfec33` (schema `progressed` + `slice`, validator `if`/`then`/`else`, new
+  `tests/outcome-schema.test.sh`) and `a3ae3e6` (README guard-block line, which
+  `tests/citations.test.sh` 0046 requires for every new suite). S2 alone is the leg: it discharges
+  AC6, so FR4 refuses develop → develop, and S3 opens `templates/next` and `tests/next.test.sh`,
+  neither of which S2 had open (FR3).
+  - **Shape chosen inside FR7's wording.** `slice` is optional on every verdict and requires only
+    `done`; the `if` (`verdict` ∈ [`progressed`]) / `then` makes `slice` and `slice.next` required.
+    So a leg handed to verify may report `slice: {done: S2}` under `built`, and a closing leg needs
+    no `next`. The `if` uses `enum` rather than `const`, which the validator already had (FR7: "or an
+    equivalent it already has"). The validator's `if` contributes no errors of its own; it only picks
+    `then` or `else`.
+  - **CLI probe (FR7), run against the installed `claude` 2.1.327 with this schema file, stdin from
+    `/dev/null`:** (b) a `progressed` outcome with `slice {done: S1, next: S2}` came back
+    schema-valid, exit 0; (c) told to omit `slice.next`, the CLI refused it with *"/tickets/0/slice:
+    must have required property 'next', /tickets/0: must match "then" schema"* and the session
+    printed prose instead of JSON, so the CLI both accepts **and enforces** the conditional. The first
+    version printed a strict-mode warning on stderr, *"missing type "object" for keyword "required" at
+    "#/properties/tickets/items/then/properties/slice" (strictTypes)"*. Adding `"type": "object"` to
+    that sub-schema cleared it, and re-probe (d) returned valid JSON with 0 bytes on stderr. Offline
+    validator agrees with (d).
+  - **Clause table (AC6), every mutation run on committed `6bfec33` and restored by `git checkout`
+    in the same call; control after: `12 passed, 0 failed`, tree clean.**
+
+    | AC6 clause | Assertion (`tests/outcome-schema.test.sh`) | Mutation (run) | Red |
+    |---|---|---|---|
+    | Given `outcome.schema.json` and `tools/validate-json-schema.py` | every case runs the real schema through the real validator | — | — |
+    | `progressed` with `slice: {done: S1, next: S2}` validates | first case | M1 `progressed` out of the enum | 1 |
+    | `progressed` with no `slice.next` fails | second case, reason names `'next'` | M2 if/then deleted; M3 `then` drops `next`; M8 validator ignores `if` | 2; 1; 4 |
+    | (and no `slice` at all fails) | third case, names `'slice'` | M4 `then` drops `slice` | 1 |
+    | existing `built` with no `slice` still validates | fourth case | M9 validator always applies `then` | 5 |
+    | FR7 pattern `^S[0-9]+$` | `a slice name off ^S[0-9]+$` | M5 pattern dropped | 1 |
+    | slice keys closed | `an undeclared key inside slice` | M6 `additionalProperties` dropped | 1 |
+    | `next` required only when progressed | `built may report … slice.done alone` | M7 `next` required unconditionally | 1 |
+    | validator `else` | conditional fixture cases | M10 `else` never applied | 1 |
+
+    Every AC6 case was red before the change (8 of 12; the 4 green were the unchanged-shape and
+    if-matching positives).
+  - **Whole suite at `a3ae3e6`: 45 files, every one exit 0.** The S1 build notes listed three baseline reds
+    (`release`, `sprint`, `item-nfr-red`), and all three are green here. `tests/sprint.test.sh` ran AC22's
+    live probe with the new schema.
+  - **For S3/S6, observed this leg:** `handoff`'s `declared_touches` reads block-list `touches:` only.
+    The claim wrote none (0231's `expects:` is flow-style, the parked `claim` gap), and a flow-style
+    `touches: [a, b]` written by hand parses to nothing. That makes `--slice`'s dirty check pass
+    vacuously, with no refusal. Written here as a block list for that reason (`b6d4f08` → `14b9fb3`).
+    `.tickets/claim` also still needs `xxd`, so this claim passed a token explicitly. Both sit with
+    the parked `claim` findings. Neither is in S2's scope.
+  - The installed outcome schema (plugin 0.9.48) has no `progressed` until a release, so this leg
+    reports `built` to its supervisor. S6 owes the CHANGELOG line for it.
