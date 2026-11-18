@@ -14,6 +14,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- `design` hands a decision-only ticket (`qa_level: verify` or `review`, nothing to build) to `verify` rather than `develop`.
+- The `config.yml` template's `review: checklist:` example now points inside `.tickets/`, the only place `queue` commits, so a `review` ticket's checklist can be created by the stage that files it.
 - A ticket can be one outcome worked across many sessions: `templates/item.md` gains a `## Progress` section of ordered slices (each `— discharges AC…`, `— discharges none` or `— unspecified`) and a `slice:` field. `./handoff <id> <token> <stage> --slice S<n>` ends a leg: develop → develop ticks AC-less slices, develop → verify ticks nothing, and a verify pass handed back with `--slice` ticks the leg. It refuses a leg holding an AC on develop → develop, an `unspecified` slice (naming `design`), and any dirty path in the item's `touches:`. `./close` on a sliced ticket refuses while an earlier slice is unticked and ticks the closing leg with the ACs. A ticket with no `## Progress` behaves as before (0231).
 - `develop` works a sliced ticket a leg at a time: it commits each slice as it lands, continues into the next only when that slice shares open files and the leg is short of the break-even `MEASUREMENT.md` prices, and reports `PROGRESSED` (outcome verdict `progressed`, with `slice: {done, next}`) when a leg of AC-less slices ends with slices left (0231).
 - `verify` checks a sliced ticket once per leg — that leg's ACs plus the whole suite, ticking no AC — and hands a pass back with `--slice`; the leg holding the last slice is the closing verify and checks every AC (0231).

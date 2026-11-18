@@ -173,7 +173,8 @@ This step is most of the skill's value.
    write `ac_digest:` from `./next --ac-digest <id>` into the frontmatter — the author's stamp,
    which `close` and `--drift` refuse criteria against, so it rides in the same commit (0195).
 3. Delete the *Open design question* section, then release the row with
-   `./handoff <id> <token> develop`. It writes the stage and clears the claim in one locked commit, so
+   `./handoff <id> <token> develop` — or `verify` when the decision is the whole deliverable and
+   nothing is left to build (`qa_level: verify` or `review`). It writes the stage and clears the claim in one locked commit, so
    everything else this pass owes the item is written before it (`CONCURRENCY.md`, *The release is the final act*).
 
 **Item-scoped, and held by another** (`./claim` refused, or `claimed_by:` names a token you did not mint)

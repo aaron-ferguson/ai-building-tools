@@ -91,14 +91,15 @@ stage_budget_usd:
 #
 # The checklist file belongs to THE REPO BEING CHECKED, and its lines CITE the conventions rather
 # than restating them — a restated rule is a rule that drifts, and `verify` would then check the
-# stale copy.
+# stale copy. It sits inside `.tickets/` because `queue`, the stage that files a `review` ticket,
+# commits nowhere else: a checklist path outside it is one `queue` cannot create.
 #
 # WITH NO BLOCK HERE, A `qa_level: review` ITEM IS REFUSED, on exactly the same ground as `unit`
 # with no command. That refusal is the whole point of declaring a level per ticket, so `review`
 # must never be a level that legitimately has no command — otherwise the refusal can never fire
 # again and a silent downgrade becomes available everywhere.
 review:
-  checklist: <e.g. docs/review-checklist.md — a file in THIS repo, one check per line>
+  checklist: <e.g. .tickets/review-checklist.md — a file in THIS repo, one check per line>
 
 # Commands qa runs per level. Omit a level the project genuinely doesn't have —
 # qa will refuse an item whose qa_level has no command rather than silently skip it.
