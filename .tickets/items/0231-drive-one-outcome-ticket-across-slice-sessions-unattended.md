@@ -944,3 +944,15 @@ Evidence set: `skills/queue/templates/handoff`, `.tickets/handoff`, `tools/sprin
   that E8 and E9 each go red. `tools/sprint-ledger.sh` is correct as it stands and needs no change.
   Mechanism cleared: the budget, time, exit-code, CONTINUE and stage-cap clauses all reddened. Suite
   green at `9c3b097`, 45 files.
+- 2026-11-18 — **develop (33d4), leg S5 re-entry for verify b5c7's AC14 FAIL.** Under
+  `tests/sprint-ledger.test.sh` (commit `575ec14`), the short-budget case's `names budget` and the
+  short-time case's `names time` now read the `^STOP` line alone (`grep '^STOP'`), renamed `the STOP
+  line names budget` and `the STOP line names time`. `tools/sprint-ledger.sh` is unchanged. **Run, not
+  reasoned:** with the mutations applied to the committed tree and restored by path in the same turn,
+  E8 (`reasons.append("budget: ` → `"over: `) gave `228 passed, 1 failed`, `FAIL the STOP line names
+  budget -- wanted 'budget' in: STOP  over: 3.00 left, develop needs an estimated 7.00`. E9
+  (`"time: %d min left` → `"over: %d min left`) gave `228 passed, 1 failed`, `FAIL the STOP line names
+  time -- wanted 'time' in: STOP  over: 20 min left, develop needs an estimated 40 min`. The control run
+  afterwards gave `229 passed, 0 failed`, with `git status` clean. Whole suite: 45 files, 0 red, at
+  `575ec14`. No other AC14 row moved, so the rest of b5c7's clause table stands. S6 has not been
+  started.
