@@ -699,3 +699,61 @@ Evidence set: `skills/queue/templates/next`, `.tickets/next`, `tests/next.test.s
   this pass mutated each clause to red itself (*QA evidence*, Leg S3). The full suite is green at
   `d4be431`. Handed back with `--slice S3` so S3 ticks. No AC was ticked. Next leg: S4.
   `.tickets/claim` still needs `xxd` (parked), so this claim passed a token explicitly.
+- 2026-11-18 — **develop (1995), leg S4: built, handed to verify with `--slice S4`.** Commits
+  `20677fa` (FR9 and FR10 in `skills/queue/templates/next`, `.tickets/next` byte-identical, and
+  tests) and `53596c4` (a guard on the end-of-walk escalation, added because the sweep found it
+  unguarded). **S4 alone is the leg.** It discharges AC10–AC12, so FR4 refuses develop → develop.
+  S5 also opens `handoff` and `tools/sprint-ledger.sh`, which S4 never opened (FR3).
+  - **Definitions this build had to pick, all inside FR9/FR10's wording.**
+    - **"In-scope" requires `--scope`.** With no `--scope` a waiting or `next: queue` row stops the
+      walk exactly as before. 0038 AC9 and 0188 AC3 assert that and pass unedited (AC16).
+    - **"While other in-scope work is takeable" is `scope_live`**, the predicate the findings gate
+      already uses. It is checked when the walk reaches the waiting row: false → the existing
+      escalation, true → `NOTE` and continue. The first such row is remembered (`WAITED`). If the
+      walk then dispatches nothing (for example, the other in-scope row is a design row stepped over
+      for a file a running develop holds), it escalates on that row before the findings tail. So exit
+      5 is masked only by an **in-scope** waiting row, never by an out-of-scope one.
+    - **The completion arm.** `--completed <stage>:<id>` that leaves the row waiting no longer
+      escalates when `--scope` is given. It prints a `NOTE` and the rank walk decides by the rule
+      above. Without `--scope` it still escalates.
+    - **An out-of-scope `next: queue` row** is stepped over with a `NOTE`. An in-scope one still
+      escalates (asserted).
+    - **FR10's "touches: or expects:"** widens `gate_wait` to read both of the running design row's
+      lists. 0188's `gate_wait` read `expects:` only. 0188 is closed and 0212 is withdrawn into FR10,
+      so no open FR is left stale by this. The wait (`wait_on_design`) now also runs in
+      `dispatch_leg` (a leg is a gate of one, which S3 deferred) and in the same-stage arm, for
+      `develop` at `develop / ready`. That last case is a develop that stood down, so it re-enters
+      exit 6 instead of exit 4. With the file released it is the loop escalation again (asserted).
+  - **Beyond the ACs, in this leg's file: `waiting_on` reads the FR14 brief.** A brief opens on
+    `### Outcome`, so the escalation used to carry the bare heading. Where `### What needs you`
+    exists, its first line is printed. Otherwise the section's first line is printed, as before. S5
+    enforces the brief in `handoff`, and this is the reader side of it.
+  - **Not done here, for S6:** `--help` does not yet describe FR9's step-over or the touches-wide
+    wait. That prose belongs with the S6 skill text, as S3 also left it. `sprint` Step 6 is not
+    changed yet either (FR9's last clause, S6).
+  - **Clause table (S4's ACs).** Every mutation was **run** on committed `20677fa`/`53596c4` in a
+    detached worktree, against a trimmed copy of `tests/next.test.sh` (helpers, plus the S3 fixture
+    helpers, plus the S4 section). Each diff was confirmed non-empty and restored by
+    `git checkout`. The control before and after was `35 passed, 0 failed`, and the worktree was
+    removed.
+
+    | AC clause | Assertion (`tests/next.test.sh`) | Mutation (run) | Red |
+    |---|---|---|---|
+    | AC10 Given an in-scope `design / waiting` row with a complete brief and an in-scope `develop / ready` row | fixtures `0941`/`0942`, `waiting_brief` | — | — |
+    | AC10 prints a `NOTE` naming the waiting row, dispatches the develop row, exits 0 | `0231 AC10 — an in-scope waiting row is stepped over…` | M2 in-scope waiting always escalates | 6 |
+    | AC10 with the waiting row the only in-scope work, exit 4 | `… the only in-scope work, exit 4` | M3 always step over, never escalate | 5 |
+    | FR9 the walk dispatched nothing after stepping over → exit 4, not COMPLETE | `… stepped over for in-scope work the walk then cannot dispatch` | M4 end-of-walk escalation off | 3 (green before `53596c4`, hence that commit) |
+    | FR9 a completed stage leaving its row waiting | `0231 FR9 — a stage that leaves its row waiting…` | M9 completion arm escalates as before | 2 |
+    | AC11 Given out-of-scope `waiting` and `next: queue` rows above a finished scope, `FINDINGS.md` past threshold | fixtures `0951`/`0952`, scope `0953` in `DONE.md`, `eight_findings` | — | — |
+    | AC11 both stepped over with a `NOTE`, exit 5 | `0231 AC11 — out-of-scope waiting and next: queue rows…` | M1 out-of-scope waiting not stepped over; M5 out-of-scope queue not stepped over | 6; 4 |
+    | AC11 (beyond) an in-scope queue row still escalates | `… an IN-scope next: queue row still escalates` | M11 every queue row stepped over | 2 |
+    | AC12 Given design A in-progress with F in `touches:`, develop B expecting F → exit 6 naming A, no `DISPATCH` for B | `0231 AC12 — a develop row expecting a file…` | M6 `gate_wait` reads `expects:` only | 10 (with the two below) |
+    | AC12 with A's files disjoint, dispatches B | same loop, `g/other.md` | — (positive case; reds if the wait ignores the paths) | — |
+    | AC12 B unchanged after `--completed develop:B` while A holds F → exit 6, not 4 | `… a develop that left its row unchanged…` | M7 same-stage wait off | 3 |
+    | FR10 a leg waits too | `0231 FR10 — a sliced ticket's next leg waits…` | M8 `dispatch_leg` wait off | 3 |
+    | (beyond) escalation carries the brief's question | `carrying its question` | M10 `waiting_on` ignores `### What needs you` | 1 |
+
+    Before the change, 23 of the new cases were red.
+  - **Whole suite at `53596c4`: 45 files, every one exit 0** (`tests/next.test.sh` `635 passed, 0
+    failed`; `tests/batching.test.sh` `39 passed, 0 failed`; `tests/declared-copies.test.sh` `23
+    passed, 0 failed`). `git status --porcelain` was clean at the run.
