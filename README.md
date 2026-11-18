@@ -201,7 +201,7 @@ setup below was verified on 2026-11-18 with Claude Code 2.1.327. Configure it on
 at claude.ai/code (environment selector → settings):
 
 - **Repositories: list only the project repo.** With two repos listed, the session starts in the
-  folder that holds both (`/home/user`), not in the project. It then never reads the project's
+  folder that holds both checkouts, not in the project. It then never reads the project's
   `.claude/settings.json`, and the skills cannot find `.tickets/`. With one repo listed, the session
   starts inside it.
 - **Network access:** the default ("Limited · no domains · package managers on") is enough.
@@ -213,7 +213,7 @@ at claude.ai/code (environment selector → settings):
   set -eu
 
   # Conventions repo next to the project. Use a relative path: $HOME is /root here, not the
-  # checkouts folder, and the script runs in the checkouts folder (/home/user).
+  # checkouts folder, and the script runs in the folder that holds the checkouts.
   if [ ! -d ai-building-conventions ]; then
     git clone --depth 1 https://github.com/aaron-ferguson/ai-building-conventions ai-building-conventions
   fi
