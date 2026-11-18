@@ -1928,7 +1928,7 @@ echo "0231 AC14 -- with less budget left than the next stage's estimate, STOP na
 env_log "$ENV/short-budget.jsonl" 10 2026-11-18T18:00:00Z 7.00
 out="$(envelope --run "$ENV/short-budget.jsonl" --stage develop)" && rc=0 || rc=$?
 has   "prints STOP"                         "$out" "STOP"
-has   "names budget"                        "$out" "budget"
+has   "the STOP line names budget"          "$(printf '%s\n' "$out" | grep '^STOP' || true)" "budget"
 hasnt "does not print CONTINUE"             "$out" "CONTINUE"
 if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0: $out"; fi
 has   "the remaining budget is what the outcomes left (10 - 7)" "$out" "remaining 3.00"
@@ -1938,7 +1938,7 @@ echo "0231 AC14 -- with less time left than the next stage's estimate, STOP nami
 env_log "$ENV/short-time.jsonl" 100 2026-11-18T10:20:00Z 2.00
 out="$(envelope --run "$ENV/short-time.jsonl" --stage develop)" && rc=0 || rc=$?
 has   "prints STOP"                         "$out" "STOP"
-has   "names time"                          "$out" "time"
+has   "the STOP line names time"            "$(printf '%s\n' "$out" | grep '^STOP' || true)" "time"
 hasnt "does not name budget as the reason"  "$(printf '%s\n' "$out" | grep '^STOP' || true)" "budget"
 if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0: $out"; fi
 has   "the time estimate is the 40-minute develop window" "$out" "estimate 40 min"
