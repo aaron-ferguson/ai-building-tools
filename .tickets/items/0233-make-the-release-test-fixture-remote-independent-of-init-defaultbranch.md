@@ -105,3 +105,33 @@ so `git log` here cannot confirm either commit.
 - 2026-11-18 — `next: develop`: no decision and no surface; the fixture's intended branch is
   already stated by its own `git init -b main` checkouts.
 - 2026-11-18 — `close_by: verify`: AC4 is a manual macOS observation.
+- 2026-11-18 — Built by `develop` [766c] in `bd2d7e4`: `git init -q --bare -b main` on both bare
+  remotes in `tests/release.test.sh` (`$REMOTE` and `$REMOTE2`), each with a one-line comment
+  saying why. No new flag beyond `init -b`, which the checkouts already use (NFR Dependencies).
+  Container: git 2.43, `init.defaultBranch` unset in the global config.
+  - **Runs (run, not reasoned)**, `tests/release.test.sh` at `bd2d7e4`, `GIT_CONFIG_GLOBAL`
+    files carried `init.defaultBranch` plus a fixture `user.*`:
+    | Config | Before (`6327e0e`) | After (`bd2d7e4`) |
+    |---|---|---|
+    | own (unset) | `ABORTED before the tally: 23 passed, 0 failed so far (exit 1)` | `63 passed, 0 failed` |
+    | `master` | `ABORTED … 23 passed …` | `63 passed, 0 failed` |
+    | `main` | `63 passed, 0 failed` | `63 passed, 0 failed` |
+    After the fix, the "0084 NFR git — a checkout behind the remote is reported, not resolved" cases
+    print three `ok`, and "0084 AC5 — …" and "0041 — CLAUDE.md says what to do when the bump refuses
+    on an empty ## Unreleased" headings appear (AC3).
+  - **Mutation table (run)**, on the committed file, restored with `git checkout --` in the same turn:
+    | Mutation | own | master | main |
+    |---|---|---|---|
+    | M1 — `$REMOTE` init back to `git init -q --bare "$REMOTE"` (AC1/AC2's red) | ABORTED, `remote HEAD refers to nonexistent ref` | ABORTED, same | 63 passed, 0 failed |
+    | M2 — `$REMOTE2` init back to no `-b` | 63 passed | 63 passed | 63 passed |
+    | control (restored) | 63 passed | 63 passed | 63 passed |
+    M2 is green because nothing clones `$REMOTE2` today: only pushes and `ls-remote`-style reads
+    reach it, and those never resolve its `HEAD`. The `-b main` there is FR1's "pushes to" clause
+    applied ahead of a clone. **No assertion can tell its presence from its absence**; it is stated
+    here so a later reader does not take the green M2 as a missing guard.
+  - Whole suite (`for t in tests/*.test.sh`) at `bd2d7e4` with a clean `git status`: all 44 files
+    exit 0, `tests/sprint.test.sh` included (0232's Linux fix).
+  - AC4 (macOS) not discharged here; it is the author's, per `qa_manual:`.
+  - `.tickets/claim 0233` without a token failed with `.tickets/claim: 102: xxd: not found` and
+    wrote nothing. It was claimed with a token from `od -An -N2 -tx1 /dev/urandom | tr -d ' \n'`.
+    Already parked in `.tickets/FINDINGS.md` (2026-11-18, the `xxd` line); nothing new parked.
