@@ -588,6 +588,23 @@ throwaway worktree — needs its own `node_modules` and is not actually cheap. N
 Against a session running mutation batches `pgrep` reads clear in every gap between runs, so the
 condition to wait for is no runner **and** a clean `git status`, sustained over several samples.
 
+### A sliced ticket is worked a leg at a time
+
+**A ticket carrying `## Progress` is one outcome worked across sessions** (`templates/item.md`): your
+work starts at the first unticked slice, and a leg is one or more consecutive slices. **Commit each
+slice as it lands** with a dated *Notes & decisions* line naming it and its SHA, so a killed leg loses
+at most the unfinished slice. **Continue into the next slice only when it touches files you already
+have open and this leg is still short of the 28.5-turn break-even** `MEASUREMENT.md` measures for
+carrying a session's climb into more work (*Would the re-entry after a FAIL be cheaper…*); otherwise
+end the leg, since a fresh session for a normal slice is usually cheaper as well as fresher. Never
+meter spend: no session reads its running cost (`references/TRACKER.md`). A next slice marked
+`unspecified` is `design`'s. Unticked slices you may re-split or re-order with a dated note; an AC never.
+
+**End the leg with `./handoff <id> <token> <stage> --slice S<n>`**, S<n> its last slice: to `develop`
+when no slice in it discharges an AC (ticks them; outcome `progressed`, `slice: {done, next}`), else
+to `verify` (ticks nothing; `built`), including the closing leg. It refuses a dirty `touches:` path,
+an unknown slice and an `unspecified` one.
+
 ### Then stop, in this order
 
 **First read the item's `close_by:`, because it decides which ending this stage has.** Absent or
@@ -727,8 +744,10 @@ Two things it cannot say, because they are specific to this stage:
 **End on the hand-off line, the very last thing printed:**
 
 ```
-<ID> — BUILT | RED | BLOCKED — next: <stage>, status: <status>
+<ID> — BUILT | PROGRESSED | RED | BLOCKED — next: <stage>, status: <status>
 ```
+
+Example: `0081 — PROGRESSED — next: develop, status: ready` — a leg of AC-less slices ended by `--slice`.
 
 Example: `0081 — BUILT — next: verify, status: ready`
 Example: `0081 — RED — next: develop, status: ready` — the tree would not go green; it stays here.
