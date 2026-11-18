@@ -85,7 +85,9 @@ git -C "$CO" -c user.email=fixture@example.invalid -c user.name=fixture \
 SHA="$(git -C "$CO" rev-parse HEAD)"
 OTHER_SHA="0000000000000000000000000000000000000000"
 
-git init -q --bare "$REMOTE"
+# `-b main` on the bare remote too (0233): its HEAD otherwise names whatever init.defaultBranch
+# resolves to, and a later clone of it checks out nothing when that is not the branch pushed.
+git init -q --bare -b main "$REMOTE"
 git -C "$CO" remote add origin "$REMOTE"
 git -C "$CO" push -q origin main
 git -C "$CO" branch -q --set-upstream-to=origin/main main 2>/dev/null || true
@@ -339,7 +341,7 @@ mk_case() { # <dir> -> CO2 REMOTE2 INST2 REC2 SHA2, local 1.2.3, installed 1.2.3
   git -C "$CO2" add .claude-plugin/plugin.json skills/demo/SKILL.md README.md tests/noop.test.sh CHANGELOG.md
   git -C "$CO2" commit -q -m "fixture"
   SHA2="$(git -C "$CO2" rev-parse HEAD)"
-  git init -q --bare "$REMOTE2"
+  git init -q --bare -b main "$REMOTE2"   # see "$REMOTE" above (0233)
   git -C "$CO2" remote add origin "$REMOTE2"
   git -C "$CO2" push -q origin main
   git -C "$CO2" branch -q --set-upstream-to=origin/main main 2>/dev/null || true
