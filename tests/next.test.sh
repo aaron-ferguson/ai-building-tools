@@ -3327,6 +3327,178 @@ assert_rc       "exits 0"                                  "$rc" 0
 assert_contains "counts the one log once"                  "$out" 'has survived 1 completed sprint(s)'
 assert_contains "and so stays under a limit of two"        "$out" 'under the limit'
 
+# --- 0231 S3 — `--drive` routes the legs of a sliced ticket ------------------------------------
+# A sliced ticket carries `## Progress` (one line per slice) and `slice:`, the last slice of the most
+# recent leg, which `handoff --slice` writes. Whether that slice is TICKED is what tells a leg that
+# ended cleanly (develop -> develop, or a verify pass) from a verify bounce: the fixtures below are
+# the states `handoff` leaves behind, written by hand so this file does not depend on that script.
+#
+# add_sliced <id> <next> <status> <slice: value> <one expects path> <the ## Progress lines>
+add_sliced() {
+  cat > "$FIX/.tickets/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: $2
+status: $3
+qa_level: unit
+size: l
+parent: ""
+blocked_by: []
+expects:
+  - $5
+claimed_by:
+claimed_at:
+touches:
+slice: $4
+---
+
+## Problem
+
+## Progress
+
+$6
+ITEM
+}
+
+# fixture_handed_off_from <id> <stage> — commit the item as it stood at <stage>, then as the fixture
+# wrote it, so the item's last commit reads as a hand-off out of <stage> (the earlier version is
+# the claimed one, in-progress). `--drive` dispatches a leg
+# only after one (a session that died before claiming leaves the same state with no hand-off).
+fixture_handed_off_from() {
+  fh_f="$FIX/.tickets/items/$1-fixture.md"
+  fh_keep="$(mktemp)"
+  cp "$fh_f" "$fh_keep"
+  sed "s/^next: .*/next: $2/; s/^status: .*/status: in-progress/" "$fh_keep" > "$fh_f"
+  seal
+  cp "$fh_keep" "$fh_f"
+  rm -f "$fh_keep"
+  git -C "$FIX" commit -q -am "Hand off $1"
+}
+
+echo "0231 AC7 — after develop -> develop, the next leg of the same ticket is dispatched"
+scaffold
+add_row 0911 'Sliced' develop ready ''
+add_sliced 0911 develop ready S1 a/x.md '- [x] S1 — scaffolding — discharges none
+- [ ] S2 — the first behaviour — discharges AC1
+- [ ] S3 — the rest — discharges AC2'
+fixture_handed_off_from 0911 develop
+out="$(run_next --drive --completed develop:0911)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch, not the same-stage escalation" "$rc" 0 "$out"
+assert_eq "dispatches that ticket's next leg"                 "$(dispatch_line "$out")" 'DISPATCH  develop 0911'
+
+echo "0231 AC7 — after develop -> verify, that ticket alone is verified"
+# 0912 was started by this run and shares 0911's file, so the gate recovery would batch the two.
+# A leg is its own verify unit (FR5, FR11): the develop session that built it built nothing else.
+scaffold
+add_row 0911 'Sliced'        verify ready ''
+add_row 0912 'Another built' verify ready ''
+add_sliced 0911 verify ready S2 a/x.md '- [ ] S1 — scaffolding — discharges none
+- [ ] S2 — the first behaviour — discharges AC1
+- [ ] S3 — the rest — discharges AC2'
+add_ticket 0912 verify ready '[]' '' a/x.md
+seal
+out="$(run_next --drive --completed develop:0911 --started 0912)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                 "$rc" 0 "$out"
+assert_eq "verifies the leg's ticket alone"    "$(dispatch_line "$out")" 'DISPATCH  verify 0911'
+
+echo "0231 AC7 — after a leg verify passes, the next leg is dispatched"
+scaffold
+add_row 0911 'Sliced' develop ready ''
+add_sliced 0911 develop ready S2 a/x.md '- [x] S1 — scaffolding — discharges none
+- [x] S2 — the first behaviour — discharges AC1
+- [ ] S3 — the rest — discharges AC2'
+fixture_handed_off_from 0911 verify
+out="$(run_next --drive --completed verify:0911)" && rc=0 || rc=$?
+assert_rc "exits 0 — a pass is not a bounce"   "$rc" 0 "$out"
+assert_eq "dispatches the next leg"            "$(dispatch_line "$out")" 'DISPATCH  develop 0911'
+
+echo "0231 AC7 — after a leg verify fails, the bounce escalation stands"
+scaffold
+add_row 0911 'Sliced' develop ready ''
+add_sliced 0911 develop ready S2 a/x.md '- [ ] S1 — scaffolding — discharges none
+- [ ] S2 — the first behaviour — discharges AC1
+- [ ] S3 — the rest — discharges AC2'
+seal
+out="$(run_next --drive --completed verify:0911)" && rc=0 || rc=$?
+assert_rc           "exits 4 — a person decides"   "$rc" 4 "$out"
+assert_contains     "names the bounce"             "$out" 'ESCALATE  0911 bounced from verify back to next: develop'
+assert_not_contains "and dispatches nothing"       "$out" 'DISPATCH'
+
+echo "0231 FR8 — a develop that ended no leg is the same-stage loop, not a further leg"
+# The state a verify pass leaves, then a develop session that died before it claimed: the item's last
+# commit is still verify's hand-off, so nothing came out of develop and dispatching again would loop.
+scaffold
+add_row 0911 'Sliced' develop ready ''
+add_sliced 0911 develop ready S2 a/x.md '- [x] S1 — scaffolding — discharges none
+- [x] S2 — the first behaviour — discharges AC1
+- [ ] S3 — the rest — discharges AC2'
+fixture_handed_off_from 0911 verify
+out="$(run_next --drive --completed develop:0911)" && rc=0 || rc=$?
+assert_rc           "exits 4 — a person decides"    "$rc" 4 "$out"
+assert_contains     "names the same-stage loop"     "$out" 'ESCALATE  0911 is still at next: develop after a completed develop'
+assert_not_contains "and dispatches nothing"        "$out" 'DISPATCH'
+
+echo "0231 AC8 — a started ticket with slices left is finished before a higher-ranked row"
+scaffold
+add_row 0920 'Ranked above' develop ready ''
+add_row 0921 'Sliced'       develop ready ''
+add_ticket 0920 develop ready '[]' '' b/y.md
+add_sliced 0921 develop ready S2 a/x.md '- [x] S1 — scaffolding — discharges none
+- [x] S2 — the first behaviour — discharges AC1
+- [ ] S3 — the rest — discharges AC2'
+fixture_handed_off_from 0921 develop
+out="$(run_next --drive --completed develop:0921 --scope 0921 --scope 0920)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"           "$rc" 0 "$out"
+assert_eq "dispatches the sliced ticket" "$(dispatch_line "$out")" 'DISPATCH  develop 0921'
+
+echo "0231 FR8 — the same preference holds in the rank walk, from --started alone"
+out="$(run_next --drive --started 0921 --scope 0921 --scope 0920)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                  "$rc" 0 "$out"
+assert_eq "the started leg goes before rank 1"  "$(dispatch_line "$out")" 'DISPATCH  develop 0921'
+out="$(run_next --drive --scope 0921 --scope 0920)" && rc=0 || rc=$?
+assert_eq "and without it, rank decides"        "$(dispatch_line "$out")" 'DISPATCH  develop 0920'
+
+echo "0231 FR8 — a sliced ticket is its own dispatch unit, never a gate member"
+# A leg is handed off with `--slice`, per ticket; a gate session working a slice of one ticket and
+# all of another would end the leg with no hand-off that describes it.
+scaffold
+add_row 0920 'Ranked above' develop ready ''
+add_row 0921 'Sliced'       develop ready ''
+add_ticket 0920 develop ready '[]' '' a/x.md
+add_sliced 0921 develop ready S2 a/x.md '- [x] S1 — scaffolding — discharges none
+- [x] S2 — the first behaviour — discharges AC1
+- [ ] S3 — the rest — discharges AC2'
+fixture_handed_off_from 0921 develop
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_eq "the gate above it does not take it in"   "$(dispatch_line "$out")" 'DISPATCH  develop 0920'
+out="$(run_next --drive --completed develop:0921)" && rc=0 || rc=$?
+assert_eq "and its leg takes nothing in"            "$(dispatch_line "$out")" 'DISPATCH  develop 0921'
+
+echo "0231 AC9 — every row one gate developed is named in one verify session"
+# The 0220 shape: three rows built by one develop session, sharing no file and no parent NOW — the
+# gate joined them through a member that has since left verify, or a session corrected an
+# `expects:` after the gate formed. Re-running the join over what is at verify splits them.
+scaffold
+add_row 0931 'Gate lead'   verify ready ''
+add_row 0932 'Gate member' verify ready ''
+add_row 0933 'Gate member' verify ready ''
+add_ticket 0931 verify ready '[]' '' a/one.md
+add_ticket 0932 verify ready '[]' '' b/two.md
+add_ticket 0933 verify ready '[]' '' c/three.md
+seal
+out="$(run_next --drive --completed develop:0931 --started 0932 --started 0933)" && rc=0 || rc=$?
+assert_rc "exits 0 — dispatch"                       "$rc" 0 "$out"
+assert_eq "names all three in one verify session"    "$(dispatch_line "$out")" 'DISPATCH  verify 0931 0932 0933'
+
+echo "0231 AC9 — a sliced ticket's leg does not join a gate's verify session"
+add_row 0934 'Sliced' verify ready ''
+add_sliced 0934 verify ready S1 a/one.md '- [ ] S1 — the behaviour — discharges AC1
+- [ ] S2 — the rest — discharges AC2'
+seal
+out="$(run_next --drive --completed develop:0931 --started 0932 --started 0933 --started 0934)" && rc=0 || rc=$?
+assert_eq "the gate's batch leaves the leg out"      "$(dispatch_line "$out")" 'DISPATCH  verify 0931 0932 0933'
+
 # --- result -----------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

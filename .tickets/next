@@ -714,6 +714,83 @@ fm_list() {
 }
 # copy-end: fm-list
 
+# copy-begin: progress-slices
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+# --- the slices of a sliced ticket (0231 FR1) ---------------------------------------------------
+# One line per slice of the item's `## Progress` section, in file order:
+#   <position> <name> <ticked 0|1> <kind>
+# where kind is `ac` (discharges at least one AC), `none` (discharges none) or `unspecified`.
+# A slice line is `- [ ] S<n> — <what lands> — discharges AC<a>, AC<b>`, with `— discharges none`
+# or `— unspecified` as its last field instead; the kind is read from that last field alone, so
+# the text of what lands may say anything. A line whose last field is none of the three is kind
+# `ac` — refusing a develop -> develop over it is the safe misreading, skipping a verify is not.
+progress_slices() {
+  awk '
+    /^## / { inp = ($0 == "## Progress"); next }
+    inp && /^- \[[ xX]\] S[0-9]+[ \t]/ {
+      t = (substr($0, 4, 1) != " ")
+      name = $0; sub(/^- \[[ xX]\] /, "", name); sub(/[ \t].*$/, "", name)
+      last = $0; sub(/^.* — /, "", last); sub(/[ \t]+$/, "", last)
+      if (last == "unspecified") k = "unspecified"
+      else if (last == "discharges none") k = "none"
+      else k = "ac"
+      print ++n, name, t, k
+    }
+  ' "$1"
+}
+
+# has_progress <item> — whether the item has a `## Progress` heading at all.
+has_progress() { grep -qx -- "## Progress" "$1"; }
+
+# last_ticked_position <slices> — the position of the last ticked slice, 0 when none is.
+last_ticked_position() { printf '%s\n' "$1" | awk '$3 == 1 { p = $1 } END { print p + 0 }'; }
+# copy-end: progress-slices
+
+# leg_state <id> — how the most recent leg of a sliced ticket ended, read off its item (0231 FR8):
+#   unsliced   no slice lines under `## Progress` — every rule below leaves the ticket alone
+#   clean      `slice:` names a TICKED slice, or is empty, and an unticked slice remains: the last
+#              leg went develop -> develop or passed its verify, so the next leg may be dispatched
+#   bounced    `slice:` names an UNTICKED slice: a verify sent the leg back without `--slice`
+#   finished   every slice is ticked
+# The ticked state of the named slice is the whole signal, because `handoff --slice` ticks on the
+# two clean endings and on nothing else.
+leg_state() {
+  ls_item="$(item_for "$1")"
+  [ -n "$ls_item" ] || { printf 'unsliced'; return 0; }
+  ls_slices="$(progress_slices "$ls_item")"
+  [ -n "$ls_slices" ] || { printf 'unsliced'; return 0; }
+  ls_slice="$(fm "$ls_item" slice | tr -d "\"' ")"
+  printf '%s\n' "$ls_slices" | awk -v s="$ls_slice" '
+    $3 == 0 { left = 1 }
+    $2 == s { named = 1; ticked = $3 }
+    END {
+      if (!left) print "finished"
+      else if (s != "" && named && !ticked) print "bounced"
+      else print "clean"
+    }'
+}
+
+# is_sliced <id> — a sliced ticket is its own dispatch unit at develop and at verify (0231 FR5,
+# FR11): a leg ends in a `handoff --slice` that describes that ticket alone, so it never joins a gate.
+is_sliced() { [ "$(leg_state "$1")" != unsliced ]; }
+
+# handed_off_from <id> <stage> — whether the item's most recent commit moved it OUT of <stage>: the
+# version before that commit read `next: <stage>`. This is the intervening outcome the same-stage
+# guard asks for, read from the item's history rather than from its present state. Without it a
+# develop session that died before claiming leaves a clean leg looking exactly like one it just
+# ended, and the leg would be dispatched again on every call. Answers 1 on any doubt — no git, no
+# history, no earlier version — so the doubt lands on the escalation, never on a re-dispatch.
+handed_off_from() {
+  ho_item="$(item_for "$1")"
+  [ -n "$ho_item" ] || return 1
+  ho_dir="$(dirname -- "$ho_item")"
+  ho_sha="$(git -C "$ho_dir" log -1 --format=%H -- "$(basename -- "$ho_item")" 2>/dev/null)" || return 1
+  [ -n "$ho_sha" ] || return 1
+  ho_was="$(git -C "$ho_dir" show "$ho_sha^:./$(basename -- "$ho_item")" 2>/dev/null \
+    | awk 'NR == 1 && /^---$/ { f = 1; next } f && /^---$/ { exit } f && /^next:/ { sub(/^next: */, ""); gsub(/["\047 ]/, ""); print; exit }')"
+  [ "$ho_was" = "$2" ]
+}
+
 # An entry in `blocked_by` is OPEN unless the ticket it names is done. A named ticket with no item
 # file is open and said so out loud: a blocker nobody can find is not a blocker anybody cleared.
 open_blockers_of() {
@@ -1194,10 +1271,14 @@ if [ "${1:-}" = "--drive" ]; then
     lparent="$(fm "$(item_for "$lead")" parent)"
     gscope="$(fm_list "$(item_for "$lead")" expects)"
     printf '%s' "$lead"
+    # A sliced ticket is a gate of one, and never joins another's (0231 FR8, FR11): its leg ends in
+    # a `handoff --slice` describing that ticket alone.
+    if is_sliced "$lead"; then return 0; fi
     gsize=1
     for gid in $pool; do
       if [ -n "$gcap" ] && [ "$gsize" -ge "$gcap" ]; then return 0; fi
       if [ "$gid" = "$lead" ]; then continue; fi
+      if is_sliced "$gid"; then continue; fi
       if gate_admits "$gid"; then printf ' %s' "$gid"; gsize=$((gsize + 1)); fi
     done
   }
@@ -1681,6 +1762,53 @@ if [ "${1:-}" = "--drive" ]; then
     verify_batch "$(printf '%s' "$sv_pool" | awk '{ print $1 }')"
   }
 
+  # The verify session for the develop gate `--completed develop:$1` just finished (0231 FR11,
+  # absorbing 0220). NOT `verify_batch`, and the difference is the whole of 0220.
+  #
+  # `verify_batch` RE-DERIVES a gate by re-running the join over the rows now at verify. That
+  # re-derivation splits a gate whose join ran through a member no longer there — one `develop`
+  # closed itself (`close_by: develop`), or left at develop red — and a gate whose `expects:` a
+  # develop session corrected after the gate formed, which `develop` Step 1 tells it to do.
+  # run-20261025T215324Z's gate e9c46949 held four tickets (LEDGER.md) and three verify sessions
+  # followed, one each; 0177, 0190 and 0183 share no `expects:` path and no parent as they stand.
+  #
+  # At THIS moment no re-derivation is needed, because the run's own order fixes the membership:
+  # finish-before-start (0131) dispatches every started verify row before a new develop gate is
+  # formed, so the started rows sitting at `verify | ready` when a gate reports are that gate's.
+  # Rank order, as `verify_batch` prints. A sliced ticket stays its own session either way.
+  # `cb_` prefixes because sh has no locals.
+  completed_batch() {
+    if is_sliced "$1"; then printf '%s' "$1"; return 0; fi
+    cb_pool="$(started_verify_pool)"
+    contains_word "$1" "$cb_pool" || { printf '%s' "$1"; return 0; }
+    cb_out=""
+    for cb_id in $cb_pool; do
+      if [ "$cb_id" != "$1" ] && is_sliced "$cb_id"; then continue; fi
+      cb_out="$cb_out $cb_id"
+    done
+    printf '%s' "${cb_out# }"
+  }
+
+  # The highest-ranked takeable develop row this run started whose last leg ended cleanly with
+  # slices left (0231 FR8): finished before the walk opens a different develop row, for 0131's
+  # reason. A bounced leg is not preferred — the bounce is a person's, and the completion arm says so.
+  started_leg() {
+    for sg_id in $(takeable_develop); do
+      contains_word "$sg_id" "$STARTED" || continue
+      [ "$(leg_state "$sg_id")" = clean ] || continue
+      printf '%s' "$sg_id"
+      return 0
+    done
+    return 1
+  }
+
+  # One leg of one sliced ticket. The findings gate applies as it does to any develop dispatch.
+  dispatch_leg() {
+    PROPOSE_STAGE="develop"; PROPOSE_IDS="$1"
+    findings_gate gate
+    decide "$DISPATCH" "DISPATCH  develop $1"
+  }
+
   # --- the queue has to agree with itself before anything is dispatched ------------------------
   # FR1/FR2 of 0142. `--drift` exits non-zero on every class precisely so that a row disagreeing
   # with its own item stops the work, and until this landed the only reader that saw that exit was
@@ -1763,6 +1891,16 @@ if [ "${1:-}" = "--drive" ]; then
         elif [ -n "$lblockers" ]; then
           printf 'NOTE      %s gained a blocker after %s (%s) — re-deriving rather than reading it as stuck\n' \
             "$lid" "$lstage" "$lblockers"
+        elif [ "$lnext" = "develop" ] && [ "$lstatus" = "ready" ] \
+          && { [ "$lstage" = "develop" ] || [ "$lstage" = "verify" ]; } \
+          && [ "$(leg_state "$lid")" = clean ] && [ -n "$(fm "$(item_for "$lid")" slice)" ] \
+          && handed_off_from "$lid" "$lstage"; then
+          # 0231 FR8: a leg ended cleanly — develop -> develop, or a verify pass — and slices are
+          # left. Ahead of the bounce and same-stage arms, which a sliced ticket reaches only when
+          # its named slice is unticked (a bounce) or nothing was handed off (a real loop).
+          printf 'NOTE      %s ended a leg at %s after %s — slices remain; dispatching the next leg\n' \
+            "$lid" "$(fm "$(item_for "$lid")" slice)" "$lstage"
+          dispatch_leg "$lid"
         elif [ "$lstage" = "verify" ] && [ "$lnext" = "develop" ]; then
           decide "$ESCALATE" "ESCALATE  $lid bounced from verify back to next: develop — verify already decided whether the build or the contract was wrong, and re-developing blind spends a stage session rediscovering it"
         elif [ "$lnext" = "$lstage" ]; then
@@ -1774,7 +1912,7 @@ if [ "${1:-}" = "--drive" ]; then
           printf 'NOTE      %s is at next: %s after design — carrying on to the rank walk\n' "$lid" "$lnext"
         elif [ "$lstage" = "develop" ] && [ "$lnext" = "verify" ] && [ "$lstatus" = "ready" ]; then
           # The gate that was just developed, not the one row `--completed` names (0132 FR6).
-          lbatch="$(verify_batch "$lid")"
+          lbatch="$(completed_batch "$lid")"
           PROPOSE_STAGE="verify"; PROPOSE_IDS="$lbatch"
           decide "$DISPATCH" "DISPATCH  verify $lbatch"
         else
@@ -1863,6 +2001,10 @@ if [ "${1:-}" = "--drive" ]; then
         if svbatch="$(started_verify)"; then
           PROPOSE_STAGE="verify"; PROPOSE_IDS="$svbatch"
           decide "$DISPATCH" "DISPATCH  verify $svbatch"
+        fi
+        # 0231 FR8: then a started sliced ticket's next leg, for the same reason.
+        if sleg="$(started_leg)"; then
+          dispatch_leg "$sleg"
         fi
         # 0188 FR5: design first, then build. An in-scope design row ranked below this gate is
         # dispatched before it, so a related row comes out of design and joins the gate rather than
