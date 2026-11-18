@@ -25,7 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0232 | Make the sprint lock-age check read one mtime on GNU and BSD stat | verify | waiting |  |
 | 0233 | Make the release test's fixture remote independent of init.defaultBranch | verify | waiting |  |
-| 0231 | Drive one outcome ticket across slice sessions unattended | verify | ready |  |
+| 0231 | Drive one outcome ticket across slice sessions unattended | verify | in-progress |  |
 | 0064 | Make a stage skill say which copy of it is running | develop | ready |  |
 | 0066 | Fix the three places the backlog scripts answer the wrong question | develop | ready |  |
 | 0215 | Make claim and next read expects and touches through one parser that refuses or accepts the comma form | develop | ready |  |
