@@ -13,7 +13,8 @@ source: user
 parent:
 blocked_by: []
 relates: ["0084", "0228"]
-expects: tests/release.test.sh
+expects:
+  - tests/release.test.sh
 ac_digest: AC1=bb90bcd9 AC2=20fb93e8 AC3=9aa29743 AC4=73c58991
 claimed_by:
 claimed_at:

@@ -13,7 +13,9 @@ source: user
 parent:
 blocked_by: []
 relates: ["0040", "0089", "0165"]
-expects: skills/sprint/SKILL.md, tests/sprint.test.sh
+expects:
+  - skills/sprint/SKILL.md
+  - tests/sprint.test.sh
 ac_digest: AC1=fc0f67b8 AC2=577af61a AC3=e1b45118 AC4=f85bc0c4
 claimed_by:
 claimed_at:
