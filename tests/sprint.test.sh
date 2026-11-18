@@ -1320,13 +1320,13 @@ SHIM
   chmod +x "$BSDBIN/stat"
   for tool in sh date sed; do ln -s "$(command -v "$tool")" "$BSDBIN/$tool"; done
   out="$( cd "$AGED" && PATH="$BSDBIN" sh "$agecheck" 2>&1 || true )"
-  if printf '%s' "$out" | grep -Eq '^aged [0-9]+$'; then
+  if [ -n "$out" ] && ! printf '%s\n' "$out" | grep -Evq '^aged [0-9]+$'; then   # the WHOLE output, one line
     ok "0232 AC3 — under a BSD-semantics stat the aged lock is classified aged with a bare integer age"
   else
     bad "0232 AC3 — under a BSD-semantics stat the aged lock did not print 'aged <n>'; it printed [$out]"
   fi
   out="$( cd "$FRESH" && PATH="$BSDBIN" sh "$agecheck" 2>&1 || true )"
-  if printf '%s' "$out" | grep -Eq '^fresh [0-9]+$'; then
+  if [ -n "$out" ] && ! printf '%s\n' "$out" | grep -Evq '^fresh [0-9]+$'; then   # the WHOLE output, one line
     ok "0232 AC3 — under a BSD-semantics stat the fresh lock is classified fresh with a bare integer age"
   else
     bad "0232 AC3 — under a BSD-semantics stat the fresh lock did not print 'fresh <n>'; it printed [$out]"
