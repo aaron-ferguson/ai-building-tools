@@ -151,3 +151,36 @@ ticket is 0040 (AC25, QA evidence rows "aged lock escalates" / "younger lock wai
   both `stat`s", discoverable by running it.
 - 2026-11-18 — `close_by: verify`, not `develop`: AC4 is a manual macOS observation, so not every
   criterion is a committed assertion.
+- 2026-11-18 — **Build (develop, token ca6a; commits 6817272, 206451f).** Fix: the block's line
+  is now `mtime=$(stat -c %Y "$LOCK" 2>/dev/null || stat -f %m "$LOCK")` (GNU form first). Why
+  that order is safe on both: BSD `stat` rejects `-c` with usage on stderr and **nothing on stdout**,
+  so the `-f %m` fallback is the only output. The old order was unsafe because GNU `stat -f`
+  prints filesystem stats to stdout before it fails. Output shape unchanged (FR2).
+  Test (`tests/sprint.test.sh`, after the AC25 no-lock case): a BSD-semantics `stat` shim
+  (`-f %m <path>` → epoch mtime read through the host stat; any other option → exit 1, stderr
+  only). It runs on a PATH holding only `stat`, `sh`, `date` and `sed`, so a block that calls an
+  unlisted tool fails there (NFR Dependencies), plus a `perl|python|gdate` grep over the extracted
+  block. The shim cases need the **whole** output to be exactly one `aged <n>` / `fresh <n>` line.
+  The first form only needed one matching line. Under M2 it let `aged` pass, because the shim's
+  stderr sat above a matching line. Tightened in 206451f.
+  Mutations, **run** on committed state and restored with `git checkout`, control green after each:
+  - M1, the original line put back: AC25 aged and fresh FAIL `Illegal number`, plus 0165 AC1/AC2
+    FAIL; 385/4. Matches AC1 and AC2.
+  - M2, GNU-only `mtime=$(stat -c %Y "$LOCK")`: both 0232 AC3 shim cases FAIL `stat: illegal
+    option -- c`, plus 0165 AC2; 385/4. Matches AC3.
+  - Control: 389 passed, 0 failed, 0 skipped. The 0165 case was not edited (AC2).
+  Whole-suite result at 206451f: see the next note. AC4 (real macOS) is the author's and was not run
+  here. The shim's mtime read tries host `-c %Y` and then `-f %m`, so it should hold on macOS too
+  (**reasoned**, not run).
+  **CHANGELOG line left to `verify`'s `./close --note`**, per the CHANGELOG header (the NFR row is
+  not an AC). Proposed: "The sprint supervisor's lock-age check now works on Linux: it reads the
+  lock's mtime with GNU `stat -c %Y` first and falls back to BSD `stat -f %m`, where it used to
+  error before deciding aged or fresh (0232)."
+  `.tickets/claim 0232` without a token failed with `.tickets/claim: 102: xxd: not found`. Claimed
+  by passing a token minted with `od -An -N2 -tx1 /dev/urandom | tr -d ' \n'`. A finding with the
+  same root cause was already parked on 2026-11-18.
+- 2026-11-18 — **Whole suite at 206451f, tree clean:** 43 of 44 `tests/*.test.sh` exit 0. The
+  one exception is `tests/release.test.sh`, which ends with `error: pathspec 'README.md' did not
+  match any file(s) known to git` / `ABORTED before the tally: 23 passed, 0 failed so far (exit
+  1)`. That is the dispatch's stated baseline red at `cab450d`, owned by row 0233. This ticket
+  changes neither that file nor anything it reads.
