@@ -25,7 +25,14 @@ in above these rows by being newer or more interesting.
 
 ## The order now, by the argument that placed it
 
-**0231 — row 1, inserted 2026-11-18.** Aaron's stated goal for the suite is unattended progress, and the conventions now size tickets by outcome (`a325686`), so every consumer backlog is being written in the shape `sprint` cannot drive past one leg without a cap kill. Blast radius all projects (tie-breaker 1) puts it above 0064, which it does not otherwise touch. A `design` row: `develop` takes 0064 meanwhile.
+**0232, 0233 — rows 1–2, inserted 2026-11-18, above 0231 by the user's instruction** (repair-first
+rows of sprint `run-20261118T074205Z`). Both are the baseline `unit` reds on Linux — already red at
+`a118a42`, before 0231 was claimed — and every verify pass reads that baseline, 0231's included, so a
+red it did not cause is one it must argue past. 0232 first on blast radius (tie-breaker 1): it fixes
+a shipped `skills/sprint/SKILL.md` instruction wrong on every Linux machine, where 0233 fixes one
+test fixture in this repo.
+
+**0231 — row 3 (row 1 when inserted 2026-11-18).** Aaron's stated goal for the suite is unattended progress, and the conventions now size tickets by outcome (`a325686`), so every consumer backlog is being written in the shape `sprint` cannot drive past one leg without a cap kill. Blast radius all projects (tie-breaker 1) puts it above 0064, which it does not otherwise touch. A `design` row: `develop` takes 0064 meanwhile.
 
 
 | Rows, in queue order | Why they sit together | Full argument |
