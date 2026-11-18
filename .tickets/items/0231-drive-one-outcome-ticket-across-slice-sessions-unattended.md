@@ -465,6 +465,62 @@ destructive action. `waiting_on` now prints the brief's `### What needs you` lin
 Evidence set: `skills/queue/templates/next`, `.tickets/next`, `tests/next.test.sh`,
 `tests/declared-copies.test.sh`, `tests/*.test.sh`.
 
+### Leg S5 — verify (b5c7), 2026-11-18: FAIL — AC14's "naming budget or time" is unguarded
+
+Leg verify per FR5: AC13 and AC14 only (the ACs S5 discharges), plus the whole suite. No AC is ticked.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`), each file's exit
+captured. Subject: `9c3b097` (claim over `638a76a`; S5 = `439d05c`, `e2d7d63`, `d244651`). Copy executed:
+the repo's `skills/queue/templates/handoff` (`tests/handoff.test.sh` copies it, `HANDOFF_SRC`;
+`.tickets/handoff` byte-identical by `cmp`) and `tools/sprint-ledger.sh` (`TOOL`).
+`./next --ac-digest 0231 --check` → `0231: ac_digest matches`.
+Tree: `git status --porcelain` empty at Step 2 and after the last check; dirty set empty, advisory
+intersection empty.
+
+Suite: 45 files, all `EXIT 0`. `tests/handoff.test.sh` `250 passed, 0 failed`;
+`tests/sprint-ledger.test.sh` `229 passed, 0 failed`; `tests/declared-copies.test.sh`
+`declared-copies: 23 passed, 0 failed`.
+
+**Clause table. This pass ran every mutation itself** in a detached worktree at `9c3b097`, by a script
+that required each pattern exactly once, confirmed `git diff --stat` non-empty, ran the owning test
+file and restored by path. Control before and after: handoff `250 passed, 0 failed`, sprint-ledger
+`229 passed, 0 failed`; worktree clean, then removed.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC13 | Given `## Waiting on` lacks `### If no answer`, `handoff design waiting` | fixture `0911` (`brief_text`), destination `design` | — |
+| AC13 | refuses (lacking `### If no answer`) | H2 drop it from the wanted list | red, 8 |
+| AC13 | refuses (one `#### Option`) | H3 threshold `< 1` | red, 6 |
+| AC13 | naming the missing part | H5 `missing <heading>` → `missing a part`; H6 options-count line dropped | red, 9; red, 2 |
+| AC13 | and changes nothing | H4 refusal does not exit | red, 25 |
+| AC13 | the check at all / on a `design` hand-off | H1 check off; H8 `design` destination exempted | red, 38; red, 34 |
+| AC13 | every subsection with two options → succeeds | H7 success needs three options | red, 4 |
+| AC14 | Given a run log whose `scope_confirmed` carries budget and deadline | fixtures `env_log` (budget, deadline, one 40-min develop outcome), `--now` pinned | — |
+| AC14 | outcomes so far leave less than the estimate → `STOP` | E1 budget test off; E2 time test off; E4 spend not summed; E11 run-log estimate ignored | red, 7; red, 2; red, 7; red, 1 |
+| AC14 | exits non-zero | E3 STOP exits 0 | red, 5 |
+| AC14 | **naming budget** | E8 STOP reason `budget:` → `over:` | **green, 229/0 — gap** |
+| AC14 | **naming time** | E9 STOP reason `time: %d min left` → `over: %d min left` | **green, 229/0 — gap** |
+| AC14 | enough left → `CONTINUE` | E5 `CONTINUE` → `GO` | red, 1 |
+| AC14 | and exit 0 | E10 CONTINUE exits 3 | red, 2 |
+| AC14 | no ledger prior → uses the stage cap | E6 estimate 0 instead of the cap | red, 4 |
+| AC14 | and says so | E7 `no prior: the stage cap` label dropped | red, 1 |
+
+**The gap, with output.** Under E8+E9 the observable output moved and the suite stayed green:
+`STOP  budget: 3.00 left, develop needs an estimated 7.00` became `STOP  over: 3.00 left, …`, and
+`STOP  time: 20 min left, …` became `STOP  over: 20 min left, …`, both still exit 3. The STOP line no
+longer names budget or time, which is AC14's outcome. The assertions `names budget` and `names time`
+match the whole output, and the always-printed `ENVELOPE  budget …` / `ENVELOPE  time …` header lines
+satisfy them whichever reason fired, an adjacent measurement. The time case's `hasnt … budget` is
+already scoped to `^STOP`, and the past-deadline case's `has … time` is too; these two are not.
+
+AC13 passes: every clause reddened.
+
+Step 4, newly reachable: `handoff … waiting` gains a refusal (narrows, never widens, what is
+reachable); `envelope` is a read-only new mode. No route to push, release or a destructive action.
+Evidence set: `skills/queue/templates/handoff`, `.tickets/handoff`, `tools/sprint-ledger.sh`,
+`tests/handoff.test.sh`, `tests/sprint-ledger.test.sh`, `tests/declared-copies.test.sh`, `tests/*.test.sh`.
+
 ## Notes & decisions
 
 - 2026-11-18 — captured at Aaron's direction from the Traitors and Allies session of 2026-11-17, which
@@ -877,3 +933,14 @@ Evidence set: `skills/queue/templates/next`, `.tickets/next`, `tests/next.test.s
     | FR13 distinct exit codes; missing envelope is an error | `0231 FR13 -- STOP and an error exit differently…` | E5 STOP exits 1; E9 missing-field check off | 1; 2 (after `d244651`; 0 before) |
     | FR13 past deadline stops with no prior | `… a deadline already past…` | E3 past-deadline test off | 2 |
     | FR13 unpriced outcome counted at its cap | `… an outcome carrying no cost_usd…` | E7 unpriced not added | 2 |
+- 2026-11-18 — **verify (b5c7), leg S5: FAIL on AC14, handed back to develop without `--slice`.**
+  AC13 passes, every clause mutated red by this pass. AC14's clause *"prints `STOP` naming budget or
+  time"* is unguarded. Rewording the STOP reason (`budget:` → `over:`, and `time: %d min left` →
+  `over: %d min left`) changes the output and leaves `tests/sprint-ledger.test.sh` at `229 passed, 0
+  failed` (*QA evidence*, Leg S5, E8/E9). The cause is that `names budget` and `names time` (the
+  short-budget and short-time cases) match the whole output, and the `ENVELOPE  budget` / `ENVELOPE  time`
+  header lines always carry both words. **Constraint:** those two assertions must read the `STOP`
+  line alone (`grep '^STOP'`, as the time case's `hasnt` and the past-deadline case already do), so
+  that E8 and E9 each go red. `tools/sprint-ledger.sh` is correct as it stands and needs no change.
+  Mechanism cleared: the budget, time, exit-code, CONTINUE and stage-cap clauses all reddened. Suite
+  green at `9c3b097`, 45 files.
