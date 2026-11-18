@@ -3,7 +3,7 @@ id: "0231"
 title: Drive one outcome ticket across slice sessions unattended
 type: feature
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,8 +15,8 @@ blocked_by: []
 relates: ["0071", "0149", "0220", "0226", "0212", "0137", "0128", "0204"]
 expects: [skills/sprint/SKILL.md, skills/sprint/outcome.schema.json, tools/validate-json-schema.py, skills/design/SKILL.md, skills/develop/SKILL.md, skills/verify/SKILL.md, skills/queue/SKILL.md, skills/queue/templates/item.md, skills/queue/templates/next, skills/queue/templates/handoff, skills/queue/templates/claim, skills/queue/templates/close, skills/queue/templates/config.yml, references/CONCURRENCY.md, tests/next.test.sh, tests/handoff.test.sh, tests/batching.test.sh, tests/close.test.sh, tests/sprint-ledger.test.sh, tools/sprint-ledger.sh, README.md, CHANGELOG.md]
 ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=414ddd39 AC7=6caf69d4 AC8=1295a15c AC9=1dab5f85 AC10=865d23ca AC11=63334335 AC12=570dc5d8 AC13=ccc5aeaa AC14=6cd4e5b9 AC15=aca1f25c AC16=e3a5e129 AC17=06b1bf5e
-claimed_by:
-claimed_at:
+claimed_by: "5a3e"
+claimed_at: 2026-11-18T14:42:56Z
 touches:
 slice: S2
 ---
