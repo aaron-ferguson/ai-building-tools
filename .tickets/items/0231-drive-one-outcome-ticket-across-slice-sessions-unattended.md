@@ -17,7 +17,7 @@ expects: [skills/sprint/SKILL.md, skills/sprint/outcome.schema.json, tools/valid
 ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=414ddd39 AC7=6caf69d4 AC8=1295a15c AC9=1dab5f85 AC10=865d23ca AC11=63334335 AC12=570dc5d8 AC13=ccc5aeaa AC14=6cd4e5b9 AC15=aca1f25c AC16=e3a5e129 AC17=06b1bf5e
 claimed_by: "33d4"
 claimed_at: 2026-11-18T16:08:13Z
-touches:
+touches: [tests/sprint-ledger.test.sh, tools/sprint-ledger.sh (transient mutation only, E8/E9, restored in-turn)]
 slice: S5
 ---
 
