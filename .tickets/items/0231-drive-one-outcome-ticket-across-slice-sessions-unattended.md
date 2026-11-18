@@ -204,7 +204,7 @@ design pass's set. Absorbs 0212, 0220, 0226 and 0071, each withdrawn with a poin
 |---|---|---|---|
 | Security | Unattended runs still never push, bump, install or restart without per-action approval (sprint Step 8 unchanged), and a design pass never records a person's decision (FR15) | prose: no script owns either rule and this repo adds no prose guards (`CLAUDE.md`, *Tests*), so `verify` reads both (AC17) | `security-conventions.md` |
 | Compatibility | A ticket with no `## Progress`, and every installed backlog, behaves as before; existing `waiting` rows are not refused retroactively, since only a new `handoff … waiting` checks the brief | the existing `tests/*.test.sh` cases pass unchanged (AC16) | `api-conventions.md` |
-| Documentation | `CHANGELOG.md` `## Unreleased` entry, one per behaviour a session will see differently; README skill descriptions updated where sprint, develop, verify, design and queue change | `tests/changelog-entry-guards.test.sh` | `documentation-conventions.md` |
+| Documentation | `CHANGELOG.md` `## Unreleased` entry, one per behaviour a session will see differently; README skill descriptions updated where sprint, develop, verify, design and queue change | prose only — no artifact yet: `verify` reads the entry and the README (AC17), and `tools/release` refuses a bump over an empty `## Unreleased` | `documentation-conventions.md` |
 
 ## Acceptance criteria
 
@@ -385,3 +385,50 @@ hand.
     runs under `tests/`. `close_by: verify` holds, since AC17 is a read. `next: develop` holds: Aaron
     made the remaining choices and nothing is open. A `## Progress` section is added so this ticket
     follows its own convention.
+- 2026-11-18 — **develop (7295), leg S1: built, handed to verify with `--slice S1`.** Commits
+  `fb7255a` (handoff `--slice`, sliced `close`, `item.md` `## Progress` and `slice:`, tests) and
+  `56cebad` (quote-scan fix). S1 alone is the leg: S2 touches `outcome.schema.json` and the validator,
+  no file S1 had open, so FR3 ends the leg here.
+  - **Definitions this build had to pick, all inside FR4/FR6's wording.** A leg is the slices after
+    the *last ticked* slice (by position) up to `--slice S<n>`. `--slice` is accepted only on
+    develop → develop, develop → verify and verify → develop, with status `ready`; a ticket with no
+    `## Progress` refuses it. On verify → develop, S<n> must equal `slice:` (a pass ticks the leg it
+    was handed; asserted by `0905`). A slice's kind is read from its last ` — ` field only; a last
+    field that is neither `discharges none` nor `unspecified` reads as `ac`, so a misparse refuses
+    develop → develop rather than skipping a verify. `close` defines its closing leg the same way
+    and additionally refuses when `slice:` is not the last slice (a mid-ticket verify must not
+    close), naming the slices still to come — FR5's "the leg holding the last slice is the closing
+    verify", made mechanical. Shared parser: declared copy `progress-slices` in `handoff` and `close`.
+  - **Dirty check** is `git status --porcelain -- <touches: entries>` from the repo root; `touches:
+    "*"` checks the whole tree. It runs only with `--slice`.
+  - **NFR Documentation cell corrected:** it cited `tests/changelog-entry-guards.test.sh`, which
+    checks that tests do not *read* the changelog and cannot red on a missing entry; it was also
+    the baseline `tests/item-nfr-red.test.sh` red (bare file reference, red at `a118a42` before the
+    claim). Now names what actually checks it. Criteria untouched; `ac_digest` unaffected.
+  - **Clause table (S1's ACs) — every row run, as a mutation of committed code restored by
+    `git checkout` in the same call:**
+
+    | AC clause | Assertion (`tests/…`) | Mutation that reds it (run) |
+    |---|---|---|
+    | AC1 S1 ticked, `slice: S1`, claim cleared, `develop / ready` | handoff `0231 AC1` | M4-class: no tick → red (2) |
+    | AC2 dirty `touches:` path → non-zero naming it, item/row/log unchanged | handoff `0231 AC2` | M2 dirty refusal off → 5 red |
+    | AC2 dirty path not in `touches:` → succeeds | handoff `0231 AC2`, second half | — (positive case; reds if the check covers the whole tree) |
+    | AC3 develop → develop over an AC slice refuses naming verify | handoff `0231 AC3` | M1 → 8 red |
+    | AC3 develop → verify sets `slice: S2`, ticks nothing | handoff `0231 AC3` | M4/M5 rows |
+    | AC3 verify → develop `--slice S2` ticks S1, S2 | handoff `0231 AC3` | M4 verify-pass ticks nothing → 2 red |
+    | AC3 verify → develop without `--slice` ticks neither | handoff `0231 AC3` (`0904`) | — (unchanged path; reds if ticking ignores `--slice`) |
+    | AC4 unspecified in leg → refuses naming design, unchanged | handoff `0231 AC4` | M3 → 6 red |
+    | AC5 earlier slice unticked → close refuses naming it | close `0231 AC5` | M6 → 4 red |
+    | AC5 all earlier ticked → closes, ticks closing leg in the close commit | close `0231 AC5` | M8 no leg tick → 2 red |
+    | FR6 (beyond AC5) `slice:` not last → refuses | close `0231 FR6` | M7 → 3 red |
+    | declared copy kept identical | `tests/declared-copies.test.sh` | M9 drift in close's copy → 1 red |
+
+    Every new case was also red before the implementation (27 in handoff, 9 in close).
+  - **Whole suite at `56cebad`:** green except three files, each red at `a118a42` before the claim too,
+    and none touched by this leg: `tests/release.test.sh` aborts at *0084 NFR git* (`remote HEAD
+    refers to nonexistent ref`, the container's git); `tests/sprint.test.sh` 4 failures, AC25's
+    lock-age check calling `stat -f` (BSD form; Linux prints filesystem stats), and 0165's two cases
+    that follow from it; `tests/item-nfr-red.test.sh` the NFR cell above, fixed in this commit.
+  - **Not done in this leg, for the next ones:** `.tickets/claim` does not seed `touches:` from a
+    flow-style `expects: [a, b]` (it reads block lists only), and needs `xxd` to mint a token —
+    both parked in `FINDINGS-HELD.md`, neither in this ticket's scope.
