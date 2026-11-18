@@ -54,12 +54,12 @@
             "pattern": "^[0-9]{4}$"
           },
           "verdict": {
-            "description": "The word this stage's own hand-off line prints, lowercased. Each stage reaches only its own subset; the schema carries the union because one schema serves every stage. `closed` is develop's fourth, reached only on a `close_by: develop` ticket, where the build stage is also the closing one (0086) — without it a driven light close is a perfectly good stage that reads as a schema failure.",
+            "description": "The word this stage's own hand-off line prints, lowercased. Each stage reaches only its own subset; the schema carries the union because one schema serves every stage. `closed` is develop's fourth, reached only on a `close_by: develop` ticket, where the build stage is also the closing one (0086) — without it a driven light close is a perfectly good stage that reads as a schema failure. `progressed` is develop's at the end of a leg of a sliced ticket that leaves slices still to build with no verify owed (0231 FR7); it requires `slice.next`.",
             "enum": [
               "queued", "re-specified", "parked",
               "decided", "handed-to-queue",
               "prototyped",
-              "built", "red", "blocked", "closed",
+              "built", "red", "blocked", "closed", "progressed",
               "pass", "fail", "advisory"
             ]
           },
@@ -75,7 +75,25 @@
             "description": "A path — and where useful an anchor — to where this ticket's detail actually landed: its Notes & decisions, its QA evidence, FINDINGS.md, or the run log. FR14's guarantee that the trim moved the detail rather than deleting it is only checkable because this field exists.",
             "type": "string",
             "minLength": 1
+          },
+          "slice": {
+            "description": "For a sliced ticket (one carrying `## Progress`): the last slice the leg ended on, and the slice the next leg starts at. Required, with `next`, when the verdict is `progressed`, because the supervisor routes the next leg on it; optional otherwise, and absent for an unsliced ticket (0231 FR7).",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["done"],
+            "properties": {
+              "done": { "type": "string", "pattern": "^S[0-9]+$" },
+              "next": { "type": "string", "pattern": "^S[0-9]+$" }
+            }
           }
+        },
+        "if": {
+          "properties": { "verdict": { "enum": ["progressed"] } },
+          "required": ["verdict"]
+        },
+        "then": {
+          "required": ["slice"],
+          "properties": { "slice": { "type": "object", "required": ["done", "next"] } }
         }
       }
     }

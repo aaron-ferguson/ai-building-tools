@@ -96,6 +96,14 @@ def validate(doc: Any, schema: dict[str, Any], path: str = "$") -> list[str]:
             for index, entry in enumerate(doc):
                 errors.extend(validate(entry, schema["items"], f"{path}[{index}]"))
 
+    # `if` never contributes errors of its own: it only picks which of `then` or `else` applies,
+    # and an absent branch means no constraint. The outcome schema needs it for one rule -- a
+    # `progressed` verdict must name the next slice (0231 FR7) -- and this is the whole of it.
+    if "if" in schema:
+        branch = "else" if validate(doc, schema["if"], path) else "then"
+        if branch in schema:
+            errors.extend(validate(doc, schema[branch], path))
+
     return errors
 
 
