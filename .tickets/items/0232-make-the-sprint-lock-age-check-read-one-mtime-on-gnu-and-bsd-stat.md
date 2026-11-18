@@ -3,7 +3,7 @@ id: "0232"
 title: Make the sprint lock-age check read one mtime on GNU and BSD stat
 type: bug
 next: verify
-status: in-progress
+status: waiting
 qa_level: unit
 close_by: verify
 qa_manual: AC4 — `tests/sprint.test.sh` run on a real macOS machine (BSD stat), the author
@@ -17,8 +17,8 @@ expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
 ac_digest: AC1=fc0f67b8 AC2=577af61a AC3=e1b45118 AC4=f85bc0c4
-claimed_by: "fcf2"
-claimed_at: 2026-11-18T08:07:37Z
+claimed_by:
+claimed_at:
 touches:
 slice:
 ---
@@ -103,15 +103,15 @@ ticket is 0040 (AC25, QA evidence rows "aged lock escalates" / "younger lock wai
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `tests/sprint.test.sh` at the fix commit on Linux (GNU `stat`), when it runs, then
+- [x] AC1 — Given `tests/sprint.test.sh` at the fix commit on Linux (GNU `stat`), when it runs, then
   the AC25 cases "an aged lock is classified aged…" and "a lock taken a moment ago is classified
   fresh…" print `ok`, and the tally reports 0 failed. Red: restore line 801's
   `stat -f %m "$LOCK" 2>/dev/null || stat -c %Y "$LOCK"` and both AC25 cases print the
   `Illegal number` FAIL quoted in *Problem*.
-- [ ] AC2 — Given the same run, when the 0165 AC1/AC2 case runs its clean and injected copies, then
+- [x] AC2 — Given the same run, when the 0165 AC1/AC2 case runs its clean and injected copies, then
   both print `ok` with no edit to the 0165 case itself. Red: the same restoration of line 801 reds
   0165 AC2 with "the clean copy was not green".
-- [ ] AC3 — Given the BSD-semantics `stat` shim of FR3 first on `PATH`, when the extracted block runs
+- [x] AC3 — Given the BSD-semantics `stat` shim of FR3 first on `PATH`, when the extracted block runs
   against the aged (mtime 2026-01-01) and fresh fixtures, then it prints `aged <n>` and `fresh <n>`
   respectively, each `<n>` a bare integer. Red: a block calling `stat -c %Y` unguarded (GNU-only)
   reds this case under the shim; the original `stat -f … || stat -c …` form reds AC1 under GNU —
@@ -136,7 +136,63 @@ ticket is 0040 (AC25, QA evidence rows "aged lock escalates" / "younger lock wai
 - Changing `lock_stale_seconds`, the aged/fresh wording, or what the supervisor does with the verdict.
 - Rewriting the 0165 case; it is red by consequence, and AC2 asserts it recovers untouched.
 
+## Waiting on
+
+- **The author, on a real macOS machine (BSD `stat`):** check out a commit at or after `9d261dc`
+  and run `tests/sprint.test.sh`. AC4 clears when the last line reads `<n> passed, 0 failed, …`.
+  Then tick AC4 and close from a `verify` session with `./close` and the CHANGELOG `--note` proposed in
+  *Notes & decisions* (build note). That note discharges the Documentation NFR row; `## Unreleased`
+  is still empty. AC1–AC3 are cleared on Linux, see *QA evidence*. Nothing needs deploying: the check
+  is a local test run.
+
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**Verdict 2026-11-18 (verify, token fcf2): AC1–AC3 PASS on Linux; AC4 is a manual check → `waiting`.**
+Not advisory: `git status --porcelain` printed nothing at Step 2, so the dirty set was empty
+and its intersection with the evidence set was empty too.
+
+Conventions: `../ai-building-conventions` (resolved from `.tickets/config.yml` `conventions.path`)
+Command (`unit_by_file`, verbatim): `for t in tests/*.test.sh; do "$t" || true; done`, with each file's output
+redirected separately. The fail-fast `unit` line would stop at the known foreign red.
+Copy executed: the repo checkout at `9d261dc`, not the plugin install. The test extracts the block from
+`skills/sprint/SKILL.md` in the repo.
+AC digest: `./next --ac-digest 0232 --check` → `0232: ac_digest matches`.
+
+Suite at `9d261dc`: 43 of 44 files exit 0. `tests/sprint.test.sh` → `389 passed, 0 failed, 0 skipped`.
+`tests/release.test.sh` → `ABORTED before the tally: 23 passed, 0 failed so far (exit 1)`. That is the
+dispatch's baseline red at `cab450d`, owned by 0233. Neither this diff nor its evidence set touches
+that file. Reported as unattributed to this ticket, and it closes nothing here.
+
+Clause table and evidence:
+
+| AC / NFR | Clause | Checked by | Result |
+|---|---|---|---|
+| AC1 | Given `tests/sprint.test.sh` at the fix commit on Linux (GNU `stat`) | Host here is Linux with GNU coreutils `stat`. The run used `9d261dc`, whose `skills/sprint/SKILL.md:801` reads `mtime=$(stat -c %Y "$LOCK" 2>/dev/null \|\| stat -f %m "$LOCK")` | holds |
+| AC1 | AC25 "aged…" and "fresh…" print `ok` | `tests/sprint.test.sh` output: `ok   an aged lock is classified aged…` and `ok   a lock taken a moment ago is classified fresh…` | ok |
+| AC1 | tally reports 0 failed | `389 passed, 0 failed, 0 skipped` | ok |
+| AC1 | Red: restore the original line → both print `Illegal number` | **M1** (I ran it): line 801 → `stat -f %m … \|\| stat -c %Y …`. Output: `FAIL AC25 — …aged; it printed [/tmp/…/agecheck.sh: 5: Illegal number:   File: ".tickets/.lock"` and the same for fresh; `385 passed, 4 failed, 0 skipped` | red as specified |
+| AC2 | 0165 clean and injected copies print `ok` | `ok   a forced failure names its case within the last 5 lines of the run`, `ok   a green run prints no re-print block`, `ok   and its tally line keeps its shape…` | ok |
+| AC2 | with no edit to the 0165 case | `git diff cab450d..HEAD -- tests/sprint.test.sh` has one hunk (`@@ -1298,6 +1298,44 @@`, additions only) and 0 lines mention 0165 | holds |
+| AC2 | Red: same restoration → "the clean copy was not green" | M1: `FAIL 0165 AC2 — the clean copy was not green (381 passed, 2 failed, 2 skipped)…` | red as specified |
+| AC3 | Given the BSD shim of FR3 first on `PATH` | The shim at `tests/sprint.test.sh` ~1308–1320 handles `-f %m <path>` only. Any other option prints `stat: illegal option` to stderr and exits 1 with nothing on stdout. The block runs under `PATH="$BSDBIN"` (shim + `sh date sed`) | holds |
+| AC3 | aged fixture → `aged <n>`; fresh → `fresh <n>` | `ok   0232 AC3 — …aged lock is classified aged with a bare integer age`, and the same line for fresh | ok |
+| AC3 | each `<n>` a bare integer (two fixtures differ in age) | **M3** (I ran it): `echo "aged ${age}s" \|\| echo "fresh ${age}s"`. Output: `FAIL 0232 AC3 — …printed [aged 27763952s]` and `…[fresh 0s]`, 386/3. The host AC25 cases stayed green, because they only grep for the word. The shim cases are the integer guard | red |
+| AC3 | Red: GNU-only `stat -c %Y` reds under the shim | **M2** (I ran it): line 801 → `mtime=$(stat -c %Y "$LOCK")`. Output: `FAIL 0232 AC3 — …printed [stat: illegal option -- c` for aged and fresh; 385/4 | red as specified |
+| AC3 | the original form reds AC1 under GNU, so no single-platform form passes both | M1 above | holds |
+| AC4 | real macOS: tally 0 failed | **Not run.** This container is Linux and no evidence was invented. `qa_manual:` names the author → `## Waiting on` | **open** |
+| NFR Dependencies | only POSIX `sh` and the platform `stat` | **M4** (I ran it): line 801 → `mtime=$(perl -e 'print((stat shift)[9])' "$LOCK")`. Output: `FAIL 0232 NFR — the lock-age block reaches for perl/python/gdate…` and both AC3 shim cases `perl: not found`; 384/5 | guarded, holds |
+| NFR Documentation | `## Unreleased` gains the Linux line | `CHANGELOG.md` `## Unreleased` is empty. Develop deferred the line to the close's `--note`, and this pass does not close | **open until close**, guarded by `tools/release`'s refusal on an empty Unreleased |
+
+Mutations ran on committed `HEAD` (`9d261dc`). Each one used `awk`/`sed` on `skills/sprint/SKILL.md` and
+showed a non-empty diff on line 801 (M3: line 803). Each was restored with `git checkout -- skills/sprint/SKILL.md`
+alone. Control after all four: `389 passed, 0 failed, 0 skipped`, and `git status --porcelain` was empty.
+
+Step 4: the change makes no new state reachable. The output shape and the classification are unchanged,
+and the supervisor still neither takes nor breaks the lock. The diff touches no auth, data, log or egress
+path, so neither the Security nor the Privacy pass applies. Always-on (`CONVENTIONS_CORE.md`): the bug fix
+had its failing guard first (red at `cab450d`, quoted in *Problem*). The commits are atomic and in the
+imperative. A failure still surfaces: if both `stat` forms fail, the second's stderr reaches the output
+and the arithmetic errors. Nothing is swallowed.
 
 ## Notes & decisions
 
@@ -182,3 +238,10 @@ ticket is 0040 (AC25, QA evidence rows "aged lock escalates" / "younger lock wai
   match any file(s) known to git` / `ABORTED before the tally: 23 passed, 0 failed so far (exit
   1)`. That is the dispatch's stated baseline red at `cab450d`, owned by row 0233. This ticket
   changes neither that file nor anything it reads.
+- 2026-11-18 — **Verify (token fcf2): AC1–AC3 pass, AC4 waiting → `next: verify, status: waiting`.**
+  I re-ran every mutation in the build table myself (M1 and M2 matched what develop recorded) and added
+  M3 (non-integer age) and M4 (perl dependency). All four reddened, and the control was green. AC4 is a
+  real-macOS run, and `qa_manual:` names the author. This Linux container cannot produce that evidence,
+  so the ticket is not closed and not sent back. No code is owed and the contract is not stale.
+  `verify` resumes: when the author reports a macOS tally of 0 failed, tick AC4 and `./close` with
+  develop's proposed `--note`. Nothing surprised this pass, so no finding was parked.
