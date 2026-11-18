@@ -1953,7 +1953,7 @@ rc_is "exits 0"                             "$rc" 0
 echo "0231 AC14 -- with no prior for the stage, the stage cap is used and labelled"
 out="$(envelope --run "$ENV/enough.jsonl" --stage verify)" && rc=0 || rc=$?
 has   "the estimate is verify's stage cap"  "$out" "estimate 5.00"
-has   "and says it is the cap for want of a prior" "$out" "no prior"
+has   "and the budget line says it is the cap for want of a prior" "$(printf '%s\n' "$out" | grep 'budget' || true)" "no prior: the stage cap"
 has   "naming the cap's source"             "$out" "stage_budget_usd"
 rc_is "exits 0 with 95 left"                "$rc" 0
 env_log "$ENV/cap-short.jsonl" 6 2026-11-18T18:00:00Z 2.00
@@ -1964,7 +1964,8 @@ if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0:
 echo "0231 FR13 -- STOP and an error exit differently, and a scope with no envelope is an error"
 printf '{"ts":"2026-11-18T09:00:00Z","run":"r-env","event":"scope_confirmed"}\n' > "$ENV/no-envelope.jsonl"
 out="$(envelope --run "$ENV/no-envelope.jsonl" --stage develop)" && erc=0 || erc=$?
-has   "names the missing budget_usd"        "$out" "budget_usd"
+has   "names the missing budget_usd"        "$out" "scope_confirmed carries no budget_usd"
+hasnt "and is a refusal, not a traceback"   "$out" "Traceback"
 hasnt "is not a STOP"                       "$out" "STOP"
 out="$(envelope --run "$ENV/short-budget.jsonl" --stage develop)" && src=0 || src=$?
 if [ "$erc" -ne 0 ] && [ "$src" -ne 0 ] && [ "$erc" -ne "$src" ]; then ok "STOP's exit ($src) is distinct from an error's ($erc)"
