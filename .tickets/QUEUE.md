@@ -31,6 +31,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0225 | Make claim write an empty touches key when it has nothing to seed | develop | ready |  |
 | 0227 | Make next list the findings entries so no drain matches a buffer's header by hand | develop | ready |  |
 | 0229 | Make next --drift report a closed item that still carries a claim token | develop | ready |  |
+| 0234 | Let --drive re-dispatch develop on a verify bounce instead of escalating | design | ready |  |
 | 0214 | Add a profile-declared gate that a stage refuses to pass without its artifact | design | ready |  |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
@@ -49,6 +50,10 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0217 | Stop a note written below the last AC from changing that AC's digest | queue | ready |  |
 | 0219 | Make reopen leave a ticket that verify can close when it reopens a develop self-close | queue | ready |  |
 | 0230 | Make next say the queue is empty instead of printing a blank ROW 1 | develop | ready |  |
+| 0235 | Decide whether claim, handoff and close refuse off the branch the backlog is shared on | design | ready |  |
+| 0236 | Decide whether design may amend unheld sibling items its own FRs name | design | ready |  |
+| 0237 | Give queue a way to send an open verify ticket back to design | design | ready |  |
+| 0238 | Decide whether a ticket-pinned path in the current repo stands in for prototype.root at level 3 | design | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in
