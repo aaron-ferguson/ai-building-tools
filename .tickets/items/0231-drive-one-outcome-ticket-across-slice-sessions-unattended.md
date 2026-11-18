@@ -338,6 +338,68 @@ destructive action is added.
 Evidence set: `skills/sprint/outcome.schema.json`, `tools/validate-json-schema.py`,
 `tests/outcome-schema.test.sh`, `tests/sprint.test.sh`, `tests/*.test.sh`.
 
+### Leg S3 — verify (2a45), 2026-11-18: PASS, not closing
+
+Leg verify per FR5: AC7, AC8, AC9 and AC15 only (the ACs S3 discharges), plus the whole suite. No AC
+is ticked; `close` ticks them once, at the closing leg. NFR rows are not discharged by this leg
+(AC16/AC17 sit on S6). The Compatibility row's check, the existing suite unchanged and green, held at
+this SHA: S3 added 193 lines to `tests/next.test.sh` and deleted none.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`; `unit` is the same
+files fail-fast), each file's exit captured. Subject: `d4be431` (claim over `34eb735`; S3 = `61ceb12`,
+`d29fa86`). Copy executed: the repo's `skills/queue/templates/next`, which `tests/next.test.sh` copies
+into each fixture (`NEXT_SRC`). `.tickets/next` is byte-identical (`cmp`).
+`./next --ac-digest 0231 --check` → `0231: ac_digest matches`.
+Tree: `git status --porcelain` was empty at Step 2 and again after the last check, so the dirty set is
+empty and the advisory intersection is empty.
+
+Suite: 45 files, every one `EXIT 0`, no `ABORTED`, no tally with a non-zero failure count.
+`tests/next.test.sh` `600 passed, 0 failed`; `tests/batching.test.sh` `39 passed, 0 failed`;
+`tests/declared-copies.test.sh` `declared-copies: 23 passed, 0 failed`.
+
+**Clause table. This pass re-ran every mutation itself** in a detached worktree at `d4be431`, against
+a trimmed harness: `tests/next.test.sh` lines 1–412 (helpers), its later `assert_eq` and
+`dispatch_line` definitions, and the whole 0231 section. Every mutation was applied to
+`skills/queue/templates/next`, with the diff confirmed non-empty, then restored by path. The control
+before and after was `25 passed, 0 failed`, and the worktree was removed clean.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC7 | Given the AC1 and AC3 fixtures (S1 none; S2 an AC; three slices) | fixtures `0911` in the 0231 section | — |
+| AC7 | `--completed develop:<id>` after develop → develop → `DISPATCH  develop <id>` | M1 leg arm `&& false` | red, 7 (incl. `dispatches that ticket's next leg`) |
+| AC7 | after develop → verify, `DISPATCH  verify <id>` | M2 `completed_batch` → `verify_batch` | AC7 case stays green (the sliced lead is still alone); see the next row |
+| AC7 | naming that ticket alone | M3 sliced-lead early return deleted | red, 1 (`verifies the leg's ticket alone`) |
+| AC7 | `--completed verify:<id>` after the pass → `DISPATCH  develop <id>` | M1 | red (`dispatches the next leg`, `a pass is not a bounce`) |
+| AC7 | after the fail, exit 4 with the bounce escalation | M4 `bounced` never printed | red, 3 (`exits 4`, `names the bounce`, `dispatches nothing`) |
+| AC8 | Given A (S1, S2 ticked, S3 not) at develop/ready, B ranked above | fixtures `0921`/`0920` | — |
+| AC8 | `--completed develop:A --scope A --scope B` → dispatches `develop A` | M1 | red (`exits 0`, `dispatches the sliced ticket`) |
+| AC8 | not B | M9 leg arm keeps its NOTE but does not dispatch, and `started_leg` is off, so the run falls to the rank walk | red: `got: DISPATCH  develop 0920` |
+| AC9 | Given three rows developed in one gate, all at verify/ready, all in `--started` | fixtures `0931`–`0933`, which share no `expects:` and no parent. The lead joins `STARTED` via `--completed` (`next` line 1836) | — |
+| AC9 | one `DISPATCH  verify` line names all three | M2 `verify_batch` re-derivation | red, 2 (`names all three in one verify session`) |
+| AC9 | red if any is named in a separate session | M8 `completed_batch` pool = the lead alone | red, 2 |
+| AC9 (FR11) | a sliced leg is left out of the gate's batch | M5 sliced-member skip deleted | red, 1 |
+| AC15 | `tests/batching.test.sh` gate cases pass unchanged | the file is unedited since baseline `6829ae8` (`git diff --stat` empty) and runs green. Liveness: rewording the verify `SKILL.md` phrase it asserts gave `38 passed, 1 failed`, and restored gave `39 passed, 0 failed` | green, and can red |
+
+Beyond the ACs, also re-run: M6 `handed_off_from` always true → red, 3 (the same-stage loop case).
+M7 `started_leg` off → red, 1 (`the started leg goes before rank 1`).
+
+**AC15, read literally:** `tests/batching.test.sh` guards the batching prose in `skills/develop` and
+`skills/verify`, which S3 does not touch, so no change to `next` can redden it. Unsliced gate
+*behaviour* is held by `tests/next.test.sh`'s existing gate cases (0132 and the others). They passed
+unchanged, with no line of that file deleted.
+
+Step 4, newly reachable: `--drive` can now dispatch `develop` on a ticket that is not newly ranked.
+That is limited to a clean leg whose item's last commit handed it out of the completed stage
+(`handed_off_from`, M6), so a session that dies before claiming escalates and does not loop. It adds
+no route to push, release or any destructive action. Known and deferred to S4 by the build notes: a
+leg dispatch does not run `gate_wait` (FR10/AC12). Also from the build notes: `completed_batch` takes
+every started verify row, so a row skipped earlier for a blocker could widen a later gate's batch.
+That only happens among rows this run itself developed.
+Evidence set: `skills/queue/templates/next`, `.tickets/next`, `tests/next.test.sh`,
+`tests/batching.test.sh`, `skills/verify/SKILL.md` (liveness mutation only),
+`tests/declared-copies.test.sh`, `tests/*.test.sh`.
+
 ## Notes & decisions
 
 - 2026-11-18 — captured at Aaron's direction from the Traitors and Allies session of 2026-11-17, which
@@ -630,3 +692,7 @@ Evidence set: `skills/sprint/outcome.schema.json`, `tools/validate-json-schema.p
     failed`; `tests/batching.test.sh` `39 passed, 0 failed`; `tests/declared-copies.test.sh` `23
     passed, 0 failed`, which now covers a third `progress-slices` copy in `next`).
     `git status --porcelain` was clean at the run apart from this notes edit.
+- 2026-11-18 — **verify (2a45), leg S3: PASS.** AC7, AC8, AC9 and AC15 were checked literally, and
+  this pass mutated each clause to red itself (*QA evidence*, Leg S3). The full suite is green at
+  `d4be431`. Handed back with `--slice S3` so S3 ticks. No AC was ticked. Next leg: S4.
+  `.tickets/claim` still needs `xxd` (parked), so this claim passed a token explicitly.
