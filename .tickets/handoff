@@ -373,6 +373,40 @@ item_status="$(fm_value "$item" status)"
   exit 1
 }
 
+# --- a waiting hand-off carries a whole decision brief (0231 FR14) ------------------------------
+# `waiting` asks a person for something, and an unattended run reports that ask to someone who was
+# not there for any of the work. So the `## Waiting on` section is a decision brief: seven
+# subsections, and at least two `#### Option` entries under `### Options`, because a single option
+# is a notice rather than a choice. Every missing part is named at once, so one edit fixes it.
+#
+# Scoped twice, both for compatibility: only a NEW `waiting` hand-off is checked, never a ready one
+# over a stale section; and only an item that HAS a `## Waiting on` section, so a waiting hand-off
+# written before the brief existed behaves as it did. Before any write, so a refusal changes nothing.
+if [ "$STATUS" = waiting ] && grep -q '^## Waiting on' "$item"; then
+  brief_gaps="$(awk '
+    BEGIN {
+      n = split("### Outcome|### Where it stands|### What needs you|### Options|### Recommendation|### What to do|### If no answer", want, "|")
+    }
+    /^## Waiting on/ { inw = 1; next }
+    inw && /^## /    { inw = 0 }
+    !inw             { next }
+    /^### /          { h = $0; sub(/[ \t]+$/, "", h); seen[h] = 1; inopt = (h == "### Options"); next }
+    inopt && /^#### Option/ { opts++ }
+    END {
+      for (i = 1; i <= n; i++) if (!(want[i] in seen)) print "missing " want[i]
+      if (opts + 0 < 2) printf "### Options holds fewer than two #### Option entries (found %d)\n", opts + 0
+    }
+  ' "$item")"
+  [ -z "$brief_gaps" ] || {
+    echo "refusing to hand off $ID waiting: its '## Waiting on' is not a whole decision brief" >&2
+    printf '%s\n' "$brief_gaps" | sed 's/^/  /' >&2
+    echo "add what is missing: a brief has '### ' subsections Outcome, Where it stands, What needs you," >&2
+    echo "Options (two or more '#### Option' entries under it), Recommendation, What to do, If no answer" >&2
+    echo "nothing was changed" >&2
+    exit 1
+  }
+fi
+
 # copy-begin: scope-block
 # A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
 # --- the declared scope against what the commits actually changed (0106 FR3) -------------------

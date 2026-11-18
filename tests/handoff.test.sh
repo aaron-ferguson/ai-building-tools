@@ -843,6 +843,106 @@ assert_rc_nonzero "--slice on an unsliced ticket exits non-zero" "$rc" "$out"
 assert_contains "names the missing section" "$out" '## Progress'
 assert_unchanged "and changes nothing" "$before"
 
+# --- 0231 FR14 — a waiting hand-off carries a whole decision brief ------------------------------
+# The brief's seven subsections, and at least two `#### Option` entries under `### Options`. Checked
+# on a `waiting` hand-off only, and only where the item has a `## Waiting on` section: a waiting
+# hand-off with no section at all is FR2's case above, which AC16 forbids editing to pass.
+BRIEF_PARTS='### Outcome|### Where it stands|### What needs you|### Options|### Recommendation|### What to do|### If no answer'
+
+# brief_text [omit-heading] [options] — a brief with every subsection but <omit-heading>, and
+# <options> (default 2) `#### Option` entries under `### Options`.
+brief_text() {
+  omit="${1:-}"; nopt="${2:-2}"
+  printf '## Waiting on\n\n'
+  for part in '### Outcome' '### Where it stands' '### What needs you' '### Options' \
+              '### Recommendation' '### What to do' '### If no answer'; do
+    [ "$part" = "$omit" ] && continue
+    printf '%s\n' "$part"
+    if [ "$part" = '### Options' ]; then
+      k=0
+      while [ "$k" -lt "$nopt" ]; do
+        k=$((k + 1))
+        printf '#### Option %s\nPros, cons, and what would have to be true.\n' "$k"
+      done
+    else
+      printf 'Text for %s.\n' "$part"
+    fi
+  done
+}
+
+# brief_fixture <id> <section text> — a design row held by tok0 whose item carries the section.
+brief_fixture() {
+  scaffold "$FIVE_HEAD" "$FIVE_SEP" "| $1 | Needs a decision | design | in-progress | 0000 |" "$1" design in-progress tok0
+  printf '\n%s\n' "$2" >> "$FIX/.tickets/items/$1-fixture.md"
+  git -C "$FIX" commit -q -am "brief"
+}
+
+echo "0231 AC13 — a brief lacking ### If no answer refuses naming it and changes nothing"
+brief_fixture 0911 "$(brief_text '### If no answer')"
+before="$(fingerprint)"
+out="$(run_handoff 0911 tok0 design waiting)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the missing subsection" "$out" '### If no answer'
+assert_unchanged "and changes nothing" "$before"
+assert_eq "and commits nothing" "$(git -C "$FIX" log -1 --format=%s)" 'brief'
+
+echo "0231 AC13 — a brief with one #### Option refuses naming the options and changes nothing"
+brief_fixture 0912 "$(brief_text '' 1)"
+before="$(fingerprint)"
+out="$(run_handoff 0912 tok0 design waiting)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "names the options it wants" "$out" '#### Option'
+assert_contains "and how many it found" "$out" 'found 1'
+assert_unchanged "and changes nothing" "$before"
+assert_eq "and commits nothing" "$(git -C "$FIX" log -1 --format=%s)" 'brief'
+
+echo "0231 AC13 — every subsection with two options hands off waiting"
+brief_fixture 0913 "$(brief_text)"
+out="$(run_handoff 0913 tok0 design waiting)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_row "the row reads design | waiting" '| 0913 | Needs a decision | design | waiting | 0000 |'
+assert_item_line "the item's status: is waiting" 'status: waiting'
+assert_contains "the hand-off is committed" "$(git -C "$FIX" log -1 --format=%s)" 'Hand off 0913 to design [tok0]'
+
+# "Missing any subsection" is a quantifier, so every one of the seven is swept, not one named.
+echo "0231 FR14 — each of the seven subsections, missing alone, is refused by name"
+old_ifs="$IFS"; IFS='|'
+for part in $BRIEF_PARTS; do
+  IFS="$old_ifs"
+  brief_fixture 0914 "$(brief_text "$part")"
+  before="$(fingerprint)"
+  out="$(run_handoff 0914 tok0 design waiting)" && rc=0 || rc=$?
+  assert_rc_nonzero "without '$part' exits non-zero" "$rc" "$out"
+  assert_contains "names '$part'" "$out" "$part"
+  assert_unchanged "and changes nothing (without '$part')" "$before"
+  IFS='|'
+done
+IFS="$old_ifs"
+
+echo "0231 FR14 — an option outside ### Options, and a heading outside ## Waiting on, do not count"
+brief_fixture 0915 "$(brief_text '### If no answer' 1)
+#### Option stray, under What to do's neighbour
+
+## Notes & decisions
+
+### If no answer
+Not the brief's."
+before="$(fingerprint)"
+out="$(run_handoff 0915 tok0 design waiting)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero" "$rc" "$out"
+assert_contains "the heading after the section is not the brief's" "$out" '### If no answer'
+assert_contains "the option outside ### Options is not counted" "$out" 'found 1'
+assert_unchanged "and changes nothing" "$before"
+
+echo "0231 FR14 — the brief is checked on a waiting hand-off, any stage, and never on a ready one"
+brief_fixture 0916 "$(brief_text '### Recommendation')"
+out="$(run_handoff 0916 tok0 develop waiting)" && rc=0 || rc=$?
+assert_rc_nonzero "a develop waiting hand-off is checked too" "$rc" "$out"
+assert_contains "naming the missing subsection" "$out" '### Recommendation'
+out="$(run_handoff 0916 tok0 develop)" && rc=0 || rc=$?
+assert_rc "a ready hand-off over the same partial brief exits 0" "$rc" 0 "$out"
+assert_row "and the row reads develop | ready" '| 0916 | Needs a decision | develop | ready | 0000 |'
+
 # --- result -------------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"
