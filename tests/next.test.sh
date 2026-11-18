@@ -3576,6 +3576,24 @@ assert_eq           "the other in-scope row is dispatched"   "$(dispatch_line "$
 out="$(run_next --drive --completed design:0941 --scope 0941)" && rc=0 || rc=$?
 assert_rc           "and alone in scope it escalates"        "$rc" 4 "$out"
 
+echo "0231 FR9 — stepped over for in-scope work the walk then cannot dispatch, the waiting row escalates"
+# The other in-scope row is a design row naming a file a running develop session holds, so the walk
+# steps over it too (0188). Nothing is dispatched: the waiting row is what the run stops on, exit 4,
+# not COMPLETE.
+scaffold
+add_row 0971 'Waits on a person'          develop waiting     ''
+add_row 0972 'An in-scope design, held'   design  ready       ''
+add_row 0973 'A develop in progress'      develop in-progress ''
+add_ticket 0971 develop waiting '[]' '' a/one.md
+add_ticket 0972 design  ready   '[]' '' f/held.md
+add_ticket_held 0973 develop in-progress '[]' '' f/held.md 'fx73'
+waiting_brief 0971
+seal
+out="$(run_next --drive --scope 0971 --scope 0972)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"                     "$rc" 4 "$out"
+assert_contains     "on the waiting row"                     "$out" 'ESCALATE  0971'
+assert_contains     "carrying its question"                  "$(printf '%s\n' "$out" | grep -A1 'ESCALATE  0971')" 'shorter retention window'
+
 echo "0231 FR9 — a waiting row that is in scope but ranked below in-scope work does not stop it"
 scaffold
 add_row 0942 'In-scope develop'  develop ready   ''
