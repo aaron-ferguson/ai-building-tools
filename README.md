@@ -6,13 +6,13 @@ it, and verify it without asking a single clarifying question.
 
 | Skill | Does | Phase |
 |---|---|---|
-| `/queue` | Turns something you just said into a fully specified item and inserts it at a considered rank | Define |
-| `/design` | Answers a design question and records the decision — no artifact | Design |
+| `/queue` | Turns something you just said into a fully specified item — amending the open ticket whose outcome it serves before minting one, and merging tickets that serve one outcome — and inserts it at a considered rank | Define |
+| `/design` | Answers a design question and records the decision — no artifact. Unattended, it prepares a person's decision as a brief and leaves the row `waiting`, never deciding it | Design |
 | `/prototype` | Builds something to look at — a flow diagram, a clickable mockup, or a real component | Design |
-| `/develop` | Takes the top `ready` item, builds it TDD, and stops at `next: verify` | Build |
-| `/verify` | Checks a change against the item's written acceptance criteria, then closes it or sends it back | Check |
+| `/develop` | Takes the top `ready` item, builds it TDD, and stops at `next: verify` — on a sliced ticket, one leg of slices at a time | Build |
+| `/verify` | Checks a change against the item's written acceptance criteria, then closes it or sends it back — once per leg on a sliced ticket | Check |
 | `/retro` | Sweeps the parked findings of many sessions and lands the lessons where they get read again | Learn |
-| `/sprint` | Drives the loop: dispatches each stage as its own session and routes on what comes back | Drive |
+| `/sprint` | Drives the loop inside a budget and end time you confirm: dispatches each stage as its own session and routes on what comes back | Drive |
 
 `/orchestrate` is a **deprecated** alias for `/sprint`: it still resolves, and is removed in the
 first version released on or after 2026-12-10.
@@ -104,8 +104,17 @@ described by the stage, so running `develop` by hand behaves as it always did. W
 adds is that the steps with no visible output of their own — parking a finding, running the full
 suite, releasing a claim — stop depending on a person remembering them.
 
+**One outcome is one ticket, even across many sessions.** A ticket carrying `## Progress` is worked
+in slices: each `develop` session ends a leg with `./handoff --slice`, a leg that discharges an
+acceptance criterion gets one `verify`, and the leg holding the last slice is the closing verify. A
+run is sized by a budget and an end time a person confirms, checked before every dispatch by
+`tools/sprint-ledger.sh envelope`, and ends at a clean boundary when either runs out.
+
 **What it will not do on its own**: answer a design question, narrow a contract, queue new work,
-push, bump a version, install, or release. Those are escalations, and the run stops and says so.
+push, bump a version, install, or release. Those are escalations, and every one reaches you as a
+decision brief — the outcome, where it stands, what needs you, two or more options, a recommendation,
+what to do, and what waits if you do not answer. A `waiting` row does not halt a run that has other
+work in scope.
 
 Full reasoning: *The Context Tax* and *Splitting the Suite* (2026-08-22/23). Observed figures and
 the verdict: [MEASUREMENT.md](MEASUREMENT.md).
