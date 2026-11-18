@@ -44,6 +44,10 @@
 #
 #   tools/sprint-ledger.sh tail-cap  --findings N --threshold N --base-cap X
 #
+#   tools/sprint-ledger.sh envelope  --run <run-log.jsonl> --stage <stage> --config <config.yml>
+#                                   [--measurement <MEASUREMENT.md>] [--now <ISO-8601 UTC>]
+#              CONTINUE (exit 0) or STOP <reason> (exit 3) before a dispatch (0231 FR13)
+#
 #   tools/sprint-ledger.sh record   --ledger <LEDGER.md> --run <run-log.jsonl>
 #                                   --transcripts <dir> --measurement <MEASUREMENT.md>
 #                                   --config <config.yml>
@@ -57,7 +61,7 @@
 set -eu
 
 if [ $# -lt 1 ]; then
-  echo "usage: $0 estimate|record --ledger <path> ..." >&2
+  echo "usage: $0 estimate|record|tail-cap|envelope ..." >&2
   exit 2
 fi
 
@@ -880,6 +884,140 @@ if mode == "tail-cap":
     print("%.2f" % (tc_opts["base_cap"] * multiplier))
     sys.exit(0)
 
+# --- envelope (0231 FR13) -----------------------------------------------------------------------
+# Before every dispatch the supervisor asks one question: do the budget and the time the person
+# confirmed still cover the next stage? Answered here rather than in prose, because a supervisor
+# doing the arithmetic by hand reads the half it remembers -- the same reason `estimate` exists.
+#
+#   spent     the sum of the outcome events' `cost_usd`. An outcome with none is priced at its
+#             stage's cap and counted aloud: spend it cannot see must not read as spend it saved.
+#             It is stage spend only; the supervisor's own is in no outcome (outcome.schema.json).
+#   estimate  cost: the mean `cost_usd` of this run's outcomes for that stage, else MEASUREMENT.md's
+#             per-skill row when --measurement is given, else the stage cap labelled `no prior`.
+#             time: the mean dispatch-to-outcome window of this run's sessions for that stage, paired
+#             by session_id, else `no prior` -- and then only a deadline already past stops it.
+#
+# CONTINUE exits 0, STOP exits 3, and anything this cannot read exits 1, so a supervisor never
+# mistakes a log it could not read for an envelope that ran out.
+ENVELOPE_STOP = 3
+
+
+def envelope(argv):
+    o = {"run": None, "stage": None, "config": None, "measurement": None, "now": None}
+    i = 0
+    while i < len(argv):
+        key = argv[i][2:].replace("-", "_") if argv[i].startswith("--") else None
+        if key not in o:
+            die("envelope: unknown argument: %s" % argv[i])
+        i += 1
+        if i >= len(argv):
+            die("envelope: --%s needs a value" % key)
+        o[key] = argv[i]
+        i += 1
+    for k in ("run", "stage", "config"):
+        if not o[k]:
+            die("envelope needs --%s" % k)
+    events = read_run(o["run"])
+    caps, _extra, cap_src = read_config(o["config"])
+    scope = next((e for e in events if e.get("event") == "scope_confirmed"), None)
+    if scope is None:
+        die("envelope: %s carries no scope_confirmed event" % o["run"])
+    missing = [k for k in ("budget_usd", "deadline") if scope.get(k) in (None, "")]
+    if missing:
+        die("envelope: scope_confirmed carries no %s -- the envelope the person confirmed "
+            "(sprint Step 1) is what this checks against" % " or ".join(missing))
+    try:
+        budget = float(scope["budget_usd"])
+        deadline = parse_ts(scope["deadline"])
+        now = parse_ts(o["now"]) if o["now"] else datetime.now(timezone.utc)
+    except (TypeError, ValueError) as exc:
+        die("envelope: cannot read the envelope: %s" % exc)
+
+    stage = o["stage"]
+    spent, unpriced, mine = 0.0, [], []
+    for e in events:
+        if e.get("event") != "outcome":
+            continue
+        cost = e.get("cost_usd")
+        if isinstance(cost, (int, float)) and not isinstance(cost, bool):
+            spent += float(cost)
+            if e.get("stage") == stage:
+                mine.append(float(cost))
+        else:
+            cap = caps.get(e.get("stage"))
+            if cap is None:
+                die("envelope: an outcome for stage %r carries no cost_usd and %s has no cap "
+                    "for it" % (e.get("stage"), o["config"]))
+            spent += cap
+            unpriced.append(e.get("stage"))
+
+    if mine:
+        est = sum(mine) / len(mine)
+        est_src = "run log, %d %s outcome(s)" % (len(mine), stage)
+    else:
+        est, est_src = None, None
+        if o["measurement"]:
+            stages, meas_src = read_measurement(o["measurement"])
+            if stage in stages:
+                est, est_src = stages[stage]["usd_per_session"], meas_src
+        if est is None:
+            if stage not in caps:
+                die("envelope: no prior for %s and %s has no stage_budget_usd cap for it"
+                    % (stage, o["config"]))
+            est, est_src = caps[stage], "no prior: the stage cap, %s %s" % (cap_src, stage)
+
+    opened, minutes = {}, []
+    for e in events:
+        sid = e.get("session_id")
+        if e.get("stage") != stage or not isinstance(sid, str):
+            continue
+        stamp = next((e[k] for k in TS_KEYS if isinstance(e.get(k), str)), None)
+        try:
+            at = parse_ts(stamp) if stamp else None
+        except ValueError:
+            at = None
+        if at is None:
+            continue
+        if e.get("event") == "dispatch":
+            opened.setdefault(sid, at)
+        elif e.get("event") == "outcome" and sid in opened:
+            minutes.append((at - opened.pop(sid)).total_seconds() / 60.0)
+    est_min = sum(minutes) / len(minutes) if minutes else None
+    left_min = (deadline - now).total_seconds() / 60.0
+    left_usd = budget - spent
+
+    spent_src = "%d outcome(s)" % sum(1 for e in events if e.get("event") == "outcome")
+    if unpriced:
+        spent_src += ", %d unpriced and counted at their stage cap (%s)" % (
+            len(unpriced), ", ".join(unpriced))
+    print("ENVELOPE  budget   %.2f spent %.2f remaining %.2f estimate %.2f  source: %s; estimate: %s"
+          % (budget, spent, left_usd, est, spent_src, est_src))
+    if est_min is None:
+        print("ENVELOPE  time     deadline %s remaining %d min estimate %s  source: no %s window "
+              "in this run" % (scope["deadline"], round(left_min), NO_PRIOR, stage))
+    else:
+        print("ENVELOPE  time     deadline %s remaining %d min estimate %d min  source: run log, "
+              "%d %s window(s)" % (scope["deadline"], round(left_min), round(est_min),
+                                   len(minutes), stage))
+
+    reasons = []
+    if left_usd < est:
+        reasons.append("budget: %.2f left, %s needs an estimated %.2f" % (left_usd, stage, est))
+    if left_min <= 0:
+        reasons.append("time: the deadline %s has passed" % scope["deadline"])
+    elif est_min is not None and left_min < est_min:
+        reasons.append("time: %d min left, %s needs an estimated %d min"
+                       % (round(left_min), stage, round(est_min)))
+    if reasons:
+        print("STOP  %s" % "; ".join(reasons))
+        sys.exit(ENVELOPE_STOP)
+    print("CONTINUE  %s fits the envelope" % stage)
+    sys.exit(0)
+
+
+if mode == "envelope":
+    envelope(sys.argv[3:])
+
 opts = parse(sys.argv[3:])
 if not opts["ledger"]:
     die("--ledger is required")
@@ -906,5 +1044,5 @@ elif mode == "record":
                 "would forge one" % flag)
     print(record(opts))
 else:
-    die("unknown mode: %s (expected estimate, record, or tail-cap)" % mode)
+    die("unknown mode: %s (expected estimate, record, tail-cap, or envelope)" % mode)
 PY

@@ -1897,6 +1897,96 @@ else
   bad "0175 AC7 — the ledger holds $(grep -c '^## sprint ' "$LED175") blocks, not 3"
 fi
 
+# --- 0231 AC14 -- the envelope check: CONTINUE or STOP before a dispatch ------------------------
+# FR13: `envelope` reads scope_confirmed's budget and deadline, the outcome costs and timestamps so
+# far, and the next stage's estimate (the stage cap where no prior exists, labelled as such). The
+# fixtures pin `--now`, so the time half is a fact about the fixture and not about the clock.
+ENV="$FIX/env"
+mkdir -p "$ENV"
+cat > "$ENV/config.yml" <<'CFG'
+# caps, as at 2026-11-18
+stage_budget_usd:
+  develop: 6.00
+  verify: 5.00
+CFG
+
+# env_log <file> <budget> <deadline> <develop cost> -- a confirmed scope, then one develop session
+# of 40 minutes costing <develop cost>.
+env_log() {
+  cat > "$1" <<LOG
+{"ts":"2026-11-18T09:00:00Z","run":"r-env","event":"scope_confirmed","budget_usd":$2,"deadline":"$3"}
+{"ts":"2026-11-18T09:05:00Z","run":"r-env","event":"dispatch","stage":"develop","session_id":"s-dev-1","tickets":["0901"]}
+{"ts":"2026-11-18T09:45:00Z","run":"r-env","event":"outcome","stage":"develop","session_id":"s-dev-1","cost_usd":$4,"tickets":[{"id":"0901"}]}
+LOG
+}
+envelope() { "$TOOL" envelope --config "$ENV/config.yml" --now 2026-11-18T10:00:00Z "$@" 2>&1; }
+has() { case "$2" in *"$3"*) ok "$1" ;; *) bad "$1 -- wanted '$3' in: $2" ;; esac; }
+hasnt() { case "$2" in *"$3"*) bad "$1 -- did not want '$3' in: $2" ;; *) ok "$1" ;; esac; }
+rc_is() { if [ "$2" = "$3" ]; then ok "$1"; else bad "$1 -- wanted exit $3, got $2"; fi; }
+
+echo "0231 AC14 -- with less budget left than the next stage's estimate, STOP naming budget"
+env_log "$ENV/short-budget.jsonl" 10 2026-11-18T18:00:00Z 7.00
+out="$(envelope --run "$ENV/short-budget.jsonl" --stage develop)" && rc=0 || rc=$?
+has   "prints STOP"                         "$out" "STOP"
+has   "names budget"                        "$out" "budget"
+hasnt "does not print CONTINUE"             "$out" "CONTINUE"
+if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0: $out"; fi
+has   "the remaining budget is what the outcomes left (10 - 7)" "$out" "remaining 3.00"
+has   "the estimate is this run's develop outcome" "$out" "estimate 7.00"
+
+echo "0231 AC14 -- with less time left than the next stage's estimate, STOP naming time"
+env_log "$ENV/short-time.jsonl" 100 2026-11-18T10:20:00Z 2.00
+out="$(envelope --run "$ENV/short-time.jsonl" --stage develop)" && rc=0 || rc=$?
+has   "prints STOP"                         "$out" "STOP"
+has   "names time"                          "$out" "time"
+hasnt "does not name budget as the reason"  "$(printf '%s\n' "$out" | grep '^STOP' || true)" "budget"
+if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0: $out"; fi
+has   "the time estimate is the 40-minute develop window" "$out" "estimate 40 min"
+
+echo "0231 AC14 -- with enough left, CONTINUE and exit 0"
+env_log "$ENV/enough.jsonl" 100 2026-11-18T18:00:00Z 2.00
+out="$(envelope --run "$ENV/enough.jsonl" --stage develop)" && rc=0 || rc=$?
+has   "prints CONTINUE"                     "$out" "CONTINUE"
+hasnt "prints no STOP"                      "$out" "STOP"
+rc_is "exits 0"                             "$rc" 0
+
+echo "0231 AC14 -- with no prior for the stage, the stage cap is used and labelled"
+out="$(envelope --run "$ENV/enough.jsonl" --stage verify)" && rc=0 || rc=$?
+has   "the estimate is verify's stage cap"  "$out" "estimate 5.00"
+has   "and says it is the cap for want of a prior" "$out" "no prior"
+has   "naming the cap's source"             "$out" "stage_budget_usd"
+rc_is "exits 0 with 95 left"                "$rc" 0
+env_log "$ENV/cap-short.jsonl" 6 2026-11-18T18:00:00Z 2.00
+out="$(envelope --run "$ENV/cap-short.jsonl" --stage verify)" && rc=0 || rc=$?
+has   "the cap is what a budget is checked against: 4 left, cap 5 -> STOP" "$out" "STOP"
+if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0: $out"; fi
+
+echo "0231 FR13 -- STOP and an error exit differently, and a scope with no envelope is an error"
+printf '{"ts":"2026-11-18T09:00:00Z","run":"r-env","event":"scope_confirmed"}\n' > "$ENV/no-envelope.jsonl"
+out="$(envelope --run "$ENV/no-envelope.jsonl" --stage develop)" && erc=0 || erc=$?
+has   "names the missing budget_usd"        "$out" "budget_usd"
+hasnt "is not a STOP"                       "$out" "STOP"
+out="$(envelope --run "$ENV/short-budget.jsonl" --stage develop)" && src=0 || src=$?
+if [ "$erc" -ne 0 ] && [ "$src" -ne 0 ] && [ "$erc" -ne "$src" ]; then ok "STOP's exit ($src) is distinct from an error's ($erc)"
+else bad "STOP's exit ($src) is distinct from an error's ($erc)"; fi
+
+echo "0231 FR13 -- a deadline already past stops on time with no prior at all"
+env_log "$ENV/past.jsonl" 100 2026-11-18T09:30:00Z 2.00
+out="$(envelope --run "$ENV/past.jsonl" --stage verify)" && rc=0 || rc=$?
+has   "prints STOP naming time"             "$(printf '%s\n' "$out" | grep '^STOP' || true)" "time"
+if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0: $out"; fi
+
+echo "0231 FR13 -- an outcome carrying no cost_usd is priced at its stage cap, and says so"
+cat > "$ENV/unpriced.jsonl" <<'LOG'
+{"ts":"2026-11-18T09:00:00Z","run":"r-env","event":"scope_confirmed","budget_usd":10,"deadline":"2026-11-18T18:00:00Z"}
+{"ts":"2026-11-18T09:05:00Z","run":"r-env","event":"dispatch","stage":"develop","session_id":"s-dev-1","tickets":["0901"]}
+{"ts":"2026-11-18T09:45:00Z","run":"r-env","event":"outcome","stage":"develop","session_id":"s-dev-1","tickets":[{"id":"0901"}]}
+LOG
+out="$(envelope --run "$ENV/unpriced.jsonl" --stage verify)" && rc=0 || rc=$?
+has   "the unpriced develop outcome is spent at the develop cap (10 - 6)" "$out" "remaining 4.00"
+has   "and is labelled"                     "$out" "unpriced"
+has   "so verify's cap of 5 does not fit"   "$out" "STOP"
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 TALLIED=1
 [ "$FAIL" -eq 0 ]
