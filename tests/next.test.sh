@@ -3419,7 +3419,8 @@ add_row 0911 'Sliced' develop ready ''
 add_sliced 0911 develop ready S2 a/x.md '- [ ] S1 — scaffolding — discharges none
 - [ ] S2 — the first behaviour — discharges AC1
 - [ ] S3 — the rest — discharges AC2'
-seal
+# Handed off out of verify, as a real bounce is: the unticked S2 alone is what says "bounce".
+fixture_handed_off_from 0911 verify
 out="$(run_next --drive --completed verify:0911)" && rc=0 || rc=$?
 assert_rc           "exits 4 — a person decides"   "$rc" 4 "$out"
 assert_contains     "names the bounce"             "$out" 'ESCALATE  0911 bounced from verify back to next: develop'
@@ -3438,6 +3439,16 @@ out="$(run_next --drive --completed develop:0911)" && rc=0 || rc=$?
 assert_rc           "exits 4 — a person decides"    "$rc" 4 "$out"
 assert_contains     "names the same-stage loop"     "$out" 'ESCALATE  0911 is still at next: develop after a completed develop'
 assert_not_contains "and dispatches nothing"        "$out" 'DISPATCH'
+
+echo "0231 FR8 — a ticket with every slice ticked has no further leg to dispatch"
+scaffold
+add_row 0911 'Sliced' develop ready ''
+add_sliced 0911 develop ready S2 a/x.md '- [x] S1 — scaffolding — discharges none
+- [x] S2 — the rest — discharges none'
+fixture_handed_off_from 0911 develop
+out="$(run_next --drive --completed develop:0911)" && rc=0 || rc=$?
+assert_rc           "exits 4 — nothing is left to build"  "$rc" 4 "$out"
+assert_not_contains "and dispatches nothing"              "$out" 'DISPATCH'
 
 echo "0231 AC8 — a started ticket with slices left is finished before a higher-ranked row"
 scaffold
@@ -3474,6 +3485,16 @@ out="$(run_next --drive)" && rc=0 || rc=$?
 assert_eq "the gate above it does not take it in"   "$(dispatch_line "$out")" 'DISPATCH  develop 0920'
 out="$(run_next --drive --completed develop:0921)" && rc=0 || rc=$?
 assert_eq "and its leg takes nothing in"            "$(dispatch_line "$out")" 'DISPATCH  develop 0921'
+# Ranked first, unstarted, in the plain walk: it leads a gate of one.
+scaffold
+add_row 0921 'Sliced'      develop ready ''
+add_row 0922 'Ranked below' develop ready ''
+add_sliced 0921 develop ready '' a/x.md '- [ ] S1 — scaffolding — discharges none
+- [ ] S2 — the rest — discharges AC1'
+add_ticket 0922 develop ready '[]' '' a/x.md
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_eq "leading the walk, it is a gate of one"   "$(dispatch_line "$out")" 'DISPATCH  develop 0921'
 
 echo "0231 AC9 — every row one gate developed is named in one verify session"
 # The 0220 shape: three rows built by one develop session, sharing no file and no parent NOW — the

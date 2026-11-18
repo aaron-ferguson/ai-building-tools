@@ -1893,7 +1893,7 @@ if [ "${1:-}" = "--drive" ]; then
             "$lid" "$lstage" "$lblockers"
         elif [ "$lnext" = "develop" ] && [ "$lstatus" = "ready" ] \
           && { [ "$lstage" = "develop" ] || [ "$lstage" = "verify" ]; } \
-          && [ "$(leg_state "$lid")" = clean ] && [ -n "$(fm "$(item_for "$lid")" slice)" ] \
+          && [ "$(leg_state "$lid")" = clean ] \
           && handed_off_from "$lid" "$lstage"; then
           # 0231 FR8: a leg ended cleanly — develop -> develop, or a verify pass — and slices are
           # left. Ahead of the bounce and same-stage arms, which a sliced ticket reaches only when
