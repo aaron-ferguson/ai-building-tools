@@ -18,6 +18,18 @@ ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=
 claimed_by: "5c6e"
 claimed_at: 2026-11-18T16:26:50Z
 touches:
+  - skills/develop/SKILL.md
+  - skills/verify/SKILL.md
+  - skills/design/SKILL.md
+  - skills/sprint/SKILL.md
+  - skills/queue/SKILL.md
+  - skills/queue/templates/item.md
+  - skills/queue/templates/next
+  - .tickets/next
+  - references/CONCURRENCY.md
+  - README.md
+  - CHANGELOG.md
+  - tests/skill-size.test.sh
 slice: S5
 ---
 
