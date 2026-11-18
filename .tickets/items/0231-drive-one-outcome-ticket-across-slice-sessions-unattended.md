@@ -571,3 +571,66 @@ Evidence set: `skills/sprint/outcome.schema.json`, `tools/validate-json-schema.p
   pass (*QA evidence*, Leg S2); full suite green at `e4439ad`. Handed back with `--slice S2` so S2
   ticks; no AC ticked. Next leg: S3. `.tickets/claim` still needs `xxd` (parked); this claim passed a
   token explicitly.
+- 2026-11-18 — **develop (5a3e), leg S3: built, handed to verify with `--slice S3`.** Commits
+  `61ceb12` (leg routing, started-first, sliced gate of one, one verify per gate; tests) and
+  `d29fa86` (bounce and gate-of-one guards, an unfalsifiable check dropped). All in
+  `skills/queue/templates/next` (`.tickets/next` byte-identical) and `tests/next.test.sh`.
+  **S3 alone is the leg.** S4 shares both files, but FR3's second condition fails: this session was
+  about 45 turns in at S3's commit, past the 28.5-turn break-even `MEASUREMENT.md` gives
+  (*Would the re-entry after a FAIL be cheaper…*). S3 discharges ACs, so develop → develop was not
+  available anyway.
+  - **FR11's question, answered: neither of the two.** `--drive`'s verify branch did batch. It
+    recovered a gate by re-running the join (`gate_from`) over the started rows now at
+    `verify | ready`, and that re-derivation splits a gate in two cases. The first is a join that ran
+    through a member no longer at verify (closed by `close_by: develop`, or left red at develop). The
+    second is a member whose `expects:` a develop session corrected after the gate formed, which
+    `develop` Step 1 tells it to do. Evidence, read: `.tickets/LEDGER.md` records gate `e9c46949` as
+    *"GATE develop 4 ticket(s)"*. 0177, 0190 and 0183 as they stand share no `expects:` path and no
+    `parent:`. **Reasoned, not read:** which member was missing, and why. The run's jsonl is not on
+    this machine (`.tickets/runs/` is gitignored and the clone is shallow).
+  - **Fix, inside FR11's wording ("after `--completed develop:<lead>`").** The batch is now every
+    started row at `verify | ready` (`completed_batch`), not a re-derivation. Finish-before-start
+    (0131) verifies every started verify row before a new develop gate forms, so at that moment those
+    rows are that gate's. The rank walk and the started-verify preference keep `verify_batch`, so
+    0132 AC2's cases are unchanged. **A residual edge, reasoned:** an earlier gate's row that was
+    skipped for an open blocker, and whose blocker cleared during a later gate, would join that
+    later gate's batch. That costs a wider batch of rows this run developed, never a row it did not.
+  - **Definitions this build picked.** `leg_state` reads the item. It answers `unsliced` (no slice
+    lines), `finished` (all ticked), `bounced` (`slice:` names an unticked slice) or `clean`.
+    A sliced ticket is a gate of one at develop and at verify (`gate_from`, `completed_batch`), because
+    a leg ends in a `handoff --slice` that describes one ticket.
+  - **The loop guard (`handed_off_from`) is beyond FR8's letter, and it is load-bearing.** "At
+    `develop / ready` with `slice:` ticked" also describes a develop session that died before it
+    claimed after a verify pass, and dispatching on that state alone would loop forever. So a leg is
+    dispatched only when the item's last commit moved it out of the completed stage, read with
+    `git show <sha>^:` on the item. Any doubt answers no, which means the existing escalation.
+    Test fixtures model the hand-off as two commits (`fixture_handed_off_from`).
+  - **Not done here, for S4:** a leg dispatch does not run `gate_wait`. FR10's held-design-file
+    wait for legs (AC12) is S4's. `--help` does not describe legs yet; that prose goes in S6.
+  - **Clause table (S3's ACs). Every mutation was run on committed code** in a detached worktree,
+    against a trimmed copy of `tests/next.test.sh` (its helpers plus the 0231 section). Each was
+    restored by `git checkout` and controlled green after (25 passed, 0 failed):
+
+    | AC clause | Assertion (`tests/next.test.sh`) | Mutation (run) | Red |
+    |---|---|---|---|
+    | AC7 Given the AC1/AC3 fixtures; after develop → develop, `DISPATCH  develop <id>` | `0231 AC7 — after develop -> develop` | M1 leg arm off | 7 (with AC8, FR8) |
+    | AC7 after develop → verify, `DISPATCH  verify <id>` naming that ticket alone | `… that ticket alone is verified` | M5 sliced lead batched | 1 |
+    | AC7 `--completed verify:<id>` after the pass, `DISPATCH  develop <id>` | `… after a leg verify passes` | M1 | (in M1's 7) |
+    | AC7 after the fail, exit 4 with the bounce escalation | `… after a leg verify fails` | M3 bounced reads clean | 3 |
+    | FR8 (beyond the ACs) a develop that ended no leg is the same-stage loop | `… a develop that ended no leg` | M2 hand-off guard always true | 3 |
+    | FR8 (beyond) all slices ticked → nothing dispatched | `… every slice ticked` | M12 finished reads clean | 2 |
+    | AC8 A (S1, S2 ticked, S3 not) at develop/ready, B ranked above → `develop A`, not B | `0231 AC8` | M1 | (in M1's 7) |
+    | FR8 started-first in the rank walk | `… from --started alone` | M9 `started_leg` off; M10 `--started` ignored | 1; 2 |
+    | FR8 a sliced ticket is never a gate member, and leads a gate of one | `… its own dispatch unit` | M8 joiner skip off; M7 lead return off | 1; 1 |
+    | AC9 three rows from one gate, all at verify/ready, all started → one `DISPATCH  verify` naming all three | `0231 AC9 — every row one gate developed` | M4 `completed_batch` → `verify_batch` | 2 |
+    | AC9 (FR11) a sliced leg does not join the gate's batch | `… does not join a gate's verify session` | M6 sliced member admitted | 1 |
+    | AC15 `tests/batching.test.sh` gate cases pass unchanged | the file itself, unedited | — (not mutated; that file guards skill prose, which S3 does not touch) | — |
+
+    Every AC7/AC8/AC9 case except the bounce (a guard on an unchanged path) was red before the
+    change: 12 failures at the first run. One mutation was green and its check was removed rather
+    than kept: requiring a non-empty `slice:` in the leg arm was indistinguishable from the
+    hand-off guard.
+  - **Whole suite at `d29fa86`: 45 files, every one exit 0** (`tests/next.test.sh` `600 passed, 0
+    failed`; `tests/batching.test.sh` `39 passed, 0 failed`; `tests/declared-copies.test.sh` `23
+    passed, 0 failed`, which now covers a third `progress-slices` copy in `next`).
+    `git status --porcelain` was clean at the run apart from this notes edit.
