@@ -17,7 +17,7 @@ expects: [skills/sprint/SKILL.md, skills/sprint/outcome.schema.json, tools/valid
 ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=414ddd39 AC7=6caf69d4 AC8=1295a15c AC9=1dab5f85 AC10=865d23ca AC11=63334335 AC12=570dc5d8 AC13=ccc5aeaa AC14=6cd4e5b9 AC15=aca1f25c AC16=e3a5e129 AC17=06b1bf5e
 claimed_by: "c41b"
 claimed_at: 2026-11-18T14:29:07Z
-touches:
+touches: [skills/sprint/outcome.schema.json, tools/validate-json-schema.py, tests/outcome-schema.test.sh (new), .tickets/items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md]
 slice: S1
 ---
 
