@@ -33,7 +33,6 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0214 | Add a profile-declared gate that a stage refuses to pass without its artifact | design | ready |  |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
-| 0071 | Add a decision-map mode for work too large or too foggy for one project ticket | design | ready |  |
 | 0138 | Decide whether idea capture is a lighter-weight skill than queue's Add, and what triggers it | design | ready |  |
 | 0118 | Run the privacy guard where a sweep commits, not only where a suite runs | develop | ready |  |
 | 0164 | Record active and elapsed time and interruptions in the sprint ledger, and estimate them | develop | ready |  |
@@ -45,12 +44,9 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0157 | Make release verify compare the install against the released commit | develop | ready |  |
 | 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | verify | ready |  |
 | 0204 | Route a queue completion that re-specifies a waiting row to develop instead of exiting 4 | queue | ready |  |
-| 0226 | Decide whether --drive steps over an out-of-scope waiting or queue row, and which exit wins | design | ready |  |
 | 0208 | Make the prototype template's render keep focus and play enter animations once | queue | ready |  |
-| 0212 | Stop --drive dispatching develop beside a design session holding one of its files | develop | ready |  |
 | 0217 | Stop a note written below the last AC from changing that AC's digest | queue | ready |  |
 | 0219 | Make reopen leave a ticket that verify can close when it reopens a develop self-close | queue | ready |  |
-| 0220 | Make --drive name one verify session for rows developed together in one gate | queue | ready |  |
 | 0230 | Make next say the queue is empty instead of printing a blank ROW 1 | develop | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads

@@ -12,9 +12,9 @@ created: 2026-11-18
 source: user
 parent:
 blocked_by: []
-relates: ["0071", "0149", "0220", "0226", "0212", "0137", "0128"]
-expects: [skills/sprint/SKILL.md, skills/sprint/outcome.schema.json, tools/validate-json-schema.py, skills/design/SKILL.md, skills/develop/SKILL.md, skills/verify/SKILL.md, skills/queue/SKILL.md, skills/queue/templates/item.md, skills/queue/templates/next, skills/queue/templates/handoff, skills/queue/templates/claim, skills/queue/templates/close, skills/queue/templates/config.yml, references/CONCURRENCY.md, tests/next.test.sh, tests/handoff.test.sh, tests/batching.test.sh, tests/close.test.sh, README.md, CHANGELOG.md]
-ac_digest: AC1=f5e035bc AC2=6fca396f AC3=9926fde0 AC4=76f6528f AC5=23fc177e AC6=6b5a6640 AC7=275776c6 AC8=094d8b2a AC9=20b132f5 AC10=18ecb8fd AC11=b2ca314c
+relates: ["0071", "0149", "0220", "0226", "0212", "0137", "0128", "0204"]
+expects: [skills/sprint/SKILL.md, skills/sprint/outcome.schema.json, tools/validate-json-schema.py, skills/design/SKILL.md, skills/develop/SKILL.md, skills/verify/SKILL.md, skills/queue/SKILL.md, skills/queue/templates/item.md, skills/queue/templates/next, skills/queue/templates/handoff, skills/queue/templates/claim, skills/queue/templates/close, skills/queue/templates/config.yml, references/CONCURRENCY.md, tests/next.test.sh, tests/handoff.test.sh, tests/batching.test.sh, tests/close.test.sh, tests/sprint-ledger.test.sh, tools/sprint-ledger.sh, README.md, CHANGELOG.md]
+ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=414ddd39 AC7=6caf69d4 AC8=1295a15c AC9=1dab5f85 AC10=865d23ca AC11=63334335 AC12=570dc5d8 AC13=ccc5aeaa AC14=6cd4e5b9 AC15=aca1f25c AC16=e3a5e129 AC17=06b1bf5e
 claimed_by:
 claimed_at:
 touches:
@@ -67,125 +67,186 @@ And one in decisions: architecture and security choices are a person's (`coding-
 
 ## Functional requirements
 
-Settled by the 2026-11-18 design pass (*Notes & decisions*). FR numbering is new; the draft's FR10
-was discharged by that pass and is recorded there.
+Amended 2026-11-18 by `queue` at Aaron's direction (*Notes & decisions*, second amendment), over the
+design pass's set. Absorbs 0212, 0220, 0226 and 0071, each withdrawn with a pointer to the FR named.
+
+**Slices and legs**
 
 - FR1 — **Slices live in the item.** `templates/item.md` gains a `## Progress` section of ordered
-  lines in the form `- [ ] S<n> — <what lands> — discharges AC<a>, AC<b>` (or `— discharges none`),
-  and a frontmatter scalar `slice:` naming the slice of the most recent slice hand-off. Every AC is
-  named by exactly one slice, the one where it first becomes true; outcome-level ACs sit on the last
-  slice. Ticked slices are history and never edited; `develop` may re-split or re-order *unticked*
-  slices with a dated note, and never changes an AC. A ticket with no `## Progress` section is a
-  single-leg ticket and behaves exactly as today. `queue` Step 2 tells authors to write one outcome
-  ticket with ordered slices, each sized to one `develop` session, rather than one ticket per slice,
-  citing `product-definition-conventions.md` → "Slice Vertically and Thinly" rather than restating it.
-- FR2 — **A `progressed` verdict.** `outcome.schema.json` gains `progressed` in the verdict enum and
-  an optional per-ticket `slice` object `{ "done": "S<n>", "next": "S<n>" }` (pattern `^S[0-9]+$`),
-  required when the verdict is `progressed`. `develop` returns `progressed` when it hands a ticket
-  on at a slice boundary with slices remaining; `verify` returns `pass` with `next: develop` for a
-  slice pass. `tools/validate-json-schema.py` implements a subset of JSON Schema with no `if`/`then`,
-  so the conditional needs that support added (or an equivalent the validator already has), and
-  whether `claude -p --json-schema` accepts the construct is to be checked against the installed CLI,
-  not assumed.
-- FR3 — **`handoff --slice S<n>`** records slice progress in the same locked commit as the hand-off:
-  - develop → develop: ticks S<n> and sets `slice: S<n>`; **refuses if S<n> discharges any AC**,
-    naming `verify` as the destination it needs;
-  - develop → verify: sets `slice: S<n>` and leaves it unticked (refuses if already ticked);
-  - verify → develop with `--slice`: the slice passed — ticks S<n>. Without `--slice` it is the
-    fail bounce, unchanged, and S<n> stays unticked;
-  - refuses an unknown slice, or one with an earlier unticked slice above it.
-  With `--slice`, it **refuses when any path in the item's `touches:` is dirty**, naming those paths
-  and changing nothing. Not the whole tree: the tree is shared and other sessions' paths are
-  legitimately dirty (`CONCURRENCY.md`, *The working tree is shared too*).
-- FR4 — **One slice per `develop` leg.** `develop` ends at every slice boundary; it does not meter
-  its own spend, because no session reads its running cost (costs are harvested from transcripts
-  afterwards, `references/TRACKER.md`). `stage_budget_usd.develop` is the per-leg cap and keeps its
-  name; once the ledger holds legs it is derived from per-leg history as sprint Step 7 requires, and
-  until then the proposal labels the leg figure as having no prior. No new config key.
-- FR5 — **`next --drive` routes slices.** With an item carrying `## Progress`:
-  - `--completed develop:<id>`, row at `develop / ready`, `slice:` ticked and slices remaining →
-    `DISPATCH develop <id>`, in place of the same-stage escalation;
-  - `--completed develop:<id>`, row at `verify / ready` mid-slices → `DISPATCH verify <id>`, this
-    ticket alone;
-  - `--completed verify:<id>`, row at `develop / ready`, `slice:` ticked → `DISPATCH develop <id>`;
-    `slice:` unticked → the existing bounce escalation;
-  - a ticket in `--started` with slices remaining is finished before the rank walk opens a
-    different develop row.
-  An item with no `## Progress` section routes exactly as today.
-- FR6 — **`close` on a sliced ticket** refuses while any slice other than the one `slice:` names is
-  unticked, and on success ticks that last slice in the same commit as the ACs.
-- FR7 — **Waiting rows do not halt a run that has other work.** `--drive` steps over an in-scope
-  `waiting` row with a `NOTE` naming it while other in-scope work is takeable, and exits `4` only
-  when a waiting row remains and nothing in scope is takeable. Rows `blocked_by:` it stay blocked, as
-  today. An out-of-scope `waiting` or `next: queue` row is stepped over with a `NOTE`, as an
-  out-of-scope design row already is (absorbs 0226 Q1–Q2); and once the scope is finished, the
-  findings gate's exit `5` is not masked by an escalation only out-of-scope rows produce (0226 Q3).
-- FR8 — **Design prepares a person's decision; it never makes it.** `design` Step 3 gains the
+  lines `- [ ] S<n> — <what lands> — discharges AC<a>, AC<b>` (or `— discharges none`, or
+  `— unspecified` for a slice not yet sharp enough to give ACs), and a frontmatter scalar `slice:`
+  naming the last slice of the most recent leg. Every AC is named by exactly one slice, the one where
+  it first becomes true. Ticked slices are history; `develop` may re-split or re-order unticked
+  slices with a dated note and never changes an AC. A ticket with no `## Progress` is single-leg and
+  behaves exactly as today. `queue` Step 2 tells authors to state the outcome first and write one
+  outcome ticket with ordered slices, each about one develop session's work, folding adjacent small
+  slices that touch the same files into one, citing `product-definition-conventions.md` → "Slice
+  Vertically and Thinly" rather than restating it.
+- FR2 — **Fog is an unspecified slice, not a separate mechanism** (absorbs 0071). A slice marked
+  `unspecified` routes the ticket to `design` when it is the next slice; `design` gives it ACs and
+  re-stamps `ac_digest`. Work ruled out stays in *Out of scope*, so in-scope-but-unsharp and ruled-out
+  are visibly distinct. `parent:` projects stay for parts with an outcome of their own.
+- FR3 — **A leg is one or more consecutive slices.** `develop` commits each slice as it lands and
+  writes a dated *Notes & decisions* line naming it and its SHA, so a killed leg loses at most the
+  unfinished slice. It continues into the next slice only when that slice touches files it already
+  has open **and** its leg so far is short of the break-even `MEASUREMENT.md` measured for carrying
+  a session's climb into more work (*Would the re-entry after a FAIL be cheaper…*). Otherwise it
+  ends the leg. It never meters spend, because no session reads its running cost
+  (`references/TRACKER.md`).
+- FR4 — **`handoff --slice S<n>`** ends a leg whose slices run from the one after the last ticked
+  slice up to S<n>, in the same locked commit as the hand-off:
+  - develop → develop: ticks every slice in the leg and sets `slice: S<n>`; **refuses if any slice in
+    the leg discharges an AC**, naming `verify`;
+  - develop → verify: sets `slice: S<n>` and ticks nothing;
+  - verify → develop with `--slice`: the leg passed, so it ticks every slice in it. Without `--slice` it
+    is the fail bounce, unchanged, and nothing is ticked;
+  - refuses an unknown slice, and a leg containing an `unspecified` slice, naming `design`.
+  With `--slice`, it **refuses when any path in the item's `touches:` is dirty**, naming the paths and
+  changing nothing. Not the whole tree, which is shared (`CONCURRENCY.md`, *The working tree is
+  shared too*).
+- FR5 — **Verify once per leg, never once per slice.** A leg that discharges at least one AC is
+  verified by one fresh `verify` session against that leg's ACs literally plus the whole suite. A leg
+  discharging none is not verified. The leg holding the last slice is the closing verify and checks
+  every AC. Mid-ticket verifies tick no AC; `close` ticks ACs once. This is the same rule as a gate's
+  (`--drive` names one verify session for what was developed together), so FR11 applies to both.
+- FR6 — **`close` on a sliced ticket** refuses while any slice before the closing leg is unticked,
+  and on success ticks the closing leg's slices in the same commit as the ACs.
+- FR7 — **A `progressed` verdict.** `outcome.schema.json` gains `progressed` and an optional
+  per-ticket `slice` object `{ "done": "S<n>", "next": "S<n>" }` (pattern `^S[0-9]+$`), required when
+  the verdict is `progressed`. `develop` returns it at a leg end with slices remaining; `verify` returns
+  `pass` with `next: develop` for a leg pass. `tools/validate-json-schema.py` has no `if`/`then`, so it
+  gains the support (or an equivalent it already has), and whether `claude -p --json-schema` accepts the
+  construct is checked against the installed CLI.
+
+**Routing**
+
+- FR8 — **`next --drive` routes legs.** With an item carrying `## Progress`:
+  `--completed develop:<id>` at `develop / ready` with `slice:` ticked and slices left →
+  `DISPATCH develop <id>`, in place of the same-stage escalation; at `verify / ready` mid-slices →
+  `DISPATCH verify <id>`; `--completed verify:<id>` at `develop / ready` with `slice:` ticked →
+  `DISPATCH develop <id>`, unticked → the existing bounce escalation; at `design / ready` (an
+  unspecified slice is next) → the existing design routing. A ticket in `--started` with slices left is
+  finished before the rank walk opens a different develop row. No `## Progress` → unchanged.
+- FR9 — **Waiting rows do not halt a run that has other work** (absorbs 0226). `--drive` steps over
+  an in-scope `waiting` row with a `NOTE` while other in-scope work is takeable, exiting `4` only when
+  nothing in scope is takeable. An out-of-scope `waiting` or `next: queue` row is stepped over with a
+  `NOTE`, as an out-of-scope design row already is; and once the scope is finished, exit `5` is not
+  masked by an escalation only out-of-scope rows raise. Implemented in `templates/next`, and
+  `sprint` Step 6 says so.
+- FR10 — **A held design file makes develop wait** (absorbs 0212). `--drive` exits `6` instead of
+  dispatching a develop gate or leg any of whose predicted files intersect an in-progress design
+  row's `touches:` or `expects:`; a `--completed develop:<id>` that left the row unchanged while such
+  a design row still holds an intersecting file re-enters that wait, not the loop escalation.
+- FR11 — **One verify session per develop gate or leg** (absorbs 0220). After `--completed
+  develop:<lead>`, `--drive` names every row that gate developed in one `DISPATCH verify` line, never
+  one session each. Before building, read the verify branch and run-20261025T215324Z's log to learn
+  whether the resume lost the gate's membership or the branch never batched, and record which.
+
+**Sprint scope, and what reaches the person**
+
+- FR12 — **A sprint is sized by an envelope, not a count.** The proposal replaces the three-ticket
+  floor and five-ticket target with a **budget (USD) and an end time** the person confirms, offering as
+  defaults the estimated cost and time to finish the top outcome ticket, or to its next verified leg
+  if that does not fit. The run takes work in rank order within the confirmed scope. Before every
+  dispatch it continues only when the remaining budget and time cover that stage's estimate, and
+  otherwise ends at the boundary it is on, which is always a clean one. The proposal refuses an
+  envelope that cannot hold one develop leg plus its verify. The person may also name tickets beyond
+  the top one, and continuing past the confirmed scope happens only when they said so. All of it is
+  recorded in `scope_confirmed`.
+- FR13 — **The envelope check is a script.** `tools/sprint-ledger.sh envelope` reads the run log's
+  `scope_confirmed` budget and deadline, the outcome costs and timestamps so far, and the ledger's
+  per-stage estimate for the named next stage (the stage cap where there is no prior, labelled as
+  such), and prints `CONTINUE` or `STOP <reason>` with distinct exit codes.
+- FR14 — **Every ask of the person is a decision brief.** A `## Waiting on` section, and every
+  escalation the sprint reports, has these subsections: `### Outcome` (what the work is driving
+  toward), `### Where it stands` (done, blocked, what keeps running meanwhile), `### What needs you`
+  (the challenge, and why it cannot be decided without you), `### Options` (at least two
+  `#### Option` entries, each with pros, cons and what would have to be true for it to win),
+  `### Recommendation` (which and why), `### What to do` (the exact steps or reply that unblocks it,
+  and the command that resumes), `### If no answer` (what waits and what does not). `templates/item.md`
+  carries the shape. `handoff <id> <token> <stage> waiting` refuses a section missing any subsection
+  or holding fewer than two options, naming what is missing. The notification is one line naming the
+  ticket, the decision and where the brief is, and never replaces it.
+- FR15 — **Design prepares a person's decision and never makes it.** `design` Step 3 gains the
   unattended case: where the answer turns on taste, or is an architecture or security choice
-  (`coding-conventions.md` → *What Not to Delegate to AI*), and no person can be asked, the pass
-  runs its spikes, writes the options and a recommendation, reduces it to specific questions in
-  `## Waiting on`, and releases with `./handoff <id> <token> design waiting` (verdict `blocked`). It
-  never records the decision. `sprint` Step 8 says the same and Step 2 sends the person a
-  notification on every outcome that leaves a row `waiting`.
-- FR9 — **Sprint scope is counted in legs.** The proposal's floor of three and target of about five
-  is counted in develop legs, with a sliced ticket contributing its unticked slices, because the
-  floor's stated reason (a ticket's floors are paid wherever it runs; a one-*session* sprint is
-  dearer than `/develop` by hand) is about sessions. The proposal defaults to the top outcome
-  ticket and fills with other takeable rows only as needed to reach the floor. Continuing past the
-  confirmed scope happens only when the person said so at the proposal, recorded in
-  `scope_confirmed`.
-- FR10 — **`queue` amend-first.** Before minting an id, `queue` searches open tickets' outcomes and,
-  where one is served, amends it (re-checking size, ACs, QA plan and out-of-scope, re-stamping
-  `ac_digest`, and adding or re-splitting unticked slices). It mints only for work with an outcome of
-  its own, and records which test it applied in *Notes & decisions*.
-- FR11 — **`queue` Merge.** Step 1's table gains Merge: absorbing tickets into one outcome ticket
-  withdraws each per *Withdrawing a ticket* with a pointer to the requirement that now carries it,
-  quotes user-reported evidence verbatim in the absorbing ticket, and burns the ids.
-- FR12 — **A claimed ticket is still never amended; the wait is bounded instead.** Step 1's
-  prohibition stands. Because every leg releases its claim at a slice boundary (FR3), `queue` waits
-  for the release, claims the row itself, amends, and hands it back with `./handoff <id> <token>
-  develop`. `CONCURRENCY.md`, *A stage writes only the ticket it holds*, says why that is safe:
-  one writer per item file at every instant, and a wait no longer than one leg.
+  (`coding-conventions.md` → *What Not to Delegate to AI*), and no one can be asked, the pass runs
+  its spikes, writes the FR14 brief, and releases with `./handoff <id> <token> design waiting`
+  (verdict `blocked`). It never records the decision. `sprint` Step 8 says the same, and Step 2
+  sends the FR14 notification on every outcome that leaves a row `waiting`.
+
+**Capture**
+
+- FR16 — **`queue` amend-first.** Before minting an id, `queue` searches open tickets' outcomes and,
+  where one is served, amends it (re-checking size, ACs, QA plan, out-of-scope and the slice plan,
+  re-stamping `ac_digest`). It mints only for work with an outcome of its own, and records which test
+  it applied in *Notes & decisions*.
+- FR17 — **`queue` Merge.** Step 1's table gains Merge: absorbing tickets into one outcome ticket
+  withdraws each per *Withdrawing a ticket* with a pointer to the FR that now carries it, quotes
+  user-reported evidence verbatim in the absorbing ticket, re-points every `blocked_by:` naming a
+  withdrawn id, and burns the ids. This amendment is the procedure's worked example.
+- FR18 — **A claimed ticket is still never amended; the wait is bounded instead.** Step 1's
+  prohibition stands. Every leg releases at a slice boundary (FR4), so `queue` waits for the release,
+  claims the row, amends and hands it back with `./handoff <id> <token> develop`. `CONCURRENCY.md`,
+  *A stage writes only the ticket it holds*, says why: one writer per item file, and a wait of at most
+  one leg.
 
 ## Non-functional requirements
 
 | Dimension | Requirement for this item | How it would red | Convention |
 |---|---|---|---|
-| Security | Unattended runs still never push, bump, install or restart without per-action approval (sprint Step 8 unchanged), and a design pass never records a person's decision (FR8) | prose: no script owns either rule, and this repo adds no prose guards (`CLAUDE.md`, *Tests*), so `verify` reads both against AC11 | `security-conventions.md` |
-| Compatibility | A ticket with no `## Progress` section, and every backlog already installed, behaves exactly as before | the existing `tests/handoff.test.sh`, `tests/next.test.sh` and `tests/close.test.sh` cases pass unchanged (AC10) | `api-conventions.md` |
-| Documentation | `CHANGELOG.md` `## Unreleased` entry, one per behaviour a session will see differently; README skill descriptions updated where sprint, develop, design and queue change | `tests/changelog-entry-guards.test.sh` | `documentation-conventions.md` |
+| Security | Unattended runs still never push, bump, install or restart without per-action approval (sprint Step 8 unchanged), and a design pass never records a person's decision (FR15) | prose: no script owns either rule and this repo adds no prose guards (`CLAUDE.md`, *Tests*), so `verify` reads both (AC17) | `security-conventions.md` |
+| Compatibility | A ticket with no `## Progress`, and every installed backlog, behaves as before; existing `waiting` rows are not refused retroactively, since only a new `handoff … waiting` checks the brief | the existing `tests/*.test.sh` cases pass unchanged (AC16) | `api-conventions.md` |
+| Documentation | `CHANGELOG.md` `## Unreleased` entry, one per behaviour a session will see differently; README skill descriptions updated where sprint, develop, verify, design and queue change | `tests/changelog-entry-guards.test.sh` | `documentation-conventions.md` |
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture item with three slices where S1 discharges none, when `handoff <id> <token> develop --slice S1` runs, then the item shows S1 ticked, `slice: S1`, `claimed_by:` empty, `next: develop`, `status: ready`, and `next --drive --completed develop:<id> --scope <id>` prints `DISPATCH  develop <id>` and exits 0 (`tests/handoff.test.sh`, `tests/next.test.sh`).
-- [ ] AC2 — Given the same fixture with a path from the item's `touches:` modified, when `handoff --slice S1` runs, then it exits non-zero naming that path, and the item, the row and `git log` are unchanged; and given a dirty path that is not in `touches:`, then the hand-off succeeds (`tests/handoff.test.sh`).
-- [ ] AC3 — Given a fixture slice S2 that discharges an AC, when `handoff develop --slice S2` runs, then it refuses naming `verify`; when `handoff verify --slice S2` runs, then `slice: S2`, S2 unticked and `next: verify`; when verify then runs `handoff develop --slice S2`, then S2 is ticked and `--drive --completed verify:<id>` prints `DISPATCH  develop <id>`; and when verify instead hands back without `--slice`, then S2 stays unticked and `--drive` exits 4 with the bounce escalation (`tests/handoff.test.sh`, `tests/next.test.sh`).
-- [ ] AC4 — Given `outcome.schema.json` and `tools/validate-json-schema.py`, then an outcome with verdict `progressed` and `slice: {done: S1, next: S2}` validates, one with `progressed` and no `slice.next` fails, and an existing `built` outcome with no `slice` still validates (the test that owns the schema, or a new `tests/outcome-schema.test.sh`).
-- [ ] AC5 — Given a fixture where ticket A has S1 and S2 ticked and S3 unticked at `develop / ready` and ticket B at `develop / ready` ranks above it, when `next --drive --completed develop:A --scope A --scope B` runs, then it dispatches `develop A`, not B (`tests/next.test.sh`).
-- [ ] AC6 — Given a fixture where ticket A's last slice is the one `slice:` names and an earlier slice is unticked, when `close` runs, then it refuses naming the unticked slice; and with every earlier slice ticked, then it closes and the last slice is ticked in the close commit (`tests/close.test.sh`).
-- [ ] AC7 — Given a fixture with an in-scope row at `design / waiting` carrying `## Waiting on` and an in-scope row at `develop / ready`, when `--drive` runs, then it prints a `NOTE` naming the waiting row, dispatches the develop row and exits 0; and given the waiting row as the only in-scope work, then it exits 4 (`tests/next.test.sh`).
-- [ ] AC8 — Given a fixture with an out-of-scope `waiting` row and an out-of-scope `next: queue` row ranked above a finished scope and `FINDINGS.md` past `findings_threshold`, when `--drive` runs, then both are stepped over with a `NOTE` and it exits 5 (`tests/next.test.sh`).
-- [ ] AC9 — Given `tests/batching.test.sh`, then its gate cases pass unchanged, so gate batching still holds for a backlog of unsliced rows (`tests/batching.test.sh`).
-- [ ] AC10 — Given the full suite `for t in tests/*.test.sh; do "$t" || exit 1; done`, then it exits 0 with no existing case edited to pass, so a ticket without `## Progress` behaves as before.
-- [ ] AC11 — Given the changed skill files, when `verify` reads them, then `templates/item.md` documents `## Progress` and `slice:` per FR1, `queue`'s Step 1 table carries Merge (FR11) and its Step 2 carries amend-first (FR10) and the bounded wait (FR12), `design` Step 3 carries the unattended prepare-and-wait case and the clause that it never records the decision (FR8), `sprint` Step 8 still lists push, bump, install and restart as per-action approvals, and its proposal counts legs (FR9) — read, not grepped (`CLAUDE.md`, *Tests*).
+- [ ] AC1 — Given a fixture item with three slices where S1 discharges none, when `handoff <id> <token> develop --slice S1` runs, then the item shows S1 ticked, `slice: S1`, `claimed_by:` empty, `next: develop`, `status: ready` (`tests/handoff.test.sh`).
+- [ ] AC2 — Given the same fixture with a path from the item's `touches:` modified, when `handoff --slice S1` runs, then it exits non-zero naming that path, and the item, the row and `git log` are unchanged; and given a dirty path not in `touches:`, then it succeeds (`tests/handoff.test.sh`).
+- [ ] AC3 — Given a fixture where S1 discharges none and S2 discharges an AC, when `handoff develop --slice S2` runs, then it refuses naming `verify`; when `handoff verify --slice S2` runs, then `slice: S2` and neither slice is ticked; when verify then runs `handoff develop --slice S2`, then S1 and S2 are both ticked; and when verify instead hands back without `--slice`, then neither is ticked (`tests/handoff.test.sh`).
+- [ ] AC4 — Given a fixture whose leg contains a slice marked `unspecified`, when `handoff --slice` covers it, then it refuses naming `design` and changes nothing (`tests/handoff.test.sh`).
+- [ ] AC5 — Given a sliced fixture whose closing leg is the one `slice:` names and an earlier slice is unticked, when `close` runs, then it refuses naming the unticked slice; and with every earlier slice ticked, then it closes and ticks the closing leg's slices in the close commit (`tests/close.test.sh`).
+- [ ] AC6 — Given `outcome.schema.json` and `tools/validate-json-schema.py`, then a `progressed` outcome with `slice: {done: S1, next: S2}` validates, one with `progressed` and no `slice.next` fails, and an existing `built` outcome with no `slice` still validates (a new `tests/outcome-schema.test.sh`).
+- [ ] AC7 — Given the AC1 and AC3 fixtures, when `next --drive` runs with `--completed develop:<id>` after the develop → develop hand-off, then it prints `DISPATCH  develop <id>`; after the develop → verify hand-off, `DISPATCH  verify <id>` naming that ticket alone; with `--completed verify:<id>` after the pass, `DISPATCH  develop <id>`; and after the fail, exit 4 with the bounce escalation (`tests/next.test.sh`).
+- [ ] AC8 — Given ticket A with S1 and S2 ticked and S3 unticked at `develop / ready`, and ticket B at `develop / ready` ranked above it, when `next --drive --completed develop:A --scope A --scope B` runs, then it dispatches `develop A`, not B (`tests/next.test.sh`).
+- [ ] AC9 — Given three rows developed in one gate, all at `verify / ready`, all in `--started`, when `--drive --completed develop:<lead>` runs, then one `DISPATCH  verify` line names all three; red if any is named in a separate session (`tests/next.test.sh`).
+- [ ] AC10 — Given an in-scope `design / waiting` row with a complete brief and an in-scope `develop / ready` row, when `--drive` runs, then it prints a `NOTE` naming the waiting row, dispatches the develop row and exits 0; and with the waiting row as the only in-scope work, then it exits 4 (`tests/next.test.sh`).
+- [ ] AC11 — Given an out-of-scope `waiting` row and an out-of-scope `next: queue` row ranked above a finished scope, with `FINDINGS.md` past `findings_threshold`, when `--drive` runs, then both are stepped over with a `NOTE` and it exits 5 (`tests/next.test.sh`).
+- [ ] AC12 — Given design row A in-progress with file F in `touches:` and develop row B expecting F, when `--drive` runs, then it exits 6 naming A and prints no `DISPATCH` for B; with A's files disjoint, then it dispatches B; and with B unchanged after `--completed develop:B` while A still holds F, then it exits 6, not 4 (`tests/next.test.sh`).
+- [ ] AC13 — Given a fixture item whose `## Waiting on` lacks `### If no answer`, or has one `#### Option`, when `handoff <id> <token> design waiting` runs, then it refuses naming the missing part and changes nothing; and given every subsection with two options, then it succeeds (`tests/handoff.test.sh`).
+- [ ] AC14 — Given a fixture run log whose `scope_confirmed` carries a budget and deadline, when `tools/sprint-ledger.sh envelope` runs with the outcomes so far leaving less than the next stage's estimate, then it prints `STOP` naming budget or time and exits non-zero; with enough left, `CONTINUE` and exit 0; and with no ledger prior, it uses the stage cap and says so (`tests/sprint-ledger.test.sh`).
+- [ ] AC15 — Given `tests/batching.test.sh`, then its gate cases pass unchanged, so gate batching still holds for unsliced rows (`tests/batching.test.sh`).
+- [ ] AC16 — Given the full suite `for t in tests/*.test.sh; do "$t" || exit 1; done`, then it exits 0 with no existing case edited to pass.
+- [ ] AC17 — Given the changed skill files, when `verify` reads them, then: `templates/item.md` documents `## Progress`, `slice:`, `unspecified` and the FR14 brief; `develop` carries FR3's leg rule citing `MEASUREMENT.md`; `verify` carries FR5's per-leg cadence; `design` Step 3 carries the unattended prepare-and-wait case and the clause that it never records the decision; `sprint` carries the envelope proposal (FR12), the FR14 notification, and a Step 8 still listing push, bump, install and restart as per-action approvals; `queue` carries Merge, amend-first and the bounded wait (FR16–FR18); `CONCURRENCY.md` carries FR18's reasoning. Read, not grepped (`CLAUDE.md`, *Tests*).
+
+## Progress
+
+This ticket's own slice plan. The tooling for it lands in S1–S3, so until then the legs are driven by
+hand.
+
+- [ ] S1 — item shape, `handoff --slice` legs, the dirty-`touches:` refusal and `close` on sliced tickets — discharges AC1, AC2, AC3, AC4, AC5
+- [ ] S2 — `progressed` in the outcome schema and validator support for the conditional — discharges AC6
+- [ ] S3 — `--drive` leg routing, started-first, and one verify session per gate or leg (0220) — discharges AC7, AC8, AC9, AC15
+- [ ] S4 — `--drive` waiting and out-of-scope rows, exit precedence (0226), and the held-design-file wait (0212) — discharges AC10, AC11, AC12
+- [ ] S5 — the decision brief enforced by `handoff`, and the `envelope` check — discharges AC13, AC14
+- [ ] S6 — skill, template and reference prose for develop, verify, design, sprint, queue and CONCURRENCY; README; CHANGELOG — discharges AC16, AC17
 
 ## QA plan
 
-- **Why that level:** `unit` — the mechanical changes land in `handoff`, `next`, `close`, the schema
-  and its validator, which `tests/*.test.sh` already exercise with fixture backlogs. AC11 is a
-  literal read; this repo puts no guard on prose.
-- **Specific checks:** the full `tests/*.test.sh` run; AC1–AC9's fixture cases each seen red before
-  the change; a dry `/sprint` against a scratch backlog holding one three-slice ticket (S1 discharges
-  none, S2 and S3 discharge ACs) to watch develop → develop → verify → develop → verify → close.
+- **Why that level:** `unit`. The mechanical changes land in `handoff`, `next`, `close`, the schema,
+  its validator and `sprint-ledger.sh`, which `tests/*.test.sh` exercise with fixtures. AC17 is a
+  literal read, since this repo puts no guard on prose.
+- **Specific checks:** the full `tests/*.test.sh` run; each fixture AC seen red before its change; a
+  dry `/sprint` against a scratch backlog holding one four-slice ticket (S1 none, S2 an AC, S3
+  `unspecified`, S4 an AC) with a small envelope, to watch a leg, a verify, a design detour, a waiting
+  brief and an envelope stop.
 
 ## Out of scope
 
 - Running two develop sessions at once — 0137.
-- Verify batching for a gate of unsliced rows — 0220, which keeps its own outcome.
-- The design-beside-develop held-file check — 0212 defect 1, which keeps its own row. Its defect 2
-  edits the same same-stage guard FR5 changes; whichever lands second re-reads the other.
-- Charting work too foggy to ticket — 0071, which keeps its own row.
-- A develop session metering its own spend mid-leg (FR4: no mechanism exists).
+- Cheaper stage sessions in themselves (suite-check dedup, model tiering) — 0149, which keeps its
+  own outcome and measurement.
+- Re-charting the live `parent:` projects (0001, 0002, 0009, 0036) as sliced tickets.
+- A develop session metering its own spend mid-leg (FR3: no mechanism exists).
 - The release of these changes — `tools/release`, on Aaron's say-so.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
@@ -265,3 +326,54 @@ was discharged by that pass and is recorded there.
     applied by hand before FR11 lands.
   - `qa_level: unit` and `close_by: verify` re-read against AC1–AC11: both hold (fixture scripts,
     plus one literal read). `size: l` holds.
+- 2026-11-18 — **second amendment (`queue`, at Aaron's direction): the design pass's Q2 and Q4 were
+  too rigid, sprint sizing moves to an envelope, every ask of the person becomes a brief, and four
+  rows are merged in.** Aaron, verbatim: *"are you sure that a hard rule of one dev session per slice
+  also meets our goal of optimizing token efficiency while maintaining the same outcome
+  effectiveness? It sounds like we are going to pay the tax of starting a new session a lot when
+  there might be opportunities to develop more than one slice at once profitably … I have the same
+  question about running a verify session after each dev session. Don't let me sacrifice
+  effectiveness since that is the main goal"*; on sizing, *"The principle is take on enough work to
+  make meaningful progress while not taking on so much that it causes problems. We do still have to
+  worry about budgets and real world time"*; on escalations, *"enough context is given into the
+  outcome we are driving toward, the current situation, the challenges we are trying to address,
+  more than one potential option, and the pros and cons of each. Sometimes I also need instructions
+  on what I need to do."*
+  - **Legs (FR3), and the evidence on both sides.** `MEASUREMENT.md` prices a fresh session at the
+    floor's cache write (−$0.36) plus 4–7 orientation turns (−$0.50 to −$0.87), about **$0.86–1.23**,
+    and carrying a 75k-token climb through a further ~38 turns at **+$1.44**. So for a slice of normal
+    size a fresh session is usually *cheaper* as well as fresher, which is the pushback on the
+    "startup tax" worry. Aaron's point holds below the break-even: a short follow-on slice reusing open
+    files is cheaper in the same session. Hence the rule is not one slice per leg but continuing only
+    on shared files and a short leg so far, with each slice committed as it lands so a kill costs at
+    most one slice. Rejected: a fixed slices-per-leg number, since nothing measured supports one.
+  - **Verify per leg (FR5).** The ledger (run-20261027T185815Z) shows verify cost per ticket at
+    **$1.04–1.07 batched against $1.02–1.13 unbatched**: verify spend tracks the ACs checked, not the
+    session count, so an extra verify costs roughly a floor plus orientation. On the effectiveness side,
+    a bounce costs a mean **$1.60** re-entry (`MEASUREMENT.md`) plus rework on every slice built on the
+    defect. So verify follows the leg, one session per leg that discharges an AC, and grouping small
+    slices into a leg (FR1, FR3) is also how verifies get fewer. Rejected: final verify only (the
+    distance problem 5 names); verify by slices judged "risky" (a judgement that invites skipping).
+    Weak evidence, flagged: n = 4 sessions.
+  - **Envelope, not a count (FR12, FR13).** The 3/≈5 rule's own reason was not paying a supervisor
+    floor for too little work. A budget and an end time state that directly, and they also bound what
+    a count cannot: spend and wall-clock. The floor of meaningful progress becomes "fits one leg
+    plus its verify". The check is a script because it protects money (`CLAUDE.md`, *Tests*: a rule
+    that must hold exactly goes in a script). The default figures are Aaron's to set per run; none is
+    invented here.
+  - **Decision brief (FR14).** The headings map one-to-one to the asks above. It is enforced on new
+    `waiting` hand-offs, which is a structure check in a script rather than a prose grep, and is not
+    applied to existing rows.
+  - **Merged (FR17's procedure, applied by hand):** 0226 → FR9 (it was already absorbed by the design
+    pass); 0212 → FR10, the same `--drive` guards, and a sliced run makes the stand-down case
+    commoner; 0220 → FR11, which states FR5's verify rule for gates; 0071 → FR2, because under the new
+    convention fog is an outcome ticket's unsharp later slices, and its "destination first" is FR1's
+    outcome-first. 0071's question (extend `parent:` or a new skill) is answered **neither**. Their
+    ACs carried over as AC9, AC11 and AC12. No `blocked_by:` named any of them.
+    **Kept as rows:** 0149, cheaper sessions, which has its own outcome and measurement, is separable
+    from slicing, and is the natural next ticket; and 0137, parallel develop, already declined on the
+    token fact.
+  - **Re-checked:** `size: l` holds (now six slices). `qa_level: unit` holds, since every fixture AC
+    runs under `tests/`. `close_by: verify` holds, since AC17 is a read. `next: develop` holds: Aaron
+    made the remaining choices and nothing is open. A `## Progress` section is added so this ticket
+    follows its own convention.

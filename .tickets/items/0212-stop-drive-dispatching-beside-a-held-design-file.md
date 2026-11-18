@@ -2,8 +2,8 @@
 id: "0212"
 title: Stop --drive dispatching develop beside a design session holding one of its files
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: s
@@ -48,3 +48,6 @@ AetherWorks run-20261017T193821Z: design 0100 [a412] was claimed and running whe
 ## Notes & decisions
 
 - Filed by retro 2026-10-17 from the sprint supervisor's own findings entry.
+- 2026-11-18 — **withdrawn: merged into 0231 FR10** at Aaron's direction, under the outcome-sized
+  ticket convention (`product-definition-conventions.md` → "Slice Vertically and Thinly"). Its
+  acceptance criteria are carried by 0231's ACs; the id is burned.

@@ -2,8 +2,8 @@
 id: "0226"
 title: Decide whether --drive steps over an out-of-scope waiting or queue row, and which exit wins
 type: bug
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: m
 created: 2026-11-06
@@ -84,3 +84,6 @@ outside scope, does exit 5 (findings gate) win over exit 4?
   the 2026-10-27 `next: queue` entry (tools working on themselves, unconfirmed alone) and its
   2026-11-07 `waiting` twin observed in AetherWorks, which confirms it. Routed to `design` because the
   walk's comment shows stopping on `waiting` is deliberate in scope; the scope case is a decision.
+- 2026-11-18 — **withdrawn: merged into 0231 FR9** at Aaron's direction, under the outcome-sized
+  ticket convention (`product-definition-conventions.md` → "Slice Vertically and Thinly"). Its
+  acceptance criteria are carried by 0231's ACs; the id is burned.

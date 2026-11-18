@@ -2,8 +2,8 @@
 id: "0071"
 title: Add a decision-map mode for work too large or too foggy for one project ticket
 type: feature
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: l
 created: 2026-08-26
@@ -112,3 +112,6 @@ Cannot be written until the design question is settled.
 - Sized `l`: the design question's answer plausibly touches a mechanism four live projects depend
   on, which is real blast radius even though nothing about it is urgent.
 - Relates to 0069 — see that ticket's note.
+- 2026-11-18 — **withdrawn: merged into 0231 FR2** at Aaron's direction, under the outcome-sized
+  ticket convention (`product-definition-conventions.md` → "Slice Vertically and Thinly"). Its
+  acceptance criteria are carried by 0231's ACs; the id is burned.

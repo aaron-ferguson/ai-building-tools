@@ -2,8 +2,8 @@
 id: "0220"
 title: Make --drive name one verify session for rows developed together in one gate
 type: bug
-next: queue
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -32,3 +32,6 @@ Filed by retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md par
 - The opposite failure (too wide a verify batch) is in 0058's notes; the rule between them is the gate's membership.
 
 ## Notes & decisions
+- 2026-11-18 — **withdrawn: merged into 0231 FR11** at Aaron's direction, under the outcome-sized
+  ticket convention (`product-definition-conventions.md` → "Slice Vertically and Thinly"). Its
+  acceptance criteria are carried by 0231's ACs; the id is burned.
