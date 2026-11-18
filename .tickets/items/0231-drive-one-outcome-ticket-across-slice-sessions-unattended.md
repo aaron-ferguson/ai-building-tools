@@ -21,6 +21,7 @@ touches:
   - skills/sprint/outcome.schema.json
   - tools/validate-json-schema.py
   - tests/outcome-schema.test.sh  # new file, created by this leg
+  - README.md
 slice: S1
 ---
 
