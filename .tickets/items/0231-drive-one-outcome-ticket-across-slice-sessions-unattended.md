@@ -2,8 +2,8 @@
 id: "0231"
 title: Drive one outcome ticket across slice sessions unattended
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,8 +15,8 @@ blocked_by: []
 relates: ["0071", "0149", "0220", "0226", "0212", "0137", "0128", "0204"]
 expects: [skills/sprint/SKILL.md, skills/sprint/outcome.schema.json, tools/validate-json-schema.py, skills/design/SKILL.md, skills/develop/SKILL.md, skills/verify/SKILL.md, skills/queue/SKILL.md, skills/queue/templates/item.md, skills/queue/templates/next, skills/queue/templates/handoff, skills/queue/templates/claim, skills/queue/templates/close, skills/queue/templates/config.yml, references/CONCURRENCY.md, tests/next.test.sh, tests/handoff.test.sh, tests/batching.test.sh, tests/close.test.sh, tests/sprint-ledger.test.sh, tools/sprint-ledger.sh, README.md, CHANGELOG.md]
 ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=414ddd39 AC7=6caf69d4 AC8=1295a15c AC9=1dab5f85 AC10=865d23ca AC11=63334335 AC12=570dc5d8 AC13=ccc5aeaa AC14=6cd4e5b9 AC15=aca1f25c AC16=e3a5e129 AC17=06b1bf5e
-claimed_by: "7c3e"
-claimed_at: 2026-11-18T15:18:04Z
+claimed_by:
+claimed_at:
 touches:
 slice: S4
 ---
@@ -227,7 +227,7 @@ hand.
 - [x] S1 — item shape, `handoff --slice` legs, the dirty-`touches:` refusal and `close` on sliced tickets — discharges AC1, AC2, AC3, AC4, AC5
 - [x] S2 — `progressed` in the outcome schema and validator support for the conditional — discharges AC6
 - [x] S3 — `--drive` leg routing, started-first, and one verify session per gate or leg (0220) — discharges AC7, AC8, AC9, AC15
-- [ ] S4 — `--drive` waiting and out-of-scope rows, exit precedence (0226), and the held-design-file wait (0212) — discharges AC10, AC11, AC12
+- [x] S4 — `--drive` waiting and out-of-scope rows, exit precedence (0226), and the held-design-file wait (0212) — discharges AC10, AC11, AC12
 - [ ] S5 — the decision brief enforced by `handoff`, and the `envelope` check — discharges AC13, AC14
 - [ ] S6 — skill, template and reference prose for develop, verify, design, sprint, queue and CONCURRENCY; README; CHANGELOG — discharges AC16, AC17
 
@@ -398,6 +398,71 @@ every started verify row, so a row skipped earlier for a blocker could widen a l
 That only happens among rows this run itself developed.
 Evidence set: `skills/queue/templates/next`, `.tickets/next`, `tests/next.test.sh`,
 `tests/batching.test.sh`, `skills/verify/SKILL.md` (liveness mutation only),
+`tests/declared-copies.test.sh`, `tests/*.test.sh`.
+
+### Leg S4 — verify (7c3e), 2026-11-18: PASS, not closing
+
+Leg verify per FR5: AC10, AC11 and AC12 only (the ACs S4 discharges), plus the whole suite. No AC
+is ticked; `close` ticks them once, at the closing leg. NFR rows are not discharged by this leg
+(AC16/AC17 sit on S6). The Compatibility row's check still held at this SHA: S4 added 182 lines to
+`tests/next.test.sh` and deleted none, and the whole suite is green.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`; `unit` is the same
+files fail-fast), each file's exit captured. Subject: `04885aa` (claim over `b0cd540`; S4 = `20677fa`,
+`53596c4`). Copy executed: the repo's `skills/queue/templates/next`, which `tests/next.test.sh` copies
+into each fixture (`NEXT_SRC`). `.tickets/next` is byte-identical (`cmp`).
+`./next --ac-digest 0231 --check` → `0231: ac_digest matches`.
+Tree: `git status --porcelain` was empty at Step 2 and again after the last check, so the dirty set is
+empty and the advisory intersection is empty.
+
+Suite: 45 files, all 45 `EXIT 0`, and no tally with a non-zero failure count. (The one `ABORTED`
+string in the run's output is `tests/abort-announce.test.sh` asserting the announcement. That file
+tallied `321 passed, 0 failed` and exited 0.) `tests/next.test.sh` `635 passed, 0 failed`;
+`tests/batching.test.sh` `39 passed, 0 failed`; `tests/declared-copies.test.sh`
+`declared-copies: 23 passed, 0 failed`.
+
+**Clause table. This pass ran every mutation itself** in a detached worktree at `04885aa`. The trimmed
+harness was `tests/next.test.sh` lines 1–410 (helpers), plus its later `assert_eq`, `dispatch_line`,
+`eight_findings`, `first_line`, `add_sliced` and `fixture_handed_off_from`, plus the whole S4 section.
+Each mutation was applied to `skills/queue/templates/next`. A script required each pattern to occur
+exactly once and the `git diff --stat` to be non-empty, then restored the file by path. The control
+was `35 passed, 0 failed` before and after. The worktree was clean apart from the harness and was
+removed.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC10 | Given an in-scope `design / waiting` row with a complete brief and an in-scope `develop / ready` row | fixtures `0941` (design/waiting, FR14 brief via `waiting_brief`) and `0942`, both `--scope` | — |
+| AC10 | prints a `NOTE` naming the waiting row | M12 the in-scope step-over `printf` → `:` | red, 1 (`a NOTE names the waiting row`) |
+| AC10 | dispatches the develop row, exits 0 | M2 `scope_live` → `false` (in-scope waiting always escalates) | red, 6 (`exits 0`, `the develop row is dispatched`, `nothing escalates`, and the FR9 completion case) |
+| AC10 | with the waiting row the only in-scope work, exits 4 | M3 `scope_live` → `true` (always step over) | red, 5 (`exits 4`: got exit 0 and `DISPATCH  develop 0942`) |
+| AC10 (FR9) | stepped over, then nothing dispatched → exit 4 on the waiting row | M4 `WAITED` escalation off; M3+M4 together | red, 3; red, 8 |
+| FR9 | `--completed` leaving the row waiting does not halt a scope | M9 completion arm escalates as before | red, 2 |
+| AC11 | Given an out-of-scope `waiting` row and an out-of-scope `next: queue` row ranked above a finished scope, with `FINDINGS.md` past `findings_threshold` | fixtures `0951` (waiting), `0952` (queue), scope `0953` in `DONE.md`, threshold 8 with `eight_findings` | — |
+| AC11 | both stepped over: the waiting one | M1 out-of-scope waiting not stepped over | red, 6 (incl. `exits 5`) |
+| AC11 | both stepped over: the queue one | M5 out-of-scope queue not stepped over | red, 4 (incl. `exits 5`) |
+| AC11 | with a `NOTE` (each row) | M13 waiting NOTE silent; M14 queue NOTE silent | red, 1 each |
+| AC11 | exits 5 | M1, M5 (an escalation masks the gate) | red (`exits 5 — the findings gate`) |
+| AC12 | Given design A in-progress with F in `touches:`, develop B expecting F → exit 6 naming A, no `DISPATCH` for B | M6 `gate_wait` reads `expects:` only; M10 `wait_on_design` never waits; M15 rank-walk wait off | red, 10; red, 10; red, 4 |
+| AC12 | with A's files disjoint, dispatches B | M11 `gate_wait` ignores shared paths (always waits) | red, 3 (`with disjoint files it exits 0`, `dispatches the develop row`, `with the file released it is the loop again`) |
+| AC12 | B unchanged after `--completed develop:B` while A still holds F → exit 6, not 4 | M7 same-stage wait off | red, 3 (`exits 6, not 4`, `naming the design`, `not the loop escalation`) |
+| FR10 | a sliced ticket's leg waits too | M8 `dispatch_leg` wait off | red, 3 |
+
+Plural clause: AC11's "both" uses two rows that differ in the value under test (waiting against
+queue), and each row's step-over and NOTE has its own mutation that reddens alone (M1/M5, M13/M14).
+Every clause reddened. The developer's table (M1–M11) was re-run, not trusted, and it agrees. M12–M15
+are this pass's own additions.
+
+Step 4, newly reachable: an out-of-scope `waiting` or `next: queue` row no longer stops the walk, so
+the walk can now reach and dispatch develop rows ranked below it. M3's red output shows such a row
+(`DISPATCH  develop 0942` under `--scope 0941`). That is pre-existing scope semantics: `--scope`
+governs findings-gate deferral and design ordering, not develop dispatch (`next --help`). It is the
+step-over FR9 asks for, "as an out-of-scope design row already is". FR12's "continuing past the
+confirmed scope happens only when they said so" is not enforced by `next` at this SHA. FR12 is S5/S6
+work, and the closing verify should check where it lands. S4 adds no route to push, release or any
+destructive action. `waiting_on` now prints the brief's `### What needs you` line, covered by
+"carrying its question" (developer's M10).
+Evidence set: `skills/queue/templates/next`, `.tickets/next`, `tests/next.test.sh`,
 `tests/declared-copies.test.sh`, `tests/*.test.sh`.
 
 ## Notes & decisions
@@ -754,3 +819,8 @@ Evidence set: `skills/queue/templates/next`, `.tickets/next`, `tests/next.test.s
   - **Whole suite at `53596c4`: 45 files, every one exit 0** (`tests/next.test.sh` `635 passed, 0
     failed`; `tests/batching.test.sh` `39 passed, 0 failed`; `tests/declared-copies.test.sh` `23
     passed, 0 failed`). `git status --porcelain` was clean at the run.
+- 2026-11-18 — **verify (7c3e), leg S4: PASS.** AC10, AC11 and AC12 were checked literally. This pass
+  ran every clause mutation to red itself (M1–M15, *QA evidence*, Leg S4). The full suite is green at
+  `04885aa`: 45 files, all exit 0. Handed back with `--slice S4` so S4 ticks. No AC was ticked. Next
+  leg: S5. For the closing verify: FR12's scope-bounded continuation is not enforced by `next`
+  (see Step 4 in the evidence).
