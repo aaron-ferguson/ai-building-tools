@@ -193,6 +193,53 @@ Then say *"queue this: <the thing>"* in any project. `/queue` scaffolds
 `.tickets/` on first use, reading your real test commands out of `package.json` (or
 `Makefile`, `pyproject.toml`) rather than guessing.
 
+### Cloud and mobile sessions
+
+Cloud sessions run on claude.ai/code, and the mobile app uses them too. They start in a fresh
+container, so your machine's plugin install and `~/.claude/settings.json` do not reach them. The
+setup below was verified on 2026-11-18 with Claude Code 2.1.327. Configure it on the environment
+at claude.ai/code (environment selector → settings):
+
+- **Repositories: list only the project repo.** With two repos listed, the session starts in the
+  folder that holds both (`/home/user`), not in the project. It then never reads the project's
+  `.claude/settings.json`, and the skills cannot find `.tickets/`. With one repo listed, the session
+  starts inside it.
+- **Network access:** the default ("Limited · no domains · package managers on") is enough.
+  Public GitHub reads go through the session's git proxy.
+- **Setup script:**
+
+  ```bash
+  #!/bin/bash
+  set -eu
+
+  # Conventions repo next to the project. Use a relative path: $HOME is /root here, not the
+  # checkouts folder, and the script runs in the checkouts folder (/home/user).
+  if [ ! -d ai-building-conventions ]; then
+    git clone --depth 1 https://github.com/aaron-ferguson/ai-building-conventions ai-building-conventions
+  fi
+
+  # Cloud sessions ignore enabledPlugins in project settings, so install the plugin here
+  if ! claude plugin marketplace list | grep -q 'ai-building-tools'; then
+    claude plugin marketplace add aaron-ferguson/ai-building-tools
+  fi
+  claude plugin install ai-building-tools@ai-building-tools --scope user
+  ```
+
+**Cloud sessions apply a project's `permissions.deny` list but ignore its `extraKnownMarketplaces`
+and `enabledPlugins`.** The plugin entries in this repo's `.claude/settings.json` only take effect
+locally, where trusting the folder offers the install. That is why the setup script installs the
+plugin itself.
+
+**The setup script runs only when a container is built**, after the repos are cloned and before
+Claude starts. Start a new session after changing it, because a resumed session keeps its old
+container. Each new container installs whatever is on `main` at that moment, which can be newer
+than the copy installed on your machine.
+
+**To check a new environment**, ask the session to run `pwd` (it should print the project repo), to
+quote a rule from `CONVENTIONS_CORE.md` from the context it started with, and to list its
+`ai-building-tools:` skills. Invoke the skills by their qualified names, such as
+`/ai-building-tools:develop`.
+
 ---
 
 ## What lands in your project
