@@ -830,3 +830,56 @@ Evidence set: `skills/queue/templates/next`, `.tickets/next`, `tests/next.test.s
   `04885aa`: 45 files, all exit 0. Handed back with `--slice S4` so S4 ticks. No AC was ticked. Next
   leg: S5. For the closing verify: FR12's scope-bounded continuation is not enforced by `next`
   (see Step 4 in the evidence).
+- 2026-11-18 — **develop (46a6), leg S5: built, handed to verify with `--slice S5`.** Commits
+  `439d05c` (AC13: `handoff` refuses an incomplete waiting brief; template and `.tickets/handoff` copy),
+  `e2d7d63` (AC14: `tools/sprint-ledger.sh envelope`), `d244651` (two envelope assertions tightened
+  after a mutation left them green). **S5 alone is the leg.** It discharges AC13–AC14, so FR4 refuses
+  develop → develop, and FR3's two conditions both fail for S6: S6 opens skills, README, CHANGELOG
+  and `CONCURRENCY.md`, none of which this leg opened, and the session was ~30 turns in, past
+  `MEASUREMENT.md`'s 28.5-turn break-even. Whole suite at `d244651`: 45 files, all exit 0, tree clean.
+  `.tickets/claim` still needs `xxd` (parked), so this claim passed a token explicitly.
+  - **Decision inside FR14's text, for the closing verify to read:** the brief is checked only on a
+    `waiting` hand-off **of an item that has a `## Waiting on` section**. An item with no section at
+    all still hands off waiting as before, because `tests/handoff.test.sh`'s FR2 case does exactly
+    that with no section and AC16 forbids editing it. FR14 says "refuses a section missing any
+    subsection", which this satisfies literally. The NFR Compatibility row ("only a new handoff …
+    waiting checks the brief") is the other half: a `ready` hand-off over a partial brief is never
+    checked. If the author wants a section-less waiting hand-off refused too, that is a contract
+    change for `queue`, since it needs the FR2 case edited.
+  - **Options are counted under `### Options` only**, up to the next `### `; a `#### Option` elsewhere
+    and a `### ` heading after the `## Waiting on` section ends do not count. The refusal lists the
+    whole brief shape itself rather than pointing at `templates/item.md`, which gains that shape only
+    in S6 (develop Step 4: a refusal in a template must be actionable without the skill).
+  - **`envelope`'s definitions** (FR13 names the inputs, not the arithmetic): spend is the sum of the
+    outcome events' `cost_usd`. An outcome with none is priced at its stage's cap and counted aloud.
+    The supervisor's own spend is in no outcome and is not counted, and a resumed session's outcome
+    covers only its last leg (sprint Step 7). Both understate spend, so S6's sprint prose should say
+    so or add a margin. The cost estimate is this run's mean for the stage, then MEASUREMENT.md's
+    per-skill row when `--measurement` is given, then the stage cap labelled `no prior: the stage
+    cap`. "Ledger prior" is read as that chain, because `LEDGER.md` holds per-sprint figures and no
+    per-stage ones. The time estimate is the mean dispatch-to-outcome window paired by `session_id`.
+    With none, only a past deadline stops on time. Field names `budget_usd` and `deadline` (ISO UTC)
+    on `scope_confirmed` are this build's, and S6's sprint Step 1/5 prose must write them. Exit codes:
+    CONTINUE 0, STOP 3, unreadable 1. `--now` exists for fixtures.
+  - **FR12 is not done here.** The proposal, the defaults and "continue past scope only when told" are
+    sprint prose, so they belong to S6. `envelope` is only the check that FR12's per-dispatch rule calls.
+  - **Clause table (S5's ACs).** Every mutation was **run** on committed code. Each pattern was required
+    once, the diff was confirmed non-empty and restored by `git checkout --`, and the control was green.
+    `handoff` mutations ran against `tests/handoff.test.sh` (control 250/0). `envelope` mutations ran
+    against `tests/sprint-ledger.test.sh` (control 229/0).
+
+    | AC clause | Guard (test title) | Mutation | Reds |
+    |---|---|---|---|
+    | AC13 Given `## Waiting on` lacks `### If no answer` → refuses naming it, changes nothing | `0231 AC13 — a brief lacking ### If no answer…` | M6 drop it from the wanted list; M8 refusal does not exit; M1 check off | 8; 25; 38 |
+    | AC13 or has one `#### Option` → refuses naming the missing part | `… one #### Option…` | M3 threshold `< 1` | 6 |
+    | AC13 every subsection with two options → succeeds | `… every subsection with two options hands off waiting` | M9 no `### ` heading recognised (all "missing") | 6 |
+    | FR14 any subsection (quantifier) | seven-part sweep `… each of the seven subsections, missing alone` | M1, M9 | (in 38, 6) |
+    | FR14 options counted under `### Options` only; section ends at next `## ` | `… an option outside ### Options…` | M5 `inopt = 1`; M4 section never ends | 1; 1 |
+    | NFR compat: never checked on a ready hand-off | `… never on a ready one` | M7 status test dropped | 2 |
+    | AC14 less budget than the estimate → `STOP` naming budget, non-zero | `0231 AC14 -- with less budget left…` | E1 budget test off; E10 costs not summed; E6 run-log prior off | 7; 7; 1 |
+    | AC14 less time than the estimate → `STOP` naming time | `… less time left…` | E2 time test off; E11 windows not measured | 2; 3 |
+    | AC14 enough left → `CONTINUE`, exit 0 | `… with enough left, CONTINUE and exit 0` | E4 STOP exits 0 (inverse direction) | 5 |
+    | AC14 no ledger prior → stage cap, says so | `… no prior for the stage, the stage cap is used and labelled` | E8 label dropped | 1 (after `d244651`; 0 before) |
+    | FR13 distinct exit codes; missing envelope is an error | `0231 FR13 -- STOP and an error exit differently…` | E5 STOP exits 1; E9 missing-field check off | 1; 2 (after `d244651`; 0 before) |
+    | FR13 past deadline stops with no prior | `… a deadline already past…` | E3 past-deadline test off | 2 |
+    | FR13 unpriced outcome counted at its cap | `… an outcome carrying no cost_usd…` | E7 unpriced not added | 2 |
