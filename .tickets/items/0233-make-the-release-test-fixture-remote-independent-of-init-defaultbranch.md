@@ -3,7 +3,7 @@ id: "0233"
 title: Make the release test's fixture remote independent of init.defaultBranch
 type: bug
 next: verify
-status: in-progress
+status: waiting
 qa_level: unit
 close_by: verify
 qa_manual: AC4 — `tests/release.test.sh` run on a real macOS machine, the author
@@ -16,8 +16,8 @@ relates: ["0084", "0228"]
 expects:
   - tests/release.test.sh
 ac_digest: AC1=bb90bcd9 AC2=20fb93e8 AC3=9aa29743 AC4=73c58991
-claimed_by: "016f"
-claimed_at: 2026-11-18T14:09:04Z
+claimed_by:
+claimed_at:
 touches:
 slice:
 ---
@@ -65,16 +65,16 @@ so `git log` here cannot confirm either commit.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given `tests/release.test.sh` at the fix commit on the Linux container, when it runs
+- [x] AC1 — Given `tests/release.test.sh` at the fix commit on the Linux container, when it runs
   with the container's own git config (`init.defaultBranch` unset), then it prints its tally (no
   `ABORTED`) with 0 failed, and the "0084 NFR git — a checkout behind the remote is reported, not
   resolved" cases print `ok`. Red: revert line 88 to `git init -q --bare "$REMOTE"` and the run
   aborts with the `remote HEAD refers to nonexistent ref` output quoted in *Problem*.
-- [ ] AC2 — Given the same file, when it runs with `GIT_CONFIG_GLOBAL` pointing at a file setting
+- [x] AC2 — Given the same file, when it runs with `GIT_CONFIG_GLOBAL` pointing at a file setting
   `init.defaultBranch=master`, and again at one setting `init.defaultBranch=main`, then both runs
   print their tally with 0 failed. Red: the same revert reds the `master` run while the `main` run
   stays green — the pair is what tells a config-independent fixture from one that happens to match.
-- [ ] AC3 — Given the same file, when the run completes, then the cases after line 259 at
+- [x] AC3 — Given the same file, when the run completes, then the cases after line 259 at
   `cab450d` — "0084 AC5 …" and "0041 — CLAUDE.md says what to do when the bump refuses …" — each
   appear in the output. Red: any abort before them drops them from the output.
 - [ ] AC4 — Given a real macOS machine, when `tests/release.test.sh` runs, then it prints its tally
@@ -95,7 +95,58 @@ so `git log` here cannot confirm either commit.
 - `tests/sprint.test.sh`'s four failures — 0232.
 - Pinning `init.defaultBranch` for the whole suite or the repo's own config; the fix is per fixture.
 
+## Waiting on
+
+- **The author, on a real macOS machine:** check out a commit at or after `bd2d7e4` and run
+  `tests/release.test.sh`. AC4 clears when the last line reads `63 passed, 0 failed` (no `ABORTED`).
+  Then tick AC4 and close from a `verify` session with `./close` and no `--note` (a test-fixture
+  repair; no session behaviour changes). AC1–AC3 are cleared on Linux, see *QA evidence*. Nothing
+  needs deploying: the check is a local test run.
+
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**Verdict 2026-11-18 (verify, token 016f): AC1–AC3 PASS on Linux; AC4 is a manual check → `waiting`.**
+
+Conventions: `../ai-building-conventions` (from `.tickets/config.yml` `conventions.path`; `CONVENTIONS_CORE.md` present).
+Level: `qa_level: unit`. Commands run, verbatim: `tests/release.test.sh` (own config, then
+`GIT_CONFIG_GLOBAL=<scratch>/gc-master` and `GIT_CONFIG_GLOBAL=<scratch>/gc-main`, each the container's
+`~/.gitconfig` plus `[init] defaultBranch = master|main`); then `unit_by_file`:
+`for t in tests/*.test.sh; do "$t" || true; done`. Copy executed: the repo checkout (`tests/` is not
+an installed-skill path). `./next --ac-digest 0233 --check` → `0233: ac_digest matches`.
+Container: git 2.43.0, `git config --global --get init.defaultBranch` unset (exit 1).
+
+Clause table:
+
+| AC | Clause | Row | Checked by |
+|---|---|---|---|
+| AC1 | Given | `tests/release.test.sh` at the fix commit on the Linux container | run at `fcaecd4` (fix `bd2d7e4`, file unchanged since) |
+| AC1 | qualifier | with the container's own git config (`init.defaultBranch` unset) | no `GIT_CONFIG_GLOBAL`; global key absent |
+| AC1 | predicate | prints its tally (no `ABORTED`) with 0 failed | `63 passed, 0 failed`, exit 0, `ABORTED` count 0 |
+| AC1 | object | "0084 NFR git — a checkout behind the remote is reported, not resolved" cases print `ok` | three `ok` lines under that heading |
+| AC1 | red | revert line 88 → aborts with `remote HEAD refers to nonexistent ref` | M1 below |
+| AC2 | Given/qualifier | `GIT_CONFIG_GLOBAL` → `master`, and again → `main` (two configs differing in the value under test) | two runs |
+| AC2 | predicate | both runs print their tally with 0 failed | each `63 passed, 0 failed` |
+| AC2 | red | revert reds `master` while `main` stays green | M1 below |
+| AC3 | object | "0084 AC5 …" and "0041 — CLAUDE.md says what to do when the bump refuses …" each appear | both headings found in each of the three outputs (lines 38, 41) |
+| AC3 | red | any abort before them drops them | M1: heading count 0 under own/master, 2 under main |
+| AC4 | — | real macOS, tally 0 failed | **not run** — Linux container; `qa_manual:` → `## Waiting on` |
+
+| Check | Result |
+|---|---|
+| AC1 — own config | `63 passed, 0 failed`; 0084 NFR git: `ok a checkout behind the remote stops the chain` / `ok the report says the checkout is behind` / `ok the chain resolved nothing itself — HEAD is untouched` — **PASS** |
+| AC2 — `master` / `main` | `63 passed, 0 failed` / `63 passed, 0 failed` — **PASS** |
+| AC3 — later headings | present in all three runs — **PASS** |
+| M1 — line 88 → `git init -q --bare "$REMOTE"` (diff non-empty, applied to `tests/release.test.sh`) | own: `warning: remote HEAD refers to nonexistent ref, unable to checkout` / `error: pathspec 'README.md' did not match any file(s) known to git` / `ABORTED before the tally: 23 passed, 0 failed so far (exit 1)`; master: same; main: `63 passed, 0 failed` — reds AC1, AC2's pair, AC3 |
+| Restore | `git checkout -- tests/release.test.sh`; `git status --porcelain` empty |
+| Control | own `63 passed, 0 failed`; master `63 passed, 0 failed` |
+| `$REMOTE2` `-b main` (FR1 "pushes to") | not re-mutated; develop's M2 records it green because nothing clones `$REMOTE2`. No AC names it; recorded as unguarded, not papered over |
+| NFR Dependencies | `init -b` ran on git 2.43.0 in all runs above (an unsupported flag would abort AC1's run); no other flag added (diff `6327e0e..5d70ef3 -- tests/`). Holds; guarded by AC1's run |
+| AC4 — macOS | **open** — waiting on the author |
+| `unit_by_file` | 44 files, every exit 0 (`tests/release.test.sh` → `63 passed, 0 failed`) |
+
+Tree: `git status --porcelain` empty at Step 2 and after the last check. Dirty set empty → intersection
+with the evidence set (`tests/release.test.sh`, `.tickets/items/0233-*.md`, `.tickets/config.yml`) empty → not advisory.
+Always-on core check: the diff is two `git init` lines and one comment in a test fixture — no data, egress, auth or UI surface.
 
 ## Notes & decisions
 
@@ -134,3 +185,4 @@ so `git log` here cannot confirm either commit.
   - `.tickets/claim 0233` without a token failed with `.tickets/claim: 102: xxd: not found` and
     wrote nothing. It was claimed with a token from `od -An -N2 -tx1 /dev/urandom | tr -d ' \n'`.
     Already parked in `.tickets/FINDINGS.md` (2026-11-18, the `xxd` line); nothing new parked.
+- 2026-11-18 — `verify` [016f]: AC1–AC3 pass on Linux (QA evidence); AC4 is `qa_manual:` → `next: verify`, `status: waiting`. No CHANGELOG note: a test-fixture repair changes no session behaviour. Nothing new parked in FINDINGS.md.
