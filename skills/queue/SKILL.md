@@ -138,10 +138,11 @@ report the missing wiring and stop. A backlog whose tickets cite no standard can
 | "what's next", "show the queue" | `./next <stage>`, print it, stop |
 | "move X up", "do Y first", "reprioritise" | **Rerank** (Step 4) |
 | "X is blocked on Y" | Record `blocked_by:` in the item file; set the column to `blocked` **because** that derives it, never as a judgement of your own |
-| "X needs an answer from someone" | Set `status: waiting` **and write the `## Waiting on` section** — the question and who can answer it. A `waiting` row with no such section is a defect `./next --waiting` reports, being indistinguishable from a forgotten one |
+| "X needs an answer from someone" | Set `status: waiting` **and write the `## Waiting on` section** — the decision brief `templates/item.md` lays out, which `./handoff … waiting` refuses incomplete. A `waiting` row with no such section is a defect `./next --waiting` reports, being indistinguishable from a forgotten one |
 | "sweep the findings", "import the reported feedback" | **Surface parked work** (Step 5) |
 | a ticket sits at `next: queue` — bare `/queue`, or an ID | **Re-specify** it (Step 2), then **skip Step 3**: it already has a rank and keeps it |
 | "add an FR to X", "this ticket also needs Y" | **Amend** an already-specified ticket (Step 2) |
+| "fold X and Y into Z", several tickets serving one outcome | **Merge** them into one outcome ticket — see below |
 | "drop X", "we're not doing X after all" | **Withdraw** it — see below. The work goes; the id never does |
 | "re-verify X", "that close can't be trusted" — a `done` ticket | `./reopen <id> <top\|above:<row-id>> "<reason>"`. You pass the rank and the reason; it moves the row back from `DONE.md`, sets `next: verify`, unticks the ACs, keeps `## QA evidence`, re-blocks dependents and commits. Never by hand (`ecc6a60` did, and is what it replaces) |
 
@@ -163,8 +164,12 @@ change, and neither is optional:
 - **Amend** (a new FR on an unclaimed, fully-specified ticket): widening the scope invalidates whatever
   was sized *against* the old scope, so re-check **`size`, the ACs, the QA plan's named checks and
   *Out of scope*** against the new shape, and record the reason in *Notes & decisions*. That re-check
-  is where the work actually is; the FR itself is the cheap part. Never amend a claimed ticket — its
-  session is building against the contract you are changing.
+  is where the work actually is; the FR itself is the cheap part — and on a sliced ticket, the slice
+  plan with it. **Never amend a claimed ticket** — its session is building against the contract you
+  are changing. **The wait is bounded instead**: every leg releases at a slice boundary
+  (`./handoff --slice`), so wait for the release, `./claim` the row, amend, and hand it back with
+  `./handoff <id> <token> develop` — one writer per item file, and a wait of at most one leg
+  (`CONCURRENCY.md`, *A stage writes only the ticket it holds*).
 
 **Every path that writes or edits criteria — Add, Re-specify, Amend — ends the same way:**
 write `ac_digest:` from `./next --ac-digest <id>` into the frontmatter, in the same commit as the
@@ -191,6 +196,15 @@ other backlog write.
 Neither rule was written down until 0105, and `3b72d38` broke both at once — it deleted the item
 file *and* decremented the counter, queueing up a reissue of an id two guards already cited.
 
+### Merging tickets into one outcome
+
+Absorbing tickets into one outcome ticket: amend the absorbing ticket (above), carrying each one's
+work as an FR and its ACs where they still hold, and **quote any user-reported evidence verbatim** in
+its Problem — a paraphrase loses the evidence. Then withdraw each absorbed ticket per *Withdrawing a
+ticket*, its dated line pointing at the FR that now carries it; **re-point every `blocked_by:` naming a
+withdrawn id** to the absorbing one; and burn the ids. Record the merge in the absorbing ticket's
+*Notes & decisions*. Worked example: `0231`'s second amendment (0212, 0220, 0226, 0071).
+
 Read-only operations don't need the conventions resolved; anything that writes a ticket does.
 
 ---
@@ -199,6 +213,14 @@ Read-only operations don't need the conventions resolved; anything that writes a
 
 Read `templates/item.md`. That template is the contract — every section exists because something
 downstream reads it.
+
+**Amend first: before minting, ask which open ticket's outcome this serves.** Search the open
+tickets' outcomes; where one is served, **Amend** it (Step 1) rather than minting. Mint only for work
+with an outcome of its own, and record in *Notes & decisions* which test you applied. A new ticket
+states its outcome first and is one outcome ticket even across many sessions: give it ordered slices
+in `## Progress` (`templates/item.md`), each about one develop session's work, folding adjacent small
+slices that touch the same files into one, and split off a ticket only where a part has an outcome
+of its own (`product-definition-conventions.md` → "Slice Vertically and Thinly").
 
 **Claim an ID under the lock** — reading `next_id`, using it, and writing back the increment unlocked is
 how two parallel runs both take 29. Release in the same turn; the item file, ranking and the row are all
