@@ -298,6 +298,46 @@ the leg named by `slice:` (fixture `0905`). It adds no route to a destructive ac
 Evidence set: `skills/queue/templates/handoff`, `skills/queue/templates/close`, `.tickets/handoff`,
 `.tickets/close`, `tests/handoff.test.sh`, `tests/close.test.sh`, `tests/declared-copies.test.sh`, `tests/*.test.sh`.
 
+### Leg S2 — verify (8ffc), 2026-11-18: PASS, not closing
+
+Leg verify per FR5: AC6 only (the AC S2 discharges), plus the whole suite. No AC is ticked — `close`
+ticks them once, at the closing leg. NFR rows are not discharged by this leg (AC16/AC17 sit on S6); the
+Compatibility row's check, the existing suite unchanged and green (`tests/sprint.test.sh`'s schema
+cases included), held at this SHA.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`; `unit` is the same
+files fail-fast). Subject: `e4439ad` (S2 = `6bfec33`, `a3ae3e6`). Copy executed: the repo's
+`skills/sprint/outcome.schema.json` and `tools/validate-json-schema.py`, which the test reads by repo
+path; the installed 0.9.48 schema has no `progressed`, which is expected until a release.
+`./next --ac-digest 0231 --check` → `0231: ac_digest matches`.
+Tree: `git status --porcelain` empty at Step 2 and after the last check, so the dirty set is empty and
+the advisory intersection is empty.
+
+Suite: 45 files, every one exit 0, every tally `0 failed`, none aborted. `tests/outcome-schema.test.sh`
+`12 passed, 0 failed`; `tests/sprint.test.sh` `389 passed, 0 failed, 0 skipped`;
+`tests/citations.test.sh` `52 passed, 0 failed`.
+
+**Clause table, every mutation re-run by this pass** in a detached worktree at `e4439ad`, applied to
+`skills/sprint/outcome.schema.json` or `tools/validate-json-schema.py`, diff confirmed non-empty,
+restored by path; control after `12 passed, 0 failed`, worktree clean:
+
+| AC6 clause | Mutation | Result (`tests/outcome-schema.test.sh`) |
+|---|---|---|
+| Given `outcome.schema.json` and `tools/validate-json-schema.py` | — (the test reads both by repo path; every row below mutates one of them) | — |
+| a `progressed` outcome with `slice: {done: S1, next: S2}` validates | M1 `progressed` removed from the verdict enum | red, 1 |
+| one with `progressed` and no `slice.next` fails | M2 schema `if`/`then` deleted | red, 2 |
+| (same) | M3 `then`'s `slice.required` reduced to `done` | red, 1 |
+| (same) | M4 validator ignores `if` | red, 4 |
+| (same, slice absent altogether) | M7 `then.required` emptied | red, 1 |
+| an existing `built` outcome with no `slice` still validates | M5 `slice` made required on every ticket | red, 1 |
+| (same) | M6 validator always applies `then` | red, 5 |
+
+Step 4, newly reachable: a schema enum value and an optional object; no route, permission or
+destructive action is added.
+Evidence set: `skills/sprint/outcome.schema.json`, `tools/validate-json-schema.py`,
+`tests/outcome-schema.test.sh`, `tests/sprint.test.sh`, `tests/*.test.sh`.
+
 ## Notes & decisions
 
 - 2026-11-18 — captured at Aaron's direction from the Traitors and Allies session of 2026-11-17, which
@@ -523,3 +563,7 @@ Evidence set: `skills/queue/templates/handoff`, `skills/queue/templates/close`, 
     the parked `claim` findings. Neither is in S2's scope.
   - The installed outcome schema (plugin 0.9.48) has no `progressed` until a release, so this leg
     reports `built` to its supervisor. S6 owes the CHANGELOG line for it.
+- 2026-11-18 — **verify (8ffc), leg S2: PASS.** AC6 checked literally, each clause mutated red by this
+  pass (*QA evidence*, Leg S2); full suite green at `e4439ad`. Handed back with `--slice S2` so S2
+  ticks; no AC ticked. Next leg: S3. `.tickets/claim` still needs `xxd` (parked); this claim passed a
+  token explicitly.
