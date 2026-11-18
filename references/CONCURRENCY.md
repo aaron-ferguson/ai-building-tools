@@ -224,6 +224,12 @@ claim stays invisible until something is written inside it.
   item" — where no such row existed and the next reader had no reason to doubt it. An unbuilt
   requirement quietly lost its home. Write "this still needs a row", never "this has a row", unless you
   are looking at the row.
+- **A claimed ticket is never amended, even by `queue`; the wait is bounded instead.** A long-lived
+  outcome ticket will often be claimed when a finding for it arrives, and a second writer in a held
+  item file has no merge protocol behind it. A folding-in by the holder would be worse: `develop`
+  changing criteria `queue` authored, which `ac_digest` exists to refuse (0195). So `queue` waits for
+  the release, claims, amends and hands back with `./handoff <id> <token> develop`. The wait is at most
+  one leg, because every leg releases at a slice boundary (`./handoff --slice`, 0231 FR18).
 - **A stage finding a ticket at another stage refuses it** — `develop` skips `next: design`, `verify`
   refuses anything not `next: verify`. That field keeps two stages off one ticket.
 - **`verify` owns closing**, holding the verdict when it acts, so no green goes stale.
