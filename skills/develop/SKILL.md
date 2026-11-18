@@ -595,7 +595,7 @@ work starts at the first unticked slice, and a leg is one or more consecutive sl
 slice as it lands** with a dated *Notes & decisions* line naming it and its SHA, so a killed leg loses
 at most the unfinished slice. **Continue into the next slice only when it touches files you already
 have open and this leg is still short of the 28.5-turn break-even** `MEASUREMENT.md` measures for
-carrying a session's climb into more work (*Would the re-entry after a FAIL be cheaper…*); otherwise
+carrying a session's climb into more work (its FAIL re-entry pricing); otherwise
 end the leg, since a fresh session for a normal slice is usually cheaper as well as fresher. Never
 meter spend: no session reads its running cost (`references/TRACKER.md`). A next slice marked
 `unspecified` is `design`'s. Unticked slices you may re-split or re-order with a dated note; an AC never.

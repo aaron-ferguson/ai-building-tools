@@ -201,7 +201,8 @@ block each cycle spends the one term the cost model above can actually move.
 
 The proposal states, all of it from that one call:
 
-- **How many tickets** the sprint expects to work.
+- **How many tickets** the sprint expects to work, inside **the envelope** — a budget in USD and
+  an end time, below.
 - **Which tickets**, by id and title.
 - **What the work is** for each, in one line drawn from the ticket rather than invented.
 - **Why these** — and where a gate is held together by a shared file, *which* file and how many rows
@@ -237,16 +238,13 @@ Confirm those ids as scope with the rest. The decision line still names the top 
 goes first, then build, and a related row comes out of design and joins the gate rather than being
 built and rebuilt (the *Design beside other stages* section).
 
-**A sprint carries at least three tickets, and about five is the target.** `--propose` names one
-gate, and **a gate is the batching unit, which is not the scope**: where the gate is shorter,
-`--propose` extends it down the rank order in whole gates and prints the sprint as `SPRINT` lines,
-design rows in the way included, so the run does not end on them. Confirm those as the scope. A
-`SHORT` line is the script saying the queue could not reach three; propose fewer otherwise only for
-a stated reason, such as a person needed. A ticket's develop and verify floors are paid in
-whichever sprint runs it, so extra tickets
-are not extra cost. Splitting them across sprints adds a supervisor floor, a tail and a run a person
-has to start, and a one-ticket sprint is slower and dearer than `/develop` by hand
-(2026-09-25, a person's correction).
+**A sprint is sized by an envelope, not a ticket count: a budget (USD) and an end time the person
+confirms.** Offer as defaults the estimate to finish the top outcome ticket, or to its next verified
+leg where that does not fit; `--propose`'s `SPRINT` and `SHORT` lines say what else the rank holds,
+not a floor to reach. Work is taken in rank order within the confirmed scope; tickets beyond the top
+one, and continuing past the scope, only where the person said so. **Refuse an envelope that cannot
+hold one develop leg plus its verify.** Record them in `scope_confirmed`: `budget_usd`, `deadline`
+(ISO UTC), the tickets named and any leave to continue — what `envelope` (Step 2) reads.
 
 **Where the confirmed scope is only part of a gate, name the rows left behind and what resuming them
 costs.** They were un-takeable while the rest is in progress anyway, so the real price is one
@@ -328,6 +326,21 @@ by-hand mode names. A `3` therefore means the queue is consistent AND spent; bef
 meant only the second, and a drifted backlog read to a driver as a finished one.
 **A `4` on a row a running design session holds is that session mid-write** — it adds an AC before
 re-stamping `ac_digest:`. Wait for its outcome and re-call with `--completed` before escalating.
+
+**Before every dispatch, ask the envelope**: `tools/sprint-ledger.sh envelope --run <run log>
+--stage <stage> --config .tickets/config.yml --measurement MEASUREMENT.md`. `CONTINUE` (exit 0)
+dispatches; `STOP <reason>` (exit 3) ends the run at the boundary it is on, always a clean one; exit 1
+is an unreadable log and stops it too. It counts stage spend only — the supervisor's own and a resumed
+stage's earlier legs are in no outcome — so it understates: leave margin.
+
+**A sliced ticket is its own dispatch unit, a leg per session** (`templates/item.md`, `## Progress`).
+A leg ending in `progressed` gets the next leg's `develop`; one returning `built` gets one `verify`,
+whose `pass` with `next: develop` sends the next leg. A started sliced ticket is finished first.
+
+**Every outcome leaving a row `waiting` sends one notification line** — ticket, decision, and where
+the brief is — never in place of the brief. Every escalation the run reports is that brief
+(`templates/item.md`, `## Waiting on`): outcome, where it stands, what needs the person, two or more
+options, a recommendation, what to do, and what waits if no answer comes.
 
 **The dispatch unit is a gate, not a row.** `--drive` prints the whole gate — the topmost takeable
 row plus every other takeable row sharing its `expects:` scope or its parent slice, capped at
@@ -697,6 +710,11 @@ redundant: a project parking two findings a sprint never reaches a threshold of 
 it that buffer is never swept and the lessons in it are never landed. `./next --findings` reports
 both and `--drive` spends exit `5` on either, saying which.
 
+**A `waiting` row does not end a run that has other work.** Given `--scope`, `--drive` steps over an
+in-scope `waiting` row with a `NOTE` while other in-scope work is takeable, exiting `4` only when none
+is; an out-of-scope `waiting` or `next: queue` row is stepped over with a `NOTE`, as an out-of-scope
+design row is, so it never masks exit `5` (`templates/next`).
+
 **An uncrossed gate dispatches neither tail stage, and the findings carry forward untouched** to be
 swept by a later sprint alongside its own. A sprint that parks nothing ends with no tail at all: the
 tail is roughly USD 6.75 — `retro` plus `queue` at `MEASUREMENT.md`'s per-session means, which is
@@ -857,10 +875,11 @@ with the derivation beside it**, never a figure chosen here and never one rounde
   own — `CONCURRENCY.md`, *Claim tokens*. A supervisor holding rows it is not working is the scope
   reservation *The working tree is shared too* forbids, and every `in-progress` row during a run
   should correspond to a stage process that is actually running.
-- **It never answers a design question, narrows a contract, or writes a ticket.** A `waiting` row, a
-  `next: queue` row, a `next: design` row outside the confirmed scope, a stale FR and a ticket that
+- **It never answers a design question, narrows a contract, or writes a ticket.** A `waiting` row
+  with nothing else in scope takeable, an in-scope `next: queue` row, a stale FR and a ticket that
   needs splitting are all escalations: name what must be decided and stop. An in-scope design row is answered by the `design`
-  session it dispatches, never by the supervisor. Queuing new work and designing tickets are escalations, not automation.
+  session it dispatches, never by the supervisor; on taste, architecture or security that session
+  prepares a brief and leaves the row `waiting`, never deciding (`design` Step 3). Queuing new work and designing tickets are escalations, not automation.
   The one exception is the proposal's repair first: the person choosing it has answered that
   escalation, so the `queue` session minting the repair row is dispatched rather than escalated.
 - **It never runs two stage sessions at once, except a design session beside a develop, verify or design session**

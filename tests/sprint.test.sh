@@ -3071,19 +3071,6 @@ else
   fi
 fi
 
-echo "Scope size — a proposal carries three to five tickets, and a one-ticket gate is not the scope"
-# 2026-09-25, a person's correction: --propose named a one-ticket gate and the supervisor
-# recommended that one ticket, pricing each extra ticket as "another session floor". That price is
-# paid in whichever sprint the ticket runs; splitting only adds a supervisor floor, a tail and a
-# person-started run. A one-ticket sprint is slower and dearer than /develop by hand.
-if says_ci "$SKILL" "The proposal" 'at least three tickets' && \
-   says_ci "$SKILL" "The proposal" 'is not the scope' && \
-   says_ci "$SKILL" "The proposal" 'paid in whichever sprint'; then
-  ok "the proposal extends a short gate down the rank to three-to-five tickets, and says why"
-else
-  bad "scope size — the proposal section does not require at least three tickets, or does not say a one-ticket gate is not the scope and why"
-fi
-
 echo "0184 — the supervisor commits its park by pathspec before it releases the lock"
 # 0184: Step 9 said "Take that backlog's lock, append, release it" and never said commit, so the
 # supervisor's park sat uncommitted and the next stage dispatched onto the tree inherited a dirty
