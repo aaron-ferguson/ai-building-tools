@@ -381,6 +381,7 @@ tests/handoff.test.sh                    # ./handoff — all five fields land or
 tests/item-ac-form.test.sh               # every item's criteria are in the one form close can tick
 tests/item-nfr-red.test.sh               # every open item's NFR rows say how they would red, not a bare file
 tests/money-in-skill-prose.test.sh       # no skill file writes a dollar figure that argument substitution would eat
+tests/outcome-schema.test.sh             # a progressed outcome must name its next slice; the validator's if/then
 tests/qa-level-once.test.sh              # the QA level is written in one place in the item template
 tests/release.test.sh                    # tools/release verifies the install against the pushed commit
 tests/remote-anchor.test.sh              # a session editing a tool repo anchors to the remote first
