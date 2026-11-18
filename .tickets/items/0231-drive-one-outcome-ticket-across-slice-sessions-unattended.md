@@ -521,6 +521,57 @@ reachable); `envelope` is a read-only new mode. No route to push, release or a d
 Evidence set: `skills/queue/templates/handoff`, `.tickets/handoff`, `tools/sprint-ledger.sh`,
 `tests/handoff.test.sh`, `tests/sprint-ledger.test.sh`, `tests/declared-copies.test.sh`, `tests/*.test.sh`.
 
+### Leg S5 re-entry — verify (e4a7), 2026-11-18: PASS, not closing
+
+Leg verify per FR5: AC13 and AC14 only, plus the whole suite. No AC is ticked; S6 remains.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`), each file's exit
+captured. Subject: `36694aa` (claim over `2493e71`; the re-entry change is `575ec14`, test-only).
+Copy executed: the repo's `skills/queue/templates/handoff` (`HANDOFF_SRC`; `.tickets/handoff`
+byte-identical by `cmp`) and `tools/sprint-ledger.sh` (`TOOL`).
+`./next --ac-digest 0231 --check` → `0231: ac_digest matches`.
+Tree: `git status --porcelain` empty at Step 2 and after the last check; dirty set empty, advisory
+intersection empty.
+
+Suite: 45 files, all `EXIT 0`. `tests/handoff.test.sh` `250 passed, 0 failed`;
+`tests/sprint-ledger.test.sh` `229 passed, 0 failed`; `tests/declared-copies.test.sh`
+`declared-copies: 23 passed, 0 failed`.
+
+**Clause table reused from b5c7 (no new division). Every mutation was re-run by this pass** in a
+detached worktree at `36694aa`, by a script that required each pattern exactly once, confirmed
+`git diff --stat` non-empty, ran the owning test file and restored by path. Control before and
+after: handoff `250 passed, 0 failed`, sprint-ledger `229 passed, 0 failed`; worktree clean, then
+removed.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC13 | Given `## Waiting on` lacks `### If no answer`, `handoff design waiting` | fixture `0911` (`brief_text`), destination `design` | — |
+| AC13 | refuses (lacking `### If no answer`) | H2 drop it from the wanted list | red, 242/8 |
+| AC13 | refuses (one `#### Option`) | H3 threshold `< 1` | red, 244/6 |
+| AC13 | naming the missing part | H5 `missing <heading>` → `missing a part`; H6 options-count message → `incomplete` | red, 241/9; red, 248/2 |
+| AC13 | and changes nothing | H4 refusal does not exit | red, 225/25 |
+| AC13 | the check at all / on a `design` hand-off | H1 check off; H8 `design` destination exempted | red, 212/38; red, 216/34 |
+| AC13 | every subsection with two options → succeeds | H7 success needs three options | red, 246/4 |
+| AC14 | Given a run log whose `scope_confirmed` carries budget and deadline | fixtures `env_log`, `--now` pinned | — |
+| AC14 | outcomes so far leave less than the estimate → `STOP` | E1 budget test off; E2 window test off; E4 spend not summed; E11 run-log estimate ignored; E12 deadline-passed test off | red, 221/8; red, 226/3; red, 221/8; red, 228/1; red, 227/2 |
+| AC14 | exits non-zero | E3 STOP exits 0 | red, 224/5 |
+| AC14 | **naming budget** | E8 STOP reason `budget:` → `over:` | **red, 228/1** — `FAIL the STOP line names budget -- wanted 'budget' in: STOP  over: 3.00 left, develop needs an estimated 7.00` |
+| AC14 | **naming time** | E9 `time: %d min left` → `over: %d min left`; E13 `time: the deadline` → `over: the deadline` | **red, 228/1** — `FAIL the STOP line names time -- wanted 'time' in: STOP  over: 20 min left, develop needs an estimated 40 min`; red, 228/1 |
+| AC14 | enough left → `CONTINUE` | E5 `CONTINUE` → `GO` | red, 228/1 |
+| AC14 | and exit 0 | E10 CONTINUE exits 3 | red, 227/2 |
+| AC14 | no ledger prior → uses the stage cap | E6 estimate 0 instead of the cap | red, 225/4 |
+| AC14 | and says so | E7 `no prior: the stage cap` label dropped | red, 228/1 |
+
+b5c7's gap is closed: E8 and E9 now red. No mutation stayed green, so the gap test has nothing to report.
+
+Step 4. Compatibility row (only an item that has `## Waiting on` is checked): mutating the scope
+away (`&& grep -q '^## Waiting on' "$item"` removed) reddens `tests/handoff.test.sh` (`FAIL — exits 0`,
+`FAIL — the row reads develop | waiting`), so the row is guarded. Security and Documentation rows are
+S6's (AC17), not this leg's. Newly reachable: unchanged from b5c7; the re-entry is test-only.
+Evidence set: `skills/queue/templates/handoff`, `.tickets/handoff`, `tools/sprint-ledger.sh`,
+`tests/handoff.test.sh`, `tests/sprint-ledger.test.sh`, `tests/declared-copies.test.sh`, `tests/*.test.sh`.
+
 ## Notes & decisions
 
 - 2026-11-18 — captured at Aaron's direction from the Traitors and Allies session of 2026-11-17, which
@@ -956,3 +1007,7 @@ Evidence set: `skills/queue/templates/handoff`, `.tickets/handoff`, `tools/sprin
   afterwards gave `229 passed, 0 failed`, with `git status` clean. Whole suite: 45 files, 0 red, at
   `575ec14`. No other AC14 row moved, so the rest of b5c7's clause table stands. S6 has not been
   started.
+- 2026-11-18 — **verify (e4a7), leg S5 re-entry: PASS, handed back to develop with `--slice S5`.**
+  AC13 and AC14 hold, and this pass ran every mutation in b5c7's clause table again (*QA evidence*, Leg S5
+  re-entry). E8 and E9, the b5c7 gap, now each go red at `228 passed, 1 failed` under `575ec14`'s
+  `^STOP`-scoped assertions. Suite green at `36694aa`, 45 files. No AC ticked; S6 (AC16, AC17) is next.
