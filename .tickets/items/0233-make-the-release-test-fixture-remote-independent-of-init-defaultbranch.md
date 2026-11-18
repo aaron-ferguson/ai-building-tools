@@ -125,8 +125,8 @@ so `git log` here cannot confirm either commit.
     | M1 — `$REMOTE` init back to `git init -q --bare "$REMOTE"` (AC1/AC2's red) | ABORTED, `remote HEAD refers to nonexistent ref` | ABORTED, same | 63 passed, 0 failed |
     | M2 — `$REMOTE2` init back to no `-b` | 63 passed | 63 passed | 63 passed |
     | control (restored) | 63 passed | 63 passed | 63 passed |
-    M2 is green because nothing clones `$REMOTE2` today: only pushes and `ls-remote`-style reads
-    reach it, and those never resolve its `HEAD`. The `-b main` there is FR1's "pushes to" clause
+    M2 is green because nothing clones `$REMOTE2` today: only pushes and
+    reach it (lines 498, 584: `git -C "$REMOTE2" rev-parse main`, an explicit ref), and those never resolve its `HEAD` (checked by grep). The `-b main` there is FR1's "pushes to" clause
     applied ahead of a clone. **No assertion can tell its presence from its absence**; it is stated
     here so a later reader does not take the green M2 as a missing guard.
   - Whole suite (`for t in tests/*.test.sh`) at `bd2d7e4` with a clean `git status`: all 44 files
