@@ -53,4 +53,4 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
-- 2026-11-18 — **`tests/sprint.test.sh` AC26 reds on any digit in a comment *after* the `stage_budget_usd:` key in `skills/queue/templates/config.yml`.** Its awk window closes only on a non-`#`, non-space line, so it spans the following sections' comment blocks; a retro adding "(its Step 6)" to the `review:` comment read as "the template ships a cap figure". Reworded to pass; the guard's window, not the edit, was wrong. (pointer: tests/sprint.test.sh, the `tpl_state` awk; retro run-20261118T074205Z)
+- 2026-11-18 [->none] — **`tests/sprint.test.sh` AC26 reds on any digit in a comment *after* the `stage_budget_usd:` key in `skills/queue/templates/config.yml`.** Its awk window closes only on a non-`#`, non-space line, so it spans the following sections' comment blocks; a retro adding "(its Step 6)" to the `review:` comment read as "the template ships a cap figure". Reworded to pass; the guard's window, not the edit, was wrong. (pointer: tests/sprint.test.sh, the `tpl_state` awk; retro run-20261118T074205Z)
