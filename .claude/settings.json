@@ -13,5 +13,16 @@
       "WebSearch",
       "Workflow"
     ]
+  },
+  "extraKnownMarketplaces": {
+    "ai-building-tools": {
+      "source": {
+        "source": "github",
+        "repo": "aaron-ferguson/ai-building-tools"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "ai-building-tools@ai-building-tools": true
   }
 }
