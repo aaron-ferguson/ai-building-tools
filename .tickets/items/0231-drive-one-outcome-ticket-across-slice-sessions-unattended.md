@@ -252,6 +252,52 @@ hand.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
 
+### Leg S1 — verify (0a93), 2026-11-18: PASS, not closing
+
+Leg verify per FR5: AC1–AC5 only (the ACs S1 discharges), plus the whole suite. No AC is ticked —
+`close` ticks them once, at the closing leg. NFR rows are not discharged by this leg (AC16/AC17 sit on
+S6); the Compatibility row's check, the existing suite unchanged and green, held at this SHA.
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`; `unit` is the same
+files fail-fast). Subject: `0918f6c` (S1 = `fb7255a`, `56cebad`). Copy executed: the repo's
+`skills/queue/templates/{handoff,close}` (the harness copies them); `.tickets/{handoff,close}` byte-identical.
+`./next --ac-digest 0231 --check` → `0231: ac_digest matches`.
+Tree: `git status --porcelain` empty at Step 2 and after the last check, so the dirty set is empty and
+the advisory intersection is empty.
+
+Suite: 44 files, 44 tallies reading `0 failed`, no `ABORTED`. `tests/handoff.test.sh` `208 passed, 0 failed`;
+`tests/close.test.sh` `322 passed, 0 failed`; `tests/declared-copies.test.sh` `23 passed, 0 failed`.
+(The three baseline reds in the build notes — `release`, `sprint`, `item-nfr-red` — are green at this SHA.)
+
+**Clause table, every mutation re-run by this pass** in a detached worktree at `0918f6c`, applied to
+`skills/queue/templates/{handoff,close}`, diff confirmed non-empty, restored by path, control green after
+(handoff `208 passed, 0 failed`, close `322 passed, 0 failed`, worktree clean):
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC1 | Given: three slices, S1 discharges none; `handoff develop --slice S1` | fixture `0901`, `tests/handoff.test.sh` | — |
+| AC1 | S1 ticked | develop→develop `TICK_LEG=""` | red, 2 (`S1 is ticked`, `and the leg is ticked`) |
+| AC1 | `slice: S1` | `slice:` line kept, not rewritten | red, 16 |
+| AC1 | `claimed_by:` empty, `next: develop`, `status: ready` | `claimed_by:` kept | red, 58 |
+| AC2 | dirty `touches:` path → non-zero, item/row/log unchanged | dirty check returns empty | red, 5 (`exits non-zero`, `byte-identical`, `git log is unchanged`, …) |
+| AC2 | naming that path | dirty-path listing deleted | red, 1 (`names the dirty touches: path`) |
+| AC2 | dirty path not in `touches:` → succeeds | dirty check over the whole tree | red, 16 |
+| AC3 | develop→develop `--slice S2` refuses naming `verify` | AC refusal off | red, 8 |
+| AC3 | develop→verify: `slice: S2`, neither ticked | develop→verify sets `TICK_LEG=1` | red, 3 |
+| AC3 | verify→develop `--slice S2` ticks S1 and S2 | verify-pass `TICK_LEG=""` | red, 2 |
+| AC3 | verify→develop without `--slice` ticks neither | tick every slice when `--slice` absent | red, 2 (fixture `0904`) |
+| AC4 | `unspecified` in the leg → refuses naming `design`, unchanged | unspecified refusal off | red, 6 (both destinations) |
+| AC5 | earlier slice unticked → `close` refuses naming it | gap refusal off (`tests/close.test.sh`) | red, 4 |
+| AC5 | all earlier ticked → closes, ticks the closing leg | closing-leg tick deleted | red, 2 |
+| AC5 | in the close commit | not mutated; asserted by `rev-list --count HEAD` = 2 | guarded by assertion, unmutated |
+
+Step 4, newly reachable: `--slice` is a new path into `handoff`. It is accepted only on
+develop→develop, develop→verify and verify→develop at status `ready`, and a verify pass can tick only
+the leg named by `slice:` (fixture `0905`). It adds no route to a destructive action.
+Evidence set: `skills/queue/templates/handoff`, `skills/queue/templates/close`, `.tickets/handoff`,
+`.tickets/close`, `tests/handoff.test.sh`, `tests/close.test.sh`, `tests/declared-copies.test.sh`, `tests/*.test.sh`.
+
 ## Notes & decisions
 
 - 2026-11-18 — captured at Aaron's direction from the Traitors and Allies session of 2026-11-17, which
@@ -425,3 +471,6 @@ hand.
   - **Not done in this leg, for the next ones:** `.tickets/claim` does not seed `touches:` from a
     flow-style `expects: [a, b]` (it reads block lists only), and needs `xxd` to mint a token —
     both parked in `FINDINGS-HELD.md`, neither in this ticket's scope.
+- 2026-11-18 — **verify (0a93), leg S1: PASS.** AC1–AC5 checked literally, and each clause was
+  mutated red by this pass (*QA evidence*, Leg S1). The full suite is green at `0918f6c`. Handed back with
+  `--slice S1` so S1 ticks; no AC ticked. Next leg: S2.
