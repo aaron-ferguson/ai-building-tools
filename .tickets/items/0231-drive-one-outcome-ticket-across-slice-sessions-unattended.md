@@ -18,6 +18,12 @@ ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=
 claimed_by: "46a6"
 claimed_at: 2026-11-18T15:24:18Z
 touches:
+  - skills/queue/templates/handoff
+  - .tickets/handoff
+  - tests/handoff.test.sh
+  - tools/sprint-ledger.sh
+  - tests/sprint-ledger.test.sh
+  - .tickets/items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md
 slice: S4
 ---
 
