@@ -382,6 +382,16 @@ verdict file exists or is needed. **Banking one was considered and rejected**: a
 tick the next session did not write, and a file hash certifies which bytes were read, never that the
 earlier pass mutated the right behaviour and saw it go red.
 
+**A sliced ticket is verified once per leg, never once per slice.** A ticket carrying `## Progress`
+arrives with `slice:` naming the last slice of the leg `develop` handed you (`templates/item.md`).
+Check **that leg's ACs literally, plus the whole suite**, and tick no AC. A pass hands back with
+`./handoff <id> <token> develop --slice S<n>`, S<n> equal to `slice:`, which ticks the leg's slices;
+report `pass` with `next: develop`. A fail hands back without `--slice`, unchanged, ticking nothing.
+**The leg holding the last slice is the closing verify, and it checks every AC**, since an earlier
+leg's pass cannot survive a later regression; `./close` ticks the ACs and that leg's slices once, and
+refuses while an earlier slice is unticked. A leg discharging no AC never reaches you. It is a gate's
+rule too: what was developed together is verified in one session.
+
 **On green, close it with `./close`** — one step, and the supported path:
 
 ```bash
@@ -461,6 +471,9 @@ reading the result back first:
 .tickets/handoff 0007 8a04 queue             # stale contract — re-specify it, not you
 .tickets/handoff 0007 8a04 develop waiting   # a person is needed
 ```
+
+A `waiting` hand-off over a `## Waiting on` that is not the whole decision brief `templates/item.md`
+lays out is refused, naming what is missing; write the brief, then hand off.
 
 By hand, under the lock, committed before you release it — the fallback where the script is not
 installed: the same five fields, in one `Edit` per file.
