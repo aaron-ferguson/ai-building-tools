@@ -18,6 +18,14 @@ ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=
 claimed_by: "7295"
 claimed_at: 2026-11-18T07:24:22Z
 touches:
+  - skills/queue/templates/handoff
+  - .tickets/handoff
+  - skills/queue/templates/close
+  - .tickets/close
+  - skills/queue/templates/item.md
+  - .tickets/item.md
+  - tests/handoff.test.sh
+  - tests/close.test.sh
 ---
 
 ## Problem
