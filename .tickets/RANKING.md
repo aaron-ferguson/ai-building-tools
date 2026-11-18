@@ -25,6 +25,9 @@ in above these rows by being newer or more interesting.
 
 ## The order now, by the argument that placed it
 
+**0231 — row 1, inserted 2026-11-18.** Aaron's stated goal for the suite is unattended progress, and the conventions now size tickets by outcome (`a325686`), so every consumer backlog is being written in the shape `sprint` cannot drive past one leg without a cap kill. Blast radius all projects (tie-breaker 1) puts it above 0064, which it does not otherwise touch. A `design` row: `develop` takes 0064 meanwhile.
+
+
 | Rows, in queue order | Why they sit together | Full argument |
 |---|---|---|
 | **0085** | Row 1, inheriting the position `0073` held as the diagnosis. It is Aaron's standing token-efficiency instruction with a measured target behind it — 41.9% of every turn in the suite is the backlog protocol — and the only row whose cost is paid by every session working every other row. Nothing was moved to make room. | *2026-09-02*, "0085 goes to row 1" |
