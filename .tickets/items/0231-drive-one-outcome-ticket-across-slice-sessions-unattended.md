@@ -18,6 +18,9 @@ ac_digest: AC1=d8fb5dee AC2=315e6e9d AC3=7c1fb14c AC4=a8520dae AC5=d6c01921 AC6=
 claimed_by: "1995"
 claimed_at: 2026-11-18T15:07:16Z
 touches:
+  - skills/queue/templates/next
+  - .tickets/next
+  - tests/next.test.sh
 slice: S3
 ---
 
