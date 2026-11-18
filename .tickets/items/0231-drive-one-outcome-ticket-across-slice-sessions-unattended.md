@@ -1023,3 +1023,40 @@ Evidence set: `skills/queue/templates/handoff`, `.tickets/handoff`, `tools/sprin
   AC13 and AC14 hold, and this pass ran every mutation in b5c7's clause table again (*QA evidence*, Leg S5
   re-entry). E8 and E9, the b5c7 gap, now each go red at `228 passed, 1 failed` under `575ec14`'s
   `^STOP`-scoped assertions. Suite green at `36694aa`, 45 files. No AC ticked; S6 (AC16, AC17) is next.
+- 2026-11-18 — **develop (5c6e), leg S6: built, handed to verify with `--slice S6` — the closing
+  verify.** Commits `55ac883` (`templates/item.md` brief), `8ec83f0` (develop), `1b826c8` (verify),
+  `e70b168` (design), `7efcba1` (sprint, plus the guard deletion below and a develop citation fix),
+  c1223d0 (queue), `1a17811`
+  (`CONCURRENCY.md`), `6931ff6` (README), `b661e88` (CHANGELOG), `19f76e4` (`next --help`, template and
+  `.tickets/next` byte-identical). S6 is one slice, so the leg is S6 alone.
+  - **Where AC17's items landed, for the read:** `skills/queue/templates/item.md` `## Waiting on`
+    (the seven-part brief; `## Progress`, `slice:` and `unspecified` were already there from S1);
+    `skills/develop/SKILL.md` Step 5, *A sliced ticket is worked a leg at a time* (FR3, citing
+    `MEASUREMENT.md`'s 28.5-turn break-even), and `PROGRESSED` on the hand-off line;
+    `skills/verify/SKILL.md` Step 5, the paragraph opening *A sliced ticket is verified once per leg*;
+    `skills/design/SKILL.md` Step 3, *Unattended …* (prepare, brief, `design waiting`, verdict
+    `blocked`, **never record the decision**), and Step 4's `unspecified`-slice line (FR2);
+    `skills/sprint/SKILL.md` — the proposal's envelope paragraph (FR12, field names `budget_usd` and
+    `deadline` as S5 built them), Step 2's envelope check, leg routing and FR14 notification, Step 6's
+    waiting step-over (FR9), Step 8's design bullet (FR15), Step 8's first bullet unchanged (push,
+    bump, install, restart); `skills/queue/SKILL.md` — Step 1's Merge row and *Merging tickets into
+    one outcome* (FR17), the Amend bullet's bounded wait (FR18), Step 2's *Amend first* paragraph
+    (FR16, with FR1's slice-authoring guidance); `references/CONCURRENCY.md`, *A stage writes only the
+    ticket it holds*, first new bullet (FR18's reasoning).
+  - **AC16, for the closing verify to judge — one existing case was deleted, not edited.**
+    `tests/sprint.test.sh`'s *Scope size* block asserted the proposal says `at least three tickets`.
+    FR12 replaces exactly that floor, so the guard asserts a rule this ticket reverses; `CLAUDE.md`
+    (*Tests*) says a prose guard that reds on correct wording is deleted, not re-anchored, so it was
+    deleted (`7efcba1`) rather than satisfied by keeping the phrase in prose that no longer means it.
+    If the closing verify reads AC16's "no existing case edited to pass" as covering a deletion, that is
+    a criterion conflict for `queue`, not a red to fix here. The *0130 AC3* `how many tickets` element
+    still passes unedited: the proposal bullet still names how many tickets, now inside the envelope.
+  - **Sizes:** develop 55,376 (bound 55,862), verify 48,187 (50,522), sprint 64,766 (65,813), queue
+    50,839 (53,538), design under the goal; no reason re-argued, `tests/skill-size.test.sh` 45/0.
+    `tests/skill-size.test.sh` was declared in `touches:` and not changed.
+  - **Not done, and not this ticket's:** `--propose` still prints `SPRINT`/`SHORT` lines that extend
+    toward three tickets; the sprint prose now calls them what the rank holds, not a floor. Making
+    `--propose` emit envelope defaults is script work no FR asked for (S4's verify note on FR12's
+    scope-bounded continuation stands: `next` does not enforce it, the supervisor does via `envelope`).
+  - **Whole suite at `19f76e4`: 45 files, every one exit 0**, `git status --porcelain` clean at the run.
+    No mutation sweep this leg: AC17 is a read and this repo adds no prose guards; AC16 is the suite.
