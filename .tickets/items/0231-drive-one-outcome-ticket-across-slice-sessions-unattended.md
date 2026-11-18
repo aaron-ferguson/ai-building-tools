@@ -3,7 +3,7 @@ id: "0231"
 title: Drive one outcome ticket across slice sessions unattended
 type: feature
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,8 +15,8 @@ blocked_by: []
 relates: ["0071", "0149", "0220", "0226", "0212", "0137", "0128"]
 expects: [skills/sprint/SKILL.md, skills/sprint/outcome.schema.json, skills/develop/SKILL.md, skills/verify/SKILL.md, skills/queue/SKILL.md, skills/queue/templates/item.md, skills/queue/templates/next, skills/queue/templates/handoff, skills/queue/templates/claim, skills/queue/templates/close, skills/queue/templates/config.yml, references/CONCURRENCY.md, tests/next.test.sh, tests/handoff.test.sh, tests/batching.test.sh, CHANGELOG.md]
 ac_digest: AC1=16d514b5 AC2=2b8c9086 AC3=6dd5577b AC4=5519976d AC5=9d8b6a77 AC6=54f704e7
-claimed_by:
-claimed_at:
+claimed_by: "e4ad"
+claimed_at: 2026-11-18T05:55:57Z
 touches:
 ---
 
