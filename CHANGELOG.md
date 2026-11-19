@@ -28,6 +28,10 @@ the release session, because only a whole-release view can say it.
 - `/queue` amends the open ticket whose outcome new work serves before minting an id, gains a Merge operation (withdraw each absorbed ticket with a pointer, quote reported evidence verbatim, re-point `blocked_by:`), and waits for a claimed ticket's leg to release rather than amending it (0231).
 - The sprint supervisor's lock-age check now works on Linux: it reads the lock's mtime with GNU `stat -c %Y` first and falls back to BSD `stat -f %m`, where it used to error before deciding aged or fresh (0232).
 
+### Did not change
+
+`retro` and `prototype`, `./claim`, `./migrate` and `tools/release` are as they were. A ticket with no `## Progress` section is worked, handed off and closed exactly as in 0.9.48, and rows already `waiting` are not re-checked against the new brief rule.
+
 ## 0.9.48 — 2026-11-08
 
 - `verify` re-syncs a backlog's stale scripts when `./next` answers `unknown stage: --ac-digest`, rather than recording the digest as unverifiable and passing.
