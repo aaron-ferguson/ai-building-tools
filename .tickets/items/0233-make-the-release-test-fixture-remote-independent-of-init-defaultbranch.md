@@ -3,7 +3,7 @@ id: "0233"
 title: Make the release test's fixture remote independent of init.defaultBranch
 type: bug
 next: verify
-status: waiting
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual: AC4 — `tests/release.test.sh` run on a real macOS machine, the author

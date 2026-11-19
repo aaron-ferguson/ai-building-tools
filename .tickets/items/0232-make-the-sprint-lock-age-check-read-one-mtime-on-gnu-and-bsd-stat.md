@@ -3,7 +3,7 @@ id: "0232"
 title: Make the sprint lock-age check read one mtime on GNU and BSD stat
 type: bug
 next: verify
-status: waiting
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual: AC4 — `tests/sprint.test.sh` run on a real macOS machine (BSD stat), the author
