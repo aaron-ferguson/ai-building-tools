@@ -14,6 +14,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+## 0.9.49 — 2026-11-19
+
 - `design` hands a decision-only ticket (`qa_level: verify` or `review`, nothing to build) to `verify` rather than `develop`.
 - The `config.yml` template's `review: checklist:` example now points inside `.tickets/`, the only place `queue` commits, so a `review` ticket's checklist can be created by the stage that files it.
 - A ticket can be one outcome worked across many sessions: `templates/item.md` gains a `## Progress` section of ordered slices (each `— discharges AC…`, `— discharges none` or `— unspecified`) and a `slice:` field. `./handoff <id> <token> <stage> --slice S<n>` ends a leg: develop → develop ticks AC-less slices, develop → verify ticks nothing, and a verify pass handed back with `--slice` ticks the leg. It refuses a leg holding an AC on develop → develop, an `unspecified` slice (naming `design`), and any dirty path in the item's `touches:`. `./close` on a sliced ticket refuses while an earlier slice is unticked and ticks the closing leg with the ACs. A ticket with no `## Progress` behaves as before (0231).
