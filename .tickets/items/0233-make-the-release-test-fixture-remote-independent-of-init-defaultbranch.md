@@ -77,7 +77,7 @@ so `git log` here cannot confirm either commit.
 - [x] AC3 — Given the same file, when the run completes, then the cases after line 259 at
   `cab450d` — "0084 AC5 …" and "0041 — CLAUDE.md says what to do when the bump refuses …" — each
   appear in the output. Red: any abort before them drops them from the output.
-- [ ] AC4 — Given a real macOS machine, when `tests/release.test.sh` runs, then it prints its tally
+- [x] AC4 — Given a real macOS machine, when `tests/release.test.sh` runs, then it prints its tally
   with 0 failed. Manual — see `qa_manual:`.
 
 ## QA plan
@@ -104,6 +104,8 @@ so `git log` here cannot confirm either commit.
   needs deploying: the check is a local test run.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**AC4 2026-11-18 (verify, token 92d7): PASS on real macOS (Darwin, BSD `stat`).** The author's Mac, `main` at `e7b40bb` (merge of the cloud branch, includes the fix): `tests/release.test.sh` → `63 passed, 0 failed`. Whole suite green on the same commit. The author approved the close.
 
 **Verdict 2026-11-18 (verify, token 016f): AC1–AC3 PASS on Linux; AC4 is a manual check → `waiting`.**
 

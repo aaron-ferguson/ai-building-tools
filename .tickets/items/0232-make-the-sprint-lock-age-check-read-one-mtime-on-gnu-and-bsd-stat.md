@@ -116,7 +116,7 @@ ticket is 0040 (AC25, QA evidence rows "aged lock escalates" / "younger lock wai
   respectively, each `<n>` a bare integer. Red: a block calling `stat -c %Y` unguarded (GNU-only)
   reds this case under the shim; the original `stat -f … || stat -c …` form reds AC1 under GNU —
   so no single-platform form passes both.
-- [ ] AC4 — Given a real macOS machine, when `tests/sprint.test.sh` runs, then the tally reports 0
+- [x] AC4 — Given a real macOS machine, when `tests/sprint.test.sh` runs, then the tally reports 0
   failed. Red: a fix that only works under GNU `stat` (e.g. `stat -c %Y` alone) reds the AC25 cases
   there. Manual — see `qa_manual:`.
 
@@ -146,6 +146,8 @@ ticket is 0040 (AC25, QA evidence rows "aged lock escalates" / "younger lock wai
   is a local test run.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
+
+**AC4 2026-11-18 (verify, token 95c4): PASS on real macOS (Darwin, BSD `stat`).** The author's Mac, `main` at `e7b40bb` (merge of the cloud branch, includes the fix): `tests/sprint.test.sh` → `388 passed, 0 failed, 0 skipped`. Whole suite green on the same commit. The author approved the close.
 
 **Verdict 2026-11-18 (verify, token fcf2): AC1–AC3 PASS on Linux; AC4 is a manual check → `waiting`.**
 Not advisory: `git status --porcelain` printed nothing at Step 2, so the dirty set was empty
