@@ -26,6 +26,7 @@ the release session, because only a whole-release view can say it.
 - `/sprint` sizes a run by a budget and an end time the person confirms instead of a three-to-five ticket count, recorded as `budget_usd` and `deadline` on `scope_confirmed`, and asks `tools/sprint-ledger.sh envelope` before every dispatch, ending at a clean boundary on `STOP`. Every outcome that leaves a row waiting sends a one-line notification pointing at the brief, and every escalation is written as that brief (0231).
 - `/design`, run where no one can be asked, prepares a decision that turns on taste or is an architecture or security choice — spikes, options, a recommendation as a decision brief — and leaves the row `waiting`; it never records the decision (0231).
 - `/queue` amends the open ticket whose outcome new work serves before minting an id, gains a Merge operation (withdraw each absorbed ticket with a pointer, quote reported evidence verbatim, re-point `blocked_by:`), and waits for a claimed ticket's leg to release rather than amending it (0231).
+- The sprint supervisor's lock-age check now works on Linux: it reads the lock's mtime with GNU `stat -c %Y` first and falls back to BSD `stat -f %m`, where it used to error before deciding aged or fresh (0232).
 
 ## 0.9.48 — 2026-11-08
 

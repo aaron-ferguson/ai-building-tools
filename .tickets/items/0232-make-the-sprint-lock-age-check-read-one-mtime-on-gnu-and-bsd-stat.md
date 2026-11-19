@@ -2,8 +2,8 @@
 id: "0232"
 title: Make the sprint lock-age check read one mtime on GNU and BSD stat
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 qa_manual: AC4 — `tests/sprint.test.sh` run on a real macOS machine (BSD stat), the author
@@ -17,10 +17,11 @@ expects:
   - skills/sprint/SKILL.md
   - tests/sprint.test.sh
 ac_digest: AC1=fc0f67b8 AC2=577af61a AC3=e1b45118 AC4=f85bc0c4
-claimed_by: "95c4"
-claimed_at: 2026-11-19T00:57:10Z
+claimed_by:
+claimed_at:
 touches:
 slice:
+closed: 2026-11-19
 ---
 
 ## Problem
