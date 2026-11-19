@@ -2,8 +2,8 @@
 id: "0233"
 title: Make the release test's fixture remote independent of init.defaultBranch
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 qa_manual: AC4 — `tests/release.test.sh` run on a real macOS machine, the author
@@ -16,10 +16,11 @@ relates: ["0084", "0228"]
 expects:
   - tests/release.test.sh
 ac_digest: AC1=bb90bcd9 AC2=20fb93e8 AC3=9aa29743 AC4=73c58991
-claimed_by: "92d7"
-claimed_at: 2026-11-19T00:57:10Z
+claimed_by:
+claimed_at:
 touches:
 slice:
+closed: 2026-11-19
 ---
 
 ## Problem
