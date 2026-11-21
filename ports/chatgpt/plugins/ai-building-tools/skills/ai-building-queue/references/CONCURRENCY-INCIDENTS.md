@@ -1,0 +1,296 @@
+# Concurrency — incidents, reasoning, and live-conflict procedures
+
+**Not part of the always-read set.** `CONCURRENCY.md` states every rule and the failure it prevents;
+this file holds the incident that produced each one, the reasoning behind the design, and the
+procedure for a conflict that is actually happening right now.
+
+Read it when: a lock is busy or looks stale, a scope overlap turns up, a sweep has already happened,
+or you want to argue with a rule. Otherwise skip it — re-reading a narrative on every cycle to teach
+something already learned is the cost that split this file in two.
+
+**Every entry names the rule it justifies**, so a rule and its evidence stay findable from either
+end. Rule names are the headings in `CONCURRENCY.md`.
+
+---
+
+## Live-conflict procedures
+
+### A busy or stale lock — rule: *Lock every write to the backlog directory*
+
+```bash
+BACKLOG=".tickets"
+if mkdir "$BACKLOG/.lock" 2>/dev/null; then
+  printf '%s\t%s\n' "$CLAIM" "$(date -u +%FT%TZ)" > "$BACKLOG/.lock/held-by"
+else
+  cat "$BACKLOG/.lock/held-by"   # who has it, and since when
+fi
+```
+
+Busy? Wait a couple of seconds and retry, up to about three times — it is only ever held for a
+moment, so a genuine holder will be gone. Still held, then read `held-by`:
+
+- **Under 5 minutes** → another session is mid-claim. Report it to the user and stop. **Do not break
+  it.**
+- **Over 5 minutes** → stale; a session almost certainly ended between `mkdir` and `rmdir`. Say so,
+  name the timestamp, `rm -rf "$BACKLOG/.lock"`, and continue.
+
+**At close time, retry rather than stop.** The two cases are told apart by what you are holding,
+not by which script you are running. Claiming, you hold nothing, so stopping costs nothing. Holding
+a verdict, stopping discards evidence that exists nowhere else and leaves the row `in-progress`
+under a token whose session is ending. So keep retrying, with more patience — re-read `held-by`
+each time — until the lock is released or its timestamp passes 5 minutes, where the stale path
+above takes over; a lock under 5 minutes old is still never broken. While you wait, the verdict
+stays in the item you hold, in its `## QA evidence` table, written before the close was attempted
+(`verify` Step 7). If the session must end first, its report says the row is `in-progress` under
+your token, the close is owed, and the evidence is in that section, uncommitted — never
+`./handoff` the row away to free yourself.
+
+Always release with `rm -rf` in the turn you took it, including on the path where you decide *not* to
+make the change. A script releases on its failure paths via a `trap`.
+
+**These bite a by-hand lock, and every one of them fails silently.**
+
+- **Resolve `$BACKLOG` to an absolute path.** A `trap 'rm -rf "$BACKLOG/.lock"' EXIT` resolves against
+  the shell's cwd *at trap time*, so a sequence that `cd`s to the repo root — the natural shape, since
+  the commit needs repo-relative pathspecs — deletes a `.lock` that isn't there and exits reporting
+  success. The lock stays held. One session held it for ~8 minutes across a whole implementation and
+  found out only when its own handoff hit a busy lock carrying its own token.
+- **A `trap ... EXIT` fires when each shell invocation exits, not when your turn ends.** A lock taken in
+  one tool call is already released by the next, so the claim looks held and is not. Either run the whole
+  sequence (lock, re-read, row edit, frontmatter, commit, release) in a **single** invocation, or **drop
+  the trap** and release with an explicit `rm -rf` at the end. Dropping it is what a `verify` close needs,
+  since its row edits go through `Edit` for single-row safety and cannot be one shell call — the cost is
+  a lock held for minutes, so keep every edit that is not to `QUEUE.md` outside it.
+- **A busy-lock report should say when the holder is you.** It prints the token and timestamp, which
+  diagnoses the leak above only if the reader remembers minting that token. Compare it against the token
+  you hold and say so.
+- **The snippet is `sh`, and an agent's Bash tool runs zsh.** Under `set -eu` zsh treats an unmatched
+  glob as a fatal error rather than a false test, so a routine guard like `[ -e items/0176-*.md ]`
+  kills the sequence *after* the `mkdir` and before the explicit `rm -rf` — the exact form the bullet
+  above prescribes, stranding the lock and blocking every claim and close until a person clears it
+  (2026-09-21). `sed -i` differs the same way and warns nobody. Pipe the sequence into `/bin/sh -s`,
+  which is what cleared it, rather than pasting it into the tool's own shell.
+- **The commit fails while the release succeeds.** Every entry above is the lock outliving the turn;
+  this is the lock released over a commit that never happened. Landing two items in one invocation, a
+  session built `paths` in a loop and wrote `git commit -m … -- $paths`. zsh does not word-split an
+  unquoted parameter, so git received one argument of two space-joined paths and refused with
+  *"pathspec … did not match any file(s)"*. The `rm -rf` on the next line released the lock anyway,
+  leaving both item files edited and `FINDINGS.md` drained, uncommitted, in a shared tree — the
+  uncommitted-claim failure, arriving from a direction the lock cannot see (`0091`, 2026-09-05). The
+  scripts are immune, committing their own fixed paths. The rule it added — literal pathspecs, and
+  `git status` clean before the release — is in *Lock every write to the backlog directory*.
+
+### A scope overlap — rule: *The working tree is shared too*
+
+Take the next `ready` row whose scope is clear, and name both the row you stepped over and the scope
+it collided with. **Nothing rescues an overlap taken anyway** — there is no merge protocol here; the
+whole design is to keep two sessions out of the same files. If every `ready` row collides, the honest
+answer is that there is nothing to develop right now, not that the collision is acceptable.
+
+An `in-progress` row with an empty `touches:` means either "not declared yet" or "released as it
+closes", and nothing visible from outside distinguishes them. Ask, or take a row that does not depend
+on the answer.
+
+### A sweep that already happened — rule: *The git index is shared*
+
+If you find another session's change already committed under your message: **report it plainly and do
+not rebase.** They may already be building on the commit. Their rows land correctly under your
+message, which is the whole cost, and it is cheaper than rewritten history.
+
+If you find source paths already staged when you arrive, they are the other window's. `git restore
+--staged <path>` takes them out of *your* commit without touching their working tree.
+
+### A backlog with no scripts — rule: *The five scripts*
+
+A project may predate `./claim` and `./next`. Hand-editing under the lock is still correct, just
+easier to get wrong: the step most often forgotten is the commit inside the lock.
+
+---
+
+## The incidents
+
+### The index sweep — rule: *The git index is shared*
+
+A window running `queue` committed with the index swept whole and carried off a developing window's
+staged file deletion, so that deletion is recorded in a commit about an unrelated backlog entry.
+Nothing errored. Neither session noticed until afterwards.
+
+### The documentation sweep — rule: *A pathspec is necessary but not sufficient*
+
+A pathspec commits the entire current state of the paths it names, including edits another session
+made to the same file. For a file only you touch these are the same thing, which is why the rule
+reads as airtight; for a shared file they are not, and there is no moment at which the file contains
+only your change, so there is nothing to time correctly.
+
+The paragraph in the rule about the project's own documentation exists because **the session that
+wrote that rule swept the other window's `CLAUDE.md` edits into the very commit that introduced the
+fix.** Both windows write the docs, at exactly the moment they are also committing, and neither
+expects the other to.
+
+### The uncommitted claim — rule: *A claim must be durable the moment it is made*
+
+A claim was written to `QUEUE.md` and left uncommitted for the life of the ticket, because nothing in
+the protocol said to commit it. The window that closed the *next* ticket committed the queue and
+swept both pending claims into a commit about something else. Everything worked; the history is
+simply wrong, and the sweep was invisible until someone read the diff afterwards.
+
+This is why `./claim` is a script rather than a rule in a document: the commit is exactly the thing a
+session under load forgets, and a script cannot forget.
+
+### The four files that became nine — rule: *The working tree is shared too*
+
+**Why two fields rather than one.** `expects:` is written by `queue` while the code is already open,
+and `touches:` by `develop` on claim, checked against the code rather than copied.
+
+They fail differently, and that is what justifies keeping both. A wrong `expects:` costs one
+suboptimal pick, so it may be a best guess and it may age. A wrong `touches:` costs two sessions in
+one file, which has no merge protocol behind it. Holding one field to both standards forces a choice
+between a scope nobody can trust and a scope nobody can afford to write.
+
+**Predict at capture, verify at claim.** Without the prediction, a session choosing what to take has
+to research each candidate just to learn whether it may take it — and again for the next row down,
+which is the cost that makes the collision check get skipped. Without the verification, the prose
+leads: one ticket declared four implementation files and went on to edit three specs, a shared test
+helper and the runner's config, because a change that alters what a behaviour **means** reaches every
+test that drives it.
+
+### The rule that was narrowed and widened back — rule: *Lock every write to the backlog directory*
+
+The rule once locked only the two literal read-modify-writes — claiming an ID and claiming a row —
+and exempted closing a row on the reasoning that a close is "a single-line edit to a row only you
+hold."
+
+That reasoning is true about the *row* and false about the *file*. The edit is single-line; the
+**commit that follows takes the whole file**, and `./claim` rebuilds the whole file. Both operate at
+file granularity, so the exemption let a close interleave with a claim.
+
+### The rule that was deleted, not narrowed — rule: *A stage writes only the ticket it holds*
+
+*`verify` never writes the queue* made `verify` read-only so it was safe to run in a second window
+against a ticket the first was developing. Real hazard, real guard — but a workaround for a risk the
+one-skill-per-session architecture does not have: `verify` acts only on tickets whose `next` is
+`verify`, and nothing is developing those.
+
+An earlier plan had `verify` writing a durable verdict file for `develop` to read, with a commit-SHA
+staleness guard so a stale green could not close a changed ticket. Both disappeared when `verify`
+took over closing: it holds the verdict in the session where it acts on it, so there is no window for
+a green to go stale in. **That deleted a ticket from the plan rather than adding one.**
+
+### The reconcile that rewrote tickets it did not hold — rule: *A stage writes only the ticket it holds*
+
+The rule's exception lets a close write rows other than its own, and `close` implemented it by
+selecting every item whose `blocked_by` named the ticket being closed. Two things make that
+selection wrong, and both were reachable:
+
+**`blocked_by` outlives the close.** Nothing clears it when a ticket closes, so a closed ticket names
+its blockers for ever. Closing a blocker later flipped a `done` dependent back to `ready` while it
+sat in `DONE.md` — the two files then disagreed about whether it was finished, which is the same
+"queue that lies about what is takeable" the exception exists to prevent, in the other direction.
+
+**The ownership guard was a `QUEUE.md` row.** A dependent with no row — closed, or not yet ranked —
+was neither skipped nor reported, and had its `status:` rewritten under another session's live
+claim, `claimed_by:` left intact. The guard consulted the one place *Claim tokens* says ownership
+does not live.
+
+So the rule now selects on the dependent's own `status:` reading `blocked` rather than on
+`blocked_by` alone, and tests ownership in the item.
+
+**The row clause it also grew, and why that lost (0029).** The same fix added a second test: an
+`in-progress` row carrying no token *also* read as held, on *The working tree is shared too*'s
+"silence is not permission" — a session that had edited the row but not yet written its token would
+otherwise be written over. That is a real window, and the argument is kept here rather than deleted
+because a rule that looks arbitrary gets re-added by the next session that meets the case.
+
+It lost on **one definition beating two**. The rule and `verify`'s hand-close defined *held* as the
+item's token alone; only the script carried the extra clause, so the documented fallback wrote a
+dependent the script left alone — two paths, one close, different results. That is the defect shape,
+whichever half is right. The window it guarded also closed on its own: `./claim` writes the row and
+the token under one lock in one commit, so the untokened `in-progress` row is no longer a state a
+live session passes through — it is drift, and 0024 built `./next --drift` so drift is reported
+rather than silently honoured by every reader in turn.
+
+The wider lesson is about the ACs, not the script. The verification that found this had eight
+criteria and all eight passed; every dependent in every fixture had a row, so no criterion could
+see the case. **A guard written against one shape of input is verified only against that shape.**
+
+### The parser that reported an empty backlog — rule: *The five scripts*
+
+`./next` and `./claim` read the queue table by fixed column index. When the table was pared to five
+columns, `./next` printed "0 ready of 2 rows" and `./claim` refused every row — both without
+erroring. The failure was safe but silent, and a reader would conclude the backlog was empty rather
+than that the parser was wrong. `./next` now refuses a table shape it cannot parse; that is why
+"refuse rather than guess" is stated as a property of both scripts.
+
+### The stream edit that deleted every blank line — rule: *Never rewrite `QUEUE.md` by hand*
+
+Closing 0030 without the scripts, a stray `perl -i -ne` with an unset variable expanded its match to
+`"\n"` and deleted **every blank line in `QUEUE.md`**. The row removal beside it was correct, so the
+only signal was the diffstat — 14 deletions for a one-row close — which nothing requires anyone to
+read; it was repaired in the next commit. The rule then named `Write` and read-rebuild-write, and a
+reader took it as covering only those, so three later multi-row inserts went through `awk` to a temp
+file, each guarded by a diff check invented on the spot. That check is now the rule's safe shape.
+
+### The file-scope shapes that were rejected — rule: *The working tree is shared too*
+
+On 2026-08-25 the whole `develop` stage stalled twice on different file pairs: 0034 held
+`skills/verify/SKILL.md` and `CONCURRENCY.md` and every takeable row collided with one or the other,
+and 0038, held at `verify`, held the only files the one takeable `develop` row needed. Overlap
+chains, so any starting row reached the whole stage. Four shapes were weighed (0050); the chosen one
+keeps the file as the unit and makes the session the single writer. The other three, and why not:
+
+- **Sub-file scope** — a section or heading as the unit. A pathspec commit carries every change to
+  the path, so a section claim is unenforceable without a staging change no git primitive offers;
+  and some fixes need a unit *larger* than a file — a comment shared byte-identically by three suites
+  can only be fixed by a session holding all three — which a smaller unit makes worse.
+- **A worktree per session** — merge afterwards. Whether `develop` runs in parallel at all is `0137`'s
+  question, not a file-scope answer; backlog writes are refused from a linked worktree; and prose
+  merges conflict at the paragraph, where line-based guards then break. A worktree stays a read-only
+  place to pin a verdict to a commit.
+- **Ranking against the held set** — let held files reorder the queue. Rank is absolute and a join
+  decides batching, never selection; the held set already shapes takeability and gate membership,
+  and letting it reorder rank would build rank-2 work ahead of the head.
+
+### The rename that no mechanism could see — rule: *A change that touches every file takes an exclusive claim*
+
+Renaming the container ticket type effort → project (`267d13f`, 2026-08-23) touched **30 files**:
+`QUEUE.md`, `RANKING.md`, `SCHEDULED.md`, the item template, two skills, three test suites and
+**20 item files**, **9** of which belonged to tickets that were already `done` (19 tickets were in
+`DONE.md` at `267d13f^`). No `touches:` list can usefully declare that, no single ticket owned it,
+and `claim` protects one row at a time — so the change was invisible to every concurrency mechanism
+this repo has.
+
+Two distinct defects came out of it, and only the first is what the rule addresses:
+
+- **It was not atomic across a guard and the file it guards.** `tests/graph-fields.test.sh`
+  asserted the new wording while `skills/queue/templates/item.md` still carried the old. 0005 held
+  the test file in `touches:` and read a red it had not caused, against a contract it never agreed
+  to. One commit fixes this by construction, and the exclusive claim covers the working-tree window.
+- **It edited a held ticket's requirements** — 0005's FR2 and FR5 were rewritten while 0005 sat at
+  `verify`. That needed no new rule: *A stage writes only the ticket it holds* already forbade it.
+  What the rule adds is the explicit statement that being cross-cutting is not an exemption.
+
+The audit-trail half of the same event — the rename's commits tagged with another ticket's live
+claim token, sweeping 41 lines of that ticket's uncommitted notes into their own message — is 0049,
+and has a different root cause.
+
+**The ticket's own figures were wrong, and re-verifying them changed the answer.** It read "27 files
+… 21 closed tickets"; the commit is 30 files, 20 item files, 9 of them closed. The 21-of-27 figure
+makes closed tickets look like the bulk of the work, which argues for a project with slices; 9-of-20,
+all of them excludable, argues for one commit.
+
+**Rejected — a scheduling rule alone** ("vocabulary changes only when nothing is claimed"). It
+survives as the first precondition, but it is not a shape on its own: it says nothing about
+atomicity, nothing about closed tickets, and nothing about the session that *starts* mid-change. It
+would win if sessions never started mid-rename. They do.
+
+**Rejected — a project with a slice per affected area.** Slices that each touch everything collide
+with *each other*, so the machinery reintroduces the problem inside the project; and a project holds
+one outcome carried by children with distinct outcomes, whereas a rename's outcome is only true when
+the last file changes. A half-landed rename is the failure, not a milestone. The escape hatch, stated
+so it is not re-derived: a vocabulary change that genuinely cannot be one commit is not a rename but
+a redesign, and then it is a project whose first slice introduces the new term as an addition.
+
+**Rejected — expand/contract.** `migration-conventions.md` governs schema under running code, where
+both shapes must be live because both old and new code are. Prose has no old code still running, and
+its dual-write step is two live names for one concept — the exact defect the rename exists to remove.
+Forward-only survives from that file, and is what the closed-tickets rule rests on.

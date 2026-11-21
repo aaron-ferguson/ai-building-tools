@@ -1,0 +1,10 @@
+{
+  "name": "ai-building-tools",
+  "version": "0.1.0",
+  "description": "Queue engineering tickets using the project's ai-building conventions.",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AI Building Tools",
+    "shortDescription": "Capture and rank engineering tickets in your project backlog."
+  }
+}

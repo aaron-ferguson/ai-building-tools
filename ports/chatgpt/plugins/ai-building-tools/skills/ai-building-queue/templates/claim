@@ -1,0 +1,461 @@
+#!/bin/sh
+#
+# Claim a backlog row: lock → edit QUEUE.md → write the item's frontmatter → commit → unlock,
+# as one atomic step.
+#
+# **The commit is why this is a script and not a rule in a document.** A claim edits QUEUE.md,
+# and until something commits that edit it sits dirty in the file both windows share — so the
+# next window to close anything commits it for you, under its own message. That is not
+# hypothetical: one project's close carried two pending claims exactly that way. Timing
+# discipline cannot fix it, because the foreign edit is already in the file before you touch it.
+# The only fix is upstream — never leave the claim uncommitted — and a script cannot forget.
+#
+# Usage:  .tickets/claim <id> [token]
+#
+# **`touches:` is written here, provisionally, from the item's `expects:` — but only on a FRESH
+# `develop` claim.** It used to be printed as an instruction, which made the one field the other
+# window reads to decide what is safe to take the only part of a claim that was neither written nor
+# committed atomically — and it was skipped exactly as often as that invites. `expects:` is a
+# prediction and not a verified scope, so the session still has to narrow it to what it will
+# actually open and widen it the moment the work reaches further; a provisional scope is wrong in
+# the direction that costs a suboptimal pick, where an absent one is read as "every file this item
+# names is held".
+# See `CONCURRENCY.md`, *The working tree is shared too* — and keep that citation on ONE line: the
+# guard in tests/citations.test.sh is line-based, so a rule name wrapped across a comment break
+# reads as "The # working tree is shared too" and is reported as stale.
+# An item with no `expects:` gets no invented scope and is told so.
+#
+# **The seed has two conditions, and both are the same rule read from different ends: a prediction
+# never overwrites a verified scope, and a stage that does not build declares no build scope** (0106).
+#   - A POPULATED `touches:` is left exactly as it is. The seed used to prepend itself above the
+#     existing block and stop skipping the old entries at the first line that was not a `- ` bullet
+#     — a standalone comment — so the previous session's narrowing came back below the widened seed,
+#     its explanatory comment now annotating the wrong list and every shared path listed twice
+#     (0039, then 0086). Nothing was lost, but the field the other window reads reserved a strictly
+#     wider set than the work needed, which is the suboptimal pick this field exists to prevent.
+#   - A row at any stage but `develop` gets no seed. `verify` opens none of the files a build scope
+#     names — it writes the item and the queue — so a QA claim that seeded `expects:` reserved seven
+#     paths for a pass that touched none of them. A table with no `Next` column cannot answer the
+#     question and keeps the seed, so a legacy shape claims exactly as it did before.
+#
+# **Columns are resolved by header name, never by position.** The table's shape is not a contract:
+# it was pared from eight columns to five, and a parser keyed on a fixed index then read every
+# row's status as empty and refused every claim — silently, with a message that blamed the row.
+# A session's honest reading of that is "the backlog has nothing takeable". So: match the header
+# cell by name, work against any column order or count, and make a missing `Status` column a loud
+# error rather than a refusal. Ownership is not read from a column at all; it lives in the item's
+# `claimed_by:`.
+#
+# See references/CONCURRENCY.md — 'A claim must be durable the moment it is made'.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+# --- where the backlog lives (0182) -- byte-identical in claim, close, handoff, next and reopen ---
+# `.tickets/` at the repo root is the location (0228). `.claude/backlog/` and `.backlog/` are legacy:
+# the harness refuses writes under any `.claude` path segment as a sensitive file, which is what 0182
+# moved away from, and `.backlog/` was the name 0182 chose before 0228 named the directory for the
+# whole ticket system it holds. A repo holding more than one is refused rather than guessed at.
+# LEGACY_UNTIL is the date in references/CONCURRENCY.md, *Where the backlog lives*, and
+# tests/backlog-location.test.sh holds the two equal. The note is exported so a nested call (`close`
+# runs `next`) does not print it twice.
+LEGACY_UNTIL=2026-12-31
+case "$DIR" in
+  */.claude/backlog) ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"; LEGACY_AT=.claude/backlog ;;
+  */.backlog)        ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT=.backlog ;;
+  *)                 ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT="" ;;
+esac
+HELD_AT=""
+HELD_COUNT=0
+for held_loc in .tickets .backlog .claude/backlog; do
+  if [ -d "$ROOT/$held_loc" ]; then HELD_AT="$HELD_AT $ROOT/$held_loc"; HELD_COUNT=$((HELD_COUNT + 1)); fi
+done
+if [ "$HELD_COUNT" -gt 1 ]; then
+  echo "refusing: this repo holds more than one backlog:$HELD_AT -- keep one (references/CONCURRENCY.md, Where the backlog lives)" >&2
+  exit 1
+fi
+if [ -n "$LEGACY_AT" ] && [ -z "${BACKLOG_LEGACY_NOTED:-}" ]; then
+  echo "note: this backlog is at the legacy $LEGACY_AT/ -- run ./migrate to move it to .tickets/; the legacy location works until $LEGACY_UNTIL" >&2
+  BACKLOG_LEGACY_NOTED=1
+  export BACKLOG_LEGACY_NOTED
+fi
+# --- end of where the backlog lives ---
+QUEUE="$DIR/QUEUE.md"
+LOCK="$DIR/.lock"
+
+# `git-conventions.md` *Co-authorship* asks for this trailer on ALL AI-assisted commits, and a
+# lifecycle commit a script makes on a session's behalf is one — skills/develop/SKILL.md Step 1
+# says so in as many words: "A lifecycle commit is not exempt from it", and
+# references/CONCURRENCY.md *The git index is shared* requires it of every AI-assisted commit. Those
+# two files SETTLE the scope question; it is not open, and a third session need not re-ask it. It
+# read as open only because Step 1's sentence sits inside its BY-HAND claim sequence, which a
+# session running this script never executes (0090 FR4). The generic name is deliberate: the script
+# cannot know which model is driving it, and guessing wrong is worse than the convention's own
+# literal.
+COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+
+ID="${1:-}"
+[ -n "$ID" ] || { echo "usage: claim <id> [token]" >&2; exit 2; }
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+
+TOKEN="${2:-$(head -c2 /dev/urandom | xxd -p)}"
+
+# --- the linked-worktree refusal (0083) --------------------------------------------------------
+# The lock and QUEUE.md live in the working tree, so a linked worktree has its own copy of both and
+# a claim made there is invisible to the primary. Worse than invisible: the 0083 design probe saw a
+# claim from a detached worktree exit 0, commit onto the detached HEAD, and become unreachable from
+# every branch once the worktree was removed — which the skills tell a session to do the same turn.
+# A linked worktree is the checkout whose git dir is not the common dir. A second CLONE passes this
+# check and nothing inside a clone can tell it from the primary, so the rule covers that case alone:
+# See `CONCURRENCY.md`, *A second checkout never writes the backlog*.
+# **Before the lock, deliberately**, for the reason the refusal below gives.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 &&
+   [ "$(git -C "$DIR" rev-parse --path-format=absolute --git-dir)" != \
+     "$(git -C "$DIR" rev-parse --path-format=absolute --git-common-dir)" ]; then
+  echo "refusing to claim $ID: this is a linked worktree, whose lock and QUEUE.md no other session reads" >&2
+  echo "run it from the primary checkout: $(git -C "$DIR" worktree list --porcelain | sed -n '1s/^worktree //p')" >&2
+  echo "see references/CONCURRENCY.md, 'A second checkout never writes the backlog'" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# --- the fourth refusal: a foreign edit this claim's commit would carry ------------------------
+# This script used to *warn* here and commit anyway, which is the shape a warning always has: it
+# was right, it was read, and the other window's row went into the git record under this claim's
+# message all the same (AetherWorks 0091, carried by `Claim 0034 [fc89]`). A pathspec limits a
+# commit to the paths it names and never to the changes you made, so there is no version of the
+# commit below that can leave a foreign row behind — the only fix is upstream, and a script
+# holding the lock can refuse where a person under load cannot.
+#
+# **Before the lock, deliberately.** A refusal that has taken the lock has something to undo, and
+# a refusal that has edited the row has something worse; refusing here is the only point at which
+# "changes nothing" is true by construction rather than by cleanup (0082 AC4).
+#
+# **Pathspec here is relative to `$DIR`, deliberately — do not "tidy" it back to `$QUEUE`.** It is
+# absolute, and on a case-insensitive filesystem `$DIR` can spell the repo path in a different case
+# from `git rev-parse --show-toplevel`, which makes an absolute pathspec read as *outside the repo*.
+# With a single pathspec there is no second file to compare against, so the check degrades to a
+# silent pass instead of a loud wrong answer — the direction that loses work rather than time.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- QUEUE.md; then
+  echo "refusing to claim $ID: QUEUE.md holds uncommitted changes this claim's commit would carry" >&2
+  echo "the rows that would land under 'Claim $ID [$TOKEN]':" >&2
+  git -C "$DIR" diff -U0 -- QUEUE.md | awk '/^[+-]\| / { print "  " $0 }' >&2
+  echo "commit them by pathspec if they are yours; if they are another session's, leave them alone" >&2
+  echo "and wait, or 'git restore -- .tickets/QUEUE.md' if you know they are stray" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# --- lock -------------------------------------------------------------------------------------
+mkdir "$LOCK" 2>/dev/null || {
+  echo "backlog is locked by: $(cat "$LOCK/held-by" 2>/dev/null || echo unknown)" >&2
+  exit 1
+}
+echo "claim $ID by $TOKEN" > "$LOCK/held-by"
+# Release the lock however we leave, so a failed claim never strands the other window.
+trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+# --- find the columns by name, under the lock -------------------------------------------------
+# Under the lock, so the shape we write to is the shape we read. A pre-pared eight-column table
+# and the current five-column one differ only in where `Status` sits; both are claimable.
+#
+# `ID` is resolved by name too. Resolving one column by name and the other by position would make
+# the header comment's promise false in exactly the case nobody tests: the parser would look
+# order-independent and still read the wrong cell the day a column moves in front of `ID`.
+header="$(awk -F'|' '/^\|/ {
+  for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
+}' "$QUEUE")"
+[ -n "$header" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
+
+# copy-begin: column-named
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+column_named() {
+  printf '%s' "$header" | awk -F'|' -v want="$1" '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
+  }'
+}
+# copy-end: column-named
+
+ID_COL="$(column_named ID)"
+STATUS_COL="$(column_named Status)"
+# `Next` is OPTIONAL, unlike the other two: the pre-0010 eight-column table has no such column, and
+# refusing it would turn a shape this script has always claimed into an error. Absent means "cannot
+# tell", and cannot-tell keeps the seed rather than dropping it silently (0106 FR2).
+NEXT_COL="$(column_named Next)"
+[ -n "$STATUS_COL" ] || {
+  echo "no Status column in the QUEUE.md table — cannot tell a ready row from a blocked one" >&2
+  echo "header found: $header" >&2
+  exit 1
+}
+
+# --- re-read the row under the lock -----------------------------------------------------------
+# It may have changed since it was chosen; proceeding on a stale read is the whole race.
+row="$(awk -F'|' -v id="$ID" -v c="$ID_COL" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
+[ -n "$row" ] || { echo "no row for $ID in QUEUE.md" >&2; exit 1; }
+
+status="$(printf '%s' "$row" | awk -F'|' -v c="$STATUS_COL" '{ v = $c; gsub(/^ +| +$/, "", v); print v }')"
+stage=""
+[ -z "$NEXT_COL" ] || stage="$(printf '%s' "$row" | awk -F'|' -v c="$NEXT_COL" '{ v = $c; gsub(/^ +| +$/, "", v); print v }')"
+[ "$status" = "ready" ] || {
+  echo "$ID is '$status', not ready — pick another row" >&2
+  if [ "$status" = "in-progress" ]; then
+    echo "who holds it is the item's claimed_by:, in items/$ID-*.md — not a queue column" >&2
+  fi
+  exit 1
+}
+
+# --- resolve the item file, BEFORE the row is edited -------------------------------------------
+# Deliberately above the `mv` below. This refusal used to sit after it, so a row whose item is
+# missing or misnamed left QUEUE.md edited, uncommitted and — the trap having fired — unlocked: the
+# fail-open shape 0082 closed on two other paths, on a third it did not name (0090 FR2). A refusal
+# that has not yet written the row has nothing to undo, which is the only way "changes nothing" is
+# true by construction rather than by cleanup.
+item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
+[ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
+
+# --- an exclusive claim refuses while anything else is held (0067 FR6) -------------------------
+# `expects: "*"` declares a change that touches every file — a cross-cutting rename
+# (`references/CONCURRENCY.md`, *A change that touches every file takes an exclusive claim*). Its
+# first precondition is that NOTHING ELSE IS HELD, and a precondition that is only written down is
+# a precondition remembered. This is it enforced.
+#
+# `expects:` and not `touches:`, because the seed is written further down this script: at this
+# point `touches:` is still whatever the ticket was authored with, and `expects:` is what the
+# ticket DECLARED. Placed with the other refusals, ABOVE the row edit, so a refused claim has
+# nothing to undo — the fail-open shape 0082 and 0090 both closed.
+exclusive="$(awk '
+  NR == 1 && /^---$/ { fm = 1; next }
+  fm && /^---$/      { exit }
+  fm && /^expects:/ {
+    rest = $0; sub(/^expects:[ \t]*/, "", rest)
+    if (rest ~ /\*/) { print "yes"; exit }
+    inx = 1; next
+  }
+  inx && /^[ \t]*$/ { next }
+  inx && /^[ \t]*#/ { next }
+  inx && /^[ \t]*- / { if ($0 ~ /\*/) { print "yes"; exit } ; next }
+  inx { exit }
+' "$item")"
+
+if [ -n "$exclusive" ]; then
+  holders=""
+  for other in "$DIR/items/"*.md; do
+    [ -f "$other" ] || continue
+    case "$other" in *"/$ID-"*) continue ;; esac
+    otok="$(awk '
+      NR == 1 && /^---$/ { fm = 1; next }
+      fm && /^---$/        { exit }
+      fm && /^claimed_by:/ {
+        sub(/^claimed_by:[ \t]*/, "")
+        gsub(/["\047]/, "")
+        sub(/[ \t]+#.*$/, "")
+        sub(/[ \t]+$/, "")
+        print; exit
+      }
+    ' "$other")"
+    [ -n "$otok" ] || continue
+    holders="$holders $(basename "$other" | sed 's/-.*//') [$otok]"
+  done
+  if [ -n "$holders" ]; then
+    echo "refusing to claim $ID: its expects: declares \"*\", an exclusive claim over the whole tree" >&2
+    echo "held right now:$holders" >&2
+    echo "an exclusive claim is taken only when nothing else is held, lands in one commit, and has" >&2
+    echo "the suite green before and after (references/CONCURRENCY.md)" >&2
+    exit 1
+  fi
+fi
+
+# --- edit the row -----------------------------------------------------------------------------
+# The Status cell and nothing else. The token goes in the item's frontmatter, so a legacy table
+# that still carries an Owner column keeps whatever is already in it.
+tmp="$(mktemp)"
+awk -F'|' -v OFS='|' -v id="$ID" -v idc="$ID_COL" -v c="$STATUS_COL" '
+  /^\|/ {
+    v = $idc; gsub(/^ +| +$/, "", v)
+    if (v == id) { $c = " in-progress " }
+  }
+  { print }
+' "$QUEUE" > "$tmp"
+mv "$tmp" "$QUEUE"
+
+# --- item frontmatter -------------------------------------------------------------------------
+
+now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# --- what is already in touches:, and whether this stage may seed at all (0106) ----------------
+# Read BEFORE the editing pass, because awk meets the `touches:` key one line before it can know
+# whether entries follow it — and the branch has to be chosen at the key.
+#
+# A standalone comment line inside the block is SKIPPED rather than ending it. Falling through
+# would read a narrowed-and-annotated block as empty, which is the precise reading that produced
+# the duplicate list this rule exists to prevent.
+existing_touches="$(awk '
+  NR == 1 && /^---$/ { fm = 1; next }
+  fm && /^---$/      { exit }
+  fm && /^touches:/  { intou = 1; next }
+  intou && /^[ \t]*$/ { next }
+  intou && /^[ \t]*#/ { next }
+  intou && /^[ \t]*- / {
+    sub(/^[ \t]*- */, "")
+    sub(/[ \t]+#.*$/, "")
+    sub(/[ \t]+$/, "")
+    if ($0 != "") print
+    next
+  }
+  intou { exit }
+' "$item")"
+
+# `develop` is the only stage that builds, so it is the only stage a build scope belongs to. An
+# unreadable stage (no `Next` column) is not a reason to withhold the seed — see the header.
+SEED=1
+[ -z "$existing_touches" ] || SEED=0
+case "$stage" in
+  ""|develop) : ;;
+  *)          SEED=0 ;;
+esac
+
+tmp="$(mktemp)"
+count="$(mktemp)"
+paths="$(mktemp)"
+# The ownership keys are *replaced* where they exist and *added* where they do not. An item
+# written before the template carried them has nothing to replace, and a silent skip is the worst
+# outcome available: the row says claimed, the script says claimed, and the item file records no
+# owner at all — so the "did I mint this token?" test in CONCURRENCY.md has nothing to read.
+# `touches:` is the third such key and is written the same way, from `expects:` (0082 FR1).
+#
+# One pass, and one parser: the entry count the report below branches on is written out by this
+# awk rather than recomputed by a second one, because two parsers of the same frontmatter drift
+# and the drift is silent — the file would say one thing and the report another.
+#
+# The array is `want[]` and not `exp[]`: `exp` is an awk BUILT-IN (exponential), and using it as
+# an array name is a parse error reported as `illegal statement` on the line that reads it, which
+# points at the loop rather than at the name.
+#
+# Every rule is guarded on `fm`. Without it the `intou`/`inexp` list rules would swallow an
+# indented bullet in the item's PROSE, which is a data-loss bug that no assertion about
+# frontmatter can see.
+awk -v tok="$TOKEN" -v now="$now" -v cf="$count" -v pf="$paths" -v seed="$SEED" '
+  NR == 1 && /^---$/ { fm = 1; print; next }
+  fm && /^---$/      {
+    if (!by)  { print "claimed_by: \"" tok "\""; added = 1 }
+    if (!at)  { print "claimed_at: " now;         added = 1 }
+    if (!tou && n && seed) { print "touches:"; for (i = 1; i <= n; i++) print want[i]; added = 1 }
+    fm = 0
+    if (added) print "note: item predated some of the claim keys; added them" > "/dev/stderr"
+    print; next
+  }
+  fm && /^expects:/    { inexp = 1; print; next }
+  fm && inexp && /^[ \t]+-/ { want[++n] = $0; print; next }
+  fm && inexp          { inexp = 0 }
+  fm && /^touches:/    {
+    tou = 1
+    # No seed: print the key and let the block that follows fall through untouched, entries,
+    # comments and all. This is the branch a re-claim and a non-develop claim both take.
+    if (!seed) { print; next }
+    print "touches:"
+    for (i = 1; i <= n; i++) print want[i]
+    intou = 1; next
+  }
+  fm && intou && /^[ \t]+-/ { next }
+  fm && intou          { intou = 0 }
+  fm && /^claimed_by:/ { print "claimed_by: \"" tok "\""; by = 1; next }
+  fm && /^claimed_at:/ { print "claimed_at: " now;         at = 1; next }
+  fm && /^status:/     { print "status: in-progress"; next }
+  { print }
+  # The count and the path list come out of this one pass for the reason the header gives: two
+  # parsers of the same frontmatter drift, and the drift is silent. `want[i]` is the raw line, so
+  # strip the bullet, then the trailing comment, then the quotes — comment before quotes, or a
+  # quoted `#` inside a path would survive as part of it. An entry that cleans to nothing is
+  # dropped rather than reported as a missing path named "".
+  END {
+    print n + 0 > cf
+    for (i = 1; i <= n; i++) {
+      p = want[i]
+      sub(/^[ \t]*-[ \t]*/, "", p)
+      sub(/[ \t]+#.*$/, "", p)
+      gsub(/["\047]/, "", p)
+      sub(/[ \t]+$/, "", p)
+      if (p != "") print p > pf
+    }
+  }
+' "$item" > "$tmp"
+mv "$tmp" "$item"
+N_EXPECTS="$(cat "$count")"
+rm -f "$count"
+
+# --- which of the seeded paths are fiction (0147 FR1) -----------------------------------------
+# A ticket may name a path that has never existed — `0075` expected `tests/skill-prose.test.sh`,
+# absent from the tree and from the whole history — and the seed above reserves it verbatim as
+# held scope, against which every other session's file-scope check then compares. This is the
+# cheapest moment anyone finds out, because this is the one place standing in the right position
+# to look.
+#
+# A WARNING and never a refusal (FR2). Declaring a guard you are about to write is the common and
+# correct case; refusing it would make the field unusable for exactly the tickets that need it.
+#
+# `-e` and not `-f` (FR3): `tests/` and `items/` are ordinary things for a ticket to declare, and
+# reporting a directory as fiction would make this noise on the first broadly-scoped row. The
+# unquoted `$p` is what gives a glob the same treatment for free — it expands to its matches, or
+# stays literal when it has none, which is exactly the answer wanted either way.
+#
+# Resolved against the REPO ROOT, not the caller's cwd: `expects:` entries are root-relative and
+# `claim` is run from anywhere. Derived by path arithmetic from `$DIR` rather than from
+# `git rev-parse --show-toplevel`, which on a case-insensitive filesystem can spell the same
+# directory a different way — the hazard the pathspec comment above records.
+#
+# Existence only. *Does not exist* and *exists but another claim holds it* are different facts
+# answered by different branches (FR4); the holder report is the exclusive-claim refusal above,
+# and folding the two together would turn every held path into a reported fiction.
+paths_missing=""
+if [ "$SEED" -eq 1 ] && [ "${N_EXPECTS:-0}" -gt 0 ]; then
+  paths_missing="$(cd "$ROOT" && while IFS= read -r p; do
+    [ -n "$p" ] || continue
+    found=0
+    for m in $p; do
+      if [ -e "$m" ]; then found=1; break; fi
+    done
+    if [ "$found" -eq 0 ]; then printf '%s\n' "$p"; fi
+  done < "$paths")"
+fi
+rm -f "$paths"
+
+# --- commit, by pathspec, in the same breath as the edit --------------------------------------
+# Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
+  n=0
+  until git -C "$DIR" commit -q -m "Claim $ID [$TOKEN]" -m "$COAUTHOR" -- "$QUEUE" "$item" 2>/dev/null; do
+    n=$((n + 1))
+    [ "$n" -lt 30 ] || { echo "could not commit the claim (git busy); QUEUE.md is edited but uncommitted" >&2; exit 1; }
+  done
+fi
+
+echo "claimed $ID with token $TOKEN"
+# Four outcomes, and each says which one it is. Silence about a scope that was NOT written reads as
+# "a scope was written" to the next reader, which is the failure the unset branch was added for.
+if [ -n "$existing_touches" ]; then
+  echo "touches: was already set and is left as the previous session set it — a narrowed scope is"
+  echo "verified and a prediction from expects: never overwrites one. It keeps:"
+  printf '  %s\n' $existing_touches
+  echo "widen it in $item the moment your work reaches further"
+elif [ "$SEED" -eq 0 ]; then
+  echo "touches: is not seeded from expects:, because '$stage' does not build — a build scope here"
+  echo "would reserve files this stage never opens. $stage writes only its item and row, which this"
+  echo "claim already holds, so touches: stays empty — the release will report any other path the"
+  echo "pass's commits change (0145)"
+elif [ "${N_EXPECTS:-0}" -gt 0 ]; then
+  echo "touches: is set provisionally from expects: ($N_EXPECTS paths) — NARROW it in $item to"
+  echo "what you will actually open, and widen it the moment the work reaches further"
+else
+  echo "touches: is unset: $ID declares no expects:, and a scope invented from nothing would be"
+  echo "worse than none — set it in $item before you open anything"
+fi
+
+# Printed after the four outcomes rather than inside the seeded one, so the scope report reads the
+# same as it always has and this is plainly a second, separate statement about it.
+if [ -n "$paths_missing" ]; then
+  echo "these declared paths do not exist in the working tree:"
+  printf '  %s\n' $paths_missing
+  echo "fine for a file this ticket is about to create — and a finding about the ticket if it is"
+  echo "not: a path nobody ever wrote has just been reserved against every other session"
+fi

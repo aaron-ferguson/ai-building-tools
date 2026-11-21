@@ -1,0 +1,2205 @@
+#!/bin/sh
+#
+# What a session needs to start work, in a fixed handful of lines.
+#
+# Reading QUEUE.md whole costs more context every time the queue grows, and the queue is the
+# file both windows edit most — so it is also the file the harness re-echoes most often. This
+# answers the three questions almost every read actually has: what may I take for my stage, what
+# is waiting on a person, and which files another session has claimed. Its output is the same size
+# whether the queue holds ten rows or three hundred.
+#
+# It is a reader and nothing else: it never writes, never takes the lock, and never decides.
+# Claiming a row is `./claim <id>`, which locks, edits, commits and unlocks in one step — see
+# references/CONCURRENCY.md for why the commit is the part that matters.
+#
+# Two modes answer a driver rather than a human. `--drive` says what should happen next and spends a
+# distinct exit code per outcome, because a human reading "nothing is takeable" off a zero gets away
+# with it and a loop does not; `--findings` counts the findings buffer, tolerant of both entry
+# shapes it actually carries. Both are documented under `--help` and specified by 0038. `--drive`
+# runs `--drift`'s check before it picks a gate (0142): the classes that stop a human reading that
+# report were invisible to the one reader that is never a person.
+#
+# Read the whole file when you genuinely need the whole file — a re-rank, a themes pass, or any
+# judgement about *order* rather than about what to do next.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+# --- where the backlog lives (0182) -- byte-identical in claim, close, handoff, next and reopen ---
+# `.tickets/` at the repo root is the location (0228). `.claude/backlog/` and `.backlog/` are legacy:
+# the harness refuses writes under any `.claude` path segment as a sensitive file, which is what 0182
+# moved away from, and `.backlog/` was the name 0182 chose before 0228 named the directory for the
+# whole ticket system it holds. A repo holding more than one is refused rather than guessed at.
+# LEGACY_UNTIL is the date in references/CONCURRENCY.md, *Where the backlog lives*, and
+# tests/backlog-location.test.sh holds the two equal. The note is exported so a nested call (`close`
+# runs `next`) does not print it twice.
+LEGACY_UNTIL=2026-12-31
+case "$DIR" in
+  */.claude/backlog) ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"; LEGACY_AT=.claude/backlog ;;
+  */.backlog)        ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT=.backlog ;;
+  *)                 ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT="" ;;
+esac
+HELD_AT=""
+HELD_COUNT=0
+for held_loc in .tickets .backlog .claude/backlog; do
+  if [ -d "$ROOT/$held_loc" ]; then HELD_AT="$HELD_AT $ROOT/$held_loc"; HELD_COUNT=$((HELD_COUNT + 1)); fi
+done
+if [ "$HELD_COUNT" -gt 1 ]; then
+  echo "refusing: this repo holds more than one backlog:$HELD_AT -- keep one (references/CONCURRENCY.md, Where the backlog lives)" >&2
+  exit 1
+fi
+if [ -n "$LEGACY_AT" ] && [ -z "${BACKLOG_LEGACY_NOTED:-}" ]; then
+  echo "note: this backlog is at the legacy $LEGACY_AT/ -- run ./migrate to move it to .tickets/; the legacy location works until $LEGACY_UNTIL" >&2
+  BACKLOG_LEGACY_NOTED=1
+  export BACKLOG_LEGACY_NOTED
+fi
+# --- end of where the backlog lives ---
+QUEUE="$DIR/QUEUE.md"
+
+CONFIG="$DIR/config.yml"
+FINDINGS="$DIR/FINDINGS.md"
+DONE="$DIR/DONE.md"
+
+# The findings-buffer threshold a driver gates on. It lives in config.yml so a project can raise it
+# without editing this script — this repo's own rate is inflated because its tickets are *about* the
+# tooling, so every one surfaces a tooling defect. The default is `retro`'s stated cadence, and
+# `retro` points at this key rather than carrying a second number.
+FINDINGS_THRESHOLD_DEFAULT=8
+THRESHOLD="$FINDINGS_THRESHOLD_DEFAULT"
+
+# Loud rather than defaulted: a driver silently gating on 8 where the project wrote 20 is the same
+# class of defect as a count that reads low — wrong, and with nothing to notice it by.
+#
+# `sub(/#.*/, "")` is correct here and wrong in `fm_list` below. Do not unify them: a threshold is a
+# number, so a `#` in it can only be a comment, where a `#` in a path can be part of the path.
+read_threshold() {
+  [ -f "$CONFIG" ] || return 0
+  raw="$(awk '/^findings_threshold:/ {
+    v = $0; sub(/^findings_threshold: */, "", v); sub(/#.*/, "", v); gsub(/[ \t]/, "", v)
+    print v; exit
+  }' "$CONFIG")"
+  [ -n "$raw" ] || return 0
+  case "$raw" in
+    *[!0-9]*) echo "findings_threshold in $CONFIG is not a whole number: $raw" >&2; return 1 ;;
+  esac
+  THRESHOLD="$raw"
+}
+
+# The most rows one new develop gate may hold, lead included (0178). The bound replaced rank
+# contiguity: rank orders admission, and this is what stops a join sweeping a backlog into one
+# session. 5 is the largest develop batch this repo has a measured saving for; the derivation is in
+# 0178's *Notes & decisions*. Loud rather than defaulted, for read_threshold's reason — and 0 is as
+# malformed as a word, since a gate with no room for its lead is no gate.
+GATE_MAX_ROWS_DEFAULT=5
+GATE_MAX_ROWS="$GATE_MAX_ROWS_DEFAULT"
+read_gate_max_rows() {
+  [ -f "$CONFIG" ] || return 0
+  raw="$(awk '/^gate_max_rows:/ {
+    v = $0; sub(/^gate_max_rows: */, "", v); sub(/#.*/, "", v); gsub(/[ \t]/, "", v)
+    print v; exit
+  }' "$CONFIG")"
+  [ -n "$raw" ] || return 0
+  case "$raw" in
+    *[!0-9]*) echo "gate_max_rows in $CONFIG is not a whole number of at least 1: $raw" >&2; return 1 ;;
+  esac
+  if [ "$raw" -lt 1 ]; then
+    echo "gate_max_rows in $CONFIG is not a whole number of at least 1: $raw" >&2; return 1
+  fi
+  GATE_MAX_ROWS="$raw"
+}
+
+# Entries in FINDINGS.md, tolerant of both shapes the file carries: `- <date> — lead.` and
+# `- **<date> — lead.**`. The obvious `^- 2026-` grep sees only the first, and MEASUREMENT.md
+# published 26 and 28 in adjacent sentences against a format-tolerant 42. A gate reading a reliably
+# low number fires late, silently, and nothing goes red when it does.
+#
+# A third shape is neither counted nor ignored — it is named, and the caller fails. A count nobody
+# can trust is worse than no count, because it looks like one.
+#
+# THE COUNT IS EVERY ENTRY, AND WHAT MAKES THAT REDUCIBLE IS AN INVARIANT IN ANOTHER FILE (0060).
+# `retro` is the TERMINAL SWEEPER: `skills/retro/SKILL.md` Step 4 gives every entry it reads one of
+# four dispositions and states that `no entry survives the pass that read it`. So every entry left
+# in this file is work a retro can still do, and the gate below is satisfiable by the stage it
+# dispatches. Lose that sentence and this counter silently becomes what it was before 0060 — a gate
+# only the OTHER sweeper could clear, diverting drivers into retros that correctly find nothing.
+# tests/findings-buffer.test.sh guards the sentence for this reason; do not delete it as a
+# duplicate of the disposition guard in tests/retro-tool-edit.test.sh, which asserts the same words
+# about a different claim.
+#
+# A marker-aware count that skipped `[->NNNN]` entries was considered and REJECTED in design: it
+# goes quiet exactly when deferred and handed-over entries pile up, which is when the gate's whole
+# job is to be loud. The token sits after the date precisely so both shapes below still match it.
+#
+# $1 the buffer to read, named in any MALFORMED line so a second buffer's bad entry is not hunted
+# for in the wrong repo.
+count_findings() {
+  awk -v src="$1" '
+    function dated(s)  { return s ~ /^- [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ }
+    function bolded(s) { return s ~ /^- \*\*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ }
+    # The preamble above the rule is prose about the file, and counting it inflates every read.
+    !body && /^---$/ { body = 1; next }
+    !body { next }
+    /^- / {
+      if (dated($0) || bolded($0)) { n++; next }
+      printf "MALFORMED %s:%d  %s\n", src, NR, $0
+      bad = 1
+    }
+    END { printf "COUNT %d %d\n", n + 0, bad + 0 }
+  ' "$1"
+}
+
+# --- the gate's SECOND limit: time served rather than volume (0133) ----------------------------
+#
+# The count alone strands a low-yield project. A repo parking two findings a sprint never reaches a
+# threshold of eight, so its buffer is never swept, and the lessons in it are never landed — the
+# gate is silent in exactly the case where nothing else will notice.
+#
+# THE UNIT IS COMPLETED SPRINTS, NOT CALENDAR DAYS, and the reason is that the gate is only ever
+# evaluated when a sprint ends. A dormant project's calendar clock runs while nothing is there to
+# read it, so a window and a sprint count fire identically on the next sprint whenever it comes —
+# and the sprint count is the one that measures what it claims to: opportunities offered and missed.
+#
+# WHERE THE COUNT COMES FROM, and why it is not a counter in config.yml beside `next_id`. A
+# supervisor may not take the backlog lock (`sprint` Step 7), and every write to this directory
+# needs it (`CONCURRENCY.md`, *Lock every write to the backlog directory*) — so the one durable
+# record a supervisor can write is its own per-run log, which is single-writer and needs no lock.
+# A completed sprint is therefore a run log carrying a `sprint_ended` event. Counting FILES instead
+# would score a supervisor killed mid-run as an opportunity the buffer was offered, which is the
+# opposite of true.
+#
+# Loud rather than defaulted, for read_threshold's reason: a driver gating on 2 where the project
+# wrote 6 is wrong with nothing to notice it by.
+MAX_SPRINTS=2
+read_max_sprints() {
+  [ -f "$CONFIG" ] || return 0
+  raw="$(awk '/^findings_max_sprints:/ {
+    v = $0; sub(/^findings_max_sprints: */, "", v); sub(/#.*/, "", v); gsub(/[ \t]/, "", v)
+    print v; exit
+  }' "$CONFIG")"
+  [ -n "$raw" ] || return 0
+  case "$raw" in
+    *[!0-9]*) echo "findings_max_sprints in $CONFIG is not a whole number: $raw" >&2; return 1 ;;
+  esac
+  MAX_SPRINTS="$raw"
+}
+
+RUNS="$DIR/runs"
+
+# The earliest date any entry in either buffer carries, or nothing where both are empty. The OLDEST
+# and never the newest: a buffer still receiving entries would otherwise reset its own clock every
+# sprint, which is precisely the low-yield project this limit exists for.
+#
+# Both entry shapes `count_findings` tolerates are read here too, and by the same preamble rule —
+# two readers disagreeing about which lines are entries is 0060's defect in miniature.
+oldest_entry_date() {
+  for oed_buf in "$FINDINGS" "$TOOLS_FINDINGS"; do
+    [ -n "$oed_buf" ] && [ -f "$oed_buf" ] || continue
+    awk '
+      !body && /^---$/ { body = 1; next }
+      !body { next }
+      /^- / {
+        v = $0
+        sub(/^- (\*\*)?/, "", v)
+        if (v ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) print substr(v, 1, 10)
+      }
+    ' "$oed_buf"
+  done | sort | head -n 1
+}
+
+# How many sprints have ENDED since $1, an ISO date.
+#
+# STRICTLY AFTER, and that is an ACKNOWLEDGED OVER-STRICTNESS rather than an oversight. An entry
+# carries a date and a run an instant, so on a shared day there is no fact saying which came first.
+# Not counting it delays the gate by at most one sprint; counting it fires the whole tail on a
+# finding parked minutes before the run ended, which is the worse of the two by the cost of a tail.
+sprints_since() {
+  [ -d "$RUNS" ] || { printf '0\n'; return 0; }
+  ss_n=0
+  for ss_f in "$RUNS"/*.jsonl; do
+    [ -f "$ss_f" ] || continue
+    ss_hit="$(awk -v since="$1" '
+      /"event"[ \t]*:[ \t]*"sprint_ended"/ {
+        if (match($0, /"at"[ \t]*:[ \t]*"[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)) {
+          d = substr($0, RSTART + RLENGTH - 10, 10)
+          if (d > since) { print "yes"; exit }
+        }
+      }
+    ' "$ss_f")"
+    [ -z "$ss_hit" ] || ss_n=$((ss_n + 1))
+  done
+  printf '%s\n' "$ss_n"
+}
+
+# Sets FOLDEST and FAGE. Call after `tally_findings`, which is what resolves the second buffer.
+FOLDEST=""
+FAGE=0
+tally_age() {
+  FOLDEST="$(oldest_entry_date)"
+  FAGE=0
+  [ -n "$FOLDEST" ] || return 0
+  FAGE="$(sprints_since "$FOLDEST")"
+}
+
+# The age half of the gate, as one predicate both readers share. An EMPTY buffer never crosses it,
+# however many sprints have ended: a sprint that parks nothing ends without a tail (0133 FR1), and
+# a tail costs about $6.75 against a one-ticket sprint that may cost less.
+age_gate_crossed() {
+  [ -n "$FOLDEST" ] || return 1
+  [ "$FCOUNT" -gt 0 ] || return 1
+  [ "$FAGE" -ge "$MAX_SPRINTS" ]
+}
+
+# --- the second buffer, and only the second (0060 FR10) ----------------------------------------
+#
+# The gate counts the buffers the retro it would dispatch will actually READ. `retro` Step 1 reads
+# the resolved local buffer, plus the tools repo's where one is configured — so a gate counting only
+# the local one under-reports a project whose sessions park tool findings by subject, and a gate
+# counting anything MORE would fire for a buffer its own retro cannot reach, which is the defect
+# this ticket opened on. Sibling backlogs under a shared workspace are deliberately not counted:
+# 0111 FR5 makes them unreachable by construction.
+#
+# RESOLVED, NEVER DISCOVERED, and never derived from the plugin install — references/CONVENTIONS.md,
+# *Routing a finding to the repo it is about*, is where that is settled. Relative paths resolve from
+# the project root, exactly as `conventions.path` does.
+#
+# Unlike the threshold, a `#` is NOT stripped here: it can be part of a path. That asymmetry is
+# stated in read_threshold above and is the reason these two readers are not unified.
+TOOLS_FINDINGS=""
+TOOLS_NOTE=""
+read_tools_buffer() {
+  TOOLS_FINDINGS=""
+  TOOLS_NOTE="local buffer only — config.yml names no tools.path"
+  [ -f "$CONFIG" ] || return 0
+  tpath="$(awk '
+    /^tools:[ \t]*$/ { intools = 1; next }
+    intools && /^[^ \t#]/ { intools = 0 }
+    intools && /^[ \t]+path:/ {
+      v = $0; sub(/^[ \t]*path:[ \t]*/, "", v)
+      sub(/[ \t]+$/, "", v)
+      print v; exit
+    }
+  ' "$CONFIG")"
+  [ -n "$tpath" ] || return 0
+
+  case "$tpath" in
+    /*) troot="$tpath" ;;
+    *)  troot="$ROOT/$tpath" ;;
+  esac
+  tbuf="$troot/.tickets/FINDINGS.md"
+  # A tools repo not yet migrated still has its buffer at a legacy location (0182 FR2, 0228 FR3).
+  [ -f "$tbuf" ] || tbuf="$troot/.backlog/FINDINGS.md"
+  [ -f "$tbuf" ] || tbuf="$troot/.claude/backlog/FINDINGS.md"
+
+  if [ ! -f "$tbuf" ]; then
+    TOOLS_NOTE="local buffer only — tools.path $tpath did not resolve to a backlog buffer"
+    return 0
+  fi
+  # A project configured to point at ITSELF would otherwise double every entry it holds, and the
+  # gate would fire at half the threshold with nothing to show for it. The template tells a tool
+  # repo to omit the key; this is what happens when it does not.
+  if [ "$(cd -- "$(dirname -- "$tbuf")" && pwd)/$(basename -- "$tbuf")" \
+     = "$(cd -- "$(dirname -- "$FINDINGS")" && pwd)/$(basename -- "$FINDINGS")" ]; then
+    TOOLS_NOTE="local buffer only — tools.path resolves to this project's own buffer"
+    return 0
+  fi
+  TOOLS_FINDINGS="$tbuf"
+  TOOLS_NOTE=""
+}
+
+# Sets FCOUNT (the total the gate reads), FLOCAL, FTOOLS and FBAD, and prints any MALFORMED line
+# from either buffer. One tally, so the line a human reads and the code a driver routes on can
+# never report different numbers — two counts over one question is this ticket's own defect in
+# miniature.
+tally_findings() {
+  FLOCAL=0; FTOOLS=0; FBAD=0
+  if [ -f "$FINDINGS" ]; then
+    lrep="$(count_findings "$FINDINGS")"
+    printf '%s\n' "$lrep" | grep '^MALFORMED' || true
+    FLOCAL="$(printf '%s\n' "$lrep" | awk '/^COUNT/ { print $2; exit }')"
+    [ "$(printf '%s\n' "$lrep" | awk '/^COUNT/ { print $3; exit }')" = 0 ] || FBAD=1
+  fi
+  if [ -n "$TOOLS_FINDINGS" ]; then
+    trep="$(count_findings "$TOOLS_FINDINGS")"
+    printf '%s\n' "$trep" | grep '^MALFORMED' || true
+    FTOOLS="$(printf '%s\n' "$trep" | awk '/^COUNT/ { print $2; exit }')"
+    [ "$(printf '%s\n' "$trep" | awk '/^COUNT/ { print $3; exit }')" = 0 ] || FBAD=1
+  fi
+  FCOUNT=$((FLOCAL + FTOOLS))
+}
+
+# The provenance line: which buffers that total came from. A count whose sources are not named
+# cannot be argued with — and where a second buffer was expected and missed, the miss is the thing
+# worth seeing.
+findings_sources() {
+  if [ -n "$TOOLS_FINDINGS" ]; then
+    printf 'local %s (%s) + tools %s (%s)\n' "$FLOCAL" "$FINDINGS" "$FTOOLS" "$TOOLS_FINDINGS"
+  else
+    printf '%s (%s)\n' "$TOOLS_NOTE" "$FINDINGS"
+  fi
+}
+
+usage() {
+  cat <<'USAGE'
+usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --findings | --drive [--propose] [--completed <stage>[:<id>]] [--started <id>]… [--scope <id>]… | --help]
+
+  ./next             counts by stage and by status, plus anything another session holds
+  ./next <stage>     the first takeable row for that stage, and its size
+                     stages: queue | design | develop | verify
+  ./next --waiting   every waiting row with the question it is waiting on
+  ./next --drift     every row that disagrees with its blocked_by or with its own item —
+                     stage, status, a claim the row does not match either way, a missing item file,
+                     a stamped ac_digest the criteria no longer match; one line per row, exits 1 if any
+  ./next --ac-digest <id> [--check]
+                     the digest of the item's acceptance criteria, one key per ACn, as queue and
+                     design stamp it; --check compares it with the stamped ac_digest: and exits 1
+                     naming each criterion changed, added or removed
+  ./next --findings  how many entries FINDINGS.md holds, and the TWO limits a driver gates on:
+                     the count against findings_threshold, and the oldest entry's age in completed
+                     sprints against findings_max_sprints. Either one crossed dispatches the tail
+  ./next --drive     what should happen next, for a driver rather than a human: one decision line,
+                     how deep the backlog is, and a distinct exit code per outcome. It runs the
+                     same drift check --drift runs before it picks a gate, and escalates on it:
+                     a drifted queue is not a finished one.
+                     --completed <stage>[:<id>] says which stage just finished on which ticket.
+                     That input is what tells a verify bounce from a fresh develop row, and a
+                     crash-recovery re-dispatch from a loop. Give it at most once.
+                     --started <id> names a ticket this RUN has already opened work on —
+                     repeatable, and cumulative over the whole run rather than over the last call.
+                     While one of them is still awaiting verify, no NEW develop gate is dispatched:
+                     work that was started gets finished. --completed's id is unioned in, so a run
+                     whose gates are all single tickets needs no --started at all.
+                     --scope <id> names a ticket in the run's CONFIRMED SCOPE — repeatable, and
+                     the whole scope on every call rather than what is left of it. While any of them
+                     is still dispatchable a crossed findings gate DEFERS: the dispatch goes ahead
+                     and one NOTE says so. The tail runs at the end of the scope, never in the
+                     middle of it. With no --scope the gate waits for the end of the run instead.
+                     Given --scope, a takeable design row the scope does not name is stepped over
+                     with a NOTE, and every in-scope design row is dispatched before any develop
+                     gate: design first, then build.
+                     Given --scope, an in-scope waiting row is stepped over with a NOTE while other
+                     in-scope work is takeable (exit 4 only when none is), and an out-of-scope
+                     waiting or next: queue row is stepped over with a NOTE, never masking exit 5.
+                     A ticket carrying ## Progress is its own dispatch unit, one leg per session:
+                     after `handoff --slice` the next leg's develop or the leg's verify is
+                     dispatched rather than escalated, and a started sliced ticket is finished first.
+                     --propose describes the dispatch a person is being asked to approve — how many
+                     tickets, which, a line of work each, and what holds the gate together — and is
+                     for the ONE call a run makes before its first stage. Opt-in because every later
+                     cycle would re-send the same block into the driver's context for nothing.
+                     It plans from the first develop-ready row, passing design-ready rows above it,
+                     and names as DESIGN lines the design rows related to that gate and the design
+                     row that heads the next sprint, nothing else.
+  ./next --help      this
+
+Takeable means four things: `next` matches the stage, no `blocked_by` entry is still open, the
+item carries no claim, and no file the row `expects:` is already held by a held row's `touches:`.
+Ownership is the item's `claimed_by:` and the Status column is a cache of it, so a row reading
+`ready` over a held ticket is skipped and reported — references/CONCURRENCY.md, *A stage writes
+only the ticket it holds*, is where that is settled. `blocked` is
+DERIVED from `blocked_by`, so the column is a cache of that answer and never the authority — a
+row is offered on the graph's answer whatever the column says, and the disagreement is reported.
+
+A row held out on that third test is reported as COLLIDES, naming the shared paths and the row
+holding them, and the walk carries on to the next clear row rather than stopping at the first
+stage match. The held set spans every stage: a develop row can collide with a live verify claim.
+Where every row at the stage collides, the closing line says so in different words from an
+empty stage — the two mean different things to whoever reads them.
+
+--drive spends a code per outcome, and they are the contract: 0 dispatch this · 3 run complete,
+nothing takeable · 4 escalate, a person decides, drift included · 5 the findings gate is reached,
+dispatch retro · 6 wait, the develop gate or leg names a file a design session in progress also names in touches: or expects:;
+wait for that session's outcome, then call again. A design row naming a file a develop session in
+progress touches is stepped over instead; design beside design or verify never conflicts. 1 (drift, malformed) and 2 (usage error) mean what they mean everywhere else —
+--drive reports drift on 4 rather than on 1 because what it has found is a decision for a person,
+which is the one thing 4 already means. Every other mode still spends 0 on "nothing is takeable",
+which is why --drive could not reuse it.
+USAGE
+}
+
+case "${1:-}" in
+  -h|--help|help) usage; exit 0 ;;
+esac
+
+# --- --findings -------------------------------------------------------------------------------
+# Ahead of the QUEUE.md check on purpose: the buffer's size is not a question about the table, and
+# a driver asking it on a project mid-scaffold should get the count rather than a parse error.
+if [ "${1:-}" = "--findings" ]; then
+  read_threshold || exit 1
+  read_max_sprints || exit 1
+  read_tools_buffer
+  if [ ! -f "$FINDINGS" ] && [ -z "$TOOLS_FINDINGS" ]; then
+    printf 'FINDINGS  0 entries; threshold %s — no FINDINGS.md at %s\n' "$THRESHOLD" "$FINDINGS"
+    exit 0
+  fi
+  tally_findings
+  if [ "$FCOUNT" -ge "$THRESHOLD" ]; then state='at or over the threshold'; else state='under the threshold'; fi
+  printf 'FINDINGS  %s entries; threshold %s (config.yml findings_threshold) — %s\n' \
+    "$FCOUNT" "$THRESHOLD" "$state"
+  printf '          %s' "$(findings_sources)"
+  printf '\n'
+  # The second limit, printed only where there is an entry to date. A line reading `oldest entry
+  # (none)` on an empty buffer invites the reading that the tail is merely overdue.
+  tally_age
+  if [ -n "$FOLDEST" ]; then
+    if age_gate_crossed; then astate='at or over the limit'; else astate='under the limit'; fi
+    printf '          oldest entry %s has survived %s completed sprint(s); limit %s (config.yml findings_max_sprints) — %s\n' \
+      "$FOLDEST" "$FAGE" "$MAX_SPRINTS" "$astate"
+  fi
+  [ "$FBAD" = 0 ] || {
+    echo "the count above is not trustworthy: an entry matches neither '- <date>' nor '- **<date>'" >&2
+    exit 1
+  }
+  exit 0
+fi
+
+# --- --ac-digest ------------------------------------------------------------------------------
+# The ONE definition of what an acceptance criterion's digest is (0195 FR1). `close` invokes this
+# rather than carrying a copy, and `--drift` below calls the same functions: a second copy of the
+# normalisation is a second contract, and the two would disagree the first time one was edited.
+#
+# A criterion is identified by its `ACn` label, on a checkbox line (`- [ ] ACn`) or a struck line
+# (`~~ACn`), and its text runs to the next label line or the section's end. Normalised here and
+# nowhere else:
+#   - the tick is dropped, so `close` ticking and `reopen` unticking are not edits to the contract;
+#   - every whitespace run, newlines included, is one space, so a rewrap is not an edit;
+#   - prose above the first label is excluded — it is the template's instructions, not the contract.
+# `cksum` because POSIX guarantees it and it prints the same CRC on macOS and Linux. This detects a
+# unilateral edit; it is not a tamper control — a session that edits and restamps defeats it.
+ac_digest_of() {
+  awk '
+    function flush() {
+      if (label == "") return
+      gsub(/[ \t]+/, " ", text); sub(/^ /, "", text); sub(/ $/, "", text)
+      printf "%s\t%s\n", label, text
+      label = ""; text = ""
+    }
+    /^## / { flush(); in_ac = ($0 ~ /^## Acceptance criteria/); next }
+    !in_ac { next }
+    /^- \[[ xX]\][ \t]+AC[0-9]+([^0-9]|$)/ || /^~~AC[0-9]+([^0-9]|$)/ {
+      flush()
+      line = $0
+      sub(/^- \[[ xX]\][ \t]+/, "", line)
+      label = line; sub(/^~~/, "", label); sub(/[^A-Z0-9].*$/, "", label)
+      text = line
+      next
+    }
+    label != "" { text = text " " $0 }
+    END { flush() }
+  ' "$1" | while IFS="$(printf '\t')" read -r acd_label acd_text; do
+    printf '%s=%08x\n' "$acd_label" "$(printf '%s' "$acd_text" | cksum | awk '{ print $1 }')"
+  done | awk '{ printf "%s%s", (NR > 1 ? " " : ""), $0 }'
+}
+
+# The keys of a stamped digest against a computed one, as `changed: AC2; added: AC3; removed: AC4`
+# — empty when they agree. By KEY, never by string: a stamp written in another order still matches,
+# and a criterion present on only one side is named as added or removed rather than missed (0195
+# FR4). `--drift` and `close` both report through this, so the two name a mismatch identically.
+ac_digest_diff() {
+  awk -v stamped="$1" -v computed="$2" '
+    function load(s, arr,   n, i, kv, parts) {
+      n = split(s, parts, " ")
+      for (i = 1; i <= n; i++) { split(parts[i], kv, "="); arr[kv[1]] = kv[2]; order[++norder] = kv[1] }
+    }
+    function add(kind, key) { list[kind] = list[kind] (list[kind] == "" ? "" : " ") key }
+    BEGIN {
+      load(stamped, s); load(computed, c)
+      for (i = 1; i <= norder; i++) {
+        k = order[i]
+        if (seen[k]++) continue
+        if (!(k in c)) add("removed", k)
+        else if (!(k in s)) add("added", k)
+        else if (s[k] != c[k]) add("changed", k)
+      }
+      out = ""
+      if (list["changed"] != "") out = "changed: " list["changed"]
+      if (list["added"] != "")   out = out (out == "" ? "" : "; ") "added: " list["added"]
+      if (list["removed"] != "") out = out (out == "" ? "" : "; ") "removed: " list["removed"]
+      printf "%s", out
+    }
+  '
+}
+
+# `--ac-digest <id>` prints the digest line `queue` and `design` stamp. `--ac-digest <id> --check`
+# compares it with the item's stamped `ac_digest:` and is what `close` runs: exit 0 and `ac_digest
+# matches` on agreement, exit 1 naming the criteria on a mismatch, and on an absent stamp exit 0
+# with `ac_digest absent — unverifiable` — absent is neither drift nor a match (0195 FR8).
+if [ "${1:-}" = "--ac-digest" ]; then
+  [ -n "${2:-}" ] || { echo "usage: ./next --ac-digest <id> [--check]" >&2; exit 2; }
+  case "${3:-}" in ''|--check) : ;; *) echo "usage: ./next --ac-digest <id> [--check]" >&2; exit 2 ;; esac
+  acd_item="$(ls "$DIR/items/$2-"*.md 2>/dev/null | head -1 || true)"
+  [ -n "$acd_item" ] || { echo "no item file for $2 — items/$2-*.md resolves to nothing" >&2; exit 1; }
+  acd_computed="$(ac_digest_of "$acd_item")"
+  if [ -z "${3:-}" ]; then
+    printf 'ac_digest: %s\n' "$acd_computed"
+    exit 0
+  fi
+  acd_stamped="$(awk '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && /^ac_digest:/ { sub(/^ac_digest: */, ""); sub(/[ \t]+$/, ""); print; exit }
+  ' "$acd_item")"
+  if [ -z "$acd_stamped" ]; then
+    printf '%s: ac_digest absent — unverifiable: no stamp to compare the criteria against\n' "$2"
+    exit 0
+  fi
+  acd_diff="$(ac_digest_diff "$acd_stamped" "$acd_computed")"
+  if [ -n "$acd_diff" ]; then
+    printf '%s: ac_digest differs from the criteria on disk — %s\n' "$2" "$acd_diff"
+    exit 1
+  fi
+  printf '%s: ac_digest matches\n' "$2"
+  exit 0
+fi
+
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------------------------
+# The table shape, resolved two ways for one reason.
+#
+# Fixed indices are checked rather than assumed, because the failure mode of a silently wrong
+# index is the worst one available: this script prints "0 ready of 2 rows" against a table it
+# cannot read, and a session concludes the backlog is empty rather than that the parser is wrong.
+# That happened once already. Refusing to run against a shape we cannot read is the floor.
+#
+# 0038's FR18 raises the floor for the NEW modes only: they resolve columns by header *name*, so a
+# moved column changes nothing, and 0006 still owns converting the pre-existing ones. Writing
+# `--drive` against fixed indices would have handed 0006 a second index-based reader to rewrite and
+# a second chance to be silently wrong until it did.
+#
+# So the pre-existing modes keep the fixed-shape assertion they have always made — verbatim, message
+# included, because three closed tickets and two scripts read what they return — and `--drive` skips
+# it. The by-name resolution below then runs for every mode; on the canonical table it yields the
+# same 2/3/4/5, so nothing that worked reads a different cell.
+# ---------------------------------------------------------------------------------------------
+if [ "${1:-}" != "--drive" ]; then
+  header="$(awk '/^\| *ID *\|/ { print; exit }' "$QUEUE")"
+  [ -n "$header" ] || { echo "no table header in $QUEUE — expected a row starting '| ID |'" >&2; exit 1; }
+  shape="$(printf '%s' "$header" | awk -F'|' '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); printf "%s%s", (i > 2 ? "/" : ""), v }
+  }')"
+  [ "$shape" = "ID/Title/Next/Status/Parent" ] || {
+    echo "unexpected table shape: $shape" >&2
+    echo "this reader parses ID/Title/Next/Status/Parent by position; fix the table or the reader" >&2
+    exit 1
+  }
+fi
+
+# `ID` is resolved by name too. Resolving one column by name and another by position would make the
+# promise above false in exactly the case nobody tests: the parser would look order-independent and
+# still read the wrong cell the day a column moves in front of `ID`.
+name_row="$(awk -F'|' '/^\|/ {
+  for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
+}' "$QUEUE")"
+[ -n "$name_row" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
+
+name_row_column() {
+  printf '%s' "$name_row" | awk -F'|' -v want="$1" '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
+  }'
+}
+
+ID="$(name_row_column ID)"
+TITLE="$(name_row_column Title)"
+NEXT="$(name_row_column Next)"
+STATUS="$(name_row_column Status)"
+
+# Routing is impossible without these three, and a missing column reads as empty on every row —
+# which presents as "nothing is takeable" rather than as a broken parser. That is the same failure
+# the fixed-shape check refuses, arriving through the new door, so it is refused here too.
+for required in "ID:$ID" "Next:$NEXT" "Status:$STATUS"; do
+  case "$required" in
+    *:) echo "no ${required%%:*} column in the QUEUE.md table — cannot route on a cell that is not there" >&2
+        echo "header found: $name_row" >&2
+        exit 1 ;;
+  esac
+done
+
+# The header and separator rows are recognised by the ID *cell*, not by cell 2 — under a reordered
+# table cell 2 holds something else, and the header would come back as a data row.
+rows() {
+  awk -F'|' -v n="$ID" '/^\|/ {
+    id = $n; gsub(/^ +| +$/, "", id)
+    if (id == "ID" || id ~ /^-+$/ || id == "") next
+    print
+  }' "$QUEUE"
+}
+
+field() { printf '%s' "$1" | awk -F'|' -v n="$2" '{ v = $n; gsub(/^ +| +$/, "", v); print v }'; }
+
+row_for() { rows | awk -F'|' -v id="$1" -v n="$ID" '{ v = $n; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }'; }
+
+# Ids whose row matches a column value. Ids carry no whitespace, so callers can iterate them with a
+# plain `for` — which keeps the loop in this shell rather than a pipeline subshell, where a counter
+# set inside would be discarded and every "did anything match?" test would read false.
+ids_where() { rows | awk -F'|' -v n="$1" -v want="$2" -v idc="$ID" '{ v = $n; gsub(/^ +| +$/, "", v); if (v == want) { id = $idc; gsub(/^ +| +$/, "", id); print id } }'; }
+
+all_ids() { rows | awk -F'|' -v n="$ID" '{ v = $n; gsub(/^ +| +$/, "", v); print v }'; }
+
+item_for() { ls "$DIR/items/$1-"*.md 2>/dev/null | head -1 || true; }
+
+# YAML's comment rule, as awk source text injected into every frontmatter reader below. awk has no
+# include, so a shared implementation is a string rather than a file; every other template that
+# reads frontmatter carries this same block, declared by the markers below, and the scripts are
+# separate files by install contract (`tests/backlog-scripts-installed.test.sh` AC2).
+#
+# It applies to SCALARS as much as to lists, and that asymmetry was the defect: 0031 taught the
+# list reader to strip comments while `fm` kept returning `aa11" # mine` for an annotated token —
+# and `close` compares exactly that string against the token it is given before it will close
+# anything (0044).
+#
+# `sub(/#.*/, "")` is the obvious form and it is wrong twice, so do not simplify it back:
+#   - `- "docs/a#b.md"` is a legal quoted path, and the naive form truncates it to `docs/a`;
+#   - in YAML a `#` only opens a comment at the start of a value or after whitespace, so `a#b`
+#     unquoted is one token too.
+# Hence: a quote only quotes when it is the value's first character (mid-value it is a literal, so
+# `it's/a/path.md` keeps its apostrophe), and a `#` only cuts when it opens the value or follows a
+# space or tab. `"\047"` is that apostrophe — this block is single-quoted shell.
+# copy-begin: decomment
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+DECOMMENT='
+function decomment(s,   i, ch, quote, out, start) {
+  sub(/^[ \t]+/, "", s)
+  start = 1
+  ch = substr(s, 1, 1)
+  if (ch == "\"" || ch == "\047") { quote = ch; start = 2 }
+  for (i = start; i <= length(s); i++) {
+    ch = substr(s, i, 1)
+    if (quote != "" && ch == quote) { quote = ""; continue }
+    if (quote != "")                { out = out ch; continue }
+    if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
+    out = out ch
+  }
+  sub(/[ \t]+$/, "", out)
+  return out
+}
+'
+# copy-end: decomment
+
+# One scalar out of an item's frontmatter.
+fm() {
+  [ -n "$1" ] || return 0
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && $0 ~ "^" key ":" { sub("^" key ": *", ""); print decomment($0); exit }
+  ' "$1"
+}
+
+# One frontmatter list, flattened to a line: inline `["0010"]` or a block of `- ` entries.
+#
+# Entries may carry YAML comments, because `develop` Step 1 tells a session to declare a file it is
+# about to create and say inline that it is new. A comment returned as part of an entry is not
+# cosmetic: these lists are what the scope-overlap check compares, so prose in the list reads as a
+# claimed path and a trailing space makes a real collision compare unequal — it fails open, and both
+# windows land in one file. `decomment` is defined once, above.
+# copy-begin: fm-list
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+fm_list() {
+  [ -n "$1" ] || return 0
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && $0 ~ "^" key ":" {
+      rest = $0; sub("^" key ": *", "", rest)
+      rest = decomment(rest)
+      if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
+      inside = 1; next
+    }
+    # A comment on its own line is skipped rather than ending the block: falling through to the
+    # `exit` below would silently truncate the list at the note.
+    inside && /^[ \t]*#/ { next }
+    inside && /^  *- / {
+      sub(/^ *- */, "")
+      entry = decomment($0)
+      if (entry != "") printf "%s ", entry
+      next
+    }
+    inside { exit }
+  ' "$1"
+}
+# copy-end: fm-list
+
+# copy-begin: progress-slices
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+# --- the slices of a sliced ticket (0231 FR1) ---------------------------------------------------
+# One line per slice of the item's `## Progress` section, in file order:
+#   <position> <name> <ticked 0|1> <kind>
+# where kind is `ac` (discharges at least one AC), `none` (discharges none) or `unspecified`.
+# A slice line is `- [ ] S<n> — <what lands> — discharges AC<a>, AC<b>`, with `— discharges none`
+# or `— unspecified` as its last field instead; the kind is read from that last field alone, so
+# the text of what lands may say anything. A line whose last field is none of the three is kind
+# `ac` — refusing a develop -> develop over it is the safe misreading, skipping a verify is not.
+progress_slices() {
+  awk '
+    /^## / { inp = ($0 == "## Progress"); next }
+    inp && /^- \[[ xX]\] S[0-9]+[ \t]/ {
+      t = (substr($0, 4, 1) != " ")
+      name = $0; sub(/^- \[[ xX]\] /, "", name); sub(/[ \t].*$/, "", name)
+      last = $0; sub(/^.* — /, "", last); sub(/[ \t]+$/, "", last)
+      if (last == "unspecified") k = "unspecified"
+      else if (last == "discharges none") k = "none"
+      else k = "ac"
+      print ++n, name, t, k
+    }
+  ' "$1"
+}
+
+# has_progress <item> — whether the item has a `## Progress` heading at all.
+has_progress() { grep -qx -- "## Progress" "$1"; }
+
+# last_ticked_position <slices> — the position of the last ticked slice, 0 when none is.
+last_ticked_position() { printf '%s\n' "$1" | awk '$3 == 1 { p = $1 } END { print p + 0 }'; }
+# copy-end: progress-slices
+
+# leg_state <id> — how the most recent leg of a sliced ticket ended, read off its item (0231 FR8):
+#   unsliced   no slice lines under `## Progress` — every rule below leaves the ticket alone
+#   clean      `slice:` names a TICKED slice, or is empty, and an unticked slice remains: the last
+#              leg went develop -> develop or passed its verify, so the next leg may be dispatched
+#   bounced    `slice:` names an UNTICKED slice: a verify sent the leg back without `--slice`
+#   finished   every slice is ticked
+# The ticked state of the named slice is the whole signal, because `handoff --slice` ticks on the
+# two clean endings and on nothing else.
+leg_state() {
+  ls_item="$(item_for "$1")"
+  [ -n "$ls_item" ] || { printf 'unsliced'; return 0; }
+  ls_slices="$(progress_slices "$ls_item")"
+  [ -n "$ls_slices" ] || { printf 'unsliced'; return 0; }
+  ls_slice="$(fm "$ls_item" slice | tr -d "\"' ")"
+  printf '%s\n' "$ls_slices" | awk -v s="$ls_slice" '
+    $3 == 0 { left = 1 }
+    $2 == s { named = 1; ticked = $3 }
+    END {
+      if (!left) print "finished"
+      else if (s != "" && named && !ticked) print "bounced"
+      else print "clean"
+    }'
+}
+
+# is_sliced <id> — a sliced ticket is its own dispatch unit at develop and at verify (0231 FR5,
+# FR11): a leg ends in a `handoff --slice` that describes that ticket alone, so it never joins a gate.
+is_sliced() { [ "$(leg_state "$1")" != unsliced ]; }
+
+# handed_off_from <id> <stage> — whether the item's most recent commit moved it OUT of <stage>: the
+# version before that commit read `next: <stage>`. This is the intervening outcome the same-stage
+# guard asks for, read from the item's history rather than from its present state. Without it a
+# develop session that died before claiming leaves a clean leg looking exactly like one it just
+# ended, and the leg would be dispatched again on every call. Answers 1 on any doubt — no git, no
+# history, no earlier version — so the doubt lands on the escalation, never on a re-dispatch.
+handed_off_from() {
+  ho_item="$(item_for "$1")"
+  [ -n "$ho_item" ] || return 1
+  ho_dir="$(dirname -- "$ho_item")"
+  ho_sha="$(git -C "$ho_dir" log -1 --format=%H -- "$(basename -- "$ho_item")" 2>/dev/null)" || return 1
+  [ -n "$ho_sha" ] || return 1
+  ho_was="$(git -C "$ho_dir" show "$ho_sha^:./$(basename -- "$ho_item")" 2>/dev/null \
+    | awk 'NR == 1 && /^---$/ { f = 1; next } f && /^---$/ { exit } f && /^next:/ { sub(/^next: */, ""); gsub(/["\047 ]/, ""); print; exit }')"
+  [ "$ho_was" = "$2" ]
+}
+
+# An entry in `blocked_by` is OPEN unless the ticket it names is done. A named ticket with no item
+# file is open and said so out loud: a blocker nobody can find is not a blocker anybody cleared.
+open_blockers_of() {
+  bl="$(fm_list "$(item_for "$1")" blocked_by)"
+  for b in $bl; do
+    bi="$(item_for "$b")"
+    if [ -z "$bi" ]; then printf '%s(no item file) ' "$b"; continue; fi
+    [ "$(fm "$bi" status)" = "done" ] || printf '%s ' "$b"
+  done
+}
+
+# `blocked` is derived, never authored: a row is blocked if and only if `blocked_by` names at least
+# one ticket that is not done. The Status column caches that answer and nothing kept the cache in
+# step — a ticket closed and four rows naming it stayed `blocked` for the rest of a session. So
+# every read here asks the graph, and `--drift` reports the cache lines that have gone stale.
+derived_of() {
+  if [ -n "$(open_blockers_of "$1")" ]; then printf 'blocked'; else printf 'ready'; fi
+}
+
+# Who holds a ticket. `references/CONCURRENCY.md`, *A stage writes only the ticket it holds*, owns
+# the definition and it is not restated here; this is the one implementation of it, and every
+# ownership question in this script routes through it — the take loop, the `--drive` walk, the
+# CLAIMED FILES block, the collision report and `--drift`'s two ownership classes.
+#
+# Ownership is a property of the ITEM, so the Status column is a cache of it exactly as it is a
+# cache of `blocked`, and `--drift` reports the cache lines that have gone stale in both directions.
+#
+# Prints the token and returns 0 when held; prints nothing and returns 1 when not. The `hb_`
+# prefixes matter: sh has no locals, and two of the callers below loop over `it` and `tok`.
+held_by() {
+  hb_it="$(item_for "$1")"
+  [ -n "$hb_it" ] || return 1
+  hb_tok="$(fm "$hb_it" claimed_by)"
+  [ -n "$hb_tok" ] || return 1
+  printf '%s' "$hb_tok"
+}
+
+# The first line of an item's `## Waiting on` section — the question, without opening the ticket.
+#
+# A section written as the FR14 decision brief (0231) opens on `### Outcome`, so its first line is a
+# heading and carries nothing a person can answer. Where the brief has `### What needs you`, the
+# first line under it is the question; otherwise the section's first line, as before.
+waiting_on() {
+  [ -n "$1" ] || return 0
+  awk '
+    /^## Waiting on/ { inside = 1; next }
+    inside && /^## / { exit }
+    inside && first == "" && NF { first = $0 }
+    inside && /^### What needs you/ { need = 1; next }
+    need && /^#/ { need = 0 }
+    need && NF { print; found = 1; exit }
+    END { if (!found && first != "") print first }
+  ' "$1"
+}
+
+# The first line of an item's `## Open design question` section — what `--drive` carries to a person
+# when a row is at `next: design`, so they answer in one line rather than opening the ticket.
+design_question() {
+  [ -n "$1" ] || return 0
+  awk '
+    /^## Open design question/ { inside = 1; next }
+    inside && /^## / { exit }
+    inside && NF { print; exit }
+  ' "$1"
+}
+
+# The first line of an item's `## Problem` section, which is what a proposal shows a person as the
+# work (0130 FR4: drawn from the ticket rather than invented). Emphasis is stripped because these
+# lines are almost always written `**bolded like this**, and then continued`, and the asterisks are
+# markup for a file nobody is reading here. Truncated, because one ticket's opening sentence is not
+# allowed to set the width of a forty-row proposal.
+problem_line() {
+  [ -n "$1" ] || return 0
+  awk '
+    /^## Problem/ { inside = 1; next }
+    inside && /^## / { exit }
+    # The first PARAGRAPH, flattened — never the first source line. These sections are wrapped
+    # prose, so a line is a typographic accident: the live backlog produced "…is invisible to the
+    # only reader that is", cut mid-clause at the wrap. Flatten, then truncate on a width this
+    # function chooses.
+    inside && NF { para = (para == "" ? $0 : para " " $0); next }
+    inside && para != "" { exit }
+    END {
+      gsub(/\*\*/, "", para)
+      gsub(/[ \t]+/, " ", para)
+      sub(/^ /, "", para); sub(/ $/, "", para)
+      if (para == "") exit
+      if (length(para) > 140) para = substr(para, 1, 139) "…"
+      print para
+    }
+  ' "$1"
+}
+
+# --- shared tails -----------------------------------------------------------------------------
+# Is $1 one of the space-separated words in $2? The padding is what makes it exact — without it
+# `docs/a` matches `docs/ab`. Ids and the paths in `expects:` carry no whitespace, which is what
+# lets every list in this script be space-separated in the first place.
+contains_word() {
+  case " $2 " in *" $1 "*) return 0 ;; esac
+  return 1
+}
+
+# Every path in $1 that is also in $2, in $1's order. `--drive` asks only whether the two lists
+# meet; the take loop has to name which paths did, because a collision reported without its path
+# is a verdict the reader cannot check (0045 FR3).
+paths_shared() {
+  for pa in $1; do
+    if contains_word "$pa" "$2"; then printf '%s ' "$pa"; fi
+  done
+}
+
+paths_overlap() {
+  [ -n "$(paths_shared "$1" "$2")" ]
+}
+
+
+# An uncommitted queue is a claim only one session can see: whoever commits QUEUE.md next carries
+# these rows under their own message, and the first anyone notices is a confusing diff.
+warn_dirty() {
+  # **Pathspec here is relative to `$DIR`, deliberately — do not "tidy" it back to `$QUEUE`.** It is
+# absolute, and on a case-insensitive filesystem `$DIR` can spell the repo path in a different case
+# from `git rev-parse --show-toplevel`, which makes an absolute pathspec read as *outside the repo*.
+# With a single pathspec there is no second file to compare against, so the check degrades to a
+# silent pass instead of a loud wrong answer — the direction that loses work rather than time.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- QUEUE.md; then
+    printf 'WARNING: QUEUE.md has uncommitted row changes — commit yours now, and do not commit rows\n'
+    printf '         you did not claim (references/CONCURRENCY.md). Changed rows:\n'
+    git -C "$DIR" diff -U0 -- QUEUE.md | awk -F'|' -v s="$STATUS" -v n="$NEXT" '
+      /^[+-]\| / {
+        id = $2; gsub(/^[+-] *| *$/, "", id)
+        nx = $n; gsub(/^ +| +$/, "", nx)
+        st = $s; gsub(/^ +| +$/, "", st)
+        printf "         %s %s | %s | %s\n", substr($0, 1, 1), id, nx, st
+      }'
+  fi
+}
+
+# The best available description of a held row's file scope. `touches:` was checked against the
+# code; `expects:` is the prediction the ticket was written with and is labelled as such — the
+# reader is being handed a weaker answer, not a narrower claim, and still has to ask.
+#
+# $1 the held item file.
+declared_scope() {
+  tou="$(fm_list "$1" touches)"
+  [ -z "$tou" ] || { printf '%s' "$tou"; return 0; }
+  pred="$(fm_list "$1" expects)"
+  [ -n "$pred" ] || { printf 'none declared — assume held, ask'; return 0; }
+  printf 'none declared; predicted by expects: %s — assume held, ask' "${pred% }"
+}
+
+# Files another session holds. This is the check that stops two windows in one file, and it is why
+# the script reads item frontmatter rather than only the table: `touches:` is a claim on files.
+# The set is every HELD row, in rank order — not every row the column calls `in-progress` (0140).
+# A row reading `ready` over a held item was omitted from this block entirely, which is the one
+# place a reader could have seen the claim; a row reading `in-progress` over a tokenless item was
+# listed as `[no token]`, which reads as a claim where `--drift` calls it drift.
+show_claimed() {
+  busy=""
+  for cid in $(all_ids); do
+    ctok="$(held_by "$cid")" || continue
+    # An empty `touches:` here is ambiguous — not yet declared, or released as the row closes — and
+    # nothing can tell them apart, so `declared_scope` says so rather than implying the row is free.
+    busy="$busy  $cid [$ctok] $(declared_scope "$(item_for "$cid")")
+"
+  done
+  [ -n "$busy" ] || return 0
+  printf 'CLAIMED FILES — another session owns these; take a row that avoids them:\n'
+  printf '%s' "$busy"
+}
+
+# Which held rows hold a file this candidate's `expects:` names, and which files those are.
+# One line per colliding row, already worded for the report: a collision stated without its path is
+# a verdict the reader cannot check, and without its holder there is nobody to ask (0045 FR3).
+#
+# `touches:` only. That is the claim a session made against the code, where a held row's `expects:`
+# was written before anyone opened the file — the CLAIMED FILES block below carries the weaker
+# field for a reader to judge, and a prediction is not a thing to refuse a row over.
+#
+# Not filtered by stage: the instance that cost the most was a `develop` row colliding with a live
+# `verify` claim, and that one is the worse case — a QA session runs the suite while the files
+# under it are edited, so its verdict describes a tree that was never a commit (0045 FR6).
+#
+# Empty when the candidate is clear, which is also how the caller asks the question.
+#
+# $1 the candidate's id, $2 its `expects:` list.
+collision_report() {
+  for hid in $(all_ids); do
+    htok="$(held_by "$hid")" || continue
+    htouches="$(fm_list "$(item_for "$hid")" touches)"
+    # An EXCLUSIVE CLAIM — `touches: "*"` — holds the whole tree, so it collides with every
+    # candidate rather than with the ones naming a path it happens to share (0067 FR5;
+    # `CONCURRENCY.md`, *A change that touches every file takes an exclusive claim*). Tested BEFORE
+    # `paths_shared`, which matches path words exactly and so intersects `*` with nothing at all —
+    # which is how a cross-cutting rename came to be invisible to the one mechanism that reports
+    # scope. It has to short-circuit for a second reason: a candidate whose own `expects:` is empty
+    # has no path to intersect, so no intersection filter, however wide the holder's side, can ever
+    # report it.
+    #
+    # Only from a HELD row, which `held_by` above already decides. A stale `"*"` left on an unheld
+    # row must collide with nothing, or one un-stripped field freezes the stage for everyone.
+    if contains_word '*' "$htouches"; then
+      printf 'COLLIDES  %s | every file — exclusive claim held by %s [%s]\n' "$1" "$hid" "$htok"
+      continue
+    fi
+    shared="$(paths_shared "$2" "$htouches")"
+    [ -n "$shared" ] || continue
+    printf 'COLLIDES  %s | %s — held by %s [%s]\n' "$1" "${shared% }" "$hid" "$htok"
+  done
+}
+
+# --- --waiting --------------------------------------------------------------------------------
+# A `waiting` row says a person is needed and not what for. Without this, finding out means opening
+# the ticket — the exact cost the pared table exists to remove.
+if [ "${1:-}" = "--waiting" ]; then
+  bad=0
+  any=0
+  for id in $(ids_where "$STATUS" waiting); do
+    any=1
+    row="$(row_for "$id")"
+    q="$(waiting_on "$(item_for "$id")")"
+    if [ -n "$q" ]; then
+      printf 'WAITING   %s | %s\n          %s\n' "$id" "$(field "$row" "$TITLE")" "$q"
+    else
+      # Reported as a defect in the row, never skipped: a `waiting` row with no question is
+      # indistinguishable from a forgotten one, and only the person named can clear either.
+      printf 'MALFORMED %s | %s\n          status is waiting with no "## Waiting on" section\n' \
+        "$id" "$(field "$row" "$TITLE")"
+      bad=1
+    fi
+  done
+  [ "$any" -eq 1 ] || printf 'nothing is waiting on a person\n'
+  exit "$bad"
+fi
+
+# --- --drift ----------------------------------------------------------------------------------
+# A row and the item behind it are two records of one ticket, and only one of them is authoritative
+# on each field. This names every row where the two disagree, so the staleness is visible without
+# opening a ticket. Seven classes, and this comment is the one place they are listed — `usage()`
+# names them in a line, and the prose that cites this mode cites the contract rather than copying
+# it (0115 FR6):
+#
+#   1. no item file resolves for the row                        — checked first, because every read
+#      below returns empty against a missing file and would present as a disagreement with ""
+#   2. the Status column against `blocked_by`, in both directions — the cache 0024 built this for
+#   3. the Next column against the item's `next:`                — a half-applied hand-off
+#   4. the Status column against the item's `status:`            — the other half of the same
+#   5. a row at `in-progress` over an unheld item                — drift, not ownership, per
+#      CONCURRENCY.md's *A stage writes only the ticket it holds*, which owns the definition of
+#      *held*; distinct from 4 because both records can read `in-progress` with nobody holding the
+#      ticket
+#   6. a row NOT at `in-progress` over a HELD item                — the mirror of 5, and the
+#      direction that loses work rather than time: the row reads takeable while somebody is
+#      building it (0140). Reported after 4 so a row disagreeing on `status:` as well is one line,
+#      class 4's, rather than two
+#   7. a stamped `ac_digest:` that differs from the criteria on disk (0195 FR4) — naming each
+#      criterion changed, added or removed. An ABSENT stamp is not this class: every backlog holds
+#      items written before the field, and `--drive` would stop on exit 4 for a state nobody caused
+#
+# One line per row, the classes in that order: a second line about the same row is noise, and the
+# stale `blocked` cache is the more actionable reading whenever it and 4 both fire. It exits
+# non-zero on any drift: a report that prints and exits zero is invisible to anything scripted
+# around it, which is the same silent failure it exists to remove. Nothing here writes —
+# reconciling belongs to whatever closed the blocker or left the hand-off half-applied.
+#
+# A FUNCTION, and shared with `--drive` rather than restated there (0142 FR3). Two copies of the
+# class list is the defect 0115 and 0141 each recorded once already: the second copy is written
+# from the first and then diverges silently, because nothing reds when one of them stops naming a
+# class. Prints one line per drifted row and returns 1 if any drifted, 0 if none — the return is
+# the report's verdict, so a caller that only wants the verdict discards the output rather than
+# re-deriving it. `dr_` prefixes because sh has no locals and both callers loop over `id`.
+drift_report() {
+  dr_drifted=0
+  for dr_id in $(all_ids); do
+    id="$dr_id"
+    row="$(row_for "$id")"
+    written="$(field "$row" "$STATUS")"
+    derived="$(derived_of "$id")"
+    item="$(item_for "$id")"
+
+    # Only `blocked` is derived. `waiting` is cleared by a person and `in-progress` by a claim, so
+    # neither can drift against the graph — but a row sitting at either WITH an open blocker is
+    # still a lie about takeability, and that direction is reported.
+    if [ -z "$item" ]; then
+      printf 'DRIFT     %s | row present, no item file — items/%s-*.md resolves to nothing\n' "$id" "$id"
+      dr_drifted=1
+    elif [ "$written" = "blocked" ] && [ "$derived" = "ready" ]; then
+      printf 'DRIFT     %s | written blocked, derived ready — no blocked_by entry is still open\n' "$id"
+      dr_drifted=1
+    elif [ "$written" != "blocked" ] && [ "$derived" = "blocked" ]; then
+      printf 'DRIFT     %s | written %s, derived blocked — blocked_by still open: %s\n' \
+        "$id" "$written" "$(open_blockers_of "$id")"
+      dr_drifted=1
+    elif [ "$(field "$row" "$NEXT")" != "$(fm "$item" next)" ]; then
+      printf 'DRIFT     %s | row Next %s, item next: %s — the row and its item disagree about the stage\n' \
+        "$id" "$(field "$row" "$NEXT")" "$(fm "$item" next)"
+      dr_drifted=1
+    elif [ "$written" != "$(fm "$item" status)" ]; then
+      printf 'DRIFT     %s | row Status %s, item status: %s — the row and its item disagree about the status\n' \
+        "$id" "$written" "$(fm "$item" status)"
+      dr_drifted=1
+    elif [ "$written" = "in-progress" ] && ! held_by "$id" >/dev/null; then
+      printf 'DRIFT     %s | row Status in-progress, item claimed_by: empty — nobody holds it\n' "$id"
+      dr_drifted=1
+    elif [ "$written" != "in-progress" ] && dtok="$(held_by "$id")"; then
+      printf 'DRIFT     %s | row Status %s, item claimed_by: %s — held, and the row does not say so\n' \
+        "$id" "$written" "$dtok"
+      dr_drifted=1
+    elif dstamp="$(fm "$item" ac_digest)" && [ -n "$dstamp" ] &&
+         ddiff="$(ac_digest_diff "$dstamp" "$(ac_digest_of "$item")")" && [ -n "$ddiff" ]; then
+      printf 'DRIFT     %s | ac_digest differs from the criteria on disk — %s — a person decides whether the new text is agreed\n' \
+        "$id" "$ddiff"
+      dr_drifted=1
+    fi
+  done
+  return "$dr_drifted"
+}
+
+if [ "${1:-}" = "--drift" ]; then
+  if drift_report; then
+    printf 'no drift: every row agrees with its blocked_by and with its item\n'
+    exit 0
+  fi
+  exit 1
+fi
+
+# --- --drive ----------------------------------------------------------------------------------
+# What should happen next, for a driver rather than a human. FR8 of 0038 is the specification: the
+# whole space of transitions the three stages can write, each routed, and anything outside it stops
+# rather than falling through to a default.
+#
+# Two things make this a different question from `./next <stage>`, and neither is cosmetic:
+#
+#   - It spends a distinct code per outcome. `./next develop` spends 0 on both "here is a row" and
+#     "nothing is takeable" — a human reading the line gets away with that, a loop cannot.
+#   - It takes the completed outcome as an INPUT (`--completed`) rather than deriving it. A driver
+#     killed after dispatch but before the stage claimed leaves the row `ready`, so a stateless
+#     re-derivation has to re-dispatch it; a guard keyed on "same ticket, same stage" alone would
+#     escalate that recovery. The guard needs an intervening outcome, and only the caller's run log
+#     holds one. Absent it, `--drive` dispatches.
+#
+# The Status COLUMN is the authority for routing, deliberately, because there are two vocabularies:
+# item frontmatter also carries `active` (a project, which has no row) and `done` (a closed ticket).
+# Frontmatter stays the authority for everything else — `parent:`, `expects:`, the two sections.
+#
+# Nothing here writes, takes the lock, or acts. It prints one decision.
+if [ "${1:-}" = "--drive" ]; then
+  # The four outcomes, named because a bare `decide 3` where `decide 4` was meant is a silent
+  # routing bug: a driver reads "run complete" and stops instead of asking a person. `--help`
+  # publishes the same numbers — that block and these four lines are the contract.
+  DISPATCH=0
+  RUN_COMPLETE=3
+  ESCALATE=4
+  FINDINGS_GATE=5
+  WAIT=6
+
+  read_threshold || exit 1
+  read_max_sprints || exit 1
+  read_gate_max_rows || exit 1
+  shift
+  COMPLETED=""
+  STARTED=""
+  SCOPE=""
+  PROPOSE=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --propose) PROPOSE=1; shift ;;
+      --completed)
+        shift
+        [ $# -gt 0 ] || { echo "--completed needs <stage>[:<id>]" >&2; usage >&2; exit 2; }
+        # One only, and it stays that way (0131 FR8). The guard below needs *an* intervening
+        # outcome, not a history, so accepting a list while reading a single element is a trap for
+        # the caller. What a run's history is for is the finish-before-start preference, and that
+        # is `--started`: a different fact with a different lifetime — "what just finished" is
+        # per-call and transient, "what this run has opened" is cumulative and monotonic.
+        [ -z "$COMPLETED" ] || { echo "--completed takes one <stage>[:<id>]; got a second: $1" >&2; exit 2; }
+        COMPLETED="$1"
+        shift ;;
+      --started)
+        shift
+        [ $# -gt 0 ] || { echo "--started needs <id>" >&2; usage >&2; exit 2; }
+        # Four digits or a usage error. A malformed id matches no row and would disable the
+        # preference in silence, which is the one failure mode a fail-open rule may not have.
+        case "$1" in
+          [0-9][0-9][0-9][0-9]) : ;;
+          *) echo "--started takes a four-digit id; got: $1" >&2; usage >&2; exit 2 ;;
+        esac
+        contains_word "$1" "$STARTED" || STARTED="$STARTED $1"
+        shift ;;
+      --scope)
+        shift
+        [ $# -gt 0 ] || { echo "--scope needs <id>" >&2; usage >&2; exit 2; }
+        # Four digits or a usage error, exactly as `--started` is (0168 FR1). A malformed id here
+        # is worse than one there: it matches no row, so the scope reads as already finished and
+        # the tail this flag exists to defer fires in the middle of the run instead.
+        case "$1" in
+          [0-9][0-9][0-9][0-9]) : ;;
+          *) echo "--scope takes a four-digit id; got: $1" >&2; usage >&2; exit 2 ;;
+        esac
+        contains_word "$1" "$SCOPE" || SCOPE="$SCOPE $1"
+        shift ;;
+      *) echo "unknown argument to --drive: $1" >&2; usage >&2; exit 2 ;;
+    esac
+  done
+
+  # A started id with no row is ordinary: the ticket closed, or gained a child and became a
+  # project. An id with no row AND no item file is a driver bug, and it is reported rather than
+  # swallowed — the preference silently stopping applying is worse than the run stopping, and both
+  # are worse than one line naming the id (references/CONVENTIONS.md, the fail-open ladder).
+  for sid in $STARTED; do
+    if [ -z "$(row_for "$sid")" ] && [ -z "$(item_for "$sid")" ]; then
+      printf 'NOTE      --started %s matches no row and no item file — nothing recognises that id\n' "$sid"
+    fi
+  done
+
+  # Every takeable `next: develop` row, in rank order — the same predicate `./next develop` applies.
+  takeable_develop() {
+    for tid in $(all_ids); do
+      trow="$(row_for "$tid")"
+      if [ "$(field "$trow" "$NEXT")" != "develop" ]; then continue; fi
+      case "$(field "$trow" "$STATUS")" in in-progress|waiting) continue ;; esac
+      if held_by "$tid" >/dev/null; then continue; fi
+      if [ -n "$(open_blockers_of "$tid")" ]; then continue; fi
+      printf '%s ' "$tid"
+    done
+  }
+
+  # $1 minus $2. sh has no set type, so the difference is a loop rather than an operator.
+  without() {
+    for wid in $1; do
+      if ! contains_word "$wid" "$2"; then printf '%s ' "$wid"; fi
+    done
+  }
+
+  # The gate led by $1 out of the pool $2: the lead, plus every other takeable develop row sharing
+  # its parent or naming one of the same files in `expects:`. That is `develop`'s own batching unit
+  # — the unit is a gate, not a row, because what batching saves is the startup a session pays
+  # before it writes a line, and that is only shared where the parent or the files are.
+  #
+  # Membership is tested against the gate's ACCUMULATED scope — the union of the `expects:` of every
+  # row already in it — not against the lead's alone (0136). Against the lead alone the gates this
+  # walk produces are not guaranteed disjoint from each other: a row can be excluded from gate 1 for
+  # not overlapping its lead while naming a file some other member of gate 1 does name, and then
+  # lead a gate 2 that collides with it. That miscounts DEPTH today and is a live hazard the moment
+  # anything dispatches two gates at once.
+  #
+  # Two bounds hold that chaining down, and they have to be read together with the hazard above:
+  #
+  #  - **One pass over the pool, in rank order, each row tested exactly once and never reconsidered.**
+  #    So the scope only ever grows forward: a row stepped over is not pulled back in by a later
+  #    member that happens to name one of its files. This is not the transitive closure of the
+  #    shared-file graph, which is what would sweep half a backlog into one gate via a file two
+  #    unrelated efforts both happen to touch.
+  #  - **The pool is the takeable `develop` rows only**, so nothing blocked, held or at another
+  #    stage can extend the scope.
+  #
+  #  - **A ROW CAP, `gate_max_rows`, binding only the gates this walk FORMS (0178)** — every new-gate
+  #    site passes it to `gate_from`. Rank orders admission within it: the pass is in rank order,
+  #    so when more rows join than fit, the ones nearest the lead get in and the rest wait for a
+  #    later gate. A joiner is admissible however many non-joining rows separate it from the lead;
+  #    rank chooses the LEAD, and a join decides batching and never selection. `verify_batch` calls
+  #    `gate_from` with no cap, because it recovers a membership already fixed rather than choosing
+  #    one.
+  #
+  # A gate can still grow long where a chain of rows really does share files pairwise; that group is
+  # genuinely one file scope and cannot be split into sessions that run together. Making the
+  # composition legible to a person is 0130's.
+  #
+  # Does $1 join the gate accumulating in `lparent`/`gscope`? Extends `gscope` and answers 0 when it
+  # does. Factored out so a new gate and a recovered one cannot drift apart on what a join IS — they
+  # differ on the row cap alone (0178).
+  gate_admits() {
+    ga_expects="$(fm_list "$(item_for "$1")" expects)"
+    if [ -n "$lparent" ] && [ "$(fm "$(item_for "$1")" parent)" = "$lparent" ]; then
+      gscope="$gscope $ga_expects"; return 0
+    fi
+    if paths_overlap "$gscope" "$ga_expects"; then
+      gscope="$gscope $ga_expects"; return 0
+    fi
+    return 1
+  }
+
+  # $3, when given, is the row cap: the pass stops once the gate holds that many, so a row that
+  # would join only through a scope widened past the cap is never reached. Absent, it is unbounded.
+  gate_from() {
+    lead="$1"; pool="$2"; gcap="${3:-}"
+    lparent="$(fm "$(item_for "$lead")" parent)"
+    gscope="$(fm_list "$(item_for "$lead")" expects)"
+    printf '%s' "$lead"
+    # A sliced ticket is a gate of one, and never joins another's (0231 FR8, FR11): its leg ends in
+    # a `handoff --slice` describing that ticket alone.
+    if is_sliced "$lead"; then return 0; fi
+    gsize=1
+    for gid in $pool; do
+      if [ -n "$gcap" ] && [ "$gsize" -ge "$gcap" ]; then return 0; fi
+      if [ "$gid" = "$lead" ]; then continue; fi
+      if is_sliced "$gid"; then continue; fi
+      if gate_admits "$gid"; then printf ' %s' "$gid"; gsize=$((gsize + 1)); fi
+    done
+  }
+
+  # What the walk would halt on after every takeable gate is spent. Without this a driver's first
+  # run stops at the first `next: design` row and reads as broken rather than as finished.
+  depth_stopper() {
+    for sid in $(all_ids); do
+      srow="$(row_for "$sid")"
+      snext="$(field "$srow" "$NEXT")"
+      sstatus="$(field "$srow" "$STATUS")"
+      if [ "$sstatus" = "in-progress" ]; then continue; fi
+      if [ -n "$(open_blockers_of "$sid")" ]; then continue; fi
+      if held_by "$sid" >/dev/null; then continue; fi
+      if [ "$sstatus" = "waiting" ]; then printf '%s (waiting on a person)' "$sid"; return 0; fi
+      case "$snext" in
+        queue)                 printf '%s (next: %s — a person decides)' "$sid" "$snext"; return 0 ;;
+        design|develop|verify) continue ;;
+        *)              printf "%s (next: '%s' — no routing rule covers it)" "$sid" "$snext"; return 0 ;;
+      esac
+    done
+    printf 'the end of the queue'
+  }
+
+  # FR17: one read answers both "what now" and "how far does this go", because the read happens
+  # anyway. Gates, not rows — two rows that batch are one session.
+  depth_line() {
+    remaining="$(takeable_develop)"
+    gates=0
+    while [ -n "$remaining" ]; do
+      taken="$(gate_from "$(printf '%s' "$remaining" | awk '{ print $1 }')" "$remaining" "$GATE_MAX_ROWS")"
+      gates=$((gates + 1))
+      remaining="$(without "$remaining" "$taken" | awk '{ $1 = $1; print }')"
+    done
+    printf 'DEPTH     %s develop gate(s) takeable; runs dry at %s\n' "$gates" "$(depth_stopper)"
+  }
+
+  # What `--propose` describes, set at each dispatch site and read by `decide`. Two variables
+  # rather than an argument to `decide`, because every non-dispatch decision would otherwise have
+  # to pass two empty strings past a reader who never wants them.
+  PROPOSE_STAGE=""
+  PROPOSE_IDS=""
+
+  # The gate, made legible before a person approves it (0130). Printed between the depth line and
+  # the decision, so a reader meets the shape of the run and then the instruction.
+  #
+  # WHAT THIS IS FOR, in one sentence, because the block reads like a report and is not one: a gate
+  # is a CONFLICT unit, and presenting a conflict unit as a plan is how a person approves thirteen
+  # tickets meaning to approve four. The JOIN lines are the whole point — a count alone reads as a
+  # large sprint, where "ten of these are here because they all edit one file" reads as the grouping
+  # artefact it is, and only the second is something a person can act on.
+  #
+  # A file NAMED BY ONE ROW IS NOT PRINTED. It explains no grouping, and a one-row coincidence
+  # listed beside a real hub invites reading it as a theme.
+  #
+  # How many shared files are listed before the rest are counted in one line. Five because the
+  # question a person is answering is "is this one effort or several", and the files explaining the
+  # largest shares are what answer it; the long tail of pairs is what buried the answer on the live
+  # backlog. A figure, not a judgement call, so the block's length is bounded by the gate's shape
+  # and never by how verbose its tickets are.
+  PROPOSE_JOIN_CAP=5
+
+  # A sprint's size, in develop tickets. A gate is the BATCHING unit and the first dispatch; it is
+  # not the scope. A ticket's develop and verify floors are paid in whichever sprint runs it, so a
+  # short sprint saves nothing and adds a supervisor floor, a tail and a run a person has to start:
+  # a one-ticket sprint is slower and dearer than /develop by hand (2026-09-25, a person's
+  # correction, after --propose offered a gate of one and the supervisor proposed exactly that).
+  SPRINT_MIN_TICKETS=3
+  SPRINT_TARGET_TICKETS=5
+
+  # `pb_` prefixes because sh has no locals, and this script's own `held_by` records why that
+  # matters: `paths_shared` loops over a bare `pa`, so a future call to it from inside this block
+  # would corrupt the loop it was called from, silently.
+  propose_block() {
+    [ "$PROPOSE" = 1 ] || return 0
+    [ -n "$PROPOSE_STAGE" ] || return 0
+
+    pb_n=0
+    for pb_id in $PROPOSE_IDS; do pb_n=$((pb_n + 1)); done
+
+    # `retro` is dispatched by the findings gate and holds no row. It is still a stage session, so
+    # it is still something a person is being asked to approve — a stage that silently skipped the
+    # proposal would be the one hole in "no stage runs unconfirmed".
+    if [ "$pb_n" = 0 ]; then
+      printf 'PROPOSE   %s | no ticket of its own — the findings buffer is the subject\n' "$PROPOSE_STAGE"
+      return 0
+    fi
+
+    printf 'PROPOSE   %s | %s ticket(s)\n' "$PROPOSE_STAGE" "$pb_n"
+    for pb_id in $PROPOSE_IDS; do
+      pb_item="$(item_for "$pb_id")"
+      printf 'TICKET    %s | size %s | %s\n' "$pb_id" "$(fm "$pb_item" size)" "$(field "$(row_for "$pb_id")" "$TITLE")"
+      pb_work="$(problem_line "$pb_item")"
+      [ -z "$pb_work" ] || printf 'WORK      %s\n' "$pb_work"
+    done
+
+    # One `fm_list` per ticket rather than one per (ticket, path) pair: the counting is awk's, so a
+    # forty-row gate naming a hundred and sixty paths stays forty reads rather than six thousand.
+    # A row naming the same path twice counts once — `expects:` is a set, and a duplicated entry
+    # would otherwise inflate the very number a person is being asked to judge.
+    for pb_id in $PROPOSE_IDS; do
+      for pb_path in $(fm_list "$(item_for "$pb_id")" expects); do printf '%s %s\n' "$pb_path" "$pb_id"; done
+    done | awk -v n="$pb_n" -v cap="$PROPOSE_JOIN_CAP" '
+      !($1 SUBSEP $2 in pair) {
+        pair[$1 SUBSEP $2] = 1
+        if (!($1 in count)) { path[++k] = $1 }
+        count[$1]++
+      }
+      END {
+        # Ranked by how much of the gate each file explains, so the hub a person needs to see is
+        # the first line rather than wherever the lead happened to name it. Selection sort: k is
+        # the number of distinct paths in one gate, and a sort utility is a process.
+        for (i = 1; i <= k; i++) {
+          top = i
+          for (j = i + 1; j <= k; j++) if (count[path[j]] > count[path[top]]) top = j
+          swap = path[i]; path[i] = path[top]; path[top] = swap
+        }
+        # Capped, and the tail COUNTED rather than dropped. 34 join lines over a 41-row gate is the
+        # unreadable thing FR5 removes, arriving one level down — and a block that silently stops
+        # listing is a proposal whose numbers cannot be reconciled against the gate it describes.
+        for (i = 1; i <= k; i++) {
+          if (count[path[i]] < 2) continue
+          shared++
+          if (shared <= cap)
+            printf "JOIN      %s | %d of %d rows join through this file\n", path[i], count[path[i]], n
+        }
+        if (shared > cap)
+          printf "JOIN      %d further file(s) shared by 2 or more rows, not listed\n", shared - cap
+      }
+    '
+
+    # The gate's OTHER join mechanism. `gate_from` batches on a shared `parent:` as well as on a
+    # shared file, so a proposal explaining only the files mislabels a row that joined by slice as
+    # unexplained — and that row is the one a person is most likely to think was included by mistake.
+    for pb_id in $PROPOSE_IDS; do fm "$(item_for "$pb_id")" parent; done | awk -v n="$pb_n" '
+      NF { if (!($0 in count)) { par[++k] = $0 } ; count[$0]++ }
+      END {
+        for (i = 1; i <= k; i++)
+          if (count[par[i]] >= 2)
+            printf "JOIN      parent %s | %d of %d rows share this parent slice\n", par[i], count[par[i]], n
+      }
+    '
+  }
+
+  # A takeable `next: design` row: ready, unheld, unblocked. Named in a sprint proposal because a
+  # design row ranked inside the sprint ends the run on it unless it is taken into scope.
+  takeable_design() {
+    td_row="$(row_for "$1")"
+    [ "$(field "$td_row" "$NEXT")" = "design" ] || return 1
+    [ "$(field "$td_row" "$STATUS")" = "ready" ] || return 1
+    if held_by "$1" >/dev/null; then return 1; fi
+    [ -z "$(open_blockers_of "$1")" ]
+  }
+
+  # The sprint beyond a develop gate shorter than the target: whole further gates in rank order,
+  # the same walk `depth_line` makes, until the develop count reaches SPRINT_TARGET_TICKETS or the
+  # takeable rows run out; then every takeable design row ranked inside that span. Whole gates,
+  # because splitting one re-pays the floor batching exists to share. The gate itself stays the
+  # decision line: this states the scope a person confirms, never a second dispatch.
+  # `ps_` prefixes because sh has no locals and `gate_from` loops over `gid`.
+  #
+  # SPRINT_SCOPE is what `propose_design` removes to find the next sprint's head (0188): the develop
+  # tickets and the design rows this block names. Design rows ranked above the head, and rows
+  # related to the gate, are `propose_design`'s to name, so this block skips both.
+  SPRINT_SCOPE=""
+  propose_sprint() {
+    [ "$PROPOSE_STAGE" = develop ] || return 0
+    SPRINT_SCOPE="$PROPOSE_IDS"
+    ps_n=0
+    for ps_id in $PROPOSE_IDS; do ps_n=$((ps_n + 1)); done
+    [ "$ps_n" -lt "$SPRINT_TARGET_TICKETS" ] || return 0
+    ps_ids="$PROPOSE_IDS"
+    ps_remaining="$(without "$(takeable_develop)" "$PROPOSE_IDS" | awk '{ $1 = $1; print }')"
+    while [ "$ps_n" -lt "$SPRINT_TARGET_TICKETS" ] && [ -n "$ps_remaining" ]; do
+      ps_taken="$(gate_from "$(printf '%s' "$ps_remaining" | awk '{ print $1 }')" "$ps_remaining" "$GATE_MAX_ROWS")"
+      for ps_id in $ps_taken; do ps_n=$((ps_n + 1)); done
+      ps_ids="$ps_ids $ps_taken"
+      ps_remaining="$(without "$ps_remaining" "$ps_taken" | awk '{ $1 = $1; print }')"
+    done
+    printf 'SPRINT    %s develop ticket(s) — the gate above is the first dispatch, not the scope; a sprint carries at least %s and targets %s\n' \
+      "$ps_n" "$SPRINT_MIN_TICKETS" "$SPRINT_TARGET_TICKETS"
+    # Rank order, stopping at the lowest-ranked develop ticket taken: a design row below it is the
+    # next sprint's, not this one's.
+    ps_left="$ps_ids"
+    ps_head="${PROPOSE_IDS%% *}"
+    ps_below=0
+    for ps_id in $(all_ids); do
+      [ -n "$(printf '%s' "$ps_left" | tr -d ' ')" ] || break
+      [ "$ps_id" != "$ps_head" ] || ps_below=1
+      if contains_word "$ps_id" "$ps_left"; then
+        ps_left="$(without "$ps_left" "$ps_id")"
+        SPRINT_SCOPE="$SPRINT_SCOPE $ps_id"
+        contains_word "$ps_id" "$PROPOSE_IDS" && continue
+        ps_stage=develop
+      elif [ "$ps_below" = 1 ] && ! contains_word "$ps_id" "$PLAN_RELATED" && takeable_design "$ps_id"; then
+        SPRINT_SCOPE="$SPRINT_SCOPE $ps_id"
+        ps_stage=design
+      else
+        continue
+      fi
+      printf 'SPRINT    %s | %s | size %s | %s\n' "$ps_id" "$ps_stage" \
+        "$(fm "$(item_for "$ps_id")" size)" "$(field "$(row_for "$ps_id")" "$TITLE")"
+    done
+    if [ "$ps_n" -lt "$SPRINT_MIN_TICKETS" ]; then
+      printf 'SHORT     %s develop ticket(s), under the minimum of %s — the queue holds no further takeable develop row\n' \
+        "$ps_n" "$SPRINT_MIN_TICKETS"
+    fi
+  }
+
+  # --- 0188: a sprint is planned from a develop-ready head, and design stays one sprint ahead ------
+  # The user's rule (2026-09-24, run-20260924T050130Z): a sprint is planned from the first
+  # develop-ready row; the design rows RELATED to that gate are designed in parallel and then built,
+  # and so is the design row that will head the NEXT sprint. Nothing else is designed.
+
+  # The first takeable develop row at or below $1, passing only `design ready` rows on the way. A
+  # `waiting` or `next: queue` row needs a person, and so does anything else this walk would stop on,
+  # so it ends the plan rather than being passed. Rows the walk steps over are stepped over here too.
+  # Answers 1, printing nothing, where no develop head is reachable.
+  plan_head() {
+    ph_from=0
+    for ph_id in $(all_ids); do
+      [ "$ph_id" != "$1" ] || ph_from=1
+      [ "$ph_from" = 1 ] || continue
+      ph_row="$(row_for "$ph_id")"
+      [ "$(field "$ph_row" "$STATUS")" != in-progress ] || continue
+      [ -z "$(open_blockers_of "$ph_id")" ] || continue
+      if held_by "$ph_id" >/dev/null; then continue; fi
+      if takeable_design "$ph_id"; then continue; fi
+      [ "$(field "$ph_row" "$STATUS")" != waiting ] || return 1
+      [ "$(field "$ph_row" "$NEXT")" = develop ] || return 1
+      printf '%s' "$ph_id"
+      return 0
+    done
+    return 1
+  }
+
+  # The design rows RELATED to the proposed gate: takeable, ranked above its lowest member, and
+  # admitted by `gate_admits` — the join that builds gates — against the gate's own scope. The scope
+  # is reset per candidate, so one design row cannot pull in another through a file the gate never
+  # names. Sets PLAN_RELATED, read by `propose_sprint` and `propose_design`.
+  PLAN_RELATED=""
+  plan_related() {
+    PLAN_RELATED=""
+    [ "$PROPOSE_STAGE" = develop ] || return 0
+    pr_last="${PROPOSE_IDS##* }"
+    pr_parent="$(fm "$(item_for "${PROPOSE_IDS%% *}")" parent)"
+    pr_scope=""
+    for pr_id in $PROPOSE_IDS; do pr_scope="$pr_scope $(fm_list "$(item_for "$pr_id")" expects)"; done
+    for pr_id in $(all_ids); do
+      if takeable_design "$pr_id"; then
+        lparent="$pr_parent"; gscope="$pr_scope"
+        if gate_admits "$pr_id"; then PLAN_RELATED="$PLAN_RELATED $pr_id"; fi
+      fi
+      [ "$pr_id" != "$pr_last" ] || break
+    done
+  }
+
+  # The DESIGN lines: every related row, then the next sprint's head — the first row the walk would
+  # reach once this sprint's scope is removed, named only where it is `design ready`. One row: the
+  # user said the head only.
+  propose_design() {
+    [ "$PROPOSE_STAGE" = develop ] || return 0
+    for pd_id in $PLAN_RELATED; do
+      printf 'DESIGN    %s | related to this gate | size %s | %s\n' "$pd_id" \
+        "$(fm "$(item_for "$pd_id")" size)" "$(field "$(row_for "$pd_id")" "$TITLE")"
+    done
+    pd_scope="$SPRINT_SCOPE $PLAN_RELATED"
+    for pd_id in $(all_ids); do
+      if contains_word "$pd_id" "$pd_scope"; then continue; fi
+      pd_row="$(row_for "$pd_id")"
+      [ "$(field "$pd_row" "$STATUS")" != in-progress ] || continue
+      [ -z "$(open_blockers_of "$pd_id")" ] || continue
+      if held_by "$pd_id" >/dev/null; then continue; fi
+      if takeable_design "$pd_id"; then
+        printf 'DESIGN    %s | heads the next sprint | size %s | %s\n' "$pd_id" \
+          "$(fm "$(item_for "$pd_id")" size)" "$(field "$pd_row" "$TITLE")"
+      fi
+      return 0
+    done
+  }
+
+  # FR6's one relation. A design session writes only its own item and row, so its WRITES conflict
+  # with nothing; what conflicts is a design reading and citing files a develop session is editing.
+  # So only develop's files count — its `touches:`, or its `expects:` where nothing is declared yet.
+  #
+  # running_at <stage> — every row at that stage another session is working: held, or in-progress.
+  running_at() {
+    for ra_id in $(all_ids); do
+      ra_row="$(row_for "$ra_id")"
+      [ "$(field "$ra_row" "$NEXT")" = "$1" ] || continue
+      if [ "$(field "$ra_row" "$STATUS")" = in-progress ] || held_by "$ra_id" >/dev/null; then
+        printf '%s ' "$ra_id"
+      fi
+    done
+  }
+
+  # design_conflict <design id> — prints "<develop id> <shared paths>" for the first running develop
+  # session whose files the design row's `expects:` names; answers 1 where there is none.
+  design_conflict() {
+    dc_expects="$(fm_list "$(item_for "$1")" expects)"
+    for dc_id in $(running_at develop); do
+      dc_files="$(fm_list "$(item_for "$dc_id")" touches)"
+      [ -n "$dc_files" ] || dc_files="$(fm_list "$(item_for "$dc_id")" expects)"
+      dc_shared="$(paths_shared "$dc_expects" "$dc_files")"
+      if [ -n "$dc_shared" ]; then printf '%s %s' "$dc_id" "${dc_shared% }"; return 0; fi
+    done
+    return 1
+  }
+
+  # gate_wait <gate ids> — prints "<design id> <shared paths>" for the first running design session
+  # whose `touches:` or `expects:` the gate's `expects:` meets; answers 1 where there is none. The
+  # gate WAITS rather than being stepped over, because stepping over the head would build rank-2 work
+  # ahead of it.
+  #
+  # BOTH of the design row's lists (0231 FR10, absorbing 0212). `expects:` is what capture predicted
+  # and `touches:` is what the claiming session declared, and a design pass that widens its reading
+  # after it claimed records the new file only in `touches:` — `expects:` alone missed it.
+  gate_wait() {
+    gw_scope=""
+    for gw_id in $1; do gw_scope="$gw_scope $(fm_list "$(item_for "$gw_id")" expects)"; done
+    for gw_id in $(running_at design); do
+      gw_it="$(item_for "$gw_id")"
+      gw_shared="$(paths_shared "$(fm_list "$gw_it" touches) $(fm_list "$gw_it" expects)" "$gw_scope")"
+      if [ -n "$gw_shared" ]; then printf '%s %s' "$gw_id" "${gw_shared% }"; return 0; fi
+    done
+    return 1
+  }
+
+  # $1 the exit code, $2 the decision. The depth line goes out with every decision, never on its own
+  # invocation — that second read is the cost FR17 exists to avoid.
+  decide() {
+    depth_line
+    propose_block
+    if [ "$PROPOSE" = 1 ]; then
+      plan_related
+      propose_sprint
+      propose_design
+    fi
+    printf '%s\n' "$2"
+    exit "$1"
+  }
+
+  # Is any confirmed-scope id still something this walk could dispatch? (0168 FR2.) The predicate is
+  # `takeable_develop`'s, widened to every stage this walk dispatches, because a scope ticket is
+  # unfinished at any of them.
+  #
+  # `design` is in that set since 0159, and 0168 FR2 enumerates only develop and verify because it
+  # was written while a design row still escalated. Left at two, a scope ticket sitting at design
+  # reads as FINISHED scope and fires the tail in the middle of the run — the exact failure 0168
+  # exists to prevent, arriving through the stage 0159 made dispatchable.
+  #
+  # An id with no row answers NO, which is the common case and the right one: the ticket closed, so
+  # that part of the scope is finished. A four-digit check at parse time is what keeps a TYPO out of
+  # this answer, where it would read as finished scope and fire the tail mid-run.
+  scope_live() {
+    for sl_id in $SCOPE; do
+      sl_row="$(row_for "$sl_id")"
+      [ -n "$sl_row" ] || continue
+      case "$(field "$sl_row" "$NEXT")" in design|develop|verify) : ;; *) continue ;; esac
+      case "$(field "$sl_row" "$STATUS")" in in-progress|waiting) continue ;; esac
+      if held_by "$sl_id" >/dev/null; then continue; fi
+      if [ -n "$(open_blockers_of "$sl_id")" ]; then continue; fi
+      return 0
+    done
+    return 1
+  }
+
+  # $1 is the SITE: `gate` where a new gate would be dispatched, `complete` where the walk has run
+  # out of work. The site is what decides whether a crossed gate defers or fires (0168).
+  #
+  # WHY THE TAIL WAITS. The user's rule: retro and queue run at the very end of the working session,
+  # whatever the count says — finish the work, then sweep. Firing at the gate stopped a run with two
+  # in-scope tickets still unbuilt, and sprint Step 6 then started no further stage. So a crossed
+  # gate defers while confirmed scope remains, and decides the moment it does not.
+  #
+  # With NO `--scope` the run has confirmed no scope to be inside, and the rule still holds: the
+  # gate waits for the end of the run, which is the `complete` site. Deferral is never silent —
+  # one NOTE says the gate crossed — because a run that spends no tail and says nothing about why
+  # is indistinguishable from one whose buffer is empty.
+  findings_gate() {
+    fg_site="$1"
+    read_tools_buffer
+    [ -f "$FINDINGS" ] || [ -n "$TOOLS_FINDINGS" ] || return 0
+    # The same tally the `--findings` line prints (0060 FR10). A driver routing on one number while
+    # the human beside it reads another is the divergence this gate exists to prevent, not to add.
+    tally_findings
+    if [ "$FBAD" != 0 ]; then
+      decide "$ESCALATE" "ESCALATE  FINDINGS.md carries an entry shape the count does not recognise, so the gate cannot be trusted — and a gate reading a low number fires late and silently"
+    fi
+    tally_age
+    # The provenance clause rides along only where a SECOND buffer was counted: where the total is
+    # the local buffer alone, the original sentence already says everything a driver acts on.
+    gsrc=""
+    [ -z "$TOOLS_FINDINGS" ] || gsrc="; $(findings_sources)"
+    # TWO LIMITS, WHICHEVER COMES FIRST (0133 FR2), and the line says WHICH crossed — a driver that
+    # cannot tell volume from time served cannot report why it spent a tail.
+    #
+    # THE TAIL IS `retro` AND THEN `queue`. Naming only the retro is 0060's asymmetry arriving as a
+    # dispatch: retro lands the lesson halves and only a queue sweep can take the work halves, so a
+    # gate that dispatches one of the two leaves the buffer holding what it came to clear.
+    fg_reason=""
+    if [ "$FCOUNT" -ge "$THRESHOLD" ]; then
+      fg_reason="FINDINGS.md holds $FCOUNT entries against a threshold of $THRESHOLD$gsrc"
+    elif age_gate_crossed; then
+      fg_reason="FINDINGS.md holds $FCOUNT entries whose oldest ($FOLDEST) has survived $FAGE completed sprint(s) against a limit of $MAX_SPRINTS$gsrc"
+    fi
+    [ -n "$fg_reason" ] || return 0
+    if [ "$fg_site" = gate ]; then
+      # Two sentences for two conditions (0174): with no --scope there is no confirmed scope to
+      # finish, and naming one sends a supervisor looking for ids it never passed.
+      if [ -z "$SCOPE" ]; then
+        printf 'NOTE      the findings gate crossed and is deferred until the run is out of work — %s\n' "$fg_reason"
+        return 0
+      fi
+      if scope_live; then
+        printf 'NOTE      the findings gate crossed and is deferred until confirmed scope is finished — %s\n' "$fg_reason"
+        return 0
+      fi
+    fi
+    PROPOSE_STAGE="retro"; PROPOSE_IDS=""
+    decide "$FINDINGS_GATE" "DISPATCH  retro, then queue — $fg_reason"
+  }
+
+  # Every row this RUN started that is still sitting at `verify | ready`, in rank order.
+  #
+  # Why it is scoped to the run's own tickets (0131 FR5): a ticket left at `next: verify` by a
+  # hand-driven session before this run began is not this run's to hold, and jumping the rank for
+  # it would let unrelated stale work reorder every run. The set is an INPUT and never derived from
+  # `parent:` or `expects:` — deriving it re-admits exactly what the scoping forbids, a stale
+  # verify row reordering the run because it happens to name one of the same files.
+  #
+  # Rank still decides among the candidates: the walk is `all_ids`, so the ids' arrival order on
+  # the command line means nothing. `sv_` prefixes because sh has no locals.
+  started_verify_pool() {
+    for sv_id in $(all_ids); do
+      contains_word "$sv_id" "$STARTED" || continue
+      sv_row="$(row_for "$sv_id")"
+      [ "$(field "$sv_row" "$NEXT")" = "verify" ] || continue
+      [ "$(field "$sv_row" "$STATUS")" = "ready" ] || continue
+      if held_by "$sv_id" >/dev/null; then continue; fi
+      if [ -n "$(open_blockers_of "$sv_id")" ]; then continue; fi
+      printf '%s ' "$sv_id"
+    done
+  }
+
+  # The verify batch $1 belongs to: $1 plus every other STARTED verify row that was in the same
+  # develop gate, in rank order. $1 alone where it was not started, or where nothing joins it.
+  #
+  # WHY THIS CONDITION AND NOT `develop`'s (0059, 0132 FR1). `develop` batches to amortise a
+  # startup, which is a pure saving, so anything takeable batches. A verify batch spends the gate's
+  # INDEPENDENCE — halo across verdicts read in one context, and a red misattributed across
+  # tickets, both recorded concretely on 0132 — and no startup saving amortises that. So the only
+  # thing that licenses several tickets in one verify session is that a develop gate already fixed
+  # the membership. Rows merely sitting at `next: verify` are NOT thereby a batch, however much
+  # scope they share; that is 0132 AC2 and it is the assertion this function exists to satisfy.
+  #
+  # TWO FILTERS, AND BOTH ARE LOAD-BEARING. `started_verify_pool` answers *did this run develop
+  # it*, and `gate_from` answers *which gate*. Dropping the first admits the stale row 0131 FR5
+  # excludes; dropping the second batches two unrelated gates because the run happened to open
+  # both. Recovering the membership with `gate_from` — the same grouping that formed the gate at
+  # dispatch, over a pool that is now a subset of it — is what makes the two ends of the cycle
+  # agree by construction rather than by a second rule that can drift from the first.
+  #
+  # Printed in RANK order rather than in `gate_from`'s lead-first order, so the line a person reads
+  # and the line a driver logs are in the backlog's own order whichever member led. `vb_` prefixes
+  # because sh has no locals, and `gate_from` loops over `gid` — it is called before this
+  # function's own loop starts, never inside it.
+  verify_batch() {
+    vb_lead="$1"
+    vb_pool="$(started_verify_pool)"
+    contains_word "$vb_lead" "$vb_pool" || { printf '%s' "$vb_lead"; return 0; }
+    vb_gate="$(gate_from "$vb_lead" "$vb_pool")"
+    vb_out=""
+    for vb_id in $(all_ids); do
+      if contains_word "$vb_id" "$vb_gate"; then vb_out="$vb_out $vb_id"; fi
+    done
+    printf '%s' "${vb_out# }"
+  }
+
+  # The whole batch led by the highest-ranked started verify row, or nothing. The finish-before-
+  # start preference (0131) reads this, and it hands back the GATE rather than its lead: picking
+  # one id would leave the rest of the same gate to be re-dispatched a session at a time on later
+  # calls, paying exactly the session floors 0132 exists to stop paying.
+  started_verify() {
+    sv_pool="$(started_verify_pool)"
+    [ -n "$sv_pool" ] || return 1
+    verify_batch "$(printf '%s' "$sv_pool" | awk '{ print $1 }')"
+  }
+
+  # The verify session for the develop gate `--completed develop:$1` just finished (0231 FR11,
+  # absorbing 0220). NOT `verify_batch`, and the difference is the whole of 0220.
+  #
+  # `verify_batch` RE-DERIVES a gate by re-running the join over the rows now at verify. That
+  # re-derivation splits a gate whose join ran through a member no longer there — one `develop`
+  # closed itself (`close_by: develop`), or left at develop red — and a gate whose `expects:` a
+  # develop session corrected after the gate formed, which `develop` Step 1 tells it to do.
+  # run-20261025T215324Z's gate e9c46949 held four tickets (LEDGER.md) and three verify sessions
+  # followed, one each; 0177, 0190 and 0183 share no `expects:` path and no parent as they stand.
+  #
+  # At THIS moment no re-derivation is needed, because the run's own order fixes the membership:
+  # finish-before-start (0131) dispatches every started verify row before a new develop gate is
+  # formed, so the started rows sitting at `verify | ready` when a gate reports are that gate's.
+  # Rank order, as `verify_batch` prints. A sliced ticket stays its own session either way.
+  # `cb_` prefixes because sh has no locals.
+  completed_batch() {
+    if is_sliced "$1"; then printf '%s' "$1"; return 0; fi
+    cb_pool="$(started_verify_pool)"
+    contains_word "$1" "$cb_pool" || { printf '%s' "$1"; return 0; }
+    cb_out=""
+    for cb_id in $cb_pool; do
+      if [ "$cb_id" != "$1" ] && is_sliced "$cb_id"; then continue; fi
+      cb_out="$cb_out $cb_id"
+    done
+    printf '%s' "${cb_out# }"
+  }
+
+  # The highest-ranked takeable develop row this run started whose last leg ended cleanly with
+  # slices left (0231 FR8): finished before the walk opens a different develop row, for 0131's
+  # reason. A bounced leg is not preferred — the bounce is a person's, and the completion arm says so.
+  started_leg() {
+    for sg_id in $(takeable_develop); do
+      contains_word "$sg_id" "$STARTED" || continue
+      [ "$(leg_state "$sg_id")" = clean ] || continue
+      printf '%s' "$sg_id"
+      return 0
+    done
+    return 1
+  }
+
+  # wait_on_design <develop ids> — exits 6 where a running design session holds a file they expect.
+  wait_on_design() {
+    if wd_wait="$(gate_wait "$1")"; then
+      decide "$WAIT" "WAIT      develop $1 names ${wd_wait#* }, which design ${wd_wait%% *} is reading — wait for its outcome, then call again with --completed"
+    fi
+  }
+
+  # One leg of one sliced ticket. The findings gate applies as it does to any develop dispatch, and
+  # so does the held-design-file wait (0231 FR10): a leg is a gate of one.
+  dispatch_leg() {
+    PROPOSE_STAGE="develop"; PROPOSE_IDS="$1"
+    wait_on_design "$1"
+    findings_gate gate
+    decide "$DISPATCH" "DISPATCH  develop $1"
+  }
+
+  # --- the queue has to agree with itself before anything is dispatched ------------------------
+  # FR1/FR2 of 0142. `--drift` exits non-zero on every class precisely so that a row disagreeing
+  # with its own item stops the work, and until this landed the only reader that saw that exit was
+  # a person running the mode by hand: `--drive`'s body carried no drift check, so a drifted
+  # backlog read as a FINISHED one to a driver. Measured on the 0084 shape — `--drift` exited 1
+  # while `--drive` printed `COMPLETE nothing takeable` and exited 3 over the same queue.
+  #
+  # FIRST, and before the walk, because that ordering IS the requirement: run it after the
+  # takeability walk and a queue with drift and nothing takeable reaches COMPLETE and exits 3 with
+  # the drift never printed, which is the bug rather than the fix.
+  #
+  # It spends ESCALATE rather than a sixth code. The outcome is *a person decides* — reconciling a
+  # row against its item is not a stage's to do, and `sprint` already routes 4 exactly that
+  # way. 3 is forbidden: 3 is what the bug is.
+  if ! drift_report; then
+    decide "$ESCALATE" "ESCALATE  the rows above disagree with their own items — a drifted queue is not a finished one, and reconciling it is a person's call"
+  fi
+
+  # `--completed`'s id is a ticket this run opened work on too, so it joins the started set
+  # (0131 FR6). That is what lets a run whose gates are all single tickets pass no `--started` at
+  # all: the flag it already sends carries the same fact for the one ticket it names.
+  if [ -n "$COMPLETED" ]; then
+    cid="${COMPLETED#*:}"
+    if [ "$cid" != "$COMPLETED" ] && [ -n "$cid" ]; then
+      contains_word "$cid" "$STARTED" || STARTED="$STARTED $cid"
+    fi
+  fi
+  #
+  # MOVED AHEAD OF THE ROUTING BLOCK BELOW (0132). That block is where a develop hand-off routes
+  # to verify, and it now selects a batch — which reads the started set. Left where it was, the
+  # one ticket `--completed` names was absent from the pool at exactly the moment its own gate was
+  # being assembled, so the lead of every batch was missing from it.
+
+  # --- what the caller says just finished -----------------------------------------------------
+  # Order matters here and is not alphabetical. `waiting`, `design` and `queue` are checked before
+  # the same-stage guard, because develop writing any of those leaves the row where it was and the
+  # specific reason is the thing a person needs. An acquired blocker is checked before it too: that
+  # one is not stuck at all, it is re-derivable.
+  last=""
+  for c in $COMPLETED; do last="$c"; done
+  if [ -n "$last" ]; then
+    lstage="${last%%:*}"
+    lid="${last#*:}"
+    if [ "$lid" = "$lstage" ]; then lid=""; fi
+    if [ -z "$lid" ]; then
+      printf 'NOTE      %s finished with no ticket of its own — choosing the next gate\n' "$lstage"
+    else
+      lrow="$(row_for "$lid")"
+      if [ -z "$lrow" ]; then
+        # A row leaving QUEUE.md is two different events and only one of them is a close. A ticket
+        # becomes a project the moment it gains a child, and its row leaves — not an error, and not
+        # something to loop on.
+        if [ -f "$DONE" ] && [ -n "$(awk -F'|' -v id="$lid" '/^\|/ { v = $2; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$DONE")" ]; then
+          printf 'NOTE      %s closed and left QUEUE.md — choosing the next gate\n' "$lid"
+        elif [ -n "$(item_for "$lid")" ]; then
+          printf 'NOTE      %s has an item but no row — a ticket that became a project; not an error and not a loop\n' "$lid"
+        else
+          decide "$ESCALATE" "ESCALATE  $lid has no row in QUEUE.md and no item file — nothing recognises that state"
+        fi
+      else
+        lnext="$(field "$lrow" "$NEXT")"
+        lstatus="$(field "$lrow" "$STATUS")"
+        lblockers="$(open_blockers_of "$lid")"
+        if [ "$lstatus" = "waiting" ] && [ -n "$SCOPE" ]; then
+          # 0231 FR9 (0226): given a confirmed scope, a row left waiting halts the run only when
+          # nothing else in scope is takeable. The rank walk decides that, and escalates if so.
+          printf 'NOTE      %s is waiting on a person after %s — the rank walk decides whether other in-scope work goes ahead\n' \
+            "$lid" "$lstage"
+        elif [ "$lstatus" = "waiting" ]; then
+          decide "$ESCALATE" "ESCALATE  $lid is waiting on a person after $lstage — only they can clear it
+          $(waiting_on "$(item_for "$lid")")"
+        elif [ "$lstatus" = "in-progress" ]; then
+          decide "$ESCALATE" "ESCALATE  $lid is still in-progress after $lstage completed — the claim was never released"
+        elif [ "$lnext" = "design" ] && [ "$lstatus" = "ready" ] && [ "$lstage" != "design" ]; then
+          # 0159 FR2. Not an escalation and not a dispatch either: the rank walk below decides,
+          # because this row may not be the top one. A design row STILL at design after a completed
+          # design falls past this to the same-stage arm, which is a real loop.
+          printf 'NOTE      %s is at next: design after %s — design is autonomous work; carrying on to the rank walk\n' \
+            "$lid" "$lstage"
+        elif [ "$lnext" = "design" ] && [ "$lstage" != "design" ]; then
+          decide "$ESCALATE" "ESCALATE  $lid is at next: design / $lstatus after $lstage — a person decides
+          $(design_question "$(item_for "$lid")")"
+        elif [ "$lnext" = "queue" ]; then
+          decide "$ESCALATE" "ESCALATE  $lid went back to next: queue after $lstage — the contract is stale, and respecifying it is a person's call"
+        elif [ -n "$lblockers" ]; then
+          printf 'NOTE      %s gained a blocker after %s (%s) — re-deriving rather than reading it as stuck\n' \
+            "$lid" "$lstage" "$lblockers"
+        elif [ "$lnext" = "develop" ] && [ "$lstatus" = "ready" ] \
+          && { [ "$lstage" = "develop" ] || [ "$lstage" = "verify" ]; } \
+          && [ "$(leg_state "$lid")" = clean ] \
+          && handed_off_from "$lid" "$lstage"; then
+          # 0231 FR8: a leg ended cleanly — develop -> develop, or a verify pass — and slices are
+          # left. Ahead of the bounce and same-stage arms, which a sliced ticket reaches only when
+          # its named slice is unticked (a bounce) or nothing was handed off (a real loop).
+          printf 'NOTE      %s ended a leg at %s after %s — slices remain; dispatching the next leg\n' \
+            "$lid" "$(fm "$(item_for "$lid")" slice)" "$lstage"
+          dispatch_leg "$lid"
+        elif [ "$lstage" = "verify" ] && [ "$lnext" = "develop" ]; then
+          decide "$ESCALATE" "ESCALATE  $lid bounced from verify back to next: develop — verify already decided whether the build or the contract was wrong, and re-developing blind spends a stage session rediscovering it"
+        elif [ "$lnext" = "$lstage" ]; then
+          # 0231 FR10 (0212): a develop session that found its files held by a running design stood
+          # down and left the row as it was. That is the wait re-entered, not a loop.
+          if [ "$lstage" = develop ] && [ "$lstatus" = ready ]; then wait_on_design "$lid"; fi
+          decide "$ESCALATE" "ESCALATE  $lid is still at next: $lstage after a completed $lstage — same ticket, same stage, with an outcome in between"
+        elif [ "$lstage" = "design" ] && [ "$lstatus" = "ready" ]; then
+          # `--completed design:<id>` and the row has moved on — to develop, or anywhere the
+          # designer sent it. 0159 FR2: the rank walk decides, where this once fell through to
+          # *no routing rule covers it* and stopped a run on a stage that had just succeeded.
+          printf 'NOTE      %s is at next: %s after design — carrying on to the rank walk\n' "$lid" "$lnext"
+        elif [ "$lstage" = "develop" ] && [ "$lnext" = "verify" ] && [ "$lstatus" = "ready" ]; then
+          # The gate that was just developed, not the one row `--completed` names (0132 FR6).
+          lbatch="$(completed_batch "$lid")"
+          PROPOSE_STAGE="verify"; PROPOSE_IDS="$lbatch"
+          decide "$DISPATCH" "DISPATCH  verify $lbatch"
+        else
+          decide "$ESCALATE" "ESCALATE  $lid is at next: $lnext / $lstatus after $lstage, which no routing rule covers"
+        fi
+      fi
+    fi
+  fi
+
+  # --- otherwise, walk the rank ---------------------------------------------------------------
+  # WAITED is the first in-scope waiting row the walk stepped over (0231 FR9). If the walk then
+  # dispatches nothing, that row is what the run is stopped on, ahead of the findings tail.
+  WAITED=""
+  # Line order is the rank and the rank is absolute, so the first row anything can act on decides.
+  # `blocked` and `in-progress` are the two the rank legitimately steps over — nobody can act on
+  # either and no person is being asked for anything. Everything else dispatches or stops.
+  for id in $(all_ids); do
+    row="$(row_for "$id")"
+    rnext="$(field "$row" "$NEXT")"
+    rstatus="$(field "$row" "$STATUS")"
+    if [ "$rstatus" = "in-progress" ]; then
+      printf 'NOTE      %s is in-progress — another session holds it; stepping over it\n' "$id"
+      continue
+    fi
+    rblockers="$(open_blockers_of "$id")"
+    if [ -n "$rblockers" ]; then
+      printf 'NOTE      %s is blocked by %s— stepping over it\n' "$id" "$rblockers"
+      continue
+    fi
+    # The column said `ready` and the item says otherwise. Unfixed, a driver dispatches an
+    # unattended second session onto a ticket somebody is building — the worse instance of 0140,
+    # because nobody reads the line it would have printed.
+    if rhold="$(held_by "$id")"; then
+      printf 'NOTE      %s is held by %s — another session holds it; stepping over it\n' "$id" "$rhold"
+      continue
+    fi
+    # 0231 FR9 (absorbing 0226). Given --scope, a waiting row the scope does not name is stepped
+    # over, as an out-of-scope design row is; an in-scope one is stepped over while other in-scope
+    # work is takeable, and remembered so the walk escalates on it if nothing is dispatched. With
+    # no --scope there is no confirmed scope to be inside, and the row stops the walk as before.
+    if [ "$rstatus" = "waiting" ] && [ -n "$SCOPE" ]; then
+      if ! contains_word "$id" "$SCOPE"; then
+        printf 'NOTE      %s is waiting on a person outside the confirmed scope — stepping over it\n' "$id"
+        continue
+      fi
+      if scope_live; then
+        printf 'NOTE      %s is waiting on a person — other in-scope work is takeable; stepping over it\n' "$id"
+        [ -n "$WAITED" ] || WAITED="$id"
+        continue
+      fi
+    fi
+    if [ "$rstatus" = "waiting" ]; then
+      decide "$ESCALATE" "ESCALATE  $id is waiting on a person and outranks everything below it
+          $(waiting_on "$(item_for "$id")")"
+    fi
+    case "$rnext" in
+      design)
+        # DESIGN IS AUTONOMOUS WORK (0159). `/design` settles the question and writes the answer, so
+        # a `ready` design row is a stage to dispatch, not a decision to hand back. Only `waiting`
+        # needs a person, and that is decided above this `case` for every stage at once.
+        #
+        # Everything else the walk would have stepped over — in-progress, an open blocker, a live
+        # claim — is stepped over above too, so a row reaching here is takeable by construction.
+        #
+        # The findings gate applies exactly as it does to a develop gate: a design dispatch is new
+        # work, and the gate exists to stop new work once the buffer crosses.
+        #
+        # 0188: given --scope, a design row the scope does not name is stepped over rather than
+        # dispatched, and one naming a file a running develop session touches is stepped over always.
+        # Under --propose the plan is drawn from the develop head below it; the decision stays this row.
+        if [ "$rstatus" = "ready" ]; then
+          if [ -n "$SCOPE" ] && ! contains_word "$id" "$SCOPE"; then
+            printf 'NOTE      %s is at next: design outside the confirmed scope — stepping over it\n' "$id"
+            continue
+          fi
+          if dconflict="$(design_conflict "$id")"; then
+            printf 'NOTE      %s is at next: design and names %s, which develop %s is editing — stepping over it\n' \
+              "$id" "${dconflict#* }" "${dconflict%% *}"
+            continue
+          fi
+          PROPOSE_STAGE="design"; PROPOSE_IDS="$id"
+          if [ "$PROPOSE" = 1 ] && phead="$(plan_head "$id")"; then
+            PROPOSE_STAGE="develop"; PROPOSE_IDS="$(gate_from "$phead" "$(takeable_develop)" "$GATE_MAX_ROWS")"
+          fi
+          findings_gate gate
+          decide "$DISPATCH" "DISPATCH  design $id
+          $(design_question "$(item_for "$id")")"
+        fi
+        decide "$ESCALATE" "ESCALATE  $id is at next: design / $rstatus, which no routing rule covers" ;;
+      queue)
+        if [ -n "$SCOPE" ] && ! contains_word "$id" "$SCOPE"; then
+          printf 'NOTE      %s is at next: queue outside the confirmed scope — stepping over it\n' "$id"
+          continue
+        fi
+        decide "$ESCALATE" "ESCALATE  $id is at next: queue — it has no acceptance criteria to build against, and specifying it is a person's call" ;;
+      verify)
+        # Batched only where this run developed it (0132 AC2): a row nobody here built is one
+        # verdict in one session, whatever scope it shares with the rows around it.
+        vbatch="$(verify_batch "$id")"
+        PROPOSE_STAGE="verify"; PROPOSE_IDS="$vbatch"
+        decide "$DISPATCH" "DISPATCH  verify $vbatch" ;;
+      develop)
+        # Finish before start (0131). Checked here, where a NEW gate would be formed, for the same
+        # reason `findings_gate` is and just ahead of it: a ticket this run already built is
+        # finished rather than left half-done while the run opens more work. Checked at the gate
+        # rather than before the walk, so it preempts nothing a person is being asked to decide —
+        # a `waiting`, `design` or `queue` row above this one still stops the run.
+        if svbatch="$(started_verify)"; then
+          PROPOSE_STAGE="verify"; PROPOSE_IDS="$svbatch"
+          decide "$DISPATCH" "DISPATCH  verify $svbatch"
+        fi
+        # 0231 FR8: then a started sliced ticket's next leg, for the same reason.
+        if sleg="$(started_leg)"; then
+          dispatch_leg "$sleg"
+        fi
+        # 0188 FR5: design first, then build. An in-scope design row ranked below this gate is
+        # dispatched before it, so a related row comes out of design and joins the gate rather than
+        # being built and then rebuilt.
+        if [ -n "$SCOPE" ]; then
+          for sd_id in $(all_ids); do
+            contains_word "$sd_id" "$SCOPE" || continue
+            takeable_design "$sd_id" || continue
+            if sdconflict="$(design_conflict "$sd_id")"; then
+              printf 'NOTE      %s is at next: design and names %s, which develop %s is editing — stepping over it\n' \
+                "$sd_id" "${sdconflict#* }" "${sdconflict%% *}"
+              continue
+            fi
+            PROPOSE_STAGE="design"; PROPOSE_IDS="$sd_id"
+            findings_gate gate
+            decide "$DISPATCH" "DISPATCH  design $sd_id
+          $(design_question "$(item_for "$sd_id")")"
+          done
+        fi
+        gate="$(gate_from "$id" "$(takeable_develop)" "$GATE_MAX_ROWS")"
+        PROPOSE_STAGE="develop"; PROPOSE_IDS="$gate"
+        wait_on_design "$gate"
+        findings_gate gate
+        decide "$DISPATCH" "DISPATCH  develop $gate" ;;
+      *)
+        decide "$ESCALATE" "ESCALATE  $id is at next: '$rnext', which no routing rule covers — stopping rather than falling through to a default" ;;
+    esac
+  done
+  # 0168 FR3/FR4: the run is out of work, so the deferral is over — whether the scope finished or
+  # there was none to confirm. The gate decides here or it never runs at all.
+  if [ -n "$WAITED" ]; then
+    decide "$ESCALATE" "ESCALATE  $WAITED is waiting on a person and nothing else in the confirmed scope could be dispatched
+          $(waiting_on "$(item_for "$WAITED")")"
+  fi
+  findings_gate complete
+  decide "$RUN_COMPLETE" "COMPLETE  nothing takeable at develop — every row is done, blocked, or held by another session"
+fi
+
+# --- ./next <stage> ---------------------------------------------------------------------------
+if [ -n "${1:-}" ]; then
+  stage="$1"
+  case "$stage" in
+    queue|design|develop|verify) : ;;
+    *) echo "unknown stage: $stage" >&2; usage >&2; exit 2 ;;
+  esac
+
+  took=0
+  collided=0
+  for id in $(ids_where "$NEXT" "$stage"); do
+    row="$(row_for "$id")"
+    written="$(field "$row" "$STATUS")"
+    # `ready` and `blocked` are both candidates, because `blocked` is derived and the column only
+    # caches it. Trusting the cache is the asymmetric half of the defect: a stale `blocked` hides
+    # takeable work and no reader ever notices, where a stale `ready` is caught one line below.
+    # `waiting` and `in-progress` are the two a person and a stage write directly, so a row at
+    # either is skipped here as before. Neither is the ownership test: that is the item's, checked
+    # below, and a row can read `ready` over a ticket somebody holds (0140).
+    case "$written" in
+      ready|blocked) : ;;
+      *) continue ;;
+    esac
+    ob="$(open_blockers_of "$id")"
+    if [ -n "$ob" ]; then
+      printf 'SKIP      %s | blocked_by still open: %s\n' "$id" "$ob"
+      continue
+    fi
+    # After the blocker check and before the stale-`blocked` line, so a held row is one line and
+    # the open blocker keeps precedence — a row that is both is not takeable for either reason, and
+    # the blocker is the one that outlives the claim. CONTINUE for the same reason the collision
+    # branch carries: a session correctly warned and still with nothing to do is the same outcome
+    # by a slower route.
+    if hold="$(held_by "$id")"; then
+      printf 'SKIP      %s | held by %s — the item carries a claim (references/CONCURRENCY.md,\n' "$id" "$hold"
+      printf '                   *A stage writes only the ticket it holds*); the Status column is a cache of it\n'
+      continue
+    fi
+    if [ "$written" = "blocked" ]; then
+      printf 'DRIFT     %s | column says blocked, no blocked_by entry is still open\n' "$id"
+    fi
+    it="$(item_for "$id")"
+    exp="$(fm_list "$it" expects)"
+    # The proof used to be printed four lines below the verdict it contradicts: this loop filtered
+    # on stage, `blocked_by` and the column, `show_claimed` ran afterward and independently, and
+    # neither consulted the other. Cross them here, before the word TAKE is written.
+    #
+    # And CONTINUE rather than break — that is the load-bearing half. Suppressing the wrong TAKE
+    # without it leaves a session correctly warned and still with nothing to do, which is the same
+    # outcome by a slower route; the thing `develop` Step 1 actually asks for is the next clear row.
+    clash="$(collision_report "$id" "$exp")"
+    if [ -n "$clash" ]; then
+      printf '%s\n' "$clash"
+      collided=1
+      continue
+    fi
+    # `close_by` is printed unconditionally, ABSENT OR NOT, rather than only when it is `develop`.
+    # It decides whether the develop session closes the ticket itself or hands it to a QA pass, so a
+    # session reading this line has to be able to tell "the default" from "the field was never
+    # read" — and a conditional print makes the commonest branch the one no case can assert on
+    # (0086 AC8).
+    take_close_by="$(fm "$it" close_by)"
+    [ -n "$take_close_by" ] || take_close_by=verify
+    printf 'TAKE      %s | %s | size %s | qa %s | close %s\n' \
+      "$id" "$(field "$row" "$TITLE")" "$(fm "$it" size)" "$(fm "$it" qa_level)" "$take_close_by"
+    printf 'EXPECTS   %s\n' "${exp:-not predicted — check this one by hand}"
+    took=1
+    break
+  done
+  # Three outcomes, not two. An empty stage is not an error; a session asking "anything for me?"
+  # gets a plain no and a zero. But a stage whose every row is held says something else entirely —
+  # come back, or ask — and one message for both reads as "this stage is done" when it is not.
+  if [ "$took" -eq 0 ]; then
+    if [ "$collided" -eq 1 ]; then
+      printf 'every takeable %s row collides with files another session holds — nothing here is safe to take\n' "$stage"
+    else
+      printf 'nothing is takeable at stage %s\n' "$stage"
+    fi
+  fi
+  show_claimed
+  warn_dirty
+  exit 0
+fi
+
+# --- ./next (no argument) ---------------------------------------------------------------------
+printf 'BY STAGE:  '
+for s in queue design develop verify; do
+  printf '%s %s  ' "$s" "$(rows | awk -F'|' -v n="$NEXT" -v w="$s" '{ v=$n; gsub(/^ +| +$/,"",v); if (v==w) c++ } END { print c+0 }')"
+done
+printf '\n'
+printf 'BY STATUS: '
+for s in ready waiting blocked in-progress; do
+  printf '%s %s  ' "$s" "$(rows | awk -F'|' -v n="$STATUS" -v w="$s" '{ v=$n; gsub(/^ +| +$/,"",v); if (v==w) c++ } END { print c+0 }')"
+done
+printf '\n'
+printf 'ROWS:      %s\n' "$(rows | wc -l | tr -d ' ')"
+printf 'ROW 1:     %s | %s | %s | %s\n' \
+  "$(field "$(rows | head -1)" "$ID")" "$(field "$(rows | head -1)" "$TITLE")" \
+  "$(field "$(rows | head -1)" "$NEXT")" "$(field "$(rows | head -1)" "$STATUS")"
+show_claimed
+warn_dirty

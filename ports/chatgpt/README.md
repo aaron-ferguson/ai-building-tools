@@ -1,19 +1,38 @@
-# Queue for ChatGPT Work
+# AI Building Tools for ChatGPT Work
 
-From the tools checkout, build a skill archive at a new path:
+This marketplace ships the queue workflow. A workspace admin can import it
+directly from GitHub in Admin Console → Plugins → Add → Import marketplace.
 
-    python3 ports/chatgpt/build.py /tmp/ai-building-queue.zip
+| Field | Value |
+| --- | --- |
+| Source | https://github.com/aaron-ferguson/ai-building-tools |
+| Path | `ports/chatgpt` |
+| Branch | `chatgpt/queue-port` for the pilot. Use `main` after merge. |
 
-Install the ZIP as a skill in ChatGPT Work. Start a fresh chat with a writable
-project checkout and a readable conventions checkout. In the project's
-AGENTS.md or CLAUDE.md, a sibling conventions checkout can be wired with:
+Review the import result and set AI Building Tools to Installed for the test
+role, or make it Available and install it from the workspace directory.
+Open a new Work chat with a writable project checkout and a readable
+ai-building-conventions checkout. An existing project can set conventions.path
+in .tickets/config.yml. For a new project with sibling checkouts, put this in
+the project root's AGENTS.md or CLAUDE.md:
 
     ## Conventions
     @../ai-building-conventions/CONVENTIONS_CORE.md
 
-Existing projects can use conventions.path in .tickets/config.yml.
-Invoke ai-building-queue and ask it to queue a specific engineering change.
-Check the item, its convention citations and its position in .tickets/QUEUE.md.
-Repeat in an unwired disposable project and verify it stops without creating
-.tickets/. The generated ZIP contains queue only. Open a new session for
-each subsequent stage using the existing harness.
+Ask the fresh chat to queue an engineering change. Verify that the
+ai-building-queue skill ran, then inspect the ticket, its convention citation,
+and its position in .tickets/QUEUE.md. In a second, unwired disposable project,
+verify that queue stops before creating .tickets/.
+
+## Maintaining the package
+
+Work imports the committed plugin directory directly. After changing the
+source queue workflow, templates, references, or adapter, run these commands
+from the repository root and commit the updated package alongside the change:
+
+    python3 ports/chatgpt/build.py --refresh-plugin
+    python3 ports/chatgpt/test_package.py
+
+The test compares the complete packaged skill with a fresh build, including
+executable permissions. Remove obsolete generated files identified by the test.
+To build a standalone skill ZIP, pass a new output filename to build.py.

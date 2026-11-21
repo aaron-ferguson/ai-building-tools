@@ -1,0 +1,143 @@
+# Per-project backlog config. Read by the queue, develop, and verify skills.
+project: <Project Name>
+
+# Where this project's conventions live. Required — these tools carry no standards of their
+# own and will stop rather than guess. Relative paths resolve from the repo root.
+# If omitted, the skills fall back to the `## Conventions` import in the project's CLAUDE.md;
+# if that is absent too, they stop and tell you how to wire it up.
+# See: https://github.com/aaron-ferguson/ai-building-conventions
+conventions:
+  path: ../ai-building-conventions
+
+# Optional. Where the WRITABLE CHECKOUT of these tools lives, so a finding about a skill, a
+# reference file or a backlog script can be parked in the repo that owns it rather than in this
+# project's buffer, where nothing can act on it. Resolved from the repo root, exactly like
+# `conventions.path`. See references/CONVENTIONS.md, "Routing a finding to the repo it is about".
+#
+# NEVER DERIVED FROM THE PLUGIN INSTALL, which is why this key exists rather than being inferred.
+# The install directory is not a git repository, and the marketplace clone beside it IS one — right
+# `origin`, identical `HEAD`, a whole backlog — so it reads as a working checkout while being a
+# managed copy the plugin system refreshes over anything parked there.
+#
+# Omit it when there is no checkout on this machine: a tool finding is then parked locally prefixed
+# `[for <repo>]` for a later retro to forward, which is the stated fallback and not a failure. Omit
+# it too when THIS project IS the tool repo — a finding about it is already local.
+tools:
+  path: <e.g. ../ai-building-tools — a writable checkout, not the plugin install>
+
+
+# Monotonic: this counter only ever rises. `queue` claims this number for a new item, then
+# increments it. A withdrawal BURNS the id — it never decrements this, and it keeps the item file
+# marked `status: withdrawn` so a citation resolves to that rather than to nothing. Note ids are
+# minted as `max(items on disk) + 1`, so this value is a cache of the disk and the disk wins.
+next_id: 1
+
+# How many entries FINDINGS.md has to hold before a driver stops dispatching tickets and runs a
+# retro instead. Read by `./next --findings` (which reports it) and `./next --drive` (which gates
+# on it, exit code 5). The default matches retro's stated cadence of about eight entries; raise it
+# on a project whose tickets are about a product rather than about this tooling, where the rate is
+# inflated because every ticket surfaces a tooling defect.
+findings_threshold: 8
+
+# The most rows one new develop gate may hold, lead included (0178). Rank orders admission — the
+# joiners nearest the lead in rank get in, the rest wait for a later gate. 5 is the largest develop
+# batch with a measured saving (2026-08-22, five tickets in one session; see skills/develop); no run
+# has recorded a larger one, and an eleven-ticket run is cited as needing guardrails rather than as a
+# saving. Raise it when a measurement shows develop cost per ticket still falling above 5. 1 means no
+# batching; 0 or a non-number stops `./next --drive` rather than defaulting.
+gate_max_rows: 5
+
+# The gate's SECOND limit: how many COMPLETED SPRINTS the oldest unswept finding may survive before
+# the tail runs whatever the count says. Either limit crossed dispatches the tail (0133 FR2), and
+# this is the half that covers retro's "or weekly if the buffer fills slower" — a project parking
+# two findings a sprint never reaches the threshold above, so without this its buffer is never
+# swept and the lessons in it are never landed.
+#
+# SPRINTS RATHER THAN DAYS, because the gate is only ever evaluated when a sprint ends: a dormant
+# project's calendar clock runs with nothing there to read it, so a window and a sprint count fire
+# identically on the next sprint whenever it comes. A completed sprint is a run log under `runs/`
+# carrying a `sprint_ended` event — a supervisor killed mid-run offered the buffer no opportunity.
+#
+# SET IT WITH THE THRESHOLD ABOVE or one of the two goes dead: they should roughly coincide at the
+# project's own parking rate. Raise this one on a project whose sprints are long.
+findings_max_sprints: 2
+
+# How long a held `.tickets/.lock/` may be before a driver escalates instead of waiting on
+# it (`sprint` Step 7). Seconds. A lock in use is held for seconds; anything far above that is
+# a stage that died holding it, and it blocks every claim and close in the repo until a human
+# clears it. Read from the lock DIRECTORY's mtime, never from `held-by`, which the claim path
+# writes without a timestamp.
+lock_stale_seconds: 900
+
+# Per-stage spend cap a driver passes as `--max-budget-usd`, in USD. DELIBERATELY UNSET: this is
+# the one key a template must not fill in. A number shipped here is another project's derivation,
+# and a cap below a session's startup floor kills every stage identically while reading exactly
+# like a broken CLI.
+#
+# Fill it from THIS project's own `cost_tracking:` history once there is some — the mean cost per
+# session for each stage, with headroom because the mean is not the maximum, plus that mean again
+# per ticket beyond the first in a gate — and record the figures it came from beside it, so the
+# next person to change it re-derives rather than rounds.
+stage_budget_usd:
+  develop:
+  verify:
+  retro:
+
+# Optional, and deliberately absent. `qa_level: review` is the level for a repo whose artifact is
+# PROSE and whose checks are judgement — a conventions or documentation repo, where `develop`'s TDD
+# cycle has nothing to turn red and an NFR table citing accessibility for a wording edit is
+# theatre. It is not on `testing-conventions.md`'s pyramid, so it is NOT cumulative: it runs the
+# checklist below plus any configured `lint`/`typecheck`, and implies nothing else.
+#
+# The checklist file belongs to THE REPO BEING CHECKED, and its lines CITE the conventions rather
+# than restating them — a restated rule is a rule that drifts, and `verify` would then check the
+# stale copy. It sits inside `.tickets/` because `queue`, the stage that files a `review` ticket,
+# commits nowhere else: a checklist path outside it is one `queue` cannot create.
+#
+# WITH NO BLOCK HERE, A `qa_level: review` ITEM IS REFUSED, on exactly the same ground as `unit`
+# with no command. That refusal is the whole point of declaring a level per ticket, so `review`
+# must never be a level that legitimately has no command — otherwise the refusal can never fire
+# again and a silent downgrade becomes available everywhere.
+review:
+  checklist: <e.g. .tickets/review-checklist.md — a file in THIS repo, one check per line>
+
+# Commands qa runs per level. Omit a level the project genuinely doesn't have —
+# qa will refuse an item whose qa_level has no command rather than silently skip it.
+commands:
+  unit: <e.g. pnpm test>
+  integration: <e.g. pnpm test:integration>
+  e2e: <e.g. pnpm exec playwright test>
+  lint: <e.g. pnpm lint>
+  typecheck: <e.g. pnpm typecheck>
+
+# Optional. An external issue tracker the backlog mirrors to, ONE WAY. The local
+# item stays the source of truth — it carries the FRs, NFR citations, acceptance
+# criteria, and QA level a ticket does not. Read references/TRACKER.md before
+# enabling. WHICH tracker/project/issue-types is a company-profile question; this
+# block records what the profile resolved to, so it is derived once, not per session.
+# Omit the whole block for solo projects — the skills then never touch the network.
+tracker:
+  enabled: false
+  type: jira
+  site: ""
+  project_key: ""            # never guess this; an item in the wrong project is noise
+  issue_type_for:
+    feature: Story
+    bug: Bug
+    chore: Task
+    debt: Task
+  mirror_on: [claim, close, block]
+
+# Optional. Record what each item actually cost when it closes — the only moment
+# per-item attribution exists, because only the session that did the work knows
+# which item its tokens belonged to. See references/TRACKER.md.
+cost_tracking:
+  enabled: false
+  transcript_dir: ""
+  effort_ledger: ""          # human hours: usually the dominant cost term by far
+
+# Optional, and deliberately absent. A project that collects feedback from other humans adds an
+# `external_feedback:` block here — WHICH product holds those reports is a profile preference, so
+# the base suite ships no default. See references/EXTERNAL-FEEDBACK.md for the block's shape and
+# what a source has to provide. With no block, Step 5 sweeps FINDINGS.md and never touches the
+# network.

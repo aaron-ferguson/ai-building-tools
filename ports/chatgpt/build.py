@@ -2,7 +2,7 @@
 import argparse
 from hashlib import sha256
 from pathlib import Path
-from zipfile import ZIP_DEFLATED, ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 ROOT = Path(__file__).resolve().parents[2]
 QUEUE = ROOT / "skills/queue"
@@ -21,7 +21,7 @@ def replace_once(text, old, new):
     return text.replace(old, new)
 
 
-def build(output):
+def package_files():
     workflow = (QUEUE / "SKILL.md").read_text()
     _, _, body = workflow.split("---\n", 2)
     body = replace_once(body, "# /queue", "# Queue engineering work\n\n" + PREFLIGHT)
@@ -47,16 +47,38 @@ def build(output):
     before = replace_once(before, "Stop at the first\none that resolves to a directory containing `CONVENTIONS_CORE.md`.",
                           "Select the first valid core and report inconsistent pointers as described below.")
     reference = before + Path(__file__).with_name("resolution.md").read_text() + "\n" + end + routing
-    with ZipFile(output, "x", ZIP_DEFLATED) as archive:
-        archive.writestr(f"{NAME}/SKILL.md", header + body)
-        archive.writestr(f"{NAME}/references/CONVENTIONS.md", reference)
-        for folder in (QUEUE / "templates", ROOT / "references"):
-            for path in sorted(folder.iterdir()):
-                if path.is_file() and path != ROOT / "references/CONVENTIONS.md":
-                    archive.write(path, f"{NAME}/{folder.name}/{path.name}")
+    yield f"{NAME}/SKILL.md", (header + body).encode(), 0o644
+    yield f"{NAME}/references/CONVENTIONS.md", reference.encode(), 0o644
+    for folder in (QUEUE / "templates", ROOT / "references"):
+        for path in sorted(folder.iterdir()):
+            if path.is_file() and path != ROOT / "references/CONVENTIONS.md":
+                yield f"{NAME}/{folder.name}/{path.name}", path.read_bytes(), path.stat().st_mode & 0o777
+
+
+def build(output):
+    with ZipFile(output, "x") as archive:
+        for name, data, mode in package_files():
+            info = ZipInfo(name)
+            info.external_attr = (0o100000 | mode) << 16
+            archive.writestr(info, data, compress_type=ZIP_DEFLATED)
+
+
+def refresh_plugin():
+    skills = Path(__file__).parent / "plugins/ai-building-tools/skills"
+    for name, data, mode in package_files():
+        dest = skills / name
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(data)
+        dest.chmod(mode)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("output", type=Path, help="new ZIP file to create")
-    build(parser.parse_args().output)
+    target = parser.add_mutually_exclusive_group(required=True)
+    target.add_argument("output", nargs="?", type=Path, help="new ZIP file to create")
+    target.add_argument("--refresh-plugin", action="store_true", help="refresh the checked-in skill")
+    args = parser.parse_args()
+    if args.refresh_plugin:
+        refresh_plugin()
+    else:
+        build(args.output)
