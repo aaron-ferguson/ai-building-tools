@@ -1,6 +1,6 @@
 # AI Building Tools for ChatGPT Work
 
-This marketplace ships the queue workflow. A workspace admin can import it
+This marketplace ships six manual workflows: queue, design, prototype, develop, verify, and retro. A workspace admin can import it
 directly from GitHub in Admin Console → Plugins → Add → Import marketplace.
 
 | Field | Value |
@@ -33,6 +33,6 @@ from the repository root and commit the updated package alongside the change:
     python3 ports/chatgpt/build.py --refresh-plugin
     python3 ports/chatgpt/test_package.py
 
-The test compares the complete packaged skill with a fresh build, including
+The test compares all six packaged skills with a fresh build, including
 executable permissions. Remove obsolete generated files identified by the test.
-To build a standalone skill ZIP, pass a new output filename to build.py.
+To build a standalone queue skill ZIP, pass a new output filename to build.py.

@@ -5,7 +5,7 @@ import json
 import unittest
 from zipfile import ZipFile
 
-from build import NAME, QUEUE, ROOT, build
+from build import NAME, QUEUE, ROOT, STAGES, build, plugin_files
 
 
 class QueuePackageTest(unittest.TestCase):
@@ -17,16 +17,15 @@ class QueuePackageTest(unittest.TestCase):
         manifest = json.loads((plugin / ".codex-plugin/plugin.json").read_text())
         self.assertEqual(entry["name"], manifest["name"])
         skills = plugin / manifest["skills"]
-        with TemporaryDirectory() as directory:
-            output = Path(directory) / "queue.zip"
-            build(output)
-            with ZipFile(output) as archive:
-                files = {str(p.relative_to(skills)) for p in skills.rglob("*") if p.is_file()}
-                self.assertEqual(files, set(archive.namelist()))
-                for entry in archive.infolist():
-                    path = skills / entry.filename
-                    self.assertEqual(path.read_bytes(), archive.read(entry), entry.filename)
-                    self.assertEqual(path.stat().st_mode & 0o111, entry.external_attr >> 16 & 0o111)
+        expected = {name: (data, mode) for name, data, mode in plugin_files()}
+        files = {str(p.relative_to(skills)) for p in skills.rglob("*") if p.is_file()}
+        self.assertEqual(files, set(expected))
+        names = {p.parent.name for p in skills.glob("*/SKILL.md")}
+        self.assertEqual(names, {f"ai-building-{stage}" for stage in ("queue", *STAGES)})
+        for name, (data, mode) in expected.items():
+            path = skills / name
+            self.assertEqual(path.read_bytes(), data, name)
+            self.assertEqual(path.stat().st_mode & 0o111, mode & 0o111, name)
 
     def test_self_contained_queue(self):
         with TemporaryDirectory() as directory:

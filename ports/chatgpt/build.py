@@ -55,6 +55,59 @@ def package_files():
                 yield f"{NAME}/{folder.name}/{path.name}", path.read_bytes(), path.stat().st_mode & 0o777
 
 
+STAGES = ("design", "prototype", "develop", "verify", "retro")
+
+
+def replace_section(text, start, end, replacement):
+    if text.count(start) != 1 or text.count(end) != 1:
+        raise ValueError(f"Review changed section: {start}")
+    before, section = text.split(start)
+    _, after = section.split(end)
+    return before + replacement + end + after
+
+
+def stage_workflow(stage):
+    source = ROOT / "skills" / stage / "SKILL.md"
+    text = replace_once(source.read_text(), f"name: {stage}\n", f"name: ai-building-{stage}\n")
+    header, body = text.split("\n---\n", 1)
+    host = (
+        "Work in the target project's writable checkout. Resolve bundled paths relative "
+        "to this skill directory. Read applicable project instructions, including AGENTS.md "
+        "and existing CLAUDE.md. Follow references/CONVENTIONS.md for conventions lookup. "
+        "Use a fresh session for each stage. Stage names in ticket fields and handoffs stay "
+        "unprefixed; ask for the corresponding ai-building skill in the next session.\n"
+    )
+    body = body.replace("at the plugin root", "in this skill directory")
+    body = body.replace("the project's `CLAUDE.md`", "the project's instructions")
+    if stage == "verify":
+        body = replace_section(body, "Skills run from the pinned install", "The `qa_level`",
+                               "Record the installed plugin version and the source revision under test. "
+                               "Verify installed behavior in a fresh session after publishing.\n\n")
+    if stage == "retro":
+        body = replace_section(body, "- **A skill edit has a release chain", "## Step 6",
+                               "- For a ChatGPT skill change, edit the source checkout, rebuild the port, "
+                               "and run ports/chatgpt/test_package.py. Obtain authorization to publish "
+                               "the branch and update the private plugin. Report any pending release "
+                               "or fresh-session verification.\n\n---\n\n")
+        body = body.split("**When Step 5 ran")[0].rstrip() + " Report pending publication or verification here.\n"
+    return header + "\n---\n\n" + host + body
+
+
+def plugin_files():
+    queue = list(package_files())
+    yield from queue
+    for stage in STAGES:
+        name = f"ai-building-{stage}"
+        yield f"{name}/SKILL.md", stage_workflow(stage).encode(), 0o644
+        for path, data, mode in queue:
+            relative = path.split("/", 1)[1]
+            if relative.startswith("references/") or relative == "templates/item.md":
+                yield f"{name}/{relative}", data, mode
+        if stage == "prototype":
+            asset = ROOT / "skills/prototype/assets/prototype-template.html"
+            yield f"{name}/assets/{asset.name}", asset.read_bytes(), 0o644
+
+
 def build(output):
     with ZipFile(output, "x") as archive:
         for name, data, mode in package_files():
@@ -65,7 +118,7 @@ def build(output):
 
 def refresh_plugin():
     skills = Path(__file__).parent / "plugins/ai-building-tools/skills"
-    for name, data, mode in package_files():
+    for name, data, mode in plugin_files():
         dest = skills / name
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(data)

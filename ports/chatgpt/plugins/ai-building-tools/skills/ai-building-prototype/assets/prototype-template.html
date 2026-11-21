@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>[Feature Name] — Prototype</title>
+<style>
+/* ============================================================
+   Design tokens — NEUTRAL PLACEHOLDERS. Swap these for your design
+   system's real values before showing anyone: if a design system is
+   configured, pull them with its MCP and replace this whole block.
+   Semantic TEXT shades here are deliberately dark enough to pass
+   WCAG AA on their own light tints; keep that property when you swap
+   in real values, and re-check any new colored-text-on-tint pairing.
+   Variable names are what the rest of the file uses — keep them.
+   ============================================================ */
+:root {
+  --navy: #1f2430; --navy-2: #2c3240;                 /* neutral 900 / .800 — dark chrome */
+  --accent: #4f46e5; --accent-ink: #4338ca;           /* accent / accent-strong */
+  --ground: #eef0f3; --panel: #ffffff; --panel-2: #f6f7f9;  /* neutral 200 / lightest / .100 */
+  --line: #d7dae0; --line-strong: #b9bec7;            /* neutral 300 / .400 */
+  --ink: #14171d; --ink-2: #4d5462; --ink-3: #6c7380; /* darkest / neutral 700 / .600 */
+  --success: #0a6b47; --success-bg: #e3faee;          /* green 700 / .100 */
+  --warning: #9a530f; --warning-bg: #fdf2e1;          /* orange 700 / .100 */
+  --critical: #c92a2a; --critical-bg: #fdeaea;        /* red 600 / .100 */
+  --info: #4338ca; --info-bg: #f7f5ff;                /* info / info tint */
+  --radius: 8px; --radius-sm: 6px;                    /* borderRadius.md / .sm */
+  --shadow: 0 1px 2px rgba(18,18,18,.06), 0 4px 16px rgba(18,18,18,.05);
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #161a22; --panel: #1f2430; --panel-2: #242a36;  /* neutral 1000 / .900 */
+    --line: #2c3240; --line-strong: #4d5462;                  /* neutral 800 / .700 */
+    --ink: #f6f7f9; --ink-2: #b9bec7; --ink-3: #8b929e;       /* neutral 100 / .400 / .500 */
+    --navy: #161a22; --navy-2: #1f2430;
+    --accent: #8b85f0; --accent-ink: #a8a4f5;                 /* accent dark / accent-strong dark */
+    --success: #35c48e; --success-bg: #07341f;                /* green 400 / .900 */
+    --warning: #f5a94f; --warning-bg: #4f2f0a;                /* orange 400 / .900 */
+    --critical: #f4827d; --critical-bg: #57100c;              /* red 400 / .900 */
+    --info: #a8a4f5; --info-bg: #221a4d;                      /* info dark / info tint dark */
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+  }
+}
+/* Explicit overrides win over the OS preference when the in-page toggle is used */
+:root[data-theme="light"] { --ground:#eef0f3; --panel:#fff; --panel-2:#f6f7f9; --line:#d7dae0; --line-strong:#b9bec7; --ink:#14171d; --ink-2:#4d5462; --ink-3:#6c7380; --navy:#1f2430; --navy-2:#2c3240; --accent:#4f46e5; --accent-ink:#4338ca; --success:#0a6b47; --success-bg:#e3faee; --warning:#9a530f; --warning-bg:#fdf2e1; --critical:#c92a2a; --critical-bg:#fdeaea; --info:#4338ca; --info-bg:#f7f5ff; }
+:root[data-theme="dark"]  { --ground:#161a22; --panel:#1f2430; --panel-2:#242a36; --line:#2c3240; --line-strong:#4d5462; --ink:#f6f7f9; --ink-2:#b9bec7; --ink-3:#8b929e; --navy:#161a22; --navy-2:#1f2430; --accent:#8b85f0; --accent-ink:#a8a4f5; --success:#35c48e; --success-bg:#07341f; --warning:#f5a94f; --warning-bg:#4f2f0a; --critical:#f4827d; --critical-bg:#57100c; --info:#a8a4f5; --info-bg:#221a4d; }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font-family: var(--sans); background: var(--ground); color: var(--ink); font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { margin: 0; font-weight: 650; letter-spacing: -.01em; }
+button { font-family: inherit; cursor: pointer; }
+a { color: var(--accent); text-decoration: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* ---- App shell: a topbar that always spans full width (it never moves,
+   whether the sidebar is open or collapsed — that's where the single
+   toggle icon lives) plus a main content area that shifts to make room
+   for the sidebar. Everything about running the prototype-as-a-tool
+   (view switching, data state, save/load, theme) lives in that
+   persistent left sidebar instead of eating screen real estate on every
+   screen — the point of a level-2 prototype is the feature being
+   demoed, not the chrome around it. Delete what you don't need — a
+   single-screen or modal-centric feature doesn't need the topbar at
+   all, just drop straight into .main with a .card (the drawer and its
+   toggle are independent of the topbar, so they still work). ---- */
+.topbar { background: var(--panel); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 14px; padding: 0 20px; height: 54px; box-sizing: border-box; }
+.brand { font-weight: 700; font-size: 14.5px; color: var(--ink); }
+.proto-banner { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 650; letter-spacing: .03em; color: var(--warning); background: var(--warning-bg); border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent); padding: 5px 11px; border-radius: 999px; }
+.proto-banner .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); }
+.topbar .spacer { flex: 1; }
+.app { margin-left: 300px; min-height: calc(100vh - 54px); transition: margin-left .2s ease; }
+.main { padding: 22px 26px 60px; overflow-x: hidden; }
+.view { animation: fade .16s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-2); display: grid; place-items: center; }
+#loadInput { display: none; }
+
+/* ---- Sidebar drawer: mimics Jira's collapsible sidebar. Defaults
+   collapsed, starting right below the topbar (top: 54px) rather than
+   overlapping it — view switching, data state, save/load, theme
+   all live here as labeled sections, reusing .btn/.data-state-switch
+   rather than inventing new controls per section. No
+   drawer-specific header/title — the topbar above it already gives the
+   page its identity, so the sidebar's content starts immediately. The
+   one toggle icon lives in the topbar (see HTML), not here, precisely
+   so it stays reachable when the sidebar is collapsed — clicking it
+   expands it again. Unlike a temporary overlay menu, nothing here
+   auto-collapses when you pick an action — a persistent sidebar
+   shouldn't vanish just because you clicked something in it. ---- */
+.drawer { position: fixed; top: 54px; left: 0; bottom: 0; width: 300px; max-width: 85vw; background: var(--panel); border-right: 1px solid var(--line); box-shadow: 4px 0 24px rgba(0,0,0,.15); z-index: 95; display: flex; flex-direction: column; transform: translateX(0); transition: transform .2s ease; overflow-y: auto; }
+body.drawer-collapsed .app { margin-left: 0; }
+body.drawer-collapsed .drawer { transform: translateX(-100%); }
+@media (prefers-reduced-motion: reduce) { .drawer, .app { transition: none; } }
+
+.menu-section { margin-bottom: 18px; }
+.menu-section:last-child { margin-bottom: 0; }
+.menu-section-title { font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-2); margin-bottom: 8px; }
+.menu-section-hint { font-size: 12px; color: var(--ink-2); margin: -4px 0 8px; }
+.menu-btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.menu-btn-row.stack { flex-direction: column; }
+.menu-btn-row.stack .btn { width: 100%; justify-content: flex-start; }
+.menu-btn-row .item.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ---- Data-state switcher: typical / empty / overloaded. Lives in every
+   level-2 prototype's menu by default — see the script section for why. ---- */
+.data-state-switch { display: flex; align-items: center; gap: 0; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
+.data-state-switch button { flex: 1; border: none; background: var(--panel); color: var(--ink-2); font-size: 12px; font-weight: 600; padding: 6px 11px; border-right: 1px solid var(--line-strong); text-align: center; }
+.data-state-switch button:last-child { border-right: none; }
+.data-state-switch button:hover { background: var(--panel-2); color: var(--ink); }
+.data-state-switch button.active { background: var(--navy); color: #fff; }
+
+/* ---- Primitives: buttons, cards, stat tiles, pills, tables, tabs, forms, toast, modal ---- */
+.btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line-strong); background: var(--panel); color: var(--ink); padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 550; }
+.btn:hover { border-color: var(--ink-3); background: var(--panel-2); }
+.btn.primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+.btn.accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.sm { padding: 5px 10px; font-size: 12px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card-pad { padding: 18px; }
+.card-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.card-head h3 { font-size: 14.5px; } .card-head .sub { font-size: 12px; color: var(--ink-2); } .card-head .spacer { flex: 1; }
+
+.page-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+.page-head .titles { flex: 1; min-width: 0; }
+.page-head h1 { font-size: 21px; }
+.page-head .desc { color: var(--ink-2); font-size: 13.5px; margin-top: 4px; }
+.breadcrumb { color: var(--ink-3); font-size: 12.5px; margin-bottom: 8px; cursor: pointer; }
+
+.grid { display: grid; gap: 16px; }
+.g-4 { grid-template-columns: repeat(4, 1fr); } .g-3 { grid-template-columns: repeat(3, 1fr); } .g-2 { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 1000px) { .g-4 { grid-template-columns: repeat(2,1fr); } .g-3, .g-2 { grid-template-columns: 1fr; } }
+
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 15px 16px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+.stat .k { font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.stat .v { font-size: 25px; font-weight: 700; margin-top: 5px; }
+.stat .stripe { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
+.stat.warn .stripe { background: var(--warning); } .stat.crit .stripe { background: var(--critical); } .stat.ok .stripe { background: var(--success); }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; }
+.pill .pd { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.ok { color: var(--success); background: var(--success-bg); }
+.pill.warn { color: var(--warning); background: var(--warning-bg); }
+.pill.crit { color: var(--critical); background: var(--critical-bg); }
+.pill.neutral { color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--line); }
+
+.tbl-wrap { overflow-x: auto; }
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.tbl th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-2); font-weight: 650; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
+table.tbl td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.tbl tbody tr:last-child td { border-bottom: none; }
+table.tbl tbody tr.click { cursor: pointer; } table.tbl tbody tr.click:hover { background: var(--panel-2); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 16px; overflow-x: auto; }
+.tab { padding: 9px 14px; font-size: 13px; font-weight: 550; color: var(--ink-2); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; cursor: pointer; }
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 650; }
+
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+input[type=text], input[type=number], input[type=date], select, textarea { font: inherit; font-size: 13.5px; color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; padding: 9px 11px; width: 100%; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px) { .row-2 { grid-template-columns: 1fr; } }
+
+.toast-wrap { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
+.toast { background: var(--navy); color: #fff; padding: 11px 15px; border-radius: 9px; box-shadow: var(--shadow); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 9px; animation: slidein .2s ease; max-width: 320px; }
+@keyframes slidein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15,17,25,.45); display: none; align-items: center; justify-content: center; z-index: 90; }
+.modal-backdrop.open { display: flex; }
+.modal-box { background: var(--panel); border-radius: var(--radius); box-shadow: 0 10px 34px rgba(0,0,0,.3); width: 420px; max-width: calc(100vw - 40px); max-height: calc(100vh - 60px); overflow-y: auto; }
+.modal-box.wide { width: 520px; }
+.modal-box .card-head { border-radius: var(--radius) var(--radius) 0 0; }
+
+
+.muted { color: var(--ink-2); } .small { font-size: 12px; }
+.flex { display: flex; align-items: center; gap: 10px; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.divider { height: 1px; background: var(--line); margin: 14px 0; }
+</style>
+</head>
+<body class="drawer-collapsed">
+
+<div class="topbar">
+  <button class="icon-btn" id="drawerToggle" data-no-log title="Expand sidebar">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2" stroke="currentColor" stroke-width="1.3"/><line x1="5.75" y1="2.75" x2="5.75" y2="13.25" stroke="currentColor" stroke-width="1.3"/></svg>
+  </button>
+  <span class="brand">[Feature Name]</span>
+  <span class="proto-banner"><span class="dot"></span> PROTOTYPE · mock data · no live systems</span>
+  <span class="spacer"></span>
+</div>
+<div class="app">
+  <main class="main" id="main"></main>
+</div>
+<div class="toast-wrap" id="toasts"></div>
+
+<div class="drawer" id="adminDrawer">
+  <div class="card-pad">
+
+    <!-- No "View" section by default — real navigation between a feature's own
+         top-level screens is part of the feature being demoed, not admin tooling,
+         so it belongs in .app as ordinary persistent nav markup (a sibling of
+         .main, styled however this feature's real nav would look), wired with
+         the same navTo/data-nav pattern. Only add a drawer "View" section back
+         for the narrow, rare case of combining screens that would never coexist
+         as one navigable UI in production (e.g. three separate role-restricted
+         portals shown as tabs purely so one file can demo all three) — and say
+         so explicitly in field-reference.md if you do. When in doubt, it's real
+         navigation: put it in the app, not here. -->
+
+    <div class="menu-section">
+      <div class="menu-section-title">Data State</div>
+      <div class="menu-section-hint">See how this screen handles different data volumes.</div>
+      <div class="data-state-switch" id="dataStateSwitch" title="Switch which data scenario is loaded">
+        <button class="active" data-state="typical">Typical</button>
+        <button data-state="empty">Empty</button>
+        <button data-state="overloaded">Overloaded</button>
+      </div>
+    </div>
+
+    <div class="menu-section">
+      <div class="menu-section-title">Scenario</div>
+      <div class="menu-section-hint">Capture exactly what happened here, or reload a scenario captured earlier.</div>
+      <div class="menu-btn-row">
+        <button class="btn sm" id="saveBtn">Save</button>
+        <button class="btn sm" id="loadBtn">Load</button>
+        <input type="file" id="loadInput" accept="application/json,.json" hidden>
+      </div>
+    </div>
+
+    <div class="menu-section">
+      <div class="menu-section-title">Appearance</div>
+      <button class="btn sm" id="themeBtn">Toggle Light / Dark</button>
+    </div>
+
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Mock data — everything lives in this in-memory object.
+   Nothing persists across a reload, nothing calls out to a
+   real API. Replace the shape below with whatever the feature
+   actually needs; this is just here to show the pattern.
+
+   DATA_STATES backs the Typical / Empty / Overloaded switcher in
+   the ☰ menu. Define all three for the feature's main list/table
+   — don't skip Empty or Overloaded just because they're less
+   interesting to build. An empty state with no "no results"
+   messaging, or a table that falls apart at 80 rows, is exactly
+   the kind of thing this is meant to surface before a stakeholder
+   finds it live in a demo instead.
+     - typical: a handful of representative rows covering the
+       statuses/edge cases that matter for this feature
+     - empty: zero rows — pair with real empty-state UI in the
+       view, not just a blank table
+     - overloaded: 50-100+ rows (scale to whatever's plausible in
+       production), with a few deliberately long field values to
+       stress-test truncation, wrapping, and column alignment
+   ============================================================ */
+let SEQ = 100;
+function makeItem(o){ return Object.assign({ id: 'ID-' + (SEQ++) }, o); }
+
+const DATA_STATES = {
+  typical: () => ({ items: [
+    makeItem({ name: 'Example Item One', status: 'active', notes: [] }),
+    makeItem({ name: 'Example Item Two', status: 'flagged', notes: [] }),
+  ] }),
+  empty: () => ({ items: [] }),
+  overloaded: () => ({ items: Array.from({ length: 75 }, (_, i) => makeItem({
+    name: `Overloaded Example Item ${i + 1} — a deliberately long name to test wrapping and truncation`,
+    status: ['active', 'flagged', 'pending'][i % 3],
+    notes: [],
+  })) }),
+};
+let db = DATA_STATES.typical();
+let currentDataStateKey = 'typical';
+
+/* ---- helpers ---- */
+const $ = (s, r=document) => r.querySelector(s);
+const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+function toast(msg){
+  const t = el(`<div class="toast"><span>${msg}</span></div>`);
+  $('#toasts').appendChild(t);
+  setTimeout(() => { t.style.transition = 'opacity .3s, transform .3s'; t.style.opacity = '0'; t.style.transform = 'translateY(8px)'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+function statusPill(s){
+  const map = { active: ['ok', 'Active'], flagged: ['crit', 'Flagged'], pending: ['warn', 'Pending'] };
+  const [cls, label] = map[s] || ['neutral', s];
+  return `<span class="pill ${cls}"><span class="pd"></span>${label}</span>`;
+}
+
+/* ---- theme toggle: cycles system -> light -> dark -> system ---- */
+(function(){
+  const root = document.documentElement;
+  let mode = 'system';
+  $('#themeBtn').addEventListener('click', () => {
+    mode = mode === 'system' ? 'light' : mode === 'light' ? 'dark' : 'system';
+    if (mode === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', mode);
+  });
+})();
+
+/* ---- Sidebar drawer: mimics Jira's collapsible sidebar. Defaults
+   collapsed (body.drawer-collapsed set in the HTML); the one toggle icon
+   (in the topbar, not the drawer — see HTML) collapses/expands it. When
+   docked open it shifts .app over via margin-left rather than overlaying
+   it. The icon itself never changes, only
+   its tooltip — same pattern Jira uses. Nothing here auto-collapses
+   when you pick an action (switch view, switch data state, save, load)
+   — a persistent sidebar shouldn't disappear just because you clicked
+   something in it, any more than Jira's does. ---- */
+let drawerCollapsed = true;
+function setDrawerCollapsed(collapsed){
+  drawerCollapsed = collapsed;
+  document.body.classList.toggle('drawer-collapsed', collapsed);
+  $('#drawerToggle').title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+}
+$('#drawerToggle').addEventListener('click', () => setDrawerCollapsed(!drawerCollapsed));
+
+/* ---- tiny router: state + render(), swap views by key. Queries data-nav
+   globally rather than scoped to one container, since real app navigation
+   lives in .app (not the drawer) and this same wiring should pick it up
+   wherever it ends up — see the drawer's "View" comment above. ---- */
+let state = { view: 'list', itemId: null };
+function navTo(view, opts = {}) { state.view = view; Object.assign(state, opts); render(); }
+document.querySelectorAll('[data-nav]').forEach(a => a.addEventListener('click', () => navTo(a.dataset.nav)));
+
+function render() {
+  document.querySelectorAll('[data-nav].item').forEach(a => a.classList.toggle('active', a.dataset.nav === state.view || (state.view === 'detail' && a.dataset.nav === 'list')));
+  const m = $('#main');
+  m.innerHTML = '';
+  m.appendChild((views[state.view] || views.list)());
+}
+
+/* ---- data-state switcher: rebuilds db from DATA_STATES and re-renders.
+   Falls back to the list view if the current selection (e.g. a detail
+   view's itemId) no longer exists in the new data set. ---- */
+function setDataState(key){
+  currentDataStateKey = key;
+  db = DATA_STATES[key]();
+  $('#dataStateSwitch').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.state === key));
+  if (state.itemId && !db.items.some(i => i.id === state.itemId)) { state.view = 'list'; state.itemId = null; }
+  render();
+}
+$('#dataStateSwitch').querySelectorAll('[data-state]').forEach(b => b.addEventListener('click', () => setDataState(b.dataset.state)));
+
+/* ============================================================
+   Interaction logger — generic, event-delegation based. Works with
+   any db/state shape and any screen built from this template with
+   zero per-screen wiring: it watches `document`, not `.main`, so it
+   survives every render() wipe and reaches modals that live outside
+   `.main` as siblings of `.app`. Mark any control that shouldn't
+   appear in the log (like the buttons this feature itself adds)
+   with `data-no-log`.
+
+   Listens in the capture phase, not bubble — that's what makes each
+   entry reflect pre-mutation state: capture runs before the clicked
+   element's own handler (registered directly on it, default bubble
+   phase) has a chance to mutate db/state or detach itself from the
+   DOM on the next render().
+   ============================================================ */
+const interactionLog = [];
+function logInteraction(label){ interactionLog.push({ t: new Date().toISOString(), view: state.view, label }); }
+
+function readableLabelForField(field){
+  const wrap = field.closest('.field');
+  if (wrap) { const lab = wrap.querySelector('label'); if (lab && lab.textContent.trim()) return lab.textContent.trim(); }
+  if (field.id) { const lab = document.querySelector(`label[for="${CSS.escape(field.id)}"]`); if (lab) return lab.textContent.trim(); }
+  if (field.getAttribute('aria-label')) return field.getAttribute('aria-label');
+  if (field.placeholder) return field.placeholder;
+  const raw = field.name || field.id;
+  if (raw) return raw.replace(/^filt_/, '').replace(/[_-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, c => c.toUpperCase()).trim();
+  return field.tagName.toLowerCase();
+}
+function readableValue(field){
+  if (field.type === 'password') return '(hidden)';
+  if (field.tagName === 'SELECT') { const opt = field.options[field.selectedIndex]; return opt ? opt.textContent.trim() : field.value; }
+  if (field.type === 'checkbox') return field.checked ? 'checked' : 'unchecked';
+  if (field.type === 'radio') return field.checked ? `${readableLabelForField(field)} selected` : null;
+  const v = (field.value || '').trim();
+  if (!v) return '(cleared)';
+  return v.length > 60 ? v.slice(0, 57) + '…' : v;
+}
+function readableLabelForEl(el){
+  const text = (el.textContent || '').trim().replace(/\s+/g, ' ');
+  const symbolic = text.length <= 2 || !/\w/.test(text); // catches icon-only glyphs like ✕ ▸
+  if (!symbolic && text) return text.slice(0, 60);
+  return el.getAttribute('aria-label') || el.title || (el.id ? `#${el.id}` : el.tagName.toLowerCase());
+}
+function describeClickTarget(target){
+  const label = readableLabelForEl(target);
+  const meta = [];
+  if (target.dataset) Object.entries(target.dataset).forEach(([k, v]) => { if (k !== 'noLog') meta.push(v === '' ? k : `${k}=${v}`); });
+  const tr = target.closest('tr');
+  let rowCtx = '';
+  if (tr) {
+    const cell = tr.querySelector('strong') || [...tr.querySelectorAll('td')].find(td => td.textContent.trim().length > 1);
+    if (cell) rowCtx = ` (row: ${cell.textContent.trim().slice(0, 40)})`;
+  }
+  return `Clicked "${label}"${rowCtx}${meta.length ? ` [${meta.join(', ')}]` : ''}`;
+}
+
+document.addEventListener('change', (e) => {
+  const field = e.target.closest('input, select, textarea');
+  if (!field || field.closest('[data-no-log]')) return;
+  if (field.type === 'radio' && !field.checked) return;
+  const value = readableValue(field);
+  if (value === null) return;
+  logInteraction(`Set "${readableLabelForField(field)}" to ${value}`);
+}, true);
+
+document.addEventListener('click', (e) => {
+  const t = e.target.nodeType === 3 ? e.target.parentElement : e.target; // a Text node can be e.target in some browsers
+  if (!t || t.closest('[data-no-log]')) return;
+  if (t.classList && t.classList.contains('modal-backdrop')) { logInteraction('Dismissed modal (clicked outside)'); return; }
+  const target = t.closest('button, a, [data-nav], [data-action], [data-packet], [data-case], [data-report], [data-expand], [data-tab], [data-state], tr.click, .tab, summary, .expand-toggle, [role="button"]');
+  if (!target) return;
+  logInteraction(describeClickTarget(target));
+}, true);
+
+/* ---- Save / Load scenario: exports the interaction log plus a full
+   db+state snapshot as JSON, and restores that exact snapshot from a
+   previously-exported file. Entirely client-side — no server, so this
+   works the same whether the prototype is opened via file:// or a
+   local dev server. ---- */
+const SCENARIO_SCHEMA = 'prototype-scenario@1';
+
+function slugifyTitle(title){
+  return (title || 'prototype').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'prototype';
+}
+function timestampForFilename(){
+  return new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+}
+function saveScenario(){
+  const payload = {
+    schema: SCENARIO_SCHEMA,
+    prototype: document.title,
+    exportedAt: new Date().toISOString(),
+    dataStateAtExport: currentDataStateKey,
+    state,
+    db,
+    interactionLog,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = el(`<a href="${url}" download="${slugifyTitle(document.title)}--${timestampForFilename()}.json"></a>`);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+  toast('Scenario saved to file.');
+}
+function loadScenario(file){
+  const reader = new FileReader();
+  reader.onerror = () => toast('Load failed: could not read file.');
+  reader.onload = () => {
+    let parsed;
+    try { parsed = JSON.parse(String(reader.result)); }
+    catch { toast('Load failed: not valid JSON.'); return; }
+    if (!parsed || parsed.schema !== SCENARIO_SCHEMA || !parsed.db || !parsed.state) {
+      toast('Load failed: file is not a recognized scenario export.');
+      return;
+    }
+    if (parsed.prototype && parsed.prototype !== document.title) {
+      if (!confirm(`This file was saved from "${parsed.prototype}", not this prototype. Load anyway?`)) return;
+    }
+    try {
+      db = parsed.db;
+      state = parsed.state;
+      currentDataStateKey = 'custom';
+      interactionLog.length = 0;
+      $('#dataStateSwitch').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      render();
+      logInteraction(`Loaded scenario from ${file.name}`);
+      toast(`Scenario loaded from ${file.name}.`);
+    } catch (err) {
+      console.error('Load failed while rendering loaded scenario:', err);
+      toast('Load failed: file contents don’t match this prototype — reverted to Typical.');
+      setDataState('typical');
+    }
+  };
+  reader.readAsText(file);
+}
+$('#saveBtn').addEventListener('click', saveScenario);
+$('#loadBtn').addEventListener('click', () => $('#loadInput').click());
+$('#loadInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (file) loadScenario(file);
+});
+
+/* ============================================================
+   Views — add one function per screen. Keep the list+detail
+   pair below as a reference for the click-through pattern
+   (list row -> detail -> tabs -> back), then replace the
+   content with the real screens from the wireframe.
+   ============================================================ */
+const views = {};
+
+views.list = () => {
+  const v = el(`<div class="view"></div>`);
+  v.innerHTML = `
+    <div class="page-head"><div class="titles"><h1>Items</h1><div class="desc">${db.items.length} items</div></div></div>
+    ${db.items.length === 0 ? '<div class="card card-pad muted">No items yet.</div>' : `
+    <div class="card"><div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Name</th><th>Status</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div></div>`}`;
+  const tb = v.querySelector('#rows');
+  if (tb) db.items.forEach(item => {
+    const tr = el(`<tr class="click"><td><strong>${item.name}</strong></td><td>${statusPill(item.status)}</td></tr>`);
+    tr.addEventListener('click', () => navTo('detail', { itemId: item.id }));
+    tb.appendChild(tr);
+  });
+  return v;
+};
+
+views.detail = () => {
+  const item = db.items.find(i => i.id === state.itemId);
+  const v = el(`<div class="view"></div>`);
+  v.innerHTML = `
+    <div class="breadcrumb" id="bc">Items ›</div>
+    <div class="page-head"><div class="titles"><h1>${item.name}</h1><div class="desc">${statusPill(item.status)}</div></div>
+      <button class="btn accent" id="act">Mark Active</button></div>
+    <div class="card"><div class="card-pad">Notes, fields, or tabs for this item go here.</div></div>`;
+  v.querySelector('#bc').addEventListener('click', () => navTo('list'));
+  v.querySelector('#act').addEventListener('click', () => { item.status = 'active'; toast(`${item.name} marked active`); render(); });
+  return v;
+};
+
+render();
+</script>
+</body>
+</html>
