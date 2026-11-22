@@ -160,13 +160,38 @@ on every run.
 
 ## Waiting on  *(only while `status: waiting`)*
 
-The specific question, and who can answer it — one or two lines, written by whoever sets the
-status. `./next --waiting` prints the first line of this section, which is the whole point: the
-set of things needing a person is scannable without opening a ticket. A `waiting` row with no
-section here is reported as a defect in the row rather than skipped.
+A **decision brief**, written by whoever sets the status: a person reading it cold, away from the
+session that wrote it, decides from it and nothing else. `./next --waiting` and every `--drive`
+escalation print the first line under `### What needs you`, so the set of things needing a person
+is scannable without opening a ticket. A `waiting` row with no section here is reported as a defect
+in the row rather than skipped. **`./handoff <id> <token> <stage> waiting` refuses a section missing
+any of the seven subsections below, or holding fewer than two `#### Option` entries under
+`### Options`**, naming what is missing and changing nothing. Rows already `waiting` are not
+re-checked.
 
-- **Question:**
-- **Who can answer:**
+### Outcome
+What the work is driving toward.
+
+### Where it stands
+What is done, what is blocked, and what keeps running meanwhile.
+
+### What needs you
+The challenge, in one first line, and why it cannot be decided without a person.
+
+### Options
+#### Option A — <name>
+Pros, cons, and what would have to be true for it to win.
+#### Option B — <name>
+Pros, cons, and what would have to be true for it to win.
+
+### Recommendation
+Which option, and why.
+
+### What to do
+The exact steps or reply that unblocks it, and the command that resumes.
+
+### If no answer
+What waits, and what does not.
 
 Delete this section when the status changes.
 
