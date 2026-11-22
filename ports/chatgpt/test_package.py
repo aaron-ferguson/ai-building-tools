@@ -19,9 +19,9 @@ class QueuePackageTest(unittest.TestCase):
         skills = plugin / manifest["skills"]
         expected = {name: (data, mode) for name, data, mode in plugin_files()}
         files = {str(p.relative_to(skills)) for p in skills.rglob("*") if p.is_file()}
-        self.assertEqual(files, set(expected))
+        self.assertEqual(files, set(expected) | {"ai-building-sprint/SKILL.md"})
         names = {p.parent.name for p in skills.glob("*/SKILL.md")}
-        self.assertEqual(names, {f"ai-building-{stage}" for stage in ("queue", *STAGES)})
+        self.assertEqual(names, {f"ai-building-{stage}" for stage in ("queue", "sprint", *STAGES)})
         for name, (data, mode) in expected.items():
             path = skills / name
             self.assertEqual(path.read_bytes(), data, name)

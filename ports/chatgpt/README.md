@@ -24,6 +24,10 @@ ai-building-queue skill ran, then inspect the ticket, its convention citation,
 and its position in .tickets/QUEUE.md. In a second, unwired disposable project,
 verify that queue stops before creating .tickets/.
 
+## Cloud sprint
+
+Ask Work to coordinate a sprint with fresh subagent sessions. Specify the repository, branch, ticket scope and stopping limits. The coordinator uses a writable cloud checkout and the existing backlog scripts. Grant publication permission when the resulting commits should go to GitHub.
+
 ## Maintaining the package
 
 Work imports the committed plugin directory directly. After changing the
