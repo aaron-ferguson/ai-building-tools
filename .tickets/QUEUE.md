@@ -52,6 +52,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0236 | Decide whether design may amend unheld sibling items its own FRs name | design | ready |  |
 | 0237 | Give queue a way to send an open verify ticket back to design | design | ready |  |
 | 0238 | Decide whether a ticket-pinned path in the current repo stands in for prototype.root at level 3 | design | ready |  |
+| 0239 | Codex test | develop | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads
 the graph rather than this cache. Everything that *writes* it is governed by `CONCURRENCY.md` in

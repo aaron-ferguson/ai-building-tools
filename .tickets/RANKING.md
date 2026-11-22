@@ -25,6 +25,8 @@ in above these rows by being newer or more interesting.
 
 ## The order now, by the argument that placed it
 
+**0239 — directly below 0238.** This one-off Codex test has a single-file outcome and no dependent work. The prototype-path decision above it has lasting value for future sessions.
+
 **0232, 0233 — rows 1–2, inserted 2026-11-18, above 0231 by the user's instruction** (repair-first
 rows of sprint `run-20261118T074205Z`). Both are the baseline `unit` reds on Linux — already red at
 `a118a42`, before 0231 was claimed — and every verify pass reads that baseline, 0231's included, so a
