@@ -109,6 +109,27 @@ read_gate_max_rows() {
   GATE_MAX_ROWS="$raw"
 }
 
+# `bounce_max:` — how many times one ticket may re-enter an earlier stage in one run before
+# `--drive` escalates it (0234 FR2): verify -> develop, verify or develop -> queue (an in-scope
+# contract repair), verify or develop -> design. The count is the supervisor's, passed as
+# `--bounces <id>=<n>`, because `--drive` is stateless. Absent means 2. Unlike `gate_max_rows`, 0 is
+# legal and means every bounce escalates — the pre-0234 behaviour, kept one config line away as the
+# rollback. Anything that is not a whole number is a malformed config, loudly.
+BOUNCE_MAX_DEFAULT=2
+BOUNCE_MAX="$BOUNCE_MAX_DEFAULT"
+read_bounce_max() {
+  [ -f "$CONFIG" ] || return 0
+  raw="$(awk '/^bounce_max:/ {
+    v = $0; sub(/^bounce_max: */, "", v); sub(/#.*/, "", v); gsub(/[ \t]/, "", v)
+    print v; exit
+  }' "$CONFIG")"
+  [ -n "$raw" ] || return 0
+  case "$raw" in
+    *[!0-9]*) echo "bounce_max in $CONFIG is not a whole number of 0 or more: $raw" >&2; return 1 ;;
+  esac
+  BOUNCE_MAX="$raw"
+}
+
 # Entries in FINDINGS.md, tolerant of both shapes the file carries: `- <date> — lead.` and
 # `- **<date> — lead.**`. The obvious `^- 2026-` grep sees only the first, and MEASUREMENT.md
 # published 26 and 28 in adjacent sentences against a format-tolerant 42. A gate reading a reliably
@@ -341,7 +362,7 @@ findings_sources() {
 
 usage() {
   cat <<'USAGE'
-usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --findings | --drive [--propose] [--completed <stage>[:<id>]] [--started <id>]… [--scope <id>]… | --help]
+usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --findings | --drive [--propose] [--completed <stage>[:<id>]] [--started <id>]… [--scope <id>]… [--bounces <id>=<n>]… | --help]
 
   ./next             counts by stage and by status, plus anything another session holds
   ./next <stage>     the first takeable row for that stage, and its size
@@ -383,6 +404,15 @@ usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --fi
                      A ticket carrying ## Progress is its own dispatch unit, one leg per session:
                      after `handoff --slice` the next leg's develop or the leg's verify is
                      dispatched rather than escalated, and a started sliced ticket is finished first.
+                     A RE-ENTRY is routed, not escalated, up to bounce_max (config.yml, default 2;
+                     0 escalates every one): a verify bounce to develop re-dispatches develop, an
+                     in-scope ticket a verify or develop sent to next: queue dispatches a queue
+                     repair, and a re-entry into design goes to the rank walk. Past the bound it
+                     escalates. --bounces <id>=<n> carries the count, which the SUPERVISOR keeps,
+                     since this script is stateless: n is that ticket's re-entries in this run since
+                     its last verify pass, including the one --completed reports. Repeatable, one
+                     per id, and only the --completed id's is read; absent counts as 1 (after a
+                     develop -> design hand-off, absent is unbounded).
                      --propose describes the dispatch a person is being asked to approve — how many
                      tickets, which, a line of work each, and what holds the gate together — and is
                      for the ONE call a run makes before its first stage. Opt-in because every later
@@ -1155,10 +1185,12 @@ if [ "${1:-}" = "--drive" ]; then
   read_threshold || exit 1
   read_max_sprints || exit 1
   read_gate_max_rows || exit 1
+  read_bounce_max || exit 1
   shift
   COMPLETED=""
   STARTED=""
   SCOPE=""
+  BOUNCES=""
   PROPOSE=0
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -1196,6 +1228,27 @@ if [ "${1:-}" = "--drive" ]; then
           *) echo "--scope takes a four-digit id; got: $1" >&2; usage >&2; exit 2 ;;
         esac
         contains_word "$1" "$SCOPE" || SCOPE="$SCOPE $1"
+        shift ;;
+      --bounces)
+        shift
+        [ $# -gt 0 ] || { echo "--bounces needs <id>=<n>" >&2; usage >&2; exit 2; }
+        # 0234 FR3. A four-digit id and a count of at least 1, else a usage error, for `--started`'s
+        # reason: a malformed entry matches no id and would read as an absent count in silence. A
+        # second value for one id is refused too — which of two counts is the run's is not this
+        # script's to guess.
+        bid="${1%%=*}"; bn="${1#*=}"
+        case "$1" in
+          [0-9][0-9][0-9][0-9]=[0-9]*) : ;;
+          *) echo "--bounces takes <four-digit id>=<n>; got: $1" >&2; usage >&2; exit 2 ;;
+        esac
+        case "$bn" in
+          *[!0-9]*|'') echo "--bounces takes <four-digit id>=<n>; got: $1" >&2; usage >&2; exit 2 ;;
+        esac
+        [ "$bn" -ge 1 ] || { echo "--bounces counts re-entries, at least 1; got: $1" >&2; usage >&2; exit 2; }
+        case " $BOUNCES " in
+          *" $bid="*) echo "--bounces names $bid twice; pass one count per id" >&2; usage >&2; exit 2 ;;
+        esac
+        BOUNCES="$BOUNCES $bid=$bn"
         shift ;;
       *) echo "unknown argument to --drive: $1" >&2; usage >&2; exit 2 ;;
     esac
@@ -1811,7 +1864,8 @@ if [ "${1:-}" = "--drive" ]; then
 
   # The highest-ranked takeable develop row this run started whose last leg ended cleanly with
   # slices left (0231 FR8): finished before the walk opens a different develop row, for 0131's
-  # reason. A bounced leg is not preferred — the bounce is a person's, and the completion arm says so.
+  # reason. A bounced leg is not preferred here: the completion arm re-dispatches it directly, under
+  # `bounce_max` (0234 FR1), so the walk never has to.
   started_leg() {
     for sg_id in $(takeable_develop); do
       contains_word "$sg_id" "$STARTED" || continue
@@ -1837,6 +1891,20 @@ if [ "${1:-}" = "--drive" ]; then
     findings_gate gate
     decide "$DISPATCH" "DISPATCH  develop $1"
   }
+
+  # bounce_count <id> <absent> — the supervisor's `--bounces` count for <id>, or <absent> where it
+  # passed none (0234 FR3). Only the named id's entry is read: another ticket's count is not this
+  # one's, however large.
+  bounce_count() {
+    for bc in $BOUNCES; do
+      [ "${bc%%=*}" = "$1" ] && { printf '%s' "${bc#*=}"; return 0; }
+    done
+    printf '%s' "$2"
+  }
+
+  # past_bound <n> — true when a re-entry count is over `bounce_max` (0234 FR2: `n > max` escalates,
+  # so n = max is still routed and `bounce_max: 0` escalates the first bounce).
+  past_bound() { [ "$1" -gt "$BOUNCE_MAX" ]; }
 
   # --- the queue has to agree with itself before anything is dispatched ------------------------
   # FR1/FR2 of 0142. `--drift` exits non-zero on every class precisely so that a row disagreeing
@@ -1915,11 +1983,40 @@ if [ "${1:-}" = "--drive" ]; then
           # 0159 FR2. Not an escalation and not a dispatch either: the rank walk below decides,
           # because this row may not be the top one. A design row STILL at design after a completed
           # design falls past this to the same-stage arm, which is a real loop.
+          #
+          # 0234 FR16: a re-entry into design spends the run's one `bounce_max` allowance. After
+          # verify an absent count is 1; after develop only a count the supervisor passed is read,
+          # so a develop -> design hand-off with none stays unbounded exactly as before 0234.
+          ldn=""
+          if [ "$lstage" = verify ]; then ldn="$(bounce_count "$lid" 1)"
+          elif [ "$lstage" = develop ]; then ldn="$(bounce_count "$lid" '')"; fi
+          if [ -n "$ldn" ] && past_bound "$ldn"; then
+            decide "$ESCALATE" "ESCALATE  $lid went back to next: design $ldn time(s) in this run, past bounce_max $BOUNCE_MAX — the loop is not converging, and whether to go round again is a person's call; the record is in $(item_for "$lid")"
+          fi
           printf 'NOTE      %s is at next: design after %s — design is autonomous work; carrying on to the rank walk\n' \
             "$lid" "$lstage"
         elif [ "$lnext" = "design" ] && [ "$lstage" != "design" ]; then
           decide "$ESCALATE" "ESCALATE  $lid is at next: design / $lstatus after $lstage — a person decides
           $(design_question "$(item_for "$lid")")"
+        elif [ "$lnext" = "queue" ] && [ "$lstatus" = "ready" ] \
+          && { [ "$lstage" = "verify" ] || [ "$lstage" = "develop" ]; } \
+          && [ -n "$SCOPE" ] && contains_word "$lid" "$SCOPE"; then
+          # 0234 FR5: an in-scope ticket a verify (or a develop) found the CONTRACT wrong on is
+          # repaired by a queue session inside the run — the person answered this in advance by
+          # confirming the scope. Keyed on the completed stage being verify or develop and never
+          # queue, so a queue session's own hand-off back to queue reaches the stale-contract arm
+          # below instead of looping (FR14). Same count and bound as a develop re-dispatch: one
+          # allowance for the whole cycle. No held-design-file wait: a queue session writes only
+          # the backlog.
+          lqn="$(bounce_count "$lid" 1)"
+          if past_bound "$lqn"; then
+            decide "$ESCALATE" "ESCALATE  $lid bounced from $lstage $lqn time(s) in this run, past bounce_max $BOUNCE_MAX — the loop is not converging, and whether to go round again is a person's call; the record is in $(item_for "$lid")"
+          fi
+          printf "NOTE      %s bounced from %s to next: queue (%s of %s) — dispatching queue to repair the contract; %s's diagnosis is in %s\n" \
+            "$lid" "$lstage" "$lqn" "$BOUNCE_MAX" "$lstage" "$(item_for "$lid")"
+          PROPOSE_STAGE="queue"; PROPOSE_IDS="$lid"
+          findings_gate gate
+          decide "$DISPATCH" "DISPATCH  queue $lid"
         elif [ "$lnext" = "queue" ]; then
           decide "$ESCALATE" "ESCALATE  $lid went back to next: queue after $lstage — the contract is stale, and respecifying it is a person's call"
         elif [ -n "$lblockers" ]; then
@@ -1936,12 +2033,29 @@ if [ "${1:-}" = "--drive" ]; then
             "$lid" "$(fm "$(item_for "$lid")" slice)" "$lstage"
           dispatch_leg "$lid"
         elif [ "$lstage" = "verify" ] && [ "$lnext" = "develop" ]; then
-          decide "$ESCALATE" "ESCALATE  $lid bounced from verify back to next: develop — verify already decided whether the build or the contract was wrong, and re-developing blind spends a stage session rediscovering it"
+          # 0234 FR1: a verify bounce is re-developed, not escalated — verify handed it to develop
+          # rather than queue, so it judged the build wrong, and the supervisor's prompt carries its
+          # diagnosis. The bounced ticket alone, through dispatch_leg's findings gate and design
+          # wait; sliced (`leg_state` = bounced) or not alike. Past `bounce_max` it is a person's.
+          lbn="$(bounce_count "$lid" 1)"
+          if past_bound "$lbn"; then
+            decide "$ESCALATE" "ESCALATE  $lid bounced from verify $lbn time(s) in this run, past bounce_max $BOUNCE_MAX — the loop is not converging, and whether to go round again is a person's call; verify's diagnosis is in $(item_for "$lid")"
+          fi
+          printf "NOTE      %s bounced from verify (%s of %s) — re-dispatching develop; verify's diagnosis is in %s\n" \
+            "$lid" "$lbn" "$BOUNCE_MAX" "$(item_for "$lid")"
+          dispatch_leg "$lid"
         elif [ "$lnext" = "$lstage" ]; then
           # 0231 FR10 (0212): a develop session that found its files held by a running design stood
           # down and left the row as it was. That is the wait re-entered, not a loop.
           if [ "$lstage" = develop ] && [ "$lstatus" = ready ]; then wait_on_design "$lid"; fi
           decide "$ESCALATE" "ESCALATE  $lid is still at next: $lstage after a completed $lstage — same ticket, same stage, with an outcome in between"
+        elif [ "$lstage" = "queue" ] && [ "$lstatus" = "ready" ] \
+          && { [ "$lnext" = "develop" ] || [ "$lnext" = "verify" ]; }; then
+          # 0234 FR13: a queue session re-specified the row and moved it on (to develop, or to
+          # verify where every FR's code still stands). Routed by the rank walk as after any stage
+          # that moved a row on; before this arm the catch-all below escalated it as a shape no rule
+          # covers — the 0204 case, where a supervisor had to drop `--completed` by hand.
+          printf 'NOTE      %s is at next: %s after queue — carrying on to the rank walk\n' "$lid" "$lnext"
         elif [ "$lstage" = "design" ] && [ "$lstatus" = "ready" ]; then
           # `--completed design:<id>` and the row has moved on — to develop, or anywhere the
           # designer sent it. 0159 FR2: the rank walk decides, where this once fell through to

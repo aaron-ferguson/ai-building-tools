@@ -770,19 +770,18 @@ assert_rc       "exits 0 — dispatch"          "$rc" 0
 assert_contains "says why 0101 has no row"    "$out" 'closed'
 assert_contains "dispatches the next gate"    "$out" 'DISPATCH  develop 0102'
 
-echo "0038 AC9 — verify bounced the ticket back to develop/ready: escalate"
+# AMENDED BY 0234 (AC1), on the user's call: a verify bounce is routed back to develop, not
+# escalated. The old escalation is asserted only under `bounce_max: 0` (AC3) and past the bound
+# (AC4), in the 0234 section near the end of this file. The fixture is unchanged.
+echo "0038 AC9 / 0234 AC1 — verify bounced the ticket back to develop/ready: re-dispatch develop"
 scaffold
 add_row 0101 'A bounced ticket' develop ready 0091
 add_ticket 0101 develop ready '[]' 0091 a/one.md
 seal
 out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
-assert_rc           "exits 4 — escalate"        "$rc" 4
-assert_contains     "escalates"                 "$out" 'ESCALATE'
-assert_contains     "names the ticket"          "$out" '0101'
-# The reason, not just the outcome: with the bounce branch deleted the final `else` escalates
-# anyway, so rc and ESCALATE alone are green against code that has lost this FR8 row entirely.
-assert_contains     "names it as the bounce"    "$out" 'bounced from verify'
-assert_not_contains "dispatches nothing"        "$out" 'DISPATCH'
+assert_rc           "exits 0 — dispatch"        "$rc" 0 "$out"
+assert_contains     "re-dispatches develop"     "$out" 'DISPATCH  develop 0101'
+assert_not_contains "escalates nothing"         "$out" 'ESCALATE'
 
 echo "0038 AC9 — verify found a stale contract and sent it to queue/ready: escalate"
 scaffold
@@ -3413,7 +3412,9 @@ out="$(run_next --drive --completed verify:0911)" && rc=0 || rc=$?
 assert_rc "exits 0 — a pass is not a bounce"   "$rc" 0 "$out"
 assert_eq "dispatches the next leg"            "$(dispatch_line "$out")" 'DISPATCH  develop 0911'
 
-echo "0231 AC7 — after a leg verify fails, the bounce escalation stands"
+# AMENDED BY 0234 (AC2), on the user's call: the bounce re-dispatches the leg's ticket, where 0231
+# delivered an escalation. Same fixture.
+echo "0231 AC7 / 0234 AC2 — after a leg verify fails, the leg is re-dispatched to develop"
 scaffold
 add_row 0911 'Sliced' develop ready ''
 add_sliced 0911 develop ready S2 a/x.md '- [ ] S1 — scaffolding — discharges none
@@ -3422,9 +3423,9 @@ add_sliced 0911 develop ready S2 a/x.md '- [ ] S1 — scaffolding — discharges
 # Handed off out of verify, as a real bounce is: the unticked S2 alone is what says "bounce".
 fixture_handed_off_from 0911 verify
 out="$(run_next --drive --completed verify:0911)" && rc=0 || rc=$?
-assert_rc           "exits 4 — a person decides"   "$rc" 4 "$out"
-assert_contains     "names the bounce"             "$out" 'ESCALATE  0911 bounced from verify back to next: develop'
-assert_not_contains "and dispatches nothing"       "$out" 'DISPATCH'
+assert_rc           "exits 0 — dispatch"           "$rc" 0 "$out"
+assert_eq           "re-dispatches the leg"        "$(dispatch_line "$out")" 'DISPATCH  develop 0911'
+assert_not_contains "escalates nothing"            "$out" 'ESCALATE'
 
 echo "0231 FR8 — a develop that ended no leg is the same-stage loop, not a further leg"
 # The state a verify pass leaves, then a develop session that died before it claimed: the item's last
@@ -3701,6 +3702,193 @@ out="$(run_next --drive --completed develop:0963)" && rc=0 || rc=$?
 assert_rc           "exits 6 — wait"                         "$rc" 6 "$out"
 assert_contains     "the WAIT line names the leg"            "$(first_line "$out" 'WAIT      ')" '0963'
 assert_not_contains "and dispatches nothing"                 "$out" 'DISPATCH'
+
+# --- 0234 S1 — a re-entry is routed under `bounce_max`, counted by the supervisor --------------
+# A verify bounce re-dispatches develop, an in-scope contract-wrong hand-off (from verify or
+# develop) dispatches a queue repair, and a re-entry into design is bounded the same way. One
+# allowance, `bounce_max` (absent: 2; 0: every bounce escalates, the pre-0234 behaviour), against
+# the count the supervisor passes as `--bounces <id>=<n>`, since `--drive` is stateless.
+
+# set_config <yaml lines> — the fixture's whole config.yml.
+set_config() { printf 'project: Fixture\n%s\n' "$1" > "$FIX/.tickets/config.yml"; }
+# The NOTE lines printed before the first DISPATCH line, so a NOTE after it does not count.
+notes_before_dispatch() { printf '%s\n' "$1" | awk '/^DISPATCH/ { exit } /^NOTE/ { print }'; }
+
+fx_develop() { scaffold; add_row 0101 'A bounced ticket' develop ready ''; add_ticket 0101 develop ready '[]' '' a/one.md; }
+fx_queue()   { scaffold; add_row 0101 'A stale contract' queue ready '';   add_ticket 0101 queue ready '[]' '' a/one.md; }
+fx_design()  {
+  scaffold; add_row 0101 'A question' design ready ''; add_ticket 0101 design ready '[]' '' a/one.md
+  append_section 0101 '## Open design question
+
+Is the cap per run or per ticket?'
+}
+
+echo "0234 AC3 — bounce_max: 0 restores the escalation on every verify bounce"
+fx_develop; set_config 'bounce_max: 0'; seal
+out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
+assert_rc           "exits 4 — escalate"            "$rc" 4 "$out"
+assert_contains     "names the bounce"              "$out" 'ESCALATE  0101 bounced from verify'
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+
+echo "0234 AC4 / AC7 — n = bounce_max re-dispatches, with a NOTE first; n = max + 1 escalates"
+fx_develop; set_config 'bounce_max: 2'; seal
+out="$(run_next --drive --completed verify:0101 --bounces 0101=2)" && rc=0 || rc=$?
+assert_rc           "at the bound: exits 0"         "$rc" 0 "$out"
+assert_contains     "re-dispatches develop"         "$out" 'DISPATCH  develop 0101'
+note="$(notes_before_dispatch "$out" | grep 'bounced from verify' || true)"
+assert_contains     "a NOTE before it names the id"      "$note" '0101'
+assert_contains     "and the count against the bound"    "$note" '2 of 2'
+assert_contains     "and the item verify recorded in"    "$note" '.tickets/items/0101-'
+out="$(run_next --drive --completed verify:0101 --bounces 0101=3)" && rc=0 || rc=$?
+assert_rc           "past the bound: exits 4"       "$rc" 4 "$out"
+esc="$(printf '%s\n' "$out" | grep '^ESCALATE' || true)"
+assert_contains     "the escalation names the id"   "$esc" '0101'
+assert_contains     "the count"                     "$esc" '3 time(s)'
+assert_contains     "and the bound"                 "$esc" 'bounce_max 2'
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+
+echo "0234 AC5 — only the completed id's count is read"
+fx_develop; set_config 'bounce_max: 2'; seal
+out="$(run_next --drive --completed verify:0101 --bounces 0102=9 --bounces 0101=1)" && rc=0 || rc=$?
+assert_rc           "exits 0"                       "$rc" 0 "$out"
+assert_contains     "re-dispatches develop"         "$out" 'DISPATCH  develop 0101'
+
+echo "0234 AC6 — a malformed --bounces is a usage error; a malformed bounce_max is a config error"
+fx_develop; seal
+for bad_arg in '101=1' '0101=0' '0101=x' '0101'; do
+  out="$(run_next --drive --completed verify:0101 --bounces "$bad_arg")" && rc=0 || rc=$?
+  assert_rc         "--bounces $bad_arg exits 2"    "$rc" 2 "$out"
+done
+out="$(run_next --drive --completed verify:0101 --bounces 0101=1 --bounces 0101=2)" && rc=0 || rc=$?
+assert_rc           "a second value for one id exits 2" "$rc" 2 "$out"
+for bad_max in 'two' '-1'; do
+  fx_develop; set_config "bounce_max: $bad_max"; seal
+  out="$(run_next --drive --completed verify:0101)" && rc=0 || rc=$?
+  assert_rc         "bounce_max: $bad_max exits 1"  "$rc" 1 "$out"
+  assert_contains   "and names the key"             "$out" 'bounce_max'
+done
+
+# NOT AC8 AS WRITTEN. AC8 asks for exit 5 with no `--scope`, but with no `--scope` the gate site
+# defers by 0174's rule and every develop dispatch exits 0, so that fixture cannot tell a bounce
+# that takes the gate from one that skips it. This is the form that can (a scope with no live work
+# left, where the gate fires); the correction is the author's (0234 *Notes & decisions*).
+echo "0234 FR1 (AC8, proposed form) — a bounce re-dispatch takes the findings gate like any develop dispatch"
+fx_develop; set_config 'findings_threshold: 2'
+add_findings "$(printf -- '- 2026-11-01 — one.\n- 2026-11-02 — two.')"
+seal
+out="$(run_next --drive --completed verify:0101 --scope 0102)" && rc=0 || rc=$?
+assert_rc           "exits 5 — the findings gate"   "$rc" 5 "$out"
+assert_not_contains "and dispatches no develop"     "$out" 'DISPATCH  develop'
+
+echo "0234 AC9 — a contract-wrong verify bounce outside the confirmed scope still escalates"
+fx_queue; set_config 'bounce_max: 2'; seal
+out="$(run_next --drive --completed verify:0101 --bounces 0101=1)" && rc=0 || rc=$?
+assert_rc           "no --scope: exits 4"           "$rc" 4 "$out"
+assert_contains     "as the stale contract"         "$out" 'the contract is stale'
+assert_not_contains "and dispatches no queue"       "$out" 'DISPATCH  queue'
+add_row 0102 'Other scope work' develop ready ''; add_ticket 0102 develop ready '[]' '' b/two.md; seal
+out="$(run_next --drive --completed verify:0101 --bounces 0101=1 --scope 0102)" && rc=0 || rc=$?
+assert_rc           "--scope 0102 only: exits 4"    "$rc" 4 "$out"
+assert_contains     "as the stale contract"         "$out" 'the contract is stale'
+assert_not_contains "and dispatches no queue"       "$out" 'DISPATCH  queue'
+
+echo "0234 AC13 — an in-scope contract-wrong verify bounce dispatches a queue repair"
+fx_queue; seal
+out="$(run_next --drive --completed verify:0101 --scope 0101)" && rc=0 || rc=$?
+assert_rc           "exits 0"                       "$rc" 0 "$out"
+assert_contains     "dispatches queue"              "$out" 'DISPATCH  queue 0101'
+assert_not_contains "escalates nothing"             "$out" 'ESCALATE'
+note="$(notes_before_dispatch "$out" | grep 'next: queue' || true)"
+assert_contains     "a NOTE before it names the id"      "$note" '0101'
+assert_contains     "the hand-off target"                "$note" 'next: queue'
+assert_contains     "the count against the default 2"    "$note" '1 of 2'
+assert_contains     "and the item"                       "$note" '.tickets/items/0101-'
+
+echo "0234 AC14 — the queue repair spends the same allowance"
+fx_queue; set_config 'bounce_max: 2'; seal
+out="$(run_next --drive --completed verify:0101 --scope 0101 --bounces 0101=2)" && rc=0 || rc=$?
+assert_rc           "n = max: exits 0"              "$rc" 0 "$out"
+assert_contains     "dispatches queue"              "$out" 'DISPATCH  queue 0101'
+out="$(run_next --drive --completed verify:0101 --scope 0101 --bounces 0101=3)" && rc=0 || rc=$?
+assert_rc           "n = max + 1: exits 4"          "$rc" 4 "$out"
+esc="$(printf '%s\n' "$out" | grep '^ESCALATE' || true)"
+assert_contains     "names the id"                  "$esc" '0101'
+assert_contains     "the count"                     "$esc" '3 time(s)'
+assert_contains     "and the bound"                 "$esc" 'bounce_max 2'
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+set_config 'bounce_max: 1'; seal
+out="$(run_next --drive --completed verify:0101 --scope 0101 --bounces 0101=2)" && rc=0 || rc=$?
+assert_rc           "bounce_max 1, second re-entry: exits 4" "$rc" 4 "$out"
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+set_config 'bounce_max: 0'; seal
+out="$(run_next --drive --completed verify:0101 --scope 0101)" && rc=0 || rc=$?
+assert_rc           "bounce_max 0, no count: exits 4" "$rc" 4 "$out"
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+
+echo "0234 AC15 — after the repair, a queue completion at develop/ready routes as usual"
+fx_develop; seal
+out="$(run_next --drive --completed queue:0101 --scope 0101)" && rc=0 || rc=$?
+assert_rc           "exits 0"                       "$rc" 0 "$out"
+assert_contains     "dispatches develop"            "$out" 'DISPATCH  develop 0101'
+assert_not_contains "escalates nothing"             "$out" 'ESCALATE'
+
+echo "0234 AC16 — a repair left waiting or at next: queue is a person's; it never loops"
+scaffold; add_row 0101 'A narrowing' queue waiting ''; add_ticket 0101 queue waiting '[]' '' a/one.md
+append_section 0101 '## Waiting on
+
+Narrow AC3 or drop the second fixture?'
+seal
+out="$(run_next --drive --completed queue:0101)" && rc=0 || rc=$?
+assert_rc           "no --scope: exits 4"           "$rc" 4 "$out"
+assert_contains     "as waiting on a person"        "$out" 'ESCALATE  0101 is waiting on a person'
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+out="$(run_next --drive --completed queue:0101 --scope 0101)" && rc=0 || rc=$?
+assert_rc           "--scope 0101: exits 4"         "$rc" 4 "$out"
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+fx_queue; seal
+out="$(run_next --drive --completed queue:0101 --scope 0101 --bounces 0101=1)" && rc=0 || rc=$?
+assert_rc           "left at queue/ready: exits 4"  "$rc" 4 "$out"
+assert_contains     "as the stale contract"         "$out" 'the contract is stale'
+assert_not_contains "and dispatches no queue"       "$out" 'DISPATCH  queue'
+
+echo "0234 AC18 — a design re-entry after verify dispatches design; develop -> queue is a repair"
+fx_design; seal
+out="$(run_next --drive --completed verify:0101 --scope 0101)" && rc=0 || rc=$?
+assert_rc           "design after verify: exits 0"  "$rc" 0 "$out"
+assert_contains     "dispatches design"             "$out" 'DISPATCH  design 0101'
+assert_not_contains "escalates nothing"             "$out" 'ESCALATE'
+fx_queue; seal
+out="$(run_next --drive --completed develop:0101 --scope 0101)" && rc=0 || rc=$?
+assert_rc           "queue after develop: exits 0"  "$rc" 0 "$out"
+assert_contains     "dispatches queue"              "$out" 'DISPATCH  queue 0101'
+note="$(notes_before_dispatch "$out" | grep 'next: queue' || true)"
+assert_contains     "a NOTE before it names the id" "$note" '0101'
+assert_contains     "and the count"                 "$note" '1 of 2'
+
+echo "0234 AC19 — a design re-entry spends the same allowance"
+fx_design; set_config 'bounce_max: 2'; seal
+out="$(run_next --drive --completed verify:0101 --scope 0101 --bounces 0101=2)" && rc=0 || rc=$?
+assert_rc           "after verify, n = max: exits 0" "$rc" 0 "$out"
+assert_contains     "dispatches design"             "$out" 'DISPATCH  design 0101'
+out="$(run_next --drive --completed verify:0101 --scope 0101 --bounces 0101=3)" && rc=0 || rc=$?
+assert_rc           "after verify, n = max + 1: exits 4" "$rc" 4 "$out"
+esc="$(printf '%s\n' "$out" | grep '^ESCALATE' || true)"
+assert_contains     "names the id"                  "$esc" '0101'
+assert_contains     "the target"                    "$esc" 'next: design'
+assert_contains     "the count"                     "$esc" '3 time(s)'
+assert_contains     "and the bound"                 "$esc" 'bounce_max 2'
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+out="$(run_next --drive --completed develop:0101 --scope 0101 --bounces 0101=3)" && rc=0 || rc=$?
+assert_rc           "after develop, n = max + 1: exits 4" "$rc" 4 "$out"
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+set_config 'bounce_max: 0'; seal
+out="$(run_next --drive --completed develop:0101 --scope 0101)" && rc=0 || rc=$?
+assert_rc           "after develop with no count, bounce_max 0: exits 0" "$rc" 0 "$out"
+assert_contains     "dispatches design, unbounded as before" "$out" 'DISPATCH  design 0101'
+fx_queue; set_config 'bounce_max: 0'; seal
+out="$(run_next --drive --completed develop:0101 --scope 0101)" && rc=0 || rc=$?
+assert_rc           "queue after develop, bounce_max 0: exits 4" "$rc" 4 "$out"
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
 
 # --- result -----------------------------------------------------------------------------------
 echo
