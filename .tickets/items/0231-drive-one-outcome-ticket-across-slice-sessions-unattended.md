@@ -1156,3 +1156,8 @@ Evidence set: `skills/queue/templates/{handoff,close,next,item.md}`, `.tickets/{
     scope-bounded continuation stands: `next` does not enforce it, the supervisor does via `envelope`).
   - **Whole suite at `19f76e4`: 45 files, every one exit 0**, `git status --porcelain` clean at the run.
     No mutation sweep this leg: AC17 is a read and this repo adds no prose guards; AC16 is the suite.
+- 2026-11-26 (develop, 0234 S3, token 95b5) — **FR13/AC14's contract was changed by `0234`, on the
+  user's call.** `tools/sprint-ledger.sh envelope` no longer prints `STOP` on `budget_usd` or
+  `deadline`; it is an account-headroom gate (`0234` FR19), and `skills/sprint/SKILL.md` proposes no
+  sprint-wide budget or deadline at all (the person's direction of 2026-11-26, in `0234`'s *Notes &
+  decisions*). This item's ticked ACs and `ac_digest:` are left as the record of what was verified then.
