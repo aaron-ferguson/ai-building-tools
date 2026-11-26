@@ -448,16 +448,16 @@ in reverse: cheaper turns, wrong backlog.
 | Performance | The queue and retro sessions after release take no by-hand lock: `classify-turns.sh`'s `LOCK` column reads 0.0% for both stages over the first 10 such sessions, re-measured by 2027-01-31 | Observation after release, recorded in *Notes & decisions*; not a close condition | `measurement-conventions.md` |
 | Migration / schema | A backlog scaffolded before this release gains the five scripts at its next `queue` Step 0 and keeps every file it owns untouched | AC15: an old-shape fixture backlog after the sync | `migration-conventions.md` |
 | Documentation | Each script's usage line is its header comment and its `usage:` refusal, and the skills name the script rather than restating its steps | AC16, a reading | `documentation-conventions.md` |
-| Testing | (0225) FR16 starts as a failing test that runs `claim` then `handoff` on an item with neither `expects:` nor `touches:`. *Red when:* the key is not added and `handoff` refuses. | `testing-conventions.md` |
+| Testing | (0225) FR16 starts as a failing test that runs `claim` then `handoff` on an item with neither `expects:` nor `touches:`. *Red when:* the key is not added and `handoff` refuses. | FR16's failing case: `claim` then `handoff` on an item with neither key reds when the key is not added | `testing-conventions.md` |
 | Testing | (0155) Each FR has a fixture case, and the template copies are what the cases exercise. | `backlog-scripts-installed` reds on a single-copy edit. | `testing-conventions.md` |
-| Documentation | (0066) FR26's usage text documents every mode each script has, as `./next --help` already does | `documentation-conventions.md` |
-| Progressive delivery | (0066) The scripts ship to every machine installing the plugin; the release is the version bump and the install | `progressive-delivery-conventions.md` |
+| Documentation | (0066) FR26's usage text documents every mode each script has, as `./next --help` already does | AC33: drop a mode from either script's usage text | `documentation-conventions.md` |
+| Progressive delivery | (0066) The scripts ship to every machine installing the plugin; the release is the version bump and the install | AC36: edit one installed copy so it differs from its template | `progressive-delivery-conventions.md` |
 | Correctness | (0066) FR29's `touches:` write happens inside the same lock and commit as the claim — no separate, unlocked follow-up write | `CONCURRENCY.md`, *A claim must be durable the moment it is made* |
 | Documentation | (0229) `--help` names the class a session will now see | AC44's assertion on the `--drift` usage text | `documentation-conventions.md` |
 | Testing | (0227) FR40's cases are proven red against `next` before FR36 lands, and again under a mutation of the shared awk program. | Delete the `!body && /^---$/` rule from the shared program: AC47 lists three entries, not two. | `testing-conventions.md` |
 | Testing | (0156) The case runs the real hand-off then `--drift`, in fixture. | Two separately-built fixtures that never meet. | `testing-conventions.md` |
-| Privacy & data | (0118) The rule being enforced is `CLAUDE.md`'s public-repo constraint; cite it, do not restate it | `data-privacy-conventions.md` |
-| Documentation | (0118) Both skills state the same requirement once each, in their own voice | `documentation-conventions.md` |
+| Privacy & data | (0118) The rule being enforced is `CLAUDE.md`'s public-repo constraint; cite it, do not restate it | AC55: a tracked file carrying a real home path, run through the named command, is not refused | `data-privacy-conventions.md` |
+| Documentation | (0118) Both skills state the same requirement once each, in their own voice | prose only — no artifact yet | `documentation-conventions.md` |
 
 ## Acceptance criteria
 

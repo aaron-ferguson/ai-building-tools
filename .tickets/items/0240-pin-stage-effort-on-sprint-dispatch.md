@@ -206,7 +206,7 @@ inform whether any of those tickets need adjustment.
 | Documentation | (0241) Every new figure's source and read date sit in the comment above `RATES`; the CHANGELOG names the models | AC15 and AC16 are readings | `documentation-conventions.md` |
 | Observability | (0164) Waiting time is never reported as active time | AC17 | `measurement-conventions.md` |
 | Migration / schema | (0164) Existing `LEDGER.md` blocks stay readable without rewriting them | AC19 | `migration-conventions.md` |
-| Documentation | (0149) Decisions and recommendations land in *Notes & decisions* before the handoff, in a form a cold session can act on without re-deriving the research | `documentation-conventions.md` |
+| Documentation | (0149) Decisions and recommendations land in *Notes & decisions* before the handoff, in a form a cold session can act on without re-deriving the research | prose only — no artifact yet | `documentation-conventions.md` |
 
 ## Acceptance criteria
 
