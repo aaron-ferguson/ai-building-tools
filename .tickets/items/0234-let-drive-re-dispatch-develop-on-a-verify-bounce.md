@@ -2,8 +2,8 @@
 id: "0234"
 title: Drive a whole outcome ticket through a sprint unattended, routing whatever stage it needs
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -28,8 +28,8 @@ expects:
   - tools/next
   - references/CONCURRENCY.md
   - .claude/backlog/next
-claimed_by: "b7e3"
-claimed_at: 2026-11-26T23:11:11Z
+claimed_by:
+claimed_at:
 touches:
 slice: S1
 ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=e083f2f6 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
@@ -444,7 +444,7 @@ code tree while leaving `.claude/backlog/` shared — and shared is correct ther
 **One outcome is one ticket, even across many sessions**; its slices are worked in order, each about
 one develop session's work (`product-definition-conventions.md` → "Slice Vertically and Thinly").
 
-- [ ] S1 — `--drive`: the develop and queue bounce arms, the develop → queue and design re-entry bounds, `--bounces`, `bounce_max`, help, the amended 0038/0231 tests, `.tickets/next` re-synced — discharges AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8, AC9, AC10, AC12, AC13, AC14, AC15, AC16, AC18, AC19
+- [x] S1 — `--drive`: the develop and queue bounce arms, the develop → queue and design re-entry bounds, `--bounces`, `bounce_max`, help, the amended 0038/0231 tests, `.tickets/next` re-synced — discharges AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8, AC9, AC10, AC12, AC13, AC14, AC15, AC16, AC18, AC19
 - [ ] S2 — the headroom gate in `tools/sprint-ledger.sh`: `reading` and `outcome` over a stream, `envelope` reworked from a budget/deadline STOP into CONTINUE/WAIT/not-visible, 0231's envelope tests amended citing 0234 — discharges AC20, AC22, AC23, AC24
 - [ ] S3 — the prose: `skills/sprint/SKILL.md` Steps 1, 2, 3, 4, 7, 8 and the proposal (FR7–FR9, FR17, FR20, FR21), `skills/queue/SKILL.md`'s *Re-specify* bullet, the config template comment, `CHANGELOG.md`, 0231's pointer note — discharges AC11, AC17, AC21
 - [ ] S4 — the marker heartbeat leaves no orphaned `sleep` child (0170) — discharges AC25, AC26
