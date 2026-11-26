@@ -38,6 +38,7 @@ touches:
   - .tickets/items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md
   - tests/skill-size.test.sh  # argued_at re-argued for the sprint skill's S3 growth
   - README.md  # its stale envelope sentence, which S2's notes handed to S3
+  - tests/sprint.test.sh  # the 0180 AC4 'one exception' guard, deleted
 slice: S2
 ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=e083f2f6 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
 ---
@@ -792,6 +793,43 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   (each line asserted present), not as a count of two. A direct run printed exactly 2. `.tickets/claim`
   with no token died on the missing `xxd` before taking the lock (already in `FINDINGS.md`), so this
   pass claimed with an explicit token.
+
+- **2026-11-26 (develop, S3 leg, token 95b5) — S3 built at `42fbe87`; handed to `verify` with
+  `--slice S3`.** Discharges AC11, AC17, AC21, all readings at verify (no prose guard, `CLAUDE.md`
+  *Tests*). Whole suite green at `42fbe87`: 45 files, every one exit 0, `git status --porcelain`
+  clean of other sessions' paths, no concurrent runner.
+- **The person's direction for this run (2026-11-26), carried explicitly in S3's prose:** *a sprint
+  is run to drive toward an outcome, not to a date/time or a budget, so no sprint-wide budget or
+  deadline is proposed or enforced; each individual stage session carries a projected per-session
+  budget, proposed to the person before dispatch, as a runaway catch.* Written into
+  `skills/sprint/SKILL.md` (the proposal's bullets and its sizing paragraph, Step 3's cap paragraph)
+  and `CHANGELOG.md`'s `## Unreleased`.
+- **Decisions S3 made, stated so verify can disagree:** (1) **The direction supersedes part of FR17
+  and FR21**: they had Step 1 still recording `budget_usd` and `deadline` on `scope_confirmed` as
+  the forecast; the proposal now asks for neither, and the forecast is the estimate (scored by
+  `record`). AC21's clause "`budget_usd` and `deadline` being the forecast" is met only in the
+  sentence saying an older run's `scope_confirmed` carrying them is read as that forecast and never
+  as a stop. If verify reads that clause as requiring the proposal to ask for them, the AC wants a
+  `queue` amend to match the direction — not edited here (only the author changes a criterion).
+  (2) "Proposed to the person before dispatch" is read as **the proposal**, before the first
+  dispatch, listing each planned session's projected cap; a raised cap or an added session is
+  logged as `cap_raised` before its dispatch and named in the next report, not asked mid-run — a
+  per-dispatch question would stall the unattended run FR17 and AC21 ask for. (3) **FR11 is stale
+  in one respect**: the 0231 bullet it says to correct in place has since been released under
+  0.9.49, so a released entry is not rewritten; the new `## Unreleased` bullet says it supersedes
+  0.9.49's envelope instead. (4) Step 2 states the principle in short form and points at Step 8,
+  which carries FR9's whole sentence with the four examples and the reason, to hold the file's
+  growth. (5) `README.md`'s stale envelope sentence, handed to S3 by S2's notes, is corrected.
+- **Guards touched — run:** `tests/sprint.test.sh`'s `0180 AC4` guard on Step 8's `'one exception'`
+  reddened on FR9's required rewording (two exceptions) and is **deleted**, not re-anchored
+  (`CLAUDE.md` *Tests*), with a comment at its site citing 0234. `tests/skill-size.test.sh` reddened
+  on the sprint skill's growth (70331 bytes against 60813 + 5000): its justification is re-argued
+  and `argued_at` moved with it, as that file's header asks. A first re-argue naming the ticket id
+  mid-reason reddened `0035 FR6` (a four-digit run in a reason goes stale), so the reason names the
+  change instead.
+- **Refused or failed commands this leg:** `.tickets/claim 0234` exited 2 with
+  `.tickets/claim: 102: xxd: not found` before taking the lock (already in `FINDINGS.md`); claimed
+  with an explicit token. No backlog write was refused.
 
 ### Open questions for the unspecified slices
 
