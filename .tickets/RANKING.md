@@ -492,3 +492,7 @@ one class of defect, and splitting them across the queue would scatter the evide
 ## 2026-11-26 - 0240 and 0241 placed directly above 0137
 
 `0240` (pin and log effort per sprint dispatch) and `0241` (price Sonnet 5.5 and Haiku 5.5) are the prerequisites of 0149's model-tiering trial, and a prerequisite outranks its dependent, so both sit above `0149`. They also go above `0137` on tie-breaker 4: each is `s`/`m`, certain and needs no decision, while `0137` is a design row. They sit below `0170` and the rows above it on capture order. `0240` is above `0241` because `0241` is blocked by `0192` and `0240` is takeable now.
+
+## 2026-11-26 - 0242 placed directly below 0227
+
+`0242` (every backlog write one script call) is Tier 2: every queue, retro and park step pays the by-hand lock today, and every project these tools scaffold inherits it. It sits below `0227` because a prerequisite outranks its dependent (its S4 drain acts on `0227`'s listing), and below `0066`/`0215`/`0225`, which fix the scripts it extends in the same files and on capture order. It goes above `0229`, which is Tier 4, and above every design row.

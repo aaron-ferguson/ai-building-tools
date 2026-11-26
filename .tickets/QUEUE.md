@@ -28,6 +28,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0215 | Make claim and next read expects and touches through one parser that refuses or accepts the comma form | develop | ready |  |
 | 0225 | Make claim write an empty touches key when it has nothing to seed | develop | ready |  |
 | 0227 | Make next list the findings entries so no drain matches a buffer's header by hand | develop | ready |  |
+| 0242 | Make every backlog write one script call, so no session takes the lock by hand | develop | ready |  |
 | 0229 | Make next --drift report a closed item that still carries a claim token | develop | ready |  |
 | 0234 | Route whatever stage the confirmed outcome needs, mid-sprint | develop | ready |  |
 | 0214 | Add a profile-declared gate that a stage refuses to pass without its artifact | design | ready |  |
