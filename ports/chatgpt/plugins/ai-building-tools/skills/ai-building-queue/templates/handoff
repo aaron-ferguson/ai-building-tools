@@ -1,0 +1,817 @@
+#!/bin/sh
+#
+# Hand a backlog row to the next stage: lock → re-read → edit the row and the item → commit →
+# unlock, as one atomic step.
+#
+# **The commit is why this is a script**, the same reason as `claim` and `close`. Two further
+# defects are specific to this transition, and both are invisible in the git record afterwards.
+#
+# **1. A hand-off that no-ops and commits anyway.** The by-hand form was five field edits across
+# two files. One of them was written against `status: ready` while the item read
+# `status: in-progress`, so it did not apply — and the commit did not depend on it having applied.
+# The result was a queue row reading `verify | ready` over an item reading `develop | in-progress`:
+# precisely the drift `./next --drift` exists to catch, produced by the prescribed procedure. So
+# **this script reads the result back before it writes anything into place.** All five fields land
+# — `next`, `status`, and the cleared `claimed_by:`, `claimed_at:`, `touches:` — or nothing does.
+# A no-op is a failure, never a success.
+#
+# **2. The release must be the stage's final act.** A stage that releases its claim before its last
+# write leaves the row takeable while its holder is still committing to it: 29 seconds, once,
+# between a hand-off commit and the findings commit that followed it. No lock can see this — the
+# lock guards the two-second edit, and the hole is in the ORDER of the hand-off. That rule is in
+# references/CONCURRENCY.md, 'The release is the final act'; what this script contributes is making
+# the whole hand-off one invocation, so there is nothing left to write after it.
+#
+# Usage:  .tickets/handoff <id> <token> <stage> [status] [--slice S<n>]
+#
+# The destination stage is an ARGUMENT and not inferred. A fixed transition table would have to
+# guess between `verify`'s three outgoing branches — `develop` on red, `queue` on a stale contract,
+# and the stage that resumes a `waiting` ticket — which is exactly where this script must refuse.
+# `status` defaults to `ready` and exists for `verify`'s `waiting` branch.
+#
+# The token is not optional and is not minted here, for `close`'s reason: ownership is memory, no
+# script can check memory, and the argument is how the session proves it.
+#
+# **Columns are resolved by header name, never by position** — the table's shape is not a contract,
+# and a fixed-index parser is the defect 0022 found in `claim`.
+#
+# **It refuses rather than guesses, on six grounds**: a destination stage or status it does not
+# recognise; a table shape it cannot read; a row it cannot find; a token that is not the one the
+# item records; a row and an item that disagree about the current stage; and either of them not
+# reading `in-progress`. The last two are the 0087 drift, caught from both sides.
+#
+# **`--slice S<n>` ends a leg of a sliced ticket (0231 FR4)** — one whose item carries a
+# `## Progress` section of ordered slice lines. The leg is every slice from the one after the last
+# ticked slice up to S<n>, and the slice lines and the `slice:` key are written in the same locked
+# commit as the hand-off. Three transitions take it, and nothing else does:
+#
+#   develop -> develop  ticks the leg and sets `slice: S<n>`; refuses a leg that discharges an AC,
+#                       because an AC is never ticked past without an independent check (verify)
+#   develop -> verify   sets `slice: S<n>` and ticks nothing: the leg is not done until it passes
+#   verify  -> develop  the leg passed: ticks it. S<n> must be the slice verify was handed. Without
+#                       --slice this is the fail bounce, unchanged, and nothing is ticked
+#
+# It refuses an unknown slice, a slice already ticked, and a leg holding an `unspecified` slice,
+# which has no ACs to build or verify against and so is `design`'s. And with --slice it refuses
+# while any path in the item's `touches:` is dirty: a leg's work is committed before the leg ends,
+# or a killed next leg starts on files nobody can attribute. Only `touches:`, never the whole tree,
+# which other sessions share (CONCURRENCY.md, 'The working tree is shared too').
+#
+# See references/CONCURRENCY.md — 'The five scripts' and 'Lock every write to the backlog directory'.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+# --- where the backlog lives (0182) -- byte-identical in claim, close, handoff, next and reopen ---
+# `.tickets/` at the repo root is the location (0228). `.claude/backlog/` and `.backlog/` are legacy:
+# the harness refuses writes under any `.claude` path segment as a sensitive file, which is what 0182
+# moved away from, and `.backlog/` was the name 0182 chose before 0228 named the directory for the
+# whole ticket system it holds. A repo holding more than one is refused rather than guessed at.
+# LEGACY_UNTIL is the date in references/CONCURRENCY.md, *Where the backlog lives*, and
+# tests/backlog-location.test.sh holds the two equal. The note is exported so a nested call (`close`
+# runs `next`) does not print it twice.
+LEGACY_UNTIL=2026-12-31
+case "$DIR" in
+  */.claude/backlog) ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"; LEGACY_AT=.claude/backlog ;;
+  */.backlog)        ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT=.backlog ;;
+  *)                 ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT="" ;;
+esac
+HELD_AT=""
+HELD_COUNT=0
+for held_loc in .tickets .backlog .claude/backlog; do
+  if [ -d "$ROOT/$held_loc" ]; then HELD_AT="$HELD_AT $ROOT/$held_loc"; HELD_COUNT=$((HELD_COUNT + 1)); fi
+done
+if [ "$HELD_COUNT" -gt 1 ]; then
+  echo "refusing: this repo holds more than one backlog:$HELD_AT -- keep one (references/CONCURRENCY.md, Where the backlog lives)" >&2
+  exit 1
+fi
+if [ -n "$LEGACY_AT" ] && [ -z "${BACKLOG_LEGACY_NOTED:-}" ]; then
+  echo "note: this backlog is at the legacy $LEGACY_AT/ -- run ./migrate to move it to .tickets/; the legacy location works until $LEGACY_UNTIL" >&2
+  BACKLOG_LEGACY_NOTED=1
+  export BACKLOG_LEGACY_NOTED
+fi
+# --- end of where the backlog lives ---
+QUEUE="$DIR/QUEUE.md"
+LOCK="$DIR/.lock"
+
+# `git-conventions.md` *Co-authorship* asks for this trailer on ALL AI-assisted commits, and a
+# lifecycle commit a script makes on a session's behalf is one — skills/develop/SKILL.md Step 1
+# says so in as many words: "A lifecycle commit is not exempt from it", and
+# references/CONCURRENCY.md *The git index is shared* requires it of every AI-assisted commit. Those
+# two files SETTLE the scope question; it is not open, and a third session need not re-ask it. It
+# read as open only because Step 1's sentence sits inside its BY-HAND claim sequence, which a
+# session running this script never executes (0090 FR4). The generic name is deliberate: the script
+# cannot know which model is driving it, and guessing wrong is worse than the convention's own
+# literal.
+COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+
+# `--slice` may sit anywhere after the id; everything else is positional, in the order above.
+SLICE=""
+SLICE_GIVEN=""
+npos=0
+ID=""; TOKEN=""; STAGE=""; STATUS=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --slice)
+      SLICE_GIVEN=1
+      [ "$#" -ge 2 ] && SLICE="$2" || SLICE=""
+      [ "$#" -ge 2 ] && shift 2 || shift ;;
+    --slice=*) SLICE_GIVEN=1; SLICE="${1#--slice=}"; shift ;;
+    *)
+      npos=$((npos + 1))
+      case "$npos" in
+        1) ID="$1" ;; 2) TOKEN="$1" ;; 3) STAGE="$1" ;; 4) STATUS="$1" ;;
+        *) echo "unexpected argument '$1'" >&2; echo "usage: handoff <id> <token> <stage> [status] [--slice S<n>]" >&2; exit 2 ;;
+      esac
+      shift ;;
+  esac
+done
+STATUS="${STATUS:-ready}"
+
+[ -n "$ID" ] && [ -n "$TOKEN" ] && [ -n "$STAGE" ] || {
+  echo "usage: handoff <id> <token> <stage> [status] [--slice S<n>]" >&2
+  echo "  stage   the stage being handed TO: queue | design | develop | verify" >&2
+  echo "  status  ready (default) | waiting — a person is needed, named in '## Waiting on'" >&2
+  echo "  --slice S<n>  end a leg of a sliced ticket at slice S<n> (its '## Progress' section)" >&2
+  echo "the token is the item's claimed_by: — a hand-off is only yours if you hold the claim" >&2
+  exit 2
+}
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+
+# --- the vocabulary, checked before the lock ---------------------------------------------------
+# Both lists live in skills/queue/templates/item.md, which is the authority; they are repeated
+# here because a script cannot read prose, and a value outside them produces a row that lies about
+# what can act on it.
+case " queue design develop verify " in
+  *" $STAGE "*) ;;
+  *) echo "'$STAGE' is not a stage this backlog has — expected one of: queue, design, develop, verify" >&2
+     exit 1 ;;
+esac
+
+case "$STATUS" in
+  ready|waiting) ;;
+  blocked)
+    echo "refusing to write 'blocked': it is derived from blocked_by and never authored" >&2
+    echo "add the blocker to blocked_by: instead; whatever closes it is what clears the row" >&2
+    exit 1 ;;
+  done)
+    echo "refusing to write 'done': closing is ./close's, and it holds the verdict when it acts" >&2
+    exit 1 ;;
+  in-progress)
+    echo "refusing to write 'in-progress': a hand-off releases a claim, it does not make one" >&2
+    echo "the next session claims the row itself, with ./claim" >&2
+    exit 1 ;;
+  *)
+    echo "'$STATUS' is not a status this script may write — expected ready or waiting" >&2
+    exit 1 ;;
+esac
+
+if [ -n "$SLICE_GIVEN" ]; then
+  case "$SLICE" in
+    S[0-9]*) case "${SLICE#S}" in *[!0-9]*) SLICE_BAD=1 ;; *) SLICE_BAD="" ;; esac ;;
+    *) SLICE_BAD=1 ;;
+  esac
+  [ -z "$SLICE_BAD" ] || {
+    echo "--slice takes a slice name, S<n> — got '$SLICE'" >&2
+    echo "nothing was changed and no lock was taken" >&2
+    exit 2
+  }
+  [ "$STATUS" = ready ] || {
+    echo "refusing --slice with status '$STATUS': a leg ends ready for the next stage to take" >&2
+    echo "nothing was changed and no lock was taken" >&2
+    exit 1
+  }
+fi
+
+# --- the linked-worktree refusal (0083) --------------------------------------------------------
+# The lock and QUEUE.md live in the working tree, so a linked worktree has its own copy of both and
+# a hand-off made there is invisible to the primary, which goes on reading the row as held — and the
+# commit lands on a detached HEAD that is unreachable once the worktree is removed. A linked worktree
+# is the checkout whose git dir is not the common dir. A second CLONE passes this check and nothing
+# inside a clone can tell it from the primary, so the rule covers that case alone:
+# See `CONCURRENCY.md`, *A second checkout never writes the backlog*.
+# **Before the lock, deliberately**, for the reason the refusal below gives.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 &&
+   [ "$(git -C "$DIR" rev-parse --path-format=absolute --git-dir)" != \
+     "$(git -C "$DIR" rev-parse --path-format=absolute --git-common-dir)" ]; then
+  echo "refusing to hand off $ID: this is a linked worktree, whose lock and QUEUE.md no other session reads" >&2
+  echo "run it from the primary checkout: $(git -C "$DIR" worktree list --porcelain | sed -n '1s/^worktree //p')" >&2
+  echo "see references/CONCURRENCY.md, 'A second checkout never writes the backlog'" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# Anything already dirty in QUEUE.md would ride along on our commit, so REFUSE rather than warn and
+# carry on (0090 FR3). A pathspec limits a commit to the paths it names and never to authorship
+# (`CONCURRENCY.md`, *A pathspec is necessary but not sufficient*), so there is no form of the commit
+# below that can leave a foreign row behind — the only fix is upstream, and a script holding the lock
+# can refuse where a person under load cannot. Same argument and same shape as `claim` (0082 FR3) and
+# `close`: the rule was never specific to claiming.
+#
+# **Before the lock, deliberately** — "nothing was changed and no lock was taken" is then true by
+# construction rather than by cleanup.
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 && ! git -C "$DIR" diff --quiet -- "$QUEUE"; then
+  echo "refusing to hand off $ID: QUEUE.md holds uncommitted changes this hand-off's commit would carry" >&2
+  echo "the rows that would land under 'Hand off $ID to $STAGE [$TOKEN]':" >&2
+  git -C "$DIR" diff -U0 -- "$QUEUE" | awk '/^[+-]\| / { print "  " $0 }' >&2
+  echo "commit them by pathspec if they are yours; if they are another session's, leave them alone" >&2
+  echo "and wait, or 'git restore -- .tickets/QUEUE.md' if you know they are stray" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# --- lock --------------------------------------------------------------------------------------
+mkdir "$LOCK" 2>/dev/null || {
+  echo "backlog is locked by: $(cat "$LOCK/held-by" 2>/dev/null || echo unknown)" >&2
+  exit 1
+}
+printf 'handoff %s by %s\n%s\n' "$ID" "$TOKEN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK/held-by"
+# Release however we leave, so a failed hand-off never strands the other window.
+trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+# --- resolve the columns by name, under the lock -----------------------------------------------
+header="$(awk -F'|' '/^\|/ {
+  for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
+}' "$QUEUE")"
+[ -n "$header" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
+
+# copy-begin: column-named
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+column_named() {
+  printf '%s' "$header" | awk -F'|' -v want="$1" '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
+  }'
+}
+# copy-end: column-named
+
+missing=""
+for want in ID Next Status; do
+  [ -n "$(column_named "$want")" ] || missing="$missing $want"
+done
+[ -z "$missing" ] || {
+  echo "QUEUE.md's table is missing the column(s):$missing" >&2
+  echo "header found: $header" >&2
+  echo "a shape this script cannot read is an error, never a refusal that looks like a hand-off" >&2
+  exit 1
+}
+
+Q_ID="$(column_named ID)"
+Q_NEXT="$(column_named Next)"
+Q_STATUS="$(column_named Status)"
+
+# copy-begin: read-cell
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+read_cell() { printf '%s' "$1" | awk -F'|' -v c="$2" '{ v = $c; gsub(/^ +| +$/, "", v); print v }'; }
+# copy-end: read-cell
+
+# --- re-read the row under the lock ------------------------------------------------------------
+row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE")"
+[ -n "$row" ] || { echo "no row for $ID in QUEUE.md" >&2; exit 1; }
+
+row_next="$(read_cell "$row" "$Q_NEXT")"
+row_status="$(read_cell "$row" "$Q_STATUS")"
+
+# --- the item ----------------------------------------------------------------------------------
+item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
+[ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
+
+# YAML's comment rule, as awk source text. Every other template that reads frontmatter carries this
+# same block, declared by the markers below; awk has no include, and the scripts are separate files
+# by install contract (tests/backlog-scripts-installed.test.sh AC2). It applies to
+# SCALARS as much as to lists: `develop` Step 1 invites an inline annotation, and an annotated
+# `claimed_by: "f0c3" # mine` read naively comes back as `f0c3" # mine`, refusing the holder's own
+# hand-off. `sub(/#.*/, "")` is the obvious form and it is wrong twice — see close for both.
+# `"\047"` is an apostrophe: this block is single-quoted shell.
+# copy-begin: decomment
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+DECOMMENT='
+function decomment(s,   i, ch, quote, out, start) {
+  sub(/^[ \t]+/, "", s)
+  start = 1
+  ch = substr(s, 1, 1)
+  if (ch == "\"" || ch == "\047") { quote = ch; start = 2 }
+  for (i = start; i <= length(s); i++) {
+    ch = substr(s, i, 1)
+    if (quote != "" && ch == quote) { quote = ""; continue }
+    if (quote != "")                { out = out ch; continue }
+    if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
+    out = out ch
+  }
+  sub(/[ \t]+$/, "", out)
+  return out
+}
+'
+# copy-end: decomment
+
+# copy-begin: fm-value
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+fm_value() {
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && index($0, key ":") == 1 {
+      print decomment(substr($0, length(key) + 2)); exit
+    }
+  ' "$1"
+}
+# copy-end: fm-value
+
+# Presence, scoped to the frontmatter. `grep -q "^key:"` is not this: a line starting `touches:`
+# anywhere in the body satisfies it, and the key the edit needs is still absent.
+fm_has() {
+  awk -v key="$2" '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && index($0, key ":") == 1 { found = 1; exit }
+    END { exit !found }
+  ' "$1"
+}
+
+# --- the five fields must exist before any of them can be set ---------------------------------
+# An absent key has nothing for the edit to replace, and `fm_value` returns empty for it — which
+# reads as 'already cleared' for the three that get cleared. That is how the 0087 defect looked
+# from the inside, so a missing key is named here rather than diagnosed later as something else.
+absent=""
+for key in next status claimed_by claimed_at touches; do
+  fm_has "$item" "$key" || absent="$absent $key"
+done
+[ -z "$absent" ] || {
+  echo "$ID's frontmatter has no:$absent" >&2
+  echo "a hand-off sets next and status and clears claimed_by, claimed_at and touches — all five," >&2
+  echo "so a key that is not there is a hand-off that cannot fully apply (skills/queue/templates/item.md)" >&2
+  exit 1
+}
+
+held_by="$(fm_value "$item" claimed_by)"
+[ -n "$held_by" ] || {
+  echo "$ID records no claimed_by: — nothing holds it, so there is no claim to hand on" >&2
+  echo "a hand-off releases a claim; claim it first with ./claim $ID, or it is already handed off" >&2
+  exit 1
+}
+[ "$held_by" = "$TOKEN" ] || {
+  echo "$ID is held by token '$held_by', not '$TOKEN' — refusing to hand off another session's ticket" >&2
+  echo "a ticket is yours only if you minted its token in this conversation; ask, never take over" >&2
+  exit 1
+}
+
+item_next="$(fm_value "$item" next)"
+item_status="$(fm_value "$item" status)"
+
+# --- the 0087 drift, from both sides -----------------------------------------------------------
+# Nothing tells this script which stage it is being handed FROM, so the check is that the row and
+# the item agree about it. That disagreement IS the defect this script exists to stop reproducing,
+# so handing off over the top of it would carry a half-applied hand-off forward.
+[ "$row_next" = "$item_next" ] || {
+  echo "$ID disagrees with itself about its stage: the row reads '$row_next', the item reads '$item_next'" >&2
+  echo "that is the half-applied hand-off this script exists to prevent — reconcile them first" >&2
+  exit 1
+}
+[ "$item_status" = "in-progress" ] && [ "$row_status" = "in-progress" ] || {
+  echo "$ID is not held: the item reads '$item_status' and the row reads '$row_status', and a hand-off requires in-progress on both" >&2
+  echo "a row that is not in-progress has already been handed off, or was never claimed" >&2
+  exit 1
+}
+
+# --- a waiting hand-off carries a whole decision brief (0231 FR14) ------------------------------
+# `waiting` asks a person for something, and an unattended run reports that ask to someone who was
+# not there for any of the work. So the `## Waiting on` section is a decision brief: seven
+# subsections, and at least two `#### Option` entries under `### Options`, because a single option
+# is a notice rather than a choice. Every missing part is named at once, so one edit fixes it.
+#
+# Scoped twice, both for compatibility: only a NEW `waiting` hand-off is checked, never a ready one
+# over a stale section; and only an item that HAS a `## Waiting on` section, so a waiting hand-off
+# written before the brief existed behaves as it did. Before any write, so a refusal changes nothing.
+if [ "$STATUS" = waiting ] && grep -q '^## Waiting on' "$item"; then
+  brief_gaps="$(awk '
+    BEGIN {
+      n = split("### Outcome|### Where it stands|### What needs you|### Options|### Recommendation|### What to do|### If no answer", want, "|")
+    }
+    /^## Waiting on/ { inw = 1; next }
+    inw && /^## /    { inw = 0 }
+    !inw             { next }
+    /^### /          { h = $0; sub(/[ \t]+$/, "", h); seen[h] = 1; inopt = (h == "### Options"); next }
+    inopt && /^#### Option/ { opts++ }
+    END {
+      for (i = 1; i <= n; i++) if (!(want[i] in seen)) print "missing " want[i]
+      if (opts + 0 < 2) printf "### Options holds fewer than two #### Option entries (found %d)\n", opts + 0
+    }
+  ' "$item")"
+  [ -z "$brief_gaps" ] || {
+    echo "refusing to hand off $ID waiting: its '## Waiting on' is not a whole decision brief" >&2
+    printf '%s\n' "$brief_gaps" | sed 's/^/  /' >&2
+    echo "add what is missing: a brief has '### ' subsections Outcome, Where it stands, What needs you," >&2
+    echo "Options (two or more '#### Option' entries under it), Recommendation, What to do, If no answer" >&2
+    echo "nothing was changed" >&2
+    exit 1
+  }
+fi
+
+# copy-begin: scope-block
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+# --- the declared scope against what the commits actually changed (0106 FR3) -------------------
+# `touches:` can name a file for an edit that never happens, and nothing notices: 0039's re-entry
+# declared `.claude-plugin/plugin.json` for a version bump that never occurred. An unused
+# reservation is invisible by construction — `./next --drift` compares Status against `blocked_by`,
+# and until this nothing compared the declared scope against the diff.
+#
+# **A NOTE, never a gate.** Over-declaring is legitimate — you widen `touches:` before you know how
+# far the work reaches — so a mismatch is not an error. The asymmetry is the point: a touch reaching
+# FURTHER than declared is the dangerous one, and one reaching LESS far carries an intention that
+# reads, to the next session, as a completed step. Both are printed; neither refuses.
+#
+# The range is anchored to the CLAIM COMMIT for this token. It is the only marker in the history
+# that says "this session's work starts here", and `claim` writes it. No such commit — a by-hand
+# claim, a fixture, a backlog that predates the script — means no range, and no range means no
+# report rather than a report over an invented one.
+#
+# The backlog's own bookkeeping is excluded: QUEUE.md, DONE.md, FINDINGS.md and the item file are
+# written by these scripts on every ticket and are declared by none, so reporting them would put a
+# guaranteed false positive on every close and teach the reader to skip the whole note.
+#
+# **An empty touches: means nothing declared** to this report (0145), so every path the pass changed
+# outside the bookkeeping is named as undeclared. That is a different question from the one
+# `references/CONCURRENCY.md` answers when it reads an empty `touches:` on an in-progress row as
+# *held*: that reading serves a session choosing what to take, where assuming the files are held is
+# the safe default; this one serves the release, where silence would hide a QA pass that edited
+# code. `touches: "*"`, inline or as a list entry, is the exclusive claim and covers every path.
+#
+# Only commits whose subject carries `[<token>]` or names the id as a word are counted (0145 FR6):
+# the range is `claim^..HEAD` on a shared branch, so it also holds other sessions' work. What is left
+# out is counted aloud rather than dropped silently.
+#
+# **This block is duplicated verbatim in `close` and `handoff`** — the two stages that release a
+# claim, and so the two that can compare the field before it is cleared. A backlog script is a
+# separate file by install contract (`tests/backlog-scripts-installed.test.sh`) and sources
+# nothing, so a shared implementation is a copy — declared by the markers around this block.
+SCOPE_NOTE=""
+
+# The `touches:` entries, decommented. `#` opens a comment only at the start of a value or after
+# whitespace, which is YAML's own rule and the reason `sub(/#.*/, "")` is wrong: `- docs/a#b.md` is
+# one token. A standalone comment LINE inside the block is skipped rather than ending it —
+# `develop` Step 1 invites exactly that annotation, and truncating at it reads a narrowed-and-
+# annotated scope as empty.
+declared_touches() {
+  awk '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && /^touches:/  {
+      v = $0
+      sub(/^touches:[ \t]*/, "", v)
+      sub(/[ \t]+#.*$/, "", v)
+      if (v == "\"*\"" || v == "\047*\047" || v == "*") print "*"
+      intou = 1; next
+    }
+    intou && /^[ \t]*$/ { next }
+    intou && /^[ \t]*#/ { next }
+    intou && /^[ \t]*- / {
+      sub(/^[ \t]*- */, "")
+      sub(/[ \t]+#.*$/, "")
+      sub(/[ \t]+$/, "")
+      if ($0 == "\"*\"" || $0 == "\047*\047") $0 = "*"
+      if ($0 != "") print
+      next
+    }
+    intou { exit }
+  ' "$1"
+}
+
+# names_this_ticket <subject> — whether a commit subject carries this pass's token or the id as a
+# word: `(0145)`, `0145's` and `Claim 0145 [ab12]` count, `10145` does not.
+names_this_ticket() {
+  case "$1" in *"[$TOKEN]"*) return 0 ;; esac
+  printf '%s\n' "$1" | grep -Eq "(^|[^0-9A-Za-z])$ID([^0-9A-Za-z]|\$)"
+}
+
+scope_note() {
+  git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || return 0
+  git -C "$DIR" rev-parse -q --verify HEAD >/dev/null 2>&1 || return 0
+
+  declared="$(declared_touches "$item")"
+
+  # Oldest first: a token can appear on several commits, and the claim is the first of them.
+  #
+  # Anchored on the id AND the token, never the token alone (0144). A token is four hex characters
+  # and nothing checks one for reuse, so a bare `grep -F "[$TOKEN]"` over the whole history makes
+  # the FIRST reuse win: an older ticket's claim commit becomes the range start and everything
+  # between reads as this ticket's work. That is the same wrong-attribution this report exists to
+  # prevent, arriving as a confident, specific, wrong answer rather than an error. Both halves are
+  # load-bearing — the id alone re-breaks a ticket claimed twice under different tokens, where the
+  # superseded pass's commits are not this one's.
+  claim_sha="$(git -C "$DIR" log --format='%H %s' | grep -E "^[0-9a-f]+ Claim $ID \[$TOKEN\]" | tail -1 | cut -d' ' -f1)"
+  [ -n "$claim_sha" ] || return 0
+
+  # `A^..HEAD` includes A itself. On a root commit there is no `A^`, and `--root` is what makes
+  # `--name-only` report a root commit's paths at all rather than silently listing none.
+  if git -C "$DIR" rev-parse -q --verify "$claim_sha^" >/dev/null 2>&1; then
+    range="$claim_sha^..HEAD"
+  else
+    range="HEAD"
+  fi
+
+  if printf '%s\n' "$declared" | grep -qx '\*'; then
+    SCOPE_NOTE='scope: exclusive claim — touches: "*" covers every path'
+    return 0
+  fi
+
+  counted=""
+  skipped=0
+  subjects="$(git -C "$DIR" log --format='%H %s' "$range")"
+  while read -r sha subject; do
+    [ -n "$sha" ] || continue
+    if names_this_ticket "$subject"; then counted="$counted $sha"; else skipped=$((skipped + 1)); fi
+  done <<SUBJECTS
+$subjects
+SUBJECTS
+  actual=""
+  for sha in $counted; do
+    actual="$actual
+$(git -C "$DIR" log --root -1 --format= --name-only "$sha")"
+  done
+  actual="$(printf '%s\n' "$actual" | grep . | sort -u || true)"
+
+  prefix="$(git -C "$DIR" rev-parse --show-prefix)"
+  bookkeeping="${prefix}QUEUE.md ${prefix}DONE.md ${prefix}FINDINGS.md ${prefix}items/$(basename "$item")"
+
+  # A declared entry covers a path that IS it, or that sits under it — so declaring a directory
+  # reads as declaring what is in it, which is how sessions actually write the field.
+  covers() {
+    for d in $2; do
+      [ "$1" = "$d" ] && return 0
+      case "$1" in "$d"/*) return 0 ;; esac
+    done
+    return 1
+  }
+
+  undeclared=""
+  for p in $actual; do
+    case " $bookkeeping " in *" $p "*) continue ;; esac
+    covers "$p" "$declared" || undeclared="$undeclared $p"
+  done
+
+  untouched=""
+  for d in $declared; do
+    hit=0
+    for p in $actual; do
+      [ "$p" = "$d" ] && { hit=1; break; }
+      case "$p" in "$d"/*) hit=1; break ;; esac
+    done
+    [ "$hit" -eq 1 ] || untouched="$untouched $d"
+  done
+
+  if [ -z "$declared" ] && [ -z "$undeclared" ]; then
+    SCOPE_NOTE="scope: nothing declared, and the commits since the claim changed only backlog bookkeeping"
+  elif [ -z "$undeclared" ] && [ -z "$untouched" ]; then
+    SCOPE_NOTE="scope: touches: and the commits since the claim agree"
+  else
+    [ -z "$untouched" ]  || SCOPE_NOTE="scope: declared but untouched:$untouched"
+    [ -z "$undeclared" ] || SCOPE_NOTE="${SCOPE_NOTE:+$SCOPE_NOTE
+}scope: touched but undeclared:$undeclared"
+    SCOPE_NOTE="$SCOPE_NOTE
+scope: a note, not a gate — widen or narrow the field on the next ticket, never this one"
+  fi
+  [ "$skipped" -eq 0 ] || SCOPE_NOTE="$SCOPE_NOTE
+scope: $skipped commits since the claim name neither $ID nor [$TOKEN] and were not counted"
+  return 0
+}
+scope_note
+# copy-end: scope-block
+
+# copy-begin: progress-slices
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+# --- the slices of a sliced ticket (0231 FR1) ---------------------------------------------------
+# One line per slice of the item's `## Progress` section, in file order:
+#   <position> <name> <ticked 0|1> <kind>
+# where kind is `ac` (discharges at least one AC), `none` (discharges none) or `unspecified`.
+# A slice line is `- [ ] S<n> — <what lands> — discharges AC<a>, AC<b>`, with `— discharges none`
+# or `— unspecified` as its last field instead; the kind is read from that last field alone, so
+# the text of what lands may say anything. A line whose last field is none of the three is kind
+# `ac` — refusing a develop -> develop over it is the safe misreading, skipping a verify is not.
+progress_slices() {
+  awk '
+    /^## / { inp = ($0 == "## Progress"); next }
+    inp && /^- \[[ xX]\] S[0-9]+[ \t]/ {
+      t = (substr($0, 4, 1) != " ")
+      name = $0; sub(/^- \[[ xX]\] /, "", name); sub(/[ \t].*$/, "", name)
+      last = $0; sub(/^.* — /, "", last); sub(/[ \t]+$/, "", last)
+      if (last == "unspecified") k = "unspecified"
+      else if (last == "discharges none") k = "none"
+      else k = "ac"
+      print ++n, name, t, k
+    }
+  ' "$1"
+}
+
+# has_progress <item> — whether the item has a `## Progress` heading at all.
+has_progress() { grep -qx -- "## Progress" "$1"; }
+
+# last_ticked_position <slices> — the position of the last ticked slice, 0 when none is.
+last_ticked_position() { printf '%s\n' "$1" | awk '$3 == 1 { p = $1 } END { print p + 0 }'; }
+# copy-end: progress-slices
+
+# --- a leg of a sliced ticket (0231 FR4) --------------------------------------------------------
+# Every refusal here is before anything is built, so "changes nothing" holds by construction.
+LEG=""
+TICK_LEG=""
+if [ -n "$SLICE_GIVEN" ]; then
+  has_progress "$item" || {
+    echo "refusing --slice: $ID has no '## Progress' section, so it has no slices to end a leg at" >&2
+    echo "a ticket without one is single-leg — hand it off without --slice (skills/queue/templates/item.md)" >&2
+    exit 1
+  }
+  case "$item_next->$STAGE" in
+    develop-\>develop|develop-\>verify|verify-\>develop) ;;
+    *)
+      echo "refusing --slice on a $item_next -> $STAGE hand-off: a leg ends develop -> develop," >&2
+      echo "develop -> verify, or verify -> develop (the leg passed); nothing was changed" >&2
+      exit 1 ;;
+  esac
+  slices="$(progress_slices "$item")"
+  target="$(printf '%s\n' "$slices" | awk -v s="$SLICE" '$2 == s { print $1; exit }')"
+  [ -n "$target" ] || {
+    echo "refusing --slice $SLICE: $ID's '## Progress' has no slice $SLICE" >&2
+    echo "its slices: $(printf '%s\n' "$slices" | awk '{ printf "%s%s", sep, $2; sep = " " }')" >&2
+    exit 1
+  }
+  last="$(last_ticked_position "$slices")"
+  [ "$target" -gt "$last" ] || {
+    echo "refusing --slice $SLICE: $SLICE is already ticked, or before the last ticked slice — a leg" >&2
+    echo "runs from the slice after the last ticked one, so it cannot end at a slice that is done" >&2
+    exit 1
+  }
+  LEG="$(printf '%s\n' "$slices" | awk -v a="$last" -v b="$target" '$1 > a && $1 <= b { printf "%s%s", sep, $2; sep = " " }')"
+  unspec="$(printf '%s\n' "$slices" | awk -v a="$last" -v b="$target" '$1 > a && $1 <= b && $4 == "unspecified" { printf "%s%s", sep, $2; sep = " " }')"
+  [ -z "$unspec" ] || {
+    echo "refusing --slice $SLICE: the leg ($LEG) holds unspecified slice(s): $unspec" >&2
+    echo "an unspecified slice has no ACs to build or verify against — it goes to design first:" >&2
+    echo "  ./handoff $ID $TOKEN design   then /design $ID gives it ACs and re-stamps ac_digest" >&2
+    exit 1
+  }
+  if [ "$item_next" = verify ]; then
+    handed="$(fm_value "$item" slice)"
+    [ "$handed" = "$SLICE" ] || {
+      echo "refusing --slice $SLICE: verify was handed the leg ending at slice: ${handed:-<empty>}," >&2
+      echo "and a pass ticks the leg it checked, never another — pass --slice ${handed:-<the slice: value>}" >&2
+      exit 1
+    }
+    TICK_LEG=1
+  elif [ "$STAGE" = develop ]; then
+    acs="$(printf '%s\n' "$slices" | awk -v a="$last" -v b="$target" '$1 > a && $1 <= b && $4 == "ac" { printf "%s%s", sep, $2; sep = " " }')"
+    [ -z "$acs" ] || {
+      echo "refusing develop -> develop --slice $SLICE: the leg ($LEG) discharges an AC in: $acs" >&2
+      echo "a leg that discharges an AC is checked by an independent pass before it is ticked —" >&2
+      echo "hand it to verify instead:  ./handoff $ID $TOKEN verify --slice $SLICE" >&2
+      exit 1
+    }
+    TICK_LEG=1
+  fi
+  # A leg's work is committed before the leg ends. Only this item's own touches:, never the whole
+  # tree: another session's dirty file is none of this hand-off's business.
+  dirty_list="$(declared_touches "$item")"
+  if printf '%s\n' "$dirty_list" | grep -qx '\*'; then
+    dirty="$(git -C "$ROOT" status --porcelain 2>/dev/null || true)"
+  elif [ -n "$dirty_list" ]; then
+    # shellcheck disable=SC2086 # one path per entry, and an entry holds no whitespace
+    dirty="$(cd "$ROOT" && git status --porcelain -- $dirty_list 2>/dev/null || true)"
+  else
+    dirty=""
+  fi
+  [ -z "$dirty" ] || {
+    echo "refusing to end the leg at $SLICE: paths in $ID's touches: hold uncommitted changes:" >&2
+    printf '%s\n' "$dirty" | sed 's/^/  /' >&2
+    echo "commit this leg's work by pathspec first, so a killed next leg cannot lose it; nothing was changed" >&2
+    exit 1
+  }
+fi
+
+# --- build both files aside, and read them back before either is moved into place --------------
+# The whole point: the 0087 defect was an edit that did not apply and a commit that proceeded
+# regardless. Writing to temporaries and verifying them is what makes 'all five, or nothing' true
+# rather than merely intended.
+item_tmp="$(mktemp)"
+queue_tmp="$(mktemp)"
+trap 'rm -f "$item_tmp" "$queue_tmp"; rm -rf "$LOCK"' EXIT INT TERM
+
+# `touches:` is cleared with its list entries — a handed-off ticket that keeps reserving files
+# reads as held to the other window (CONCURRENCY.md, 'The working tree is shared too'). `expects:`
+# is left alone: it is the prediction the next capture calibrates on, not a reservation.
+awk -v stage="$STAGE" -v st="$STATUS" -v slice="$SLICE" -v given="$SLICE_GIVEN" -v leg=" $LEG " -v tick="$TICK_LEG" '
+  NR == 1 && /^---$/ { fm = 1; print; next }
+  fm && /^---$/      {
+    if (given && !slice_seen) print "slice: " slice
+    fm = 0; print; next
+  }
+  /^## /             { inp = ($0 == "## Progress") }
+  !fm && inp && tick && /^- \[ \] S[0-9]+[ \t]/ {
+    name = $0; sub(/^- \[ \] /, "", name); sub(/[ \t].*$/, "", name)
+    if (index(leg, " " name " ")) sub(/^- \[ \]/, "- [x]")
+    print; next
+  }
+  fm {
+    if (given && $0 ~ /^slice:/) { print "slice: " slice; slice_seen = 1; next }
+    if ($0 ~ /^next:/)       { print "next: " stage; next }
+    if ($0 ~ /^status:/)     { print "status: " st;  next }
+    if ($0 ~ /^claimed_by:/) { print "claimed_by:";  next }
+    if ($0 ~ /^claimed_at:/) { print "claimed_at:";  next }
+    if ($0 ~ /^touches:/)    { print "touches:"; skiplist = 1; next }
+    if (skiplist && $0 ~ /^[ \t]*- /) { next }
+    skiplist = 0
+    print; next
+  }
+  { print }
+' "$item" > "$item_tmp"
+
+awk -F'|' -v OFS='|' -v id="$ID" -v idc="$Q_ID" -v nc="$Q_NEXT" -v sc="$Q_STATUS" \
+    -v stage="$STAGE" -v st="$STATUS" '
+  /^\|/ {
+    v = $idc; gsub(/^ +| +$/, "", v)
+    if (v == id) { $nc = " " stage " "; $sc = " " st " " }
+  }
+  { print }
+' "$QUEUE" > "$queue_tmp"
+
+# --- verify all five, and both cells, before anything moves ------------------------------------
+# **This is a redundancy check, and no input reaches it while the editor above is correct** — the
+# refusals have already established that every key is in the frontmatter and that the row and the
+# item agree. Said out loud because a guard nothing can reach is normally a defect: here it is the
+# point. The 0087 failure was not a bad input, it was an edit written against the wrong value, and
+# the only thing that can catch that class is reading the result back. tests/handoff.test.sh proves
+# it by breaking the editor and asserting on this message, which is the only mutation that reaches
+# it (`testing-conventions.md`, prove a new guard fails).
+unapplied=""
+[ "$(fm_value "$item_tmp" next)"       = "$STAGE"  ] || unapplied="$unapplied next"
+[ "$(fm_value "$item_tmp" status)"     = "$STATUS" ] || unapplied="$unapplied status"
+[ -z "$(fm_value "$item_tmp" claimed_by)" ]         || unapplied="$unapplied claimed_by"
+[ -z "$(fm_value "$item_tmp" claimed_at)" ]         || unapplied="$unapplied claimed_at"
+[ -z "$(fm_value "$item_tmp" touches)" ]            || unapplied="$unapplied touches"
+# Present on the way in (checked above) and still present on the way out: an edit that deleted a
+# key would otherwise read as 'cleared' for the three that are cleared.
+for key in next status claimed_by claimed_at touches; do
+  fm_has "$item_tmp" "$key" || case "$unapplied" in
+    *" $key"*) ;;
+    *) unapplied="$unapplied $key" ;;
+  esac
+done
+# `touches:` is cleared only if its ENTRIES went too. An empty key over a surviving list still
+# reserves files, and `fm_value` cannot see it: the value it reads is the empty string either way.
+awk '
+  NR == 1 && /^---$/ { fm = 1; next }
+  fm && /^---$/      { exit }
+  fm && index($0, "touches:") == 1 { seen = 1; next }
+  seen && /^[ \t]*- / { found = 1; exit }
+  seen { exit }
+  END { exit !found }
+' "$item_tmp" && unapplied="$unapplied touches.entries"
+
+if [ -n "$SLICE_GIVEN" ]; then
+  [ "$(fm_value "$item_tmp" slice)" = "$SLICE" ] || unapplied="$unapplied slice"
+  after="$(progress_slices "$item_tmp")"
+  for name in $LEG; do
+    want=0; [ -z "$TICK_LEG" ] || want=1
+    [ "$(printf '%s\n' "$after" | awk -v s="$name" '$2 == s { print $3; exit }')" = "$want" ] ||
+      unapplied="$unapplied progress.$name"
+  done
+fi
+
+new_row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$queue_tmp")"
+[ "$(read_cell "$new_row" "$Q_NEXT")"   = "$STAGE"  ] || unapplied="$unapplied row.Next"
+[ "$(read_cell "$new_row" "$Q_STATUS")" = "$STATUS" ] || unapplied="$unapplied row.Status"
+
+[ -z "$unapplied" ] || {
+  echo "$ID: the hand-off did not apply to:$unapplied" >&2
+  echo "nothing has been written — a partly-applied hand-off is the defect this script exists to prevent" >&2
+  echo "the item's frontmatter must carry all of: next, status, claimed_by, claimed_at, touches" >&2
+  exit 1
+}
+
+mv "$item_tmp" "$item"
+mv "$queue_tmp" "$QUEUE"
+trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+# --- commit, by pathspec, in the same breath as the edits --------------------------------------
+# Fatal if the repo cannot be committed to: the commit is the entire reason this is a script, so a
+# hand-off that leaves both shared files dirty is the failure it exists to prevent.
+git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
+  echo "not a git repository ($DIR) — QUEUE.md and the item are edited but uncommitted" >&2
+  echo "commit them by pathspec yourself before anything else touches those files" >&2
+  exit 1
+}
+# Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
+n=0
+# A second -m is what makes the trailer a trailer: git separates the two with a blank line, so
+# `%(trailers:...)` parses it rather than it being prose in the body.
+until git -C "$DIR" commit -q -m "Hand off $ID to $STAGE [$TOKEN]" -m "$COAUTHOR" -- "$QUEUE" "$item" 2>/dev/null; do
+  n=$((n + 1))
+  [ "$n" -lt 30 ] || {
+    echo "could not commit the hand-off (git busy) — the files are edited but uncommitted" >&2
+    exit 1
+  }
+done
+
+echo "handed off $ID: $item_next -> $STAGE, status $STATUS, claim $TOKEN released"
+if [ -n "$SLICE_GIVEN" ]; then
+  if [ -n "$TICK_LEG" ]; then echo "leg ended at $SLICE: ticked $LEG; slice: $SLICE"
+  else echo "leg ended at $SLICE: $LEG handed to verify, nothing ticked; slice: $SLICE"; fi
+fi
+[ -z "$SCOPE_NOTE" ] || echo "$SCOPE_NOTE"
+echo "this is the last write of the stage; anything still to record belongs in this commit or before it"

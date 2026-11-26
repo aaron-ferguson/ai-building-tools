@@ -1,0 +1,764 @@
+---
+name: ai-building-develop
+description: >
+  Pull the next item off the project's stack-ranked backlog, implement it TDD per conventions,
+  leave the tree green, and stop at `next: verify` for a QA session to check and close.
+  Use this skill when the user says "let's
+  work on the next thing", "pick up the next item", "what's next — do it", "work the backlog",
+  "develop 0007", "start on the top item", or invokes /develop. Also use when the user has
+  tokens/time to spend and asks what to do next with intent to actually do it. Reads
+  .tickets/ — created by the queue skill.
+---
+
+Work in the target project's writable checkout. Resolve bundled paths relative to this skill directory. Read applicable project instructions, including AGENTS.md and existing CLAUDE.md. Follow references/CONVENTIONS.md for conventions lookup. Use a fresh session for each stage. Stage names in ticket fields and handoffs stay unprefixed; ask for the corresponding ai-building skill in the next session.
+
+# /develop
+
+Take the top `ready` item off `.tickets/QUEUE.md` and build it: implemented, committed,
+the tree left green, and the ticket set to `next: verify` so a QA session can check it against the
+written ACs and close it.
+
+**This skill does not close the ticket.** `verify` does, because the stage holding the verdict is
+the stage that should act on it — there is then no window in which a green goes stale, and no
+verdict has to survive a session boundary in conversation. Your last act is the implementation
+commit plus `next: verify, status: ready`.
+
+**One skill per session.** Run this skill in its own conversation; the backlog carries the handoff —
+the ticket's `next` field and `FINDINGS.md`, never a conversation. **Observed 2026-08-23/24** over 30
+isolated sessions: a `develop` turn costs **USD 0.1044 at 109,750 context tokens**, against a baseline
+USD 0.1203 at 151,669 — context per turn down 30%, cost 14.5%, short of the projected two-thirds
+(`MEASUREMENT.md`). **No standard is relaxed** — the rigour is all in the fifth of spend that is output.
+
+**One gate per invocation, not one ticket.** The unit is a gate: **one gate per session, not one
+ticket per session** — and the condition is takeability at the stage, nothing narrower: **any row
+`./next develop` hands you may be worked in the same session**. Tickets from unrelated projects do
+not batch, because what a batch saves is the startup a session pays before it writes a line — the
+conventions, the project's instructions, `CONCURRENCY.md`, this file — and a different project's are a
+different startup rather than a shared one. Shared file scope (their `expects:` overlap) and a shared
+parent slice are why a batch pays more, adding the orientation in the code on top of the startup any
+batch already amortises; they are not a test the rows must pass first. **Assemble the batch by
+repeating `./next develop` after each close** — claim, work, close, ask again — never by selecting a
+set up front: a claimed row is not takeable, so the next call hands the next row, and nothing is held
+before it is worked (`CONCURRENCY.md`, *The working tree is shared too*). Two guardrails, both of
+which a real eleven-ticket run needed:
+**Claim and close each ticket individually** — the row is the unit of ownership whatever the session
+is, and a batch holding rows it is not yet working on is the scope reservation `CONCURRENCY.md`
+forbids — and **Stop at the first ticket whose contract turns out wrong** rather than carrying a bad
+assumption into the rest of the batch. The figure behind this is capture-side and dated
+**2026-08-22**: five related tickets in one session cost measurably less per ticket than five
+sessions would have. **0026** looked for the develop-side figure in the 2026-08-23/24 sessions and
+found no batched session to measure; producing it needs a run designed for it. **`verify`
+batches on a different condition — that the tickets were developed together in one gate — because
+what a verify batch spends is the gate's independence, which no startup saving amortises. Do not
+carry this rule there.**
+
+**A join decides batching and never selection.** Rank picks the lead; a joining row below it is
+admissible however far down, bounded by `gate_max_rows` and nearest in rank first (0178).
+
+**Another session may be working this same backlog.** Read `references/CONCURRENCY.md` in this skill directory
+(`../../references/CONCURRENCY.md` from this file) before touching any backlog file.
+
+**This skill states no standards of its own.** How to build, test, commit, and review is
+defined by the project's conventions and cited here, never restated. Resolve them per
+`references/CONVENTIONS.md`.
+
+---
+
+## Where work is tracked, and where cost is recorded
+
+Two optional `config.yml` blocks change what this skill does at claim and at stop. Both are **off
+unless configured**, and this skill never prompts to set them up. Read `references/TRACKER.md` before
+acting on either.
+
+- **`tracker:`** — an external tracker the backlog **mirrors to, one way**. The local item stays the
+  source of truth: it holds the FRs, NFR citations, ACs and QA level a ticket does not, and an agent
+  must never be blocked on the network. *Which* tracker is a company-profile question, not this
+  skill's. A failed mirror call is logged in the notes and does not block.
+- **`cost_tracking:`** — record what this session spent before it stops. Only the session that did
+  the work knows which ticket its tokens belonged to; `verify` appends its own share. Aggregate spend
+  is recoverable later, the attribution is not.
+
+---
+
+## Step 1 — Select and claim the item
+
+**Run `./next develop` rather than reading `QUEUE.md`.** It prints the first takeable row — `next:
+develop`, nothing still open in `blocked_by` — with its `size`, `qa_level` and `expects:`, plus the
+files every in-progress ticket has claimed. Reading the queue whole to learn one row is the largest
+avoidable context cost in the backlog; open the file only for questions about *order*.
+
+```bash
+.tickets/next develop
+```
+
+Without the script, read `QUEUE.md` and apply the same rules:
+
+- **No argument → the topmost takeable `next: develop` row.** The rank is not a suggestion.
+- **An ID (`/develop 0007`)** → that ticket, but say so if you are skipping higher rows and why you
+  believe that is intended.
+- **`blocked` or `waiting`** → report which and what clears it: a named ticket, or for `waiting` the
+  question in its `## Waiting on` section (`./next --waiting`). Then take the next takeable row.
+  Never reorder to make your choice look correct.
+- **`blocked_by` decides takeability, never the `Status` column** — `blocked` is derived, and the
+  column only caches it. A row still naming an open ticket is not takeable however green the column
+  looks, and a row written `blocked` whose `blocked_by` entries are all `done` **is** takeable: take
+  it, say the column was stale, and fix it in your claim edit. Skipping it is how four rows sat
+  unavailable for a whole session. `./next --drift` lists every disagreement between column and
+  graph, in both directions, and exits non-zero if it finds any.
+- **`next: design`** → skip it and name its open question. It has no acceptance criteria by
+  definition, so building it means inventing the contract you will then be verified against. The
+  title is not the spec. Same for **`next: queue`**: hand it back rather than inventing the missing
+  half. Given as an explicit ID, say so and stop rather than proceeding.
+- **`in-progress`** → another session's, unless you minted its token in this conversation. Skip it
+  and name the token. Never take it over because the work looks stalled; ask.
+- **No backlog directory** → offer `queue` to start one. Don't invent work.
+
+**On size:** the rank is absolute, so you do not skip row 1 because it is an `l` and the session is
+short. Say so and let the user choose — take it and stop at a clean commit boundary, or explicitly
+drop down this once. Silently picking something easier is how the important expensive ticket never
+gets done.
+
+**Check the file scope before you claim.** Compare your candidate's `expects:` against the `touches:`
+of every `in-progress` ticket. Trust it for *triage* and nothing else — advisory, ages, verified for
+real below; a candidate with no `expects:` still costs a look. On overlap, take the next clear `ready`
+row and name what you stepped over. If every row collides, say there is nothing safe to develop
+(`CONCURRENCY.md`, *The working tree is shared too*).
+
+**The held-file list `./next develop` prints *is* the in-progress set — do not derive it by grepping
+`claimed_by:` over `items/*.md`.** `close` and `handoff` clear the row, and at least five closed
+items still carry the token they were never stripped of, so that grep answers with five `status:
+done` tickets and a session reading them as live scope concludes there is nothing safe to develop.
+The failure is cheap to reach and it stops work, which is the direction that never gets questioned.
+
+**Re-run `./next` immediately before `./claim`.** A claim landing between the two is invisible to the
+comparison you just made: `./next develop` offered a row seventeen seconds after another session's claim
+commit, and the collision surfaced only on a re-run — then the *second* candidate collided too, on files
+that session declared a minute after claiming. `./claim` re-reads under the lock, so the **row** is
+safe either way; the **file-scope** check above has no such re-read and is the half that goes stale. One
+extra call, and it catches the window.
+
+**Run the staleness grep before you claim, not after.** Step 2 tells you to grep the symbol an FR names
+before building to it; the same grep against the symbol the **Problem** section names belongs here,
+because a row whose bug no longer reproduces should never be claimed at all. One ticket sat `ready` at
+the top of the queue for five days describing a failure that a passing deploy had already fixed ad hoc
+in another session — the fix landed outside the lifecycle, so no `DONE.md` row and no closed item ever
+mentioned it, and nothing in selection had a cue to look. `DONE.md` cannot answer this; only the code
+can.
+
+**Fetch before you claim, and stop if you are behind.** Every check this stage makes runs against
+the tree you have — Step 2's staleness greps, Step 3's guard greps — and a check against a
+**stale tree is not evidence**: a green "the rule is not there yet" is indistinguishable from a
+real one. `git fetch` then `git status -sb`. **Behind the remote stops the session** unless
+*A behind checkout fast-forwards only over backlog commits* (`CONCURRENCY.md`) applies — then
+fast-forward and report it; any other pull is the user's call, since resolving divergence can mean
+choosing between two of the author's own commits (`git-conventions.md`). A pass that edited this repo 47 commits behind
+`origin/main` rewrote a commit already pushed four days earlier, and found out at the rebase.
+
+**Claim it with `./claim`** — one step, and the supported path:
+
+```bash
+.tickets/claim 0007          # lock → re-read → edit row → frontmatter → commit → unlock
+```
+
+**The commit is why this is a script**: until it lands, the claim is visible only in your working
+tree and the next session to commit that file carries it off. On a tracker-backed backlog the API
+write is the durability instead (`CONCURRENCY.md`, *A claim must be durable the moment it is made*).
+
+By hand, under the lock, in this order — and `ready` → `in-progress` **needs** the lock, being a
+read-modify-write two sessions can both win:
+
+1. **Re-read the row.** No longer `ready` → release and pick again.
+2. Set `Status` to `in-progress` as one single-line `Edit`.
+3. Write `claimed_by:`, `claimed_at:` (ISO-8601 UTC) and `touches:` into the item's frontmatter.
+   **`touches:` is `expects:` checked against the code, never copied.** Grep for the symbols this
+   ticket will alter: a ticket written weeks ago names what the work is *about* and cannot name
+   everything that *exercises* the behaviour. **`ls` the directories rather than writing the filename
+   the prose implies** — a guessed path reserves nothing and the other window cannot tell it from one
+   you are about to create, so **declare a file you will create the same way and say inline that it
+   is new**. Correct `expects:` where it was wrong; the next capture calibrates on it.
+4. **Commit by pathspec** — `git commit -m "Claim 0007 [$CLAIM]" -- <queue> <item>`, with the
+   `Co-Authored-By` trailer (`git-conventions.md`). A lifecycle commit is not exempt from it.
+5. `rm -rf .tickets/.lock` — this same turn, before any implementation work.
+
+Widen `touches:` the moment the work reaches further: the other window reads it to decide what it may
+safely take.
+
+**A file you break on purpose and put back is declared too, and it is the sharpest hold on the list.**
+Proving a guard red means mutating a file and restoring it, so the committed diff never shows it and
+neither reading of the field — what you will open, what you will create — reaches it. Declare it, and
+say inline that the mutation is transient, so the entry is not later read as an edit that never
+happened. While the mutation is live the suite is deliberately red, and a concurrent whole-suite run
+collects failures that belong to nobody, cannot be reproduced a moment later, and point at a file its
+own ticket never touched. Step 5 tells the *arriving* session to check `pgrep` before starting a run;
+the session holding the mutation owes the mirror of it — check for a live run before you break
+anything, keep the break and its restore inside one turn, and never leave a mutation live across a
+hand-off, a wait, or the end of a turn.
+
+**Then mirror the claim if a tracker is configured** (`references/TRACKER.md`), outside the lock — a
+network call must never be made while holding it. No `tracker_key` yet → create the ticket and write
+the key in; otherwise transition it. Note the key in your report. Failure is logged in the item's
+notes and does not stop the work.
+
+Report the token, then read the full item file before doing anything else.
+
+---
+
+## Step 2 — Restate the contract before writing code
+
+Out loud, in three or four lines: the FRs you're satisfying, the NFR rows that apply, the ACs you'll
+be held to, and the QA level. This is the last cheap moment to catch a misunderstanding.
+
+**First, though: a ticket that has been round the loop carries a second contract, and it is the
+expensive half.** Read *Notes & decisions* for a verdict a previous `verify` wrote — what failed, the
+actual output, which AC, usually the suggested fix. On a re-entry **that section is the specification**:
+the FRs and ACs are what was thought through before anyone tried it, the verdict is what turned out to
+be wrong. A bounced ticket looks identical to a fresh one at Step 1, so nothing but this will tell you
+to look, and the cost of missing it is rediscovering a failure someone already diagnosed.
+
+**A verdict offering two remedies is not a specification.** One read *"either narrow it … or widen
+that paragraph to say so and assert the accepted case"* — one changes behaviour, the other documents
+a hole, and they are opposite products. Unless the item's own FRs already pick between them, that is
+a missing *decision* arriving inside the artifact this step told you to trust: take the branch below
+and set `next: design` rather than choosing on the ticket's behalf.
+
+**If the ticket's real acceptance is a look, get something in front of the author before building it
+properly** — including when its *written* acceptance is entirely numeric. A correctness fix that
+changes an appearance as a side effect has an unwritten AC only the author can settle, and nothing in
+the ticket flags it: one ticket's ACs were all contrast ratios, so a complete implementation was
+built, tested and committed before the author rejected the new look in one line. Ask what the change
+*looks* like, not only what it must measure.
+
+An AC only a human can settle — does this feel right, does it read as a place — is not verified by any
+amount of implementation, and every test written against a *guessed* look is thrown away with the
+guess; one ticket spent three implementations, each with its own suite, before the author saw anything.
+Build the cheapest thing that answers the question (`prototype` exists for this), then
+implement to the full standard against an answer you have. Two habits follow: **show a batch, not a
+guess** — variants side by side in one image, since a round trip costs the same either way — and
+**look once per round**, compositing variants into a single sheet rather than screenshotting each
+parameter in turn.
+
+**The same rule holds when the acceptance is a *listen* rather than a look, and the artifact changes.**
+A committed standalone HTML bench that plays the candidates on demand beat a screenshot outright: it
+worked on the author's other device, it survived the session, and — because the synthesis maths *is* the
+spec — the thing approved by ear was literally the thing shipped. Two rounds settled four sounds. Reach
+for whatever artifact lets the author answer the question directly; the batch is the principle, the
+image is only its commonest form.
+
+**And where a ticket's ACs are *mostly* human judgement, say up front which ones this session can
+actually close.** A ticket asking for gestures on a physical device owes no code at all: Step 4's TDD
+cycle has nothing to turn red, and Step 5's whole-suite run measures a change to one Markdown file.
+Name the ACs an agent can discharge, do those, and hand the rest over as the author's — plainly, in
+the hand-off. Without that, "built" and "not closed" are the only two vocabularies available, and the
+ticket ping-pongs between `develop` and `verify` accumulating suite runs while each stage correctly
+concludes it has nothing to do. `verify` Step 5's `waiting` branch is where such a ticket comes to
+rest; a `## Waiting on` section saying which person must do what is what makes it takeable again.
+
+**If the ticket is underspecified — no FRs, no ACs, or a stale problem statement — fix it first**, and
+update the file so the next reader gets the improved version. A ticket that can't be restated can't be
+verified.
+
+**But if what is missing is a *decision* rather than detail, do not decide it — set `next: design`,
+`status: ready`, write the question into the *Open design question* section, release the claim, and
+stop.** Missing detail you sharpen here; a missing decision answered by the session about to build
+against it is a contract nobody agreed to, and `verify` is what discovers you invented it. Name the
+command: `/design <id>`, in its own session. **An item that disagrees with itself is this case** — a
+Problem section calling a behaviour correct that an FR or AC forbids. Building half to each side and
+recording it as a "deliberate asymmetry" decides it, and costs a `verify` session that can only send
+it to `design` anyway (2026-10-17, a consumer backlog).
+
+**A declared success threshold is a goal to iterate toward, never a number you may move.** When the
+build misses one — a balance cap, a latency ceiling, a rate — change the inputs and try again, or stop
+and escalate the miss; editing the threshold, its test, or its tolerance to turn the build green is
+the contract narrowing `queue` alone may do. quantum-catan 0008 held on the strength of a ticket note
+until the owner stated this as a general rule (2026-10-10).
+
+If the ticket's assumptions have gone stale (the code moved, the bug is fixed, a dependency changed),
+say so and ask before building to a spec that no longer matches reality.
+
+**Staleness also arrives from a sibling ticket, not only from the code.** An FR enumerating how a
+mechanism works goes stale when another ticket *changes that mechanism* after this one was written —
+every file it names still untouched, so nothing in the diff looks wrong. Check what closed since this
+ticket's capture date (`DONE.md`) for anything owning the same mechanism, and treat a literal build of a
+superseded FR as the stale contract it is. **The cheap form of that check is a grep, not a reading of
+`DONE.md`: before building an FR, grep the symbol it names for a sibling item number and read that
+item.** A decision recorded at its own site is findable by the session sent to that site; one recorded
+only in `DONE.md` requires already knowing to look. Four FRs across two tickets were caught this way,
+each naming files that still existed, with prose that stayed internally consistent while becoming
+false — one would have deleted a sibling's acceptance criterion outright.
+
+**The same grep runs in the other direction, and only that direction catches a sibling you staled
+yourself.** Everything above asks whether someone else's change staled *your* FR. A ticket that
+*widens* a mechanism — a new dispatchable stage, a new arm, a new permitted value — makes stale every
+earlier FR that enumerated it, including one built ninety minutes ago in this same session, which is in
+the tree and in no `DONE.md`. So when an FR widens an enumeration, grep the widened symbol for sibling
+item numbers **before** closing, and report what you staled; you may not edit another ticket's FR text,
+and saying nothing leaves it reading as current. `0159` made `next: design` dispatchable and by doing
+so falsified `0168` FR2's two-stage enumeration, written and built the same session; it surfaced only
+as a red in `0159`'s own new case, because `0168`'s suite had no design row to fail on.
+
+**Grep your own id as well as the symbols, and do it first.** A sibling ticket may have already
+built your FR and cited you by number while doing it: `0075` FR3 asked that the version bump derive
+from the remote, and `tools/release` had done exactly that since `0084`, in a comment reading *"the
+next version it names has to be derived from the REMOTE's plugin.json (0075: a hand-picked version
+collided)"*, with a guard on it. `grep -rn '<your id>' --exclude-dir=.claude` is one call, resolves
+at the site rather than through `DONE.md`, and re-scopes the ticket before a line is read — where
+the symbol grep only finds it if you guessed the right symbol.
+
+**That grep covers a figure an FR *reprices*, not only a symbol it names.** A guard can pin the old
+figure as a literal, so the ticket ranked to change it takes a green suite red on a correct document
+at the very end of the work; `grep -rn '32%' tests/` before the edit costs one call and reframes the
+surprise as "re-anchor the guard".
+
+**And a claim about the *past* is not answerable by any grep of the tree.** "This id was issued to
+work that never claimed it" is a history question — `git log --all --diff-filter=A -- 'items/<id>-*'`
+answers it; a grep answers only "does this still exist".
+
+**A superseded FR does not always condemn the whole ticket.** Where some FRs are stale and the rest are
+perfectly buildable, `next: design` for the ticket entire is the wrong instrument — say which FRs are
+stale and why, build the rest, and ask before splitting them out; only `queue` writes the row that
+carries the remainder. One ticket enumerated a five-step procedure that a sibling
+had since made a six-step one; building it as written would have automated the very defect the sibling
+existed to fix.
+
+**Only the author changes a criterion.** Where a criterion is wrong or impossible, **stop**:
+record in *Notes & decisions* which `ACn`, why, and the proposed text, then
+`./handoff <id> <token> queue`. It does not edit the criterion, even to correct it; `close` refuses
+one that no longer matches `ac_digest:`. A correct fix (5 → 6 VP) once passed two `verify` passes
+unseen (0195).
+
+**And a figure a ticket quotes about a file it does not own is a cache, not a fact — re-read the
+source, never the FR.** A cited number is an assertion about another file, and it is the one kind of
+assertion a ticket cannot test itself: the arithmetic stays internally consistent, the citation
+resolves, and nothing in the diff looks wrong. Four ways it has bitten. The figure **moved** since
+capture, and the ticket's whole question rested on the old shape. The figure was **misread** at
+capture — a session count taken for a turn count — and propagated into the published constant and two
+ACs written against it. The figure is **not in the cited file at all**, so the next session told to
+recompute from it finds one input missing and either invents it or trusts the stale value. And the
+figure is stale in its **tense** rather than its value: an FR reading "~-18% once `0085` lands" is
+satisfied by `0085` landing, while the measurement it quotes is pinned to a window that has not
+closed and was never run — the condition and the measurement are different facts. Same
+discipline the backlog already applies to `blocked`: the cache reads correctly on its own, and the
+source is the authority whenever the two disagree.
+
+**The same holds for any claim a ticket makes about an external tool's interface, and re-running it
+costs one command.** A dated *"confirmed by running it"* ages exactly like a quoted figure, and it
+reads as stronger evidence, which is what makes it worse. One ticket's FR said a stage is launched
+with `claude -p --json-schema <path>`, citing a run from three weeks earlier; the flag does not take
+a path — it fails with `--json-schema is not valid JSON: JSON Parse error: Unrecognized token '/'` —
+and the inline `"$(cat f.json)"` form is what works. Two more surfaced in the same three-second
+probe, neither visible in any prose: a nested `claude -p` **must redirect stdin** or it waits and
+then prints `Warning: no stdin data received in 3s` *into the stream being parsed as JSON*, so a
+good subprocess reads as a schema failure; and `--max-budget-usd` set below a session's startup
+floor returns `Error: Exceeded USD budget` rather than a result, which reads identically to a
+broken CLI. Probe the interface before building on it — a version bump you did not make is enough
+to invalidate the claim.
+
+**And a QA plan's named check can itself be wrong; the plan is not the authority on what is
+checkable.** The staleness rules above cover an FR and an AC. A plan's *specific checks* are written
+at capture time, against code the author may not have opened, and inherit none of that scrutiny.
+One plan asked for "a grep asserting `--bare` appears nowhere in `skills/sprint/`" — but the
+skill has to *explain* why `--bare` is disqualifying, so the check as specified reds exactly the
+file that documents the rule best. That is the negative-assertion trap `testing-conventions.md`
+already names, arriving from a ticket rather than from an author. Where a plan's check cannot be
+written as stated, write the one carrying the same claim — here, the flag must appear in no
+**fenced code block**, with the prose checked separately and positively — and record the
+substitution in the item's notes, because the next QA pass reads the plan, not the note.
+
+**And a figure is only the commonest case — the rule is about any claim a ticket makes on a file it
+does not own.** Three more shapes have bitten, all of them invisible in a diff:
+
+- **A mechanism the ticket justifies by how another file behaves.** An FR required buffering pointer
+  moves and replaying them, because "the camera establishes velocity from the move stream it has
+  seen"; the camera in fact takes each move's delta from its own map and reads only a recent window,
+  so deleting the replay reddened nothing in either engine. Verify the rationale against the source.
+  **If no assertion can tell the mechanism's presence from its absence, say so in the item** rather
+  than leaving a future reader to rediscover it.
+- **An outcome another file can veto.** An FR asking for "the smallest pan that clears the panel" was
+  unsatisfiable against a clamp in a file the ticket never named, and it failed by 0.6px — a
+  near-miss that a pixel of tolerance in the assertion would have shipped as "works". An FR that asks
+  for an outcome is an assertion about every bound that can refuse it; grep for the bound before
+  building to the FR.
+- **A criterion carried in from another ticket.** "Fold this into item NNNN" makes a claim about code
+  the carrying item does not own, and it ages exactly like a quoted figure — see *A stage writes only
+  the ticket it holds* in `CONCURRENCY.md` for who may write it and what a claiming session owes it.
+- **An illustrative example inside an acceptance criterion — a quoted figure in prose clothing.** An AC
+  reading "selections offering different sections (a node with three, an unbuilt conduit with two)"
+  describes a *board state*, and it ages exactly like a number while reading as colour rather than as
+  an assertion, which is what makes it the more inviting of the two. Neither half of that parenthetical
+  was reachable: generated boards had carried no unbuilt conduit since a sibling item, and where one
+  did exist the node offered two sections rather than three. **Two sessions read past it** — one
+  anchored the spec elsewhere and it worked by luck until a third ticket landed. Before building to an
+  AC's example, confirm the state it describes exists.
+- **An instruction that contradicts a house pattern established elsewhere in the repo.** A ticket said
+  "grab CC0 audio" while the project's own committed practice — two sibling generator scripts, each
+  saying in as many words that assets are *drawn rather than committed as opaque binaries* — pointed
+  the other way. This is not a stale FR: nothing changed under it, and the ticket was arguably never
+  right. The tell was cheap, two files in the same directory, and the check is the sibling grep already
+  prescribed above. A scope reversal is the author's call, so surface it rather than silently obeying
+  either side.
+
+**And the nearest cache of all sits inside a file the ticket does own.** A comment beside a fixture is
+a cache of the fixture, and it ages exactly like a quoted figure while sitting where none of the shapes
+above reach. One read `turn 4  Read .../SKILL.md  orient` where the code had always constructed an
+`Edit` — and the acceptance criterion that fixture existed for was precisely *an Edit of a skill file
+is `work`, not `orientation`*. Read beside a comment asserting the opposite of the behaviour under
+test, a substring match over the whole output looks like a reasonable question, which is plausibly how
+that unfalsifiable guard came to be written. Nothing in a diff looks wrong: the comment reads correctly
+on its own and the arithmetic around it stays consistent. **Before trusting a fixture, read its
+construction, never its comment.**
+
+---
+
+## Step 3 — Load the conventions this item actually triggers
+
+Resolve the conventions directory per `references/CONVENTIONS.md` and stop if none resolves —
+there is nothing to build against, and guessing at the house standard is exactly what these
+tools exist to prevent.
+
+Always: `CONVENTIONS_CORE.md`, plus the project's own `CLAUDE.md` — project overrides beat
+universal defaults.
+
+Then read exactly the convention files cited in the item's NFR table, plus the files the core's
+index names for coding and testing. Don't read all of them; don't read none.
+
+**Then grep the project's own guards for the mechanism you are about to introduce**, before writing
+code. A ticket can be blocked by a project invariant it never names: one specified a timeout constant
+in a project whose `CLAUDE.md` bans wall-clock timers outright and whose suite enforces that against
+a named allowlist, so the ticket was silently asking for an allowlist entry plus the fresh argument
+the project demands for one. **The same grep covers a file you are only growing**: a size budget, or a
+guard on how a figure may be written, is no mechanism yet reds at the end of the work — one skill file
+sat four bytes under its size budget before a ticket that had to grow it. Step 2 restates the item's own citations and this step loads the
+conventions its NFR table names — neither reaches an invariant the item is silent about, and the
+failure mode is an unrelated-looking test going red with the rule to be reconstructed from it.
+
+---
+
+## Step 4 — Build it
+
+Follow the TDD cycle and the commit rules exactly as the conventions core states them — non-negotiable
+there, and not restated here. Read it before the first line. For a bug, the first test reproduces the
+bug and stays as a permanent guard.
+
+**Read one sibling test in the target directory before writing the first test.** Not for style — for
+what is wired up: which matchers exist (no `jest-dom` means no `toBeInTheDocument`), which helpers and
+fixtures are there, `fireEvent` or `userEvent`, what the helpers return. Each is a red-to-red round
+trip when guessed at, and they come in threes; one file read costs less than the first wrong guess.
+
+Work FR by FR, committing each logical unit as it completes rather than one commit at the end, in the
+conventions' commit format, referencing the ticket ID.
+
+**Make a refusal that arrives before its skill self-sufficient**: a refusal added to `skills/queue/templates/*`
+binds the next session, the skill change satisfying it only after a release. Its stderr names what is missing
+and names the fix, actionable without the skill, and it refuses before anything is written; the ticket's test
+runs the script into the refusal and asserts stderr names the fix — `0160`'s `names the line it wants`.
+
+**Every commit contains this session's work and nothing else**, per `CONCURRENCY.md`, *The git index
+is shared* — read it there rather than trusting a summary here. One thing is worth repeating:
+**`git add <paths> && git commit` is not a substitute for a pathspec**, since `git commit` writes the
+whole index.
+
+Respect the ticket's **Out of scope**. Adjacent problems you find get queued as new tickets, not fixed
+here. Append anything non-obvious to *Notes & decisions* as you learn it — a disproved theory, a
+mechanism that surprised you, a rule that misled you. **What has no home yet goes in
+`.tickets/FINDINGS.md`, one dated line, as you hit it**; Step 7 is the backstop, not the place
+to start remembering.
+
+---
+
+## Step 5 — Leave the tree green, then stop at `next: verify`
+
+**This skill does not run the ticket's QA level and does not close it.** Do not self-certify: the
+point of a separate pass is that it checks what the ACs *say* rather than what you remember
+building.
+
+**What you do run is the project's whole test suite once — every runner it has, not the ticket's
+declared level.** That is not QA: the level says what this ticket had to *prove*, not what it was
+allowed to *break*. A `unit` ticket changing a shared default can leave the browser suite red and
+pass QA, because nothing on its path ever started a browser — that happened, and it was two tickets
+before anything ran them. Handing a red tree to a QA session spends that session on a diagnosis you already had the context for.
+
+**Read `git status --porcelain` before believing any whole-suite result**, red or green. The fork
+below — falsified or exposed — assumes the tree is a state that exists as a commit, and where several
+sessions share a checkout it often is not (`CONCURRENCY.md`, *The working tree is shared too*). Three
+causes of a red sit outside that fork, and none is yours to fix:
+- another session's uncommitted work — two runners once went red, then green on three immediate
+  re-runs with nothing re-rolled, because ~30 files were mid-rename in the shared tree;
+- another session's deliberate red — its failing tests written and its implementation not yet;
+- a measurement whose subject moved mid-run — a harvest of a live transcript store counted 30
+  sessions, then 31, because another window opened one.
+
+**The remedy is a run in a throwaway worktree at your own last commit** — a verdict about
+a tree that exists, where the checkout is a file set nobody committed. Worth its cost whenever the dirty set
+intersects what the suite reads; with `git status` clean the checkout already is that tree. Site it
+so whatever the suite resolves outside the repo still resolves — `node_modules` in an app, and the
+conventions directory wherever `config.yml` resolves it against the parent: a worktree put elsewhere
+reds a citations guard on where it stands, not on what it holds (0189).
+It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the backlog*).
+
+**A red the tree is supposed to have is attributed with evidence**, carried into the hand-off rather
+than asserted in a sentence: "not mine" is the one claim the next `verify` cannot check. Write into
+*Notes & decisions* what it can — the owning row and its token, the path's `git status` line, and the
+worktree run at your commit, green.
+
+**A ticket whose output is a measurement of the machine it runs on pins its snapshot and
+records the pin** — copy the source, or fix a cut-off (a timestamp, a count, a SHA) and write it into the notes —
+so the figure `verify` re-derives is the figure you produced, not the machine an hour later.
+
+**Red in a file this ticket never touched:** find out whose it is before touching anything
+(`git log -1 -- <path>`, the in-progress rows). Another session's red is theirs to fix and yours to
+report. If the tree is too entangled to judge, run it in a throwaway worktree (`git worktree add`) and
+remove it in the same turn.
+It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the backlog*).
+
+**A red no ticket owns is never fixed under the claim you hold**, however small the fix. `da524ce`
+repaired one under `0176`'s claim: an unrelated test file sat in `0176`'s diff for verify to
+explain, and nothing in the backlog recorded that the defect had existed. Park a `FINDINGS.md` entry
+saying the red still needs a row (`CONCURRENCY.md`, *A stage writes only the ticket it holds*),
+name it in the outcome's `escalation` when a supervisor dispatched you, and carry on if your own ACs
+can still be attributed. A red your dispatch prompt lists as `baseline_red` is not yours.
+
+**An *untracked* file is the cheap case and needs no worktree at all.** `git status` settles it in one
+call: a file git has never seen is definitionally neither your change nor the tree's baseline, so it is
+another session mid-TDD. Nine failures once came from an untracked test file another window was still
+writing — and a worktree at the base commit would not have contained it, so the comparison the step
+sends you to could not have been run. Exclude it, say you did, and move on.
+
+**Red in a file you *did* touch has two owners, and telling them apart is the whole job.** Your change
+either **falsified** a check — it asserts a rule this ticket deliberately reverses, and rewriting it is
+part of the work — or **exposed** one already fragile, where the ticket merely added load, data or
+timing it could not absorb. Both look identical: a plausible assertion about behaviour you just
+changed. The throwaway worktree separates them — run the check at the commit before your work, under
+the same conditions. Green there means it is yours.
+
+**Where two sessions' commits interleave, no single commit answers the question, and the worktree is
+built by replay rather than by checkout.** With three sessions committing, the history can run: your
+first commit, then their breaking commit, then your second — so your own tip reproduces *their* red,
+and the commit before your work proves only that the red is not in your first commit. Neither is the
+comparison you want. Build the state that is exactly your work on a clean base:
+`git worktree add --detach <path> <last commit before your first>`, symlink `node_modules`, then
+`git cherry-pick <your commits>`. About two minutes, and the failure it prevents is expensive in the
+wrong direction — meeting a red at your own tip, the natural next move is to start debugging your own
+change. **The resulting SHA is throwaway and must never be reported as a verified commit.**
+It is a second checkout (`CONCURRENCY.md`, *A second checkout never writes the backlog*).
+
+**That settles it only for a deterministic check, and the failure is confidently backwards.** Where
+the check samples anything the runner re-rolls — a seed, a generated fixture, wall-clock pacing, a
+port or worker assignment — one run at each commit compares two draws rather than two commits, and the
+likeliest outcome of a 1-in-6 flake is exactly the one that indicts you. Ask what the check re-rolls;
+if anything, repeat both sides (`--repeat-each`) and compare **rates**, not verdicts. A session lost real time
+on a correct worktree comparison: the spec drew a fresh random board per load, and
+repeating showed 1 failure in 6 **at the baseline** against 0 in 6 on the working tree.
+
+Fix the first. **Queue the second rather than stabilising it inside this ticket** — a ticket that
+adopts every fragile check it brushes against stops being the ticket that was ranked.
+
+**A guard whose claim is a quantifier is proved by a sweep, not by named mutations**
+(`testing-conventions.md`), and a sweep of that size is a long-running job: give the script a
+sentinel line it prints last and wait on it with an `until grep -q`, planned before the run is
+backgrounded rather than after. Driven, wait inside the turn, never by ending it (`verify` Step 3).
+
+**A mutation sweep enumerates from the AC text, never from the guard block**: a sweep over the guard's
+own phrases covers only what the guard already covers (0180 reported "31 of 31", truly, with two
+unguarded AC clauses). Use the clause table and gap test `verify` Step 3 defines — a row for each
+Given condition and qualifier scoping it, each predicate, each object or destination the AC names;
+a green mutation is a gap only if the AC's phrase no longer occurs anywhere in that section —
+the AC's own words, verbatim, never a restatement. A Given row is the whole Given clause, verbatim,
+qualifier included, and its guard asserts all of it.
+Where the prose only paraphrases a Given, no guard can assert the AC's words, so reword the prose
+to them in the same round — expected even on a "guard work only" hand-back (0180, 62b4b3d); under
+the gap test a paraphrase is a gap, not a pass.
+Write the table into the build notes under *Notes & decisions*, so verify checks against it.
+
+**If you mutation-check your own guards here, mutate only what is committed.** `git checkout -- <path>`
+restores that file to `HEAD` rather than to the state you found it in, so reverting a mutation over a
+fix you have not committed **deletes the fix** — silently, with no error, and the run that follows
+reports unrelated reds that read as a surprising finding rather than as self-inflicted damage. The trap
+is that the same script shape is perfectly safe inside a worktree pinned to a commit, which is where
+most sessions first use it. Commit the fix, then break it — and **a file git has never seen needs
+`git add` first**: `git commit -- <untracked path>` refuses with "pathspec did not match", the
+`git checkout --` after it fails too, and the mutations stack (quantum-catan 0007). Chain the mutation
+run on the commit's success with `&&` so a commit that did not happen stops it. Where something genuinely cannot be committed
+first, copy it to a scratch path and restore from that copy, and finish with a control run whose green
+is what licenses the reds before it.
+
+**And a whole-suite run is a shared resource on a project whose browser suite forbids overlap.** Check
+for a live run before starting one (`pgrep -f '<runner> <run-subcommand>'`, e.g. `'playwright test|vitest run'`
+— a bare `playwright` matches the Playwright MCP server, which never exits), and wait on it rather than racing: a
+background `until` loop on the worker process is clean and costs nothing, where the obvious fallback — a
+throwaway worktree — needs its own `node_modules` and is not actually cheap. Neither this skill nor
+`CONCURRENCY.md` names which session yields, so the rule is simply that the one arriving second waits.
+Against a session running mutation batches `pgrep` reads clear in every gap between runs, so the
+condition to wait for is no runner **and** a clean `git status`, sustained over several samples.
+
+### A sliced ticket is worked a leg at a time
+
+**A ticket carrying `## Progress` is one outcome worked across sessions** (`templates/item.md`): your
+work starts at the first unticked slice, and a leg is one or more consecutive slices. **Commit each
+slice as it lands** with a dated *Notes & decisions* line naming it and its SHA, so a killed leg loses
+at most the unfinished slice. **Continue into the next slice only when it touches files you already
+have open and this leg is still short of the 28.5-turn break-even** `MEASUREMENT.md` measures for
+carrying a session's climb into more work (its FAIL re-entry pricing); otherwise
+end the leg, since a fresh session for a normal slice is usually cheaper as well as fresher. Never
+meter spend: no session reads its running cost (`references/TRACKER.md`). A next slice marked
+`unspecified` is `design`'s. Unticked slices you may re-split or re-order with a dated note; an AC never.
+
+**End the leg with `./handoff <id> <token> <stage> --slice S<n>`**, S<n> its last slice: to `develop`
+when no slice in it discharges an AC (ticks them; outcome `progressed`, `slice: {done, next}`), else
+to `verify` (ticks nothing; `built`), including the closing leg. It refuses a dirty `touches:` path,
+an unknown slice and an `unspecified` one.
+
+### Then stop, in this order
+
+**First read the item's `close_by:`, because it decides which ending this stage has.** Absent or
+`verify` → steps 1-6 below, unchanged, and the ticket goes to a QA session. **`close_by: develop`
+→ this session closes it**: run steps 1-3, then tick each AC against the assertion you just proved
+red-then-green, and call `./close <id> <token>` in place of `./handoff`. Report the close, not
+`/verify <id>`. `close` re-checks the eligibility itself and refuses a criterion citing no committed
+guard, so a close that goes through is the gate agreeing with you rather than trusting you.
+**The gate is the same one every ticket gets, never a lower one**: the project's whole suite green
+and the review checklist below, both of them, before the close. A cheap tier is cheap because it
+uses fewer sessions, not because it tests less (`docs/decisions/002-matching-rigour-to-stakes.md`,
+*What never scales down*).
+
+**`develop` may RAISE `close_by` from `develop` to `verify`, and may never set or lower it to
+`develop`.** The raise is the useful half: a session finding an AC that is not a real assertion —
+its verdict is a reading, an eyeball, a judgement — hands the ticket to an independent pass, and
+says in *Notes & decisions* which criterion it was. **This is a different field from `qa_level`, so
+that field's own raise-only rule below does not reach it by implication.** Lowering into the tier is
+`queue`'s alone, because narrowing a contract is the author's call.
+
+1. Run the review checklist the conventions define for changed code. A build-quality gate, not QA.
+2. **Write down what you learned while the item file is open** — a mechanism, a disproved theory, a
+   rule that misled you — per the conventions' documentation rules, in *Notes & decisions*. The QA
+   session will not have had the context that produced any of it. **Mark each mutation or
+   unreachability claim as run or reasoned**: both read alike in a table, and two reasoned ones were
+   wrong on consecutive days (0143, 0130).
+3. **Record the cost if `cost_tracking:` is configured** (`references/TRACKER.md`). This session is
+   the only thing that knows which ticket its tokens belonged to; `verify` appends its own share. This
+   is what turns `size: m` from a guess into a calibrated estimate.
+4. **Hand it to QA with `./handoff`** — one step, and the supported path:
+
+   ```bash
+   .tickets/handoff 0007 08b7 verify        # lock → re-read → row + item → commit → unlock
+   ```
+
+   It sets `next: verify` and `status: ready` and clears `claimed_by:`, `claimed_at:` and `touches:`
+   — **all five or none**, because it reads the result back before writing either file. That is not
+   theoretical: the by-hand form's `status` edit was once written against `ready` while the item read
+   `in-progress`, so it no-oped and the commit proceeded anyway, leaving a row at `verify | ready`
+   over an item at `develop | in-progress`. It refuses a token that is not yours, and a row and an
+   item that disagree about the current stage.
+
+   **Never issue it in the same parallel tool batch as a write it must follow.** A batch has no
+   order: a refused notes append beside an accepted `./handoff` committed the hand-off without the
+   notes it should have carried (quantum-catan 0007). Confirm every *Notes & decisions* write landed,
+   then hand off in a call of its own.
+
+   **Correct `qa_level` first if this session proved the declared level wrong** — a re-entry carrying
+   "`unit` was too low for a change that moves rendered geometry" as an explicit `verify` verdict has
+   nowhere else to put it, and the correction survives only as prose in *Notes & decisions*, where the
+   next QA pass will run the old level anyway. Raising it is yours; lowering it is not.
+
+   By hand, under the lock, committed before you release it — the fallback where the script is not
+   installed: set `next: verify`, `status: ready`, clear all three ownership fields, take the lock for
+   the row edit and commit before releasing it. You hold neither the row nor its files any more, and
+   the QA session claims both itself — a leftover `touches:` reserves files nobody is editing, which
+   `CONCURRENCY.md` says reads as "held".
+5. **Commit the code by pathspec in or before that same step** (`CONCURRENCY.md`, *The git index is
+   shared*). **The release is the final act** (`CONCURRENCY.md`, *The release is the final act*):
+   nothing this stage still owes may be written after the hand-off, because from that commit the row
+   is takeable and `./claim` will grant it — a stage that released first once left a row claimable for
+   29 seconds while it was still committing to it. Findings, notes and cost go in before, or into the
+   same commit. **Then confirm `git status --porcelain` lists none of your own paths** before the
+   hand-off: `e604703` handed a ticket to `verify` with two words of its own subject file still in
+   the tree, so that pass opened advisory before it ran anything.
+6. **Mirror the state if a tracker is configured** — transition to its in-review equivalent, comment
+   the commit SHAs. Failure is logged in the notes, never a blocker. A network call is not a write to
+   the row, so it may follow the release.
+
+**If you cannot get the tree green**, set `next: develop` with `status: ready` — or `waiting` with the
+reason, or a `blocked_by` entry naming the ticket that must land first, since `blocked` is derived and
+never typed — clear the claim and `touches:`, and report what is left. Never hand a red tree to QA
+as though it were done.
+
+**Do not push** unless the project's instructions or `git-conventions.md` says so, or the user asks.
+Building a ticket is not authority to publish it.
+
+**Then stop and report.** Built and awaiting QA; name the command the next session runs — `/verify
+<id>`, in a new session. Do not invoke it here.
+
+---
+
+## Step 6 — Name the retro; do not run it
+
+**Do not invoke `/retro` — a later session does.** Pulling another skill in re-injects its whole
+instruction file into the largest context in the run; a measured run averaged 191,752 context tokens
+per turn.
+
+**What a retro is for has not changed, and none of it is optional.** Step 5 records what you learned
+while the item file was open. The half that falls through is the work
+this work *created*: the deferrals, the reds you proved were not yours, the thing you noticed and moved
+past. A finding that reaches only your final report dies with the conversation — the next session
+re-derives it with none of your context. **Step 7 is what makes it durable**, not this step.
+
+`/retro` is not a lifecycle stage and not a `next` value; it runs on a cadence over many sessions'
+findings. Say whether the buffer looks worth sweeping, and name the command —
+`/retro`, in its own session.
+
+---
+
+## Step 7 — Park what surprised you
+
+Before reporting, park what surprised you in `.tickets/FINDINGS.md` — one dated line, while the
+context is still hot.
+
+Triggers: **a template or skill step that had no correct answer for your case**, a configured command that
+behaved unexpectedly, a scaffolding step you had to invent.
+
+**An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
+entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
+uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
+**The append takes the backlog lock**, being a write inside the backlog directory
+(`CONCURRENCY.md`, *Lock every write to the backlog directory*).
+
+**Route it by subject, not by where you are standing** — a finding about a skill, a reference file, a
+backlog script or a convention belongs in that repo's buffer, not this project's. The destinations, how
+each is resolved, the marked-local fallback and the privacy bar on crossing into a public repo are in
+`references/CONVENTIONS.md`, *Routing a finding to the repo it is about*.
+
+**Write and commit it *before* Step 5's hand-off, whatever its number here says.** `./handoff` commits
+`QUEUE.md` and the item and nothing else, so a findings append cannot ride along in it — and after the
+hand-off the row is takeable and the claim is gone (`CONCURRENCY.md`, *The release is the final act*).
+The steps are numbered by what they are for, not by what must be committed last.
+
+---
+
+## Step 8 — Report
+
+What belongs on the screen and what belongs on disk is `references/REPORTING.md` in this skill directory.
+Two things it cannot say, because they are specific to this stage:
+
+- **The ticket is not closed — say so.** A stage reporting "done" over a ticket sitting at
+  `next: verify` is reporting a state it did not reach, and the QA pass is what reaches it.
+- **Name the two commands a following session runs** — `/verify <id>` to close it, and `/retro` if
+  the buffer is worth sweeping. Each in its own session, and neither is invoked here.
+
+**End on the hand-off line, the very last thing printed:**
+
+```
+<ID> — BUILT | PROGRESSED | RED | BLOCKED — next: <stage>, status: <status>
+```
+
+Example: `0081 — PROGRESSED — next: develop, status: ready` — a leg of AC-less slices ended by `--slice`.
+
+Example: `0081 — BUILT — next: verify, status: ready`
+Example: `0081 — RED — next: develop, status: ready` — the tree would not go green; it stays here.
+Example: `0081 — BLOCKED — next: develop, status: waiting` — or a `blocked_by` entry naming the ticket.
+
+`BUILT` is not `done` and the line is what stops it being read as one: the stage on it is `verify`,
+which is the pass that closes the ticket. There is no verdict word here that closes anything —
+**except on a `close_by: develop` ticket, the one case where this stage is also the closing one.**
+There the line reads `<ID> — CLOSED — next: , status: done`, and it is a claim about a `./close`
+that returned zero, never about a suite you ran and read yourself.
+
+Example: `0081 — CLOSED — next: , status: done` — a light ticket, closed here by `./close`.

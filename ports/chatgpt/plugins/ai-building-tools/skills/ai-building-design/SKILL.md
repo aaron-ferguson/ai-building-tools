@@ -1,0 +1,245 @@
+---
+name: ai-building-design
+description: >
+  Answer a design question and record the decision — which pattern, where a control belongs,
+  what the empty and error states are, whether a flow should be one step or several, whether an
+  interaction is accessible. Use when the user asks "should this be a modal or a page", "where
+  should this live", "what's the right pattern for X", "how do we handle the empty state", "is
+  this accessible", or invokes /design. Also use to settle a backlog item sitting at
+  `next: design`. Returns a DECISION with reasoning, checked against the project's design,
+  UI, and accessibility conventions and its design system. NOT for building an artifact — if
+  the user wants a diagram, a clickable mockup, or a real component to look at, that is
+  /prototype. Tell me versus show me is the line.
+---
+
+Work in the target project's writable checkout. Resolve bundled paths relative to this skill directory. Read applicable project instructions, including AGENTS.md and existing CLAUDE.md. Follow references/CONVENTIONS.md for conventions lookup. Use a fresh session for each stage. Stage names in ticket fields and handoffs stay unprefixed; ask for the corresponding ai-building skill in the next session.
+
+# /design
+
+Answer a design question well enough that nobody has to answer it again. The output is a **decision**,
+not an artifact: `/prototype` builds something to look at, this works out what should be built and writes
+down why.
+
+**One skill per session.** Run this skill in its own conversation; the backlog carries the handoff — the
+ticket's `next` field and `FINDINGS.md`, never a conversation. Measured **2026-08-22**: **85% of USD 15.11
+went on context handling** at **191,752 tokens per turn**, modelling to **~USD 5.09** isolated. **No standard
+is relaxed** — the rigour is all in the 15% that was output.
+
+**This skill states no standards of its own** — usable, accessible and consistent are defined by the
+project's conventions and cited, never restated. Resolve them per `references/CONVENTIONS.md` in this skill directory; if none
+resolve, stop as that file directs, because a verdict against no standard looks identical to a real
+one.
+
+**It writes the ticket it settled, under a claim it holds.** Handing the answer back to `queue` to be
+typed in costs that skill's whole instruction file — measured at 5,699 tokens, five turns and **USD 0.67**
+for one ticket. The rule against writing existed so two sessions could not write one item, so a design
+session takes the row at Step 1 rather than discovering at Step 4 that someone else is on it.
+**How to tell:** `claimed_by:` is the token your own `./claim` minted →
+held by you, and you write it (Step 4).
+Any other token, or a `./claim` that refused →
+held by another, and you hand off.
+
+---
+
+## Step 1 — Get the question, and make it decidable
+
+From a ticket at `next: design`: **take the row with `./claim <id>` before any Step 2 reading.** A refusal
+means another session holds it — stop and report, having spent nothing on the question. The token it
+prints is yours for the whole pass, and the script takes the lock itself (`CONCURRENCY.md`, *Claim tokens*
+and *Lock every write to the backlog directory*). A pass that spends first and claims last is two sessions
+reasoning over one ticket, and in a sprint it is a second design session dispatched onto the same row.
+
+Then read its **Open design question** section. That is the contract — answer *that*, not a broader topic
+you find more interesting. **A row with no such section** — 0180 arrived with its open decisions
+filed as undecided FRs — takes those FRs as the question; name them in the decision, so the answer
+is checkable against something written.
+
+Ad-hoc: take the question as asked. An ad-hoc question takes no claim — there is no row to hold.
+
+**Sharpen it before answering.** A decidable question has a small set of candidate answers and something
+that distinguishes them. "Bulk edit UX" is a topic; "modal or full page for bulk edit, given the user
+needs the list visible while editing?" is a question. Given a topic, propose the sharper version first —
+an unsharpened question produces an answer nobody can act on. If the real answer is "this is three
+questions", say so and take them in order.
+
+---
+
+## Step 2 — Look before reasoning
+
+In this order, because each can make the next unnecessary.
+
+1. **Prior art in this codebase.** An answer matching what the product already does beats a better one
+   that makes it inconsistent; departing from prior art needs an explicit why.
+2. **The design system.** The project's context config (`CLAUDE.md` names `company: <name>` and its
+   config directory) declares `design_system`; configured with an MCP server it is the source of truth
+   for tokens, components and contrast, so query it rather than reasoning from memory. Search components
+   before inventing one — "how should X look" is very often already answered by one that exists. Absent,
+   answer from the conventions and the codebase and **say so**, since component names and token values
+   are then descriptions rather than citations.
+3. **The conventions.** Read the files the core's index names for design, UI and accessibility — read
+   them, do not recall them. Cite the file when the answer turns on a rule.
+4. **The evidence the ticket rests on.** A design pass is the stage most likely to build a whole
+   argument on one cited figure and the least likely to be caught at it: a fully-specified ticket whose
+   every requirement was denominated in a share of *turns* that nobody had priced in *tokens* was
+   settled, recorded and handed on before the gap was visible, and it took the user to send it back.
+   `develop` Step 2 carries the discipline in its narrower form — a figure a ticket quotes about a file
+   it does not own is a cache, not a fact — so re-read the source rather than the requirement, and
+   date-stamp what you re-verified. **A citation of a *line* is not a citation of what the line
+   does:** a ticket cited `tools/release:294` correctly and asserted the guard there is false in an
+   agent shell; it is true, the `read` beneath it then fails, and `set -e` exits with no message —
+   which changed which fix was correct. Where the answer turns on a conditional's *result*, record
+   the result you observed, never the conditional you read.
+
+**If the question touches user-facing UI, accessibility is not optional** and does not wait to be asked
+about. Check contrast on any colored-text pairing you propose, and confirm the interaction works from the
+keyboard and reads to a screen reader. An answer that only works with a mouse is not an answer.
+
+---
+
+## Step 3 — Answer it
+
+The recommendation first, then the reasoning. Not a survey — a decision.
+
+- **Give the real alternatives**, two or three, and what would have to be true for each to win. Every
+  conceivable option is a way of avoiding the decision.
+- **Name the trade-off you are accepting.** An answer with no stated cost has not been thought about hard
+  enough.
+- **Say what it depends on.** If the answer flips on a fact you do not have, name that fact rather than
+  assuming it quietly.
+
+**When the answer cannot be settled on paper**, say so and stop, then state what a prototype would have
+to settle — the specific thing that must be *seen* — which fidelity level settles it, and why a cheaper
+one would not. Same discipline as kill criteria before a test: the prototype has a job, and you can tell
+afterwards whether it did it.
+Do not invoke `/prototype` — the user does.
+
+### When to involve a person: ask on taste, decide on fact
+
+**The test is what the answer turns on, not how important it feels.**
+
+- **It turns on taste** — which of two defensible looks, how formal the voice, whether this reads as a
+  place — then no reasoning settles it and you are guessing on someone's behalf. Ask.
+- **It turns on fact** — what the data contains, what the code does, what the convention says, what
+  component exists — then go and check. **You have standing permission to decide these without asking,
+  and using it is the skill working.** A measured design run asked nothing, read the workbook, and found
+  all three proposed inputs for a rule did not exist in the data — "ask early" would have made it worse.
+
+**When you do ask, the recommendation and the question go in the same message.** A session that asks
+early costs cents; one that assembles the full argument and *then* asks has already spent the budget on
+a direction that may be rejected in one line. Lead with what you would do and why, then the one thing
+that would change it.
+
+**Unattended — no one can be asked — you prepare a person's decision and never make it.** Where the
+answer turns on taste, or is an architecture or security choice (`coding-conventions.md` → *What Not to
+Delegate to AI*), and a `/sprint` dispatched you or the session is otherwise unwatched: run the spikes,
+read the code, lay out the options and recommend one — most of a decision's cost needs no person — then
+write it as the decision brief `templates/item.md` lays out in `## Waiting on` (Outcome, Where it
+stands, What needs you, two or more Options with pros, cons and what would have to be true, the
+Recommendation, What to do, If no answer). Release with `./handoff <id> <token> design waiting`, which
+refuses a brief missing a part, and report verdict `blocked`. **Never record the decision** — no
+*Notes & decisions* answer, no FRs or ACs written to it, no `ac_digest` — because a recommendation the
+person never saw would then read as one they agreed. Fact-turning questions you still decide.
+
+---
+
+## Step 4 — Record it, or it will be re-litigated
+
+A decision living only in a chat log gets decided differently next month by someone with less context.
+This step is most of the skill's value.
+
+**Item-scoped, and held by you** — you write it, here, now, under the token Step 1 minted:
+
+1. Record the answer and what it rejected in *Notes & decisions*.
+2. Write the FRs and given/when/then ACs the answer unblocks. If it unblocks none, it did not settle the
+   question — say so rather than moving the stage. **Unless the ticket arrived already specified**, in
+   which case the job is to validate and extend rather than to author: `queue` can write full FRs and
+   ACs on a ticket that still carries one open decision, and against that shape "unblocks none" reads as
+   a false negative. Say which existing criteria the answer confirms, which it changes, and which it
+   adds — an answer that leaves every one of them untouched is the real negative. **That accounting
+   goes in *Notes & decisions*, and every criterion stays a `- [ ] ACn — ` checkbox**: a numbered list
+   and a bulleted cross-reference each took `tests/item-ac-form.test.sh` red on another stage's time.
+   **That test cannot check this item yet**: it skips rows still at `next: design`, and it reads the
+   items beside its own copy, so run from a project it reads the tools repo's backlog. Its green before
+   the handoff is about other items — two sessions banked it as this one's (item 0209 gives it a path).
+   Until then, read every criterion line against the `- [ ] ACn — ` form yourself.
+   **Re-read `qa_level` and `close_by` against the criteria you just wrote**: `queue` predicted both
+   before any existed, and this is the only stage that learns what they should be.
+   **Cross-check the criteria against each other and the tree**: read every AC's prohibition against
+   every FR, and run any detector an FR specifies over the tree before an AC requires the tree green.
+   An allowlist forbidding what an FR required (0182) and a detector never run on paper (0146) each
+   bounced a row from `develop`.
+   **On a sliced ticket sent here by an `unspecified` slice** (`templates/item.md`, `## Progress`), the
+   criteria you write are that slice's: name them on its line in place of `unspecified`, so every AC
+   still sits on exactly one slice.
+   **Where you wrote or changed criteria, last of all**:
+   write `ac_digest:` from `./next --ac-digest <id>` into the frontmatter — the author's stamp,
+   which `close` and `--drift` refuse criteria against, so it rides in the same commit (0195).
+3. Delete the *Open design question* section, then release the row with
+   `./handoff <id> <token> develop` — or `verify` when the decision is the whole deliverable and
+   nothing is left to build (`qa_level: verify` or `review`). It writes the stage and clears the claim in one locked commit, so
+   everything else this pass owes the item is written before it (`CONCURRENCY.md`, *The release is the final act*).
+
+**Item-scoped, and held by another** (`./claim` refused, or `claimed_by:` names a token you did not mint)
+— hand `queue` the answer and the *Notes & decisions* entry, writing nothing yourself. The token is not
+yours, and two sessions in one item file has no merge protocol behind it.
+
+**It has to be *seen* rather than decided** — write the ask into the ticket's `## Waiting on` section
+as the decision brief `templates/item.md` lays out (what must be looked at goes under *What to do*), release with `./handoff <id> <token> design waiting`, and stop;
+`./next --waiting` surfaces it without anyone opening the ticket. Still do not invoke `/prototype`.
+
+**Stopped without deciding** — the answer rests on a fact nobody has, or the pass ends early — release
+with `./handoff <id> <token> design ready` rather than walking away with the claim held.
+
+**Standing** — a pattern beyond this ticket: write a decision record where the project's
+`documentation-conventions.md` says they live, with the question, the answer, what was rejected and why,
+and the date. What was rejected is what stops the debate reopening.
+
+**Neither** — a one-off: skip the recording rather than manufacturing a document nobody will read.
+
+---
+
+## Step 5 — Park what surprised you
+
+Before reporting, park what surprised you in `.tickets/FINDINGS.md` — one dated line, while the
+context is still hot.
+
+Triggers: **a template or skill step that had no correct answer for your case**, a configured command that
+behaved unexpectedly, a scaffolding step you had to invent.
+
+**An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
+entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
+uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
+**The append takes the backlog lock**, being a write inside the backlog directory
+(`CONCURRENCY.md`, *Lock every write to the backlog directory*).
+
+**Route it by subject, not by where you are standing** — a finding about a skill, a reference file, a
+backlog script or a convention belongs in that repo's buffer, not this project's. The destinations, how
+each is resolved, the marked-local fallback and the privacy bar on crossing into a public repo are in
+`references/CONVENTIONS.md`, *Routing a finding to the repo it is about*.
+
+---
+
+## Step 6 — Report
+
+What belongs on the screen and what belongs on disk is `references/REPORTING.md` in this skill directory.
+One thing it cannot say, because it is specific to a decision: **never report one as settled when
+Step 3 found it depends on a fact you do not have** — a confident answer to an unanswerable question
+is worse than an admitted gap, because it gets built. That is a refusal, and it is reported as one.
+
+A prototype the decision now needs is what this session needs from the user, and the command that
+builds it is part of saying so.
+
+**End on the hand-off line, the very last thing printed:**
+
+```
+<ID> — DECIDED | HANDED TO QUEUE | BLOCKED — next: <stage>, status: <status>
+```
+
+Example: `0042 — DECIDED — next: develop, status: ready`
+Example: `0042 — HANDED TO QUEUE — next: design, status: in-progress` — Step 4's claimed-ticket path,
+where you wrote nothing and the row is unchanged; the line says so rather than implying you moved it.
+Example: `0042 — BLOCKED — next: design, status: waiting` — it has to be seen before it can be decided.
+Example: `- — DECIDED — next: /queue` — a standing or one-off question that holds no row.
+
+A refusal is `BLOCKED`, never a quiet `DECIDED`: an answer that rests on a fact nobody has reads
+identically to a settled one once it is a line in someone's scrollback.

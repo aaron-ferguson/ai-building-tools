@@ -1,0 +1,10 @@
+{
+  "name": "ai-building-tools",
+  "version": "0.3.0",
+  "description": "Coordinate six engineering workflows in cloud subagent sessions with a shared project backlog and conventions.",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AI Building Tools",
+    "shortDescription": "Run engineering workflows"
+  }
+}
