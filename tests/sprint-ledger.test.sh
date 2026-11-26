@@ -1897,21 +1897,16 @@ else
   bad "0175 AC7 — the ledger holds $(grep -c '^## sprint ' "$LED175") blocks, not 3"
 fi
 
-# --- 0231 AC14 -- the envelope check: CONTINUE or STOP before a dispatch ------------------------
-# FR13: `envelope` reads scope_confirmed's budget and deadline, the outcome costs and timestamps so
-# far, and the next stage's estimate (the stage cap where no prior exists, labelled as such). The
-# fixtures pin `--now`, so the time half is a fact about the fixture and not about the clock.
+# --- 0234 S2 -- the headroom gate (supersedes the 0231 AC14 / FR13 envelope blocks) -------------
+# 0231 FR13 built `envelope` as a budget/deadline STOP. 0234 FR19 changes that contract on the
+# user's call: no run budget or deadline stops a sprint, and `envelope` gates on the ACCOUNT's
+# headroom instead, read from the `headroom` events `reading` (FR18) appends after each stage. The
+# 0231 short-budget and past-deadline fixtures are kept and now assert no STOP (AC22, FR22).
 ENV="$FIX/env"
 mkdir -p "$ENV"
-cat > "$ENV/config.yml" <<'CFG'
-# caps, as at 2026-11-18
-stage_budget_usd:
-  develop: 6.00
-  verify: 5.00
-CFG
 
-# env_log <file> <budget> <deadline> <develop cost> -- a confirmed scope, then one develop session
-# of 40 minutes costing <develop cost>.
+# env_log <file> <budget> <deadline> <develop cost> -- 0231 AC14's fixture shape: a confirmed scope,
+# then one develop session of 40 minutes costing <develop cost>. It carries no headroom event.
 env_log() {
   cat > "$1" <<LOG
 {"ts":"2026-11-18T09:00:00Z","run":"r-env","event":"scope_confirmed","budget_usd":$2,"deadline":"$3"}
@@ -1919,74 +1914,186 @@ env_log() {
 {"ts":"2026-11-18T09:45:00Z","run":"r-env","event":"outcome","stage":"develop","session_id":"s-dev-1","cost_usd":$4,"tickets":[{"id":"0901"}]}
 LOG
 }
-envelope() { "$TOOL" envelope --config "$ENV/config.yml" --now 2026-11-18T10:00:00Z "$@" 2>&1; }
+# hr <stage> <five_hour u> <five_hour resets_at> <seven_day u> <seven_day resets_at> -- one
+# readable headroom event line, the shape `reading` prints.
+hr() {
+  printf '{"event":"headroom","stage":"%s","session_id":"s-%s","at":"2026-11-18T09:00:00Z","windows":{"five_hour":{"utilization":%s,"resets_at":"%s"},"seven_day":{"utilization":%s,"resets_at":"%s"}}}\n' \
+    "$1" "$1" "$2" "$3" "$4" "$5"
+}
+envelope() { "$TOOL" envelope --now 2026-11-18T10:00:00Z "$@" 2>&1; }
+reading() { "$TOOL" reading "$@" 2>&1; }
 has() { case "$2" in *"$3"*) ok "$1" ;; *) bad "$1 -- wanted '$3' in: $2" ;; esac; }
 hasnt() { case "$2" in *"$3"*) bad "$1 -- did not want '$3' in: $2" ;; *) ok "$1" ;; esac; }
 rc_is() { if [ "$2" = "$3" ]; then ok "$1"; else bad "$1 -- wanted exit $3, got $2"; fi; }
+line_of() { printf '%s\n' "$1" | grep "$2" || true; }
+R5=2026-11-18T14:00:00Z   # five_hour resets after --now
+R7=2026-11-21T00:00:00Z   # seven_day resets after --now
 
-echo "0231 AC14 -- with less budget left than the next stage's estimate, STOP naming budget"
-env_log "$ENV/short-budget.jsonl" 10 2026-11-18T18:00:00Z 7.00
-out="$(envelope --run "$ENV/short-budget.jsonl" --stage develop)" && rc=0 || rc=$?
-has   "prints STOP"                         "$out" "STOP"
-has   "the STOP line names budget"          "$(printf '%s\n' "$out" | grep '^STOP' || true)" "budget"
-hasnt "does not print CONTINUE"             "$out" "CONTINUE"
-if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0: $out"; fi
-has   "the remaining budget is what the outcomes left (10 - 7)" "$out" "remaining 3.00"
-has   "the estimate is this run's develop outcome" "$out" "estimate 7.00"
+# --- AC20 -- `reading` builds a headroom event from the LAST rate_limit_event --------------------
+cat > "$ENV/stream.jsonl" <<'STREAM'
+Warning: no stdin data received in 3s, proceeding without it.
+{"type":"system","subtype":"init","session_id":"s1"}
+{"type":"rate_limit_event","rate_limit_info":{"status":"allowed","unifiedWindows":{"five_hour":{"utilization":0.10,"resetsAt":1795000000}}}}
+{"type":"assistant","message":{"content":[]}}
+{"type":"rate_limit_event","rate_limit_info":{"status":"allowed","unifiedWindows":{"five_hour":{"utilization":0.21,"resetsAt":1795000000},"seven_day":{"utilization":0.77,"resetsAt":1795500000}}}}
+{"type":"result","subtype":"success","session_id":"s1","structured_output":{"stage":"develop","commits":[],"cost_usd":0.5,"findings_parked":0,"conventions_resolved":"../ai-building-conventions","escalation":null,"tickets":[{"id":"0901","verdict":"built","next":"verify","status":"ready","detail":".tickets/items/0901-x.md"}]}}
+STREAM
+echo "0234 AC20 -- reading: the last rate_limit_event's unifiedWindows, as one headroom line"
+out="$(reading --stream "$ENV/stream.jsonl" --stage develop --session s1 --now 2026-11-18T10:00:00Z)" && rc=0 || rc=$?
+rc_is "exits 0" "$rc" 0
+if [ "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" = 1 ]; then ok "prints exactly one line"; else bad "prints exactly one line -- got: $out"; fi
+has   "a headroom event"            "$out" '"event":"headroom"'
+has   "naming the stage"            "$out" '"stage":"develop"'
+has   "naming the session"          "$out" '"session_id":"s1"'
+has   "stamped at --now"            "$out" '"at":"2026-11-18T10:00:00Z"'
+has   "five_hour from the LAST event (0.21, not 0.10)" "$out" '"five_hour":{"utilization":0.21,"resets_at":"2026-11-18T11:06:40Z"}'
+has   "seven_day 0.77 with its reset as ISO" "$out" '"seven_day":{"utilization":0.77,"resets_at":"2026-11-24T06:00:00Z"}'
+hasnt "and is not marked unreadable" "$out" '"readable":false'
+printf '%s\n' "$out" > "$ENV/reading.jsonl"
+if python3 -c 'import json,sys; json.loads(open(sys.argv[1]).read())' "$ENV/reading.jsonl" 2>/dev/null; then ok "the line is JSON"; else bad "the line is JSON -- got: $out"; fi
 
-echo "0231 AC14 -- with less time left than the next stage's estimate, STOP naming time"
-env_log "$ENV/short-time.jsonl" 100 2026-11-18T10:20:00Z 2.00
-out="$(envelope --run "$ENV/short-time.jsonl" --stage develop)" && rc=0 || rc=$?
-has   "prints STOP"                         "$out" "STOP"
-has   "the STOP line names time"            "$(printf '%s\n' "$out" | grep '^STOP' || true)" "time"
-hasnt "does not name budget as the reason"  "$(printf '%s\n' "$out" | grep '^STOP' || true)" "budget"
-if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0: $out"; fi
-has   "the time estimate is the 40-minute develop window" "$out" "estimate 40 min"
+echo "0234 AC20 -- reading: no unifiedWindows falls back to the top-level rateLimitType"
+cat > "$ENV/stream-top.jsonl" <<'STREAM'
+{"type":"rate_limit_event","rate_limit_info":{"status":"allowed","rateLimitType":"seven_day","utilization":0.5,"resetsAt":1795500000}}
+STREAM
+out="$(reading --stream "$ENV/stream-top.jsonl" --stage verify --session s2 --now 2026-11-18T10:00:00Z)" && rc=0 || rc=$?
+rc_is "exits 0" "$rc" 0
+has   "holds the one window seven_day at 0.5" "$out" '"windows":{"seven_day":{"utilization":0.5,"resets_at":"2026-11-24T06:00:00Z"}}'
+hasnt "and is not marked unreadable" "$out" '"readable":false'
 
-echo "0231 AC14 -- with enough left, CONTINUE and exit 0"
+echo "0234 AC20 -- reading: a stream with no rate_limit_event is a fact to log, exit 0"
+printf 'not json\n{"type":"result","structured_output":{}}\n' > "$ENV/stream-none.jsonl"
+out="$(reading --stream "$ENV/stream-none.jsonl" --stage verify --session s3 --now 2026-11-18T10:00:00Z)" && rc=0 || rc=$?
+rc_is "exits 0" "$rc" 0
+has   "marked unreadable"           "$out" '"readable":false'
+has   "with a reason"               "$out" '"reason":'
+has   "still a headroom event"      "$out" '"event":"headroom"'
+printf '{"type":"rate_limit_event","rate_limit_info":{"unifiedWindows":{"five_hour":{"utilization":"high","resetsAt":1795000000}}}}\n' > "$ENV/stream-bad.jsonl"
+out="$(reading --stream "$ENV/stream-bad.jsonl" --stage verify --session s3)" && rc=0 || rc=$?
+rc_is "a non-number utilization exits 0 too" "$rc" 0
+has   "and is marked unreadable"    "$out" '"readable":false'
+
+echo "0234 AC20 -- reading: a --stream path that does not exist exits 1"
+out="$(reading --stream "$ENV/no-such-stream" --stage verify --session s4)" && rc=0 || rc=$?
+rc_is "exits 1" "$rc" 1
+hasnt "a refusal, not a traceback"  "$out" "Traceback"
+
+# --- AC24 -- `outcome` prints the result line's structured_output, schema-valid -----------------
+echo "0234 AC24 -- outcome: the result line's structured_output, exactly one line"
+out="$("$TOOL" outcome --stream "$ENV/stream.jsonl" 2>&1)" && rc=0 || rc=$?
+rc_is "exits 0" "$rc" 0
+if [ "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" = 1 ]; then ok "prints exactly one line"; else bad "prints exactly one line -- got: $out"; fi
+printf '%s\n' "$out" > "$ENV/outcome.json"
+if python3 "$ROOT/tools/validate-json-schema.py" "$ROOT/skills/sprint/outcome.schema.json" "$ENV/outcome.json" >/dev/null 2>&1; then
+  ok "which validate-json-schema.py accepts against outcome.schema.json"
+else bad "the outcome line is not schema-valid: $out"; fi
+hasnt "and is not the whole result line" "$out" '"subtype"'
+printf '{"type":"assistant"}\n' > "$ENV/stream-noresult.jsonl"
+out="$("$TOOL" outcome --stream "$ENV/stream-noresult.jsonl" 2>&1)" && rc=0 || rc=$?
+rc_is "no result line exits 1" "$rc" 1
+has   "naming the missing result line" "$out" "no result line"
+printf '{"type":"result","subtype":"success"}\n' > "$ENV/stream-noso.jsonl"
+out="$("$TOOL" outcome --stream "$ENV/stream-noso.jsonl" 2>&1)" && rc=0 || rc=$?
+rc_is "a result line with no structured_output exits 1" "$rc" 1
+has   "naming structured_output"    "$out" "no structured_output"
+
+# --- AC22 -- envelope: CONTINUE / WAIT / not visible ---------------------------------------------
+echo "0234 AC22 -- envelope: one reading with room in both windows, CONTINUE on the defaults"
+hr verify 0.21 $R5 0.77 $R7 > "$ENV/room.jsonl"
+out="$(envelope --run "$ENV/room.jsonl" --stage develop)" && rc=0 || rc=$?
+rc_is "exits 0" "$rc" 0
+has   "prints CONTINUE"             "$out" "CONTINUE  develop fits the account headroom"
+has   "a five_hour ENVELOPE line"   "$(line_of "$out" '^ENVELOPE  five_hour')" "utilization 0.21 headroom 0.79 expected 0.10  source: default"
+has   "a seven_day ENVELOPE line"   "$(line_of "$out" '^ENVELOPE  seven_day')" "utilization 0.77 headroom 0.23 expected 0.02  source: default"
+hasnt "prints no WAIT"              "$out" "WAIT"
+
+echo "0234 AC22 -- envelope: seven_day at 0.99 is short, WAIT naming it, exit 3"
+hr verify 0.21 $R5 0.99 $R7 > "$ENV/short7.jsonl"
+out="$(envelope --run "$ENV/short7.jsonl" --stage develop)" && rc=0 || rc=$?
+rc_is "exits 3" "$rc" 3
+has   "a WAIT line naming seven_day and its reset" "$(line_of "$out" '^WAIT')" "seven_day headroom 0.01 < expected 0.02; resets $R7"
+has   "that says when to resume"    "$(line_of "$out" '^WAIT')" "resume after $R7"
+hasnt "and does not name five_hour" "$(line_of "$out" '^WAIT')" "five_hour"
+hasnt "prints no CONTINUE"          "$out" "CONTINUE"
+hasnt "prints no STOP"              "$out" "STOP"
+
+echo "0234 AC22 -- envelope: the boundary -- expected equal to headroom waits, one point under continues"
+hr verify 0.21 $R5 0.98 $R7 > "$ENV/edge98.jsonl"
+out="$(envelope --run "$ENV/edge98.jsonl" --stage develop)" && rc=0 || rc=$?
+rc_is "seven_day 0.98 (headroom 0.02 = expected 0.02) exits 3" "$rc" 3
+hr verify 0.21 $R5 0.97 $R7 > "$ENV/edge97.jsonl"
+out="$(envelope --run "$ENV/edge97.jsonl" --stage develop)" && rc=0 || rc=$?
+rc_is "seven_day 0.97 (headroom 0.03 > expected 0.02) exits 0" "$rc" 0
+
+echo "0234 AC22 -- envelope: a window that reset since the reading counts as 0"
+hr verify 0.21 $R5 0.99 2026-11-18T09:30:00Z > "$ENV/reset.jsonl"
+out="$(envelope --run "$ENV/reset.jsonl" --stage develop)" && rc=0 || rc=$?
+rc_is "seven_day 0.99 reset before --now exits 0" "$rc" 0
+has   "and is counted at 0"         "$(line_of "$out" '^ENVELOPE  seven_day')" "utilization 0.00"
+
+echo "0234 AC22 -- envelope: a gate that cannot see headroom stops nothing"
 env_log "$ENV/enough.jsonl" 100 2026-11-18T18:00:00Z 2.00
 out="$(envelope --run "$ENV/enough.jsonl" --stage develop)" && rc=0 || rc=$?
-has   "prints CONTINUE"                     "$out" "CONTINUE"
-hasnt "prints no STOP"                      "$out" "STOP"
-rc_is "exits 0"                             "$rc" 0
+rc_is "no headroom event exits 0" "$rc" 0
+has   "and says headroom is not visible" "$out" "headroom not visible"
+{ hr verify 0.21 $R5 0.99 $R7
+  printf '{"event":"headroom","stage":"develop","session_id":"s-x","at":"2026-11-18T09:50:00Z","readable":false,"reason":"no rate_limit_event in the stream"}\n'; } > "$ENV/blind.jsonl"
+out="$(envelope --run "$ENV/blind.jsonl" --stage develop)" && rc=0 || rc=$?
+rc_is "a last event readable:false exits 0 (an earlier short reading is not used)" "$rc" 0
+has   "and says headroom is not visible, with the reason" "$out" "headroom not visible — no rate_limit_event in the stream"
 
-echo "0231 AC14 -- with no prior for the stage, the stage cap is used and labelled"
-out="$(envelope --run "$ENV/enough.jsonl" --stage verify)" && rc=0 || rc=$?
-has   "the estimate is verify's stage cap"  "$out" "estimate 5.00"
-has   "and the budget line says it is the cap for want of a prior" "$(printf '%s\n' "$out" | grep 'budget' || true)" "no prior: the stage cap"
-has   "naming the cap's source"             "$out" "stage_budget_usd"
-rc_is "exits 0 with 95 left"                "$rc" 0
-env_log "$ENV/cap-short.jsonl" 6 2026-11-18T18:00:00Z 2.00
-out="$(envelope --run "$ENV/cap-short.jsonl" --stage verify)" && rc=0 || rc=$?
-has   "the cap is what a budget is checked against: 4 left, cap 5 -> STOP" "$out" "STOP"
-if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0: $out"; fi
+echo "0234 AC22 / FR22 -- 0231 AC14's short-budget fixture: no run budget stops the gate (supersedes 0231 AC14 budget STOP)"
+env_log "$ENV/short-budget.jsonl" 10 2026-11-18T18:00:00Z 7.00
+out="$(envelope --run "$ENV/short-budget.jsonl" --stage develop)" && rc=0 || rc=$?
+rc_is "exits 0" "$rc" 0
+hasnt "prints no STOP"              "$out" "STOP"
 
-echo "0231 FR13 -- STOP and an error exit differently, and a scope with no envelope is an error"
-printf '{"ts":"2026-11-18T09:00:00Z","run":"r-env","event":"scope_confirmed"}\n' > "$ENV/no-envelope.jsonl"
-out="$(envelope --run "$ENV/no-envelope.jsonl" --stage develop)" && erc=0 || erc=$?
-has   "names the missing budget_usd"        "$out" "scope_confirmed carries no budget_usd"
-hasnt "and is a refusal, not a traceback"   "$out" "Traceback"
-hasnt "is not a STOP"                       "$out" "STOP"
-out="$(envelope --run "$ENV/short-budget.jsonl" --stage develop)" && src=0 || src=$?
-if [ "$erc" -ne 0 ] && [ "$src" -ne 0 ] && [ "$erc" -ne "$src" ]; then ok "STOP's exit ($src) is distinct from an error's ($erc)"
-else bad "STOP's exit ($src) is distinct from an error's ($erc)"; fi
-
-echo "0231 FR13 -- a deadline already past stops on time with no prior at all"
+echo "0234 AC22 / FR22 -- 0231 FR13's past-deadline fixture: no deadline stops the gate (supersedes 0231 FR13 past-deadline STOP)"
 env_log "$ENV/past.jsonl" 100 2026-11-18T09:30:00Z 2.00
 out="$(envelope --run "$ENV/past.jsonl" --stage verify)" && rc=0 || rc=$?
-has   "prints STOP naming time"             "$(printf '%s\n' "$out" | grep '^STOP' || true)" "time"
-if [ "$rc" -ne 0 ]; then ok "exits non-zero"; else bad "exits non-zero -- got 0: $out"; fi
+rc_is "exits 0" "$rc" 0
+hasnt "prints no STOP"              "$out" "STOP"
 
-echo "0231 FR13 -- an outcome carrying no cost_usd is priced at its stage cap, and says so"
-cat > "$ENV/unpriced.jsonl" <<'LOG'
-{"ts":"2026-11-18T09:00:00Z","run":"r-env","event":"scope_confirmed","budget_usd":10,"deadline":"2026-11-18T18:00:00Z"}
-{"ts":"2026-11-18T09:05:00Z","run":"r-env","event":"dispatch","stage":"develop","session_id":"s-dev-1","tickets":["0901"]}
-{"ts":"2026-11-18T09:45:00Z","run":"r-env","event":"outcome","stage":"develop","session_id":"s-dev-1","tickets":[{"id":"0901"}]}
-LOG
-out="$(envelope --run "$ENV/unpriced.jsonl" --stage verify)" && rc=0 || rc=$?
-has   "the unpriced develop outcome is spent at the develop cap (10 - 6)" "$out" "remaining 4.00"
-has   "and is labelled"                     "$out" "unpriced"
-has   "so verify's cap of 5 does not fit"   "$out" "STOP"
+echo "0234 FR19 / FR22 -- WAIT and an unreadable log exit differently (supersedes 0231 FR13 STOP-versus-error)"
+{ cat "$ENV/short7.jsonl"; printf 'this line is not JSON\n'; } > "$ENV/garbled.jsonl"
+out="$(envelope --run "$ENV/garbled.jsonl" --stage develop)" && erc=0 || erc=$?
+rc_is "a line that is not JSON exits 1" "$erc" 1
+hasnt "a refusal, not a traceback"  "$out" "Traceback"
+hasnt "and is not a WAIT"           "$out" "WAIT"
+printf '{"event":"headroom","stage":"verify","windows":{"five_hour":{"utilization":0.2}}}\n' > "$ENV/nowin.jsonl"
+out="$(envelope --run "$ENV/nowin.jsonl" --stage develop)" && rc=0 || rc=$?
+rc_is "a headroom window with no resets_at exits 1" "$rc" 1
+has   "naming resets_at"            "$out" "resets_at"
+printf '{"ts":"2026-11-18T09:00:00Z","run":"r-env","event":"scope_confirmed"}\n' > "$ENV/no-envelope.jsonl"
+out="$(envelope --run "$ENV/no-envelope.jsonl" --stage develop)" && rc=0 || rc=$?
+rc_is "a scope_confirmed without budget_usd/deadline is no longer an error (supersedes 0231 FR13)" "$rc" 0
+
+echo "0234 FR19 -- two short windows: WAIT names both and resumes after the later reset"
+hr verify 0.95 $R5 0.99 $R7 > "$ENV/short-both.jsonl"
+out="$(envelope --run "$ENV/short-both.jsonl" --stage develop)" && rc=0 || rc=$?
+rc_is "exits 3" "$rc" 3
+has   "names five_hour"             "$(line_of "$out" '^WAIT')" "five_hour headroom 0.05 < expected 0.10; resets $R5"
+has   "resumes after the later (seven_day) reset" "$(line_of "$out" '^WAIT')" "— resume after $R7"
+
+# --- AC23 -- a stage's expected cost is the mean of this run's samples ---------------------------
+echo "0234 AC23 -- envelope: develop's expected cost is the mean of its rises, attributed to the later event"
+{ printf '{"event":"headroom","stage":"verify","windows":{"five_hour":{"utilization":0.20,"resets_at":"%s"}}}\n' $R5
+  printf '{"event":"headroom","stage":"develop","windows":{"five_hour":{"utilization":0.35,"resets_at":"%s"}}}\n' $R5
+  printf '{"event":"headroom","stage":"develop","windows":{"five_hour":{"utilization":0.60,"resets_at":"%s"}}}\n' $R5; } > "$ENV/samples.jsonl"
+out="$(envelope --run "$ENV/samples.jsonl" --stage develop)" && rc=0 || rc=$?
+has   "expected 0.20, the mean of 0.15 and 0.25, from 2 develop samples" "$(line_of "$out" '^ENVELOPE  five_hour')" "expected 0.20  source: run log, 2 develop sample(s)"
+rc_is "and 0.40 headroom fits it" "$rc" 0
+out="$(envelope --run "$ENV/samples.jsonl" --stage verify)" && rc=0 || rc=$?
+has   "verify has no sample (the first event begins no interval), so the default" "$(line_of "$out" '^ENVELOPE  five_hour')" "expected 0.10  source: default"
+{ printf '{"event":"headroom","stage":"verify","windows":{"five_hour":{"utilization":0.20,"resets_at":"%s"}}}\n' $R5
+  printf '{"event":"headroom","stage":"develop","windows":{"five_hour":{"utilization":0.35,"resets_at":"%s"}}}\n' $R5
+  printf '{"event":"headroom","stage":"develop","windows":{"five_hour":{"utilization":0.60,"resets_at":"2026-11-18T19:00:00Z"}}}\n'; } > "$ENV/samples-reset.jsonl"
+out="$(envelope --run "$ENV/samples-reset.jsonl" --stage develop)" && rc=0 || rc=$?
+has   "a changed resets_at is no sample: expected 0.15 from 1" "$(line_of "$out" '^ENVELOPE  five_hour')" "expected 0.15  source: run log, 1 develop sample(s)"
+{ printf '{"event":"headroom","stage":"verify","windows":{"five_hour":{"utilization":0.50,"resets_at":"%s"}}}\n' $R5
+  printf '{"event":"headroom","stage":"develop","windows":{"five_hour":{"utilization":0.30,"resets_at":"%s"}}}\n' $R5; } > "$ENV/samples-fall.jsonl"
+out="$(envelope --run "$ENV/samples-fall.jsonl" --stage develop)" && rc=0 || rc=$?
+has   "a fall is no sample: the default" "$(line_of "$out" '^ENVELOPE  five_hour')" "expected 0.10  source: default"
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 TALLIED=1
