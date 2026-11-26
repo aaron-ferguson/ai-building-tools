@@ -107,10 +107,12 @@ suite, releasing a claim — stop depending on a person remembering them.
 **One outcome is one ticket, even across many sessions.** A ticket carrying `## Progress` is worked
 in slices: each `develop` session ends a leg with `./handoff --slice`, a leg that discharges an
 acceptance criterion gets one `verify`, and the leg holding the last slice is the closing verify. A
-run is sized by a budget and an end time a person confirms, checked before every dispatch by
-`tools/sprint-ledger.sh envelope`, and ends at a clean boundary when either runs out.
+run drives toward an outcome, not a date or a budget: each stage session carries a projected cap as
+a runaway catch, and `tools/sprint-ledger.sh envelope` waits on the account's usage headroom before
+a dispatch rather than stopping the run. A verify bounce is re-developed, or repaired by `queue`, up
+to `bounce_max`.
 
-**What it will not do on its own**: answer a design question, narrow a contract, queue new work,
+**What it will not do on its own**: answer a design question, narrow a contract, queue work outside the confirmed scope,
 push, bump a version, install, or release. Those are escalations, and every one reaches you as a
 decision brief — the outcome, where it stands, what needs you, two or more options, a recommendation,
 what to do, and what waits if you do not answer. A `waiting` row does not halt a run that has other

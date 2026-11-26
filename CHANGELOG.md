@@ -14,6 +14,12 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- `next --drive` re-dispatches `develop` when a verify fail hands a row back to `next: develop`, instead of exiting 4, printing a `NOTE` that names where verify's diagnosis is. The bound is `bounce_max:` in `config.yml` (absent means 2; `0` restores escalate-on-every-bounce), counted from the supervisor's `--bounces <id>=<n>`; past it the bounce escalates (0234).
+- `next --drive` dispatches a `queue` repair when a verify or develop session hands an in-scope row to `next: queue`, under the same `bounce_max` and count; an out-of-scope row, or one with no `--scope`, still escalates as a stale contract. A re-entry into `design` spends the same allowance (0234).
+- `/queue`'s Re-specify tells a repair (correcting a contradictory, unmeetable or drifted criterion of an outcome the ticket keeps) from a narrowing (removing or weakening an AC, moving scope out); a narrowing in a session with no person in it is not written but handed off as `waiting` (0234).
+- `/sprint` is run to drive toward an outcome, not to a date, a time or a budget: no sprint-wide budget or deadline is proposed or enforced (the person's direction, 2026-11-26), superseding 0.9.49's `budget_usd`/`deadline` envelope. Each stage session carries a projected cap, shown to the person in the proposal before dispatch, as a runaway catch; the supervisor may raise one or add a session the outcome needs, logging `cap_raised` first. A cap kill is still an escalation (0234).
+- `tools/sprint-ledger.sh envelope` no longer stops a run on budget or deadline: it is an account-headroom gate printing `CONTINUE`, or `WAIT … resume after <iso>` (exit 3), from the run log's `headroom` readings, and stops nothing when headroom is not visible. `/sprint` dispatches stages with `--output-format stream-json --verbose`, reads the outcome through the new `outcome --stream` mode and logs `reading --stream`'s `headroom` line after every stage; a `WAIT` waits and resumes, never ending the run (0234).
+
 - `tools/release` updates every install recorded for the plugin at its own scope — `user`, and each `project` or `local` entry from its own directory — where it used to run one bare `claude plugin update` that, inside a checkout enabling the plugin, moved only that project's entry. `tools/release verify` checks every recorded install and fails naming the scope and path of any that is stale; an entry whose project directory no longer exists is skipped and reported.
 
 ## 0.9.49 — 2026-11-19

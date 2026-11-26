@@ -71,16 +71,22 @@ fails, so the key must stay absent.
 
 ```sh
 # step-1-probe
+mkdir -p .tickets/runs
 claude -p \
   --model opus \
   --session-id "$RUN_PROBE_UUID" \
   --json-schema "$(cat <plugin root>/skills/sprint/outcome.schema.json)" \
   --max-budget-usd 1.00 \
+  --output-format stream-json --verbose \
   'Return a minimal valid stage outcome: stage "retro", empty arrays for commits and tickets, 0 for cost_usd and findings_parked, null for conventions_resolved and escalation.' \
-  < /dev/null
+  < /dev/null > ".tickets/runs/$RUN_ID.probe.out"
 ```
 
-A schema-valid outcome comes back, or this host cannot drive a loop. **Where it cannot, say so plainly
+`tools/sprint-ledger.sh outcome --stream` on that capture yields a schema-valid outcome, or this
+host cannot drive a loop. Append `reading --stream <it> --stage probe --session "$RUN_PROBE_UUID"`'s
+line to the run log: the run's first headroom reading (Step 2). **A probe that answers only without
+the stream flags still drives**: dispatch every stage without them and say once in the run log that
+the headroom gate runs blind; Step 7's `limit_hit` pause is then the only limit catch. **Where it cannot, say so plainly
 and fall back to naming the commands for a person to run** — today's behaviour, which is a working
 answer. What is forbidden is appearing to drive a loop you are not driving.
 
@@ -201,8 +207,7 @@ block each cycle spends the one term the cost model above can actually move.
 
 The proposal states, all of it from that one call:
 
-- **How many tickets** the sprint expects to work, inside **the envelope** — a budget in USD and
-  an end time, below.
+- **The outcome** the sprint drives toward, and how many tickets it expects to work for it.
 - **Which tickets**, by id and title.
 - **What the work is** for each, in one line drawn from the ticket rather than invented.
 - **Why these** — and where a gate is held together by a shared file, *which* file and how many rows
@@ -226,7 +231,11 @@ The proposal states, all of it from that one call:
   labelled as having no prior rather than presented as derived** — as at 2026-09-10 `MEASUREMENT.md`
   records no wall-clock at all, so the time figure has none until this ledger has a sprint in it,
   and a proposal showing three derived figures where one is invented is worse than one showing two
-  and an admission.
+  and an admission. **The estimate is a forecast the run is scored against (Step 6's `record`),
+  never a ceiling.**
+- **Each planned stage session and its projected cap** — the `--max-budget-usd` it would run under,
+  `stage_budget_usd` scaled for its gate (Step 3) — so the person sees every runaway catch before
+  the first dispatch.
 
 **A sprint is planned from its develop head: plan from the first develop-ready row, and take the
 related design rows and the next sprint's head, nothing else** (the user's rule, 2026-09-24,
@@ -238,13 +247,13 @@ Confirm those ids as scope with the rest. The decision line still names the top 
 goes first, then build, and a related row comes out of design and joins the gate rather than being
 built and rebuilt (the *Design beside other stages* section).
 
-**A sprint is sized by an envelope, not a ticket count: a budget (USD) and an end time the person
-confirms.** Offer as defaults the estimate to finish the top outcome ticket, or to its next verified
-leg where that does not fit; `--propose`'s `SPRINT` and `SHORT` lines say what else the rank holds,
-not a floor to reach. Work is taken in rank order within the confirmed scope; tickets beyond the top
-one, and continuing past the scope, only where the person said so. **Refuse an envelope that cannot
-hold one develop leg plus its verify.** Record them in `scope_confirmed`: `budget_usd`, `deadline`
-(ISO UTC), the tickets named and any leave to continue — what `envelope` (Step 2) reads.
+**A sprint is run to drive toward an outcome, not to a date, a time or a budget** (the person's
+direction, 2026-11-26): **no sprint-wide budget or deadline is proposed or enforced.** Offer the top
+outcome ticket as the default scope; `--propose`'s `SPRINT` and `SHORT` lines say what else the rank
+holds, not a floor to reach. Work is taken in rank order within the confirmed scope; tickets beyond
+the top one, and continuing past the scope, only where the person said so. Record in
+`scope_confirmed` the tickets named and any leave to continue. A `scope_confirmed` from an older run
+carrying `budget_usd` or `deadline` is read as that forecast; nothing reads either as a stop.
 
 **Where the confirmed scope is only part of a gate, name the rows left behind and what resuming them
 costs.** They were un-takeable while the rest is in progress anyway, so the real price is one
@@ -327,11 +336,29 @@ meant only the second, and a drifted backlog read to a driver as a finished one.
 **A `4` on a row a running design session holds is that session mid-write** — it adds an AC before
 re-stamping `ac_digest:`. Wait for its outcome and re-call with `--completed` before escalating.
 
-**Before every dispatch, ask the envelope**: `tools/sprint-ledger.sh envelope --run <run log>
---stage <stage> --config .tickets/config.yml --measurement MEASUREMENT.md`. `CONTINUE` (exit 0)
-dispatches; `STOP <reason>` (exit 3) ends the run at the boundary it is on, always a clean one; exit 1
-is an unreadable log and stops it too. It counts stage spend only — the supervisor's own and a resumed
-stage's earlier legs are in no outcome — so it understates: leave margin.
+**Route every stage the confirmed outcome needs — a `design` session, a `queue` repair, a
+re-develop, a verify — and escalate only what needs a person's judgment** (Step 8 names it). A
+person's by other rules: a row a stage left `waiting`, an aged lock (Step 7), and new work outside
+the confirmed scope. An account-headroom `WAIT` is neither an escalation nor a stop.
+
+**A bounce is routed, not escalated, up to `bounce_max`** (`config.yml`, default 2). A verify fail
+handing a row to `next: develop` gets `DISPATCH  develop <id>`; an in-scope row a verify — or a
+develop — hands to `next: queue` (the contract is wrong) gets `DISPATCH  queue <id>`, a repair under
+the same bound and the same count; report its finish as `--completed queue:<id>` and `--drive`
+routes on as usual. A scope row sent to `next: design` mid-run — by verify, by develop, or a design
+question a develop session found — is dispatched to `design` under that bound too. **After any
+outcome that re-entered a ticket, pass `--bounces <id>=<n>` for the completed id**: `<n>` counts that
+ticket's re-entries this run since its last verify `pass`, the one just reported included — each
+outcome for it whose `next` names an earlier stage than the one that ran — read from the run log.
+Exit 4 past the bound is the cap, and a person's. A repair handed to `waiting`, or left at `next:
+queue`, is a person's; a `next: queue` row outside the scope stays an escalation.
+
+**Before every dispatch, ask the headroom gate**: `tools/sprint-ledger.sh envelope --run <run log>
+--stage <stage>`. It reads the run log's `headroom` readings (Step 4), not spend. `CONTINUE` (exit 0)
+dispatches, including `headroom not visible`, which stops nothing. `WAIT … resume after <iso>` (exit
+3) logs a `headroom_wait` event (`windows`, `until`), waits to that time — Monitor with an until-loop,
+never a foreground sleep — asks again, and dispatches on `CONTINUE`: **a WAIT never ends the run**.
+Exit 1 is an unreadable log and stops it.
 
 **A sliced ticket is its own dispatch unit, a leg per session** (`templates/item.md`, `## Progress`).
 A leg ending in `progressed` gets the next leg's `develop`; one returning `built` gets one `verify`,
@@ -450,9 +477,12 @@ claude -p \
   --setting-sources user,project \
   --allowed-tools '<the tools that stage needs>' \
   --max-budget-usd <cap> \
+  --output-format stream-json --verbose \
   '/ai-building-tools:develop 0039 0086' \
   < /dev/null
 ```
+
+Where the Step 1 probe fell back, drop the stream flags and the gate runs blind.
 
 Every flag earns its place, and two of them are load-bearing in a way that is not obvious:
 
@@ -487,8 +517,8 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
   then prints *"Warning: no stdin data received in 3s"* **into the stream you are parsing as
   JSON** — so a perfectly good stage reads as one that failed the schema, and Step 4 escalates on
   it. Redirect stdin on every dispatch, the probe included.
-- **Capture stdout beside the run log**, as `.tickets/runs/<run-id>.<session-id>.out`, which
-  must outlive the supervisor: run-20260913T222409Z captured into the supervising session's
+- **Capture stdout beside the run log**, as `.tickets/runs/<run-id>.<session-id>.out` — the
+  stream, one JSON object per line — which must outlive the supervisor: run-20260913T222409Z captured into the supervising session's
   scratchpad, the harness withdrew that directory mid-run, and the outcome survived only because the
   file was already open. **The same holds for any dispatch helper you write** — keep it under
   `.tickets/runs/` too: run-20261101T172121Z kept one in the scratchpad, paused five days on an
@@ -496,6 +526,13 @@ Every flag earns its place, and two of them are load-bearing in a way that is no
 - **In a run whose baseline red was waived, every stage prompt quotes it** as "baseline red at
   <sha>, not yours", with the `baseline_red` case list from `scope_confirmed`. Without it each stage
   re-separates a waived red from its own by hand, which is the cost the waiver exists to remove.
+- **A dispatch after a bounce carries verify's `detail` pointer for that ticket and the failed AC
+  named from it** (Step 4), so the develop is pointed at the diagnosis rather than rediscovering it.
+  A bounce's `queue` prompt carries the same two, names the work as a re-specify of `<id>` that
+  repairs the failed criteria and returns the row to `develop`, and says that where only a narrowing
+  would make them meetable the session writes no criteria and hands off: `status: waiting`, `next:
+  queue`, `## Waiting on` naming the AC and the narrowing to choose, the same sentence in its
+  outcome's `escalation` (`queue` Step 1, *Re-specify*).
 - **The stage prompt names the write rule and the path form.** A refused backlog write follows
   `references/CONCURRENCY.md`, *When a backlog write is refused* — split a compound call first,
   `python3` on the legacy path, never leave the lock held, quote the exact refused commands — and
@@ -544,6 +581,15 @@ quantum-catan host (run-20261008T021734Z), whose floor is near four times this r
 the object. Size a stage's cap against this repo's observed
 per-session figures in `MEASUREMENT.md`, never against a guess at how small the work is.
 
+**A stage's cap is a runaway catch, not a budget.** `stage_budget_usd` is the default
+`--max-budget-usd`, and the proposal shows each planned session's projected cap. The supervisor
+**may raise a cap for a dispatch** — a larger gate, a re-dispatch after a bounce, a stage whose
+run-log mean already exceeds the default — **and may add sessions the proposal did not forecast**
+(a design, a queue repair, another develop) when the confirmed outcome needs them, logging each,
+**before** that dispatch, as one `cap_raised` event: `stage`, `ids`, `session_id`, `from`, `to`,
+`reason`, and named in the next report. A stage that hits its cap is stopped and assessed (Step 7),
+never retried higher.
+
 **Authority is the narrowest that works, and it does not outlive the process.**
 `--dangerously-skip-permissions` appears nowhere. Each stage gets the tools it needs and a spend
 cap, granted per dispatch. An unattended loop is standing authority to run commands, commit, and
@@ -553,12 +599,17 @@ replace the tooling it is running on; it acquires none of that beyond the cycle 
 
 ## Step 4 — Read the outcome, and nothing else
 
-Stdout is a single JSON object satisfying `skills/sprint/outcome.schema.json`, or the stage
+The outcome is one JSON object satisfying `skills/sprint/outcome.schema.json`, or the stage
 failed. That object is **all you read**: not the transcript, not the skill file, not any other
-output of that process. **Validate the last stdout line that opens `{`, not the whole stream**: the
-CLI prints its own warnings ahead of the object, and one — *"Warning: this sign-in ends between …"* —
-`< /dev/null` cannot prevent; a whole-stream `json.loads` read a schema-valid stage as failed in
-run-20261101T172121Z. That warning also predicts every later dispatch failing, so relay it to the
+output of that process. **Read it as `tools/sprint-ledger.sh outcome --stream <capture>`'s line** —
+the stream's last `result` line's `structured_output` — and validate that; a blind run validates the
+last stdout line that opens `{`. Never parse the whole capture: the CLI prints its own warnings into
+it, and one — *"Warning: this sign-in ends between …"* — `< /dev/null` cannot prevent; a
+whole-stream `json.loads` read a schema-valid stage as failed in run-20261101T172121Z. The stream's
+other lines are read only by `reading`, never as the stage's report: **after every stage, append
+`reading --stream <capture> --stage <stage> --session <id>`'s `headroom` line to the run log beside
+its `outcome`** — that stage's *after* and the next one's *before*, from which `envelope` learns
+what each stage costs. That warning also predicts every later dispatch failing, so relay it to the
 person. A CLI line is not the stage's prose; the rule below against parsing prose still holds. The envelope carries the stage, the session id, the commits, the cost, the
 findings-parked count, which conventions resolved, and an escalation or null; the array carries one
 entry per ticket, each with its id, verdict, resulting `next:` and `status:`, and a pointer to where
@@ -600,8 +651,8 @@ this run is learnable from anywhere else**, because the stage narrative you woul
 read is exactly what was trimmed. Surface it: a cycle's report carries the findings-parked count,
 and a pointer worth opening gets named.
 
-**Open the `detail` pointer of every `fail` before presenting it to a person**, and name the failed AC
-from it. The outcome carries no fail reason, and `escalation` may hold a separate open question: in
+**Open the `detail` pointer of every `fail` before presenting it to a person or re-dispatching the
+ticket**, and name the failed AC from it; both go into the bounce's prompt (Step 3). The outcome carries no fail reason, and `escalation` may hold a separate open question: in
 run-20261004T232135Z it was relayed as the cause of 0041's fail, the person decided on it, and the
 real cause, AC1, was only in the item's Notes.
 
@@ -825,7 +876,9 @@ age=$(( $(date -u +%s) - mtime ))
 seconds. **Aged** — it escalates, naming the age and the ticket `held-by` records, joined through
 the **run log** to the stage process that should have held it, and **dispatches nothing**.
 
-**A stage stopped by an account session limit is a pause, not a recovery.** Its stdout reads
+**A stage stopped by an account session limit is a pause, not a recovery** — the reactive fallback
+behind Step 2's headroom gate, and what still catches a limit where the gate could not see headroom
+(API-key auth, a host that emits no `rate_limit_event`) or a stage ran over its expected cost. Its stdout reads
 *"You've hit your session limit · resets <time>"* where the outcome should be, and it leaves the
 claim, the dirty tree and possibly the lock exactly as a cap kill does. The difference is that here
 the work is local and unpushed and no other session starts while one waits, so the same session
@@ -861,8 +914,10 @@ transcript, and it lands in the run log timestamped before it reaches the user. 
 **starts nothing further**. Releasing that claim, cleaning that tree and removing that lock are a
 human's, every one — recovery is not authority this loop was given.
 
-**The cap is `stage_budget_usd` in `config.yml`, derived from `cost_tracking:` history and recorded
-with the derivation beside it**, never a figure chosen here and never one rounded later.
+**The default cap is `stage_budget_usd` in `config.yml`, derived from `cost_tracking:` history and
+recorded with the derivation beside it**, never rounded later; a raise is the logged exception
+(`cap_raised`, Step 3), never a figure chosen silently. The cap is a runaway catch: a cap kill is
+still this escalation, and its remedy is the person's, never a raise-and-retry.
 
 ---
 
@@ -875,13 +930,21 @@ with the derivation beside it**, never a figure chosen here and never one rounde
   own — `CONCURRENCY.md`, *Claim tokens*. A supervisor holding rows it is not working is the scope
   reservation *The working tree is shared too* forbids, and every `in-progress` row during a run
   should correspond to a stage process that is actually running.
-- **It never answers a design question, narrows a contract, or writes a ticket.** A `waiting` row
-  with nothing else in scope takeable, an in-scope `next: queue` row, a stale FR and a ticket that
-  needs splitting are all escalations: name what must be decided and stop. An in-scope design row is answered by the `design`
+- **It never answers a design question, narrows a contract, or writes a ticket.** It escalates only
+  what needs a person's judgment — narrowing the outcome, a release action, repeated failure past
+  `bounce_max`, a cap kill — and routes every stage the confirmed outcome needs itself, because an
+  unattended run stalls on every question until the person checks in and the goal is the confirmed
+  outcome, not the least spend (Step 2). A `waiting` row with nothing else in scope takeable, a
+  `next: queue` row no in-scope bounce sent there, a repair that would narrow the outcome, a stale FR
+  and a ticket that needs splitting are escalations: name what must be decided and stop. An in-scope design row is answered by the `design`
   session it dispatches, never by the supervisor; on taste, architecture or security that session
-  prepares a brief and leaves the row `waiting`, never deciding (`design` Step 3). Queuing new work and designing tickets are escalations, not automation.
-  The one exception is the proposal's repair first: the person choosing it has answered that
-  escalation, so the `queue` session minting the repair row is dispatched rather than escalated.
+  prepares a brief and leaves the row `waiting`, never deciding (`design` Step 3). Queuing work
+  outside the confirmed scope is an escalation; designing or re-specifying an in-scope ticket is routed.
+  There are two exceptions to writing no ticket. The proposal's repair first: the person choosing it
+  has answered that escalation, so the `queue` session minting the repair row is dispatched. And a
+  bounce's contract repair (Step 2), which the person answered in advance by confirming the scope.
+  A repair is not narrowing: it corrects a contradictory, unmeetable or drifted statement of an
+  outcome the ticket keeps; where repair ends and narrowing starts is `queue`'s *Re-specify*.
 - **It never runs two stage sessions at once, except a design session beside a develop, verify or design session**
   (the *Design beside other stages* section). Otherwise the loop is sequential by decision, and what it
   parallelises is *tickets*, through the gate.
