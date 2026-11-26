@@ -732,6 +732,51 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   disjoint `next:` values (`develop` vs `queue`), so their order cannot change a decision (develop's
   reasoning, re-read and agreed). AC9 still rests on a run mutation (M2).
 
+- **2026-11-26 (develop, S2 leg, token 7080) — S2 built in `612a548`.** `tools/sprint-ledger.sh`
+  gains `reading` and `outcome` (FR18) and `envelope` becomes the headroom gate (FR19); the 0231
+  AC14/FR13 envelope blocks in `tests/sprint-ledger.test.sh` are replaced by a `0234 S2` section
+  whose headers name the 0231 case each supersedes (FR22). Whole suite green at `612a548`
+  (`git status` clean before and after, no concurrent runner). Ledger file: `266 passed, 0 failed`.
+- **Decisions the FRs left open, stated so verify can disagree:** (1) `envelope` **accepts and
+  ignores** `--config` and `--measurement` rather than refusing them as unknown — the installed
+  0.9.49 skill's Step 2 still passes `--config`, and a sprint driven by it must not exit 1 on the
+  new script between this leg and S3's prose. FR19's "no longer reads" holds: neither is opened.
+  (2) A sample needs two **adjacent** headroom events both readable; a `readable:false` event
+  between two readings breaks the pair rather than booking the hidden interval to the later stage.
+  (3) A zero rise is a sample (only a fall is excluded). (4) `reading` reads only the last
+  `rate_limit_event`; if that one is malformed the line is `readable:false`, even if an earlier one
+  was good. (5) The top-level fallback looks for `rateLimitType`/`utilization`/`resetsAt` inside
+  `rate_limit_info` first, then on the event itself. (6) A window counted as reset says so in its
+  source (`; reset <iso>, since the reading`). (7) `envelope` reads its log strictly (a non-JSON
+  line exits 1), unlike `read_run`'s skip-a-partial-line, because FR19 makes that an unreadable log.
+- **Mutation sweep — run**, each on the committed `612a548` script, restored from a copy, control
+  `266 passed, 0 failed`: M1 first `rate_limit_event` read instead of the last → reds AC20 first case;
+  M2 top-level fallback dropped → AC20 second; M3 unreadable stream exits 1 → AC20 third; M4 whole
+  `result` line printed → AC24 schema check; M5 missing outcome exits 0 → AC24; M6 `<` → `<=` → AC22
+  0.98 boundary; M7 reset rule dropped → AC22 reset case; M8 not-visible exits 3 → AC22 not-visible
+  and both 0231 fixtures; M9 samples booked to the earlier event's stage → AC23; M10 delta across a
+  changed `resets_at` counted → AC23 reset case; M11 mean replaced by last sample → AC23; M12 lenient
+  JSON in the log → FR19 unreadable-log case; M13 resume after the earliest reset → FR19 two-window
+  case; M14 a fall counted → the fall case.
+- **The 0231 short-budget fixture against the pre-change `envelope` — run:** `1f8ac86`'s script
+  printed `STOP  budget: 3.00 left, develop needs an estimated 7.00`, exit 3; `612a548`'s prints
+  `CONTINUE  headroom not visible …`, exit 0. (The first red run of the new tests, 47 FAIL, is weaker
+  evidence for this: the old script also refused the tests' missing `--config`.)
+- **Clause table for S2's ACs** (each row an assertion in the `0234 S2` section):
+  AC20 — warning line skipped; last event's `five_hour` 0.21 not 0.10; `seven_day` 0.77; `stage`,
+  `session_id`, `event`; `resets_at` ISO of epoch (1795000000 → 2026-11-18T11:06:40Z, 1795500000 →
+  2026-11-24T06:00:00Z, checked with `date -u -d @`); one line; top-level fallback one window at 0.5;
+  no event → exit 0 `readable:false`; missing path → exit 1.
+  AC22 — 0.21/0.77 → exit 0, `CONTINUE`, two `ENVELOPE` lines source `default`; 0.99 → exit 3, `WAIT`
+  naming `seven_day`, its reset and `resume after`, no `CONTINUE`, no `STOP`; 0.98 → 3; 0.97 → 0;
+  0.99 reset before `--now` → 0; no headroom event → 0 `headroom not visible`; last `readable:false`
+  → 0 `headroom not visible`; 0231 short-budget and past-deadline fixtures → 0, no `STOP`.
+  AC23 — `expected 0.20` source `run log, 2 develop sample(s)`; reset third event → `expected 0.15`,
+  1 sample. AC24 — exit 0, one line, schema-valid via `tools/validate-json-schema.py`; no `result`
+  line → 1 naming it; no `structured_output` → 1 naming it.
+- **For S3:** `README.md` line 111 still says the sprint "ends at a clean boundary when either runs
+  out" of `envelope` — stale since `612a548`, and not on S3's list of places; S3 should take it.
+
 ### Open questions for the unspecified slices
 
 **Established, not yet specified (it was at next: queue), from 0204 — Route a queue completion that re-specifies a waiting row to develop instead of exiting 4:**
