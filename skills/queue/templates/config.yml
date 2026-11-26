@@ -47,6 +47,12 @@ findings_threshold: 8
 # batching; 0 or a non-number stops `./next --drive` rather than defaulting.
 gate_max_rows: 5
 
+# How many times one ticket may re-enter an earlier stage in one run before `./next --drive`
+# escalates it to a person (0234): a verify bounce back to develop, an in-scope queue repair of the
+# contract, a return to design. The supervisor counts and passes `--bounces <id>=<n>`. 0 restores
+# the pre-0234 behaviour, escalating every bounce; a non-number stops `./next --drive`.
+bounce_max: 2
+
 # The gate's SECOND limit: how many COMPLETED SPRINTS the oldest unswept finding may survive before
 # the tail runs whatever the count says. Either limit crossed dispatches the tail (0133 FR2), and
 # this is the half that covers retro's "or weekly if the buffer fills slower" — a project parking
