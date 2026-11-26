@@ -75,7 +75,9 @@ findings_max_sprints: 2
 # writes without a timestamp.
 lock_stale_seconds: 900
 
-# Per-stage spend cap a driver passes as `--max-budget-usd`, in USD. DELIBERATELY UNSET: this is
+# Per-stage spend cap a driver passes as `--max-budget-usd`, in USD — a runaway catch for one
+# session, never a sprint budget: a driver may raise it for a dispatch, logging `cap_raised` first
+# (`sprint` Step 3), and no figure here stops a sprint. DELIBERATELY UNSET: this is
 # the one key a template must not fill in. A number shipped here is another project's derivation,
 # and a cap below a session's startup floor kills every stage identically while reading exactly
 # like a broken CLI.

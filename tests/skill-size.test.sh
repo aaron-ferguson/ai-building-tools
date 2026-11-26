@@ -134,7 +134,7 @@ justification() {
     skills/queue/SKILL.md)     echo "0035 — considered relocating the specification rules; rejected on (a), because every other stage reads them and p is zero — there is no branch here that any run skips" ;;
     skills/develop/SKILL.md)   echo "0035 — considered relocating its worked anecdotes; rejected on both: they are already the one-clause statement of the failure each rule prevents, so moving them leaves a rule with no failure named, and they are read on every run" ;;
     skills/retro/SKILL.md)     echo "b9a5ee0 — considered relocating Step 4's four dispositions and Step 1's two modes; rejected on both: a run reaches them before it can triage a single entry, so p is zero, and each is mandatory the moment the buffer is non-empty" ;;
-    skills/sprint/SKILL.md)    echo "0190 — considered relocating Step 7's lock and cap-kill recovery and the design-beside rule, the only two branches a run can skip; rejected on both conditions: Step 7 is mandatory the moment a lock is met, and behind a pointer it is skipped exactly then, so a driver steals a working stage's lock; the design-beside rule is taken on most runs now design runs a sprint ahead, and it is what stops the supervisor overriding the step-over that --drive decides, so design cites files a running develop is editing; every other section is on every run's main path, so p is zero" ;;
+    skills/sprint/SKILL.md)    echo "0190 — considered relocating Step 7's lock and cap-kill recovery and the design-beside rule, the only two branches a run can skip; rejected on both conditions: Step 7 is mandatory the moment a lock is met, and behind a pointer it is skipped exactly then, so a driver steals a working stage's lock; the design-beside rule is taken on most runs now design runs a sprint ahead, and it is what stops the supervisor overriding the step-over that --drive decides, so design cites files a running develop is editing; every other section is on every run's main path, so p is zero; re-argued when the headroom gate and bounce routing landed, considered relocating Step 2's bounce-routing and headroom-gate paragraphs and Step 3's cap-raise paragraph; rejected on (b): every dispatch asks the gate and runs under a cap, and a bounce is an ordinary cycle, so each is on the main path and p is zero" ;;
     skills/verify/SKILL.md)    echo "0052 — considered relocating Step 3's mutation guidance to a pointer file; rejected on (b), because it is mandatory the moment an AC rests on an automated check, and a mandatory step behind a pointer is a step that gets skipped" ;;
     *) return 0 ;;
   esac
@@ -149,7 +149,7 @@ argued_at() {
     skills/queue/SKILL.md)     echo 48538 ;;   # grandfathered by 0190
     skills/develop/SKILL.md)   echo 50862 ;;   # grandfathered by 0190
     skills/retro/SKILL.md)     echo 30034 ;;   # grandfathered by 0190
-    skills/sprint/SKILL.md)    echo 60813 ;;   # argued by 0190
+    skills/sprint/SKILL.md)    echo 70331 ;;   # argued by 0190, re-argued by 0234
     skills/verify/SKILL.md)    echo 45522 ;;   # grandfathered by 0190
     *) return 0 ;;
   esac

@@ -2881,9 +2881,9 @@ guard_says "$SKILL" "$PROPOSAL" 'runs the baseline again' \
 guard_says "$SKILL" "$PROPOSAL" 'nothing else in the confirmed scope is dispatched until it is green' \
   "0180 AC4 — nothing else is dispatched until the re-run is green" \
   "0180 AC4 — the re-run is not a gate; confirmed scope can dispatch over a still-red baseline"
-guard_says "$SKILL" "Step 8" 'one exception' \
-  "0180 AC4 — the never-writes-a-ticket rule names repair first as its one exception" \
-  "0180 AC4 — Step 8 still forbids the queue dispatch repair first needs"
+# The Step 8 'one exception' guard was deleted by 0234 (FR9): Step 8 now names two exceptions, the
+# rewording that guard reddened on, and a prose guard that reds on a correct rewording is deleted,
+# not re-anchored (CLAUDE.md, Tests). repair first's dispatch is still guarded by the proposal rows above.
 # Round 5's clause table: the unowned Given (verify 391b), and the Step 8 rule and what its
 # exception is, each green with only itself deleted.
 guard_says "$SKILL" "$PROPOSAL" 'a red no open ticket owns' \

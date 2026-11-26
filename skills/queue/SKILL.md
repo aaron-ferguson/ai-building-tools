@@ -160,7 +160,15 @@ change, and neither is optional:
   set and the work is worth what it was worth. **Un-tick every AC the re-specification touches**: a
   tick is evidence about the contract as it then stood, and a ticket returning with ACs still green
   from a pass against the *old* contract is how `verify`, which closes on ticked ACs, closes over a
-  real regression.
+  real regression. **A re-specify repairs or narrows, and only a repair may be written unattended.**
+  It **repairs** when it corrects a contradictory, unmeetable or drifted statement of an outcome the
+  ticket keeps — a wrong path, a fixture that cannot reproduce the case, two ACs that contradict,
+  figures that cannot discriminate — and records one line in *Notes & decisions* saying what was
+  corrected. It **narrows** when it removes an AC, weakens what an AC's outcome asserts, or moves an
+  FR's scope to *Out of scope*. A narrowing in a session with no person in it (a sprint's `claude -p`
+  dispatch) is not written: set `status: waiting`, leave `next: queue`, write `## Waiting on` naming
+  the AC and the narrowing a person must choose between, and report the same sentence in the
+  outcome's `escalation`.
 - **Amend** (a new FR on an unclaimed, fully-specified ticket): widening the scope invalidates whatever
   was sized *against* the old scope, so re-check **`size`, the ACs, the QA plan's named checks and
   *Out of scope*** against the new shape, and record the reason in *Notes & decisions*. That re-check
