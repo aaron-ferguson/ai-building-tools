@@ -600,6 +600,102 @@ else
   esac
 fi
 
+# --- every install record is updated and verified, not only the user one ------------------------
+#
+# WHY. On 2026-11-18 this repo enabled the plugin in its own committed settings, so the record
+# held two entries: `user` and `project` (for this checkout). Step 9's bare `claude plugin update`,
+# run from inside the checkout, moved only the project entry; verify read only the user entry and
+# failed, and the user entry -- what every other project loads -- stayed one release behind until
+# it was updated by hand. Read the other way, a project entry verify never looked at could go
+# stale with a clean verify. So the chain updates EACH recorded install at its own scope, and
+# verify checks each one.
+
+write_two_records() { # <project-dir> <project-sha> -> two entries, user at $SHA, project at <sha>
+  cat > "$FIX/record.json" <<REC
+{
+  "version": 2,
+  "plugins": {
+    "$KEY": [
+      { "scope": "user", "installPath": "$INST", "version": "9.9.9",
+        "installedAt": "2026-09-01T00:00:00.000Z", "lastUpdated": "2026-09-01T00:00:00.000Z",
+        "gitCommitSha": "$SHA" },
+      { "scope": "project", "projectPath": "$1", "installPath": "$INST", "version": "9.9.9",
+        "installedAt": "2026-09-01T00:00:00.000Z", "lastUpdated": "2026-09-01T00:00:00.000Z",
+        "gitCommitSha": "$2" }
+    ]
+  }
+}
+REC
+}
+
+echo "multi-record — a stale project entry fails verify even when the user entry is current"
+PROJ_DIR="$FIX/a-project"; mkdir -p "$PROJ_DIR"
+write_two_records "$PROJ_DIR" "$OTHER_SHA"
+verify
+if [ "$VST" -ne 0 ]; then ok "verify fails"
+else bad "multi-record — verify passed over a stale project entry: $VOUT"; fi
+case "$VOUT" in
+  *"project"*"$PROJ_DIR"*"$OTHER_SHA"*) ok "the failure names the project entry, its path and its stale sha" ;;
+  *) bad "multi-record — the failure does not name the stale project entry: $VOUT" ;;
+esac
+
+echo "multi-record — both entries current verifies clean and reports each"
+write_two_records "$PROJ_DIR" "$SHA"
+verify
+if [ "$VST" -eq 0 ]; then ok "verify passes"
+else bad "multi-record — two current entries failed verify: $VOUT"; fi
+case "$VOUT" in
+  *"user"*"project"*"$PROJ_DIR"*) ok "the report names both entries" ;;
+  *) bad "multi-record — the report does not name both entries: $VOUT" ;;
+esac
+
+echo "multi-record — an entry for a project directory that no longer exists is skipped, not failed"
+write_two_records "$FIX/a-project-that-was-deleted" "$OTHER_SHA"
+verify
+if [ "$VST" -eq 0 ]; then ok "verify passes on the user entry alone"
+else bad "multi-record — a record for a deleted project failed verify: $VOUT"; fi
+case "$VOUT" in
+  *skipped*"a-project-that-was-deleted"*) ok "and says it skipped that entry" ;;
+  *) bad "multi-record — the skipped entry is not reported: $VOUT" ;;
+esac
+
+# A full run with a FAKE `claude` first on PATH (and the real one filtered out, as above), which
+# logs each call and the directory it ran in. Nothing real is installed or updated.
+if PATH="$NOCLAUDE" command -v claude >/dev/null 2>&1; then
+  bad "multi-record — could not build a PATH without the real \`claude\`; refused rather than weakened"
+else
+  echo "multi-record — step 9 updates every recorded install at its own scope"
+  # An assignment prefixed to a function call outlives the call in sh, so an earlier case's empty
+  # MK_CHANGELOG would otherwise stop this run at step 4.
+  unset MK_CHANGELOG
+  MU="$FIX/mu"; mkdir -p "$MU/bin" "$MU/proj"; mk_case "$MU"
+  cat > "$MU/bin/claude" <<'FAKE'
+#!/bin/sh
+printf '%s | %s\n' "$PWD" "$*" >> "$FAKE_CLAUDE_LOG"
+FAKE
+  chmod +x "$MU/bin/claude"
+  python3 - "$REC2" "$KEY" "$MU/proj" "$INST2" <<'PY'
+import json, sys
+rec, key, proj, inst = sys.argv[1:]
+d = json.load(open(rec))
+d["plugins"][key].append({"scope": "project", "projectPath": proj, "installPath": inst,
+                          "version": "1.2.3", "gitCommitSha": "x"})
+json.dump(d, open(rec, "w"))
+PY
+  MUST=0
+  MUOUT="$(FAKE_CLAUDE_LOG="$MU/calls.log" PATH="$MU/bin:$NOCLAUDE" "$TOOL" --bump --yes \
+            --record "$REC2" --plugin "$KEY" --checkout "$CO2" --confirm-device "$MU/none" 2>&1)" || MUST=$?
+  CALLS="$(cat "$MU/calls.log" 2>/dev/null || true)"
+  case "$CALLS" in
+    *"plugin update --scope user $KEY"*) ok "the user install is updated at --scope user" ;;
+    *) bad "multi-record — no user-scope update; calls: [$CALLS] / $MUOUT" ;;
+  esac
+  case "$CALLS" in
+    *"$MU/proj | plugin update --scope project $KEY"*) ok "the project install is updated at --scope project, from its own directory" ;;
+    *) bad "multi-record — no project-scope update from $MU/proj; calls: [$CALLS] / $MUOUT" ;;
+  esac
+fi
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 TALLIED=1
 [ "$FAIL" -eq 0 ]

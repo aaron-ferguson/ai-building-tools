@@ -91,7 +91,14 @@ d = json.load(sys.stdin if src == "-" else open(src))
 sys.stdout.write(str(d.get(sys.argv[2], "")))' "$1" "$2"
 }
 
-record_entry() { # <record-file> <plugin-key> -> installPath TAB version TAB gitCommitSha
+# Every install recorded for <plugin-key>, one per line, fields joined by the ASCII unit separator
+# (0x1f) -- a tab would collapse an empty projectPath under `read`, since tab is IFS whitespace.
+#   scope US projectPath US installPath US version US gitCommitSha
+# The record holds one entry per scope the plugin is enabled at: `user`, plus a `project` or
+# `local` entry for each checkout whose settings enable it. Every one of them is something a
+# session loads, so step 9 updates each and verify checks each -- reading only the user entry let
+# a project entry go stale under a clean verify, and the reverse failed a release by hand.
+record_entries() { # <record-file> <plugin-key>
   python3 -c 'import json,sys
 rec, key = sys.argv[1], sys.argv[2]
 try:
@@ -102,9 +109,12 @@ entries = d.get("plugins", {}).get(key)
 if not entries:
     sys.stderr.write("release: no entry for %s in %s -- is the plugin installed?\n" % (key, rec))
     sys.exit(4)
-e = next((x for x in entries if x.get("scope") == "user"), entries[0])
-print("\t".join([e.get("installPath", ""), e.get("version", ""), e.get("gitCommitSha", "")]))' "$1" "$2"
+for e in entries:
+    print("\x1f".join([e.get(f, "") for f in
+                       ("scope", "projectPath", "installPath", "version", "gitCommitSha")]))' "$1" "$2"
 }
+
+US="$(printf '\037')"
 
 version_gt() { # <a> <b> -> true when a is strictly newer than b
   awk -v a="$1" -v b="$2" 'BEGIN {
@@ -239,19 +249,12 @@ open(path, "w").write("\n".join(out).rstrip("\n") + "\n")' "$1" "$2" "$3"
 
 # --- verify ------------------------------------------------------------------------------------
 
-cmd_verify() { # uses RECORD KEY CHECKOUT COMMIT
-  ENTRY="$(record_entry "$RECORD" "$KEY")"
-  INSTALL_PATH="$(printf '%s' "$ENTRY" | cut -f1)"
-  REC_VERSION="$(printf '%s' "$ENTRY" | cut -f2)"
-  REC_SHA="$(printf '%s' "$ENTRY" | cut -f3)"
+verify_one() { # <label> <installPath> <version> <sha>; uses KEY CHECKOUT FULL_COMMIT RECORD
+  _label="$1"; INSTALL_PATH="$2"; REC_VERSION="$3"; REC_SHA="$4"
 
-  [ -n "$INSTALL_PATH" ] || die "the record has no installPath for $KEY; there is no directory to verify" 4
-  [ -d "$INSTALL_PATH" ] || die "installPath $INSTALL_PATH does not exist -- the record names a directory that is not there" 1
+  [ -n "$INSTALL_PATH" ] || die "the $_label entry has no installPath for $KEY; there is no directory to verify" 4
+  [ -d "$INSTALL_PATH" ] || die "installPath $INSTALL_PATH ($_label) does not exist -- the record names a directory that is not there" 1
 
-  git -C "$CHECKOUT" cat-file -e "$COMMIT^{commit}" 2>/dev/null \
-    || die "$COMMIT is not a commit in $CHECKOUT" 2
-
-  FULL_COMMIT="$(git -C "$CHECKOUT" rev-parse "$COMMIT")"
   DIFFS="$(paths_that_differ "$CHECKOUT" "$FULL_COMMIT" "$INSTALL_PATH")"
   N_DIFFS="$(printf '%s' "$DIFFS" | grep -c . || true)"
   N_TRACKED="$(tracked_count "$CHECKOUT" "$FULL_COMMIT")"
@@ -266,6 +269,7 @@ cmd_verify() { # uses RECORD KEY CHECKOUT COMMIT
   else
     say "$ME: FAILED -- the install does not hold $FULL_COMMIT"
   fi
+  say "  scope     $_label"
   say "  version   $REC_VERSION"
   say "  install   $INSTALL_PATH"
   say "            (from installPath in $RECORD, never built from the version string)"
@@ -286,23 +290,82 @@ cmd_verify() { # uses RECORD KEY CHECKOUT COMMIT
     say "            evidence about the bytes"
   fi
 
-  if [ "$BYTES_OK" -eq 1 ] && [ "$RECORD_OK" -eq 1 ]; then
+  [ "$BYTES_OK" -eq 1 ] && [ "$RECORD_OK" -eq 1 ]
+}
+
+cmd_verify() { # uses RECORD KEY CHECKOUT COMMIT
+  ENTRIES="$(record_entries "$RECORD" "$KEY")" || exit $?
+
+  git -C "$CHECKOUT" cat-file -e "$COMMIT^{commit}" 2>/dev/null \
+    || die "$COMMIT is not a commit in $CHECKOUT" 2
+  FULL_COMMIT="$(git -C "$CHECKOUT" rev-parse "$COMMIT")"
+
+  # A here-document, not a pipe, so the loop runs in this shell and its counts survive it.
+  N_CHECKED=0
+  N_FAILED=0
+  while IFS="$US" read -r _scope _proj _inst _ver _sha; do
+    _label="$_scope"
+    if [ -n "$_proj" ]; then
+      _label="$_scope $_proj"
+      if [ ! -d "$_proj" ]; then
+        say "$ME: skipped the $_scope entry for $_proj -- that directory no longer exists, so no session loads it"
+        continue
+      fi
+    fi
+    N_CHECKED=$((N_CHECKED + 1))
+    verify_one "$_label" "$_inst" "$_ver" "$_sha" || N_FAILED=$((N_FAILED + 1))
+  done <<ENTRIES
+$ENTRIES
+ENTRIES
+
+  [ "$N_CHECKED" -gt 0 ] || die "every install recorded for $KEY was skipped; there is nothing to verify" 1
+  if [ "$N_FAILED" -eq 0 ]; then
     say "  restart   required -- skills resolve once at session start, so this session still runs"
     say "            the copy it started with"
     return 0
   fi
+  say "$ME: $N_FAILED of $N_CHECKED recorded installs do not hold $FULL_COMMIT"
   return 1
 }
 
 # --- the chain ---------------------------------------------------------------------------------
 
+# Update every recorded install at its own scope. A bare `claude plugin update` picks ONE scope
+# from the directory it runs in: inside a checkout that enables the plugin it moved only that
+# project's entry and left `user` -- what every other project loads -- a release behind. A
+# project or local entry is updated from its own directory, which is how the CLI resolves it.
+update_each_install() { # uses RECORD KEY
+  _entries="$(record_entries "$RECORD" "$KEY")" || exit $?
+  while IFS="$US" read -r _scope _proj _inst _ver _sha; do
+    case "$_scope" in
+      user)
+        claude plugin update --scope user "$KEY" || die "plugin update failed at scope user" 1 ;;
+      project|local)
+        if [ ! -d "$_proj" ]; then
+          say "  skipped   the $_scope entry for $_proj -- that directory no longer exists"
+          continue
+        fi
+        ( cd "$_proj" && claude plugin update --scope "$_scope" "$KEY" ) \
+          || die "plugin update failed at scope $_scope in $_proj" 1 ;;
+      *)
+        say "  skipped   the $_scope entry -- that scope is not this run's to update" ;;
+    esac
+  done <<ENTRIES
+$_entries
+ENTRIES
+}
+
 cmd_release() {
   PLUGIN_FILE="$CHECKOUT/.claude-plugin/plugin.json"
   [ -f "$PLUGIN_FILE" ] || die "no $PLUGIN_FILE -- $CHECKOUT is not a plugin checkout" 2
 
-  ENTRY="$(record_entry "$RECORD" "$KEY")"
-  INSTALL_PATH="$(printf '%s' "$ENTRY" | cut -f1)"
-  INSTALLED_VERSION="$(printf '%s' "$ENTRY" | cut -f2)"
+  # The version gate compares against the user install -- the one every project without its own
+  # entry loads -- or, when there is none, the first recorded.
+  ENTRIES="$(record_entries "$RECORD" "$KEY")" || exit $?
+  ENTRY="$(printf '%s\n' "$ENTRIES" | awk -F "$US" '$1 == "user" { print; exit }')"
+  [ -n "$ENTRY" ] || ENTRY="$(printf '%s\n' "$ENTRIES" | head -n 1)"
+  INSTALL_PATH="$(printf '%s' "$ENTRY" | cut -d "$US" -f3)"
+  INSTALLED_VERSION="$(printf '%s' "$ENTRY" | cut -d "$US" -f4)"
 
   BRANCH="$(git -C "$CHECKOUT" rev-parse --abbrev-ref HEAD)"
 
@@ -426,7 +489,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>" -- $BUMP_PATHS
     MARKETPLACE="${KEY#*@}"
     claude plugin marketplace update "$MARKETPLACE" || die "marketplace update failed" 1
     say "  acted     marketplace $MARKETPLACE updated"
-    claude plugin update "$KEY" || die "plugin update failed" 1
+    update_each_install
     say "  acted     plugin update ran -- its success line is not evidence the bytes changed"
   else
     say "  skipped   no \`claude\` on PATH; update the install yourself, then re-run \`$ME verify\`"

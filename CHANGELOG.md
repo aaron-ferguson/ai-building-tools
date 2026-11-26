@@ -14,6 +14,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- `tools/release` updates every install recorded for the plugin at its own scope — `user`, and each `project` or `local` entry from its own directory — where it used to run one bare `claude plugin update` that, inside a checkout enabling the plugin, moved only that project's entry. `tools/release verify` checks every recorded install and fails naming the scope and path of any that is stale; an entry whose project directory no longer exists is skipped and reported.
+
 ## 0.9.49 — 2026-11-19
 
 - `design` hands a decision-only ticket (`qa_level: verify` or `review`, nothing to build) to `verify` rather than `develop`.
