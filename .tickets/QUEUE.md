@@ -37,6 +37,8 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0118 | Run the privacy guard where a sweep commits, not only where a suite runs | develop | ready |  |
 | 0164 | Record active and elapsed time and interruptions in the sprint ledger, and estimate them | develop | ready |  |
 | 0170 | Stop the marker heartbeat leaving an orphaned sleep child | develop | ready |  |
+| 0240 | Pin each stage's effort on its sprint dispatch and record it in the run log | develop | ready | 0128 |
+| 0241 | Price Sonnet 5.5 and Haiku 5.5 turns in the harvest, Haiku at its long-prompt rate above 100K | develop | blocked | 0128 |
 | 0137 | Decide whether two develop sessions may run at once, and in what isolation | design | ready | 0128 |
 | 0149 | Audit sprint efficiency — suite-check dedup, per-agent overhead, and model tiering | design | ready | 0128 |
 | 0155 | Make claim and next agree on what blocks a take | develop | ready |  |

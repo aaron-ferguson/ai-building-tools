@@ -488,3 +488,7 @@ one class of defect, and splitting them across the queue would scatter the evide
 ## 2026-11-08 - 0229 placed directly below 0227; 0230 at the bottom
 
 `0229` (a `--drift` class for a closed item keeping its claim token) is a `next` correctness fix of the same class and size as `0227` above it, and turns a warning `develop` carries as prose into a check. Tier 4, not 2: the stale tokens come only from by-hand closes that predate `close`, and one repo holds them, so nothing new accrues. Below `0227` on capture order; above `0214` and the design rows because it is `s`, certain and needs no decision. `0230` (a blank `ROW 1:` on an empty queue) is Tier 5 polish, cosmetic on a state only a new project's queue reaches, and beats no row above it.
+
+## 2026-11-26 - 0240 and 0241 placed directly above 0137
+
+`0240` (pin and log effort per sprint dispatch) and `0241` (price Sonnet 5.5 and Haiku 5.5) are the prerequisites of 0149's model-tiering trial, and a prerequisite outranks its dependent, so both sit above `0149`. They also go above `0137` on tie-breaker 4: each is `s`/`m`, certain and needs no decision, while `0137` is a design row. They sit below `0170` and the rows above it on capture order. `0240` is above `0241` because `0241` is blocked by `0192` and `0240` is takeable now.
