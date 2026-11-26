@@ -54,7 +54,7 @@ expects:
   - .claude/backlog/handoff
   - tests/handoff.test.sh
   - tests/findings-routing.test.sh
-ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=6226b6e4 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7
+ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7
 claimed_by:
 claimed_at:
 touches:
@@ -487,7 +487,8 @@ reads the live backlog.
   commit land in the second repo and the first repo is unchanged. Red: ignore `--repo`.
   (`tests/park.test.sh`)
 - [ ] AC8 — Given a second checkout whose `CLAUDE.md` profile marks it public, when `./park` is given
-  an entry holding a real-shaped home path (`/Users/someone/`), then it exits non-zero, writes
+  an entry holding a real-shaped macOS or Linux home path (assembled in the test, never written
+  literally), then it exits non-zero, writes
   nothing and names the failing shape; the same entry with the path redacted is written. Red: skip
   the guard. (`tests/park.test.sh`)
 - [ ] AC9 — Given rows A, B, C, when `./rank C above:A` runs, then the order is C, A, B with every
@@ -730,6 +731,11 @@ pattern at all.
 
 ## Notes & decisions
 
+- **2026-11-26 (queue): AC8 example reworded, meaning unchanged.** Its literal home-path example
+  reddened `tests/measurement.test.sh` ("a tracked file publishes a home-directory path") at
+  `53ecb3a`. The example now names the shape in prose and says the test assembles the sample, as
+  that guard's own falsification control does; the criterion, its red and its test are unchanged.
+  `ac_digest` AC8 re-stamped.
 - **2026-11-26 (queue): captured at the user's request.** The trigger is their instruction quoted in
   the Problem, which `CLAUDE.md`'s *Where toolkit work comes from* accepts in place of a confirming
   project. It also reverses 0048's withdrawal. 0048's id stays burned, and this ticket is its outcome.
