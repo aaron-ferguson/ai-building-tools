@@ -34,17 +34,7 @@ touches:
   - skills/queue/templates/next
   - skills/queue/templates/config.yml
   - .tickets/next
-  - skills/sprint/SKILL.md
-  - skills/queue/SKILL.md
   - tests/next.test.sh
-  - tools/sprint-ledger.sh
-  - tests/sprint-ledger.test.sh
-  - CHANGELOG.md
-  - .tickets/items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md
-  - tests/sprint.test.sh
-  - tools/next
-  - references/CONCURRENCY.md
-  - .claude/backlog/next
 slice:
 ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=2038cf12 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
 ---
@@ -680,6 +670,48 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   - `0204` (Route a queue completion that re-specifies a waiting row to develop instead of exiting 4): no FRs, no ACs (an unspecified slice)
   - `0137` (Decide whether two develop sessions may run at once, and in what isolation): FR25–FR27, no ACs (an unspecified slice)
   Each absorbed ticket's Problem is quoted verbatim above, and its FRs, ACs, NFR rows, QA plan, Out of scope and Notes are carried below with `*(was NNNN FRn)*` tags. **Bare FR and AC numbers inside the carried text were renumbered to this ticket's.** A reference to another ticket's criterion not written as `NNNN ACn` may have been renumbered too, and the withdrawn file holds the original. An unspecified slice sends this ticket to `design` when it is next; its open question is below.
+
+- **2026-11-26 (develop, S1 leg, token 5542) — S1 built in `482784d`; handed to `queue` on AC8.**
+  Built: `read_bounce_max` (`bounce_max:`, absent 2, 0 legal, non-number exits 1); `--bounces
+  <id>=<n>` (four-digit id, n ≥ 1, one per id, else exit 2); `bounce_count`/`past_bound` (`n >
+  max`); the verify → develop arm now NOTEs and calls `dispatch_leg` (findings gate + design wait);
+  a new in-scope `next: queue` arm above the stale-contract arm, keyed on the completed stage being
+  verify or develop and the id in `--scope`; FR16's bound inside the 0159 design NOTE arm; help and
+  usage; `bounce_max: 2` in `skills/queue/templates/config.yml`; `.tickets/next` re-synced
+  (`diff` empty). 0038 AC9's bounce block and 0231 AC7's fail block amended citing 0234; 0038
+  AC9's stale-contract block unedited and green. New section `0234 S1` at the end of
+  `tests/next.test.sh`. Whole suite green at `482784d` (`git status` clean before the run).
+- **FR13 needed an arm, as it allowed for.** `--completed queue:<id>` at `develop`/`ready` reached
+  the catch-all `else` ("which no routing rule covers", exit 4) — AC15 was red against it. Added a
+  `lstage = queue`, `ready`, `next: develop|verify` arm that NOTEs and carries on to the rank walk.
+  **This is also the 0204 case S5 names** (a queue completion that re-specified a row to develop);
+  S5 is not ticked here, being `unspecified` and not this leg's — the next `design`/`queue` pass
+  should check whether S5 is now discharged by FR13/AC15 alone.
+- **AC8 is unmeetable as written — `queue` must correct it (only the author changes a criterion).**
+  AC8: "Given AC1's fixture with `findings_threshold: 2` and two `FINDINGS.md` entries and **no
+  `--scope`** … exits 5". With no `--scope`, `findings_gate gate` defers by 0174's rule (NOTE
+  "deferred until the run is out of work") and returns 0, for every develop dispatch, so a bounce
+  that takes the gate exits 0 exactly like one that skips it — the fixture cannot discriminate and
+  its stated red cannot be produced. **Run, not reasoned** (scratch fixture, `482784d`'s script):
+  no `--scope` → exit 0; `--scope 0101` → exit 0 (deferred, scope live); `--scope 0102` (no such
+  row, scope not live) → exit 5 `DISPATCH  retro, then queue`; a plain `--drive` develop dispatch
+  under the same fixture → exit 0. **Proposed text:** "AC8 — Given AC1's fixture with
+  `findings_threshold: 2`, two `FINDINGS.md` entries and `--scope 0102` naming no takeable row (so
+  no confirmed-scope work remains), when `./next --drive --completed verify:0101 --scope 0102` runs,
+  then it exits 5 and prints no `DISPATCH  develop` — the bounce re-dispatch takes the findings gate
+  like any develop dispatch. Red: a re-dispatch that decides `DISPATCH` without `findings_gate gate`
+  (exits 0)." The committed guard is that proposed form, labelled `0234 FR1 (AC8, proposed form)`,
+  and M6 below proves it red.
+- **Mutation sweep — run** against the committed template, each restored from `HEAD`:
+  M1 `past_bound` `-gt`→`-ge`: reds AC4, AC14, AC19 first halves. M2 queue arm's `--scope` test
+  dropped: reds AC9. M3 queue arm also keyed on `queue`: reds AC16's third half. M4 queue arm at a
+  constant count 1: reds AC14 (third half). M5 the develop → design absent entry counted as 1: reds AC19 (fourth half). M6 the bounce arm deciding `DISPATCH` without `dispatch_leg`: reds the AC8 proposed-form guard. M7 `bounce_count` reading the first entry whatever its id: reds AC5.
+  Not swept: "move the bounce arm above the `next: queue` arm" — the two arms test disjoint `next`
+  values (`develop` vs `queue`), so their relative order cannot change a decision (reasoned).
+- AC1/AC2 amended assertions were red against the pre-change arm (first run of the amended suite:
+  `exits 0 — dispatch` / `re-dispatches develop` / `escalates nothing` FAIL in both blocks) — run.
+- `--drive`'s NOTE prints the item path `item_for` returns, which is `$DIR`-prefixed (absolute in a
+  fixture); the ACs' `.tickets/items/0101-` is a substring of it.
 
 ### Open questions for the unspecified slices
 
