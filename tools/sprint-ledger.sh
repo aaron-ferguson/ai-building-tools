@@ -44,9 +44,16 @@
 #
 #   tools/sprint-ledger.sh tail-cap  --findings N --threshold N --base-cap X
 #
-#   tools/sprint-ledger.sh envelope  --run <run-log.jsonl> --stage <stage> --config <config.yml>
-#                                   [--measurement <MEASUREMENT.md>] [--now <ISO-8601 UTC>]
-#              CONTINUE (exit 0) or STOP <reason> (exit 3) before a dispatch (0231 FR13)
+#   tools/sprint-ledger.sh reading   --stream <stage stdout> --stage <stage> --session <id>
+#                                   [--now <ISO-8601 UTC>]
+#              one run-log `headroom` event from a stream-json capture (0234 FR18)
+#
+#   tools/sprint-ledger.sh outcome   --stream <stage stdout>
+#              the stage outcome: the stream's last result line's structured_output (0234 FR18)
+#
+#   tools/sprint-ledger.sh envelope  --run <run-log.jsonl> --stage <stage> [--now <ISO-8601 UTC>]
+#              CONTINUE (exit 0) or WAIT ... resume after <iso> (exit 3) on the account's
+#              headroom before a dispatch; never a stop on budget or deadline (0234 FR19)
 #
 #   tools/sprint-ledger.sh record   --ledger <LEDGER.md> --run <run-log.jsonl>
 #                                   --transcripts <dir> --measurement <MEASUREMENT.md>
@@ -61,7 +68,7 @@
 set -eu
 
 if [ $# -lt 1 ]; then
-  echo "usage: $0 estimate|record|tail-cap|envelope ..." >&2
+  echo "usage: $0 estimate|record|tail-cap|reading|outcome|envelope ..." >&2
   exit 2
 fi
 
@@ -884,137 +891,246 @@ if mode == "tail-cap":
     print("%.2f" % (tc_opts["base_cap"] * multiplier))
     sys.exit(0)
 
-# --- envelope (0231 FR13) -----------------------------------------------------------------------
-# Before every dispatch the supervisor asks one question: do the budget and the time the person
-# confirmed still cover the next stage? Answered here rather than in prose, because a supervisor
-# doing the arithmetic by hand reads the half it remembers -- the same reason `estimate` exists.
+# --- the headroom gate (0234 FR18, FR19) --------------------------------------------------------
+# 0231 FR13 built `envelope` as a STOP on the run's confirmed budget_usd and deadline. 0234 changed
+# that contract on the user's call: a budget is a runaway catch for ONE session, never a reason to
+# stop a sprint, unless it is tied to a hard constraint -- and the hard constraint is the account's
+# own usage limit. So the gate reads the account's headroom, which `claude -p --output-format
+# stream-json --verbose` reports as a `rate_limit_event` per window: a FRACTION used and an epoch
+# reset, not tokens left. The gate therefore compares fractions, never dollars.
 #
-#   spent     the sum of the outcome events' `cost_usd`. An outcome with none is priced at its
-#             stage's cap and counted aloud: spend it cannot see must not read as spend it saved.
-#             It is stage spend only; the supervisor's own is in no outcome (outcome.schema.json).
-#   estimate  cost: the mean `cost_usd` of this run's outcomes for that stage, else MEASUREMENT.md's
-#             per-skill row when --measurement is given, else the stage cap labelled `no prior`.
-#             time: the mean dispatch-to-outcome window of this run's sessions for that stage, paired
-#             by session_id, else `no prior` -- and then only a deadline already past stops it.
-#
-# CONTINUE exits 0, STOP exits 3, and anything this cannot read exits 1, so a supervisor never
-# mistakes a log it could not read for an envelope that ran out.
-ENVELOPE_STOP = 3
+#   reading   one stage's stream -> one run-log `headroom` event (the stage's after, the next
+#             stage's before). An unreadable stream is a FACT to log, exit 0, not an error.
+#   outcome   one stage's stream -> its stage outcome, the `result` line's structured_output.
+#   envelope  the run log's headroom events -> CONTINUE (0), WAIT (3), or unreadable log (1).
+#             A gate that cannot see headroom CONTINUEs: it never stops anything blind, and Step 7's
+#             reactive limit_hit pause is what still catches a limit there.
+ENVELOPE_WAIT = 3
+# What a stage is expected to spend of a window when this run holds no sample for it. Guesses,
+# labelled `default` wherever they are used, and replaced by the run's own samples as they accrue.
+DEFAULT_EXPECTED = {"five_hour": 0.10, "seven_day": 0.02}
+DEFAULT_EXPECTED_OTHER = 0.10
+# `1 - 0.98` is not 0.02 in a float, so both sides of the headroom comparison are rounded first.
+HEADROOM_PLACES = 6
 
 
-def envelope(argv):
-    o = {"run": None, "stage": None, "config": None, "measurement": None, "now": None}
+def is_num(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def iso(dt):
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def frac(x):
+    """A fraction as printed: at least two places, at most HEADROOM_PLACES, no float noise."""
+    s = ("%." + str(HEADROOM_PLACES) + "f") % round(x, HEADROOM_PLACES)
+    whole, dec = s.split(".")
+    dec = dec.rstrip("0")
+    return "%s.%s" % (whole, dec.ljust(2, "0"))
+
+
+def flag_args(name, argv, keys, required):
+    o = dict((k, None) for k in keys)
     i = 0
     while i < len(argv):
         key = argv[i][2:].replace("-", "_") if argv[i].startswith("--") else None
         if key not in o:
-            die("envelope: unknown argument: %s" % argv[i])
+            die("%s: unknown argument: %s" % (name, argv[i]))
         i += 1
         if i >= len(argv):
-            die("envelope: --%s needs a value" % key)
+            die("%s: --%s needs a value" % (name, key))
         o[key] = argv[i]
         i += 1
-    for k in ("run", "stage", "config"):
+    for k in required:
         if not o[k]:
-            die("envelope needs --%s" % k)
-    events = read_run(o["run"])
-    caps, _extra, cap_src = read_config(o["config"])
-    scope = next((e for e in events if e.get("event") == "scope_confirmed"), None)
-    if scope is None:
-        die("envelope: %s carries no scope_confirmed event" % o["run"])
-    missing = [k for k in ("budget_usd", "deadline") if scope.get(k) in (None, "")]
-    if missing:
-        die("envelope: scope_confirmed carries no %s -- the envelope the person confirmed "
-            "(sprint Step 1) is what this checks against" % " or ".join(missing))
-    try:
-        budget = float(scope["budget_usd"])
-        deadline = parse_ts(scope["deadline"])
-        now = parse_ts(o["now"]) if o["now"] else datetime.now(timezone.utc)
-    except (TypeError, ValueError) as exc:
-        die("envelope: cannot read the envelope: %s" % exc)
+            die("%s needs --%s" % (name, k))
+    return o
 
-    stage = o["stage"]
-    spent, unpriced, mine = 0.0, [], []
-    for e in events:
-        if e.get("event") != "outcome":
+
+def read_stream(path):
+    """The JSON objects of a captured stream, in order. Non-JSON lines are CLI warnings (a nested
+    `claude -p` without stdin prints one into the stream) and are skipped, never fatal."""
+    if not os.path.exists(path):
+        die("no stream at %s" % path)
+    out = []
+    for line in open(path, errors="replace"):
+        line = line.strip()
+        if not line:
             continue
-        cost = e.get("cost_usd")
-        if isinstance(cost, (int, float)) and not isinstance(cost, bool):
-            spent += float(cost)
-            if e.get("stage") == stage:
-                mine.append(float(cost))
-        else:
-            cap = caps.get(e.get("stage"))
-            if cap is None:
-                die("envelope: an outcome for stage %r carries no cost_usd and %s has no cap "
-                    "for it" % (e.get("stage"), o["config"]))
-            spent += cap
-            unpriced.append(e.get("stage"))
-
-    if mine:
-        est = sum(mine) / len(mine)
-        est_src = "run log, %d %s outcome(s)" % (len(mine), stage)
-    else:
-        est, est_src = None, None
-        if o["measurement"]:
-            stages, meas_src = read_measurement(o["measurement"])
-            if stage in stages:
-                est, est_src = stages[stage]["usd_per_session"], meas_src
-        if est is None:
-            if stage not in caps:
-                die("envelope: no prior for %s and %s has no stage_budget_usd cap for it"
-                    % (stage, o["config"]))
-            est, est_src = caps[stage], "no prior: the stage cap, %s %s" % (cap_src, stage)
-
-    opened, minutes = {}, []
-    for e in events:
-        sid = e.get("session_id")
-        if e.get("stage") != stage or not isinstance(sid, str):
-            continue
-        stamp = next((e[k] for k in TS_KEYS if isinstance(e.get(k), str)), None)
         try:
-            at = parse_ts(stamp) if stamp else None
+            obj = json.loads(line)
         except ValueError:
-            at = None
-        if at is None:
             continue
-        if e.get("event") == "dispatch":
-            opened.setdefault(sid, at)
-        elif e.get("event") == "outcome" and sid in opened:
-            minutes.append((at - opened.pop(sid)).total_seconds() / 60.0)
-    est_min = sum(minutes) / len(minutes) if minutes else None
-    left_min = (deadline - now).total_seconds() / 60.0
-    left_usd = budget - spent
+        if isinstance(obj, dict):
+            out.append(obj)
+    return out
 
-    spent_src = "%d outcome(s)" % sum(1 for e in events if e.get("event") == "outcome")
-    if unpriced:
-        spent_src += ", %d unpriced and counted at their stage cap (%s)" % (
-            len(unpriced), ", ".join(unpriced))
-    print("ENVELOPE  budget   %.2f spent %.2f remaining %.2f estimate %.2f  source: %s; estimate: %s"
-          % (budget, spent, left_usd, est, spent_src, est_src))
-    if est_min is None:
-        print("ENVELOPE  time     deadline %s remaining %d min estimate %s  source: no %s window "
-              "in this run" % (scope["deadline"], round(left_min), NO_PRIOR, stage))
+
+def stream_windows(objs):
+    """(windows, None) from the LAST rate_limit_event, or (None, reason)."""
+    events = [o for o in objs if o.get("type") == "rate_limit_event"]
+    if not events:
+        return None, "no rate_limit_event in the stream"
+    last = events[-1]
+    info = last.get("rate_limit_info")
+    if not isinstance(info, dict):
+        info = last
+    raw = info.get("unifiedWindows")
+    if isinstance(raw, dict) and raw:
+        pairs = list(raw.items())
     else:
-        print("ENVELOPE  time     deadline %s remaining %d min estimate %d min  source: run log, "
-              "%d %s window(s)" % (scope["deadline"], round(left_min), round(est_min),
-                                   len(minutes), stage))
+        name = info.get("rateLimitType", last.get("rateLimitType"))
+        if not isinstance(name, str) or not name:
+            return None, "the last rate_limit_event carries neither unifiedWindows nor rateLimitType"
+        pairs = [(name, info)]
+    windows = {}
+    for name, w in pairs:
+        if not isinstance(w, dict):
+            return None, "window %s is not an object" % name
+        for k in ("utilization", "resetsAt"):
+            if not is_num(w.get(k)):
+                return None, "window %s carries no numeric %s" % (name, k)
+        windows[name] = {"utilization": w["utilization"],
+                         "resets_at": iso(datetime.fromtimestamp(w["resetsAt"], timezone.utc))}
+    return windows, None
 
-    reasons = []
-    if left_usd < est:
-        reasons.append("budget: %.2f left, %s needs an estimated %.2f" % (left_usd, stage, est))
-    if left_min <= 0:
-        reasons.append("time: the deadline %s has passed" % scope["deadline"])
-    elif est_min is not None and left_min < est_min:
-        reasons.append("time: %d min left, %s needs an estimated %d min"
-                       % (round(left_min), stage, round(est_min)))
-    if reasons:
-        print("STOP  %s" % "; ".join(reasons))
-        sys.exit(ENVELOPE_STOP)
-    print("CONTINUE  %s fits the envelope" % stage)
+
+def reading(argv):
+    o = flag_args("reading", argv, ("stream", "stage", "session", "now"),
+                  ("stream", "stage", "session"))
+    if o["now"]:
+        try:
+            parse_ts(o["now"])
+        except ValueError:
+            die("reading: --now is not an ISO-8601 UTC stamp: %s" % o["now"])
+    windows, reason = stream_windows(read_stream(o["stream"]))
+    ev = {"event": "headroom", "stage": o["stage"], "session_id": o["session"],
+          "at": o["now"] or now_stamp()}
+    if windows is None:
+        ev["readable"] = False
+        ev["reason"] = reason
+    else:
+        ev["windows"] = windows
+    print(json.dumps(ev, separators=(",", ":")))
     sys.exit(0)
 
 
+def outcome(argv):
+    o = flag_args("outcome", argv, ("stream",), ("stream",))
+    results = [x for x in read_stream(o["stream"]) if x.get("type") == "result"]
+    if not results:
+        die("outcome: no result line in %s" % o["stream"])
+    so = results[-1].get("structured_output")
+    if not isinstance(so, dict):
+        die("outcome: the last result line in %s carries no structured_output" % o["stream"])
+    print(json.dumps(so, separators=(",", ":")))
+    sys.exit(0)
+
+
+def read_headroom(path):
+    """The run log's headroom events, strictly: unlike read_run, a line that is not JSON is an
+    unreadable log (exit 1), so a supervisor never mistakes a log it could not read for a WAIT."""
+    if not os.path.exists(path):
+        die("no run log at %s" % path)
+    out = []
+    for n, line in enumerate(open(path, errors="replace"), 1):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            e = json.loads(line)
+        except ValueError:
+            die("envelope: %s line %d is not JSON" % (path, n))
+        if not isinstance(e, dict) or e.get("event") != "headroom":
+            continue
+        if e.get("readable") is False:
+            out.append(e)
+            continue
+        ws = e.get("windows")
+        if not isinstance(ws, dict) or not ws:
+            die("envelope: %s line %d is a headroom event with no windows" % (path, n))
+        for name, w in ws.items():
+            if not isinstance(w, dict) or not is_num(w.get("utilization")):
+                die("envelope: %s line %d: window %s carries no numeric utilization" % (path, n, name))
+            try:
+                w["_resets"] = parse_ts(w.get("resets_at") or "")
+            except (TypeError, ValueError):
+                die("envelope: %s line %d: window %s carries no readable resets_at" % (path, n, name))
+        out.append(e)
+    return out
+
+
+def envelope(argv):
+    # --config and --measurement are accepted and ignored: 0231's prose passed them, and a sprint
+    # driven by an installed skill older than this script must not stall on an unknown flag.
+    o = flag_args("envelope", argv, ("run", "stage", "now", "config", "measurement"),
+                  ("run", "stage"))
+    try:
+        now = parse_ts(o["now"]) if o["now"] else datetime.now(timezone.utc)
+    except ValueError:
+        die("envelope: --now is not an ISO-8601 UTC stamp: %s" % o["now"])
+    stage = o["stage"]
+    events = read_headroom(o["run"])
+    blind = "; no stop, relying on Step 7's limit_hit pause"
+    if not events:
+        print("CONTINUE  headroom not visible — the run log holds no headroom event" + blind)
+        sys.exit(0)
+    last = events[-1]
+    if last.get("readable") is False:
+        print("CONTINUE  headroom not visible — %s%s" % (last.get("reason") or "the last reading "
+              "was unreadable", blind))
+        sys.exit(0)
+
+    # A sample is the rise in one window between two ADJACENT readable headroom events with the
+    # same resets_at, booked to the LATER event's stage -- the stage that ran in between. An
+    # unreadable event between two readings breaks the pair: what it hides is unattributable.
+    samples = {}
+    for prev, cur in zip(events, events[1:]):
+        if prev.get("readable") is False or cur.get("readable") is False:
+            continue
+        if cur.get("stage") != stage:
+            continue
+        for name, w in cur["windows"].items():
+            p = prev["windows"].get(name)
+            if p is None or p["_resets"] != w["_resets"]:
+                continue
+            rise = w["utilization"] - p["utilization"]
+            if round(rise, HEADROOM_PLACES) < 0:
+                continue
+            samples.setdefault(name, []).append(rise)
+
+    short = []
+    for name, w in last["windows"].items():
+        reset = w["_resets"] <= now
+        u = 0.0 if reset else float(w["utilization"])
+        if samples.get(name):
+            exp = sum(samples[name]) / len(samples[name])
+            src = "run log, %d %s sample(s)" % (len(samples[name]), stage)
+        else:
+            exp = DEFAULT_EXPECTED.get(name, DEFAULT_EXPECTED_OTHER)
+            src = "default"
+        if reset:
+            src += "; reset %s, since the reading" % w["resets_at"]
+        head = 1.0 - u
+        print("ENVELOPE  %s  utilization %s headroom %s expected %s  source: %s"
+              % (name, frac(u), frac(head), frac(exp), src))
+        if not round(exp, HEADROOM_PLACES) < round(head, HEADROOM_PLACES):
+            short.append((name, head, exp, w["_resets"], w["resets_at"]))
+    if short:
+        parts = ["%s headroom %s < expected %s; resets %s" % (n, frac(h), frac(c), r)
+                 for n, h, c, _d, r in short]
+        until = max(short, key=lambda s: s[3])[4]
+        print("WAIT  %s — resume after %s" % ("; ".join(parts), until))
+        sys.exit(ENVELOPE_WAIT)
+    print("CONTINUE  %s fits the account headroom" % stage)
+    sys.exit(0)
+
+
+if mode == "reading":
+    reading(sys.argv[3:])
+if mode == "outcome":
+    outcome(sys.argv[3:])
 if mode == "envelope":
     envelope(sys.argv[3:])
 
@@ -1044,5 +1160,5 @@ elif mode == "record":
                 "would forge one" % flag)
     print(record(opts))
 else:
-    die("unknown mode: %s (expected estimate, record, tail-cap, or envelope)" % mode)
+    die("unknown mode: %s (expected estimate, record, tail-cap, reading, outcome, or envelope)" % mode)
 PY
