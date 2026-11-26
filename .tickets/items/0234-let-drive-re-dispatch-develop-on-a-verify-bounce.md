@@ -2,7 +2,7 @@
 id: "0234"
 title: Drive a whole outcome ticket through a sprint unattended, routing whatever stage it needs
 type: feature
-next: queue
+next: verify
 status: ready
 qa_level: unit
 close_by: verify
@@ -32,7 +32,7 @@ claimed_by:
 claimed_at:
 touches:
 slice:
-ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=2038cf12 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
+ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=e083f2f6 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
 ---
 
 ## Problem
@@ -414,7 +414,7 @@ code tree while leaving `.claude/backlog/` shared — and shared is correct ther
 - [ ] AC5 — Given AC1's fixture with `bounce_max: 2`, when the call carries `--bounces 0102=9 --bounces 0101=1`, then it exits 0 with `DISPATCH  develop 0101` — another id's count is not read. Red: an implementation reading the first or the largest `--bounces` value escalates. Test: `tests/next.test.sh`.
 - [ ] AC6 — Given AC1's fixture, when `--bounces` is given as `101=1`, `0101=0`, `0101=x`, `0101` (no `=`), or `0101=1 --bounces 0101=2`, then each exits 2. And given `bounce_max: two` (and, separately, `bounce_max: -1`), the AC1 call exits 1 and names `bounce_max`. Red: any of the seven accepted. Test: `tests/next.test.sh`.
 - [ ] AC7 — Given AC4's dispatching case, then the output carries a `NOTE` line before the `DISPATCH` line containing `0101`, `2 of 2` and the fixture's item path `.tickets/items/0101-`. Red: the NOTE omitted, or printed after the DISPATCH line. Test: `tests/next.test.sh`.
-- [ ] AC8 — Given AC1's fixture with `findings_threshold: 2` and two `FINDINGS.md` entries and no `--scope`, when `./next --drive --completed verify:0101` runs, then it exits 5, not 0 — the bounce re-dispatch takes the findings gate like any develop dispatch. Red: a re-dispatch that decides `DISPATCH` without `findings_gate gate`. Test: `tests/next.test.sh`.
+- [ ] AC8 — Given AC1's fixture with `findings_threshold: 2`, two `FINDINGS.md` entries and `--scope 0102` naming no takeable row (so no confirmed-scope work remains), when `./next --drive --completed verify:0101 --scope 0102` runs, then it exits 5 and prints no `DISPATCH  develop` — the bounce re-dispatch takes the findings gate like any develop dispatch. Red: a re-dispatch that decides `DISPATCH` without `findings_gate gate` (exits 0). Test: `tests/next.test.sh`.
 - [ ] AC9 — Given a row 0101 at `queue` / `ready` and `bounce_max: 2` with `--bounces 0101=1`, when `./next --drive --completed verify:0101` runs with no `--scope`, and again with `--scope 0102` only (0102 a ready develop row), then each exits 4 with `the contract is stale` and no `DISPATCH  queue`. Red: FR5's arm made blind to `--scope` (it dispatches queue). Test: the unedited `0038 AC9 — … stale contract` block plus two new cases beside it in `tests/next.test.sh`.
 - [ ] AC10 — Given the change, when `diff skills/queue/templates/next .tickets/next` runs, then it prints nothing; and `./next --help` names `--bounces` and `bounce_max`. Red: the project copy not re-synced, or the help left unchanged. Checked by running both commands at verify.
 - [ ] AC11 — Given `skills/sprint/SKILL.md` after the change, when verify reads Step 2, the step that composes the dispatch prompts, Step 4 and Step 8, then: Step 2 routes a develop bounce up to `bounce_max` and says how `--bounces` is counted and passed (FR7), and routes an in-scope contract-wrong bounce to a `queue` repair under the same bound and count, with `--completed queue:<id>` after it (FR7); a post-bounce develop dispatch and the FR5 queue dispatch both carry verify's `detail` pointer and the failed AC, and the queue prompt names the repair and FR14's hand-off (FR8); Step 8 states the escalate-only-what-needs-judgment principle with FR9's four examples (narrowing the outcome, a release action, repeated failure past `bounce_max`, a cap kill), "routes every stage the outcome needs" and the reason, says designing or re-specifying an in-scope ticket is routed while queuing work outside the scope is an escalation, lists a narrowing repair and an out-of-scope `next: queue` row as escalations, names two exceptions where it named one, and keeps "never narrows a contract" with the repair-is-not-narrowing sentence (FR9); and no list of escalations in Steps 2, 4 or 8 still names a verify bounce or an in-scope contract-wrong bounce. Red: any of these missing, a bounce still listed as an escalation, or "the one exception" left singular. A reading at verify — no prose guard, per `CLAUDE.md` *Tests*.
@@ -708,6 +708,14 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   `exits 0 — dispatch` / `re-dispatches develop` / `escalates nothing` FAIL in both blocks) — run.
 - `--drive`'s NOTE prints the item path `item_for` returns, which is `$DIR`-prefixed (absolute in a
   fixture); the ACs' `.tickets/items/0101-` is a substring of it.
+- **2026-11-26 (queue): AC8 replaced with the develop leg's *Proposed text*, verbatim, approved by
+  the user on 2026-11-26.** A repair of the fixture, intent unchanged: the criterion still asserts
+  that the bounce re-dispatch takes the findings gate like any develop dispatch; only the fixture
+  moved from no `--scope` (where 0174 defers the gate and both builds exit 0) to `--scope 0102`
+  naming no takeable row, where the gate bites. Only AC8 changed; `ac_digest:` re-stamped from
+  `./next --ac-digest 0234`. The code at `482784d` is right and stays — S1 is built and its
+  committed guard `0234 FR1 (AC8, proposed form)` already asserts this text, so no FR gains code and
+  the row goes to `next: verify`, `status: ready`.
 
 ### Open questions for the unspecified slices
 
