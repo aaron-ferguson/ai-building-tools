@@ -3,7 +3,7 @@ id: "0234"
 title: Drive a whole outcome ticket through a sprint unattended, routing whatever stage it needs
 type: feature
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -28,8 +28,8 @@ expects:
   - tools/next
   - references/CONCURRENCY.md
   - .claude/backlog/next
-claimed_by:
-claimed_at:
+claimed_by: "c7e1"
+claimed_at: 2026-11-26T23:56:49Z
 touches:
 slice: S3
 ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=e083f2f6 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
