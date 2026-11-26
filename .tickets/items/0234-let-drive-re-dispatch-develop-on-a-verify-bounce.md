@@ -31,7 +31,7 @@ expects:
 claimed_by: "b7e3"
 claimed_at: 2026-11-26T23:11:11Z
 touches:
-slice:
+slice: S1
 ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=e083f2f6 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
 ---
 
@@ -717,6 +717,19 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   committed guard `0234 FR1 (AC8, proposed form)` already asserts this text, so no FR gains code and
   the row goes to `next: verify`, `status: ready`.
 
+- **2026-11-26 (verify, S1 leg, token b7e3) — PASS on the S1 leg; handed back to `develop` with
+  `--slice S1`.** Every AC S1 discharges (AC1–AC10, AC12–AC16, AC18, AC19) checked literally
+  against `482784d`'s code, the whole suite green, and each cited guard reddened by a mutation run
+  here (table under *QA evidence*). No AC ticked: a leg pass ticks the slice, and the closing leg
+  ticks the ACs. **Hand-off defect, recorded rather than worked around silently:** the leg reached
+  verify through develop → queue (the AC8 repair) → verify, so no `develop → verify --slice S1`
+  hand-off ever wrote `slice:`, and `handoff --slice` refuses when `slice:` is not the slice verify
+  was handed. This pass set `slice: S1` in its own claimed item. S1 is the leg develop's build notes
+  and this dispatch name, and the first unticked slice. Parked in `FINDINGS.md`.
+  QA-plan mutation not run: "move the bounce arm above the `next: queue` arm". The two arms test
+  disjoint `next:` values (`develop` vs `queue`), so their order cannot change a decision (develop's
+  reasoning, re-read and agreed). AC9 still rests on a run mutation (M2).
+
 ### Open questions for the unspecified slices
 
 **Established, not yet specified (it was at next: queue), from 0204 — Route a queue completion that re-specifies a waiting row to develop instead of exiting 4:**
@@ -762,3 +775,93 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   parallel dispatch that must not ship over a partition that can put two gates in one file. Blocking
   the decision on the fix would have stalled the cheaper half behind the more expensive one.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** `expects:` corrected from `skills/orchestrate/SKILL.md` to `skills/sprint/SKILL.md` by this pass (0129 renamed it). Also relevant to this decision: `--drive`'s `gate_from` still groups develop gates by parent-or-shared-file while `develop`'s prose (0059) makes takeability the batching condition — possibly right, as a conflict unit versus a cost unit, but nothing says so (2026-09-12 buffer entry, 0132 Out of scope).
+
+## QA evidence
+
+**S1 leg — PASS** (verify, 2026-11-26, token b7e3). Code under test: `482784d`; item contract at
+`2dbbfe5` (AC8 re-specified). `./next --ac-digest 0234 --check` → `0234: ac_digest matches`.
+
+Conventions: ../ai-building-conventions (CONVENTIONS_CORE.md; testing-conventions.md,
+progressive-delivery-conventions.md cited by the NFR rows)
+
+Level: `unit` (frontmatter). Command, verbatim from `.tickets/config.yml` `commands.unit`:
+`for t in tests/*.test.sh; do "$t" || exit 1; done` → `UNIT-EXIT=0`; 45 files tallied, none with a
+non-zero `failed`; `tests/next.test.sh`: `715 passed, 0 failed`. Also run per file
+(`commands.unit_by_file`) first: all 45 tallies `0 failed`. lint / typecheck: not configured.
+
+Tree: `git status --porcelain` empty before the first run and after the last; `HEAD` unmoved
+(`73eac2e`, the claim) — dirty set empty, intersection empty, **not advisory**. Copy executed: the
+repo's `skills/queue/templates/next` (what `tests/next.test.sh` runs); the installed 0.9.49 cache
+differs from it in `templates/next` and `templates/config.yml`, as expected before a release.
+
+Mutations: each applied to its own copy of `skills/queue/templates/next` beside a trimmed
+`tests/next.test.sh` holding the harness helpers and the 0038 AC9, 0231 AC7 and `0234 S1` blocks.
+Control on the unmutated copy: `92 passed, 0 failed`. Each pattern was required to match exactly
+once, and each copy diffed non-empty against the control.
+
+| # | Mutation (requirement broken) | Reddened |
+|---|---|---|
+| M1 | `past_bound` `-gt` → `-ge` | AC4 first half (and its AC7 NOTE), AC14 first half, AC19 first half |
+| M2 | queue-repair arm: `--scope` test dropped | 0038 AC9 stale-contract block, AC9 both cases |
+| M3 | queue-repair arm also keyed on completed `queue` | AC16 third half |
+| M4 | queue-repair count a constant 1 | AC14 second and third halves |
+| M5 | develop → design absent count read as 1 | AC19 fourth half |
+| M6 | verify bounce decides `DISPATCH` without `dispatch_leg` (no findings gate) | AC8 |
+| M7 | `bounce_count` reads the first entry whatever its id | AC5 |
+| M8 | verify → develop arm restored to the old escalation | AC1, AC2, AC4, AC5, AC8 |
+| M9 | `bounce_max: 0` read as "no bound" | AC3, AC14 fourth half, AC19 fifth half |
+| M9b | `bounce_max: -1` accepted | AC6 (`-1`) |
+| M9c | `--bounces 0101=0` accepted | AC6 (`0101=0`) |
+| M9d | duplicate `--bounces` id accepted | AC6 (second value) |
+| M9e | `--bounces 0101` (no `=`) accepted | AC6 (`0101`) |
+| M10 | verify-bounce NOTE deleted | AC7 (three NOTE assertions) |
+| M10c | verify-bounce NOTE deferred to an EXIT trap, so it prints after `DISPATCH` (confirmed by a direct run) | AC7 |
+| M11 | queue-repair NOTE deleted | AC13 NOTE, AC18 queue-half NOTE |
+| M12 | FR13 arm (`--completed queue:` at develop/ready) disabled | AC15 |
+| M14 | design re-entry after verify: absent count read as 3 | AC18 design half |
+| M14b | queue-repair arm keyed on `verify` alone | AC18 queue half |
+| M15 | design arm's bound check removed | AC19 second and third halves |
+| M19 | queue-repair arm's bound check removed | AC14 second, third, fourth halves; AC19 fifth half |
+| M20 | queue-repair arm disabled (pre-change stale-contract arm) | AC13, AC14, AC18 queue half |
+| M21 | `bounce_max: 0` rejected as malformed | AC3, AC14 fourth, AC19 fourth and fifth |
+| M22 | non-number `bounce_max` accepted | AC6 (`two`, `-1`) |
+
+Invalid mutation, published rather than counted: M10b sent the NOTE to stderr, but `run_next`
+merges `2>&1`, so the output did not move. Replaced by M10c.
+
+Clause table (S1's ACs; Given / qualifier, action, object), each row checked against an assertion
+in `tests/next.test.sh`:
+
+| AC | Given (verbatim scope) | Action | Outcome / object | Guard | Result |
+|---|---|---|---|---|---|
+| AC1 | unsliced 0101 at develop/ready, no `bounce_max:`, no `--bounces` | `--completed verify:0101` | exit 0; `DISPATCH  develop 0101`; no `ESCALATE` | 0038 AC9 / 0234 AC1 | pass, M8 red |
+| AC2 | sliced 0911, S2 unticked, handed off from verify | `--completed verify:0911` | exit 0; `dispatch_line` = `DISPATCH  develop 0911` | 0231 AC7 / 0234 AC2 | pass, M8 red |
+| AC3 | AC1 fixture, `bounce_max: 0` | same call | exit 4; `ESCALATE  0101 bounced from verify`; no `DISPATCH` | 0234 AC3 | pass, M9/M21 red |
+| AC4 | `bounce_max: 2`; `--bounces 0101=2` / `=3` | same call | 0 + `DISPATCH  develop 0101` / 4 + `0101`, `3`, `bounce_max 2`, no `DISPATCH` | 0234 AC4 / AC7 | pass, M1/M8 red |
+| AC5 | `bounce_max: 2`; two ids differing in count (`0102=9`, `0101=1`) | same call | exit 0; `DISPATCH  develop 0101` | 0234 AC5 | pass, M7 red |
+| AC6 | each of seven malformed inputs | AC1 call | `--bounces` five → exit 2 each; `bounce_max` two → exit 1 naming `bounce_max` | 0234 AC6 (each asserted separately) | pass, M9b–e/M22 red |
+| AC7 | AC4's dispatching case | — | NOTE before `DISPATCH` with `0101`, `2 of 2`, `.tickets/items/0101-` | 0234 AC4 / AC7 | pass, M10/M10c red |
+| AC8 | AC1 fixture, `findings_threshold: 2`, two entries, `--scope 0102` naming no takeable row | `--completed verify:0101 --scope 0102` | exit 5; no `DISPATCH  develop` | `0234 FR1 (AC8, proposed form)` — the re-specified AC8's text | pass, M6 red |
+| AC9 | 0101 at queue/ready, `bounce_max: 2`, `--bounces 0101=1`; no `--scope`, and `--scope 0102` only | `--completed verify:0101` | exit 4; `the contract is stale`; no `DISPATCH  queue` | unedited 0038 AC9 stale block + 0234 AC9 | pass, M2 red |
+| AC10 | the change | `diff skills/queue/templates/next .tickets/next`; `./next --help` | empty diff; help names `--bounces` and `bounce_max` | run at verify: diff exit 0, empty; help lines 1, 43, 47 | pass |
+| AC12 | whole suite | configured `commands.unit` | exit 0 | `UNIT-EXIT=0` | pass |
+| AC13 | 0101 queue/ready, no `bounce_max:`, no `--bounces` | `--completed verify:0101 --scope 0101` | exit 0; `DISPATCH  queue 0101`; no `ESCALATE`; NOTE before with `0101`, `next: queue`, `1 of 2`, `.tickets/items/0101-` | 0234 AC13 | pass, M20/M11 red |
+| AC14 | AC13 fixture under four bounds/counts | same call | `=2` dispatch; `=3` exit 4 + `0101`/`3`/`bounce_max 2`; max 1 + `=2` exit 4; max 0 no count exit 4; no `DISPATCH` on the escalations | 0234 AC14 | pass, M1/M4/M19/M21 red |
+| AC15 | 0101 develop/ready, `--scope 0101` | `--completed queue:0101` | exit 0; `DISPATCH  develop 0101`; no `ESCALATE` | 0234 AC15 | pass, M12 red |
+| AC16 | 0101 queue/waiting + `## Waiting on`; then queue/ready + `--bounces 0101=1` | `--completed queue:0101` (no scope / `--scope 0101`) | exit 4 `is waiting on a person`, no `DISPATCH`; exit 4 no `DISPATCH`; exit 4 `the contract is stale`, no `DISPATCH  queue` | 0234 AC16 | pass, M3 red (third half); halves one and two rest on the pre-existing waiting arm, which S1 did not change |
+| AC18 | design/ready + `## Open design question`, no `bounce_max:`; queue/ready | `--completed verify:` / `develop:0101 --scope 0101` | `DISPATCH  design 0101`, no `ESCALATE`; `DISPATCH  queue 0101`, NOTE before with `0101`, `1 of 2` | 0234 AC18 | pass, M14/M14b/M11 red |
+| AC19 | design fixture under `bounce_max: 2` / `0`; queue fixture under `0` | verify/develop completions | five halves as written | 0234 AC19 | pass, M1/M15/M5/M19 red. Third half ("exits 4 likewise") asserts exit 4 and no `DISPATCH`, not the line's contents; M15 reds it |
+
+NFR rows (S1's part):
+
+| Row | Check | Result |
+|---|---|---|
+| Testing | new `--drive` behaviours are behaviour tests in `tests/next.test.sh`; amended assertions seen red against old code | holds: M8 reproduces the pre-change arm and reds AC1/AC2's amended blocks; M20 reds AC13; M1 reds AC4/AC14/AC19. AC22 clauses are S2's and are not checked in this leg |
+| Reliability | (AC22 — S2) | not this leg |
+| Progressive delivery | `bounce_max: 0` restores escalation; 0 not rejected nor "unbounded" | holds, guarded: M9 ("unbounded") and M21 ("rejected") both red AC3. Config template ships `bounce_max: 2` with the rollback stated in its comment |
+
+Always-on pass (`CONVENTIONS_CORE.md`): fail-loud on malformed input holds (exit 1 config, exit 2
+usage, both guarded); no new egress, log field, credential or data visibility, so no privacy or
+security row is owed. Newly reachable: escalations became dispatches only inside a bound and only
+for an in-scope id (FR5), and every dispatch still passes the findings gate (M6). No destructive
+action becomes reachable.
