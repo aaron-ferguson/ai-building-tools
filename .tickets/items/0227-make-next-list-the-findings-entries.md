@@ -2,8 +2,8 @@
 id: "0227"
 title: Make next list the findings entries so no drain matches a buffer's header by hand
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: develop
 size: s
@@ -106,3 +106,4 @@ exists in one script, and the fix is to expose it rather than have each sweeper 
   script rather than as a sentence telling sweepers where entries start. Routed to `develop`: no
   surface and no open decision — `count_findings` already holds the boundary rule. `close_by:
   develop`: every criterion names a case in a committed test file.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR36–FR40, AC47–AC51, slice S3, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

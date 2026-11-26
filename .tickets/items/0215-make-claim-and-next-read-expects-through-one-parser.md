@@ -2,8 +2,8 @@
 id: "0215"
 title: Make claim and next read expects and touches through one parser that refuses or accepts the comma form
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: m
@@ -71,3 +71,4 @@ gives `expects:`/`touches:` none, so the writers — `queue` and `design` hand-o
   FR1 may want — check its state before choosing how to share the parser.
 - 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park (develop 0182): `touches: "*"` as an inline scalar reads through `next`'s `fm_list` as `none declared`, so an exclusive claim collides with nothing; only the block form registers. 0145 (done) made `close`/`handoff` read both forms; `next` was not in its scope. Same one-parser fix.
 - 2026-11-18 — retro (findings gate of run-20261118T074205Z), from a FINDINGS.md park (develop 0231): `./claim 0231` reported "declares no expects:" over a flow-style `expects: [...]` that `./next develop` read, so `touches:` was left unset — a live instance of this row's parser split.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR13–FR15, AC18–AC21, slice S1, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

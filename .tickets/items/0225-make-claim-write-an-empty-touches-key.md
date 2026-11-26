@@ -2,8 +2,8 @@
 id: "0225"
 title: Make claim write an empty touches key when it has nothing to seed
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: s
 created: 2026-11-06
@@ -78,3 +78,4 @@ hand-off could run. `claim` already backfills the other missing ownership keys
 
 - 2026-11-06 — Filed by retro (sprint run-20261101T172121Z tail) from the tools-repo findings entry of
   2026-11-01 observed in AetherWorks 0027. Confirmed by a real project, so filed rather than held.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR16–FR18, AC22–AC24, slice S1, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

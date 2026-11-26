@@ -2,8 +2,8 @@
 id: "0235"
 title: Decide whether claim, handoff and close refuse off the branch the backlog is shared on
 type: bug
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -47,3 +47,4 @@ script know which branch that is (a `config.yml` key, the remote's HEAD, or `mai
 ## Notes & decisions
 
 - 2026-11-18 (retro) — filed from a consuming project's finding in `.tickets/FINDINGS.md`.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR42–FR43, slice S7, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

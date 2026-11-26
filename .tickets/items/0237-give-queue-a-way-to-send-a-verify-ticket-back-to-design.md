@@ -2,8 +2,8 @@
 id: "0237"
 title: Give queue a way to send an open verify ticket back to design
 type: feature
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -45,3 +45,4 @@ unclaimed form of `./handoff`, or `./reopen` taking a target stage?
 ## Notes & decisions
 
 - 2026-11-18 (retro) — filed from a consuming project's finding in `.tickets/FINDINGS.md`.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR44–FR45, slice S12, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

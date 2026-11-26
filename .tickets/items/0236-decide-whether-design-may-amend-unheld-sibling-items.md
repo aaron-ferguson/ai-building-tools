@@ -2,8 +2,8 @@
 id: "0236"
 title: Decide whether design may amend unheld sibling items its own FRs name
 type: chore
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -47,3 +47,4 @@ stop writing FRs that amend other items. Which?
 
 - 2026-11-18 (retro) — filed from a consuming project's finding. Its other half (a decision-only
   ticket hands to `verify`) landed in `skills/design/SKILL.md` Step 4 the same day.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR46–FR46, slice S13, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

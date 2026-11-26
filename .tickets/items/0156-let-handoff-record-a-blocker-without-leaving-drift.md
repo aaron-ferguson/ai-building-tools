@@ -2,8 +2,8 @@
 id: "0156"
 title: Let handoff record a blocker without leaving drift that stops a driver
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: s
@@ -60,3 +60,4 @@ Step 5 says the same. `./next --drift` calls that class 2 drift, and `--drive` e
 ## Notes & decisions
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** One buffer entry, filed because the tooling's own documented shape is what stops a sprint.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR41–FR41, AC52–AC52, slice S4, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

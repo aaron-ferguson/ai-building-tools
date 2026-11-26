@@ -2,8 +2,8 @@
 id: "0229"
 title: Make next --drift report a closed item that still carries a claim token
 type: debt
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: develop
 qa_manual:
@@ -96,3 +96,4 @@ the token; AC4 by leaving the usage text as it is.
 - 2026-11-08 — **Knock-on to know about:** `--drive` escalates on any drift, so a sprint in
   AetherWorks will stop on these 21 lines until they are cleared. The line names the fix for that
   reason.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR31–FR33, AC41–AC44, slice S3, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

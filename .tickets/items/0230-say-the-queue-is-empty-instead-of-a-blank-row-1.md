@@ -2,8 +2,8 @@
 id: "0230"
 title: Make next say the queue is empty instead of printing a blank ROW 1
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: develop
 qa_manual:
@@ -70,3 +70,4 @@ queue.
 - 2026-11-08 — The line is kept and given text rather than dropped: the script's header says its
   output is a fixed handful of lines whatever the queue holds, and a reader scanning for `ROW 1:`
   should always find it.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR34–FR35, AC45–AC46, slice S3, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

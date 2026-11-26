@@ -2,8 +2,8 @@
 id: "0170"
 title: Stop the marker heartbeat leaving an orphaned sleep child
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: develop
 qa_manual:
@@ -65,3 +65,4 @@ stop what you started.
 
 - 2026-09-17 — filed from `FINDINGS.md` by the sprint supervisor rather than a `queue` session, for
   the reason recorded in `0168`. The sweep's review list ranked it directly below `0167`.
+- 2026-11-26 — **Withdrawn: merged into `0234`**, carried as FR23–FR24, AC25–AC26, slice S4, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

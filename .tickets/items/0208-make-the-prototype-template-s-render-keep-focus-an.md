@@ -2,8 +2,8 @@
 id: "0208"
 title: Make the prototype template's render keep focus and play enter animations once
 type: bug
-next: queue
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -34,3 +34,5 @@ opens (quantum-catan `prototypes/turn-loop/index.html`, `render`/`restoreFocus`)
   working reference implementation. Focus loss is an accessibility defect, not only polish.
 
 ## Notes & decisions
+
+- 2026-11-26 — **Withdrawn: merged into `0238`**, slice S2, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

@@ -2,8 +2,8 @@
 id: "0137"
 title: Decide whether two develop sessions may run at once, and in what isolation
 type: feature
-next: design
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 size: l
 created: 2026-09-09
@@ -96,3 +96,4 @@ Cannot be written until the design question is settled.
   parallel dispatch that must not ship over a partition that can put two gates in one file. Blocking
   the decision on the fix would have stalled the cheaper half behind the more expensive one.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** `expects:` corrected from `skills/orchestrate/SKILL.md` to `skills/sprint/SKILL.md` by this pass (0129 renamed it). Also relevant to this decision: `--drive`'s `gate_from` still groups develop gates by parent-or-shared-file while `develop`'s prose (0059) makes takeability the batching condition — possibly right, as a conflict unit versus a cost unit, but nothing says so (2026-09-12 buffer entry, 0132 Out of scope).
+- 2026-11-26 — **Withdrawn: merged into `0234`**, carried as FR25–FR27, slice S6, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

@@ -2,8 +2,8 @@
 id: "0219"
 title: Make reopen leave a ticket that verify can close when it reopens a develop self-close
 type: bug
-next: queue
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -32,3 +32,5 @@ Filed by retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md par
 - Options: `reopen` resets `close_by` to `verify` when the reopen is for an independent verify (a flag or a reason class), or `close` accepts a verify close on a reopened row. The first keeps `close`'s refusal simple.
 
 ## Notes & decisions
+
+- 2026-11-26 — **Withdrawn: merged into `0242`**, slice S6, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

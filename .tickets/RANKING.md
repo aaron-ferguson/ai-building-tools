@@ -496,3 +496,17 @@ one class of defect, and splitting them across the queue would scatter the evide
 ## 2026-11-26 - 0242 placed directly below 0227
 
 `0242` (every backlog write one script call) is Tier 2: every queue, retro and park step pays the by-hand lock today, and every project these tools scaffold inherits it. It sits below `0227` because a prerequisite outranks its dependent (its S4 drain acts on `0227`'s listing), and below `0066`/`0215`/`0225`, which fix the scripts it extends in the same files and on capture order. It goes above `0229`, which is Tier 4, and above every design row.
+
+## 2026-11-26 - the backlog merged by outcome: 32 rows to 11
+
+At the user's direction (*"group work by outcome instead of by feature … it is actually more effective and efficient to do a whole project at once instead of re-paying the context reads for pieces of the project over and over across different tickets"*), 22 tickets were absorbed into five outcome tickets and withdrawn, each id burned. Every absorbing ticket's *Notes & decisions* lists what it carries, and each withdrawn file names its new home.
+
+The order now, top down:
+
+- **`0234`, drive a whole outcome ticket unattended**, at row 1. Every other outcome ticket is worked through it: it routes a leg to whatever stage that leg needs mid-sprint. A prerequisite outranks its dependents.
+- **`0242`, every backlog write one script call, and the scripts agreeing.** Tier 2: every session in every project pays the by-hand protocol and the script disagreements today. Part A, the existing scripts agreeing, comes first because Part B extends those scripts.
+- **`0192`** at verify, directly above **`0240`**, which it blocks.
+- **`0240`, sprint cost measured, estimated and tunable.** It sits below `0242` because a cost comparison is worth more once the protocol turns it would measure have been removed.
+- **`0064`, the running copy is the released copy.** Tier 4: it has bitten, but it is caught when it does.
+- **`0238`, prototype in a consuming project.** Tier 4, and both of its slices are at design.
+- Then the four standalone design rows in their previous order, `0214`, `0069`, `0070`, `0138`, and `0239` (kept at the user's request) at the bottom.

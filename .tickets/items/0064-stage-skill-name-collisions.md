@@ -1,16 +1,16 @@
 ---
 id: "0064"
-title: Make a stage skill say which copy of it is running
+title: Make the copy of a skill that runs provably the released one
 type: bug
 next: develop
 status: ready
-qa_level: verify
+qa_level: unit
 size: m
 created: 2026-08-25
 source: agent
 parent:
 blocked_by: []
-relates: ["0026", "0061"]
+relates: ["0026", "0061", "0084", "0129", "0157"]
 expects:
   - skills/verify/SKILL.md
   - skills/design/SKILL.md
@@ -20,12 +20,17 @@ expects:
   - skills/retro/SKILL.md
   - README.md
   - CLAUDE.md
+  - tools/release
+  - tests/release.test.sh
+ac_digest: AC1=3990b053 AC2=5b6d0b3f AC3=63686a6f AC4=44ecaa4e AC5=8f89b56f AC6=bb74f016 AC7=c6a73335
 claimed_by:
 claimed_at:
 touches:
 ---
 
 ## Problem
+
+**Outcome (merged 2026-11-26, at the user's direction):** a session can tell which installed copy of a stage it is running, and that the copy matches the commit that was released. A rule can no longer be reported missing on the day it shipped.
 
 A stage whose name collides with a built-in skill is a stage that can silently not run. The session
 that verified 0026 invoked `/verify` and loaded the **built-in** evidence-capture skill rather than
@@ -48,6 +53,17 @@ Two facts make this cheap to fix and easy to keep missing. The plugin-qualified 
 what it is in its first line, which turns a silent mis-resolve into something a reader notices in
 the transcript.
 
+### Absorbed 2026-11-26: 0157 — Make release verify compare the install against the released commit
+
+**`tools/release verify` compares the install against `HEAD`, so it goes red on the first backlog
+commit after a release.** Three claim commits after a release it reported `FAILED -- the install does
+not hold 7726456` over `.claude/backlog/QUEUE.md` and two item files, and `record FAILED --
+gitCommitSha is 59d4b2d` where 59d4b2d was the released commit and the record correct. Every
+differing path was backlog state. The substitute that answered the real question was
+`git worktree add --detach <path> <released-sha>` then `diff -rq` against the install: 230 paths
+identical (verify 0129 AC6).
+
+
 ## Functional requirements
 
 - FR1 — Each of the six stage skills opens by naming itself unambiguously — the plugin and the
@@ -59,6 +75,9 @@ the transcript.
   this repo contains — and today it covers only the version.
 - FR4 — Any place in this repo that tells a reader to invoke a stage by bare name is updated to the
   qualified form, so the documentation does not itself recommend the ambiguous call.
+- FR5 *(was 0157 FR1)* — `verify` compares against the commit the installed version was released at (the record's `gitCommitSha`, or the bump commit for that version), never `HEAD`.
+- FR6 *(was 0157 FR2)* — the comparison excludes `.claude/backlog/` and reports it excluded.
+
 
 ## Non-functional requirements
 
@@ -66,6 +85,7 @@ the transcript.
 |---|---|---|
 | Documentation | The invocation form is documented where a new reader starts (`README.md`) and where a session in this repo reads its own rules (`CLAUDE.md`) | `documentation-conventions.md` |
 | Progressive delivery | The skills ship to every machine installing the plugin, and a name collision depends on what else that machine has installed — so the fix must work without knowing what else is there | `progressive-delivery-conventions.md` |
+| Observability | (0157) The report names the commit compared against and why that one. | A report naming only `HEAD`. | `observability-conventions.md` |
 
 ## Acceptance criteria
 
@@ -80,6 +100,18 @@ the transcript.
 - [ ] AC5 — Given the whole suite, when it runs, then every suite passes — including
   `tests/skill-size.test.sh`, with a recorded justification naming this ticket for any file pushed
   over its goal.
+- [ ] AC6 *(was 0157 AC1)* — Given a fixture release followed by a commit touching only `.claude/backlog/`, when `tools/release verify` runs, then it passes. Red-making input: today's HEAD comparison.
+- [ ] AC7 *(was 0157 AC2)* — Given a fixture release followed by a commit changing `skills/`, not released, when `verify` runs against an install of the released commit, then it passes; and given the install altered, it fails. Red-making change: excluding everything.
+
+
+## Progress
+
+**One outcome is one ticket, even across many sessions**; its slices are worked in order, each about
+one develop session's work (`product-definition-conventions.md` → "Slice Vertically and Thinly").
+
+- [ ] S1 — a stage skill says which copy of it is running — discharges AC1, AC2, AC3, AC4, AC5
+- [ ] S2 — `tools/release verify` compares the install against the released commit (0157) — discharges AC6, AC7
+
 
 ## QA plan
 
@@ -91,6 +123,12 @@ the transcript.
   so that a match prints the offending file and line, since an absence assertion that only exits
   non-zero cannot say what it found. Then `tests/skill-size.test.sh` and the full suite.
 
+### From 0157
+
+- **Why that level:** `unit` — `tests/release.test.sh` already scaffolds fixture releases.
+- **Specific checks:** `tests/release.test.sh`.
+
+
 ## Out of scope
 
 - **Renaming any skill.** It would break every reference in this repo, in `RANKING.md`, in 40-odd
@@ -100,6 +138,11 @@ the transcript.
 - **Detecting the collision automatically.** A guard here would have to know what else is installed
   on the machine, which this repo cannot see. FR1 makes it visible in the transcript instead.
 - Whether the *installed* copy matches this repo. That is 0061 — the same family, a different axis.
+
+### From 0157
+
+- 0061's question of how a session learns the install differs.
+
 
 ## Notes & decisions
 
@@ -128,3 +171,12 @@ the transcript.
   distinguishing name, or a line telling a session to invoke the plugin-qualified form explicitly.
 - **2026-10-17 (retro, absorbed from AetherWorks FINDINGS.md).** A fourth occurrence: bare `/verify` loaded the bundled skill during AetherWorks 0095's verify with CLAUDE.md's *invoke the stage skills as `ai-building-tools:<name>`* warning already in context; caught only by reading that paragraph and the `Hand off 0095 to verify` commit. A rule broken four times is not enforceable as prose — the finding proposed a `UserPromptSubmit` hook or project-level skills shadowing the bundled names, either of which is a stronger form of FR1's distinguishing name. Unverified: whether a hook sees a slash command before expansion.
 - 2026-10-28 — **Absorbed 0061**, withdrawn in the triage: how a session learns the installed plugin differs from this repo is this row's question too.
+- **2026-11-26 (queue): merged by outcome, at the user's direction.** The 2026-11-26 consolidation grouped the backlog by outcome so a whole outcome is worked in one ticket and its context is paid for once. Absorbed and withdrawn, each id burned and each item file kept as the record:
+  - `0157` (Make release verify compare the install against the released commit): FR5–FR6, AC6–AC7
+  Each absorbed ticket's Problem is quoted verbatim above, and its FRs, ACs, NFR rows, QA plan, Out of scope and Notes are carried below with `*(was NNNN FRn)*` tags. **Bare FR and AC numbers inside the carried text were renumbered to this ticket's.** A reference to another ticket's criterion not written as `NNNN ACn` may have been renumbered too, and the withdrawn file holds the original. An unspecified slice sends this ticket to `design` when it is next; its open question is below.
+
+### Carried notes of the absorbed tickets
+
+### From 0157 — Make release verify compare the install against the released commit
+
+- **Filed by a retro pass 2026-09-12 from FINDINGS.md.** One buffer entry; filed because the tool the release chain ends on is red within minutes of every release in this repo.

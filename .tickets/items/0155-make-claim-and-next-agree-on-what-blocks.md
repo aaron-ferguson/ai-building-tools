@@ -2,8 +2,8 @@
 id: "0155"
 title: Make claim and next agree on what blocks a take
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: m
@@ -79,3 +79,4 @@ Five defects where `claim` and `next` disagree, each from the findings buffer:
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** Six buffer entries from five sessions, grouped because each is the two scripts giving opposite answers about one take, and they share both files.
 - 2026-10-27 — retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md park, two more disagreements on what a file reservation holds: (1) develop 0169: `./close`'s scope report reads a glob `touches:` entry (`"tests/*.test.sh"`) literally — the entry reads untouched and all 34 matched files undeclared — and `next`'s held-file comparison presumably does too; decide expand-or-forbid for globs across `claim`/`next`/`close`. (2) design 0145: `collision_report` reads an empty `touches:` on a held develop row as holding nothing, while CLAIMED FILES says "assume held, ask" and `design_conflict` falls back to `expects:`. 0145 (done) settled only the scope report.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR19–FR23, AC25–AC29, slice S1, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

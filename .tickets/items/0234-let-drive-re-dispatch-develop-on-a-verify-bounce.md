@@ -1,6 +1,6 @@
 ---
 id: "0234"
-title: Route whatever stage the confirmed outcome needs, mid-sprint
+title: Drive a whole outcome ticket through a sprint unattended, routing whatever stage it needs
 type: feature
 next: develop
 status: ready
@@ -12,7 +12,7 @@ created: 2026-11-18
 source: user
 parent:
 blocked_by: []
-relates: ["0231"]
+relates: ["0231", "0153", "0170", "0204", "0050", "0054", "0059", "0134", "0136", "0137"]
 expects:
   - skills/queue/templates/next
   - skills/queue/templates/config.yml
@@ -24,14 +24,20 @@ expects:
   - tests/sprint-ledger.test.sh
   - CHANGELOG.md
   - .tickets/items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md
+  - tests/sprint.test.sh
+  - tools/next
+  - references/CONCURRENCY.md
+  - .claude/backlog/next
 claimed_by:
 claimed_at:
 touches:
 slice:
-ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=2038cf12 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16
+ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=2038cf12 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
 ---
 
 ## Problem
+
+**Outcome (merged 2026-11-26, at the user's direction):** a confirmed outcome ticket runs to `done` in one sprint with no person typing the next command: every leg is routed to the stage it needs, the supervisor's plumbing leaves nothing behind, and running develop legs in parallel has a decided answer.
 
 In sprint run-20261118T074205Z, 0231's leg S5 failed verify on AC14, and
 `./next --drive --completed verify:0231` exited 4 with
@@ -66,6 +72,57 @@ limit"*. Verified on this host 2026-11-18, `claude -p --output-format stream-jso
 `utilization` fraction and a `resetsAt` epoch — a fraction used per window, not tokens left. So the
 envelope becomes a headroom gate over those windows (FR18, FR19, FR21), **changing 0231's delivered
 contract (FR13, AC14) on the user's call**, and its 0231 tests are amended citing 0234 (FR22).
+
+### Absorbed 2026-11-26: 0170 — Stop the marker heartbeat leaving an orphaned sleep child
+
+Parked 2026-09-14, verbatim:
+
+> The supervisor's hand-rolled marker heartbeat, stopped with `kill $BEAT`, left its `sleep 60`
+> child orphaned under launchd. Killing the backgrounded subshell does not kill the `sleep` it is
+> waiting on; `pkill -P $BEAT` before `kill $BEAT` stopped it cleanly on later dispatches.
+
+Observed on run `run-20260913T222409Z`: a `sleep 60` with ppid 1 outliving the dispatch that
+started it. `0153`'s executed guard asserts the loop stops, which it does — the leak is the child
+the loop was blocked on, and no criterion looks for it. It is small and self-clearing within one
+interval, and it is still a process nobody stops on purpose, in a skill whose conventions say to
+stop what you started.
+
+### Absorbed 2026-11-26: 0204 — Route a queue completion that re-specifies a waiting row to develop instead of exiting 4
+
+Filed by retro 2026-10-10 (tail of quantum-catan run-20261010T212209Z) from this repo's buffer.
+`./next --drive --completed queue:<id>` exits 4 ("at next: develop / ready after queue, which no routing
+rule covers") when a queue session re-specified an owner-ruled `waiting` row back to `develop ready`.
+Re-calling with no `--completed` routed it normally, so the supervisor drops the flag by hand.
+(quantum-catan run-20261010T144315Z, 0008 after queue session 15061e8a.)
+
+### Absorbed 2026-11-26: 0137 — Decide whether two develop sessions may run at once, and in what isolation
+
+Aaron, 2026-09-08: *"Orchestrate is welcome to run as many develop sessions at once as it feels
+appropriate while avoiding potential conflicts with other agents."* Deferred the same day, after the
+cost and safety analysis below, and recorded here rather than dropped.
+
+**Parallel develop buys wall-clock and spends the two things this project ranks above it.** The
+stated priority order is quality, then cost, then time. N parallel sessions each re-pay the roughly
+20k-token startup floor, so they cost strictly more than the same N tickets sequentially and more
+again than one gate holding all N — the saving the suite is built on. It buys only time.
+
+**Three specific hazards, none of them hypothetical:**
+
+- **The conflict predicate is a field the code labels unreliable.** `next`'s own comment: `touches:`
+  is the claim verified against the code, while `expects:` is *"the prediction the ticket was written
+  with"*. Only the prediction exists before dispatch.
+- **Gates are not currently disjoint from each other** — `0136`, which is why this row is blocked on
+  it. Dispatching two gates in parallel on today's partition can put two sessions in one file.
+- **One working tree, one git index.** `CONVENTIONS_CORE.md` forbids `git add .` precisely because
+  *"the index is one shared staging area"*. `config.yml` already records this biting with only
+  hand-driven concurrency: verifying `0084`, another session's in-flight work reddened the
+  alphabetically-first of seventeen guards and the fail-fast loop meant the guard that verdict rested
+  on never ran.
+
+The candidate that makes it sound is **one git worktree per parallel session**, which isolates the
+code tree while leaving `.claude/backlog/` shared — and shared is correct there, since `claim`,
+`close` and the lock are built for it. That is a subsystem, not a flag.
+
 
 ## Functional requirements
 
@@ -330,6 +387,15 @@ contract (FR13, AC14) on the user's call**, and its 0231 tests are amended citin
   now asserting no `STOP` (AC22). 0231's item file gains one dated line in *Notes & decisions*
   pointing at 0234 as where its FR13/AC14 contract changed; its ticked ACs and `ac_digest:` are not
   edited, being the record of what was verified then.
+- FR23 *(was 0170 FR1)* — The Step 3 heartbeat snippet kills the loop's descendants before the loop itself.
+- FR24 *(was 0170 FR2)* — A committed guard asserts no descendant of the heartbeat survives the snippet's own stop.
+- FR25 *(was 0137 FR1)* — Whatever shape is chosen, the skill states the priority order it was chosen under, so a later
+  reader does not re-open it on wall-clock grounds alone.
+- FR26 *(was 0137 FR2)* — If parallelism is permitted, the rule names what a session does when it discovers another is
+  working the same file — the case `0054` covers for a shared dirty tree.
+- FR27 *(was 0137 FR3)* — If parallelism is declined, that is recorded as a decision with its reasoning, not left as an
+  absence.
+
 
 ## Non-functional requirements
 
@@ -365,12 +431,26 @@ contract (FR13, AC14) on the user's call**, and its 0231 tests are amended citin
 - [ ] AC22 — Given a run log whose last `headroom` event reads `five_hour` 0.21 and `seven_day` 0.77 (both `resets_at` after `--now`) and no earlier reading, when `tools/sprint-ledger.sh envelope --run <it> --stage develop --now 2026-11-18T10:00:00Z` runs, then it exits 0 and prints `CONTINUE` and two `ENVELOPE` lines whose source is `default`; with `seven_day` at 0.99 it exits 3, prints a `WAIT` line naming `seven_day` and that window's reset time and `resume after`, and prints no `CONTINUE` and no `STOP`; with `seven_day` at 0.98 against its default 0.02 (expected equal to headroom) it exits 3, and at 0.97 it exits 0 — the boundary pair; with `seven_day` at 0.99 but its `resets_at` before `--now`, it exits 0 (the window has reset); with no `headroom` event, and separately with a last event `"readable":false`, each exits 0 and prints `headroom not visible`; and given 0231 AC14's short-budget and past-deadline fixtures (a `scope_confirmed` whose budget or deadline is spent), each exits 0 with no `STOP` — no run budget or deadline stops the gate. Red: the unmodified `envelope` (the 0231 fixtures print `STOP`); the comparison mutated `<` → `<=` so equal headroom continues (the boundary case exits 0); a reset window still counted (the reset case exits 3); not-visible exiting non-zero. Test: `tests/sprint-ledger.test.sh`, the 0231 blocks amended per FR22.
 - [ ] AC23 — Given a run log with three readable `headroom` events for one window `five_hour` with the same `resets_at` — after a `verify` at 0.20, after a `develop` at 0.35, after a `develop` at 0.60 — when `envelope --stage develop` runs, then its `five_hour` line reports `expected 0.20` (the mean of 0.15 and 0.25) with source `run log, 2 develop sample(s)`; and when the third event instead carries a different `resets_at` (the window reset), then the expected cost is `0.15` from one sample. Red: samples attributed to the earlier event's stage (verify, giving the develop default); the reset delta counted (expected moves off 0.15); the mean replaced by the last sample (0.25). Test: `tests/sprint-ledger.test.sh`.
 - [ ] AC24 — Given AC20's first fixture stream whose `result` line carries a `structured_output` object, when `tools/sprint-ledger.sh outcome --stream <it>` runs, then it exits 0 and prints exactly one line, that object, which `tools/validate-json-schema.py` accepts against `skills/sprint/outcome.schema.json`; given a stream with no `result` line, and separately a `result` line with no `structured_output`, each exits 1 naming which. Red: the whole `result` line printed instead of its `structured_output` (the schema rejects it); a missing outcome exiting 0. Test: `tests/sprint-ledger.test.sh`.
+- [ ] AC25 *(was 0170 AC1)* — Given the Step 3 snippet extracted and run with a shortened interval, when the stop it
+  prescribes has run, then no descendant of the heartbeat's pid remains. Guard:
+  `tests/sprint.test.sh`. Red: the snippet as written today, with the kill of the subshell alone.
+- [ ] AC26 *(was 0170 AC2)* — Given the same extraction, the timestamp still advances while the stand-in runs, so
+  `0153` AC26 is unaffected. Guard: `tests/sprint.test.sh`. Red: a stop that also prevents the
+  refresh.
+
 
 ## Progress
+
+**One outcome is one ticket, even across many sessions**; its slices are worked in order, each about
+one develop session's work (`product-definition-conventions.md` → "Slice Vertically and Thinly").
 
 - [ ] S1 — `--drive`: the develop and queue bounce arms, the develop → queue and design re-entry bounds, `--bounces`, `bounce_max`, help, the amended 0038/0231 tests, `.tickets/next` re-synced — discharges AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8, AC9, AC10, AC12, AC13, AC14, AC15, AC16, AC18, AC19
 - [ ] S2 — the headroom gate in `tools/sprint-ledger.sh`: `reading` and `outcome` over a stream, `envelope` reworked from a budget/deadline STOP into CONTINUE/WAIT/not-visible, 0231's envelope tests amended citing 0234 — discharges AC20, AC22, AC23, AC24
 - [ ] S3 — the prose: `skills/sprint/SKILL.md` Steps 1, 2, 3, 4, 7, 8 and the proposal (FR7–FR9, FR17, FR20, FR21), `skills/queue/SKILL.md`'s *Re-specify* bullet, the config template comment, `CHANGELOG.md`, 0231's pointer note — discharges AC11, AC17, AC21
+- [ ] S4 — the marker heartbeat leaves no orphaned `sleep` child (0170) — discharges AC25, AC26
+- [ ] S5 — route a queue completion that re-specifies a waiting row to develop instead of exiting 4 (0204) — unspecified
+- [ ] S6 — decide whether two develop sessions may run at once, and in what isolation (0137) — unspecified
+
 
 ## QA plan
 
@@ -394,6 +474,13 @@ contract (FR13, AC14) on the user's call**, and its 0231 tests are amended citin
   delta across a changed `resets_at` and confirm the reset case reds. For AC24, print the whole
   `result` line and confirm the schema check reds. Read the places FR17 and FR21 name for AC21. A leg
   verify checks only the ACs its slice discharges, plus the whole suite (0231 FR5).
+
+### From 0170
+
+- **Why that level:** `unit` — both criteria execute the snippet and read process state.
+- **Specific checks:** `tests/sprint.test.sh`, each red proved by reverting the kill order, then the
+  whole suite.
+
 
 ## Out of scope
 
@@ -422,6 +509,17 @@ contract (FR13, AC14) on the user's call**, and its 0231 tests are amended citin
   the shape if one arrives, and changes nothing in `verify`.
 - Releasing it. The `CHANGELOG.md` note is in scope; the bump and install are `tools/release`'s,
   on the user's word.
+
+### From 0170
+
+`0153`'s staleness rule and the heartbeat's interval.
+
+### From 0137
+
+- Design sessions running in parallel — already permitted by `0134` on the ground that they split no
+  shared context.
+- The gate partition defect — `0136`.
+
 
 ## Notes & decisions
 
@@ -563,3 +661,54 @@ contract (FR13, AC14) on the user's call**, and its 0231 tests are amended citin
   renaming the forecast fields. FR9's person's-list loses the envelope `STOP`, and AC21 gains FR21's
   places and checks Step 8 lists no `STOP`. No AC was ticked, so none is un-ticked. Rank kept: an amend does not re-rank. Stays `next:
   develop` — no open decision and no surface remain.
+- **2026-11-26 (queue): merged by outcome, at the user's direction.** The 2026-11-26 consolidation grouped the backlog by outcome so a whole outcome is worked in one ticket and its context is paid for once. Absorbed and withdrawn, each id burned and each item file kept as the record:
+  - `0170` (Stop the marker heartbeat leaving an orphaned sleep child): FR23–FR24, AC25–AC26
+  - `0204` (Route a queue completion that re-specifies a waiting row to develop instead of exiting 4): no FRs, no ACs (an unspecified slice)
+  - `0137` (Decide whether two develop sessions may run at once, and in what isolation): FR25–FR27, no ACs (an unspecified slice)
+  Each absorbed ticket's Problem is quoted verbatim above, and its FRs, ACs, NFR rows, QA plan, Out of scope and Notes are carried below with `*(was NNNN FRn)*` tags. **Bare FR and AC numbers inside the carried text were renumbered to this ticket's.** A reference to another ticket's criterion not written as `NNNN ACn` may have been renumbered too, and the withdrawn file holds the original. An unspecified slice sends this ticket to `design` when it is next; its open question is below.
+
+### Open questions for the unspecified slices
+
+**Established, not yet specified (it was at next: queue), from 0204 — Route a queue completion that re-specifies a waiting row to develop instead of exiting 4:**
+
+- The rule set has no queue-completion case; the fix is likely one routing rule plus a `tests/next.test.sh`
+  section. Not read: which function in `tools/next` holds the completion rules.
+
+**Open design question, from 0137 — Decide whether two develop sessions may run at once, and in what isolation:**
+
+- **Question:** May two develop sessions run at once, and what isolates their working trees? The
+  candidates: **a worktree per session**, with a defined lifecycle and a merge path back; **one tree
+  with a stricter, verified scope predicate**, which requires something better than `expects:` before
+  dispatch; or **no parallel develop**, keeping the gate as the only concurrency and treating
+  wall-clock as the axis that varies.
+- **Why it blocks specification:** the acceptance criteria are incompatible. A worktree answer needs
+  a lifecycle, a merge protocol, and a statement of what happens when two worktrees both run the
+  suite. A stricter-predicate answer needs a definition of verified scope that does not exist. The
+  third is prose plus a deliberate non-goal. And there is a prior question the answer turns on:
+  whether the suite can be run in two worktrees at once at all, given every guard greps the repo's
+  own prose files.
+- **Settle it with:** `/design` — the inputs are `references/CONCURRENCY.md`, the `0084` incident in
+  `config.yml`, `0136`'s partition, and what `git worktree` costs to set up and tear down.
+
+### Carried notes of the absorbed tickets
+
+### From 0170 — Stop the marker heartbeat leaving an orphaned sleep child
+
+- 2026-09-17 — filed from `FINDINGS.md` by the sprint supervisor rather than a `queue` session, for
+  the reason recorded in `0168`. The sweep's review list ranked it directly below `0167`.
+
+### From 0204 — Route a queue completion that re-specifies a waiting row to develop instead of exiting 4
+
+- 2026-10-24 — Absorbed by retro (second leg of AetherWorks run-20261024T195310Z's tail): a broader trigger than the Problem names: AetherWorks run-20261024T195310Z dispatched a `queue` stage on the repair-first path for 0130, a fresh row rather than a re-specified `waiting` one, and `./next --drive --completed queue:0130` still exited 4 ("which no routing rule covers"); without `--completed` it gave `DISPATCH develop 0130`. So the fix is routing any `develop | ready` row after `queue`, not only a re-specified waiting row.
+
+### From 0137 — Decide whether two develop sessions may run at once, and in what isolation
+
+- **2026-09-09 — deferred, not dropped, at Aaron's direction after the analysis above.** Ranked low
+  deliberately: it is the one child of `0128` whose value is wall-clock, which is the axis this
+  project is explicitly willing to let vary.
+- **2026-09-09 — `0136` is a relation, not a blocker.** It was first written as `blocked_by`, which
+  `./next --drift` correctly reported against the row. The block was wrong in substance too: the
+  design question can be *decided* on today's partition, and it is only an implementation of
+  parallel dispatch that must not ship over a partition that can put two gates in one file. Blocking
+  the decision on the fix would have stalled the cheaper half behind the more expensive one.
+- **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** `expects:` corrected from `skills/orchestrate/SKILL.md` to `skills/sprint/SKILL.md` by this pass (0129 renamed it). Also relevant to this decision: `--drive`'s `gate_from` still groups develop gates by parent-or-shared-file while `develop`'s prose (0059) makes takeability the batching condition — possibly right, as a conflict unit versus a cost unit, but nothing says so (2026-09-12 buffer entry, 0132 Out of scope).

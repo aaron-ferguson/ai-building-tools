@@ -2,8 +2,8 @@
 id: "0157"
 title: Make release verify compare the install against the released commit
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: s
@@ -61,3 +61,4 @@ identical (verify 0129 AC6).
 ## Notes & decisions
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** One buffer entry; filed because the tool the release chain ends on is red within minutes of every release in this repo.
+- 2026-11-26 — **Withdrawn: merged into `0064`**, carried as FR5–FR6, AC6–AC7, slice S2, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

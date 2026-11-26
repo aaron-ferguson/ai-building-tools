@@ -23,38 +23,16 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0064 | Make a stage skill say which copy of it is running | develop | ready |  |
-| 0066 | Fix the three places the backlog scripts answer the wrong question | develop | ready |  |
-| 0215 | Make claim and next read expects and touches through one parser that refuses or accepts the comma form | develop | ready |  |
-| 0225 | Make claim write an empty touches key when it has nothing to seed | develop | ready |  |
-| 0227 | Make next list the findings entries so no drain matches a buffer's header by hand | develop | ready |  |
-| 0242 | Make every backlog write one script call, so no session takes the lock by hand | develop | ready |  |
-| 0229 | Make next --drift report a closed item that still carries a claim token | develop | ready |  |
-| 0234 | Route whatever stage the confirmed outcome needs, mid-sprint | develop | ready |  |
+| 0234 | Drive a whole outcome ticket through a sprint unattended, routing whatever stage it needs | develop | ready |  |
+| 0242 | Make every backlog write one script call, and make the scripts agree with each other | develop | ready |  |
+| 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | verify | ready |  |
+| 0240 | Make a sprint's cost measured, estimated and tunable | develop | blocked | 0128 |
+| 0064 | Make the copy of a skill that runs provably the released one | develop | ready |  |
+| 0238 | Make prototype levels 2 and 3 work inside a consuming project | design | ready |  |
 | 0214 | Add a profile-declared gate that a stage refuses to pass without its artifact | design | ready |  |
 | 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
 | 0138 | Decide whether idea capture is a lighter-weight skill than queue's Add, and what triggers it | design | ready |  |
-| 0118 | Run the privacy guard where a sweep commits, not only where a suite runs | develop | ready |  |
-| 0164 | Record active and elapsed time and interruptions in the sprint ledger, and estimate them | develop | ready |  |
-| 0170 | Stop the marker heartbeat leaving an orphaned sleep child | develop | ready |  |
-| 0240 | Pin each stage's effort on its sprint dispatch and record it in the run log | develop | ready | 0128 |
-| 0241 | Price Sonnet 5.5 and Haiku 5.5 turns in the harvest, Haiku at its long-prompt rate above 100K | develop | blocked | 0128 |
-| 0137 | Decide whether two develop sessions may run at once, and in what isolation | design | ready | 0128 |
-| 0149 | Audit sprint efficiency — suite-check dedup, per-agent overhead, and model tiering | design | ready | 0128 |
-| 0155 | Make claim and next agree on what blocks a take | develop | ready |  |
-| 0156 | Let handoff record a blocker without leaving drift that stops a driver | develop | ready |  |
-| 0157 | Make release verify compare the install against the released commit | develop | ready |  |
-| 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | verify | ready |  |
-| 0204 | Route a queue completion that re-specifies a waiting row to develop instead of exiting 4 | queue | ready |  |
-| 0208 | Make the prototype template's render keep focus and play enter animations once | queue | ready |  |
-| 0217 | Stop a note written below the last AC from changing that AC's digest | queue | ready |  |
-| 0219 | Make reopen leave a ticket that verify can close when it reopens a develop self-close | queue | ready |  |
-| 0230 | Make next say the queue is empty instead of printing a blank ROW 1 | develop | ready |  |
-| 0235 | Decide whether claim, handoff and close refuse off the branch the backlog is shared on | design | ready |  |
-| 0236 | Decide whether design may amend unheld sibling items its own FRs name | design | ready |  |
-| 0237 | Give queue a way to send an open verify ticket back to design | design | ready |  |
-| 0238 | Decide whether a ticket-pinned path in the current repo stands in for prototype.root at level 3 | design | ready |  |
 | 0239 | Codex test | develop | ready |  |
 
 **Read this file with `./next <stage>`, not by eye** — it applies the takeability rules and reads

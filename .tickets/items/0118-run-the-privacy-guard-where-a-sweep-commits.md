@@ -2,8 +2,8 @@
 id: "0118"
 title: Run the privacy guard where a sweep commits, not only where a suite runs
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -80,3 +80,4 @@ pattern at all.
   landed fix at `2a69aa9`. The landed half is dropped from the buffer; this is what was left
   needing a row.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Another commit site: a QA-evidence table quoting a guard's failure message verbatim published a home-directory path in `items/0052-…md:294` (`Close 0052`), reddening `measurement.test.sh` and the fail-fast release gate. Since redacted and green, but `verify` Step 7's evidence write is the ordinary route and runs no privacy check before its commit.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR47–FR49, AC53–AC55, slice S14, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

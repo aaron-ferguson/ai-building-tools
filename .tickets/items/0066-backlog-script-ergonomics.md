@@ -2,8 +2,8 @@
 id: "0066"
 title: Fix the three places the backlog scripts answer the wrong question
 type: bug
-next: develop
-status: ready
+next:
+status: withdrawn
 qa_level: unit
 size: l
 created: 2026-08-25
@@ -164,3 +164,4 @@ beside the counts. It cost a session to explain rather than a script to answer.
   malformed one. `CONCURRENCY.md` (*A stage writes only the ticket it holds*) correctly forbade the
   session that found it from repairing the row, so a bad value can only be parked — which is an
   argument for rejecting it at write time rather than tolerating it at read time.
+- 2026-11-26 — **Withdrawn: merged into `0242`**, carried as FR24–FR30, AC30–AC40, slice S2, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

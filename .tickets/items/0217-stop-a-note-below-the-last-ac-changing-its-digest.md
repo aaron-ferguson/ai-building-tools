@@ -2,8 +2,8 @@
 id: "0217"
 title: Stop a note written below the last AC from changing that AC's digest
 type: bug
-next: queue
-status: ready
+next:
+status: withdrawn
 qa_level: verify
 close_by: verify
 qa_manual:
@@ -31,3 +31,5 @@ Filed by retro 2026-10-27 (tail of run-20261025T215324Z), from a FINDINGS.md par
 - Either `--ac-digest` ends an AC at a line that is not a `- [ ] ACn` continuation, or `develop`'s re-entry guidance names where a stop note goes. The recurrence argues for the script fix: a note's position is not something a session reliably reads guidance about.
 
 ## Notes & decisions
+
+- 2026-11-26 — **Withdrawn: merged into `0242`**, slice S5, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.

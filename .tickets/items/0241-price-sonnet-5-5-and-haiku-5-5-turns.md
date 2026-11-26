@@ -2,8 +2,8 @@
 id: "0241"
 title: Price Sonnet 5.5 and Haiku 5.5 turns in the harvest, Haiku at its long-prompt rate above 100K
 type: chore
-next: develop
-status: blocked
+next:
+status: withdrawn
 qa_level: unit
 close_by: verify
 size: s
@@ -121,3 +121,4 @@ about 5x on exactly the sessions a trial would run. The same sources give Sonnet
   new ticket.
 - **For whoever runs the trial:** Haiku 5.5's tokenizer counts the same text as about 30% more tokens
   (claude-api `shared/models.md`). Compare sessions in dollars, not tokens.
+- 2026-11-26 — **Withdrawn: merged into `0240`**, carried as FR8–FR12, AC9–AC16, slice S2, in the outcome consolidation the user directed. The work goes on there; this file is the record and the id stays burned.
