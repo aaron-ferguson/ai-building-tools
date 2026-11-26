@@ -775,6 +775,17 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - **For S3:** `README.md` line 111 still says the sprint "ends at a clean boundary when either runs
   out" of `envelope` — stale since `612a548`, and not on S3's list of places; S3 should take it.
 
+- **2026-11-26 (verify, S2 leg, token 2950) — PASS on the S2 leg; handed back to `develop` with
+  `--slice S2`.** AC20, AC22, AC23 and AC24 checked literally against `612a548`'s code, the whole
+  suite green, and each cited guard reddened by a mutation run here in a detached worktree (table
+  under *QA evidence*). No AC ticked: a leg pass ticks the slice. develop's seven stated decisions
+  re-read and not disputed: none contradicts FR18/FR19, and (1), accepting and ignoring
+  `--config`/`--measurement`, keeps the installed 0.9.49 Step 2 driving until S3 lands. One
+  coverage note, not a gap that fails the leg: AC22's "two `ENVELOPE` lines" is guarded per window
+  (each line asserted present), not as a count of two. A direct run printed exactly 2. `.tickets/claim`
+  with no token died on the missing `xxd` before taking the lock (already in `FINDINGS.md`), so this
+  pass claimed with an explicit token.
+
 ### Open questions for the unspecified slices
 
 **Established, not yet specified (it was at next: queue), from 0204 — Route a queue completion that re-specifies a waiting row to develop instead of exiting 4:**
@@ -910,3 +921,76 @@ usage, both guarded); no new egress, log field, credential or data visibility, s
 security row is owed. Newly reachable: escalations became dispatches only inside a bound and only
 for an in-scope id (FR5), and every dispatch still passes the findings gate (M6). No destructive
 action becomes reachable.
+
+**S2 leg — PASS** (verify, 2026-11-26, token 2950). Code under test: `612a548`; tree at `3f6242f`
+(the claim). `./next --ac-digest 0234 --check` → `0234: ac_digest matches`.
+
+Conventions: ../ai-building-conventions (CONVENTIONS_CORE.md; testing-conventions.md cited by the
+Testing and Reliability rows)
+
+Level: `unit` (frontmatter). Command, verbatim from `.tickets/config.yml` `commands.unit`:
+`for t in tests/*.test.sh; do "$t" || exit 1; done` → `UNIT-EXIT=0`; `tests/sprint-ledger.test.sh`:
+`266 passed, 0 failed`. Run per file first (`commands.unit_by_file`): 45 files, every tally `0 failed`,
+no file exiting non-zero. lint / typecheck: not configured.
+
+Tree: `git status --porcelain` empty before the first run and in the capture fused onto the last
+one; `HEAD` unmoved (`3f6242f`). Dirty set empty, intersection empty, **not advisory**. Copy
+executed: the repo's `tools/sprint-ledger.sh` (what `tests/sprint-ledger.test.sh` runs via `$ROOT`).
+
+Mutations: each applied to `tools/sprint-ledger.sh` in a detached worktree at `3f6242f`, each pattern
+required to match exactly once and the copy to differ, restored from an in-memory copy (asserted
+byte-equal after the sweep, worktree `git status` clean). Control: `266 passed, 0 failed`.
+
+| # | Mutation (requirement broken) | Tally | Reddened |
+|---|---|---|---|
+| M1 | `reading` takes the first `rate_limit_event`, not the last | 264/2 | AC20 first case (`five_hour` 0.21, `seven_day` 0.77) |
+| M2 | top-level `rateLimitType` fallback dropped | 264/2 | AC20 second case |
+| M3 | an unreadable stream dies (exit 1) | 260/6 | AC20 third case (exit 0, `readable:false`, reason) |
+| M4 | `outcome` prints the whole `result` line | 264/2 | AC24 schema check via `tools/validate-json-schema.py`; not the whole line |
+| M5 | no `result` line exits 0 | 265/1 | AC24 no-result case |
+| M13 | a `result` with no `structured_output` accepted | 264/2 | AC24 no-`structured_output` case |
+| M12 | a non-JSON stream line is fatal | 252/14 | AC20 warning line skipped (first and third cases) |
+| M6 | headroom comparison `<` → `<=` | 265/1 | AC22 0.98 boundary |
+| M7 | reset rule dropped | 264/2 | AC22 reset case |
+| M8a | no headroom event exits 3 | 262/4 | AC22 not-visible, both 0231 fixtures, no-budget scope |
+| M8b | last `readable:false` exits 3 | 265/1 | AC22 `readable:false` case |
+| M14 | `WAIT` with no `resume after` | 264/2 | AC22 WAIT case, FR19 two-window case |
+| M9 | sample booked to the earlier event's stage | 263/3 | AC23 (all three) |
+| M10 | rise across a changed `resets_at` counted | 265/1 | AC23 reset case |
+| M11 | mean replaced by the last sample | 265/1 | AC23 mean case |
+| M0 | the pre-change `envelope` (`1f8ac86`), run directly on 0231's fixtures | — | short-budget: `STOP  budget: 3.00 left, develop needs an estimated 7.00`, exit 3; past-deadline: `STOP  time: the deadline 2026-11-18T09:30:00Z has passed`, exit 3. `612a548`: `CONTINUE  headroom not visible …`, exit 0 on both |
+
+Clause table (S2's ACs), each row checked against an assertion in the `0234 S2` section of
+`tests/sprint-ledger.test.sh`:
+
+| AC | Given | Action | Outcome / object | Result |
+|---|---|---|---|---|
+| AC20 | warning line, two `rate_limit_event`s (0.10; then 0.21/1795000000 and 0.77/1795500000), `result` | `reading --stream … --stage develop --session s1 --now …` | exit 0; one JSON line; `event`, `stage`, `session_id`; 0.21 and 0.77; ISO `resets_at` | pass, M1/M12 red |
+| AC20 | only event has no `unifiedWindows`, top-level `seven_day` 0.5 | same | one window `seven_day` 0.5 | pass, M2 red |
+| AC20 | no `rate_limit_event`; missing path | same | exit 0 `readable:false`; exit 1 | pass, M3 red; missing path asserted exit 1 |
+| AC22 | last event 0.21/0.77, both resets after `--now`, no earlier reading | `envelope --run … --stage develop --now …` | exit 0, `CONTINUE`, two `ENVELOPE` lines source `default` | pass; each window's line asserted, count of 2 seen by direct run, not asserted |
+| AC22 | `seven_day` 0.99 | same | exit 3; `WAIT` naming `seven_day`, its reset, `resume after`; no `CONTINUE`, no `STOP` | pass, M14 red |
+| AC22 | 0.98 against default 0.02; 0.97 | same | exit 3; exit 0 | pass, M6 red |
+| AC22 | 0.99, `resets_at` before `--now` | same | exit 0 | pass, M7 red |
+| AC22 | no `headroom` event; last `readable:false` | same | exit 0 each, `headroom not visible` | pass, M8a/M8b red |
+| AC22 | 0231 AC14 short-budget and past-deadline fixtures | same | exit 0, no `STOP` | pass, M0 (pre-change prints `STOP`), M8a red |
+| AC23 | three readable `five_hour` events, same reset: verify 0.20, develop 0.35, develop 0.60 | `envelope --stage develop` | `expected 0.20`, `run log, 2 develop sample(s)` | pass, M9/M11 red |
+| AC23 | third event with a different `resets_at` | same | `expected 0.15`, one sample | pass, M10 red |
+| AC24 | AC20's first stream | `outcome --stream` | exit 0, one line, schema-valid | pass, M4 red |
+| AC24 | no `result` line; `result` without `structured_output` | same | exit 1 each, naming which | pass, M5/M13 red |
+
+NFR rows (S2's part):
+
+| Row | Check | Result |
+|---|---|---|
+| Testing | `reading`/`outcome`/`envelope` behaviours are behaviour tests in `tests/sprint-ledger.test.sh` over fixtures the test builds; AC22 short-budget against the unmodified `envelope` prints `STOP`; `<` → `<=` reds the boundary | holds, guarded: M0 and M6 above |
+| Reliability | a gate that cannot see headroom never stops; a `WAIT` always has `resume after <iso>` | holds, guarded: M8a/M8b and M14 red |
+| Progressive delivery | (`bounce_max` — S1) | not this leg |
+
+Always-on pass (`CONVENTIONS_CORE.md`): fail-loud holds (missing stream or run log, non-JSON log
+line, window lacking `utilization`/`resets_at` each exit 1, guarded). The new `headroom` run-log
+event carries utilisation fractions, reset times, stage and session id. It holds no personal data
+and goes to the gitignored `.tickets/runs/`, so no privacy row is owed. No egress, credential or
+visibility change. Newly reachable: a sprint no longer stops on budget or deadline. That is the
+contract change FR19 makes on the user's call, and FR21's reactive `limit_hit` pause (S3's prose)
+backstops it.
