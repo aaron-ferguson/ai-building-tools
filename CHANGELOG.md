@@ -14,6 +14,7 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 - `./handoff` with status `ready` on an item whose `blocked_by:` still names an open ticket now writes `blocked` to the row and the item, as the cache `next` derives, and says so; `--drift` no longer reports the row and `--drive` no longer escalates on it. `blocked` is still refused as an argument (0242 S4).
+- `./next --ac-digest` now ends a criterion's text at the first line that is neither blank nor indented, so a note written at column 0 below the last criterion no longer changes that criterion's digest, and an indented line after a blank one still counts. `--check`, `close` and `--drift` accept a stamp in either the new or the old form, key by key, so upgrading reports no drift; every new stamp is written in the new form (0242 S5).
 
 ## 0.9.50 — 2026-11-27
 

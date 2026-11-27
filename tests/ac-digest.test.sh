@@ -279,6 +279,113 @@ grep -q 'never passes a criterion whose text the author did not write' "$ROOT/sk
 grep -q 'record `ac_digest absent — unverifiable`' "$ROOT/skills/verify/SKILL.md" \
   && ok "verify records absent as unverifiable" || bad "verify's absent sentence is missing"
 
+# --- 0242 S5 (0217): a column-0 note below a criterion is outside every digest ----------------
+# FR50: a criterion is its label line plus every following line that is blank or begins with a
+# space or a tab. FR51: a stamp equal to either that digest or the legacy one (text to the next
+# label or heading) is accepted key by key; only the new form is ever printed.
+
+# mknoted <id> <next> <status> <token> — AC1 runs on after a blank line as an indented `Red:` line
+# (0161 AC1's shape); AC2 is rewrapped onto an indented line; a column-0 note follows AC2.
+mknoted() {
+  cat > "$FIX/$BL/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+type: chore
+next: $2
+status: $3
+qa_level: verify
+created: 2026-08-01
+blocked_by: []
+claimed_by: $4
+claimed_at:
+touches:
+---
+
+## Acceptance criteria
+
+- [ ] AC1 — Given a board, when a road is built, then the longest road is recomputed.
+
+  Red: a road counter that never resets.
+- [ ] AC2 — Given a player at 5 VP, when they build a City,
+  then the game ends.
+
+A note about the section, written at column 0 below the last criterion.
+
+## QA evidence
+ITEM
+}
+
+# crc <text> — the digest value of one normalised criterion text, computed here independently of
+# `next`, so the expected values below are not read back from the code under test.
+crc() { printf '%s' "$1" | cksum | awk '{ printf "%08x", $1 }'; }
+AC1_TEXT='AC1 — Given a board, when a road is built, then the longest road is recomputed. Red: a road counter that never resets.'
+AC2_NEW='AC2 — Given a player at 5 VP, when they build a City, then the game ends.'
+AC2_LEGACY="$AC2_NEW A note about the section, written at column 0 below the last criterion."
+
+# stamp_with <id> <digest line> — writes a given `ac_digest:` line into the frontmatter.
+stamp_with() {
+  f="$(item_of "$1")"
+  awk -v line="$2" 'NR > 1 && /^---$/ && !done { print line; done = 1 } { print }' "$f" > "$f.tmp"
+  mv "$f.tmp" "$f"
+}
+
+check() { set +e; out="$("$FIX/$BL/next" --ac-digest "$1" --check 2>&1)"; rc=$?; set -e; }
+
+echo "AC61 — --ac-digest prints FR50's digest for the trailing-note criterion, not the legacy one"
+scaffold "9956 verify ready"
+mknoted 9956 verify ready ""
+printed="$(digest 9956)"
+p2="$(key_of "${printed#ac_digest: }" AC2)"
+[ "$p2" = "$(crc "$AC2_NEW")" ] && ok "AC2 is FR50's digest ($p2)" || bad "AC2 is $p2, FR50's is $(crc "$AC2_NEW")"
+[ "$p2" != "$(crc "$AC2_LEGACY")" ] && ok "AC2 differs from the legacy digest" || bad "AC2 is the legacy digest"
+[ "$(key_of "${printed#ac_digest: }" AC1)" = "$(crc "$AC1_TEXT")" ] \
+  && ok "AC1 keeps its blank-then-indented Red: line" || bad "AC1's digest does not include its Red: line: $printed"
+
+echo "AC56 — editing a column-0 note below the last criterion is not an edit to it"
+stamp 9956
+commit_all
+edit 9956 's/^A note about the section/An entirely rewritten note about the section/'
+grep -q '^An entirely rewritten note' "$(item_of 9956)" || bad "fixture: the note edit did not land"
+check 9956
+[ "$rc" -eq 0 ] && ok "--check exits 0" || bad "--check exited $rc: $out"
+[ "$out" = "9956: ac_digest matches" ] && ok "--check prints ac_digest matches" || bad "--check printed: $out"
+
+echo "AC57 — editing an indented continuation line of the last criterion is an edit to it"
+edit 9956 's/^  then the game ends\./  then the game is drawn./'
+grep -q '^  then the game is drawn' "$(item_of 9956)" || bad "fixture: the continuation edit did not land"
+check 9956
+[ "$rc" -eq 1 ] && ok "--check exits 1" || bad "--check exited $rc: $out"
+case "$out" in *"changed: AC2"*) ok "it names AC2 as changed" ;; *) bad "it does not name AC2 as changed: $out" ;; esac
+
+echo "AC58 — an indented line after a blank line is still the criterion's text"
+scaffold "9958 verify ready"
+mknoted 9958 verify ready ""
+stamp 9958
+edit 9958 's/^  Red: a road counter that never resets\./  Red: a road counter that resets twice./'
+grep -q '^  Red: a road counter that resets twice' "$(item_of 9958)" || bad "fixture: the Red: edit did not land"
+check 9958
+[ "$rc" -eq 1 ] && ok "--check exits 1" || bad "--check exited $rc: $out"
+case "$out" in *"changed: AC1"*) ok "it names AC1 as changed" ;; *) bad "it does not name AC1 as changed: $out" ;; esac
+
+echo "AC59 — a legacy stamp over a column-0 note still matches, and --drift is silent on it"
+scaffold "9959 verify ready"
+mknoted 9959 verify ready ""
+stamp_with 9959 "ac_digest: AC1=$(crc "$AC1_TEXT") AC2=$(crc "$AC2_LEGACY")"
+commit_all
+check 9959
+[ "$rc" -eq 0 ] && ok "--check exits 0" || bad "--check exited $rc: $out"
+[ "$out" = "9959: ac_digest matches" ] && ok "--check prints ac_digest matches" || bad "--check printed: $out"
+set +e; dout="$("$FIX/$BL/next" --drift 2>&1)"; set -e
+printf '%s\n' "$dout" | grep -q '^DRIFT     9959 .*ac_digest' && bad "--drift reports 9959: $dout" \
+  || ok "--drift prints no ac_digest line for 9959"
+
+echo "AC60 — under a legacy stamp, editing the last criterion's label line is an edit"
+edit 9959 's/5 VP/6 VP/'
+check 9959
+[ "$rc" -eq 1 ] && ok "--check exits 1" || bad "--check exited $rc: $out"
+case "$out" in *"changed: AC2"*) ok "it names AC2 as changed" ;; *) bad "it does not name AC2 as changed: $out" ;; esac
+
 # --- AC14 is tests/backlog-scripts-installed.test.sh, run by the suite ------------------------
 
 echo
