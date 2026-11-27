@@ -2,8 +2,8 @@
 id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -55,8 +55,8 @@ expects:
   - tests/handoff.test.sh
   - tests/findings-routing.test.sh
 ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7
-claimed_by: "e297"
-claimed_at: 2026-11-27T04:51:00Z
+claimed_by:
+claimed_at:
 touches:
 slice: S4
 ---
@@ -599,7 +599,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S1 — `claim` and `next` read `expects:` and `touches:` through one parser, agree on what blocks a take, and `claim` writes an empty `touches:` key when it seeds nothing (0215, 0225, 0155) — discharges AC18, AC19, AC20, AC21, AC22, AC23, AC24, AC25, AC26, AC27, AC29
 - [x] S2 — the three places the scripts answer the wrong question (0066) — discharges AC30, AC31, AC32, AC33, AC34, AC35, AC36, AC37, AC38, AC39, AC40
 - [x] S3 — `next` reports a closed item still carrying a token, says an empty queue is empty, and lists the findings entries (0229, 0230, 0227) — discharges AC41, AC42, AC43, AC44, AC45, AC46, AC47, AC48, AC49, AC50, AC51
-- [ ] S4 — `handoff` records a blocker without leaving drift that stops a driver (0156) — discharges AC52
+- [x] S4 — `handoff` records a blocker without leaving drift that stops a driver (0156) — discharges AC52
 - [ ] S5 — a note written below the last AC no longer changes that AC's digest (0217) — unspecified
 - [ ] S6 — `reopen` of a develop self-close leaves a ticket verify can close (0219) — unspecified
 - [ ] S7 — decide whether `claim`, `handoff` and `close` refuse off the branch the backlog is shared on (0235) — unspecified
@@ -963,6 +963,64 @@ and it reddened AC47. The other rows belong to other slices. Always-on pass: no 
 event, egress, credential or UI. Nothing company-specific. `53897af` carries the trailer. Newly
 reachable: `--drive` now escalates on class 8. `.tickets/next --drift` is clean on this backlog, as
 develop recorded.
+
+### Leg S4 — verify `e297`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: ../ai-building-conventions
+Level: `unit` (frontmatter). Command, `commands.unit_by_file` verbatim:
+`for t in tests/*.test.sh; do "$t" || true; done`, each file's rc and last line recorded.
+Subject: the checkout at `888486e` (the claim commit over `83496c7`; S4 built at `933484b`).
+Copy executed: the repo template (`tests/handoff.test.sh` runs `skills/queue/templates/handoff`, its
+`HANDOFF_SRC`, and copies `skills/queue/templates/next` into the fixture). `.tickets/handoff` is
+byte-identical to the template (`cmp`). The session's skills came from the 0.9.50 install.
+Dirty set at Step 2: empty. Fresh capture after the last check: empty. Intersection: empty.
+`./next --ac-digest 0242 --check`: `0242: ac_digest matches`.
+Claim: `./claim 0242 e297`, with a python3-minted token (bare `./claim` dies on `xxd`, already parked).
+
+**Whole suite:** 45 files, 45 rc=0 in one pass. Tallies, pasted: `tests/handoff.test.sh`
+`268 passed, 0 failed`; `tests/next.test.sh` `783 passed, 0 failed`;
+`tests/backlog-scripts-installed.test.sh` `55 passed, 0 failed`; `tests/declared-copies.test.sh`
+`declared-copies: 23 passed, 0 failed`; `tests/claim.test.sh` `195 passed, 0 failed`;
+`tests/close.test.sh` `330 passed, 0 failed`; `tests/reopen.test.sh` `reopen: 78 passed, 0 failed`.
+
+**Clause table and mutations, all run in this session.** Each mutation went into its own detached
+worktree of `888486e`, into `skills/queue/templates/handoff` (the copy the harness runs). Each
+substitution matched exactly once, `git diff --shortstat` was non-empty, every run ended on its
+sentinel, and the worktrees were removed. `tests/handoff.test.sh` fixtures are per-run `mktemp`, so
+the parallel runs share nothing.
+
+| AC52 clause (verbatim) | Mutation | Result |
+|---|---|---|
+| (the AC's *Red-making input: today's handoff*) | M0: the template replaced with its `9bb2de1` (pre-S4) bytes | red: `260 passed, 8 failed` — row, item, derived message, `--drift exits 0`, `--drift reports nothing` ×2, `--drive does not escalate` |
+| Given a held fixture item whose `blocked_by` names an open ticket | M1: `\|\| WRITE_STATUS=blocked` → `\|\| true` | red: `261 passed, 7 failed` (row, item, `--drift` ×3, `--drive`) |
+| … names an **open** ticket (open = not done, as `next` reads it; no item file is open) | M2: a missing item file not counted open | red: `266 passed, 2 failed` (row, `--drift reports nothing for the row`) |
+| … **open** (a done blocker is not open) | M3: `= "done"` → `= "doneX"` | red: `266 passed, 2 failed` (row reads `ready`, says nothing about a blocker) |
+| when `./handoff` runs (FR41: written as the derived cache, a `waiting` hand-off left as written) | M4: derivation applied to every status | red: `267 passed, 1 failed` (row reads `develop \| waiting`) |
+| then `./next --drift` — drift reports nothing for that row | M6, at the outcome's altitude: the row writer AND its read-back both use the asked status, so the item says `blocked`, the row `ready`, and the script's own check is satisfied | red: `262 passed, 6 failed` — `--drift exits 0`, `--drift reports nothing for the row` ×2, `--drive does not escalate on drift`, row ×2. The `--drift` and `--drive` assertions red on their own, not only the row-shape one |
+| and `--drive` does not escalate on it | M6 (above), and M1 | red in both |
+| (read-back guard) | M5: row writer only uses the asked status | red: `256 passed, 12 failed` (the read-back refuses, so `exits 0` fails) |
+| QA plan: `tests/backlog-scripts-installed.test.sh` covers `handoff` | template-only edit (`# drift` appended) | red: `handoff has diverged from skills/queue/templates/handoff` (`54 passed, 1 failed`) |
+
+No mutation stayed green. The Given is singular, so no two-item fixture is owed; the "open"
+qualifier was split into its two directions (M2, M3).
+
+**NFR rows bearing on S4:** Testing (0156), "the case runs the real hand-off then `--drift`, in
+fixture": guarded. `blocked_fixture` runs the real `handoff` and then the fixture's own `next`
+on one fixture, and M6 reddened the `--drift` assertion through that path. The other rows belong to
+other slices. Always-on pass: no log field, analytics event, egress, credential or UI. Nothing
+company-specific. `933484b` carries the trailer. Newly reachable: a `ready` hand-off to any stage now
+writes `blocked` over an open blocker. That matches `next`'s `derived_of`, and `close`'s reconcile
+selects exactly `blocked` dependents, so the row is freed when the blocker closes. `blocked` stays
+refused as an argument (FR2 cases green). Develop's `CHANGELOG.md` note for S4 is under
+`## Unreleased` and is the note.
+
+**Hand-off:** pass. S5, the next slice, is `unspecified`, and `skills/queue/templates/item.md`
+sends such a ticket to `design`. But `.tickets/handoff 0242 e297 design --slice S4` was refused
+(`refusing --slice on a verify -> design hand-off: a leg ends develop -> develop, develop -> verify,
+or verify -> develop (the leg passed); nothing was changed`). A design hand-off without `--slice`
+would leave the passed S4 unticked. So this leg hands back `./handoff 0242 e297 develop --slice S4`,
+which ticks S4. develop then finds S5 `unspecified`, which is `design`'s (`skills/develop/SKILL.md`),
+and forwards the ticket. Parked in `FINDINGS.md`.
 
 ## Notes & decisions
 
