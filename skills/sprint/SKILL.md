@@ -342,9 +342,10 @@ person's by other rules: a row a stage left `waiting`, an aged lock (Step 7), an
 the confirmed scope. An account-headroom `WAIT` is neither an escalation nor a stop.
 
 **A bounce is routed, not escalated, up to `bounce_max`** (`config.yml`, default 2). A verify fail
-handing a row to `next: develop` gets `DISPATCH  develop <id>`; an in-scope row a verify — or a
-develop — hands to `next: queue` (the contract is wrong) gets `DISPATCH  queue <id>`, a repair under
-the same bound and the same count; report its finish as `--completed queue:<id>` and `--drive`
+handing a row to `next: develop` gets `DISPATCH  develop <id>`; an in-scope row a verify, a
+develop or a design hands to `next: queue` (the contract is wrong, or a design decision has sibling
+consequences to fold in, `design` Step 4) gets `DISPATCH  queue <id>`, under the same bound and the
+same count; report its finish as `--completed queue:<id>` and `--drive`
 routes on as usual. A scope row sent to `next: design` mid-run — by verify, by develop, or a design
 question a develop session found — is dispatched to `design` under that bound too. **After any
 outcome that re-entered a ticket, pass `--bounces <id>=<n>` for the completed id**: `<n>` counts that
@@ -937,7 +938,7 @@ still this escalation, and its remedy is the person's, never a raise-and-retry.
   `bounce_max`, a cap kill — and routes every stage the confirmed outcome needs itself, because an
   unattended run stalls on every question until the person checks in and the goal is the confirmed
   outcome, not the least spend (Step 2). A `waiting` row with nothing else in scope takeable, a
-  `next: queue` row no in-scope bounce sent there, a repair that would narrow the outcome, a stale FR
+  `next: queue` row no in-scope bounce or design hand-off sent there, a repair that would narrow the outcome, a stale FR
   and a ticket that needs splitting are escalations: name what must be decided and stop. An in-scope design row is answered by the `design`
   session it dispatches, never by the supervisor; on taste, architecture or security that session
   prepares a brief and leaves the row `waiting`, never deciding (`design` Step 3). Queuing work

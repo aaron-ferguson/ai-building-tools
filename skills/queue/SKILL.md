@@ -141,6 +141,7 @@ report the missing wiring and stop. A backlog whose tickets cite no standard can
 | "X needs an answer from someone" | Set `status: waiting` **and write the `## Waiting on` section** — the decision brief `templates/item.md` lays out, which `./handoff … waiting` refuses incomplete. A `waiting` row with no such section is a defect `./next --waiting` reports, being indistinguishable from a forgotten one |
 | "sweep the findings", "import the reported feedback" | **Surface parked work** (Step 5) |
 | a ticket sits at `next: queue` — bare `/queue`, or an ID | **Re-specify** it (Step 2), then **skip Step 3**: it already has a rank and keeps it |
+| a ticket at `next: queue` whose Notes carry an unresolved `### Sibling consequences` (`design` Step 4) | Per entry: re-read the sibling against the source, since the entry is a cached claim; check the proposal against the other open tickets and their ACs, not only that sibling; then one of — **(a)** `./claim <id>`, amend, write `ac_digest:` from `./next --ac-digest <id>`, `./handoff <id> <token> <stage>` (a held sibling: wait for its release first); **(b)** a `done` sibling: `./reopen <id> <rank> "<reason>"`, `./claim <id>`, amend, write the stamp as in (a), `./handoff <id> <token> develop`, naming the reopen as intentional rework in both items' Notes; **(c)** it does not serve the outcome or conflicts with another ticket: restore an `## Open design question` naming the conflict in the held item. Mark each entry `resolved <date> queue <token>: <a\|b\|c and the commit>`, or "still needs" where unreached; then `./handoff <id> <token> develop`, or `design` if any entry took (c). The rule is `CONCURRENCY.md`, *A stage writes only the ticket it holds* |
 | "add an FR to X", "this ticket also needs Y" | **Amend** an already-specified ticket (Step 2) |
 | "fold X and Y into Z", several tickets serving one outcome | **Merge** them into one outcome ticket — see below |
 | "drop X", "we're not doing X after all" | **Withdraw** it — see below. The work goes; the id never does |
@@ -230,6 +231,8 @@ states its outcome first and is one outcome ticket even across many sessions: gi
 in `## Progress` (`templates/item.md`), each about one develop session's work, folding adjacent small
 slices that touch the same files into one, and split off a ticket only where a part has an outcome
 of its own (`product-definition-conventions.md` → "Slice Vertically and Thinly").
+**Write no FR directing another stage to write an item it will not hold.** Work that must land in
+another item is an Amend you perform yourself, or, found by `design`, a *Sibling consequences* entry.
 
 **Write the ticket as a draft from `templates/item.md` (`id: "NNNN"`), then `./capture <draft>
 <top|above:<row-id>|below:<row-id>> --ranking <file>`** — one call. It mints the id under the lock

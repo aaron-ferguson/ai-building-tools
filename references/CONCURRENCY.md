@@ -260,6 +260,14 @@ claim stays invisible until something is written inside it.
   changing criteria `queue` authored, which `ac_digest` exists to refuse (0195). So `queue` waits for
   the release, claims, amends and hands back with `./handoff <id> <token> develop`. The wait is at most
   one leg, because every leg releases at a slice boundary (`./handoff --slice`, 0231 FR18).
+- **A decision that changes another item is recorded where it is held, and a `queue` pass follows it
+  before the changed work continues.** No second exception: `design` amends no sibling, even an unheld
+  one its own FRs name. It writes a `### Sibling consequences` entry in the item it holds and hands to
+  `queue` (`design` Step 4), which re-reads each sibling, folds the change in under its own claim, and
+  may send the decision back (`queue` Step 1). The cost is accepted: the sibling reads stale until that
+  pass, and a held one finishes its leg against the old contract first, at most one leg. This governs a
+  session holding one item writing another; `queue`'s own operations on rows nobody holds — Add, Amend,
+  Re-specify, `./withdraw`, `./reopen`, an *Absorbed* note, `./capture --restamp` — are unaffected.
 - **A stage finding a ticket at another stage refuses it** — `develop` skips `next: design`, `verify`
   refuses anything not `next: verify`. That field keeps two stages off one ticket.
 - **`verify` owns closing**, holding the verdict when it acts, so no green goes stale.

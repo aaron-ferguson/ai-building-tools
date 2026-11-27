@@ -176,6 +176,18 @@ This step is most of the skill's value.
    `./handoff <id> <token> develop` — or `verify` when the decision is the whole deliverable and
    nothing is left to build (`qa_level: verify` or `review`). It writes the stage and clears the claim in one locked commit, so
    everything else this pass owes the item is written before it (`CONCURRENCY.md`, *The release is the final act*).
+   **The exception: a decision that changes what another item must say** goes to `queue` instead, below.
+
+**Item-scoped, held by you, and it changes another item** — write nothing outside the item you hold, not
+even an unheld sibling your own FRs name (`CONCURRENCY.md`, *A stage writes only the ticket it holds*).
+Record it in the held item under `## Notes & decisions`, headed `### Sibling consequences — <date>, design
+<token>`, one entry per affected item: its **id**; the **FR or AC there that must change, and how**;
+**why**; and its **state as you observed it** — open and unheld, held (with its token), or `done`. Then do
+steps 1–2 for your own item and release with `./handoff <id> <token> queue`, never `develop`; `queue`
+folds the entries in (its Step 1). A consequence on **another slice of the item you hold** is not a
+sibling consequence: you hold the file, so write it yourself. A held item whose FR directs a write to
+another item is this case too: treat that write as a sibling-consequence entry, write nothing outside the
+held item, and say so in *Notes & decisions*. A decision with no sibling consequence hands off as above.
 
 **Item-scoped, and held by another** (`./claim` refused, or `claimed_by:` names a token you did not mint)
 — hand `queue` the answer and the *Notes & decisions* entry, writing nothing yourself. The token is not
