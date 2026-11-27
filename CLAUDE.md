@@ -31,6 +31,11 @@ Two consequences, and both have cost real work:
   version than the checkout, or the same version with different bytes. A session has reported a
   rule missing that had shipped the same day. Diff the trees before concluding a rule is absent:
   `diff -rq skills/ ~/.claude/plugins/cache/ai-building-tools/ai-building-tools/<version>/skills/`
+  **Nor does the skill's name prove *which* skill answered** — the same failure, a session running
+  something other than what this repo holds. A bare `/verify` or `/design` can resolve to a built-in
+  or another plugin's skill of that name, silently: `/verify` has loaded a bundled skill whose rules
+  are the inverse of this one's. Invoke the stages as `/ai-building-tools:<name>`, and check the
+  loaded skill opens with that heading; each `skills/*/SKILL.md` does (0064).
 - **When asked to release, or to bump the plugin version, run `tools/release` from the repo root.**
   The chain is push → bump `.claude-plugin/plugin.json` → update the install → restart,
   and every step is silent when skipped. Worse, a step can be *performed*, report success, and

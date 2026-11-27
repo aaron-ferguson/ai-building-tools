@@ -212,7 +212,7 @@ before running a test.
 
 - **Question:**
 - **Why it blocks specification:** which AC cannot be written until this is answered
-- **Settle it with:** `/design` (returns a decision) or `/prototype <level>` (returns something
+- **Settle it with:** `/ai-building-tools:design` (returns a decision) or `/ai-building-tools:prototype <level>` (returns something
   to look at, when the answer needs to be seen rather than reasoned about)
 
 Delete this section when the item moves to `next: develop`, and record the answer in

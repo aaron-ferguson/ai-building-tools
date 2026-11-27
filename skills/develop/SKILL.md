@@ -10,7 +10,7 @@ description: >
   .tickets/ — created by the queue skill.
 ---
 
-# /develop
+# /ai-building-tools:develop
 
 Take the top `ready` item off `.tickets/QUEUE.md` and build it: implemented, committed,
 the tree left green, and the ticket set to `next: verify` so a QA session can check it against the
@@ -92,7 +92,7 @@ avoidable context cost in the backlog; open the file only for questions about *o
 Without the script, read `QUEUE.md` and apply the same rules:
 
 - **No argument → the topmost takeable `next: develop` row.** The rank is not a suggestion.
-- **An ID (`/develop 0007`)** → that ticket, but say so if you are skipping higher rows and why you
+- **An ID (`/ai-building-tools:develop 0007`)** → that ticket, but say so if you are skipping higher rows and why you
   believe that is intended.
 - **`blocked` or `waiting`** → report which and what clears it: a named ticket, or for `waiting` the
   question in its `## Waiting on` section (`./next --waiting`). Then take the next takeable row.
@@ -255,7 +255,7 @@ verified.
 `status: ready`, write the question into the *Open design question* section, release the claim, and
 stop.** Missing detail you sharpen here; a missing decision answered by the session about to build
 against it is a contract nobody agreed to, and `verify` is what discovers you invented it. Name the
-command: `/design <id>`, in its own session. **An item that disagrees with itself is this case** — a
+command: `/ai-building-tools:design <id>`, in its own session. **An item that disagrees with itself is this case** — a
 Problem section calling a behaviour correct that an FR or AC forbids. Building half to each side and
 recording it as a "deliberate asymmetry" decides it, and costs a `verify` session that can only send
 it to `design` anyway (2026-10-17, a consumer backlog).
@@ -607,7 +607,7 @@ an unknown slice and an `unspecified` one.
 `verify` → steps 1-6 below, unchanged, and the ticket goes to a QA session. **`close_by: develop`
 → this session closes it**: run steps 1-3, then tick each AC against the assertion you just proved
 red-then-green, and call `./close <id> <token>` in place of `./handoff`. Report the close, not
-`/verify <id>`. `close` re-checks the eligibility itself and refuses a criterion citing no committed
+`/ai-building-tools:verify <id>`. `close` re-checks the eligibility itself and refuses a criterion citing no committed
 guard, so a close that goes through is the gate agreeing with you rather than trusting you.
 **The gate is the same one every ticket gets, never a lower one**: the project's whole suite green
 and the review checklist below, both of them, before the close. A cheap tier is cheap because it
@@ -677,7 +677,7 @@ as though it were done.
 **Do not push** unless the project's `CLAUDE.md` or `git-conventions.md` says so, or the user asks.
 Building a ticket is not authority to publish it.
 
-**Then stop and report.** Built and awaiting QA; name the command the next session runs — `/verify
+**Then stop and report.** Built and awaiting QA; name the command the next session runs — `/ai-building-tools:verify
 <id>`, in a new session. Do not invoke it here.
 
 ---
@@ -696,7 +696,7 @@ re-derives it with none of your context. **Step 7 is what makes it durable**, no
 
 `/retro` is not a lifecycle stage and not a `next` value; it runs on a cadence over many sessions'
 findings. Say whether the buffer looks worth sweeping, and name the command —
-`/retro`, in its own session.
+`/ai-building-tools:retro`, in its own session.
 
 ---
 
@@ -733,7 +733,7 @@ Two things it cannot say, because they are specific to this stage:
 
 - **The ticket is not closed — say so.** A stage reporting "done" over a ticket sitting at
   `next: verify` is reporting a state it did not reach, and the QA pass is what reaches it.
-- **Name the two commands a following session runs** — `/verify <id>` to close it, and `/retro` if
+- **Name the two commands a following session runs** — `/ai-building-tools:verify <id>` to close it, and `/ai-building-tools:retro` if
   the buffer is worth sweeping. Each in its own session, and neither is invoked here.
 
 **End on the hand-off line, the very last thing printed:**

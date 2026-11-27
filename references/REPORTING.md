@@ -103,7 +103,7 @@ it, so a stage printing a word the enum lacks is a correct stage that reads as a
 escalates. No guard catches it: the line's *shape* is asserted, its vocabulary is not.
 
 **A session that holds no row** — `retro`, an ad-hoc `prototype`, a standing `design` question — writes
-a dash in the ID slot and names the command that runs next in place of a stage: `next: /queue`.
+a dash in the ID slot and names the command that runs next in place of a stage: `next: /ai-building-tools:queue`.
 Holding no ticket is not an exemption; "nothing to hand off" is itself the answer a reader needs.
 
 Nothing follows it. Not a sign-off, not a closing offer, not one more caveat — a line with prose under

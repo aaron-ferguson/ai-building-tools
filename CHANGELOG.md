@@ -15,6 +15,7 @@ the release session, because only a whole-release view can say it.
 ## Unreleased
 
 - `./claim` with no token now mints its token with POSIX `od` instead of `xxd`, so it works on hosts without vim's `xxd`. `references/CONCURRENCY.md` *Claim tokens* shows the same form (0245).
+- Each stage skill now opens with its plugin-qualified name as its heading (`# /ai-building-tools:develop`), so a session can see which skill loaded, and every command a stage names for the next session is qualified the same way: `next: /ai-building-tools:queue`, `/ai-building-tools:verify <id>`. A bare `/verify` or `/design` can resolve to a built-in or another plugin's skill. `README.md` and this repo's `CLAUDE.md` say to invoke the stages qualified (0064).
 
 ## 0.9.51 — 2026-11-27
 

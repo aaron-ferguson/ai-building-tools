@@ -1014,8 +1014,8 @@ The ID slot is a dash: this session holds no row, so there is no ticket to hand 
 `next` slot names the command a person runs rather than a stage.
 
 Example: `- — RUN COMPLETE — next: restart, then /sprint` — the queue ran dry or the retro ended it.
-Example: `- — ESCALATED — next: /queue 0080` — a person decides, and the run stopped there.
-Example: `- — DEGRADED — next: /develop 0039` — no CLI to dispatch with; the commands are named for a person.
+Example: `- — ESCALATED — next: /ai-building-tools:queue 0080` — a person decides, and the run stopped there.
+Example: `- — DEGRADED — next: /ai-building-tools:develop 0039` — no CLI to dispatch with; the commands are named for a person.
 Example: `- — REFUSED — next: nothing, another supervisor holds this backlog`.
 
 `RUN COMPLETE` closes no ticket and never means `done`: the tickets this run touched were closed by

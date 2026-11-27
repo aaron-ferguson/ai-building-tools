@@ -4,6 +4,11 @@ A suite of skills that give a project a **stack-ranked local backlog any agent c
 from**: queue a piece of feedback once, and weeks later a cold session can pick it up, build
 it, and verify it without asking a single clarifying question.
 
+**Invoke each skill by its plugin-qualified name** — `/ai-building-tools:develop`, never bare
+`/develop`. A bare name can resolve to a built-in skill or another plugin's skill of the same name,
+silently: the wrong skill answers, does something plausible, and the backlog row never moves. Each
+skill's first heading is its qualified name, so the transcript shows which one loaded.
+
 | Skill | Does | Phase |
 |---|---|---|
 | `/queue` | Turns something you just said into a fully specified item — amending the open ticket whose outcome it serves before minting one, and merging tickets that serve one outcome — and inserts it at a considered rank | Define |

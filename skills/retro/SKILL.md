@@ -10,7 +10,7 @@ description: >
   committed, and for a skill, released.
 ---
 
-# /retro
+# /ai-building-tools:retro
 
 Turn what many sessions learned into edits in the places that get read again.
 
@@ -441,7 +441,7 @@ If nothing surfaced, say that plainly.
 - — RETRO — next: <command>
 ```
 
-Example: `- — RETRO — next: restart, then /queue 0107`
+Example: `- — RETRO — next: restart, then /ai-building-tools:queue 0107`
 Example: `- — RETRO — next: nothing — buffer clear, 4 lessons landed`
 
 The ID slot is a dash and a command stands in for a stage: this skill holds no row. **When Step 5 ran

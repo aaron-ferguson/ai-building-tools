@@ -3,7 +3,7 @@ name: prototype
 description: Build a prototype of a feature at whichever fidelity level is wanted right now — a quick Mermaid flow diagram, a self-contained clickable HTML mockup, or a real mocked-out component in the base product's own stack. Starts from an existing product's current screens when there is one, or net new when there isn't. Works from a ticket key or an ad-hoc feature idea pasted inline — no ticket required. Trigger whenever the user wants to visualize a flow, sketch a screen, mock something up, show stakeholders a clickable demo before engineering builds it, or turn a ticket or idea into something clickable — including "sketch this out", "mock this up", "show me what this would look like", "make this clickable", or "build a quick prototype of X". Produces something to LOOK at; for a design question that needs an answer rather than an artifact, that is a different job.
 ---
 
-# Prototype
+# /ai-building-tools:prototype
 
 Generates a prototype at one of three fidelity levels — diagram, clickable HTML mockup, or a real Angular
 component — for any ticket or ad-hoc feature idea.
@@ -36,13 +36,12 @@ fallback to generic. Keys used: `ticket_source`, `design_system`, `prototype`, `
 **Never substitute a guess for a missing key.** A prototype built against invented paths or invented brand
 colors is worse than one that did not get built, because it looks finished.
 
-## Invocation
+## Invocation: `/ai-building-tools:prototype` plus
 
-- `/prototype <TICKET-KEY>` — fetch the ticket, ask which level (unless already stated)
-- `/prototype <TICKET-KEY> clickable` / `... level 2` — skip the fidelity question
-- `/prototype` — the user pastes or describes a feature idea inline; no ticket needed
+- `<TICKET-KEY>` — fetch the ticket, ask which level (unless already stated)
+- `<TICKET-KEY> clickable` / `... level 2` — skip the fidelity question
+- nothing — the user pastes or describes a feature idea inline; no ticket needed
 - Mid-session escalation — "make it clickable", "prototype it for real" jumps straight to a higher level
-  without repeating earlier steps
 
 ## The three fidelity levels
 
@@ -399,8 +398,8 @@ at and answer.
 <KEY or -> — PROTOTYPED (level <N>) — next: <command>
 ```
 
-Example: `PROJ-1234 — PROTOTYPED (level 2) — next: /design — modal vs page is still open`
-Example: `- — PROTOTYPED (level 1) — next: /queue` — an ad-hoc idea that now has enough shape to file.
+Example: `PROJ-1234 — PROTOTYPED (level 2) — next: /ai-building-tools:design — modal vs page is still open`
+Example: `- — PROTOTYPED (level 1) — next: /ai-building-tools:queue` — an ad-hoc idea that now has enough shape to file.
 Example: `PROJ-1234 — PROTOTYPED (level 3) — next: your review at prototypes/proj-1234-filing/`
 
 This skill moves no backlog row, so the stage slot names the command — or, where the next move is the

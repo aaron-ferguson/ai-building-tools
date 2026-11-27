@@ -9,7 +9,7 @@ description: >
   acceptance criteria and QA plan.
 ---
 
-# /verify
+# /ai-building-tools:verify
 
 Verify that a change satisfies what was promised. `/code-review` hunts defects in a diff; this checks a
 change against a **written contract**.

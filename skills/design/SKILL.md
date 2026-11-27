@@ -12,7 +12,7 @@ description: >
   /prototype. Tell me versus show me is the line.
 ---
 
-# /design
+# /ai-building-tools:design
 
 Answer a design question well enough that nobody has to answer it again. The output is a **decision**,
 not an artifact: `/prototype` builds something to look at, this works out what should be built and writes
@@ -249,7 +249,7 @@ Example: `0042 — DECIDED — next: develop, status: ready`
 Example: `0042 — HANDED TO QUEUE — next: design, status: in-progress` — Step 4's claimed-ticket path,
 where you wrote nothing and the row is unchanged; the line says so rather than implying you moved it.
 Example: `0042 — BLOCKED — next: design, status: waiting` — it has to be seen before it can be decided.
-Example: `- — DECIDED — next: /queue` — a standing or one-off question that holds no row.
+Example: `- — DECIDED — next: /ai-building-tools:queue` — a standing or one-off question that holds no row.
 
 A refusal is `BLOCKED`, never a quiet `DECIDED`: an answer that rests on a fact nobody has reads
 identically to a settled one once it is a line in someone's scrollback.

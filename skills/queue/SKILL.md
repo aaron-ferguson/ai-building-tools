@@ -14,7 +14,7 @@ description: >
   backlog lives in .tickets/ inside the project.
 ---
 
-# /queue
+# /ai-building-tools:queue
 
 Turn something the user just said into a fully specified, stack-ranked ticket a cold agent can pick up
 weeks later and implement without asking a single clarifying question.

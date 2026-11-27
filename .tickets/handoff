@@ -741,7 +741,7 @@ if [ -n "$SLICE_GIVEN" ]; then
   [ -z "$unspec" ] || {
     echo "refusing --slice $SLICE: the leg ($LEG) holds unspecified slice(s): $unspec" >&2
     echo "an unspecified slice has no ACs to build or verify against — it goes to design first:" >&2
-    echo "  ./handoff $ID $TOKEN design   then /design $ID gives it ACs and re-stamps ac_digest" >&2
+    echo "  ./handoff $ID $TOKEN design   then /ai-building-tools:design $ID gives it ACs and re-stamps ac_digest" >&2
     exit 1
   }
   if [ "$item_next" = verify ]; then
