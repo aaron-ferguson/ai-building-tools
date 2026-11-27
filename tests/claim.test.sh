@@ -942,6 +942,39 @@ assert_contains "prints FR42's first line" "$out" "refusing to claim 0285: this 
 assert_not_contains "and not the lock-held message" "$out" 'backlog is locked by'
 assert_eq "the other session's lock is still there" "$(cat "$FIX/.tickets/.lock/held-by" 2>/dev/null)" other
 
+# --- 0245 — the default token is minted without xxd ---------------------------------------------
+# `xxd` ships with vim, not coreutils, and the cloud image these sessions run on has none: the old
+# mint died at `xxd: not found` before the lock. The case keeps every PATH directory that holds no
+# `xxd` as it is, and replaces each one that does with a directory linking all of its commands but
+# `xxd` — so it reds on a host that HAS xxd as well as one without. Linking the whole PATH instead
+# breaks wrappers that find the real command by skipping their own directory.
+echo "0245 AC1/AC2 — ./claim with no token mints four hex digits on a PATH with no xxd"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0286 | No xxd | develop | ready | 0000 |' 0286
+NOXXD="$FIX.wt/noxxd-bin"
+mkdir -p "$NOXXD"
+NOXXD_PATH=""
+old_ifs="$IFS"; IFS=:
+for d in $PATH; do
+  if [ -e "$d/xxd" ]; then
+    for f in "$d"/*; do
+      n="${f##*/}"
+      [ "$n" = xxd ] || [ -e "$NOXXD/$n" ] || ln -s "$f" "$NOXXD/$n"
+    done
+    d="$NOXXD"
+  fi
+  NOXXD_PATH="${NOXXD_PATH:+$NOXXD_PATH:}$d"
+done
+IFS="$old_ifs"
+assert_eq "the fixture PATH resolves no xxd" "$(PATH="$NOXXD_PATH" command -v xxd || echo none)" none
+out="$(cd "$FIX" && PATH="$NOXXD_PATH" .tickets/claim 0286 2>&1)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+tok="$(printf '%s\n' "$out" | sed -n 's/^claimed 0286 with token \(.*\)$/\1/p')"
+assert_eq "prints a four-hex token" "$(printf '%s' "$tok" | grep -Ec '^[0-9a-f]{4}$' || true)" 1
+# Distinct fallbacks, so an empty claimed_by: and an empty token cannot agree with each other.
+cb="$(sed -n 's/^claimed_by: "\(.*\)"$/\1/p' "$FIX/.tickets/items/0286-fixture.md")"
+assert_eq "claimed_by: carries that token" "${cb:-<no claimed_by>}" "${tok:-<no token>}"
+assert_eq "the commit subject carries that token" "$(git -C "$FIX" log -1 --format=%s)" "Claim 0286 [$tok]"
+
 echo "$PASS passed, $FAIL failed"
 TALLIED=1
 [ "$FAIL" -eq 0 ] || exit 1

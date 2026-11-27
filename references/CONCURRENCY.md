@@ -359,7 +359,7 @@ leaks silently: `CONCURRENCY-INCIDENTS.md`.**
 
 ## Claim tokens
 
-No ambient session id, so ownership is a minted token — `CLAIM=$(head -c2 /dev/urandom | xxd -p)` — in
+No ambient session id, so ownership is a minted token — `CLAIM=$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n')` — in
 the item's `claimed_by:` with `claimed_at:` (ISO-8601 UTC). **That is the token's home** — the pared
 `QUEUE.md` has no ownership column. The row reads `in-progress`; report the token to the user.
 

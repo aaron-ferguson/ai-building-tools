@@ -146,7 +146,7 @@ while [ $# -gt 0 ]; do
 done
 [ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
 
-[ -n "$TOKEN" ] || TOKEN="$(head -c2 /dev/urandom | xxd -p)"
+[ -n "$TOKEN" ] || TOKEN="$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n')"
 
 # --- the linked-worktree refusal (0083) --------------------------------------------------------
 # The lock and QUEUE.md live in the working tree, so a linked worktree has its own copy of both and
