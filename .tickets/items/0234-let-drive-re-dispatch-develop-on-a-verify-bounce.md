@@ -2,7 +2,7 @@
 id: "0234"
 title: Drive a whole outcome ticket through a sprint unattended, routing whatever stage it needs
 type: feature
-next: queue
+next: design
 status: ready
 qa_level: unit
 close_by: verify
@@ -25,13 +25,11 @@ expects:
   - CHANGELOG.md
   - .tickets/items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md
   - tests/sprint.test.sh
-  - tools/next
   - references/CONCURRENCY.md
-  - .claude/backlog/next
 claimed_by:
 claimed_at:
 touches:
-slice: S4
+slice: S5
 ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=e083f2f6 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
 ---
 
@@ -448,7 +446,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S2 — the headroom gate in `tools/sprint-ledger.sh`: `reading` and `outcome` over a stream, `envelope` reworked from a budget/deadline STOP into CONTINUE/WAIT/not-visible, 0231's envelope tests amended citing 0234 — discharges AC20, AC22, AC23, AC24
 - [x] S3 — the prose: `skills/sprint/SKILL.md` Steps 1, 2, 3, 4, 7, 8 and the proposal (FR7–FR9, FR17, FR20, FR21), `skills/queue/SKILL.md`'s *Re-specify* bullet, the config template comment, `CHANGELOG.md`, 0231's pointer note — discharges AC11, AC17, AC21
 - [x] S4 — the marker heartbeat leaves no orphaned `sleep` child (0170) — discharges AC25, AC26
-- [ ] S5 — route a queue completion that re-specifies a waiting row to develop instead of exiting 4 (0204) — unspecified
+- [x] S5 — route a queue completion that re-specifies a waiting row to develop instead of exiting 4 (0204) — discharges none: already discharged by FR13/AC15, landed in S1 (the after-queue arm in `skills/queue/templates/next`, guarded by `tests/next.test.sh` block `0234 AC15`); ticked by `queue` on the user's decision, 2026-11-27
 - [ ] S6 — decide whether two develop sessions may run at once, and in what isolation (0137) — unspecified
 
 
@@ -892,6 +890,16 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   (c) drop it. The choice is `queue`'s, because it narrows or widens the contract. S6 (0137) stays
   `design`'s, and its open question is above. The expects path `tools/next` and
   `.claude/backlog/next` don't exist. `./claim` warned about both, and `queue` should correct `expects:`.
+- **2026-11-27 — decided (the user): choice (a).** S5 is ticked as discharged by FR13/AC15 — the
+  after-queue arm in `skills/queue/templates/next` (re-synced as `.tickets/next`), guarded by
+  `tests/next.test.sh` block `0234 AC15`. No AC is added or changed, so `ac_digest` is unchanged;
+  S5 names no AC, because AC15 is already named by S1 and every AC is named by exactly one slice.
+  Option (b)'s uncovered case (AC15 with no `--scope`) is not taken up. `expects:` corrected by
+  `queue`: `tools/next` and `.claude/backlog/next` removed, both confirmed absent; the real paths
+  `skills/queue/templates/next` and `.tickets/next` were already listed and both exist. Routed
+  `next: design`, `status: ready`: the next slice, S6 (0137), is `unspecified` with its open
+  design question below, and an `unspecified` next slice goes to `design`
+  (`skills/queue/templates/item.md`, *Progress*). S6 is untouched.
 
 **Open design question, from 0137 — Decide whether two develop sessions may run at once, and in what isolation:**
 
