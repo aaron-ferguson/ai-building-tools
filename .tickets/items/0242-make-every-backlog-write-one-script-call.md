@@ -64,7 +64,7 @@ expects:
   - tests/design-hold.test.sh
   - tests/scaffold-close.test.sh
   - tests/sprint.test.sh
-ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8
+ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8 AC78=9de0f100 AC79=d33bbcc4 AC80=e46fe1e6 AC81=ff13b5c9 AC82=d9ab8d22 AC83=7d5d6a7c AC84=7e39137c AC85=4c37e61e
 claimed_by: "56a2"
 claimed_at: 2026-11-27T09:41:53Z
 touches:
@@ -389,7 +389,7 @@ in reverse: cheaper turns, wrong backlog.
 - FR19 *(was 0155 FR1)* — `claim`'s exclusive detector matches only an entry that is exactly `"*"` or `*`, in both copies.
 - FR20 *(was 0155 FR2)* — `next` does not print TAKE for an exclusive-claim row while another row is held.
 - FR21 *(was 0155 FR3)* — `./claim <id>` reports a collision between the row's `expects:` and every held row's `touches:` (or predicted set, per `CONCURRENCY.md`) before granting.
-- FR22 *(was 0155 FR4)* — `./next --drift` reports an open row whose `expects:` names a path that does not exist and matches no glob.
+- FR22 *(was 0155 FR4; sharpened by design `56a2`, 2026-11-27)* — `./next --drift` reports an open row whose `expects:` names a path that does not exist and matches no glob, unless that entry carries a `# new` comment (FR63). The class sits in `drift_report`, the check `--drift` and `--drive` share, so `--drive` gates on it like every other class (FR64).
 - FR23 *(was 0155 FR5)* — the usage paragraph names the collision test rather than its ordinal.
 - FR24 *(was 0066 FR1)* — `claim`'s success message is stage-aware: it asks for `touches:` where the stage opens a
   file scope and does not where it does not.
@@ -454,9 +454,21 @@ in reverse: cheaper turns, wrong backlog.
   the backlog*. It states the refusal, the resolution order (FR55), that the check is made at
   claim time so it lands before any work starts, and the one-line fix. Prose only, and unguarded
   (`CLAUDE.md`, *Tests*: no new guard greps prose).
-- FR44 *(was 0237 FR1)* — An open row at `next: verify` can be moved to `next: design` by one script call that writes
-  the item and its `QUEUE.md` row in one locked commit.
-- FR45 *(was 0237 FR2)* — `queue` Step 1 names the operation and when it applies (the user reopens a decision).
+- FR44 *(was 0237 FR1; sharpened by design `56a2`, 2026-11-27)* — An open row at `next: verify` is moved to
+  `next: design` by `queue` running `./claim <id>` and then `./handoff <id> <token> design`. That is
+  two script calls, and each one writes the item and its `QUEUE.md` row in one locked commit. Between
+  them the row is held by `queue`, so no other session can take it, and nothing edits `next:` or the row
+  by hand. Neither script changes for this: `handoff` already accepts `design` as a target from a
+  `verify` row (observed 2026-11-27, FR59). `./reopen` keeps its stated contract ("the destination is
+  always `verify`", on a `status: done` item only), and `./handoff` keeps its token.
+- FR45 *(was 0237 FR2; sharpened by design `56a2`, 2026-11-27)* — `queue` Step 1's routing table gains one row.
+  The trigger is the user overturning the decision on an open ticket at `next: verify`. The steps are
+  `./claim <id>`; then a dated line in `## Notes & decisions` naming what the user overturned; then an
+  `## Open design question` section stating the question again, so `design` Step 1 has a contract
+  to read; then `./handoff <id> <token> design`. If `./claim` refuses because another session (a
+  verify pass) holds the row, `queue` stops and reports. It waits for that release, as
+  `references/CONCURRENCY.md`, *A claimed ticket is never amended, even by `queue`*, already
+  requires. It never writes the row unheld.
 - FR46 *(was 0236 FR1)* — Whichever is chosen is stated in `references/CONCURRENCY.md` and in the skill it binds
   (`design` Step 4 or `queue` Step 2), and the other skill does not contradict it.
 - FR47 *(was 0118 FR1)* — the step in which `queue` commits a parked finding names the privacy guard and requires it
@@ -506,6 +518,53 @@ in reverse: cheaper turns, wrong backlog.
   projects: the four scripts now refuse off the shared branch, how that branch is resolved, and
   that a project sharing on a branch other than `main` with no `origin/HEAD` needs one
   `shared_branch:` line in its `config.yml` after upgrading.
+- FR59 *(0237, design `56a2`, 2026-11-27)* — `tests/handoff.test.sh` carries a case that runs the real
+  `./claim` and then `./handoff <id> <token> design` on a fixture row at `next: verify`. It is a
+  regression guard and is green at baseline. On a scratch clone on 2026-11-27, `./claim 0192 ab12`
+  and then `./handoff 0192 ab12 design` exited 0 with `handed off 0192: verify -> design, status
+  ready, claim ab12 released`. The item and the row then read `design | ready`, `claimed_by:` was
+  empty, and the tree was clean.
+- FR60 *(0235/0237, design `56a2`, 2026-11-27)* — No other skill or reference contradicts FR45. In
+  particular, `references/CONCURRENCY.md` and `skills/verify/SKILL.md` do not say that only `verify`
+  or `reopen` may move a row off `next: verify`.
+- FR61 *(0155, design `56a2`, 2026-11-27)* — FR22's report is one line per entry:
+  `DRIFT     <id> | expects: <path> exists nowhere — correct the path, or mark it '# new' if this ticket creates it`.
+  It checks every row in `QUEUE.md`, held or not, because `expects:` is `queue`'s prediction
+  whoever holds the row. It never checks a `DONE.md` row.
+- FR62 *(0155, design `56a2`, 2026-11-27)* — A path resolves against the repo root, which is
+  `git -C "$DIR" rev-parse --show-toplevel` or, outside git, the backlog directory's parent. A glob
+  entry counts as present when shell pathname expansion matches at least one path. A plain entry
+  counts as present when `[ -e ]` is true for it. Nothing is fetched, and nothing outside the repo
+  root is read.
+- FR63 *(0155, design `56a2`, 2026-11-27)* — An entry is exempt when the YAML comment that `decomment`
+  cuts from its line begins with the word `new`. That covers `# new` and `# new — the script S8 adds`,
+  but not `# renewed` and not `# not new`. The comment is read by a helper beside the
+  `copy-begin: decomment` block. The block itself is a declared copy, and it is not changed.
+  Prior art: `skills/queue/templates/item.md`'s `expects:` comment already names `# new` as the
+  comment one path carries.
+- FR64 *(0142 FR3 kept, design `56a2`, 2026-11-27)* — `--drive` spends ESCALATE (4) on the class, as on
+  every class `drift_report` prints. `tests/next.test.sh`'s *0142 FR3* case still finds identical
+  DRIFT lines in `--drive` and `--drift`, and still counts exactly three drifted rows. Its fixture
+  paths (`a/one.md`, `b/two.md`) are written with `# new`, or the fixture creates them. The same
+  applies to every fixture helper in `tests/*.test.sh` that writes `expects:` and then runs
+  `--drift` or `--drive` (`add_ticket` and `add_item_held` in `tests/next.test.sh`, and any
+  sibling). The suite stays green; 322 reds were observed when the class was built without this
+  (S1 notes).
+- FR65 *(0155, design `56a2`, 2026-11-27)* — The S15 leg corrects this item's own `expects:`. Develop holds
+  0242 and may do this. The four `.claude/backlog/{claim,next,close,handoff}` entries do not exist
+  in this repo (0228), so they are dropped. 0240's `references/MEASUREMENT.md` belongs to another
+  ticket. The leg records in its notes that 0240 "still needs its `expects:` corrected", and does
+  not write 0240. Until `queue` corrects it, `--drive` escalates on 0240, and that is the class
+  working. Measured on 2026-11-27, those five entries are the only missing, unmarked `expects:`
+  paths in the live open rows.
+- FR66 *(0155, design `56a2`, 2026-11-27)* — `skills/queue/templates/item.md`'s `expects:` comment says
+  that an entry naming a file the ticket will create carries `# new`, and that `--drift` and
+  `--drive` report any other entry that exists nowhere. `--drift`'s usage text names the class.
+  `CHANGELOG.md` `## Unreleased` carries one line for consuming projects: after upgrading,
+  `--drive` escalates on every open row whose `expects:` names a missing, unmarked path, and the
+  fix is to correct the path or mark it `# new`. The template comment and the CHANGELOG line are
+  prose only, and unguarded (`CLAUDE.md`, *Tests*). The usage text is script output, and AC83
+  checks it.
 
 
 ## Non-functional requirements
@@ -527,6 +586,77 @@ in reverse: cheaper turns, wrong backlog.
 | Testing | (0156) The case runs the real hand-off then `--drift`, in fixture. | Two separately-built fixtures that never meet. | `testing-conventions.md` |
 | Privacy & data | (0118) The rule being enforced is `CLAUDE.md`'s public-repo constraint; cite it, do not restate it | AC55: a tracked file carrying a real home path, run through the named command, is not refused | `data-privacy-conventions.md` |
 | Documentation | (0118) Both skills state the same requirement once each, in their own voice | prose only — no artifact yet | `documentation-conventions.md` |
+
+## Waiting on
+
+### Outcome
+Slice S13 (from 0236) settles whether `design` may write sibling items that its own FRs name.
+Then the rule in `references/CONCURRENCY.md`, *A stage writes only the ticket it holds*, and the
+skills it binds say one thing, and no session repeats what one consuming project did: write two
+unheld items under the lock because a `queue`-written FR told it to.
+
+### Where it stands
+S1–S11 passed verify. Design `56a2` (2026-11-27) specified S12 (FR44, FR45, FR59, FR60, AC78–AC80)
+and S15 (FR22, FR61–FR66, AC28, AC81–AC85), and moved S13 to the end of `## Progress`. Once this is
+released, `develop` builds S12, S14 and S15 in that order without waiting on this answer. Only S13
+waits. S13 changes who may write which item, which is the backlog's concurrency architecture
+(`coding-conventions.md`, *What Not to Delegate to AI*). An unattended session prepares that
+decision and does not make it.
+
+### What needs you
+S13: may `design` amend unheld sibling items its own FRs name (a second exception), or must `queue` stop writing such FRs?
+
+### Options
+#### Option A — a second narrow exception for design
+`design`, holding item X, may also edit items that X's own FRs name. Each such item must have an
+empty `claimed_by:` and must not be `done`. The edit happens under the backlog lock, in the same
+commit as the decision, and restamps that item's `ac_digest`.
+Pros: the decision and its consequences land in one commit, with no `queue` round trip. Prior
+art: `retro` already writes unheld items under the lock (*A session with no ticket writes only
+what is unheld*).
+Cons: `retro`'s exception covers appends only. This one would let a non-author rewrite criteria
+and restamp `ac_digest`, and the template says that restamp is the one edit the digest cannot catch.
+It widens the set of writers for every item. It also needs a script, because *An exception is a
+script, never a technique*, so it is new code, not a prose line.
+Would have to be true: cross-item FRs are common, and the `queue` round trip costs more than one
+extra writer per item.
+#### Option B — queue stops writing FRs that amend other items (recommended)
+An FR names work on its own item only. If a decision changes what sibling items must say, the
+decision records that "items B and C still need amending to match" in its `## Notes & decisions`,
+which *A stage may record what still needs filing* already allows. `queue` then runs an
+**Amend** on each one: claim, amend, hand back. That is the pattern CONCURRENCY already prescribes.
+`queue` Step 2 says this, `design` Step 4 says what to do with an FR that does it anyway, and
+CONCURRENCY says it once.
+Pros: no rule is relaxed, and every item keeps one author path and an honest `ac_digest`. It is
+prose only, with no script. It matches *A criterion belonging to another ticket cannot be filed by
+the stage that finds it*.
+Cons: one `queue` pass per decision that has sibling consequences. Until that pass runs, the
+siblings read stale.
+Would have to be true: decisions with sibling consequences are rare enough that the round trip
+does not matter. On the evidence so far that is one consuming project, one occurrence (0236).
+#### Option C — design claims each sibling
+`./claim` gains a mode that lets `design` claim a `blocked` row it does not stage, so the edit
+happens under a held token.
+Pros: it keeps "write only what you hold" literally true.
+Cons: it is a script change to `claim`. A held `blocked` row is a new state that `--drive` and
+`--drift` would each have to learn. It solves a rare case with machinery every reader pays for.
+Would have to be true: Option A is wanted, and a held token is required for it.
+
+### Recommendation
+Option B. The rules already say it. The consuming project's FR49 was the defect: an FR directing a
+write that its own stage is forbidden to make. The cost is a round trip, measured at one
+occurrence.
+
+### What to do
+Reply with `A`, `B` or `C`, plus any condition, in a session running `/design 0242`. That session
+writes S13's FRs and ACs, restamps `ac_digest` and hands the row to `develop`. To have the
+specified slices built before you decide, reply `defer S13`. The design session then hands the row
+to `develop`, keeps this brief, and `develop` reaches S13 last and routes it back here.
+
+### If no answer
+S12, S14 and S15 wait with the row, although all three are specified. The S13 move means that
+`defer S13` is the only reply needed to release them. `--drive` continues with other in-scope rows
+past a waiting one. Nothing else in the backlog names 0242 in `blocked_by`.
 
 ## Acceptance criteria
 
@@ -739,6 +869,43 @@ reads the live backlog.
   them, then the section FR43 names sits directly after *A second checkout never writes the
   backlog* and states the refusal, FR55's order and the `shared_branch:` fix, and `## Unreleased`
   carries FR58's line. Checked by reading, not by a guard (`CLAUDE.md`, *Tests*).
+- [ ] AC78 *(0237)* — Given a fixture backlog whose row is at `next: verify`, `status: ready` and unheld,
+  when `./claim <id>` and then `./handoff <id> <token> design` run, then both exit 0. The item
+  then reads `next: design` and `status: ready` with `claimed_by:` empty, the row's Next and
+  Status cells read `design` and `ready`, the last two commits are `Claim <id> [<token>]` and
+  `Hand off <id> to design [<token>]`, and `git status --porcelain` is empty. This is in
+  `tests/handoff.test.sh`. It is a regression guard: it is green at baseline (FR59). Red-making
+  input: `handoff` refusing a `verify -> design` move, or leaving the claim held.
+- [ ] AC79 *(0237)* — Given the same fixture with the row already held by another token, when
+  `./claim <id>` runs, then it exits non-zero and the item, the row and `git log` are unchanged.
+  This is in `tests/handoff.test.sh` or `tests/claim.test.sh`, beside AC78. Red-making input: a
+  claim that takes a held verify row.
+- [ ] AC80 *(0237)* — Given `skills/queue/SKILL.md` after the change, when verify reads Step 1, then
+  one routing row names the trigger (the user overturns the decision on an open `next: verify`
+  ticket), the two commands in order, the dated Notes line, the restored `## Open design question`,
+  and stopping when `./claim` refuses. Also, `references/CONCURRENCY.md` and
+  `skills/verify/SKILL.md` state nothing that FR60 forbids. Checked by reading, not by a guard
+  (`CLAUDE.md`, *Tests*).
+- [ ] AC81 *(0155)* — Given an open row whose `expects:` entry names a missing path and carries `# new`,
+  when `./next --drift` runs, then no `expects:` DRIFT line names that row. The same is true for
+  `# new — created by S8`. For `# renewed`, the line is printed. This is in `tests/next.test.sh`.
+  Red-making input: no exemption, or an exemption that matches `new` anywhere in the comment.
+- [ ] AC82 *(0155)* — Given open rows whose `expects:` holds an existing path, a glob that matches one
+  file, and a glob that matches none, and a `DONE.md` row whose item expects a missing path, when
+  `./next --drift` runs, then only the glob matching none is reported, in FR61's form. Red-making
+  input: a glob compared as a literal path, or a closed row checked.
+- [ ] AC83 *(0155)* — Given AC28's fixture, when `./next --drive` runs, then it exits 4 and prints the
+  same `expects:` DRIFT line that `--drift` prints. When `./next --help` runs, the `--drift` usage
+  text names the class. This is in `tests/next.test.sh`. Red-making input: the class added to
+  `--drift`'s own path and not to `drift_report`.
+- [ ] AC84 *(0155)* — Given the tree after the change, when the whole suite runs as
+  `for t in tests/*.test.sh; do "$t" || exit 1; done`, then it exits 0, and the *0142 FR3* case
+  still counts three drifted rows. Then `./next --drift` on this repo's live backlog names no
+  `expects:` entry of 0242. Red-making input: any fixture helper left writing a missing, unmarked
+  path (FR64), or 0242's `.claude/backlog/*` entries left in place (FR65).
+- [ ] AC85 *(0155)* — Given `skills/queue/templates/item.md` and `CHANGELOG.md` after the change, when
+  verify reads them, then the `expects:` comment states FR66's `# new` rule, and `## Unreleased`
+  carries FR66's upgrade line. Checked by reading, not by a guard (`CLAUDE.md`, *Tests*).
 
 
 ## Progress
@@ -757,10 +924,10 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S9 — `./park`, with the public-repo screen — discharges AC6, AC7, AC8
 - [x] S10 — `./rank` and `./withdraw` — discharges AC9, AC10, AC11
 - [x] S11 — `./drain`, on `0227`'s listing, and the ten-script sync — discharges AC13, AC14, AC15
-- [ ] S12 — `queue` can send an open verify ticket back to design (0237) — unspecified
-- [ ] S13 — decide whether design may amend unheld sibling items its own FRs name (0236) — unspecified
+- [ ] S12 — `queue` sends an open verify ticket back to design with `./claim` then `./handoff … design`, named in its Step 1 (0237; FR44, FR45, FR59, FR60) — discharges AC78, AC79, AC80
 - [ ] S14 — the seven skills, `CONCURRENCY.md` and the CHANGELOG move onto the scripts, and every step that commits a sweep runs the privacy guard (0118) — discharges AC16, AC17, AC53, AC54, AC55
-- [ ] S15 — FR22 and AC28, `--drift` reporting an `expects:` path that exists nowhere: decide whether `--drive` gates on it (0142 FR3) and whether a path commented `# new` is exempt (0155) — unspecified
+- [ ] S15 — `--drift` and `--drive` report an `expects:` path that exists nowhere unless it is marked `# new`, through the shared check; fixtures and this item's own `expects:` are corrected (0155; FR22, FR61–FR66) — discharges AC28, AC81, AC82, AC83, AC84, AC85
+- [ ] S13 — decide whether design may amend unheld sibling items its own FRs name (0236); waiting on a person (`## Waiting on`), moved last by design `56a2` on 2026-11-27 so S12, S14 and S15 are built without waiting on it — unspecified
 
 
 ## QA plan
@@ -2531,6 +2698,57 @@ fixture-scripted. AC77 is a read verify does anyway. Both values stand.
   The first run hit one red, in `tests/citations.test.sh`, from a citation wrapped across two
   comment lines in this slice's own script. `d0db04d` fixes it.
 
+### S12, S15 decision; S13 briefed — 2026-11-27, design `56a2` (sprint run-20261127T024025Z)
+
+**S12 (0237): `queue` claims and then runs `./handoff <id> <token> design`. No new script mode.**
+Prior art decided it. `references/CONCURRENCY.md`, *A claimed ticket is never amended, even by
+`queue`*, already gives `queue` exactly this shape for an amend: wait for the release, claim,
+amend, hand back. `handoff` accepts all four stages as a target (`handoff:148`). As observed on a
+scratch clone (FR59), `./claim 0192 ab12` and then `./handoff 0192 ab12 design` moved a live
+`verify` row to `design | ready` with the claim released and the tree clean. So the gap 0237 hit was
+a missing *instruction*, not a missing *operation*.
+- Rejected: **an unclaimed form of `./handoff`**. It removes the token check, and that check is the
+  single-holder guarantee. A verify pass mid-run would have its row moved under it.
+- Rejected: **`./reopen` taking a target stage**. Its header states that the destination is always
+  `verify` and that it acts on a `status: done` item only. A contract change is a re-specify, not
+  a reopen. Widening it would make one script answer two questions.
+- Accepted cost: two calls and two commits, not FR44's original "one script call". Each call is
+  atomic, and the state between them is a held row, which is a valid state, not drift. So the
+  two-file hand edit 0237 recorded cannot recur.
+- Criteria accounting: FR44 and FR45 were sharpened. FR59 and FR60 and AC78–AC80 were added.
+  AC78 is a regression guard, green at baseline, and says so.
+
+**S15 (0155): the class goes in the shared `drift_report`, and `--drive` gates on it. An entry
+marked `# new` is exempt.** This keeps both closed contracts that the S1 build found in conflict:
+- 0142 FR3 ("--drive and --drift name the same rows and classes, because they share the check")
+  is kept by placing the class in `drift_report`.
+- `claim`'s 0147 FR2 ("declaring a file you are about to write is the common and correct case")
+  is kept by the `# new` exemption. `skills/queue/templates/item.md` already names `# new` as the
+  comment an `expects:` path carries, so the marker is prior art, not new vocabulary.
+- The 322 fixture reds the S1 build saw come from fixtures naming files they never create. FR64
+  makes those fixtures honest, and the 0142 FR3 count stays three.
+- Rejected: **the class in `--drift` only**. It reds 0142 FR3's guarded contract.
+- Rejected: **a non-gating "advisory" class in `--drive`**. It is a new concept, a class that prints
+  without escalating, invented for one case. It would also make "every DRIFT line escalates" untrue.
+- Accepted cost: on upgrade, a consuming project's `--drive` escalates on every open row that names
+  a to-be-created file without `# new`, until `queue` marks or corrects it. FR66's CHANGELOG line
+  names the fix. Here, measured on 2026-11-27, it would name 0242's four `.claude/backlog/*`
+  entries (fixed in the S15 leg, FR65) and 0240's `references/MEASUREMENT.md` (left for `queue`).
+- Criteria accounting: FR22 was sharpened. AC28 is confirmed unchanged and is now discharged by
+  S15, which settles verify `45e7`'s residual. Its "a path that does not exist" reads as an
+  *unmarked* path, and its digest is untouched. FR61–FR66 and AC81–AC85 were added.
+
+**S13 (0236): not decided. A brief is in `## Waiting on`.** S13 changes who may write which item,
+which is concurrency architecture (`coding-conventions.md`, *What Not to Delegate to AI*), and this
+pass is unattended. The recommendation (Option B) is in the brief only. No S13 FR or AC is written.
+S13 is moved to the end of `## Progress` (unticked slices may be re-ordered, `templates/item.md`), so
+a `defer S13` reply releases S12, S14 and S15 to `develop` without waiting on the decision.
+
+`qa_level: unit` and `close_by: verify` were re-read against AC78–AC85, and both still fit: every new
+criterion is a fixture case or a reading. The slice-kind parser (`progress-slices` in `handoff` and
+`next`) reads the kind from the text after the last ` — `, so S13's annotation sits before its
+`— unspecified`.
+
 ### Open questions for the unspecified slices
 
 **Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
@@ -2563,12 +2781,12 @@ fixture-scripted. AC77 is a read verify does anyway. Both values stand.
 Refuse or warn when the checked-out branch is not the one the backlog is shared on — and how does a
 script know which branch that is (a `config.yml` key, the remote's HEAD, or `main` by default)?
 
-**Open design question, from 0237 — Give queue a way to send an open verify ticket back to design:**
+**Settled 2026-11-27 by design `56a2` (S12, FR44–FR45, FR59–FR60) — kept as the question it answered. Open design question, from 0237 — Give queue a way to send an open verify ticket back to design:**
 
 Which carries it: a named operation in `queue` Step 1 that claims then `./handoff … design`, an
 unclaimed form of `./handoff`, or `./reopen` taking a target stage?
 
-**Open design question, from 0236 — Decide whether design may amend unheld sibling items its own FRs name:**
+**Briefed 2026-11-27 by design `56a2`, not settled — see `## Waiting on`. Open design question, from 0236 — Decide whether design may amend unheld sibling items its own FRs name:**
 
 Either name a second narrow exception in *A stage writes only the ticket it holds* (unheld, non-done
 items named in the held item's own FRs, under the lock, in the decision's commit), or have `queue`
