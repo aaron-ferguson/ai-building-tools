@@ -510,3 +510,5 @@ The order now, top down:
 - **`0064`, the running copy is the released copy.** Tier 4: it has bitten, but it is caught when it does.
 - **`0238`, prototype in a consuming project.** Tier 4, and both of its slices are at design.
 - Then the four standalone design rows in their previous order, `0214`, `0069`, `0070`, `0138`, and `0239` (kept at the user's request) at the bottom.
+
+Ranked directly below 0242 at the person's instruction (approved recommendation, sprint run-20261127T024025Z). 0243 changes the item storage 0242's scripts act on, and 0242 is rewriting those scripts now, so 0242 first; 0243 above 0244 because its slice statuses are evidence 0244's loop signals read, and it removes the design-behind-develop serialisation that cost this run the most sessions.
