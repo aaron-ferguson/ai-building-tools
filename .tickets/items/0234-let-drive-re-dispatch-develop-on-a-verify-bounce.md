@@ -920,6 +920,47 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
     behaves the same is reasoned, not run: this host is Linux. Nothing new for `FINDINGS.md`: the
     `xxd: not found` claim failure is already parked there.
 
+- **S6 built, 2026-11-27, develop token 65ef** — commits `131d16c` (FR28: `./claim`), `77503fa` (FR29:
+  `--drive`), `354e084` (FR30–FR32: prose, CHANGELOG), `6fcc17a` (two prose guards deleted). Whole suite
+  green at `6fcc17a` with `git status` clean; `diff` of both template/project pairs prints nothing (AC31).
+  - **FR28 mechanism.** The refusal sits after the `"*"` exclusive refusal and before the row edit, so the
+    EXIT trap releases the lock and nothing is written. A row's stage is its `QUEUE.md` `Next` cell and its
+    holder its item's `claimed_by:` — QUEUE.md rather than `items/*.md` alone, because closed items can
+    still carry an unstripped token and a closed row has left QUEUE.md. A table with no `Next` column
+    is not refused (0106's cannot-tell rule).
+  - **FR29 mechanism.** The guard is inside `wait_on_design`, which every `DISPATCH  develop` path already
+    calls (the rank gate, `dispatch_leg` for a started or bounced leg, and the same-stage stand-down arm).
+    So that arm now WAITs, not ESCALATEs, while another develop runs. That is right for a session FR28
+    refused, which stands down leaving its row as it was. The running set is `running_at develop`
+    minus the ids being dispatched.
+  - **Neighbours amended (AC31).** `tests/claim.test.sh` `add_held` takes an optional stage. The 0067 AC7
+    "ordinary ticket" and 0147 AC4 cases now hold their other row at `verify`. `tests/next.test.sh` 0038
+    AC29 and 0038 FR8 do the same, each with a comment citing 0234 FR29. Two prose guards pinned the old
+    `0137` wording FR31 replaces, and per `CLAUDE.md` *Tests* both were deleted, not re-anchored:
+    `tests/shared-dirty-tree.test.sh` ("serialised in this repo by design until `0137` decides
+    otherwise") and `tests/sprint.test.sh` (0134 Documentation NFR, "names 0137").
+  - **Mutations, all RUN** (claim: whole `tests/claim.test.sh`; next: the 0234 AC29/AC30 block extracted
+    with the file's helpers and pointed at a mutant copy):
+    | Mutation | Reds |
+    |---|---|
+    | unmodified `claim` (HEAD before `131d16c`) | AC27: exits 0, no 0101/aaaa, QUEUE.md changed |
+    | refusal returns with the lock held (`trap -` before `exit 1`) | AC27 "a following design claim exits 0" |
+    | refusal keyed on any held develop row, whatever the token | AC28 first half |
+    | refusal applied to a claim at any stage | AC27 tail (design claim), AC28 second half (verify 0104) |
+    | other rows counted at any stage, not only develop | 0067 AC7 ordinary case, 0147 AC4 (amended neighbours) |
+    | unmodified `next` (HEAD before `77503fa`) | AC29 first half (`DISPATCH  develop 0102`, exit 0), AC30 bounce half |
+    | guard only in the rank walk's gate | AC30 bounce half |
+    | guard before the walk for every stage | AC30 design half (and the bounce half) |
+  - **AC32 is a reading** at verify. The places are `references/CONCURRENCY.md` *The working tree is shared too*
+    (new bullet after the 0050 one), `skills/sprint/SKILL.md` *Design beside other stages* and Step 8's
+    "never runs two stage sessions at once", the claim step of `skills/develop/SKILL.md`, and `CHANGELOG.md`
+    `## Unreleased`. `skills/develop/SKILL.md` is 55,657 bytes, under its 55,862 ceiling (50,862 + 5,000
+    margin, `tests/skill-size.test.sh`), so FR30 is three lines.
+  - **Claim friction.** `./claim 0234` with no token died at `xxd: not found`: line 102's token default is
+    `head -c2 /dev/urandom | xxd -p`, and this host has no `xxd`. `set -e` stopped it before the lock, so
+    nothing was written. Claimed with an explicit token. Parked in `FINDINGS.md`, since it is outside S6's
+    scope.
+
 ### Open questions for the unspecified slices
 
 **Established, not yet specified (it was at next: queue), from 0204 — Route a queue completion that re-specifies a waiting row to develop instead of exiting 4:**
