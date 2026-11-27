@@ -23,11 +23,11 @@ expects:
   - tests/sprint.test.sh
   - skills/develop/SKILL.md
   - skills/verify/SKILL.md
-  - references/MEASUREMENT.md
-ac_digest: AC1=a189a364 AC2=c596ad7d AC3=f32163d4 AC4=42c38151 AC5=e1970d71 AC6=15d3aab7 AC7=786e7dcb AC8=1cb16db0 AC9=117a7eee AC10=51817b22 AC11=7d84aa21 AC12=8be356b8 AC13=15aee5b2 AC14=abdbd457 AC15=b92b78a5 AC16=a961f540 AC17=a5943396 AC18=b7aded44 AC19=f54d39aa AC20=29d9e309 AC21=3783a942
+  - MEASUREMENT.md
 claimed_by:
 claimed_at:
 touches:
+ac_digest: AC1=a189a364 AC2=c596ad7d AC3=f32163d4 AC4=42c38151 AC5=e1970d71 AC6=15d3aab7 AC7=786e7dcb AC8=1cb16db0 AC9=117a7eee AC10=51817b22 AC11=7d84aa21 AC12=8be356b8 AC13=15aee5b2 AC14=abdbd457 AC15=b92b78a5 AC16=a961f540 AC17=a5943396 AC18=b7aded44 AC19=f54d39aa AC20=29d9e309 AC21=3783a942
 ---
 
 ## Problem
@@ -191,7 +191,7 @@ inform whether any of those tickets need adjustment.
 - FR21 *(was 0149 FR3)* — The design session must produce a recommendation on model tiering: which tasks in the
   sprint supervisor and/or which full stage sessions (develop or verify) are candidates for haiku,
   the dispatch mechanism (`--model` in the `claude -p` call), and an estimated USD saving per
-  sprint compared to all-opus, derived from `references/MEASUREMENT.md`'s per-session figures
+  sprint compared to all-opus, derived from `MEASUREMENT.md`'s per-session figures
   rather than invented.
 
 
@@ -402,7 +402,7 @@ Three questions, any of which could produce a follow-on develop ticket:
 - **Why they block specification:** the answers determine which implement tickets to write and
   what their FRs should say; writing implement tickets now would be building to guesses.
 - **Settle it with:** `/design` — read the sprint, develop, and verify skills, check
-  `references/MEASUREMENT.md` for per-session figures, and write the answers into *Notes &
+  `MEASUREMENT.md` for per-session figures, and write the answers into *Notes &
   decisions*. Then set `next: develop` and add any unblocked FRs and ACs for the implement
   work, or spawn child tickets if the scope warrants it.
 
@@ -440,3 +440,6 @@ Three questions, any of which could produce a follow-on develop ticket:
 
 - **2026-09-13 — model tiering, from the run-20260913T034946Z sweep.** FR21's dispatch mechanism now exists: sprint Step 3 passes `--model opus` (commit `a666012`), after every stage of that run silently ran on claude-sonnet-4-6. The same run is the one recorded instance of a cheaper model degrading a stage: its verify session returned `conventions_resolved: null` and a placeholder `session_id` and still closed four tickets (0160). A haiku or sonnet recommendation for any stage should weigh that, not only the price differential.
 - **2026-11-26 — model-tiering decision, from the user-requested toolkit efficiency review (queue).** Recorded here so FR21 is not re-derived; `design` still owns the ticket and its two other questions. **No stage moves off Opus**: develop, verify, queue, design and retro stay on the run's resolved Opus id. Sonnet 5.5 would at most halve a stage's spend (USD 2.00/10.00 against 4.00/20.00, claude-api skill table cached 2026-11-03): about USD 14 of run-20261118T074205Z's USD 28.04 develop+verify, if turn counts held. The one recorded downgrade (this file's 2026-09-13 note, 0160) closed four tickets on an untrusted pass, and four reopens plus re-verifies cost about that saving before the person's time. **The supervisor may run on Sonnet, but there is no reason to change it**: about USD 1 a sprint on Opus 5.5 at 3 turns per cycle (an estimate from sprint's cost model, not measured). Haiku is not a fit, because the proposal, briefs and recovery are judgement. **First levers, filed as 0240 (pin and log effort per dispatch; stages inherit `effortLevel` from the host's settings today) and 0241 (price Sonnet 5.5 and Haiku 5.5, which `RATES` lacks).** Then, gated on both: an effort trial (develop/verify at `high` against `medium`, scored on cost per closed ticket including bounces), and one Haiku subagent trial on bulky reading inside a stage, with queue's duplicate search the first candidate. Verify's evidence reading is never delegated.
+- **2026-11-27 (queue `e782`).** `expects:` and the two prose mentions named `references/MEASUREMENT.md`,
+  which exists nowhere; the file is `MEASUREMENT.md` at the repo root. Corrected here, as 0242 FR65
+  left for `queue`, so 0242 S15's new `expects:` class does not escalate this row. No criterion changed.
