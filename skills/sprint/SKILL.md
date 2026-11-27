@@ -410,7 +410,8 @@ line by line, files a running develop is editing, and its citations go stale und
 enforces it: a design row naming a file a running develop session touches is stepped over with a
 `NOTE`, and a develop gate naming a file a running design session names exits `6` and waits for it
 rather than being stepped over, which would build rank-2 work ahead of the head. Design beside design
-or verify never conflicts. Parallel develop fails the token fact, which is why `0137` declines it, and
+or verify never conflicts. Parallel develop fails the token fact, which is why `0234` S6 declines it
+— `./claim` refuses a second develop holder and `--drive` waits on a running develop (exit `6`) — and
 where the prose files are the product `0050` settled file scope as one session per shared file
 (`CONCURRENCY.md`, *The working tree is shared too*).
 
@@ -947,8 +948,9 @@ still this escalation, and its remedy is the person's, never a raise-and-retry.
   A repair is not narrowing: it corrects a contradictory, unmeetable or drifted statement of an
   outcome the ticket keeps; where repair ends and narrowing starts is `queue`'s *Re-specify*.
 - **It never runs two stage sessions at once, except a design session beside a develop, verify or design session**
-  (the *Design beside other stages* section). Otherwise the loop is sequential by decision, and what it
-  parallelises is *tickets*, through the gate.
+  (the *Design beside other stages* section). Otherwise the loop is sequential by decision (`0234` S6),
+  which the scripts enforce for develop — `./claim` refuses a second holder, `--drive` waits — and what
+  it parallelises is *tickets*, through the gate.
 - **It never drives more than one backlog.**
 - **It never writes to the backlog except to park findings** — entries in `FINDINGS.md` for what
   this run learned about its own tooling (Step 9). Every other backlog write belongs to a stage.

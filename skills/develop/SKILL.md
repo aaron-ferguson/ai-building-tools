@@ -162,6 +162,10 @@ choosing between two of the author's own commits (`git-conventions.md`). A pass 
 tree and the next session to commit that file carries it off. On a tracker-backed backlog the API
 write is the durability instead (`CONCURRENCY.md`, *A claim must be durable the moment it is made*).
 
+**One develop session at a time** (0234): a gate claims every row after the first with the token the
+first `./claim` printed, `./claim <id> <token>`. A refusal naming another develop holder is the
+designed wait (`CONCURRENCY.md`): claim nothing, report its id and token, stop or take other-stage work.
+
 By hand, under the lock, in this order — and `ready` → `in-progress` **needs** the lock, being a
 read-modify-write two sessions can both win:
 
