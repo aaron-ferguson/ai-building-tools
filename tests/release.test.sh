@@ -772,6 +772,18 @@ case "$VOUT" in
 esac
 git -C "$CO" show "$SHA:skills/demo/SKILL.md" > "$S2INST/skills/demo/SKILL.md"
 
+echo "0064 FR5 — a gitCommitSha carrying a different version than the record fails the record check"
+# With the compared commit taken from the record, "the record equals it" holds by construction; the
+# second assertion is that the recorded sha carries the recorded version.
+write_record "$S2INST" "1.2.4" "$SHA"
+s2_verify
+if [ "$VST" -ne 0 ]; then ok "verify fails over a record whose halves disagree"
+else bad "FR5 — a sha carrying 1.2.3 under a recorded 1.2.4 verified clean: $VOUT"; fi
+case "$VOUT" in
+  *"record    FAILED"*"1.2.3"*"1.2.4"*) ok "the record failure names both versions" ;;
+  *) bad "FR5 — the record failure does not name 1.2.3 and 1.2.4: $VOUT" ;;
+esac
+
 echo "0064 FR5 — a gitCommitSha the checkout lacks falls back to the bump commit for the version"
 write_record "$S2INST" "1.2.3" "$OTHER_SHA"
 s2_verify
