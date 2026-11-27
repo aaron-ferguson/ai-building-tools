@@ -266,6 +266,56 @@ if [ -n "$exclusive" ]; then
   fi
 fi
 
+# --- one develop session at a time (0234 FR28) ------------------------------------------------
+# A develop claim refuses while any OTHER row at `next: develop` is held by a different token. The
+# rule binds every project these scripts run in and has no config knob, because a knob would bring
+# back as an opt-in the hazard it removes: two build sessions in one working tree and one index,
+# whose rows share files as a rule wherever prose is the product. The decision, the priority order
+# it was chosen under and the two rejected candidates are in references/CONCURRENCY.md,
+# *The working tree is shared too*.
+#
+# **The holder's own token is not refused**: that is how one develop session claims the several
+# rows of its gate, each `./claim <id> <token>` after the first carrying the token the first printed.
+#
+# The stage of each row is read from its QUEUE.md `Next` cell and the holder from its item's
+# `claimed_by:`. QUEUE.md and not `items/*.md` alone, because a closed item can still carry a token
+# nobody stripped, and a closed row has left QUEUE.md. A table with no `Next` column cannot tell a
+# develop row from any other, so it keeps claiming as it always did (the 0106 rule: cannot-tell is
+# not a refusal). Placed with the other refusals, above the row edit, so a refused claim has nothing
+# to undo — the trap releases the lock and nothing was written.
+if [ "$stage" = "develop" ] && [ -n "$NEXT_COL" ]; then
+  dev_holders=""
+  for oid in $(awk -F'|' -v idc="$ID_COL" -v nc="$NEXT_COL" '/^\|/ {
+      i = $idc; gsub(/^ +| +$/, "", i); n = $nc; gsub(/^ +| +$/, "", n)
+      if (n == "develop") print i
+    }' "$QUEUE"); do
+    [ "$oid" != "$ID" ] || continue
+    oitem="$(ls "$DIR/items/$oid-"*.md 2>/dev/null | head -1 || true)"
+    [ -n "$oitem" ] || continue
+    otok="$(awk '
+      NR == 1 && /^---$/ { fm = 1; next }
+      fm && /^---$/        { exit }
+      fm && /^claimed_by:/ {
+        sub(/^claimed_by:[ \t]*/, "")
+        gsub(/["\047]/, "")
+        sub(/[ \t]+#.*$/, "")
+        sub(/[ \t]+$/, "")
+        print; exit
+      }
+    ' "$oitem")"
+    [ -n "$otok" ] && [ "$otok" != "$TOKEN" ] || continue
+    dev_holders="$dev_holders $oid [$otok]"
+  done
+  if [ -n "$dev_holders" ]; then
+    echo "refusing to claim $ID: one develop session at a time, and another holds a develop row:$dev_holders" >&2
+    echo "this is the designed wait, not an error: claim nothing, report the holder above, and stop" >&2
+    echo "or take work at another stage; a session claiming more rows of its own gate passes its" >&2
+    echo "first token: ./claim $ID <that token> (references/CONCURRENCY.md, The working tree is shared too)" >&2
+    echo "nothing was changed and the lock is released" >&2
+    exit 1
+  fi
+fi
+
 # --- edit the row -----------------------------------------------------------------------------
 # The Status cell and nothing else. The token goes in the item's frontmatter, so a legacy table
 # that still carries an Owner column keeps whatever is already in it.
