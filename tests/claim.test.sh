@@ -768,6 +768,95 @@ add_held 0250 vv55 verify
 out="$(run_claim 0249)" && rc=0 || rc=$?
 assert_not_contains "says nothing collides" "$out" 'COLLIDES'
 
+# --- 0242 S2 — the message is stage-aware, --help answers, --touches writes the scope (0066) ----
+echo "0242 AC30 — a verify claim is not told to set touches:"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0260 | Up for QA | verify | ready | 0000 |' 0260 'expects:
+  - src/alpha.ts'
+out="$(run_claim 0260)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "says verify holds no file scope" "$out" 'verify holds no file scope'
+for word in 'NARROW it' 'set it in' 'widen it'; do
+  assert_not_contains "no instruction: $word" "$out" "$word"
+done
+
+echo "0242 AC30 — nor when the item still carries an earlier session's touches:"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0261 | Up for QA | verify | ready | 0000 |' 0261 'expects:
+  - src/alpha.ts' 'touches:
+  - src/alpha.ts'
+out="$(run_claim 0261)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_not_contains "no instruction to widen it" "$out" 'widen it'
+assert_contains "says verify holds no file scope" "$out" 'verify holds no file scope'
+
+echo "0242 AC31 — a develop claim is told to set touches:"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0262 | Build it | develop | ready | 0000 |' 0262 'expects:
+  - src/alpha.ts'
+out="$(run_claim 0262)" && rc=0 || rc=$?
+assert_contains "seeded: told to narrow it" "$out" 'NARROW it'
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0263 | Build it | develop | ready | 0000 |' 0263
+out="$(run_claim 0263)" && rc=0 || rc=$?
+assert_contains "nothing to seed: told to set it" "$out" 'set it in'
+assert_not_contains "and not told it holds no scope" "$out" 'holds no file scope'
+
+echo "0242 AC33 — ./claim --help prints usage and exits zero"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0264 | Anything | develop | ready | 0000 |' 0264
+out="$(cd "$FIX" && .tickets/claim --help 2>&1)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "prints the usage line" "$out" 'usage: claim <id> [token] [--touches <path>...]'
+assert_contains "documents --touches" "$out" '--touches <path>...'
+assert_not_contains "does not read the flag as an id" "$out" 'no row for --help'
+out="$(cd "$FIX" && .tickets/claim -h 2>&1)" && rc=0 || rc=$?
+assert_rc "-h exits 0 too" "$rc" 0 "$out"
+assert_eq "nothing was claimed" "$(git -C "$FIX" log --oneline | wc -l | tr -d ' ')" 1
+
+echo "0242 AC38 — --touches writes exactly the named paths, in the claim's own commit"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0265 | Build it | develop | ready | 0000 |' 0265
+out="$(cd "$FIX" && .tickets/claim 0265 tok0 --touches path/a path/b 2>&1)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_eq "touches: holds path/a and path/b" "$(touches_block 0265)" 'touches:
+  - path/a
+  - path/b'
+assert_row "the row reads in-progress" '| 0265 | Build it | develop | in-progress | 0000 |'
+assert_eq "one commit on top of the fixture" "$(git -C "$FIX" log --oneline | wc -l | tr -d ' ')" 2
+assert_eq "that commit is the claim" "$(git -C "$FIX" log -1 --format=%s)" 'Claim 0265 [tok0]'
+assert_eq "and carries both files" "$(git -C "$FIX" show --name-only --format= HEAD | sort | tr '\n' ' ')" '.tickets/QUEUE.md .tickets/items/0265-fixture.md '
+assert_eq "the tree is clean" "$(git -C "$FIX" status --porcelain)" ''
+assert_contains "the report says the scope was declared" "$out" 'touches: is set from --touches (2 paths)'
+assert_not_contains "and does not ask for it to be set" "$out" 'set it in'
+
+echo "0242 AC39 — --touches never takes expects:'s paths"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0266 | Build it | develop | ready | 0000 |' 0266 'expects:
+  - src/alpha.ts
+  - src/beta.ts'
+out="$(cd "$FIX" && .tickets/claim 0266 tok0 --touches path/a 2>&1)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_eq "touches: holds only path/a" "$(touches_block 0266)" 'touches:
+  - path/a'
+assert_contains "expects: is left as queue wrote it" "$(cat "$FIX/.tickets/items/0266-fixture.md")" 'expects:
+  - src/alpha.ts
+  - src/beta.ts'
+
+echo "0242 AC39 — --touches replaces an earlier session's touches:, never merges with it"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0267 | Build it | develop | ready | 0000 |' 0267 'expects:
+  - src/alpha.ts' 'touches:
+  - old/one.md
+  - old/two.md'
+out="$(cd "$FIX" && .tickets/claim 0267 tok0 --touches path/a 2>&1)" && rc=0 || rc=$?
+assert_eq "touches: holds only path/a" "$(touches_block 0267)" 'touches:
+  - path/a'
+
+echo "0242 FR29 — --touches with no path, or an unknown flag, refuses and changes nothing"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0268 | Build it | develop | ready | 0000 |' 0268
+for args in '0268 tok0 --touches' '0268 tok0 --frobnicate x' '0268 --touches'; do
+  # shellcheck disable=SC2086
+  out="$(cd "$FIX" && .tickets/claim $args 2>&1)" && rc=0 || rc=$?
+  assert_rc "claim $args exits 2" "$rc" 2 "$out"
+  assert_contains "claim $args prints usage" "$out" 'usage: claim'
+done
+assert_row "the row is untouched" '| 0268 | Build it | develop | ready | 0000 |'
+assert_eq "no commit was made" "$(git -C "$FIX" log --oneline | wc -l | tr -d ' ')" 1
+assert_eq "no lock is left" "$([ -e "$FIX/.tickets/.lock" ] && echo held || echo free)" free
+
 echo "$PASS passed, $FAIL failed"
 TALLIED=1
 [ "$FAIL" -eq 0 ] || exit 1

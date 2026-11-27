@@ -10,7 +10,15 @@
 # discipline cannot fix it, because the foreign edit is already in the file before you touch it.
 # The only fix is upstream — never leave the claim uncommitted — and a script cannot forget.
 #
-# Usage:  .tickets/claim <id> [token]
+# Usage:  .tickets/claim <id> [token] [--touches <path>...]
+#         .tickets/claim --help
+#
+# **`--touches` writes the scope the session declares, inside this claim's lock and commit** (0242
+# FR29, was 0066 FR6). It takes exactly the paths named on the command line and NEVER defaults to or
+# derives from `expects:`: `queue` writes `expects:` predicted and `develop` writes `touches:` actual,
+# and the two must never be copied from one another. It replaces whatever `touches:` held. Without
+# it, the provisional seed below applies exactly as before. The paths are recorded, not validated —
+# the flag says what the session declares, not what it verified.
 #
 # **`touches:` is written here, provisionally, from the item's `expects:` — but only on a FRESH
 # `develop` claim.** It used to be printed as an instruction, which made the one field the other
@@ -95,11 +103,50 @@ LOCK="$DIR/.lock"
 # literal.
 COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
 
+# `--help` answers before anything reads the queue (0242 FR26, was 0066 FR2): it used to be read as a
+# ticket id and answered `no row for --help in QUEUE.md`, which reads as "this script has no help".
+claim_usage() {
+  cat <<'USAGE'
+usage: claim <id> [token] [--touches <path>...]
+  <id>                 the QUEUE.md row to claim; it must read ready
+  [token]              the claim token, minted when absent; a gate's later rows pass the first's
+  --touches <path>...  write touches: as exactly these paths, in this claim's own lock and commit,
+                       replacing what it held; never taken from expects:
+  -h, --help           print this and exit
+Without --touches, a fresh develop claim seeds touches: provisionally from expects:, and a stage
+that does not build (verify, design, queue) gets an empty touches: key.
+USAGE
+}
+case "${1:-}" in -h|--help) claim_usage; exit 0 ;; esac
+
 ID="${1:-}"
-[ -n "$ID" ] || { echo "usage: claim <id> [token]" >&2; exit 2; }
+case "$ID" in
+  "")  claim_usage >&2; exit 2 ;;
+  -*)  echo "usage: claim <id> [token] [--touches <path>...] — the first argument is the id, not $ID" >&2; exit 2 ;;
+esac
+shift
+TOKEN=""
+case "${1:-}" in ""|-*) : ;; *) TOKEN="$1"; shift ;; esac
+TOUCHES_GIVEN=""
+TOUCHES_ARGS=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --touches)
+      shift
+      case "${1:-}" in
+        ""|-*) echo "usage: claim <id> [token] [--touches <path>...] — --touches needs at least one path" >&2; exit 2 ;;
+      esac
+      TOUCHES_GIVEN=1
+      while [ $# -gt 0 ]; do
+        case "$1" in -*) break ;; esac
+        TOUCHES_ARGS="$TOUCHES_ARGS $1"; shift
+      done ;;
+    *) echo "usage: claim <id> [token] [--touches <path>...] — unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
 [ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
 
-TOKEN="${2:-$(head -c2 /dev/urandom | xxd -p)}"
+[ -n "$TOKEN" ] || TOKEN="$(head -c2 /dev/urandom | xxd -p)"
 
 # --- the linked-worktree refusal (0083) --------------------------------------------------------
 # The lock and QUEUE.md live in the working tree, so a linked worktree has its own copy of both and
@@ -439,10 +486,15 @@ existing_touches="$(fm_list "$item" touches | awk '{ $1 = $1; print }')"
 # unreadable stage (no `Next` column) is not a reason to withhold the seed — see the header.
 SEED=1
 [ -z "$existing_touches" ] || SEED=0
+BUILDS=1
 case "$stage" in
   ""|develop) : ;;
-  *)          SEED=0 ;;
+  *)          SEED=0; BUILDS=0 ;;
 esac
+# `--touches` overrides both conditions: it is the session declaring its scope, not a prediction
+# that could overwrite a verified one, so it is written whatever the stage and whatever was there.
+SEED_LIST="$EXPECTS_LIST"
+if [ -n "$TOUCHES_GIVEN" ]; then SEED=1; SEED_LIST="$TOUCHES_ARGS"; fi
 
 tmp="$(mktemp)"
 count="$(mktemp)"
@@ -465,7 +517,7 @@ paths="$(mktemp)"
 # indented bullet in the item's PROSE, which is a data-loss bug that no assertion about
 # frontmatter can see.
 set -f
-awk -v tok="$TOKEN" -v now="$now" -v cf="$count" -v pf="$paths" -v seed="$SEED" -v list="$EXPECTS_LIST" '
+awk -v tok="$TOKEN" -v now="$now" -v cf="$count" -v pf="$paths" -v seed="$SEED" -v list="$SEED_LIST" '
   BEGIN { n = split(list, want, /[ \t]+/); m = 0; for (i = 1; i <= n; i++) if (want[i] != "") want[++m] = want[i]; n = m }
   NR == 1 && /^---$/ { fm = 1; print; next }
   fm && /^---$/      {
@@ -530,7 +582,7 @@ rm -f "$count"
 # answered by different branches (FR4); the holder report is the exclusive-claim refusal above,
 # and folding the two together would turn every held path into a reported fiction.
 paths_missing=""
-if [ "$SEED" -eq 1 ] && [ "${N_EXPECTS:-0}" -gt 0 ]; then
+if [ "$SEED" -eq 1 ] && [ -z "$TOUCHES_GIVEN" ] && [ "${N_EXPECTS:-0}" -gt 0 ]; then
   paths_missing="$(cd "$ROOT" && while IFS= read -r p; do
     [ -n "$p" ] || continue
     found=0
@@ -557,18 +609,29 @@ if [ -n "$collisions" ]; then
   echo "another held row already declares a file this row expects — granted, but ask before you open it:"
   printf '%s\n' "$collisions" | sed '/^$/d'
 fi
-# Four outcomes, and each says which one it is. Silence about a scope that was NOT written reads as
+# Five outcomes, and each says which one it is. Silence about a scope that was NOT written reads as
 # "a scope was written" to the next reader, which is the failure the unset branch was added for.
-if [ -n "$existing_touches" ]; then
+#
+# **Stage-aware** (0242 FR24, was 0066 FR1): only a stage that builds is asked to set, narrow or widen
+# `touches:`. A `verify` claim reads and runs; telling it to declare a file scope it never opens is
+# how a correct QA claim came to read, to every other session, as an under-specified develop one.
+if [ -n "$TOUCHES_GIVEN" ]; then
+  echo "touches: is set from --touches ($N_EXPECTS paths) — exactly the paths named, never expects:'s;"
+  echo "widen it in $item the moment the work reaches further"
+elif [ -n "$existing_touches" ]; then
   echo "touches: was already set and is left as the previous session set it — a narrowed scope is"
   echo "verified and a prediction from expects: never overwrites one. It keeps:"
   printf '  %s\n' $existing_touches
-  echo "widen it in $item the moment your work reaches further"
+  if [ "$BUILDS" -eq 1 ]; then
+    echo "widen it in $item the moment your work reaches further"
+  else
+    echo "$stage holds no file scope, so nothing here asks you to change it"
+  fi
 elif [ "$SEED" -eq 0 ]; then
-  echo "touches: is not seeded from expects:, because '$stage' does not build — a build scope here"
-  echo "would reserve files this stage never opens. $stage writes only its item and row, which this"
-  echo "claim already holds, so touches: stays empty — the release will report any other path the"
-  echo "pass's commits change (0145)"
+  echo "touches: is not seeded from expects:, because '$stage' does not build — $stage holds no file scope."
+  echo "A build scope here would reserve files this stage never opens. $stage writes only its item and"
+  echo "row, which this claim already holds, so touches: stays empty — the release will report any other"
+  echo "path the pass's commits change (0145)"
 elif [ "${N_EXPECTS:-0}" -gt 0 ]; then
   echo "touches: is set provisionally from expects: ($N_EXPECTS paths) — NARROW it in $item to"
   echo "what you will actually open, and widen it the moment the work reaches further"

@@ -3973,6 +3973,90 @@ for ord in 'that third test' 'that fourth test' 'that second test' 'that first t
   assert_not_contains "no ordinal: $ord" "$out" "$ord"
 done
 
+# --- 0242 S2 — a claim with no file scope, and bare ./next answering "what can I take?" (0066) ----
+echo "0242 AC32 — a held verify row with no touches: says it holds no file scope"
+scaffold
+add_row 0401 'A free row' develop ready 0000
+add_row 0402 'Held at verify' verify in-progress 0000
+add_item_scope 0401 develop ready free/file.md '' ''
+add_item_scope 0402 verify in-progress built/file.md '' '"aa11"'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+line="$(claimed_line "$out" 0402)"
+assert_contains     "says the stage holds no file scope" "$line" 'verify holds no file scope'
+assert_not_contains "not the undeclared wording"         "$line" 'none declared'
+assert_not_contains "and not told to assume it held"     "$line" 'assume held, ask'
+out="$(run_next)" && rc=0 || rc=$?
+assert_contains     "bare ./next says the same"          "$(claimed_line "$out" 0402)" 'verify holds no file scope'
+
+echo "0242 AC32 — a held develop row with no touches: still reads as undeclared"
+scaffold
+add_row 0403 'Held at develop' develop in-progress 0000
+add_item_scope 0403 develop in-progress guessed/file.md '' '"aa11"'
+seal
+out="$(run_next develop)" && rc=0 || rc=$?
+assert_contains     "keeps the undeclared wording"       "$(claimed_line "$out" 0403)" 'assume held, ask'
+assert_not_contains "and not the no-scope wording"       "$(claimed_line "$out" 0403)" 'holds no file scope'
+
+echo "0242 AC34/AC40 — a waiting row 1 names its question, and the takeable row is printed beside it"
+scaffold
+add_row 0411 'Waiting on a person' develop waiting 0000
+add_row 0412 'Takeable underneath' develop ready 0000
+add_ticket 0411 develop waiting '[]' '' a/one.md
+append_section 0411 '## Waiting on
+
+Does the author want the long form or the short one?'
+add_ticket 0412 develop ready '[]' '' b/two.md
+seal
+out="$(run_next)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "ROW 1 says it is not takeable, with the question" "$out" 'ROW 1:     0411 | Waiting on a person | develop | waiting — not takeable: waiting on: Does the author want the long form or the short one?'
+assert_contains "and the topmost takeable row is printed, marked" "$out" 'TAKEABLE:  0412 | Takeable underneath | develop | ready'
+
+echo "0242 AC40 — a blocked row 1 names the blocker's id"
+scaffold
+add_row 0421 'Blocked on top' develop blocked 0000
+add_row 0422 'Takeable underneath' verify ready 0000
+add_row 0423 'The open blocker' develop waiting 0000
+add_ticket 0421 develop blocked '["0423"]' '' a/one.md
+add_ticket 0422 verify ready '[]' '' b/two.md
+add_ticket 0423 develop waiting '[]' '' c/three.md
+seal
+out="$(run_next)" && rc=0 || rc=$?
+assert_contains "ROW 1 names the blocking id" "$out" 'ROW 1:     0421 | Blocked on top | develop | blocked — not takeable: blocked by 0423'
+assert_contains "the takeable row is the verify one" "$out" 'TAKEABLE:  0422 | Takeable underneath | verify | ready'
+
+echo "0242 AC40 — a held row 1 names its holder"
+scaffold
+add_row 0431 'Held on top' develop in-progress 0000
+add_row 0432 'Takeable underneath' develop ready 0000
+add_ticket_held 0431 develop in-progress '[]' '' a/one.md '"dd44"'
+add_ticket 0432 develop ready '[]' '' b/two.md
+seal
+out="$(run_next)" && rc=0 || rc=$?
+assert_contains "ROW 1 names the holder" "$out" 'ROW 1:     0431 | Held on top | develop | in-progress — not takeable: held by [dd44]'
+assert_contains "the takeable row is printed" "$out" 'TAKEABLE:  0432 | Takeable underneath | develop | ready'
+
+echo "0242 AC34 — nothing takeable anywhere says so"
+scaffold
+add_row 0441 'Waiting on a person' develop waiting 0000
+add_ticket 0441 develop waiting '[]' '' a/one.md
+seal
+out="$(run_next)" && rc=0 || rc=$?
+assert_contains "names the absence" "$out" 'TAKEABLE:  none — no row is takeable at any stage'
+
+echo "0242 AC35 — a takeable row 1 is printed once, unmarked"
+scaffold
+add_row 0451 'Takeable on top' develop ready 0000
+add_row 0452 'Also takeable' develop ready 0000
+add_ticket 0451 develop ready '[]' '' a/one.md
+add_ticket 0452 develop ready '[]' '' b/two.md
+seal
+out="$(run_next)" && rc=0 || rc=$?
+assert_eq           "ROW 1 is the row, unchanged" "$(printf '%s\n' "$out" | grep '^ROW 1:')" 'ROW 1:     0451 | Takeable on top | develop | ready'
+assert_not_contains "no TAKEABLE line repeats it" "$out" 'TAKEABLE:'
+assert_not_contains "and ROW 1 is not marked"     "$out" 'not takeable'
+
 echo
 echo "$PASS passed, $FAIL failed"
 TALLIED=1

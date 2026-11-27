@@ -93,6 +93,21 @@ LOCK="$DIR/.lock"
 # literal.
 COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
 
+# `--help` answers before anything reads the queue (0242 FR26, was 0066 FR2): it used to be read as a
+# ticket id with no token and refused, which reads as "this script has no help".
+case "${1:-}" in
+  -h|--help)
+    cat <<'USAGE'
+usage: close <id> <token> [--note <text>]
+  <id>           the QUEUE.md row to close; it must be at next: verify, or a close_by: develop
+                 ticket at develop
+  <token>        the item's claimed_by: — a close is only yours if you hold the claim
+  --note <text>  a release note, appended under ## Unreleased in CHANGELOG.md in this close's commit
+  -h, --help     print this and exit
+USAGE
+    exit 0 ;;
+esac
+
 ID="${1:-}"
 TOKEN="${2:-}"
 [ -n "$ID" ] && [ -n "$TOKEN" ] || {

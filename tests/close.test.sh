@@ -1605,6 +1605,19 @@ assert_contains "names the slice still to come" "$out" 'S3'
 assert_eq "nothing is committed" "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
 assert_clean "the tree is clean"
 
+# --- 0242 S2 — ./close --help prints usage and exits zero (FR26, 0066) ---------------------------
+echo "0242 AC33 — ./close --help prints usage and exits zero"
+FIVE_HEAD_H='| ID | Title | Next | Status | Parent |'
+FIVE_SEP_H='|------|-------|------|--------|--------|'
+for flag in --help -h; do
+  scaffold "$FIVE_HEAD_H" "$FIVE_SEP_H" '| 0270 | Anything | verify | ready | 0000 |'
+  out="$(run_close "$flag")" && rc=0 || rc=$?
+  assert_rc "close $flag exits 0" "$rc" 0 "$out"
+  assert_contains "close $flag prints the usage line" "$out" 'usage: close <id> <token> [--note <text>]'
+  assert_contains "close $flag documents --note" "$out" '--note <text>'
+  refute_contains "close $flag is not read as an id" "$out" 'no row for'
+done
+
 echo "$PASS passed, $FAIL failed"
 TALLIED=1
 [ "$FAIL" -eq 0 ] || exit 1
