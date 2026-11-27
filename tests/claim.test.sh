@@ -432,8 +432,10 @@ assert_contains "the subject still names the claim" "$(git -C "$FIX" log -1 --fo
 
 # A second ticket, appended to the fixture as a held row with a token in its item. Written here
 # rather than in `scaffold`, which builds exactly one row and one item.
+# $3 is the held row's stage, default `develop`. A case about something other than 0234 FR28 holds
+# its row at `verify`, since a second develop holder is now refused for its own reason (0234 AC31).
 add_held() {
-  printf '| %s | Another ticket | develop | in-progress | 0000 |\n' "$1" >> "$FIX/.tickets/QUEUE.md"
+  printf '| %s | Another ticket | %s | in-progress | 0000 |\n' "$1" "${3:-develop}" >> "$FIX/.tickets/QUEUE.md"
   cat > "$FIX/.tickets/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
@@ -480,7 +482,7 @@ assert_contains "the item records the token" "$(cat "$FIX/.tickets/items/0020-fi
 echo "0067 AC7 — an ordinary ticket still claims while another is held"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0022 | An ordinary ticket | develop | ready | 0000 |' 0022 \
   "$(printf 'expects:\n  - just/one/file.md')"
-add_held 0023 yy88
+add_held 0023 yy88 verify
 out="$(run_claim 0022)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "the ordinary row is claimed" '| 0022 | An ordinary ticket | develop | in-progress | 0000 |'
@@ -564,7 +566,7 @@ assert_contains "the absent directory is named" "$out" 'nowhere/at/all/'
 echo "0147 AC4 — a path that exists and is held by another claim is not reported as missing"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0033 | Held path | develop | ready | 0000 |' 0033 'expects:
   - some/other/file.md'
-add_held 0034 yy88
+add_held 0034 yy88 verify
 mkfile some/other/file.md
 out="$(run_claim 0033)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
@@ -591,6 +593,66 @@ assert_contains "names the primary checkout to run from" "$out" "$(cd "$FIX" && 
 assert_eq "no commit lands on the worktree's HEAD" "$(git -C "$WT" rev-parse HEAD)" "$before_head"
 assert_eq "the worktree's backlog is byte-identical" \
   "$(find "$WT/.tickets" -type f | sort | xargs cksum)" "$before_sums"
+
+# --- 0234 AC27, AC28 — one develop session at a time ------------------------------------------
+# A develop claim refuses while another develop row is held by a DIFFERENT token; the holder's own
+# token passes (one session's gate), and a claim at another stage is not affected. "Changes nothing"
+# is byte equality plus an unmoved HEAD; "the lock was released" is a following claim that succeeds.
+# $1 id, $2 stage, $3 status, $4 token (empty for none). Appends a row and its item, then commits.
+add_staged() {
+  printf '| %s | Staged fixture | %s | %s | 0000 |\n' "$1" "$2" "$3" >> "$FIX/.tickets/QUEUE.md"
+  cat > "$FIX/.tickets/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Staged fixture
+status: $3
+expects:
+claimed_by:${4:+ \"$4\"}
+claimed_at:
+touches:
+---
+
+## Problem
+ITEM
+  git -C "$FIX" add -A
+  git -C "$FIX" commit -q -m "staged fixture $1"
+}
+dev_fixture() {
+  scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0101 | Held develop | develop | in-progress | 0000 |' 0101
+  sed -i.bak 's/^claimed_by:$/claimed_by: "aaaa"/; s/^status: ready$/status: in-progress/' \
+    "$FIX/.tickets/items/0101-fixture.md" && rm -f "$FIX/.tickets/items/0101-fixture.md.bak"
+  git -C "$FIX" commit -q -am "hold 0101"
+  add_staged 0102 develop ready ""
+  add_staged 0103 design ready ""
+}
+
+echo "0234 AC27 — a second develop claim under another token is refused and changes nothing"
+dev_fixture
+before_queue="$(cat "$FIX/.tickets/QUEUE.md")"
+before_item="$(cat "$FIX/.tickets/items/0102-fixture.md")"
+before_head="$(git -C "$FIX" rev-parse HEAD)"
+out="$( (cd "$FIX" && .tickets/claim 0102 bbbb) 2>&1 )" && rc=0 || rc=$?
+assert_rc "exits 1" "$rc" 1 "$out"
+assert_contains "names the holding row"  "$out" '0101'
+assert_contains "and its token"          "$out" 'aaaa'
+assert_eq "QUEUE.md is byte-for-byte unchanged" "$(cat "$FIX/.tickets/QUEUE.md")" "$before_queue"
+assert_row "0102's row still reads ready" '| 0102 | Staged fixture | develop | ready | 0000 |'
+assert_eq "0102's item is byte-for-byte unchanged, claimed_by: empty" \
+  "$(cat "$FIX/.tickets/items/0102-fixture.md")" "$before_item"
+assert_eq "HEAD has not moved" "$(git -C "$FIX" rev-parse HEAD)" "$before_head"
+out="$( (cd "$FIX" && .tickets/claim 0103 cccc) 2>&1 )" && rc=0 || rc=$?
+assert_rc "a following design claim exits 0 at once — the lock was released" "$rc" 0 "$out"
+
+echo "0234 AC28 — the holder's own token claims a second develop row; another stage is unaffected"
+dev_fixture
+out="$( (cd "$FIX" && .tickets/claim 0102 aaaa) 2>&1 )" && rc=0 || rc=$?
+assert_rc "the same token exits 0 — one session's gate" "$rc" 0 "$out"
+assert_row "0102 reads in-progress" '| 0102 | Staged fixture | develop | in-progress | 0000 |'
+dev_fixture
+add_staged 0104 verify ready ""
+out="$( (cd "$FIX" && .tickets/claim 0104 dddd) 2>&1 )" && rc=0 || rc=$?
+assert_rc "a verify claim exits 0 while develop 0101 is held" "$rc" 0 "$out"
+assert_row "0104 reads in-progress" '| 0104 | Staged fixture | verify | in-progress | 0000 |'
 
 # --- result -----------------------------------------------------------------------------------
 echo
