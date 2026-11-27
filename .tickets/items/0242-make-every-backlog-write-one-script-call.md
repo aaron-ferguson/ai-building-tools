@@ -731,6 +731,67 @@ pattern at all.
 
 ## QA evidence  *(written by `verify`, never by `queue` or `develop`)*
 
+### Leg S1 — verify `45e7`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: ../ai-building-conventions
+Level: `unit` (frontmatter). Command, `commands.unit_by_file` verbatim:
+`for t in tests/*.test.sh; do "$t" || true; done`, each file's rc and last line recorded.
+Subject: the checkout at `b21893b` (the claim commit over `cf43f99`; S1 code at `718a756`).
+Copy executed: the repo templates (`tests/claim.test.sh` and `tests/next.test.sh` run
+`skills/queue/templates/{claim,next}`); the session's skills came from the 0.9.50 install.
+Dirty set at Step 2: empty. Fresh capture after the last mutation: empty. Intersection: empty.
+`./next --ac-digest 0242 --check`: `0242: ac_digest matches`.
+
+**Whole suite:** 45 files, every one rc=0. Tallies pasted: `tests/claim.test.sh` `148 passed, 0 failed`;
+`tests/next.test.sh` `735 passed, 0 failed`; `tests/backlog-scripts-installed.test.sh`
+`55 passed, 0 failed`; `tests/declared-copies.test.sh` `declared-copies: 23 passed, 0 failed`;
+`tests/handoff.test.sh` `250 passed, 0 failed`; `tests/close.test.sh` `322 passed, 0 failed`.
+
+**Clause table, and the mutation that reddened each row.** Every mutation was applied to the
+template the harness runs, its diff confirmed non-empty, then restored with `git checkout --` on that
+path alone; `git status --porcelain` was empty after every restore.
+
+| AC | Clause (Given / predicate / object) | Mutation in `skills/queue/templates/…` | Result |
+|---|---|---|---|
+| AC18 | Given inline `["a", "b"]` / `./claim` seeds `touches:` / `a` and `b` | `claim` fm-list inline branch → `exit` (M1); seed loop in the existing-key branch keeps only entry 1 (M2b) | red: `touches: holds a and b` (both) |
+| AC19 | Given block **and** inline forms / EXPECTS and seeded `touches:` / the same paths (two paths per fixture) | M1; M2b; `claim` scalar branch dropped (M3b) | red: `claim seeds the paths next printed` on each form |
+| AC20 | Given `a.ts, b.ts` / `./next develop` prints both, and not `EXPECTS not predicted` | `next` fm-list scalar branch dropped (M3) | red: `EXPECTS names both paths`, `is not read as unpredicted` |
+| AC21 | `templates/item.md`'s `expects:` comment / one written form | reading | holds: "ONE form: a `- ` block, one path per line" |
+| AC22 | Given no `expects:` and no `touches:` / claim writes an empty key / `./handoff … design` succeeds | key added only under `!tou && n && seed` (M4) | red: empty key, backfill note, handoff rc, `has no: touches` (4 FAIL) |
+| AC23 | Given entries and no key, at develop / `touches:` holds them / exactly once | key printed twice (M5); no-key seed keeps only entry 1 (M2) | red: `touches: holds the entries once`, `one touches: key` |
+| AC24 | Given a populated `touches:` / claim leaves it / byte-identical | `existing_touches=""` (M6) | red: `touches: is unchanged` plus five 0106 cases |
+| AC25 | Given `- tests/*.test.sh` and another row held / not refused as exclusive | detector back to any `*` (M7) | red: rc, `is not refused as exclusive`, glob kept |
+| AC26 | Given a takeable `"*"` row and another row held / `./next develop` / not TAKE | hold-back block `if false` (M8) | red: `0302 is not printed as TAKE`, holder named, walk continues |
+| AC27 | Given a held row touching a path and a ready row expecting it / `./claim` output / names the collision and the holder | report suppressed (M9) | red: `names the collision, the path and the holder` |
+| AC29 | `./next --help` / contains no ordinal for the collision test | usage restored to `that third test` (M10) | red: `no ordinal: that third test` |
+
+**Mutations that stayed green, published, not covered:** both are FR21 qualifiers that AC27 does not
+name, so neither leaves AC27 unverified. (M9b) Removing the `expects (predicted)` fallback for a held
+row with an empty `touches:` kept `148 passed, 0 failed`: the holder fixture's `touches:` equals its
+`expects:`. (M9c) Comparing only the first held row (`break` after the first collision) also kept
+`148 passed, 0 failed`: every AC27 fixture holds one row. FR21's "every held row's `touches:` (or
+predicted set)" is unguarded on both counts. Also not run here (develop recorded it as reasoned only):
+whether `--drive`'s gate walk offers a `"*"` row while another is held. AC26 names `./next develop`
+alone.
+
+**NFR rows bearing on S1.** Testing (0225): FR16's claim-then-handoff case reds under M4, guarded.
+Testing (0155): the cases run the template copies (`CLAIM_SRC`, `NEXT_SRC`). Appending a line to
+`.tickets/claim` alone reddened `tests/backlog-scripts-installed.test.sh` (`54 passed, 1 failed`,
+`claim has diverged from skills/queue/templates/claim`), guarded. Every S1 FR has a fixture case
+except FR22, which moved out. Correctness (0066) and the other rows belong to later legs. Always-on:
+nothing in this diff adds a log field, analytics event or egress, and its commits carry the trailer.
+
+**FR22/AC28 → S15 (`bbd3531`): sound.** `templates/item.md` (*Ticked slices are history*) and
+`develop` let an unticked slice be re-split with a dated note so long as no AC changes. The note is
+present and AC28's digest still matches. The reason was checked. `tests/next.test.sh`'s *0142 FR3*
+case asserts that `--drive` and `--drift` print identical DRIFT lines, and its fixture's `expects:`
+paths (`a/one.md`, `b/two.md`) do not exist. So putting the class in `--drift` alone reds that
+closed contract (0142 `done`), and putting it in the shared check makes `--drive` escalate on
+fixtures like it. `claim`'s 0147 FR2 header calls declaring a file you are about to write *"the
+common and correct case"*. That is a genuine contract conflict, not missing detail, so it is
+`design`'s. One residual: S15 names AC28 but, being `unspecified`, does not yet discharge it, so the
+design pass that sharpens S15 must name AC28 as discharged there.
+
 ## Notes & decisions
 
 - **2026-11-26 (queue): AC8 example reworded, meaning unchanged.** Its literal home-path example
