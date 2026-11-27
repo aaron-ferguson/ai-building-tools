@@ -2,8 +2,8 @@
 id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -65,8 +65,8 @@ expects:
   - tests/scaffold-close.test.sh
   - tests/sprint.test.sh
 ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8
-claimed_by: "27e9"
-claimed_at: 2026-11-27T07:47:54Z
+claimed_by:
+claimed_at:
 touches:
 slice: S7
 ---
@@ -752,7 +752,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S4 — `handoff` records a blocker without leaving drift that stops a driver (0156) — discharges AC52
 - [x] S5 — a note written below the last AC no longer changes that AC's digest (0217) — discharges AC56, AC57, AC58, AC59, AC60, AC61, AC62
 - [x] S6 — `reopen` of a develop self-close leaves a ticket verify can close (0219) — discharges AC63, AC64, AC65
-- [ ] S7 — `claim`, `handoff`, `close` and `reopen` refuse up front when run off the branch the backlog is shared on (0235) — discharges AC66, AC67, AC68, AC69, AC70, AC71, AC72, AC73, AC74, AC75, AC76, AC77
+- [x] S7 — `claim`, `handoff`, `close` and `reopen` refuse up front when run off the branch the backlog is shared on (0235) — discharges AC66, AC67, AC68, AC69, AC70, AC71, AC72, AC73, AC74, AC75, AC76, AC77
 - [ ] S8 — `./capture` with its restamp form, the shared lock, commit and refusal behaviour, and its install — discharges AC1, AC2, AC3, AC4, AC5, AC12, AC15
 - [ ] S9 — `./park`, with the public-repo screen — discharges AC6, AC7, AC8
 - [ ] S10 — `./rank` and `./withdraw` — discharges AC9, AC10, AC11
