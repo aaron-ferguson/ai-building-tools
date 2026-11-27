@@ -426,9 +426,10 @@ usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --fi
                      after `handoff --slice` the next leg's develop or the leg's verify is
                      dispatched rather than escalated, and a started sliced ticket is finished first.
                      A RE-ENTRY is routed, not escalated, up to bounce_max (config.yml, default 2;
-                     0 escalates every one): a verify bounce to develop re-dispatches develop, an
-                     in-scope ticket a verify or develop sent to next: queue dispatches a queue
-                     repair, and a re-entry into design goes to the rank walk. Past the bound it
+                     0 escalates every one): a verify bounce to develop re-dispatches develop, and
+                     an in-scope ticket a verify, develop or design sent to next: queue dispatches
+                     a queue pass (a contract repair, or after design the folding-in of its sibling
+                     consequences); a re-entry into design goes to the rank walk. Past the bound it
                      escalates. --bounces <id>=<n> carries the count, which the SUPERVISOR keeps,
                      since this script is stateless: n is that ticket's re-entries in this run since
                      its last verify pass, including the one --completed reports. Repeatable, one
@@ -2249,8 +2250,12 @@ if [ "${1:-}" = "--drive" ]; then
           decide "$ESCALATE" "ESCALATE  $lid is at next: design / $lstatus after $lstage — a person decides
           $(design_question "$(item_for "$lid")")"
         elif [ "$lnext" = "queue" ] && [ "$lstatus" = "ready" ] \
-          && { [ "$lstage" = "verify" ] || [ "$lstage" = "develop" ]; } \
+          && { [ "$lstage" = "verify" ] || [ "$lstage" = "develop" ] || [ "$lstage" = "design" ]; } \
           && [ -n "$SCOPE" ] && contains_word "$lid" "$SCOPE"; then
+          # 0242 FR72 (0236): `design` joins the arm. A design decision that changes what another
+          # item must say records it under `### Sibling consequences` and hands its own item to
+          # queue (FR68), and that pass is dispatched, not escalated. It counts against the same
+          # `bounce_max` on purpose — the loop guard the run has today; 0244 replaces it here.
           # 0234 FR5: an in-scope ticket a verify (or a develop) found the CONTRACT wrong on is
           # repaired by a queue session inside the run — the person answered this in advance by
           # confirming the scope. Keyed on the completed stage being verify or develop and never
@@ -2262,8 +2267,13 @@ if [ "${1:-}" = "--drive" ]; then
           if past_bound "$lqn"; then
             decide "$ESCALATE" "ESCALATE  $lid bounced from $lstage $lqn time(s) in this run, past bounce_max $BOUNCE_MAX — the loop is not converging, and whether to go round again is a person's call; the record is in $(item_for "$lid")"
           fi
-          printf "NOTE      %s bounced from %s to next: queue (%s of %s) — dispatching queue to repair the contract; %s's diagnosis is in %s\n" \
-            "$lid" "$lstage" "$lqn" "$BOUNCE_MAX" "$lstage" "$(item_for "$lid")"
+          if [ "$lstage" = "design" ]; then
+            printf "NOTE      %s handed from design to next: queue (%s of %s) — dispatching queue to fold in the sibling consequences recorded in %s\n" \
+              "$lid" "$lqn" "$BOUNCE_MAX" "$(item_for "$lid")"
+          else
+            printf "NOTE      %s bounced from %s to next: queue (%s of %s) — dispatching queue to repair the contract; %s's diagnosis is in %s\n" \
+              "$lid" "$lstage" "$lqn" "$BOUNCE_MAX" "$lstage" "$(item_for "$lid")"
+          fi
           PROPOSE_STAGE="queue"; PROPOSE_IDS="$lid"
           findings_gate gate
           decide "$DISPATCH" "DISPATCH  queue $lid"

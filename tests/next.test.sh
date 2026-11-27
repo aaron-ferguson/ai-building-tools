@@ -4295,6 +4295,51 @@ seal
 out="$(run_next --drift)" && rc=0 || rc=$?
 assert_contains "the held row's path is reported" "$out" 'DRIFT     0431 | expects: ghost/held.md exists nowhere'
 
+# 0242 S13 (0236 FR72): a design pass whose decision changes another item hands its own item to
+# `next: queue` (FR68), and `--drive` dispatches that queue pass in scope rather than escalating it
+# as a stale contract. Same count, same bound, same findings gate as the verify/develop arm.
+fx_s13() { scaffold; add_row 0001 'A decision with sibling consequences' queue ready ''; add_ticket 0001 queue ready '[]' '' a/one.md; }
+
+echo "0242 AC86 — an in-scope design -> queue hand-off dispatches queue"
+fx_s13; seal
+out="$(run_next --drive --scope 0001 --completed design:0001)" && rc=0 || rc=$?
+assert_rc           "exits 0"                       "$rc" 0 "$out"
+assert_contains     "dispatches queue"              "$out" 'DISPATCH  queue 0001'
+assert_not_contains "escalates nothing"             "$out" 'ESCALATE'
+note="$(notes_before_dispatch "$out" | grep 'next: queue' || true)"
+assert_contains     "a NOTE before it names design" "$note" 'from design'
+assert_contains     "and the id"                    "$note" '0001'
+
+echo "0242 AC87 — past bounce_max, out of scope, or after queue: it escalates"
+fx_s13; set_config 'bounce_max: 2'; seal
+out="$(run_next --drive --scope 0001 --completed design:0001 --bounces 0001=2)" && rc=0 || rc=$?
+assert_rc           "n = max: exits 0"              "$rc" 0 "$out"
+assert_contains     "dispatches queue"              "$out" 'DISPATCH  queue 0001'
+out="$(run_next --drive --scope 0001 --completed design:0001 --bounces 0001=3)" && rc=0 || rc=$?
+assert_rc           "n = max + 1: exits 4"          "$rc" 4 "$out"
+esc="$(printf '%s\n' "$out" | grep '^ESCALATE' || true)"
+assert_contains     "the bounce_max escalation"     "$esc" 'past bounce_max 2'
+assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+add_row 0002 'Other scope work' develop ready ''; add_ticket 0002 develop ready '[]' '' b/two.md; seal
+out="$(run_next --drive --scope 0002 --completed design:0001)" && rc=0 || rc=$?
+assert_rc           "out of scope: exits 4"         "$rc" 4 "$out"
+assert_contains     "as the stale contract"         "$out" 'the contract is stale'
+assert_not_contains "and dispatches no queue"       "$out" 'DISPATCH  queue'
+out="$(run_next --drive --completed design:0001)" && rc=0 || rc=$?
+assert_rc           "no --scope: exits 4"           "$rc" 4 "$out"
+assert_not_contains "and dispatches no queue"       "$out" 'DISPATCH  queue'
+out="$(run_next --drive --scope 0001 --completed queue:0001)" && rc=0 || rc=$?
+assert_rc           "after queue: exits 4"          "$rc" 4 "$out"
+assert_contains     "as the stale contract"         "$out" 'the contract is stale'
+assert_not_contains "and dispatches no queue"       "$out" 'DISPATCH  queue'
+out="$(run_next --drive --scope 0001 --completed prototype:0001)" && rc=0 || rc=$?
+assert_rc           "after any other stage: exits 4" "$rc" 4 "$out"
+assert_not_contains "and dispatches no queue"       "$out" 'DISPATCH  queue'
+
+echo "0242 AC91 — the --drive usage names design's hand-off to queue"
+out="$(run_next --help)" && rc=0 || rc=$?
+assert_contains     "names design beside verify and develop" "$out" 'a verify, develop or design sent to next: queue'
+
 echo
 echo "$PASS passed, $FAIL failed"
 TALLIED=1
