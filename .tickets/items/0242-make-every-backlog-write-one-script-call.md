@@ -68,57 +68,11 @@ ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=
 claimed_by: "be4c"
 claimed_at: 2026-11-27T06:59:23Z
 touches:
-  - skills/queue/templates/capture
-  - skills/queue/templates/park
-  - skills/queue/templates/rank
-  - skills/queue/templates/withdraw
-  - skills/queue/templates/drain
   - skills/queue/templates/next
-  - .tickets/capture
-  - .tickets/park
-  - .tickets/rank
-  - .tickets/withdraw
-  - .tickets/drain
-  - tests/capture.test.sh
-  - tests/park.test.sh
-  - tests/rank.test.sh
-  - tests/withdraw.test.sh
-  - tests/drain.test.sh
-  - tests/backlog-scripts-installed.test.sh
-  - skills/queue/SKILL.md
-  - skills/retro/SKILL.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/design/SKILL.md
-  - skills/sprint/SKILL.md
-  - skills/prototype/SKILL.md
-  - references/CONCURRENCY.md
-  - CHANGELOG.md
-  - skills/queue/templates/claim
-  - skills/queue/templates/close
-  - skills/queue/templates/reopen
-  - skills/queue/templates/item.md
-  - tests/next.test.sh
-  - tests/claim.test.sh
-  - .claude/backlog/claim
-  - .claude/backlog/next
-  - .claude/backlog/close
-  - tests/close.test.sh
   - .tickets/next
-  - skills/queue/templates/handoff
-  - .claude/backlog/handoff
-  - tests/handoff.test.sh
-  - tests/findings-routing.test.sh
   - tests/ac-digest.test.sh
-  - tests/reopen.test.sh
-  - .tickets/reopen
-  - .tickets/claim
-  - .tickets/handoff
-  - .tickets/close
-  - tests/backlog-location.test.sh
-  - tests/design-hold.test.sh
-  - tests/scaffold-close.test.sh
-  - tests/sprint.test.sh
+  - CHANGELOG.md
+  - .tickets/items/0242-make-every-backlog-write-one-script-call.md
 slice: S4
 ---
 
