@@ -92,7 +92,7 @@ qa_level: unit
 size: s
 blocked_by: $3
 expects:
-  - some/file.md
+  - some/file.md  # new
 claimed_by:
 claimed_at:
 touches:
@@ -117,7 +117,7 @@ $4
 size: s
 blocked_by: $3
 expects:
-  - some/file.md
+  - some/file.md  # new
 claimed_by:
 claimed_at:
 touches:
@@ -144,7 +144,7 @@ qa_level: unit
 size: s
 blocked_by: $3
 expects:
-  - some/file.md
+  - some/file.md  # new
 claimed_by: "aa11"
 claimed_at: 2026-08-24T00:00:00Z
 touches:$4
@@ -167,7 +167,7 @@ qa_level: unit
 size: s
 blocked_by:$3
 expects:
-  - some/file.md
+  - some/file.md  # new
 claimed_by:
 claimed_at:
 touches:
@@ -193,7 +193,7 @@ qa_level: unit
 size: s   # one sitting
 blocked_by: []
 expects:
-  - some/file.md
+  - some/file.md  # new
 claimed_by: $3
 claimed_at: 2026-08-24T00:00:00Z
 touches:
@@ -222,7 +222,7 @@ size: s
 parent: "$5"
 blocked_by: $4
 expects:
-  - $6
+  - $6  # new
 claimed_by:
 claimed_at:
 touches:
@@ -239,6 +239,9 @@ ITEM
 # $1 id, $2 next, $3 status, $4 blocked_by inline, $5 parent, $6 the expects block body — a
 # leading newline then `  - ` entries.
 add_ticket_expects() {
+  # Each entry the body names is marked `# new`: no fixture creates these paths, and --drift reports
+  # an unmarked entry that exists nowhere (0242 FR64). An entry already carrying a comment is left.
+  ate_body="$(printf '%s' "$6" | sed '/^ *- [^#]*$/s/$/  # new/')"
   cat > "$FIX/.tickets/items/$1-fixture.md" <<ITEM
 ---
 id: "$1"
@@ -249,7 +252,7 @@ qa_level: unit
 size: s
 parent: "$5"
 blocked_by: $4
-expects:$6
+expects:$ate_body
 claimed_by:
 claimed_at:
 touches:
@@ -278,7 +281,7 @@ size: s
 parent: "$5"
 blocked_by: $4
 expects:
-  - $6
+  - $6  # new
 claimed_by: $7
 claimed_at: 2026-09-09T00:00:00Z
 touches:
@@ -1395,7 +1398,7 @@ size: s
 parent:
 blocked_by: []
 expects:
-  - $4
+  - $4  # new
 claimed_by: $6
 claimed_at: 2026-08-24T00:00:00Z
 touches:$5
@@ -1769,7 +1772,7 @@ size: s
 parent:
 blocked_by: $3
 expects:
-  - $5
+  - $5  # new
 claimed_by: $4
 claimed_at: 2026-09-09T00:00:00Z
 touches:
@@ -3348,7 +3351,7 @@ size: l
 parent: ""
 blocked_by: []
 expects:
-  - $5
+  - $5  # new
 claimed_by:
 claimed_at:
 touches:
@@ -3645,11 +3648,11 @@ size: s
 parent: ""
 blocked_by: []
 expects:
-  - $2
+  - $2  # new
 claimed_by: "fx61"
 claimed_at: 2026-09-09T00:00:00Z
 touches:
-  - $3
+  - $3  # new
 ---
 
 ## Problem
@@ -4072,7 +4075,7 @@ qa_level: unit
 size: s
 blocked_by: []
 expects:
-  - some/file.md
+  - some/file.md  # new
 claimed_by: $3
 claimed_at:
 touches:
@@ -4194,6 +4197,103 @@ seal
 out="$(run_next --help)" && rc=0 || rc=$?
 assert_contains "in the usage line" "$(printf '%s\n' "$out" | head -1)" '--findings-list'
 assert_contains "and described"     "$out" './next --findings-list'
+
+# --- 0242 S15 (0155) — an expects: path that exists nowhere is drift unless it is marked new -----
+# `add_ticket_expects` marks every entry `# new` (FR64), so these cases write the list verbatim.
+# $1 id, $2 status, $3 the expects block body — a leading newline then `  - ` entries, as written.
+add_ticket_raw() {
+  cat > "$FIX/.tickets/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next: develop
+status: $2
+qa_level: unit
+size: s
+parent: ""
+blocked_by: []
+expects:$3
+claimed_by:
+claimed_at:
+touches:
+---
+
+## Problem
+ITEM
+}
+EXP_FIX='correct the path, or mark it '"'"'# new'"'"' if this ticket creates it'
+
+echo "0242 AC28 — an open row expecting a path that exists nowhere is reported, and --drift exits 1"
+scaffold
+add_row 0401 'Names a ghost' develop ready 0000
+add_ticket_raw 0401 ready '
+  - ghost/file.md'
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc "exits 1" "$rc" 1 "$out"
+assert_contains "names the id and the path, in FR61's form" "$out" \
+  "DRIFT     0401 | expects: ghost/file.md exists nowhere — $EXP_FIX"
+AC28_DRIFT="$(printf '%s\n' "$out" | grep '^DRIFT     0401 | expects:' || true)"
+
+echo "0242 AC83 — --drive exits 4 on the class and prints the same line --drift prints"
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc "exits 4 — escalate" "$rc" 4 "$out"
+assert_contains "prints --drift's expects: line" "$out" "$AC28_DRIFT"
+out="$(run_next --help)" && rc=0 || rc=$?
+assert_contains "the --drift usage text names the class" "$out" "an expects: path that exists nowhere and is not marked '# new'"
+
+echo "0242 AC81 — '# new' and '# new — …' exempt an entry; '# renewed' and '# not new' do not"
+scaffold
+add_row 0411 'Marked new' develop ready 0000
+add_ticket_raw 0411 ready '
+  - made/here.md  # new'
+add_row 0412 'Marked new, with a reason' develop ready 0000
+add_ticket_raw 0412 ready '
+  - made/there.md  # new — created by S8'
+add_row 0413 'Renewed' develop ready 0000
+add_ticket_raw 0413 ready '
+  - old/thing.md  # renewed'
+add_row 0414 'Not new' develop ready 0000
+add_ticket_raw 0414 ready '
+  - old/other.md  # not new'
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_not_contains "# new exempts the entry"            "$out" 'DRIFT     0411'
+assert_not_contains "# new — created by S8 exempts it"   "$out" 'DRIFT     0412'
+assert_contains "# renewed is printed"                   "$out" 'DRIFT     0413 | expects: old/thing.md exists nowhere'
+assert_contains "# not new is printed"                   "$out" 'DRIFT     0414 | expects: old/other.md exists nowhere'
+
+echo "0242 AC82 — an existing path and a matching glob are present, a matching-nothing glob is not, a DONE row is never checked"
+scaffold
+mkdir -p "$FIX/real"
+: > "$FIX/real/there.md"
+: > "$FIX/real/one.sh"
+add_row 0421 'Existing path' develop ready 0000
+add_ticket_raw 0421 ready '
+  - real/there.md'
+add_row 0422 'Glob matching one' develop ready 0000
+add_ticket_raw 0422 ready '
+  - real/*.sh'
+add_row 0423 'Glob matching none' develop ready 0000
+add_ticket_raw 0423 ready '
+  - real/*.py'
+add_ticket_raw 0424 done '
+  - long/gone.md'
+add_done 0424
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_eq "only the glob matching none is reported, in FR61's form" \
+  "$(printf '%s\n' "$out" | grep '| expects:' || true)" \
+  "DRIFT     0423 | expects: real/*.py exists nowhere — $EXP_FIX"
+
+echo "0242 FR61 — a held row is checked too: expects: is queue's prediction whoever holds the row"
+scaffold
+add_row 0431 'Held, ghost path' develop in-progress 0000
+add_ticket_held 0431 develop in-progress '[]' '' ghost/held.md '"dd44"'
+sed -i 's|^  - ghost/held.md  # new$|  - ghost/held.md|' "$FIX/.tickets/items/0431-fixture.md"
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_contains "the held row's path is reported" "$out" 'DRIFT     0431 | expects: ghost/held.md exists nowhere'
 
 echo
 echo "$PASS passed, $FAIL failed"

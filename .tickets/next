@@ -382,7 +382,9 @@ usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --fi
   ./next --drift     every row that disagrees with its blocked_by or with its own item —
                      stage, status, a claim the row does not match either way, a missing item file,
                      a stamped ac_digest the criteria no longer match, and
-                     a closed item keeping a token (done, withdrawn or rejected, claimed_by: set);
+                     a closed item keeping a token (done, withdrawn or rejected, claimed_by: set),
+                     and an expects: path that exists nowhere and is not marked '# new' (one line
+                     per entry; correct the path, or mark it '# new' if the ticket creates it);
                      one line per row or item, exits 1 if any
   ./next --ac-digest <id> [--check]
                      the digest of the item's acceptance criteria, one key per ACn, as queue and
@@ -762,6 +764,94 @@ function decomment(s,   i, ch, quote, out, start) {
 }
 '
 # copy-end: decomment
+
+# The comment `decomment` cuts, read beside it rather than by changing it (0242 FR63): the block above
+# is a declared copy, and every copy would have to move together. `comment_of` scans exactly as
+# `decomment` does — a quote only quotes as the first character, a `#` only cuts at the start or after
+# whitespace — and returns what follows the cutting `#`, or "". An entry is marked new when that
+# comment BEGINS with the word `new`: `# new` and `# new — created by S8` are, `# renewed` and
+# `# not new` are not. A match of `new` anywhere in the comment is the reading AC81 reds.
+NEW_MARK='
+function comment_of(s,   i, ch, quote, start) {
+  sub(/^[ \t]+/, "", s)
+  start = 1
+  ch = substr(s, 1, 1)
+  if (ch == "\"" || ch == "\047") { quote = ch; start = 2 }
+  for (i = start; i <= length(s); i++) {
+    ch = substr(s, i, 1)
+    if (quote != "" && ch == quote) { quote = ""; continue }
+    if (quote != "")                continue
+    if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) return substr(s, i + 1)
+  }
+  return ""
+}
+function marked_new(s,   c) {
+  c = comment_of(s); sub(/^[ \t]+/, "", c)
+  return c ~ /^new([^A-Za-z0-9_]|$)/
+}
+'
+
+# Every `expects:` entry of an item as `<0|1><TAB><path>`, 1 when the line carrying it is marked new.
+# It walks the list the way `fm_list` does (inline, bare scalar, or a block with comment-only lines
+# skipped), so the paths it judges are the paths the scope check compares; on an inline or scalar
+# line the one comment marks every entry on it.
+expects_marked() {
+  [ -n "$1" ] || return 0
+  awk "$DECOMMENT$NEW_MARK"'
+    function emit(list, flag,   n, parts, k) {
+      n = split(list, parts, /[ \t]+/)
+      for (k = 1; k <= n; k++) if (parts[k] != "") printf "%d\t%s\n", flag, parts[k]
+    }
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && /^expects:/ {
+      raw = $0; sub(/^expects: */, "", raw)
+      rest = decomment(raw)
+      if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); emit(rest, marked_new(raw)); exit }
+      gsub(/[",]/, " ", rest)
+      if (rest ~ /[^ \t]/) { emit(rest, marked_new(raw)); exit }
+      inside = 1; next
+    }
+    inside && /^[ \t]*#/ { next }
+    inside && /^  *- / {
+      raw = $0; sub(/^ *- */, "", raw)
+      entry = decomment(raw)
+      if (entry != "") emit(entry, marked_new(raw))
+      next
+    }
+    inside { exit }
+  ' "$1"
+}
+
+# The repo root an `expects:` path resolves against (0242 FR62): git's top level, or outside git the
+# backlog directory's parent. Computed once, and only when a drift check first needs it.
+repo_root() {
+  if [ -z "${REPO_ROOT:-}" ]; then
+    REPO_ROOT="$(git -C "$DIR" rev-parse --show-toplevel 2>/dev/null)" ||
+      REPO_ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"
+    [ -n "$REPO_ROOT" ] || REPO_ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"
+  fi
+  printf '%s\n' "$REPO_ROOT"
+}
+
+# Each unmarked `expects:` entry of an item that exists nowhere under the repo root, one per line.
+# A glob is present when pathname expansion matches at least one path, a plain entry when `[ -e ]`
+# holds. An entry with a `..` segment would be read outside the root, so it is not read: it is
+# reported, as a path this repo cannot hold. Nothing is fetched.
+expects_missing() {
+  [ -n "$1" ] || return 0
+  em_root="$(repo_root)"
+  expects_marked "$1" | while IFS="$(printf '\t')" read -r em_new em_path; do
+    [ "$em_new" = 1 ] && continue
+    case "/$em_path/" in */../*) printf '%s\n' "$em_path"; continue ;; esac
+    em_found=0
+    for em_m in "$em_root"/$em_path; do
+      [ -e "$em_m" ] && em_found=1
+      break
+    done
+    [ "$em_found" = 1 ] || printf '%s\n' "$em_path"
+  done
+}
 
 # One scalar out of an item's frontmatter.
 fm() {
@@ -1171,7 +1261,7 @@ fi
 # --- --drift ----------------------------------------------------------------------------------
 # A row and the item behind it are two records of one ticket, and only one of them is authoritative
 # on each field. This names every row where the two disagree, so the staleness is visible without
-# opening a ticket. Eight classes, and this comment is the one place they are listed — `usage()`
+# opening a ticket. Nine classes, and this comment is the one place they are listed — `usage()`
 # names them in a line, and the prose that cites this mode cites the contract rather than copying
 # it (0115 FR6):
 #
@@ -1199,8 +1289,15 @@ fi
 #      ticket is still one line. An empty token is no drift, and nothing about how an OPEN item's
 #      token is judged changes (FR32). `--drive` shares this function, so it escalates on the class
 #      too — which is why the line names the fix
+#   9. an `expects:` entry of a QUEUE.md row, held or not, that exists nowhere under the repo root
+#      and is not marked `# new` (0242 FR22, FR61–FR63, was 0155). `expects:` is `queue`'s
+#      prediction of the files a ticket touches, and a path nobody can find reserves nothing while
+#      reading as a reservation. A file the ticket will create carries `# new`, which is exactly what
+#      `develop` Step 1 tells a session to write. A DONE.md row is never checked. `--drive` gates on
+#      it like every class here (FR64), so a fixture or a live item naming a file it never made
+#      escalates — mark it, or correct it. One line per ENTRY, beside the chain rather than in it
 #
-# One line per row, the classes in that order: a second line about the same row is noise, and the
+# One line per row (class 9 aside), the classes in that order: a second line about the same row is noise, and the
 # stale `blocked` cache is the more actionable reading whenever it and 4 both fire. It exits
 # non-zero on any drift: a report that prints and exits zero is invisible to anything scripted
 # around it, which is the same silent failure it exists to remove. Nothing here writes —
@@ -1254,6 +1351,16 @@ drift_report() {
          [ -n "$ddiff" ]; then
       printf 'DRIFT     %s | ac_digest differs from the criteria on disk — %s — a person decides whether the new text is agreed\n' \
         "$id" "$ddiff"
+      dr_drifted=1
+    fi
+    # Class 9 rides beside the chain rather than in it: it is about the row's prediction, not its
+    # state, so a row drifting on a class above can drift on this one too, and it is one line per
+    # entry rather than per row (0242 FR61). Every row in QUEUE.md is checked, held or not.
+    if [ -n "$item" ] && dr_missing="$(expects_missing "$item")" && [ -n "$dr_missing" ]; then
+      printf '%s\n' "$dr_missing" | while IFS= read -r dr_path; do
+        printf 'DRIFT     %s | expects: %s exists nowhere — correct the path, or mark it \047# new\047 if this ticket creates it\n' \
+          "$id" "$dr_path"
+      done
       dr_drifted=1
     fi
   done

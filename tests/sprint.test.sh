@@ -858,7 +858,7 @@ size: s
 blocked_by: []
 relates: []
 expects:
-  - src/a.ts
+  - src/a.ts  # new
 claimed_by: dead
 claimed_at: 2026-09-06T00:00:00Z
 touches:
@@ -878,7 +878,7 @@ size: s
 blocked_by: []
 relates: []
 expects:
-  - src/b.ts
+  - src/b.ts  # new
 claimed_by:
 claimed_at:
 touches:
@@ -2125,7 +2125,7 @@ mk_two_row_backlog() {
   } > "$tw/.tickets/QUEUE.md"
   for tw_pair in 0001:design 0002:develop; do
     tw_id="${tw_pair%%:*}"; tw_next="${tw_pair#*:}"
-    printf -- '---\nid: "%s"\ntitle: Fixture %s\ntype: feature\nnext: %s\nstatus: ready\nqa_level: unit\nsize: s\nparent:\nblocked_by: []\nexpects:\n  - src/%s.ts\nclaimed_by:\nclaimed_at:\ntouches:\n---\n\n## Problem\n\nA fixture.\n' \
+    printf -- '---\nid: "%s"\ntitle: Fixture %s\ntype: feature\nnext: %s\nstatus: ready\nqa_level: unit\nsize: s\nparent:\nblocked_by: []\nexpects:\n  - src/%s.ts  # new\nclaimed_by:\nclaimed_at:\ntouches:\n---\n\n## Problem\n\nA fixture.\n' \
       "$tw_id" "$tw_id" "$tw_next" "$tw_id" > "$tw/.tickets/items/$tw_id-fixture.md"
   done
   for s in claim next handoff; do

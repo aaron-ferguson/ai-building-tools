@@ -499,6 +499,9 @@ scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0017 | Drift free | develop | in-progress |
 if [ -f "$FIX/.tickets/next" ]; then
   out="$(run_handoff 0017 tok0 verify)" && rc=0 || rc=$?
   assert_rc "the hand-off succeeds" "$rc" 0 "$out"
+  # The fixture's `expects:` names src/one.ts, which --drift now requires to exist or be marked
+  # `# new` (0242 FR64); the fixture creates it, after the hand-off, so the hand-off sees no change.
+  mkdir -p "$FIX/src" && : > "$FIX/src/one.ts"
   drift="$( (cd "$FIX" && .tickets/next --drift 2>&1) )" && drc=0 || drc=$?
   assert_rc "--drift exits zero" "$drc" 0 "$drift"
   assert_not_contains "no DRIFT line names the row" "$drift" '0017'
@@ -980,6 +983,9 @@ assert_item_line "the item reads status: blocked" 'status: blocked'
 assert_item_line "and the claim is released" 'claimed_by:'
 assert_contains "the output says the status was derived, naming the blocker" "$out" 'blocked_by still open: 0999'
 assert_contains "it lands in the hand-off commit" "$(git -C "$FIX" log -1 --format=%s)" 'Hand off 0920 to develop [tok0]'
+# The fixture's `expects:` names src/one.ts, which --drift now requires to exist or be marked
+# `# new` (0242 FR64); the fixture creates it, after the hand-off, so the hand-off sees no change.
+mkdir -p "$FIX/src" && : > "$FIX/src/one.ts"
 dout="$(run_next --drift)" && drc=0 || drc=$?
 assert_rc "--drift exits 0 afterwards" "$drc" 0 "$dout"
 assert_not_contains "--drift reports nothing for the row" "$dout" 'DRIFT     0920'
@@ -992,6 +998,9 @@ blocked_fixture 0921 '' develop
 out="$(run_handoff 0921 tok0 develop)" && rc=0 || rc=$?
 assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "the row reads develop | blocked" '| 0921 | Held with a blocker | develop | blocked | 0000 |'
+# The fixture's `expects:` names src/one.ts, which --drift now requires to exist or be marked
+# `# new` (0242 FR64); the fixture creates it, after the hand-off, so the hand-off sees no change.
+mkdir -p "$FIX/src" && : > "$FIX/src/one.ts"
 dout="$(run_next --drift)" && drc=0 || drc=$?
 assert_not_contains "--drift reports nothing for the row" "$dout" 'DRIFT     0921'
 

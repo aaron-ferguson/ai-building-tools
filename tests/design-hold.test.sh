@@ -131,7 +131,7 @@ size: s
 parent:
 blocked_by: []
 expects:
-  - src/$1.ts
+  - src/$1.ts  # new
 claimed_by:
 claimed_at:
 touches:
