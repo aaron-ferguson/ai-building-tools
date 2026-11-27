@@ -1863,6 +1863,73 @@ not this leg's.
 
 **Hand-off:** pass. `./handoff 0242 c7e1 develop --slice S12`. S14 is next.
 
+### Leg S14 — verify `462c`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Leg under test: S14 (`7e9e226`, build notes `1272084`, hand-off `22cb95d`). Claim `6fc2461`. Not the
+last slice (S15, S13 remain), so this is a leg verify: the leg's ACs literally plus the whole suite,
+no AC ticked, hand back with `--slice S14`.
+
+Conventions: `../ai-building-conventions` (from `.tickets/config.yml` `conventions.path`; `CONVENTIONS_CORE.md` present)
+Level: `qa_level: unit`, run as `commands.unit_by_file`: `for t in tests/*.test.sh; do "$t" || true; done`
+(wrapped to record each file's exit code and last line). `lint:` and `typecheck:` are empty in `config.yml`.
+`./next --ac-digest 0242 --check` → `0242: ac_digest matches`.
+Copy executed: the installed plugin 0.9.50 ran this verify skill; the repo copy at `HEAD` is the subject and the authority.
+Tree: `git status --porcelain` at Step 2 was empty (HEAD `6fc2461`), and it was empty again after the last evidence command.
+The dirty set is empty, so the intersection is empty: **not advisory**.
+
+**Whole suite:** all 50 files exited 0, including `tests/sprint.test.sh` (`387 passed, 0 failed, 0 skipped`).
+The known intermittent 0165 AC2 red did not appear. Per-file tallies, pasted: abort-announce 356/0,
+ac-digest 54/0, backlog-location 87/0, backlog-scripts-installed 106/0, batching 39/0, by-hand-lock 41/0,
+capture 65/0, changelog-entry-guards 9/0, citations 52/0, claim 217/0, close-by 67/0, close 336/0,
+cost-by-category 29/0, cross-cutting-change 21/0, declared-copies 24/0, design-hold 35/0, drain 96/0,
+external-feedback 9/0, falsifiable-acs 56/0, findings-buffer 46/0, findings-routing 41/0, floor-probe 12/0,
+gate-ticket 14/0, graph-fields 36/0, handoff 282/0, item-ac-form 8/0, item-nfr-red 12/0, last-line 17/0,
+measurement 143/0, money-in-skill-prose 12/0, next 783/0, outcome-schema 12/0, park 115/0,
+qa-level-once 11/0, rank 71/0, reference-size 15/0, release 71/0, remote-anchor 46/0, reopen 99/0,
+reporting 23/0, retro-lock-citation 13/0, retro-tool-edit 53/0, scaffold-close 3/0,
+self-sufficient-refusal 8/0, shared-dirty-tree 41/0, skill-size 45/0, sprint-ledger 266/0, sprint 387/0,
+transient-mutation 6/0, withdraw 87/0.
+
+**Clause table (S14's ACs):**
+
+| AC | Clause | Row |
+|---|---|---|
+| AC16 | Given | "the seven skills and `references/CONCURRENCY.md`" |
+| AC16 | predicate | "each calls its script" (every FR11 write site) |
+| AC16 | predicate | "no covered by-hand lock sequence remains" |
+| AC16 | predicate/object | "`CONCURRENCY.md` names the write sites still without one" |
+| AC17 | Given | "`CHANGELOG.md`, when `## Unreleased` is read" |
+| AC17 | quantifier/object | "one entry per new script" — five scripts, each tested separately |
+| AC17 | object | "names the stage steps that call it" |
+| AC53 | Given/object | "`skills/queue/SKILL.md`", the privacy guard's command |
+| AC53 | qualifier | "in the step that commits a park" (Step 7) |
+| AC54 | Given/qualifier | "`skills/retro/SKILL.md` Step 6" |
+| AC55 | Given | "a tracked file carrying a real home path" |
+| AC55 | predicate | "the named command is run as the skills instruct" |
+| AC55 | outcome | "exits non-zero and names the file" |
+
+**Evidence:**
+
+| AC / NFR | How checked | Result | Mutation (run by this pass) |
+|---|---|---|---|
+| AC16 | A reading of the S14 diff to `skills/{queue,retro,develop,verify,design,prototype,sprint}/SKILL.md` and `references/CONCURRENCY.md` against FR5–FR11. Each site calls its script: `queue` L94–95, L184 (`./capture`/`--restamp`), L203 (`./withdraw … --into`), L234, L528 (`./capture`), L552 (`./rank`), L607–630 (`./drain`), L685 (`./park`). `retro` L293, L313, L315, L325 (`./capture`/`./drain`), L406 (`./park`). `develop`, `verify`, `design` and `prototype` use `./park` in their park steps. `sprint` L1000 uses `./park … --repo`. `develop` Step 1's and Step 5's fallbacks are gone, and so are `verify` Step 1's and Step 5's. `CONCURRENCY.md` *Lock every write* names the two unscripted writes. `grep -rn 'mkdir[^`]*\.lock' skills/*/SKILL.md references/CONCURRENCY.md`, excluding `runs/.active`, finds nothing. `sprint`'s `LOCK=` block ages the lock and takes none. | PASS | A by-hand `mkdir .tickets/.lock` sentence inserted into `develop` Step 1 makes the grep report `skills/develop/SKILL.md:169`. Restored by path; the tree is clean and the grep is empty again. |
+| AC17 | `## Unreleased`: one `- New \`./<script> …` entry each for capture, rank, withdraw, park and drain (count 1 each). Each names its calling steps, e.g. `./park` names queue 7, develop 7, verify 6, design 5, prototype 8, retro 6 and sprint 9. | PASS | Deleting the `./drain` entry drops its count to 0. Restored by path; the count is 1 again. |
+| AC53 | `tests/measurement.test.sh` occurs once in `skills/queue/SKILL.md` `## Step 7 — Park what surprised you`, the step whose `./park` commits the park. | PASS | Deleting the *Where a commit lands in a public repo…* sentence leaves 0 occurrences of the command in the section. The gap test also finds "privacy guard" 0 times in the section. Restored; 1 again. No suite file guards this, by design (`CLAUDE.md` *Tests*): the check is this QA-time grep. |
+| AC54 | The same check on `skills/retro/SKILL.md` `## Step 6 — Park what surprised you`: 1 occurrence. | PASS | The same deletion gives 0, and "privacy guard" is also 0. Restored; 1 again. |
+| AC55 | `docs/ac55-verify-scratch.md` was created holding an assembled home path and tracked with `git add -N`. `tests/measurement.test.sh` was run as the skills name it. | PASS: rc=1, `FAIL Privacy & data NFR — a tracked file publishes a home-directory path:` / `docs/ac55-verify-scratch.md:1:…`, `142 passed, 1 failed` | The file was removed (`git rm --cached` plus `rm`) in the same call. Control run: `143 passed, 0 failed`; the tree is clean. |
+| NFR Documentation (AC16, a reading) | Covered by the AC16 reading. The skills name each script rather than restating its steps. | holds; by design no guard (a reading) | — |
+| NFR Privacy & data (0118) | The sentence cites the guard and does not restate `CLAUDE.md`'s rule. AC55 is the live red. | holds, guarded by AC55's run | above |
+| NFR Documentation (0118), `prose only — no artifact yet` | Read against `documentation-conventions.md`: each skill states the requirement once. The queue and retro sentences are verbatim identical rather than "each in their own voice". Both sit in the same-shaped park step, so this is noted and does not fail the row. | holds (prose) | — |
+| Always-on (`CONVENTIONS_CORE.md`) | No company material and no machine path in the diff. `tests/measurement.test.sh` is green at HEAD. | holds | — |
+
+**Guards deleted by the leg, reviewed:** two guards asserted a by-hand fallback that FR11 removes, and
+both were deleted rather than re-anchored, as `CLAUDE.md` *Tests* requires for a prose guard falsified
+by a correct change. They are `tests/sprint.test.sh`'s 0184 block on `sprint` Step 9's by-hand park
+order, and `tests/handoff.test.sh` AC6's two `By hand` assertions. AC6's assertions that each stage
+names `.tickets/handoff` are kept.
+
+**Hand-off:** pass. `./handoff 0242 462c develop --slice S14`. S15 is next.
+
 ## Notes & decisions
 
 - **2026-11-26 (queue): AC8 example reworded, meaning unchanged.** Its literal home-path example
