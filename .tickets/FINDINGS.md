@@ -53,3 +53,4 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
+- 2026-11-27 — **`./drain` cannot remove an entry from `FINDINGS-HELD.md`, so filing a held finding at a person's request still needs a by-hand lock and edit.** queue (sprint run-20261127T024025Z) absorbed 8 held `xxd` entries into 0245 and removed them with mkdir `.tickets/.lock` and a python3 filter, the path 0242 exists to remove. The dispatch also named 3 of the 8, so a sweep that matched only the named entries would have left 5 behind (pointer: `skills/queue/templates/drain`, item 0245).
