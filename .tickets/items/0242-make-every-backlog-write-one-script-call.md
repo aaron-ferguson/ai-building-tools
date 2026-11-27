@@ -66,6 +66,11 @@ touches:
   - .tickets/item.md
   - tests/claim.test.sh
   - tests/next.test.sh
+  - skills/queue/templates/close
+  - skills/queue/templates/reopen
+  - .tickets/close
+  - .tickets/reopen
+  - tests/declared-copies.test.sh
 ---
 
 ## Problem
