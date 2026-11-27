@@ -2,8 +2,8 @@
 id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: l
@@ -61,10 +61,11 @@ expects:
   - tests/scaffold-close.test.sh
   - tests/sprint.test.sh
 ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8 AC78=9de0f100 AC79=d33bbcc4 AC80=e46fe1e6 AC81=ff13b5c9 AC82=d9ab8d22 AC83=7d5d6a7c AC84=7e39137c AC85=4c37e61e AC86=034cf395 AC87=5714d3fe AC88=88f5d80c AC89=98d1d4ff AC90=76644f05 AC91=d1ca1c88
-claimed_by: "c0c4"
-claimed_at: 2026-11-27T18:26:18Z
+claimed_by:
+claimed_at:
 touches:
 slice: S13
+closed: 2026-11-27
 ---
 
 ## Problem
@@ -663,272 +664,272 @@ in reverse: cheaper turns, wrong backlog.
 Each scripted AC names its test file. Each fixture is a scratch git repo the test builds, so no AC
 reads the live backlog.
 
-- [ ] AC1 — Given a fixture backlog whose `next_id` is 5 while `items/` holds 0007, when `./capture
+- [x] AC1 — Given a fixture backlog whose `next_id` is 5 while `items/` holds 0007, when `./capture
   draft.md above:0003` runs, then it writes `items/0008-*.md` carrying id `0008`, sets `next_id: 9`,
   inserts the row directly above 0003, and makes one commit. Red: mint from `next_id`.
   (`tests/capture.test.sh`)
-- [ ] AC2 — Given AC1's capture, when `./next --ac-digest 0008` runs afterwards, then its output
+- [x] AC2 — Given AC1's capture, when `./next --ac-digest 0008` runs afterwards, then its output
   equals the item's `ac_digest:` line. Red: stamp the digest before the id is written.
   (`tests/capture.test.sh`)
-- [ ] AC3 — Given a draft with no `- [ ] AC1 —` line, when `./capture` runs, then it exits non-zero,
+- [x] AC3 — Given a draft with no `- [ ] AC1 —` line, when `./capture` runs, then it exits non-zero,
   writes no file, leaves `QUEUE.md` and `config.yml` byte-identical, leaves no `.lock`, and makes no
   commit. Red: skip the draft check. (`tests/capture.test.sh`)
-- [ ] AC4 — Given another path staged before `./capture` runs, when it commits, then that path is
+- [x] AC4 — Given another path staged before `./capture` runs, when it commits, then that path is
   absent from the capture commit and still staged afterwards. Red: commit without a pathspec.
   (`tests/capture.test.sh`)
-- [ ] AC5 — Given `above:9999`, a row not in the queue, when `./capture` runs, then it refuses before
+- [x] AC5 — Given `above:9999`, a row not in the queue, when `./capture` runs, then it refuses before
   minting, leaves no `.lock` and changes no file. Red: append at the bottom on a missing anchor.
   (`tests/capture.test.sh`)
-- [ ] AC6 — Given a fixture buffer, when `./park "what happened"` runs, then exactly one line is
+- [x] AC6 — Given a fixture buffer, when `./park "what happened"` runs, then exactly one line is
   appended in the header's head-token shape with today's UTC date, and one commit names only
   `FINDINGS.md`. Red: write the entry without its date. (`tests/park.test.sh`)
-- [ ] AC7 — Given `--repo <second fixture checkout>`, when `./park` runs, then the entry and its
+- [x] AC7 — Given `--repo <second fixture checkout>`, when `./park` runs, then the entry and its
   commit land in the second repo and the first repo is unchanged. Red: ignore `--repo`.
   (`tests/park.test.sh`)
-- [ ] AC8 — Given a second checkout whose `CLAUDE.md` profile marks it public, when `./park` is given
+- [x] AC8 — Given a second checkout whose `CLAUDE.md` profile marks it public, when `./park` is given
   an entry holding a real-shaped macOS or Linux home path (assembled in the test, never written
   literally), then it exits non-zero, writes
   nothing and names the failing shape; the same entry with the path redacted is written. Red: skip
   the guard. (`tests/park.test.sh`)
-- [ ] AC9 — Given rows A, B, C, when `./rank C above:A` runs, then the order is C, A, B with every
+- [x] AC9 — Given rows A, B, C, when `./rank C above:A` runs, then the order is C, A, B with every
   other line of `QUEUE.md` unchanged, and one commit. Red: re-sort the table. (`tests/rank.test.sh`)
-- [ ] AC10 — Given B `in-progress` under a token, when `./rank B top` runs, then it refuses and
+- [x] AC10 — Given B `in-progress` under a token, when `./rank B top` runs, then it refuses and
   changes nothing. Red: drop the claim check. (`tests/rank.test.sh`)
-- [ ] AC11 — Given 0004 named in 0005's `blocked_by:`, when `./withdraw 0004 "merged" --into 0006`
+- [x] AC11 — Given 0004 named in 0005's `blocked_by:`, when `./withdraw 0004 "merged" --into 0006`
   runs, then 0004's file stays with `status: withdrawn`, an empty `next:` and a dated note; its row is
   gone; 0005's `blocked_by:` names 0006; and `next_id` is unchanged. Red: delete the item file, or
   leave 0005 pointing at 0004. (`tests/withdraw.test.sh`)
-- [ ] AC12 — Given an unclaimed item whose AC2 text was edited, when `./capture --restamp <id>` runs,
+- [x] AC12 — Given an unclaimed item whose AC2 text was edited, when `./capture --restamp <id>` runs,
   then `./next --drift` reports no digest mismatch for it. Red: restamp from the old digest.
   (`tests/capture.test.sh`)
-- [ ] AC13 — Given a buffer whose header carries the fenced example `- 2026-09-05 [->0060] — …` and
+- [x] AC13 — Given a buffer whose header carries the fenced example `- 2026-09-05 [->0060] — …` and
   one real entry dated 2026-09-05, when `./drain 2026-09-05 removed` runs, then only the real entry is
   removed and the header is byte-identical. Red: match the date by regex over the whole file.
   (`tests/drain.test.sh`)
-- [ ] AC14 — Given a real entry, when `./drain <date> held` runs, then the entry is absent from
+- [x] AC14 — Given a real entry, when `./drain <date> held` runs, then the entry is absent from
   `FINDINGS.md`, present verbatim in `FINDINGS-HELD.md`, and both changes are in one commit. Red: write
   the held file without removing the entry. (`tests/drain.test.sh`)
-- [ ] AC15 — Given a fixture backlog holding only the five pre-existing scripts, when `queue` Step 0's
+- [x] AC15 — Given a fixture backlog holding only the five pre-existing scripts, when `queue` Step 0's
   sync runs, then all ten scripts are present and byte-equal to `templates/`, and `config.yml`,
   `QUEUE.md` and `FINDINGS.md` are byte-identical. Red: omit one new script from the sync list.
   (`tests/backlog-scripts-installed.test.sh`)
-- [ ] AC16 — Given the seven skills and `references/CONCURRENCY.md`, when every write site in FR11 is
+- [x] AC16 — Given the seven skills and `references/CONCURRENCY.md`, when every write site in FR11 is
   read, then each calls its script, no covered by-hand lock sequence remains, and `CONCURRENCY.md` names
   the write sites still without one. A reading, not a grep (`CLAUDE.md`, *Tests*). Red: any covered
   site still describing `mkdir .lock`.
-- [ ] AC17 — Given `CHANGELOG.md`, when `## Unreleased` is read, then one entry per new script names
+- [x] AC17 — Given `CHANGELOG.md`, when `## Unreleased` is read, then one entry per new script names
   the stage steps that call it. A reading. Red: a script with no entry.
-- [ ] AC18 *(was 0215 AC1)* — Given an item whose `expects:` is an inline `["a", "b"]` list, `./claim <id>` seeds
+- [x] AC18 *(was 0215 AC1)* — Given an item whose `expects:` is an inline `["a", "b"]` list, `./claim <id>` seeds
   `touches:` with `a` and `b`, asserted in `tests/claim.test.sh`.
-- [ ] AC19 *(was 0215 AC2)* — Given the same item in block form and in inline form, `./next develop`'s EXPECTS line and
+- [x] AC19 *(was 0215 AC2)* — Given the same item in block form and in inline form, `./next develop`'s EXPECTS line and
   `./claim`'s seeded `touches:` name the same paths, asserted in one test over both forms.
-- [ ] AC20 *(was 0215 AC3)* — Given an item whose `expects:` is `a.ts, b.ts`, either `./next develop` prints both paths or
+- [x] AC20 *(was 0215 AC3)* — Given an item whose `expects:` is `a.ts, b.ts`, either `./next develop` prints both paths or
   `./next --drift` names that item and `expects:`; `EXPECTS not predicted` is not printed for it.
   Asserted in `tests/next.test.sh`.
-- [ ] AC21 *(was 0215 AC4)* — `templates/item.md`'s `expects:` comment states one written form.
-- [ ] AC22 *(was 0225 AC1)* — Given an item with no `expects:` and no `touches:` key, when `./claim <id>` runs, then the
+- [x] AC21 *(was 0215 AC4)* — `templates/item.md`'s `expects:` comment states one written form.
+- [x] AC22 *(was 0225 AC1)* — Given an item with no `expects:` and no `touches:` key, when `./claim <id>` runs, then the
       item's frontmatter carries a `touches:` key with no entries and `./handoff <id> <token> design`
       succeeds without a hand edit. *Red when:* `handoff` prints `has no: touches`.
-- [ ] AC23 *(was 0225 AC2)* — Given an item with `expects:` entries and no `touches:` key, claimed at `develop`, then
+- [x] AC23 *(was 0225 AC2)* — Given an item with `expects:` entries and no `touches:` key, claimed at `develop`, then
       `touches:` holds those entries exactly once. *Red when:* the key is duplicated or empty.
-- [ ] AC24 *(was 0225 AC3)* — Given an item whose `touches:` already has entries, `claim` leaves them byte-identical.
+- [x] AC24 *(was 0225 AC3)* — Given an item whose `touches:` already has entries, `claim` leaves them byte-identical.
       *Red when:* any entry is added, removed or reordered.
-- [ ] AC25 *(was 0155 AC1)* — Given a fixture item with `expects:` `- tests/*.test.sh` and another row held, when `./claim` runs, then it is not refused as exclusive. Red-making input: today's detector.
-- [ ] AC26 *(was 0155 AC2)* — Given a takeable row with `expects: "*"` and another row held, when `./next develop` runs, then that row is not printed as TAKE. Red-making input: today's take loop.
-- [ ] AC27 *(was 0155 AC3)* — Given a held row touching `a.md` and a ready row expecting `a.md`, when `./claim <ready id>` runs, then the output names the collision and the holder. Red-making input: today's claim.
-- [ ] AC28 *(was 0155 AC4)* — Given an open row expecting a path that does not exist, when `./next --drift` runs, then that id and path are reported and the exit is non-zero. Red-making input: today's drift.
-- [ ] AC29 *(was 0155 AC5)* — Given `./next --help`, when it runs, then the output contains no ordinal naming the collision test. Red-making input: the word `third` in today's usage.
-- [ ] AC30 *(was 0066 AC1)* — Given a claim on a `next: verify` row, when `./claim` succeeds, then its message does
+- [x] AC25 *(was 0155 AC1)* — Given a fixture item with `expects:` `- tests/*.test.sh` and another row held, when `./claim` runs, then it is not refused as exclusive. Red-making input: today's detector.
+- [x] AC26 *(was 0155 AC2)* — Given a takeable row with `expects: "*"` and another row held, when `./next develop` runs, then that row is not printed as TAKE. Red-making input: today's take loop.
+- [x] AC27 *(was 0155 AC3)* — Given a held row touching `a.md` and a ready row expecting `a.md`, when `./claim <ready id>` runs, then the output names the collision and the holder. Red-making input: today's claim.
+- [x] AC28 *(was 0155 AC4)* — Given an open row expecting a path that does not exist, when `./next --drift` runs, then that id and path are reported and the exit is non-zero. Red-making input: today's drift.
+- [x] AC29 *(was 0155 AC5)* — Given `./next --help`, when it runs, then the output contains no ordinal naming the collision test. Red-making input: the word `third` in today's usage.
+- [x] AC30 *(was 0066 AC1)* — Given a claim on a `next: verify` row, when `./claim` succeeds, then its message does
   not instruct the session to set `touches:`.
-- [ ] AC31 *(was 0066 AC2)* — Given a claim on a `next: develop` row, when `./claim` succeeds, then its message does
+- [x] AC31 *(was 0066 AC2)* — Given a claim on a `next: develop` row, when `./claim` succeeds, then its message does
   instruct the session to set `touches:`.
-- [ ] AC32 *(was 0066 AC3)* — Given an `in-progress` row claimed at a stage that holds no file scope, when `./next`
+- [x] AC32 *(was 0066 AC3)* — Given an `in-progress` row claimed at a stage that holds no file scope, when `./next`
   runs, then its claimed-files block says so rather than `none declared — assume held, ask`.
-- [ ] AC33 *(was 0066 AC4)* — Given `./claim --help` and `./close --help`, when each is run, then it prints usage and
+- [x] AC33 *(was 0066 AC4)* — Given `./claim --help` and `./close --help`, when each is run, then it prints usage and
   exits zero.
-- [ ] AC34 *(was 0066 AC5)* — Given a queue whose row 1 is `waiting` and whose topmost takeable row is lower, when
+- [x] AC34 *(was 0066 AC5)* — Given a queue whose row 1 is `waiting` and whose topmost takeable row is lower, when
   bare `./next` runs, then it prints both and marks which is takeable.
-- [ ] AC35 *(was 0066 AC6)* — Given a queue whose row 1 **is** the topmost takeable row, when bare `./next` runs,
+- [x] AC35 *(was 0066 AC6)* — Given a queue whose row 1 **is** the topmost takeable row, when bare `./next` runs,
   then it does not print the row twice.
-- [ ] AC36 *(was 0066 AC7)* — Given `.claude/backlog/{claim,close,next}` compared against the templates, when
+- [x] AC36 *(was 0066 AC7)* — Given `.claude/backlog/{claim,close,next}` compared against the templates, when
   `tests/backlog-scripts-installed.test.sh` runs, then it passes.
-- [ ] AC37 *(was 0066 AC8)* — Given the whole suite, when it runs, then every suite passes.
-- [ ] AC38 *(was 0066 AC9)* — Given `./claim <id> --touches path/a path/b`, when it succeeds, then the item's
+- [x] AC37 *(was 0066 AC8)* — Given the whole suite, when it runs, then every suite passes.
+- [x] AC38 *(was 0066 AC9)* — Given `./claim <id> --touches path/a path/b`, when it succeeds, then the item's
   `touches:` and the `QUEUE.md` row reflect exactly `path/a` and `path/b`, written in the same
   commit as the claim.
-- [ ] AC39 *(was 0066 AC10)* — Given `./claim <id> --touches <paths>` on an item whose `expects:` names different
+- [x] AC39 *(was 0066 AC10)* — Given `./claim <id> --touches <paths>` on an item whose `expects:` names different
   paths, when it succeeds, then `touches:` holds only the paths given on the command line — never
   `expects:`'s paths.
-- [ ] AC40 *(was 0066 AC11)* — Given a queue whose row 1 is `waiting` or `blocked`, when bare `./next` runs, then its
+- [x] AC40 *(was 0066 AC11)* — Given a queue whose row 1 is `waiting` or `blocked`, when bare `./next` runs, then its
   report names the blocking reason (the waiting question, or the `blocked_by` id) inline, not just
   the status word.
-- [ ] AC41 *(was 0229 AC1)* — Given a fixture whose `items/` holds a `status: done` item with `claimed_by: "ab12"` and no `QUEUE.md` row, when `./next --drift` runs, then it exits non-zero and prints one DRIFT line naming that id, `done` and `ab12` — `tests/next.test.sh`
-- [ ] AC42 *(was 0229 AC2)* — Given the same item at `status: withdrawn`, and again at `status: rejected`, when `./next --drift` runs, then each is reported the same way — `tests/next.test.sh`
-- [ ] AC43 *(was 0229 AC3)* — Given a `status: done` item with an empty `claimed_by:` and no other drift, when `./next --drift` runs, then it prints no DRIFT line and exits 0 — `tests/next.test.sh`
-- [ ] AC44 *(was 0229 AC4)* — Given the template, when `./next --help` runs, then its `--drift` line names a closed item keeping a token — `tests/next.test.sh`
-- [ ] AC45 *(was 0230 AC1)* — Given a fixture whose `QUEUE.md` holds the header and table header and no rows, when bare `./next` runs, then its `ROW 1:` line is exactly `ROW 1:     none — the queue holds no rows` — `tests/next.test.sh`
-- [ ] AC46 *(was 0230 AC2)* — Given a fixture with one row `0001 | Fixture row | develop | ready`, when bare `./next` runs, then its `ROW 1:` line is `ROW 1:     0001 | Fixture row | develop | ready` — `tests/next.test.sh`
-- [ ] AC47 *(was 0227 AC1)* — Given FR40's fixture, when FR36's mode runs, then it prints exactly two lines, naming the
+- [x] AC41 *(was 0229 AC1)* — Given a fixture whose `items/` holds a `status: done` item with `claimed_by: "ab12"` and no `QUEUE.md` row, when `./next --drift` runs, then it exits non-zero and prints one DRIFT line naming that id, `done` and `ab12` — `tests/next.test.sh`
+- [x] AC42 *(was 0229 AC2)* — Given the same item at `status: withdrawn`, and again at `status: rejected`, when `./next --drift` runs, then each is reported the same way — `tests/next.test.sh`
+- [x] AC43 *(was 0229 AC3)* — Given a `status: done` item with an empty `claimed_by:` and no other drift, when `./next --drift` runs, then it prints no DRIFT line and exits 0 — `tests/next.test.sh`
+- [x] AC44 *(was 0229 AC4)* — Given the template, when `./next --help` runs, then its `--drift` line names a closed item keeping a token — `tests/next.test.sh`
+- [x] AC45 *(was 0230 AC1)* — Given a fixture whose `QUEUE.md` holds the header and table header and no rows, when bare `./next` runs, then its `ROW 1:` line is exactly `ROW 1:     none — the queue holds no rows` — `tests/next.test.sh`
+- [x] AC46 *(was 0230 AC2)* — Given a fixture with one row `0001 | Fixture row | develop | ready`, when bare `./next` runs, then its `ROW 1:` line is `ROW 1:     0001 | Fixture row | develop | ready` — `tests/next.test.sh`
+- [x] AC47 *(was 0227 AC1)* — Given FR40's fixture, when FR36's mode runs, then it prints exactly two lines, naming the
       two entries' line numbers and neither preamble line. *Red:* remove the preamble-skip rule from
       the shared program; the fenced example is listed as a third line (`tests/next.test.sh`).
-- [ ] AC48 *(was 0227 AC2)* — Given the same fixture, when `./next --findings` runs, then its count equals AC47's line
+- [x] AC48 *(was 0227 AC2)* — Given the same fixture, when `./next --findings` runs, then its count equals AC47's line
       count, read from one fixture in one case. *Red:* give the listing its own copy of the program
       without the preamble rule; the count says 2 and the listing 3 (`tests/next.test.sh`).
-- [ ] AC49 *(was 0227 AC3)* — Given a fixture whose body holds a `- ` line with no date, when FR36's mode runs, then
+- [x] AC49 *(was 0227 AC3)* — Given a fixture whose body holds a `- ` line with no date, when FR36's mode runs, then
       that line is printed marked `MALFORMED`, with its line number. *Red:* drop the MALFORMED
       branch from the listing path (`tests/next.test.sh`).
-- [ ] AC50 *(was 0227 AC4)* — Given both copies of `next`, when `tests/backlog-scripts-installed.test.sh` runs, then
+- [x] AC50 *(was 0227 AC4)* — Given both copies of `next`, when `tests/backlog-scripts-installed.test.sh` runs, then
       it passes. *Red:* add FR36 to the template only.
-- [ ] AC51 *(was 0227 AC5)* — `for t in tests/*.test.sh; do "$t" || exit 1; done` green.
-- [ ] AC52 *(was 0156 AC1)* — Given a held fixture item whose `blocked_by` names an open ticket, when `./handoff` runs and then `./next --drift`, then drift reports nothing for that row and `--drive` does not escalate on it. Red-making input: today's handoff.
-- [ ] AC53 *(was 0118 AC1)* — given `skills/queue/SKILL.md`, when grepped for the privacy guard's command, then it
+- [x] AC51 *(was 0227 AC5)* — `for t in tests/*.test.sh; do "$t" || exit 1; done` green.
+- [x] AC52 *(was 0156 AC1)* — Given a held fixture item whose `blocked_by` names an open ticket, when `./handoff` runs and then `./next --drift`, then drift reports nothing for that row and `--drive` does not escalate on it. Red-making input: today's handoff.
+- [x] AC53 *(was 0118 AC1)* — given `skills/queue/SKILL.md`, when grepped for the privacy guard's command, then it
   appears in the step that commits a park; red by deleting that sentence.
-- [ ] AC54 *(was 0118 AC2)* — the same for `skills/retro/SKILL.md` Step 6.
-- [ ] AC55 *(was 0118 AC3)* — given a tracked file carrying a real home path, when the named command is run as the
+- [x] AC54 *(was 0118 AC2)* — the same for `skills/retro/SKILL.md` Step 6.
+- [x] AC55 *(was 0118 AC3)* — given a tracked file carrying a real home path, when the named command is run as the
   skills instruct, then it exits non-zero and names the file — the control that the instruction
   points at a check that actually fires.
-- [ ] AC56 *(0217)* — Given a fixture item stamped with FR50's digest, whose last criterion is followed by a blank
+- [x] AC56 *(0217)* — Given a fixture item stamped with FR50's digest, whose last criterion is followed by a blank
   line and then a column-0 note, when the note's text is edited and `./next --ac-digest <id> --check`
   runs, then it exits 0 and prints `ac_digest matches`. In `tests/ac-digest.test.sh`. Red: today's
   normalisation, which reports `changed:` for that criterion.
-- [ ] AC57 *(0217)* — Given the AC56 fixture, when an indented continuation line of its last criterion is edited,
+- [x] AC57 *(0217)* — Given the AC56 fixture, when an indented continuation line of its last criterion is edited,
   then `--check` exits 1 and names that criterion as `changed:`. In `tests/ac-digest.test.sh`. Red:
   a rule that ends every criterion at its label line.
-- [ ] AC58 *(0217)* — Given a fixture criterion whose text runs on after a blank line as an indented line (0161
+- [x] AC58 *(0217)* — Given a fixture criterion whose text runs on after a blank line as an indented line (0161
   AC1's shape), when that indented line is edited, then `--check` exits 1 and names the criterion.
   In `tests/ac-digest.test.sh`. Red: a rule that ends a criterion at a blank line.
-- [ ] AC59 *(0217)* — Given a fixture item stamped with the legacy digest, whose last criterion has a column-0 note
+- [x] AC59 *(0217)* — Given a fixture item stamped with the legacy digest, whose last criterion has a column-0 note
   below it, when nothing is edited, then `--check` exits 0 and `./next --drift` prints no
   `ac_digest` line for it. In `tests/ac-digest.test.sh`. Red: FR51's legacy acceptance removed.
-- [ ] AC60 *(0217)* — Given the AC59 fixture, when the last criterion's own label-line text is edited, then `--check`
+- [x] AC60 *(0217)* — Given the AC59 fixture, when the last criterion's own label-line text is edited, then `--check`
   exits 1 and names it. In `tests/ac-digest.test.sh`. Red: a legacy comparison that accepts any
   value.
-- [ ] AC61 *(0217)* — Given the AC56 fixture, when `./next --ac-digest <id>` runs, then the value it prints for the
+- [x] AC61 *(0217)* — Given the AC56 fixture, when `./next --ac-digest <id>` runs, then the value it prints for the
   trailing-note criterion differs from the legacy digest and equals FR50's digest. In
   `tests/ac-digest.test.sh`. Red: stamping the legacy form.
-- [ ] AC62 *(0217)* — Given this repo after the change, when `tests/backlog-scripts-installed.test.sh` and
+- [x] AC62 *(0217)* — Given this repo after the change, when `tests/backlog-scripts-installed.test.sh` and
   `.tickets/next --ac-digest 0242 --check` run, then both pass. Red: an edit to the template alone,
   which leaves `.tickets/next` different. In this repo the migration has no live red, because the only
   stamped items with column-0 notes, 0229 and 0230, are withdrawn, and `--drift` reads open rows
   only. AC59 carries the migration case in fixture.
-- [ ] AC63 *(0219)* — Given a fixture item at `status: done` recording `close_by: develop` and `qa_level: unit`, with a
+- [x] AC63 *(0219)* — Given a fixture item at `status: done` recording `close_by: develop` and `qa_level: unit`, with a
   `DONE.md` row, when `./reopen <id> top "fixture reason"` runs, then the item reads
   `close_by: verify`, the last line of `## Notes & decisions` contains both `fixture reason` and
   `close_by: develop → verify`, and `git show --name-only HEAD` lists exactly the item, `QUEUE.md`
   and `DONE.md`. In `tests/reopen.test.sh`. Red: today's reopen, which leaves `close_by: develop`.
-- [ ] AC64 *(0219)* — Given the AC63 fixture after the reopen, claimed, with a `## QA evidence` body written, when
+- [x] AC64 *(0219)* — Given the AC63 fixture after the reopen, claimed, with a `## QA evidence` body written, when
   `./close <id> <token>` runs, then it exits 0 and never prints `the stage that may close it is
   'develop'`. In `tests/reopen.test.sh`. Red: FR53 omitted.
-- [ ] AC65 *(0219)* — Given one done fixture item recording `close_by: verify` and another with no `close_by:` key,
+- [x] AC65 *(0219)* — Given one done fixture item recording `close_by: verify` and another with no `close_by:` key,
   when each is reopened, then the first still reads `close_by: verify` and the second still has no
   `close_by:` line. In `tests/reopen.test.sh`. Red: a reopen that writes the key unconditionally.
-- [ ] AC66 *(0235)* — Given a fixture repo on `main` with no `shared_branch:` key and no remote, after
+- [x] AC66 *(0235)* — Given a fixture repo on `main` with no `shared_branch:` key and no remote, after
   `git switch -c feature`, when `./claim <id>` runs on a `ready` row, then it exits 1, stderr
   carries `this checkout is on 'feature', and the backlog is shared on 'main'` and `nothing was
   changed and no lock was taken`, `git rev-list --count HEAD` is unchanged, `QUEUE.md` and the item
   are byte-identical to before, and no `.lock` directory exists. In `tests/claim.test.sh`. Red:
   today's claim, which claims on `feature`.
-- [ ] AC67 *(0235)* — Given a fixture row claimed on `main`, after `git switch -c feature`, when
+- [x] AC67 *(0235)* — Given a fixture row claimed on `main`, after `git switch -c feature`, when
   `./handoff <id> <token> develop` runs, then it exits 1 with FR42's first line naming `feature`
   and `main`, the item still carries `claimed_by: <token>`, no commit is added and no `.lock`
   remains. In `tests/handoff.test.sh`. Red: the block omitted from `handoff`.
-- [ ] AC68 *(0235)* — Given a fixture row claimed on `main` with a `## QA evidence` body, after `git switch -c
+- [x] AC68 *(0235)* — Given a fixture row claimed on `main` with a `## QA evidence` body, after `git switch -c
   feature`, when `./close <id> <token>` runs, then it exits 1 with FR42's first line, the row is
   still in `QUEUE.md` and absent from `DONE.md`, no commit is added and no `.lock` remains. In
   `tests/close.test.sh`. Red: the block omitted from `close`.
-- [ ] AC69 *(0235)* — Given a fixture done row, after `git switch -c feature`, when `./reopen <id> top "r"` runs,
+- [x] AC69 *(0235)* — Given a fixture done row, after `git switch -c feature`, when `./reopen <id> top "r"` runs,
   then it exits 1 with FR42's first line, the row is still in `DONE.md` and absent from `QUEUE.md`,
   and no commit is added. In `tests/reopen.test.sh`. Red: the block omitted from `reopen`.
-- [ ] AC70 *(0235)* — Given a fixture whose `config.yml` reads `shared_branch: trunk  # ours`, when `./claim`
+- [x] AC70 *(0235)* — Given a fixture whose `config.yml` reads `shared_branch: trunk  # ours`, when `./claim`
   runs on branch `trunk`, then it exits 0. When it runs on `main`, then it exits 1 naming `'main'`
   and `'trunk'`. In `tests/claim.test.sh`. Red: a resolution that ignores the key, or keeps the
   comment in the value.
-- [ ] AC71 *(0235)* — Given a fixture with no key, whose `refs/remotes/origin/HEAD` is a symbolic ref to
+- [x] AC71 *(0235)* — Given a fixture with no key, whose `refs/remotes/origin/HEAD` is a symbolic ref to
   `refs/remotes/origin/develop`, when `./claim` runs on `develop`, then it exits 0. When it runs on
   `main`, then it exits 1 naming `'develop'`. In `tests/claim.test.sh`. Red: resolution by the
   `main` fallback alone.
-- [ ] AC72 *(0235)* — Given the AC71 fixture plus `shared_branch: trunk` in `config.yml`, when `./claim` runs on
+- [x] AC72 *(0235)* — Given the AC71 fixture plus `shared_branch: trunk` in `config.yml`, when `./claim` runs on
   `trunk`, then it exits 0. When it runs on `develop`, then it exits 1 naming `'trunk'`. In
   `tests/claim.test.sh`. Red: `origin/HEAD` consulted before the key.
-- [ ] AC73 *(0235)* — Given a fixture on `main` after `git checkout --detach`, when `./claim` runs, then it
+- [x] AC73 *(0235)* — Given a fixture on `main` after `git checkout --detach`, when `./claim` runs, then it
   exits 1 and stderr carries `this checkout is on 'HEAD (detached)'`. In `tests/claim.test.sh`. Red:
   a check that reads an empty branch name as a match or skips it.
-- [ ] AC74 *(0235)* — Given a fixture on `feature` whose backlog directory already holds a `.lock` directory
+- [x] AC74 *(0235)* — Given a fixture on `feature` whose backlog directory already holds a `.lock` directory
   that another session made, when `./claim` runs, then stderr carries FR42's first line and not
   the lock-held message, and the pre-existing `.lock` is still there afterwards. In
   `tests/claim.test.sh`. Red: the check placed after the lock is taken, which is no longer up front.
-- [ ] AC75 *(0235)* — Given the tree after the change, when `tests/declared-copies.test.sh` and
+- [x] AC75 *(0235)* — Given the tree after the change, when `tests/declared-copies.test.sh` and
   `tests/backlog-scripts-installed.test.sh` run, then both exit 0 and the first lists a
   `shared-branch` block in each of `claim`, `handoff`, `close` and `reopen`. Red: one copy edited
   alone, or one script left without the block.
-- [ ] AC76 *(0235)* — Given the tree after the change, when the whole suite runs as
+- [x] AC76 *(0235)* — Given the tree after the change, when the whole suite runs as
   `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=init.defaultBranch GIT_CONFIG_VALUE_0=master` with
   `for t in tests/*.test.sh; do "$t" || exit 1; done`, then it exits 0. Red: any fixture left on
   git's default branch (FR57).
-- [ ] AC77 *(0235)* — Given `references/CONCURRENCY.md` and `CHANGELOG.md` after the change, when verify reads
+- [x] AC77 *(0235)* — Given `references/CONCURRENCY.md` and `CHANGELOG.md` after the change, when verify reads
   them, then the section FR43 names sits directly after *A second checkout never writes the
   backlog* and states the refusal, FR55's order and the `shared_branch:` fix, and `## Unreleased`
   carries FR58's line. Checked by reading, not by a guard (`CLAUDE.md`, *Tests*).
-- [ ] AC78 *(0237)* — Given a fixture backlog whose row is at `next: verify`, `status: ready` and unheld,
+- [x] AC78 *(0237)* — Given a fixture backlog whose row is at `next: verify`, `status: ready` and unheld,
   when `./claim <id>` and then `./handoff <id> <token> design` run, then both exit 0. The item
   then reads `next: design` and `status: ready` with `claimed_by:` empty, the row's Next and
   Status cells read `design` and `ready`, the last two commits are `Claim <id> [<token>]` and
   `Hand off <id> to design [<token>]`, and `git status --porcelain` is empty. This is in
   `tests/handoff.test.sh`. It is a regression guard: it is green at baseline (FR59). Red-making
   input: `handoff` refusing a `verify -> design` move, or leaving the claim held.
-- [ ] AC79 *(0237)* — Given the same fixture with the row already held by another token, when
+- [x] AC79 *(0237)* — Given the same fixture with the row already held by another token, when
   `./claim <id>` runs, then it exits non-zero and the item, the row and `git log` are unchanged.
   This is in `tests/handoff.test.sh` or `tests/claim.test.sh`, beside AC78. Red-making input: a
   claim that takes a held verify row.
-- [ ] AC80 *(0237)* — Given `skills/queue/SKILL.md` after the change, when verify reads Step 1, then
+- [x] AC80 *(0237)* — Given `skills/queue/SKILL.md` after the change, when verify reads Step 1, then
   one routing row names the trigger (the user overturns the decision on an open `next: verify`
   ticket), the two commands in order, the dated Notes line, the restored `## Open design question`,
   and stopping when `./claim` refuses. Also, `references/CONCURRENCY.md` and
   `skills/verify/SKILL.md` state nothing that FR60 forbids. Checked by reading, not by a guard
   (`CLAUDE.md`, *Tests*).
-- [ ] AC81 *(0155)* — Given an open row whose `expects:` entry names a missing path and carries `# new`,
+- [x] AC81 *(0155)* — Given an open row whose `expects:` entry names a missing path and carries `# new`,
   when `./next --drift` runs, then no `expects:` DRIFT line names that row. The same is true for
   `# new — created by S8`. For `# renewed`, the line is printed. This is in `tests/next.test.sh`.
   Red-making input: no exemption, or an exemption that matches `new` anywhere in the comment.
-- [ ] AC82 *(0155)* — Given open rows whose `expects:` holds an existing path, a glob that matches one
+- [x] AC82 *(0155)* — Given open rows whose `expects:` holds an existing path, a glob that matches one
   file, and a glob that matches none, and a `DONE.md` row whose item expects a missing path, when
   `./next --drift` runs, then only the glob matching none is reported, in FR61's form. Red-making
   input: a glob compared as a literal path, or a closed row checked.
-- [ ] AC83 *(0155)* — Given AC28's fixture, when `./next --drive` runs, then it exits 4 and prints the
+- [x] AC83 *(0155)* — Given AC28's fixture, when `./next --drive` runs, then it exits 4 and prints the
   same `expects:` DRIFT line that `--drift` prints. When `./next --help` runs, the `--drift` usage
   text names the class. This is in `tests/next.test.sh`. Red-making input: the class added to
   `--drift`'s own path and not to `drift_report`.
-- [ ] AC84 *(0155)* — Given the tree after the change, when the whole suite runs as
+- [x] AC84 *(0155)* — Given the tree after the change, when the whole suite runs as
   `for t in tests/*.test.sh; do "$t" || exit 1; done`, then it exits 0, and the *0142 FR3* case
   still counts three drifted rows. Then `./next --drift` on this repo's live backlog names no
   `expects:` entry of 0242. Red-making input: any fixture helper left writing a missing, unmarked
   path (FR64), or 0242's `.claude/backlog/*` entries left in place (FR65).
-- [ ] AC85 *(0155)* — Given `skills/queue/templates/item.md` and `CHANGELOG.md` after the change, when
+- [x] AC85 *(0155)* — Given `skills/queue/templates/item.md` and `CHANGELOG.md` after the change, when
   verify reads them, then the `expects:` comment states FR66's `# new` rule, and `## Unreleased`
   carries FR66's upgrade line. Checked by reading, not by a guard (`CLAUDE.md`, *Tests*).
-- [ ] AC86 *(0236)* — Given a fixture whose in-scope row 0001 is at `next: queue` / `ready`, when
+- [x] AC86 *(0236)* — Given a fixture whose in-scope row 0001 is at `next: queue` / `ready`, when
   `./next --drive --scope 0001 --completed design:0001` runs, then it exits 0, prints
   `DISPATCH  queue 0001` and a NOTE naming `design`, and prints no `ESCALATE` line. This is in
   `tests/next.test.sh`. Red-making input: today's arm, which keys on `verify` or `develop` only.
-- [ ] AC87 *(0236)* — Given the same fixture with `--bounces 0001=<n>` past `bounce_max`, when
+- [x] AC87 *(0236)* — Given the same fixture with `--bounces 0001=<n>` past `bounce_max`, when
   `./next --drive` runs after `design:0001`, then it exits 4 with the `bounce_max` ESCALATE line.
   Given the row out of scope, it escalates as today. Given `--completed queue:0001`, it reaches the
   stale-contract ESCALATE line (0234 FR14 kept). This is in `tests/next.test.sh`. Red-making
   input: the `design` arm without the bound, or without the scope check, or keyed on any completed
   stage.
-- [ ] AC88 *(0236)* — Given `skills/design/SKILL.md` after the change, when verify reads Step 4,
+- [x] AC88 *(0236)* — Given `skills/design/SKILL.md` after the change, when verify reads Step 4,
   then it states FR68 (the subsection heading and its four entry fields, `./handoff … queue`,
   own-slice consequences written by design) and FR70's handling of an FR that directs a write to
   another item, and it permits no write to an unheld sibling. Checked by reading, not by a guard
   (`CLAUDE.md`, *Tests*).
-- [ ] AC89 *(0236)* — Given `skills/queue/SKILL.md` after the change, when verify reads Step 1 and
+- [x] AC89 *(0236)* — Given `skills/queue/SKILL.md` after the change, when verify reads Step 1 and
   Step 2, then one routing row carries FR69's re-read, the holistic check, and outcomes (a), (b)
   and (c), each with its commands in order, plus the `resolved` marking and the hand-off target.
   In (a) and (b) the stamp is written from `./next --ac-digest` before `./handoff`, and the row
   never names `./capture --restamp` on the held sibling. Step 2 also states FR70. Checked by
   reading, not by a guard. Red: a row whose (a) or (b) runs `./capture --restamp` while holding
   the claim, which that script refuses.
-- [ ] AC90 *(0236)* — Given `references/CONCURRENCY.md`, `skills/sprint/SKILL.md` and
+- [x] AC90 *(0236)* — Given `references/CONCURRENCY.md`, `skills/sprint/SKILL.md` and
   `CHANGELOG.md` after the change, when verify reads them, then *A stage writes only the ticket it
   holds* still names exactly one exception and states FR71 once, sprint's routing prose names
   `design` beside `verify` and `develop` for an in-scope dispatch to `queue` (FR72), and
@@ -936,7 +937,7 @@ reads the live backlog.
   item to write a different item, beyond the close's reconcile; `queue`'s operations on rows nobody
   holds (FR67's list, AC11, AC12) are not such a write. Checked by reading, not by a guard. Red: a
   `design` Step 4 sentence letting design edit a sibling's FRs, or a second exception in the rule.
-- [ ] AC91 *(0236)* — Given the tree after the change, when the whole suite runs as
+- [x] AC91 *(0236)* — Given the tree after the change, when the whole suite runs as
   `for t in tests/*.test.sh; do "$t" || exit 1; done`, then it exits 0. When `./next --help`
   runs, the `--drive` text names `design` as a stage whose hand-off to `queue` is dispatched in
   scope. This is in `tests/next.test.sh`. Red-making input: the usage text left naming only
@@ -962,7 +963,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S12 — `queue` sends an open verify ticket back to design with `./claim` then `./handoff … design`, named in its Step 1 (0237; FR44, FR45, FR59, FR60) — discharges AC78, AC79, AC80
 - [x] S14 — the seven skills, `CONCURRENCY.md` and the CHANGELOG move onto the scripts, and every step that commits a sweep runs the privacy guard (0118) — discharges AC16, AC17, AC53, AC54, AC55
 - [x] S15 — `--drift` and `--drive` report an `expects:` path that exists nowhere unless it is marked `# new`, through the shared check; fixtures and this item's own `expects:` are corrected (0155; FR22, FR61–FR66) — discharges AC28, AC81, AC82, AC83, AC84, AC85
-- [ ] S13 — design records sibling consequences and hands to `queue`, which folds them in, reopens a done sibling, or sends the decision back, and `--drive` dispatches that pass (0236; FR67–FR73) — discharges AC86, AC87, AC88, AC89, AC90, AC91
+- [x] S13 — design records sibling consequences and hands to `queue`, which folds them in, reopens a done sibling, or sends the decision back, and `--drive` dispatches that pass (0236; FR67–FR73) — discharges AC86, AC87, AC88, AC89, AC90, AC91
 
 
 ## QA plan
@@ -2013,6 +2014,8 @@ AC1–AC85 (closing check): every guard they rest on ran green in the whole suit
 |---|---|---|
 | All rows | S13 adds no NFR row and touches no log field, egress, credential or public-repo write; each row's guard ran green in the suite | holds; mutations as recorded by earlier legs, not re-run |
 | Always-on (`CONVENTIONS_CORE.md`) | diff of `18c5c87`, `1effb20`: no secret, no company material, no machine path; test and code in one commit | holds |
+
+Post-evidence `unit` at `bba8204`: `for t in tests/*.test.sh; do "$t" || exit 1; done` → exit 0, 50 files printing `passed, 0 failed`; `git status --porcelain` empty after it. FINDINGS: nothing new (`./claim` without a token exiting 127 on `xxd: not found` is already parked; claimed with a `python3`-minted token). Release note: `develop`'s FR73 line under `## Unreleased` is the note; closed without `--note`.
 
 ## Notes & decisions
 
