@@ -990,17 +990,17 @@ it: the item's path from the repo root, with `:<line>` of the AC where an AC is 
 the terminal opens on a click. A bare id sends the person searching for the file to read the
 criterion the report is asking them to judge (the user's request, 2026-10-10).
 
-**The supervisor parks findings about its own tooling under the backlog lock, before the hand-off
+**The supervisor parks findings about its own tooling with `./park`, before the hand-off
 line.** Every other stage parks what surprised it; this run is no different. An escalation about
 the supervisor's own behaviour (a misconfigured dispatch flag, a schema rejection, a probe that
 never came back) names a defect worth investigating, and that defect is lost when the conversation
 ends unless it is parked here. Route it by subject per `references/CONVENTIONS.md`, *Routing a finding to the repo it is about*:
 a finding about the supervisor, its scripts or this skill is about the tools repo, so it goes to
 the `FINDINGS.md` of the checkout `tools.path` resolves to, never this project's buffer unless the
-two are the same repo. Take that backlog's lock, append, commit the append by pathspec
-(`git commit -- <that FINDINGS.md>`), and only then release the lock, in the same turn — the
-sequence every writer uses (`CONCURRENCY.md`, *Lock every write to the backlog directory*).
-Uncommitted, the next stage dispatched onto the tree inherits a dirty buffer it did not write. Do not park findings discovered and already recorded by a stage session
+two are the same repo: `./park "<entry>" --repo <that checkout>`, which takes its lock and commits
+the append in one call (`CONCURRENCY.md`, *Lock every write to the backlog directory*), so the next
+stage dispatched onto the tree never inherits a dirty buffer it did not write. Then run that
+checkout's privacy guard where it ships one, as `queue` Step 7 says. Do not park findings discovered and already recorded by a stage session
 this run dispatched: those belong to the stage, and duplicating them inflates the next gate.
 
 **End on the hand-off line, the very last thing printed:**

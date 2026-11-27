@@ -517,14 +517,14 @@ if [ "$(head -n 1 "$HANDOFF_SRC")" = "#!/bin/sh" ]; then ok "declares #!/bin/sh"
 if [ -x "$HANDOFF_SRC" ]; then ok "the template is executable, so the install guard covers it"; else
   bad "the template is not executable, so the install guard does not check it"; fi
 
-# --- AC6 — develop and verify name the script and keep the fallback -----------------------------
-echo "AC6 — both stages name ./handoff as the supported path, and keep the by-hand fallback"
+# --- AC6 — develop and verify name the script ------------------------------------------------
+# The by-hand fallback this case also asserted was removed by 0242 FR11 (S14): a backlog missing the
+# script is re-synced by queue Step 0, never handed off by hand.
+echo "AC6 — both stages name ./handoff as the supported path"
 DEV="$(cat "$ROOT/skills/develop/SKILL.md")"
 VER="$(cat "$ROOT/skills/verify/SKILL.md")"
 assert_contains "develop names the command" "$DEV" '.tickets/handoff'
-assert_contains "develop keeps a by-hand fallback" "$DEV" 'By hand'
 assert_contains "verify names the command" "$VER" '.tickets/handoff'
-assert_contains "verify keeps a by-hand fallback" "$VER" 'By hand'
 
 # --- AC7 / FR4 — the release is the stage's final act -------------------------------------------
 # Defect 2 is an ORDERING, so it has no runtime assertion. The rule and the incident that produced

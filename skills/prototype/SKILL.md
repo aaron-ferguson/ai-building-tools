@@ -370,9 +370,9 @@ Triggers: **a template or skill step that had no correct answer for your case**,
 behaved unexpectedly, a scaffolding step you had to invent.
 
 **An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
-entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
-uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
-**The append takes the backlog lock**, being a write inside the backlog directory
+entry is paid for by every later session. Anything whose home is obvious goes there instead.
+**Park it with `./park "<entry>" [--repo <checkout>]`, never by hand.**
+The append takes the backlog lock inside the script and is committed by pathspec in the same call
 (`CONCURRENCY.md`, *Lock every write to the backlog directory*).
 
 **Route it by subject, not by where you are standing** — a finding about a skill, a reference file, a

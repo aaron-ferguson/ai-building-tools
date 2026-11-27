@@ -289,11 +289,12 @@ the rule prevents, not the reasoning that convinced you of it.
 If a destination check changed your mind about *where* something goes, say so before writing — that is
 the disagreement the user is most likely to have.
 
-**Take the backlog lock for every write inside `.tickets/`.** Draining `FINDINGS.md` and
-appending to an unheld item are both inside the boundary, and `retro` holds no claim token, so the lock
-is the only thing that makes its writes visible to another session. The forms a by-hand lock may take
-are `references/CONCURRENCY.md` *Lock every write to the backlog directory*, and only there; read
-it, and `CONCURRENCY-INCIDENTS.md`, before writing one.
+**Every write inside `.tickets/` is a script call or takes the backlog lock.** Draining `FINDINGS.md`
+is `./drain` and filing is `./capture`, and `retro` holds no claim token, so the lock is the only thing
+that makes its writes visible to another session. Of its writes, appending to an unheld item is
+inside it too and has no script: the forms its by-hand lock may take are
+`references/CONCURRENCY.md` *Lock every write to the backlog directory*, and only there; read it, and
+`CONCURRENCY-INCIDENTS.md`, before writing one.
 
 **Every entry you read gets one of five dispositions — landed, absorbed, filed, held or dropped — and
 `FINDINGS.md` is the home of none of them.** The buffer surfaces a lesson; it never keeps one.
@@ -309,10 +310,10 @@ it, and `CONCURRENCY-INCIDENTS.md`, before writing one.
   of this toolkit's own backlog into upkeep that no product needed (the 2026-10-27 triage).
   **A pure unit of work is filed, not handed back**: you have paid to understand it and `queue` would
   pay again. Beyond what this pass can specify, defer it per Step 1 rather than leave it unmarked.
-  **The id is minted per `queue` Step 2**, never read off `next_id` alone — one written from the
+  **File it with `./capture`** (`queue` Step 2), never an id read off `next_id` — one written from the
   counter collided with a row created the same day.
-- **Held** — real work, unconfirmed. Move the entry unchanged to `.tickets/FINDINGS-HELD.md`,
-  creating it with a one-line header if absent. A separate file and not a section, because sessions
+- **Held** — real work, unconfirmed. `./drain <date> held` moves the entry unchanged to
+  `.tickets/FINDINGS-HELD.md`, creating it if absent. A separate file and not a section, because sessions
   append to both ends of `FINDINGS.md`. Nothing reviews, counts or expires it; a pass greps it only
   for a held entry that a new, confirmed finding matches, then files the two together.
 - **Dropped** — stale, or an observation that cannot answer Step 1's question. Record the reason.
@@ -321,7 +322,7 @@ it, and `CONCURRENCY-INCIDENTS.md`, before writing one.
 demand a new guard for, or anything touching code. Half-landing strands the row that specified the
 other half and leaves it reading as stale.
 
-**Then empty what you read**, and commit in the same turn, by pathspec:
+**Then empty what you read**, each entry with `./drain <date> <removed|marked:<row-id>|held>`:
 **no entry survives the pass that read it** — a held entry leaves for `FINDINGS-HELD.md`. Your own Step 6 parks are the next pass's input rather
 than residue left by this one, which is why a healthy buffer is rarely empty and never stale.
 
@@ -401,10 +402,13 @@ Triggers: **a template or skill step that had no correct answer for your case**,
 behaved unexpectedly, a scaffolding step you had to invent.
 
 **An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
-entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
-uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
-**The append takes the backlog lock**, being a write inside the backlog directory
+entry is paid for by every later session. Anything whose home is obvious goes there instead.
+**Park it with `./park "<entry>" [--repo <checkout>]`, never by hand.**
+The append takes the backlog lock inside the script and is committed by pathspec in the same call
 (`CONCURRENCY.md`, *Lock every write to the backlog directory*).
+**Where a commit lands in a public repo that ships a privacy guard, run it there before you report**
+— this plugin's repo ships `tests/measurement.test.sh`, which exits non-zero naming each tracked file
+holding a home path; `./park` screens only the entry it writes (0118).
 
 **Route it by subject, not by where you are standing** — a finding about a skill, a reference file, a
 backlog script or a convention belongs in that repo's buffer, not this project's. The destinations, how

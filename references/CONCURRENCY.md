@@ -314,8 +314,12 @@ matching — that is information, not an obstacle to route around.
 
 ## Lock every write to the backlog directory
 
-**Every write, no exemptions**: claiming an ID (`queue`), claiming a row (`develop`, `verify`),
-closing a row (`verify`), draining the buffer or appending to an unheld item (`retro`).
+**Every write, no exemptions**, and almost every one is a script that takes the lock itself:
+capturing or re-stamping a ticket (`./capture`), ranking (`./rank`), withdrawing (`./withdraw`),
+parking (`./park`), draining the buffer (`./drain`), and claiming, handing off, closing or reopening a
+row. **Still without a script, so the only writes a by-hand lock is for:** a *Notes & decisions* line
+on an unheld item (`retro`, `queue`'s *Absorbed*), and a `blocked_by:` or `## Waiting on` edit to an
+unclaimed one (`queue` Step 1).
 
 **The lock covers the backlog *directory*, not `QUEUE.md` alone**, and the difference is not academic.
 Claiming an ID is on that list, but the file it actually mutates is `config.yml` — so a rule written as
@@ -329,7 +333,7 @@ same turn" means the same shell invocation**: a session gets a fresh shell per t
 `trap ... EXIT` releases the lock the moment that call returns and every later call edits and commits
 holding nothing. It is invisible — the sequence reads exactly like a correct lock and every step
 succeeds. Run the whole sequence in one call, or drop the trap and `rm -rf` explicitly at the end.
-**If you are writing a lock by hand rather than calling `./claim` or `./close`, read
+**If you are writing a lock by hand, for one of those unscripted writes, read
 `CONCURRENCY-INCIDENTS.md` first, not after it goes wrong**: it carries the ways a by-hand lock
 leaks silently, and this one was written down seven days before a session rediscovered it, because
 nothing sends you there until you already have trouble. It guards a two-second
@@ -376,7 +380,8 @@ five land or nothing does**, a no-op being the failure it exists to stop. **`./r
 <top|above:<row-id>> <reason>`** is `close` in reverse: a `done` ticket back to `verify | ready`,
 ACs unticked, `## QA evidence` kept, dependents re-blocked, one commit. It takes no token — a done
 ticket has no holder — and the rank and the reason are arguments, because both are `queue`
-judgements. **`./next`** only reads; `--help` lists its modes. All five refuse rather than guess. **`./migrate`**,
+judgements. **`./capture`, `./rank`, `./withdraw`, `./park` and `./drain`** write the rest of the
+backlog the same way (0242); each one's usage is its header comment. **`./next`** only reads; `--help` lists its modes. All five refuse rather than guess. **`./migrate`**,
 a sixth, moves a legacy backlog once (*Where the backlog lives*).
 
 **Prose inside these scripts' single-quoted `awk` programs takes no apostrophe.** One closes the

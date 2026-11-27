@@ -166,21 +166,13 @@ write is the durability instead (`CONCURRENCY.md`, *A claim must be durable the 
 first `./claim` printed, `./claim <id> <token>`. A refusal naming another develop holder is the
 designed wait (`CONCURRENCY.md`): claim nothing, report its id and token, stop or take other-stage work.
 
-By hand, under the lock, in this order — and `ready` → `in-progress` **needs** the lock, being a
-read-modify-write two sessions can both win:
-
-1. **Re-read the row.** No longer `ready` → release and pick again.
-2. Set `Status` to `in-progress` as one single-line `Edit`.
-3. Write `claimed_by:`, `claimed_at:` (ISO-8601 UTC) and `touches:` into the item's frontmatter.
-   **`touches:` is `expects:` checked against the code, never copied.** Grep for the symbols this
-   ticket will alter: a ticket written weeks ago names what the work is *about* and cannot name
-   everything that *exercises* the behaviour. **`ls` the directories rather than writing the filename
-   the prose implies** — a guessed path reserves nothing and the other window cannot tell it from one
-   you are about to create, so **declare a file you will create the same way and say inline that it
-   is new**. Correct `expects:` where it was wrong; the next capture calibrates on it.
-4. **Commit by pathspec** — `git commit -m "Claim 0007 [$CLAIM]" -- <queue> <item>`, with the
-   `Co-Authored-By` trailer (`git-conventions.md`). A lifecycle commit is not exempt from it.
-5. `rm -rf .tickets/.lock` — this same turn, before any implementation work.
+**`touches:` is `expects:` checked against the code, never copied** — `./claim` seeds it from
+`expects:`, and `./claim <id> --touches <path>...` names it instead. Grep for the symbols this
+ticket will alter: a ticket written weeks ago names what the work is *about* and cannot name
+everything that *exercises* the behaviour. **`ls` the directories rather than writing the filename
+the prose implies** — a guessed path reserves nothing and the other window cannot tell it from one
+you are about to create, so **declare a file you will create the same way and say inline that it
+is new**. Correct `expects:` where it was wrong; the next capture calibrates on it.
 
 Widen `touches:` the moment the work reaches further: the other window reads it to decide what it may
 safely take.
@@ -661,9 +653,8 @@ that field's own raise-only rule below does not reach it by implication.** Lower
    nowhere else to put it, and the correction survives only as prose in *Notes & decisions*, where the
    next QA pass will run the old level anyway. Raising it is yours; lowering it is not.
 
-   By hand, under the lock, committed before you release it — the fallback where the script is not
-   installed: set `next: verify`, `status: ready`, clear all three ownership fields, take the lock for
-   the row edit and commit before releasing it. You hold neither the row nor its files any more, and
+   **There is no by-hand fallback**: a backlog missing the script is re-synced by `queue` Step 0
+   first. You hold neither the row nor its files any more, and
    the QA session claims both itself — a leftover `touches:` reserves files nobody is editing, which
    `CONCURRENCY.md` says reads as "held".
 5. **Commit the code by pathspec in or before that same step** (`CONCURRENCY.md`, *The git index is
@@ -718,9 +709,9 @@ Triggers: **a template or skill step that had no correct answer for your case**,
 behaved unexpectedly, a scaffolding step you had to invent.
 
 **An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
-entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
-uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
-**The append takes the backlog lock**, being a write inside the backlog directory
+entry is paid for by every later session. Anything whose home is obvious goes there instead.
+**Park it with `./park "<entry>" [--repo <checkout>]`, never by hand.**
+The append takes the backlog lock inside the script and is committed by pathspec in the same call
 (`CONCURRENCY.md`, *Lock every write to the backlog directory*).
 
 **Route it by subject, not by where you are standing** — a finding about a skill, a reference file, a

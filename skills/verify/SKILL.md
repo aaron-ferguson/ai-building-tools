@@ -61,10 +61,9 @@ With an ID: read `.tickets/items/<id>-*.md` and take the **Acceptance criteria**
 **Non-functional requirements** and **QA plan**. With no argument, `./next verify` prints the topmost
 `next: verify` / `status: ready` row.
 
-Without the scripts, read `QUEUE.md` and apply the same rules by hand — and note that
-**`blocked_by` decides takeability, never the `Status` column**, which only caches it. Claim by hand
-under the lock, committed before you release it. The project that *ships* these scripts is the one
-most likely not to have them installed.
+**`blocked_by` decides takeability, never the `Status` column**, which only caches it. A backlog
+missing the scripts is re-synced by `queue` Step 0 first; there is no by-hand claim. The project that
+*ships* these scripts is the one most likely not to have them installed.
 
 **Refuse a ticket whose `next` is not `verify`, and name what you found instead.** A `develop` row is not
 built yet; a `design` row has no acceptance criteria, so a verdict would be issued against a contract you
@@ -75,8 +74,8 @@ No backlog ticket at all: verify against whatever the user stated as the goal, s
 an unwritten contract is weaker. Nothing is closed on that path.
 
 **Then claim the row, because this stage writes.** `./claim <id>` locks, edits the row, writes the token
-into the frontmatter, commits and unlocks as one step. By hand only without a script, and **commit inside
-the lock** (`CONCURRENCY.md`, *A claim must be durable the moment it is made*).
+into the frontmatter, commits and unlocks as one step, **the commit inside the lock**
+(`CONCURRENCY.md`, *A claim must be durable the moment it is made*).
 
 Read `config.yml` for the project's real commands and resolve the conventions per
 `references/CONVENTIONS.md`. If none resolve, stop — a verdict against no standard is indistinguishable
@@ -422,44 +421,13 @@ entry is noise every release then carries. **A note `develop` already wrote** un
 because the ticket's criteria required it before the close, **is the note**: check it and close
 without `--note`, or the entry lands twice.
 
-By hand, under the lock, committed before you release it — the fallback where the script is not
-installed:
+There is no by-hand fallback: a backlog missing the script is re-synced by `queue` Step 0 first.
+`./close` reconciles every dependent itself, and writes nothing that is held; diff `./next --drift`
+before and after it, and report what was already there rather than owning it.
 
-1. Tick the ACs, set `status: done` with the date, clear `touches:` — a closed ticket must not keep
-   reserving files — and clear `claimed_by:` / `claimed_at:`.
-2. Re-read `QUEUE.md` — another window has had the whole QA run to insert rows — then delete your row
-   with a single `Edit` and append it to `DONE.md`, newest first.
-3. **Reconcile every ticket that named this one in `blocked_by`, in this same commit.** `blocked` is
-   derived, not authored: the ticket you just closed *is* what clears those rows, and nothing else
-   will. Grep the items for your ID, and for each one whose remaining `blocked_by` entries are all
-   `done`, set its row and its item `status:` to `ready` (or `waiting`, if its `## Waiting on` section
-   says a person is needed). **Two of those you must not write**, and neither has to have a row —
-   `blocked_by` is never cleared, so a `done` dependent still names you and reconciling it resurrects
-   a closed ticket; and a dependent that is held is reported, not written — *held* is defined
-   once, in `CONCURRENCY.md`'s *A stage writes only the ticket it holds*, and a row reading
-   `in-progress` over a tokenless item is not it.
-   Skip anything whose own `status:` does not read `blocked`. Then run `./next --drift` and expect
-   zero **for the rows you reconciled**, not for the file:
-   drift an earlier close left behind names no ticket you hold, so reconciling it is forbidden and a
-   non-zero exit here can be entirely someone else's. Diff the report before and after your reconcile,
-   and report what was already there rather than owning it. **Across a batch, "already there" is
-   measured from the session, not the close** — the second close's before-report contains the first
-   close's effects, which are yours; take the first close's before-report as the session's baseline, or
-   the rule stops separating your drift from anyone else's exactly where a batch made it likely.
-
-   **This reverses the previous rule that a close touches "nothing else".** That rule was narrower
-   writes, which `CONCURRENCY.md` is right to want — but it left the only event that can clear a
-   `blocked` row unable to clear it, and a closed ticket once left four rows unavailable for a whole
-   session with nothing blocking them. Narrow writes lost to a queue that lies. You still hold the
-   lock, and you write nothing that is held — leave a claimed dependent alone and say so in your
-   report; its own session will see the drift.
-4. **Commit by pathspec** — with the `Co-Authored-By` trailer (`git-conventions.md`) — **then**
-   release the lock. The order matters: the lock guards the commit,
-   not just the edit, because the commit takes `QUEUE.md` whole (`CONCURRENCY.md`, *Lock every write to the
-   backlog directory*).
-5. Record this session's cost share if `cost_tracking:` is configured, and mirror the close if a
-   tracker is (`references/TRACKER.md`) — outside the lock, since a network call must never be made
-   while holding it. Failure is logged in the notes, never a blocker.
+**Then** record this session's cost share if `cost_tracking:` is configured, and mirror the close if a
+tracker is (`references/TRACKER.md`) — outside the lock, since a network call must never be made
+while holding it. Failure is logged in the notes, never a blocker.
 
 **On anything but green the ticket is handed back rather than closed, and `./handoff` is how** — one
 step, and the supported path. It takes the destination stage because this stage has three of them, and
@@ -475,8 +443,7 @@ reading the result back first:
 A `waiting` hand-off over a `## Waiting on` that is not the whole decision brief `templates/item.md`
 lays out is refused, naming what is missing; write the brief, then hand off.
 
-By hand, under the lock, committed before you release it — the fallback where the script is not
-installed: the same five fields, in one `Edit` per file.
+There is no by-hand fallback: a backlog missing the script is re-synced by `queue` Step 0 first.
 
 **Whichever branch, the reason goes in *Notes & decisions* first**, before any field moves — what
 failed, the actual output, which AC. Flipping the field without the reason makes the next `develop`
@@ -545,9 +512,9 @@ Triggers: **a template or skill step that had no correct answer for your case**,
 behaved unexpectedly, a scaffolding step you had to invent.
 
 **An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
-entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
-uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
-**The append takes the backlog lock**, being a write inside the backlog directory
+entry is paid for by every later session. Anything whose home is obvious goes there instead.
+**Park it with `./park "<entry>" [--repo <checkout>]`, never by hand.**
+The append takes the backlog lock inside the script and is committed by pathspec in the same call
 (`CONCURRENCY.md`, *Lock every write to the backlog directory*).
 
 **Route it by subject, not by where you are standing** — a finding about a skill, a reference file, a

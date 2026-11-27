@@ -91,16 +91,16 @@ Each of these is a plausible-looking change away, and the header no longer carri
   ticket is a file they open anyway. **The `ID` resolves to `items/<id>-*.md` by glob**, so the path is
   not worth a column — it was the bulk of every row.
 
-**Use `./claim` and `./close` rather than hand-editing either**; the commit inside the lock is the
-point in both cases, and `CONCURRENCY.md`'s *A claim must be durable the moment it is made* and
-*The five scripts* are why.
+**Every backlog write is a script call, never a hand edit** — `./capture`, `./rank`, `./withdraw`,
+`./park`, `./drain`, `./claim`, `./close`; the commit inside the lock is the point, and
+`CONCURRENCY.md`'s *A claim must be durable the moment it is made* and *The five scripts* are why.
 
 ---
 
 ## Step 0 — Locate or create the backlog
 
 Find `.tickets/` at the project root, or a legacy backlog (`references/CONCURRENCY.md`, *Where the backlog lives*), which you use where it is rather than scaffolding beside it. If neither exists, scaffold `.tickets/` by copying every template
-above (`chmod +x` `next`, `claim`, `close`, `handoff` and `reopen`), creating `items/`, and filling `config.yml` from what the repo
+above (`chmod +x` every executable), creating `items/`, and filling `config.yml` from what the repo
 actually uses — read `package.json` scripts (or `Makefile`, `pyproject.toml`) for the real
 test/lint/typecheck commands rather than guessing. Leave `tracker:`, `cost_tracking:` and
 `external_feedback:` out unless the project's `CLAUDE.md` profile wires one in or the user asks
@@ -181,8 +181,9 @@ change, and neither is optional:
   (`CONCURRENCY.md`, *A stage writes only the ticket it holds*).
 
 **Every path that writes or edits criteria — Add, Re-specify, Amend — ends the same way:**
-write `ac_digest:` from `./next --ac-digest <id>` into the frontmatter, in the same commit as the
-criteria. It is the author's stamp: `--drift` and `close` refuse criteria that no longer match it,
+`ac_digest:` stamped in the same commit as the criteria. `./capture` stamps an Add; `./capture
+--restamp <id>` stamps and commits an unclaimed item's edits; on a row you hold through `./claim`,
+write `ac_digest:` from `./next --ac-digest <id>` before `./handoff`. It is the author's stamp: `--drift` and `close` refuse criteria that no longer match it,
 which is what stops a later stage rewriting the contract it is held to (0195).
 
 ### Withdrawing a ticket — the work goes, the id is burned
@@ -199,8 +200,8 @@ ticket rather than to none, so it has two rules and neither is optional:
   it is also what actually burns the number: ids are minted as `max(items on disk) + 1`, so the
   counter alone cannot hold a gap the disk has re-opened.
 
-Then remove the row from `QUEUE.md`, under the lock and committed in the same turn, like every
-other backlog write.
+**`./withdraw <id> "<reason>" [--into <absorbing-id>]` writes both**, removes the row, re-points
+every open `blocked_by:` naming the id, and commits; it refuses a claimed item.
 
 Neither rule was written down until 0105, and `3b72d38` broke both at once — it deleted the item
 file *and* decremented the counter, queueing up a reissue of an id two guards already cited.
@@ -210,8 +211,7 @@ file *and* decremented the counter, queueing up a reissue of an id two guards al
 Absorbing tickets into one outcome ticket: amend the absorbing ticket (above), carrying each one's
 work as an FR and its ACs where they still hold, and **quote any user-reported evidence verbatim** in
 its Problem — a paraphrase loses the evidence. Then withdraw each absorbed ticket per *Withdrawing a
-ticket*, its dated line pointing at the FR that now carries it; **re-point every `blocked_by:` naming a
-withdrawn id** to the absorbing one; and burn the ids. Record the merge in the absorbing ticket's
+ticket* with `--into <absorbing-id>`, its reason pointing at the FR that now carries it. Record the merge in the absorbing ticket's
 *Notes & decisions*. Worked example: `0231`'s second amendment (0212, 0220, 0226, 0071).
 
 Read-only operations don't need the conventions resolved; anything that writes a ticket does.
@@ -231,21 +231,13 @@ in `## Progress` (`templates/item.md`), each about one develop session's work, f
 slices that touch the same files into one, and split off a ticket only where a part has an outcome
 of its own (`product-definition-conventions.md` → "Slice Vertically and Thinly").
 
-**Claim an ID under the lock** — reading `next_id`, using it, and writing back the increment unlocked is
-how two parallel runs both take 29. Release in the same turn; the item file, ranking and the row are all
-unlocked.
-
-**Mint from the disk, not from the counter: the id is `max(items on disk) + 1`, and `next_id` is then
-corrected to match.** The counter is a cache and it drifts — a session found it reading `94` against an
-`items/` already holding `0094`, `0095` and `0096`, and the collision it predicted happened in the very
-next run: a new ticket was written as `0094-…`, alongside the closed `0094-…`, and **committed** before
-anyone noticed. A lock does not fix this, because the counter was not racing anyone; it was simply
-stale. Nor does the older instruction to "confirm no `items/<id>-*.md` exists" — that is a check on the
-number rather than on the write, it reads as satisfied by a listing taken a moment ago for another
-purpose, and it fails open: nothing about writing the file, committing it, or editing `QUEUE.md`
-refuses when the id is taken. Deriving from the disk makes the failure unreachable instead. The cleanup
-is the expensive part if you get it wrong — the queue and `DONE.md` disambiguate by title, but every
-cross-reference in prose ("item 0094") is ambiguous across the repo's whole history until renumbered.
+**Write the ticket as a draft from `templates/item.md` (`id: "NNNN"`), then `./capture <draft>
+<top|above:<row-id>|below:<row-id>> --ranking <file>`** — one call. It mints the id under the lock
+**from the disk, not from the counter: the id is `max(items on disk) + 1`, and `next_id` is then
+corrected to match**, writes the item, stamps `ac_digest:`, inserts the row at your rank, appends your
+ranking reasoning, commits, and prints the id last. Never mint by hand: a stale counter once reissued
+`0094` beside the closed `0094-…`, committed before anyone noticed, and every prose "item 0094" stayed
+ambiguous until renumbered.
 
 **Write the Problem section from evidence, not paraphrase.** A repro, error text, a screenshot path goes
 in verbatim; details living only in this conversation are lost the moment it ends.
@@ -533,14 +525,13 @@ Stop at the first one that separates them; do not average them.
 Compare the new ticket against row 1. If it doesn't beat row 1, walk down to the first row it beats and
 insert above that. **Insert; do not re-sort** — rows you aren't comparing against stay where they are.
 
-**Insert with a single `Edit`**, matching the row you're going above and replacing it with your new row
-followed by it (`CONCURRENCY.md`, *Never rewrite `QUEUE.md` by hand* and *Re-read immediately before you
-write*). If the `Edit` fails the queue moved under you — re-read, re-check the placement, edit again;
-never widen the match to force it through.
+**The placement is `./capture`'s position argument**, never an `Edit` to `QUEUE.md` (`CONCURRENCY.md`,
+*Never rewrite `QUEUE.md` by hand*); a refused anchor means the queue moved under you — re-read and
+re-check the placement.
 
 Then re-read rows 1–3: if the new ticket makes the existing row 1 look wrong, that's real information, so
-say so and propose the rerank. **Write the reasoning into `RANKING.md`** — the pared table cannot carry
-it, and a re-rank a month from now is an argument from nothing without it.
+say so and propose the rerank. **The reasoning goes to `RANKING.md` through `--ranking`** — the pared
+table cannot carry it, and a re-rank a month from now is an argument from nothing without it.
 
 If you cannot justify the placement in one sentence, the problem statement is too vague to rank. Sharpen
 it first.
@@ -558,9 +549,9 @@ disagrees they will say so, which is cheaper than a question every time.
 Move whole rows. There is nothing to renumber — line order is the rank. Never add a priority field to
 resolve a tie; the tie is resolved by which line is higher.
 
-A move is two single-line edits — delete from where it was, insert where it goes — each preceded by a
-fresh read. Do not reorder a row that is `in-progress` under a token you did not mint: another session
-is working it, and its rank is no longer the interesting fact about it. Record why in `RANKING.md`.
+A move is `./rank <id> <top|above:<row-id>|below:<row-id>> --ranking <file>`, which moves that one
+line, appends why to `RANKING.md` and commits. It refuses a row `in-progress` under any token: another
+session is working it, and its rank is no longer the interesting fact about it.
 
 ---
 
@@ -613,10 +604,10 @@ a missing test file that now exists, and a click-swallowing bug whose cause a la
 `develop` Step 2 has the right instrument and it applies here unchanged — **grep the symbol the entry
 names, not just `DONE.md`**, because a fix that landed outside the lifecycle leaves no row behind.
 
-**Remove only the entries you processed, and commit in the same turn**, by pathspec. Leaving a processed
-entry is re-read by the next sweep; removing an unprocessed one loses `retro`'s half.
+**Remove only the entries you processed, each with `./drain <date> removed`**, which commits it.
+Leaving a processed entry is re-read by the next sweep; removing an unprocessed one loses `retro`'s half.
 **Enumerate the entries with `./next --findings-list`**, never the header's pattern by hand: the
-header's fenced example matches that pattern, and the listing uses the rule `--findings` counts with.
+header's fenced example matches that pattern, and `./drain` acts only on an entry the listing names.
 
 **Where a ticket was bundled from several entries, the removal list comes from the ticket's FRs, and
 never the cluster that produced it.** A cluster is how you got there; the FRs are what the row
@@ -630,13 +621,14 @@ no FR covers is not swept, whatever the bundle was called.
 disposition, and without it a sweep has only two bad options: a new row that splits one decision
 across two, or a `next: queue` stub that `develop` must refuse. Instead — **name the row**, append
 **one dated line to its *Notes & decisions*** saying what this entry establishes, and mark the entry
-`[->NNNN]` with that row's id. **It is not a new row** and not a stub. Remove the entry only if it
+`[->NNNN]` with `./drain <date> marked:NNNN`. **It is not a new row** and not a stub. Remove the entry only if it
 holds no lesson half; if it holds one, the marker hands it to `retro` exactly as above.
 
 **For an entry that is *both* work and lesson, annotate it in place rather than choosing.** Deleting it
 loses `retro`'s half; leaving it untouched makes the next sweep pay to read it again, which on a large
 buffer is the dominant cost. Neither is acceptable, so **mark it with the head token the buffer's own
-header specifies** — `- 2026-09-05 [->0108] — **what happened.**` — and hand the entry to `retro`.
+header specifies**, through `./drain` as above — `- 2026-09-05 [->0108] — **what happened.**` — and
+hand the entry to `retro`.
 The token goes immediately after the date, so a large buffer partitions with one `grep` on `\[->`
 and both entry shapes still count. Trailing prose was tried in practice and bought the next sweeper
 nothing: partitioning the file still meant reading every entry to its end.
@@ -660,24 +652,20 @@ provide, the de-duplication log and the field mapping.
 
 ## Step 6 — Commit the backlog, and only the backlog
 
-`queue` writes backlog files and never source, so **every path in its commit is under
-`.tickets/`** — enforced by what you stage, not by what you believe you edited:
+`queue` writes backlog files and never source. **The scripts commit their own paths**; what is still
+written by hand — a `blocked_by:` or `## Waiting on` edit, a *Notes & decisions* line on an unheld item
+— commits only paths under `.tickets/`, by pathspec, under the lock (`CONCURRENCY.md`, *Lock every write
+to the backlog directory*):
 
 ```bash
-git add -N .tickets/items/0007-*.md          # a file git does not know yet
-git commit -m "Capture 0007: <title>" -m "Co-Authored-By: <model> <noreply@anthropic.com>" -- \
-  .tickets/QUEUE.md .tickets/items/0007-*.md .tickets/config.yml
+git commit -m "Block 0007 on 0009" -m "Co-Authored-By: <model> <noreply@anthropic.com>" -- \
+  .tickets/QUEUE.md .tickets/items/0007-*.md
 ```
 
-**The `git add -N` is not optional**: the item file is the one capture just wrote, and a pathspec
-naming a path git has never seen fails the *whole* commit — queue rows included — with *"did not match
-any file(s) known to git"* (`CONCURRENCY.md`, *The git index is shared*). The retry happens while the
-lock is held and `QUEUE.md` is dirty, which is the worst moment to be improvising.
-
 The `--` and the explicit paths are the whole safety feature; **`git add` then a bare `git commit` is not
-a substitute** (`CONCURRENCY.md`, *The git index is shared*). It matters most here because capture
-usually runs in the window that is *not* developing, so the other window's half-finished work is in the
-same tree and frequently the same index.
+a substitute** (`CONCURRENCY.md`, *The git index is shared*): `queue` usually runs in the window that is
+*not* developing, so the other window's half-finished work is in the same tree and frequently the same
+index.
 
 Source paths already staged when you arrive are the other window's: `git restore --staged <path>` takes
 them out of *your* commit without touching their working tree. Never `git stash` to tidy.
@@ -693,10 +681,13 @@ Triggers: **a template or skill step that had no correct answer for your case**,
 behaved unexpectedly, a scaffolding step you had to invent.
 
 **An explicit "nothing surprised me" is a complete result** — never manufacture one, since an invented
-entry is paid for by every later session. **Commit it in the same turn you write it, by pathspec**;
-uncommitted it is one `git stash` from gone. Anything whose home is obvious goes there instead.
-**The append takes the backlog lock**, being a write inside the backlog directory
+entry is paid for by every later session. Anything whose home is obvious goes there instead.
+**Park it with `./park "<entry>" [--repo <checkout>]`, never by hand.**
+The append takes the backlog lock inside the script and is committed by pathspec in the same call
 (`CONCURRENCY.md`, *Lock every write to the backlog directory*).
+**Where a commit lands in a public repo that ships a privacy guard, run it there before you report**
+— this plugin's repo ships `tests/measurement.test.sh`, which exits non-zero naming each tracked file
+holding a home path; `./park` screens only the entry it writes (0118).
 
 **Route it by subject, not by where you are standing** — a finding about a skill, a reference file, a
 backlog script or a convention belongs in that repo's buffer, not this project's. The destinations, how
