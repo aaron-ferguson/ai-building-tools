@@ -54,7 +54,10 @@ expects:
   - .claude/backlog/handoff
   - tests/handoff.test.sh
   - tests/findings-routing.test.sh
-ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7
+  - tests/ac-digest.test.sh
+  - tests/reopen.test.sh
+  - .tickets/reopen
+ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118
 claimed_by: "b7a4"
 claimed_at: 2026-11-27T05:01:13Z
 touches:
@@ -438,6 +441,26 @@ in reverse: cheaper turns, wrong backlog.
   turn it is written.
 - FR49 *(was 0118 FR3)* — the requirement names the command, not the concept, so a session can run it without
   deriving which guard is meant.
+- FR50 *(0217, design 2026-11-27)* — In `skills/queue/templates/next`'s `ac_digest_of`, a criterion's text is its
+  label line plus every following line that is blank or begins with a space or a tab. The first line
+  that is neither, and is not itself a label line, ends the criterion, as a `## ` heading and the
+  next label already do. So prose written at column 0 below a criterion is outside every digest,
+  and a blank line followed by an indented line (0161 AC1's shape) is still inside one.
+- FR51 *(0217, design 2026-11-27)* — Expand, not contract (`migration-conventions.md`, *Expand, Migrate, Contract*):
+  `./next --ac-digest <id>` prints FR50's digest only, while `--ac-digest <id> --check`, `close`
+  and `--drift` accept, key by key, a stamped value equal to either FR50's digest or the legacy one
+  (today's normalisation, text to the next label or heading). An upgrade therefore reports no drift
+  that nobody caused, and every later stamp is written in the new form. The legacy computation sits
+  beside the new one in `next`, named as legacy, with a comment naming 0242 S5. Removing it is the
+  contract step, and it is out of scope.
+- FR52 *(0217, design 2026-11-27)* — `.tickets/next` is re-copied from the template so the two stay byte-equal.
+- FR53 *(0219, design 2026-11-27)* — `./reopen` on an item that records `close_by: develop` writes `close_by: verify`
+  in the same locked commit as the rest of the reopen. The dated `## Notes & decisions` line it
+  appends records the change after the reason, as `close_by: develop → verify — a reopen is for an
+  independent verify`. An item that records `close_by: verify`, or no `close_by:` at all, keeps
+  that key exactly as it was.
+- FR54 *(0219, design 2026-11-27)* — `reopen`'s header comment lists the reset beside the other item resets it
+  names, and `.tickets/reopen` is re-copied from the template so the two stay byte-equal.
 
 
 ## Non-functional requirements
@@ -459,6 +482,64 @@ in reverse: cheaper turns, wrong backlog.
 | Testing | (0156) The case runs the real hand-off then `--drift`, in fixture. | Two separately-built fixtures that never meet. | `testing-conventions.md` |
 | Privacy & data | (0118) The rule being enforced is `CLAUDE.md`'s public-repo constraint; cite it, do not restate it | AC55: a tracked file carrying a real home path, run through the named command, is not refused | `data-privacy-conventions.md` |
 | Documentation | (0118) Both skills state the same requirement once each, in their own voice | prose only — no artifact yet | `documentation-conventions.md` |
+
+## Waiting on
+
+### Outcome
+The single-holder guarantee reaches across branches: a claim made in the primary checkout is one
+that every other session sees, whatever branch that checkout has out (0235, slice S7).
+
+### Where it stands
+S1–S4 are built and have passed verify. This design pass (`b7a4`, 2026-11-27) specified S5 (0217,
+AC56–AC62) and S6 (0219, AC63–AC65), both decided on evidence and ready to build. S7 is the only
+open question in front of them, and the row waits on it alone. S8–S15 wait behind in slice order.
+FR42 and FR43 already exist for S7 and read "refuse (or warn, per the decision)".
+
+### What needs you
+Decide whether `claim`, `handoff` and `close` refuse when run off the shared branch, and how they learn which branch that is.
+This changes which checkouts may write every consuming project's backlog, so it is a concurrency
+architecture rule (`coding-conventions.md`, *What Not to Delegate to AI*). It also rests on a fact
+this repo cannot see: what branch each consuming project shares its backlog on. Observed here on
+2026-11-27: `git symbolic-ref refs/remotes/origin/HEAD` prints `fatal: ref
+refs/remotes/origin/HEAD is not a symbolic ref`, so the remote's HEAD is not a dependable source,
+even in this repo.
+
+#### Option A — Refuse, resolving the branch from config, then the remote, then `main`
+The branch is `shared_branch:` in `config.yml` if that key is set, otherwise `origin/HEAD` if
+that resolves, otherwise `main`. The refusal names both branches and the key. Pros: matches the
+linked-worktree refusal (`CONCURRENCY.md`, *A second checkout never writes the backlog*), and
+`claim`'s own header comment records a warning that was read and committed past anyway (AetherWorks
+0091). The answer is always deterministic. Cons: a consuming project that shares on `master` or
+`trunk`, with no `origin/HEAD` and no key, refuses at its next upgrade until it adds one config line.
+A prototype-branch session has to claim from the shared branch. Wins if a loud, one-line breakage
+on upgrade is acceptable.
+
+#### Option B — Refuse when the branch is known, warn when it is not
+Same resolution without the `main` fallback. With no key and no `origin/HEAD`, the scripts print
+a warning naming the key and go ahead. Pros: no project breaks on upgrade. Cons: in this repo, and
+in any checkout like it, the guard is only a warning until someone sets the key, which is the
+warn-and-commit shape `claim`'s history says fails. Wins if breaking a consuming project's backlog
+on upgrade costs more than a window of claims that are not guarded.
+
+#### Option C — Warn only
+Pros: nothing breaks, and the code is smallest. Cons: the AetherWorks 0136 case (a claim committed
+on `prototype/`, invisible on `main`) happens again whenever the warning scrolls by. Wins only if
+non-default-branch backlog work is a pattern worth keeping.
+
+### Recommendation
+Option A. Prior art in this repo answers every comparable case with a refusal, and a refusal that
+names its one-line fix costs a consuming project a minute. The silent fork it prevents cost a
+second session a whole design pass on a row it could not see was held.
+
+### What to do
+Reply `A`, `B` or `C`, naming a different key if `shared_branch:` is wrong. The next
+`/ai-building-tools:design 0242` then writes S7's FRs and ACs and hands the row to develop at S5.
+To build S5–S6 first and leave this open, reply `build S5–S6 first`: that design session moves this
+brief into *Notes & decisions*, leaves S7 `unspecified`, and hands off to develop.
+
+### If no answer
+S5 and S6 wait, specified but unbuilt, along with every later slice of 0242. No other row names
+0242 in `blocked_by`, so the rest of the backlog is unaffected.
 
 ## Acceptance criteria
 
@@ -589,6 +670,41 @@ reads the live backlog.
 - [ ] AC55 *(was 0118 AC3)* — given a tracked file carrying a real home path, when the named command is run as the
   skills instruct, then it exits non-zero and names the file — the control that the instruction
   points at a check that actually fires.
+- [ ] AC56 *(0217)* — Given a fixture item stamped with FR50's digest, whose last criterion is followed by a blank
+  line and then a column-0 note, when the note's text is edited and `./next --ac-digest <id> --check`
+  runs, then it exits 0 and prints `ac_digest matches`. In `tests/ac-digest.test.sh`. Red: today's
+  normalisation, which reports `changed:` for that criterion.
+- [ ] AC57 *(0217)* — Given the AC56 fixture, when an indented continuation line of its last criterion is edited,
+  then `--check` exits 1 and names that criterion as `changed:`. In `tests/ac-digest.test.sh`. Red:
+  a rule that ends every criterion at its label line.
+- [ ] AC58 *(0217)* — Given a fixture criterion whose text runs on after a blank line as an indented line (0161
+  AC1's shape), when that indented line is edited, then `--check` exits 1 and names the criterion.
+  In `tests/ac-digest.test.sh`. Red: a rule that ends a criterion at a blank line.
+- [ ] AC59 *(0217)* — Given a fixture item stamped with the legacy digest, whose last criterion has a column-0 note
+  below it, when nothing is edited, then `--check` exits 0 and `./next --drift` prints no
+  `ac_digest` line for it. In `tests/ac-digest.test.sh`. Red: FR51's legacy acceptance removed.
+- [ ] AC60 *(0217)* — Given the AC59 fixture, when the last criterion's own label-line text is edited, then `--check`
+  exits 1 and names it. In `tests/ac-digest.test.sh`. Red: a legacy comparison that accepts any
+  value.
+- [ ] AC61 *(0217)* — Given the AC56 fixture, when `./next --ac-digest <id>` runs, then the value it prints for the
+  trailing-note criterion differs from the legacy digest and equals FR50's digest. In
+  `tests/ac-digest.test.sh`. Red: stamping the legacy form.
+- [ ] AC62 *(0217)* — Given this repo after the change, when `tests/backlog-scripts-installed.test.sh` and
+  `.tickets/next --ac-digest 0242 --check` run, then both pass. Red: an edit to the template alone,
+  which leaves `.tickets/next` different. In this repo the migration has no live red, because the only
+  stamped items with column-0 notes, 0229 and 0230, are withdrawn, and `--drift` reads open rows
+  only. AC59 carries the migration case in fixture.
+- [ ] AC63 *(0219)* — Given a fixture item at `status: done` recording `close_by: develop` and `qa_level: unit`, with a
+  `DONE.md` row, when `./reopen <id> top "fixture reason"` runs, then the item reads
+  `close_by: verify`, the last line of `## Notes & decisions` contains both `fixture reason` and
+  `close_by: develop → verify`, and `git show --name-only HEAD` lists exactly the item, `QUEUE.md`
+  and `DONE.md`. In `tests/reopen.test.sh`. Red: today's reopen, which leaves `close_by: develop`.
+- [ ] AC64 *(0219)* — Given the AC63 fixture after the reopen, claimed, with a `## QA evidence` body written, when
+  `./close <id> <token>` runs, then it exits 0 and never prints `the stage that may close it is
+  'develop'`. In `tests/reopen.test.sh`. Red: FR53 omitted.
+- [ ] AC65 *(0219)* — Given one done fixture item recording `close_by: verify` and another with no `close_by:` key,
+  when each is reopened, then the first still reads `close_by: verify` and the second still has no
+  `close_by:` line. In `tests/reopen.test.sh`. Red: a reopen that writes the key unconditionally.
 
 
 ## Progress
@@ -600,8 +716,8 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S2 — the three places the scripts answer the wrong question (0066) — discharges AC30, AC31, AC32, AC33, AC34, AC35, AC36, AC37, AC38, AC39, AC40
 - [x] S3 — `next` reports a closed item still carrying a token, says an empty queue is empty, and lists the findings entries (0229, 0230, 0227) — discharges AC41, AC42, AC43, AC44, AC45, AC46, AC47, AC48, AC49, AC50, AC51
 - [x] S4 — `handoff` records a blocker without leaving drift that stops a driver (0156) — discharges AC52
-- [ ] S5 — a note written below the last AC no longer changes that AC's digest (0217) — unspecified
-- [ ] S6 — `reopen` of a develop self-close leaves a ticket verify can close (0219) — unspecified
+- [ ] S5 — a note written below the last AC no longer changes that AC's digest (0217) — discharges AC56, AC57, AC58, AC59, AC60, AC61, AC62
+- [ ] S6 — `reopen` of a develop self-close leaves a ticket verify can close (0219) — discharges AC63, AC64, AC65
 - [ ] S7 — decide whether `claim`, `handoff` and `close` refuse off the branch the backlog is shared on (0235) — unspecified
 - [ ] S8 — `./capture` with its restamp form, the shared lock, commit and refusal behaviour, and its install — discharges AC1, AC2, AC3, AC4, AC5, AC12, AC15
 - [ ] S9 — `./park`, with the public-repo screen — discharges AC6, AC7, AC8
@@ -1316,9 +1432,50 @@ and forwards the ticket. Parked in `FINDINGS.md`.
 - `CHANGELOG.md` `## Unreleased` gains one behaviour note for S4. It was empty, because S1–S3 left
   theirs to S14.
 
+### S5–S7 design — 2026-11-27, design `b7a4` (sprint run-20261127T024025Z)
+
+Specified S5 and S6. S7 is briefed in `## Waiting on` and not decided. Nothing in S1–S4's criteria
+was touched. FR42 and FR43 stand as written for S7.
+
+**S5 (0217): fixed in the script, not in guidance.** The note recurred a day after the first fix,
+on the same ticket (absorbed text above), so guidance about where a stop note goes is not holding.
+- **What ends a criterion: the first non-blank line at column 0 (FR50).** Rejected: ending at a
+  blank line, because `items/0161-*.md` AC1 runs on after a blank line as an indented `Red:` line,
+  and a blank-line rule would cut it. Also rejected: an explicit end marker, which every author
+  would have to remember, the same failure as the guidance. Scanned on 2026-11-27 over every item's
+  `## Acceptance criteria`: 15 column-0 lines follow a criterion, in 0041, 0085, 0191, 0229 and 0230,
+  and every one is a note about several criteria or about the section, never the criterion's own
+  text. The only blank-then-indented continuation is 0161 AC1. 0242 has neither, so its own stamp
+  does not move.
+- **Migration: accept both digests per key, stamp only the new one (FR51).** Rejected: recomputing
+  every stamp at upgrade. A stamp is the author's (0195), and a script that rewrote stamps in
+  consuming backlogs would turn a mechanical upgrade into a restamp of criteria nobody re-read.
+  Also rejected: a versioned stamp format, which would add a second contract. **Trade-off
+  accepted:** an AC still carrying a legacy stamp keeps the old defect, so editing its trailing
+  note reports drift until the next restamp. That drift is a false positive the author clears by
+  restamping. It is never a missed edit, since an edit to the criterion itself fails both forms.
+  Stamped items affected in this backlog: 0229 and 0230, both withdrawn. `--drift` checks the
+  digests of `QUEUE.md` rows only, so neither would report, and the live tree has no red for FR51.
+
+**S6 (0219): `reopen` resets `close_by` to `verify` (FR53).** `reopen`'s header already says its
+destination is always `verify`, and that a reopen distrusts a verdict. On a `close_by: develop`
+item, the verdict it distrusts is develop's self-close, so leaving `close_by: develop` in place
+contradicts the destination. That makes a flag or a reason class unnecessary. Rejected: `close`
+accepting a verify close on a reopened row. It would have to read history to know the row was
+reopened, and it would weaken a refusal that is simple today. **Trade-off accepted:** a reopen
+always raises the item to an independent close, even when the person might have wanted develop
+to re-close it. A person who wants that can re-specify through `queue`.
+
+**S7 (0235): not decided.** Refuse versus warn, and where the shared branch is read from, form a
+concurrency architecture rule for every consuming project. Unattended, this pass prepared the
+brief and recorded no answer.
+
+**`qa_level: unit` and `close_by: verify` re-read against AC56–AC65:** all are fixture-scripted
+and none needs a person, so both stand.
+
 ### Open questions for the unspecified slices
 
-**Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
+**Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
 
 - Either `--ac-digest` ends an AC at a line that is not a `- [ ] ACn` continuation, or `develop`'s re-entry guidance names where a stop note goes. The recurrence argues for the script fix: a note's position is not something a session reliably reads guidance about.
 - **2026-11-27 (develop, b3fa): S5 is next and `unspecified`, so this leg routes the ticket to `design` and builds nothing.**
@@ -1339,11 +1496,11 @@ and forwards the ticket. Parked in `FINDINGS.md`.
   ahead of them: the dispatch pointed at the unspecified-slice route, and the slice order is the
   author's sequencing.
 
-**Established, not yet specified (it was at next: queue), from 0219 — Make reopen leave a ticket that verify can close when it reopens a develop self-close:**
+**Settled 2026-11-27 by design `b7a4` (S6, FR53–FR54) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0219 — Make reopen leave a ticket that verify can close when it reopens a develop self-close:**
 
 - Options: `reopen` resets `close_by` to `verify` when the reopen is for an independent verify (a flag or a reason class), or `close` accepts a verify close on a reopened row. The first keeps `close`'s refusal simple.
 
-**Open design question, from 0235 — Decide whether claim, handoff and close refuse off the branch the backlog is shared on:**
+**Briefed 2026-11-27 in `## Waiting on`, not decided. Open design question, from 0235 — Decide whether claim, handoff and close refuse off the branch the backlog is shared on:**
 
 Refuse or warn when the checked-out branch is not the one the backlog is shared on — and how does a
 script know which branch that is (a `config.yml` key, the remote's HEAD, or `main` by default)?
