@@ -2343,6 +2343,43 @@ if printf '%s' "$HEARTBEAT" | grep -qF 'kill -0 "$$"'; then
 else
   bad "0153 FR1 — the heartbeat does not stop when its shell dies; an orphaned loop would keep a dead run looking alive"
 fi
+
+# 0234 AC25 (was 0170 AC1) — `kill "$BEAT"` alone stops the loop's subshell and orphans the `sleep` it
+# is blocked on (run-20260913T222409Z: a `sleep 60` with ppid 1 outliving its dispatch). The same
+# extraction is RUN with the interval lengthened rather than shortened, so an orphan outlives the
+# block by seconds and the check is not a race against its natural end: the stand-in records the
+# loop's children mid-dispatch, and once the block's own stop has run, none may remain. An empty
+# record would make the check vacuous, so it is asserted non-empty first. Survivors are killed here
+# either way, so a red leaves no process behind.
+echo "0234 AC25/AC26 — the heartbeat's stop leaves no descendant alive, and the beat still advances"
+KIDS_DIR="$FIX/0234-heartbeat-kids"
+mkdir -p "$KIDS_DIR/.tickets/runs/.active"
+cat > "$KIDS_DIR/standin" <<'STANDIN'
+sleep 1; pgrep -P "$BEAT" > kids || true
+STANDIN
+printf '%s' "$HEARTBEAT" | awk -v standin="$KIDS_DIR/standin" '
+  /^#.*dispatch/ { while ((getline line < standin) > 0) print line; next }
+  { gsub(/sleep [0-9]+/, "sleep 9"); print }
+' > "$KIDS_DIR/beat.sh"
+: > "$KIDS_DIR/kids"
+(cd "$KIDS_DIR" && RUN_ID=run-fixture-0234-kids sh beat.sh >/dev/null 2>&1) || true
+KIDS_SEEN="$(grep -c . "$KIDS_DIR/kids" || true)"
+KIDS_LEFT=""
+for kid in $(cat "$KIDS_DIR/kids"); do
+  if kill -0 "$kid" 2>/dev/null; then KIDS_LEFT="$KIDS_LEFT $kid"; kill "$kid" 2>/dev/null || true; fi
+done
+if [ "$KIDS_SEEN" -ge 1 ] && [ -z "$KIDS_LEFT" ]; then
+  ok "run as written, the Step 3 stop leaves none of the heartbeat's $KIDS_SEEN child process(es) alive"
+else
+  bad "0234 AC25 — after the Step 3 stop, heartbeat children survived (seen: $KIDS_SEEN, alive:${KIDS_LEFT:- none}); kill the loop's descendants (pkill -P \"\$BEAT\") before the loop itself"
+fi
+# 0234 AC26 (was 0170 AC2) — the stop must not cost the refresh. The 0153 AC2 run above is the same
+# extraction, stop included, so its advancing stamps are this criterion's evidence too.
+if [ "$BEAT_BAD" = 0 ] && [ "$BEAT_DISTINCT" -ge 2 ]; then
+  ok "with that stop, held-by still advanced while the dispatch stood in ($BEAT_DISTINCT distinct stamps)"
+else
+  bad "0234 AC26 — with the Step 3 stop, held-by did not advance during the dispatch ($BEAT_DISTINCT distinct stamps, $BEAT_BAD bad samples)"
+fi
 if says "$SKILL" "Step 1" 'however long a stage runs'; then
   ok "Step 1 says the signal stays fresh however long a stage runs"
 else
