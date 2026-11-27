@@ -2,8 +2,8 @@
 id: "0245"
 title: Mint the claim token with od, so ./claim works on a host without xxd
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -18,13 +18,9 @@ expects:
   - .tickets/claim
   - references/CONCURRENCY.md
   - tests/claim.test.sh
-claimed_by: "7401"
-claimed_at: 2026-11-27T21:08:20Z
+claimed_by:
+claimed_at:
 touches:
-  - skills/queue/templates/claim
-  - .tickets/claim
-  - references/CONCURRENCY.md
-  - tests/claim.test.sh
 slice:
 ac_digest: AC1=c5169689 AC2=d1073b86 AC3=2f2123a3 AC4=aa8e8c42
 ---
@@ -127,3 +123,29 @@ the `CONCURRENCY.md` snippet by hand on the fixture's `xxd`-free `PATH` for AC4.
   develop `be4c`, 2026-11-27 verify `357a`, 0234 S6 `65ef`, 2026-11-26 develop 0234 S1). Each entry is
   covered by FR1 (the template) and FR3 (the reference). FR5 covers the 0234 S6 entry's "check the
   other scripts". They were removed from the held buffer.
+- 2026-11-27 — Built in `42c2daf` (develop, token `7401`). FR1/FR2: line 149 of
+  `skills/queue/templates/claim` and `.tickets/claim` now read
+  `TOKEN="$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n')"`, byte-identical (`cmp`). FR3:
+  `references/CONCURRENCY.md` *Claim tokens* quotes the same form. FR5 re-checked after the edit:
+  `grep -rn xxd skills references` and the installed `.tickets/*` scripts find nothing.
+- 2026-11-27 — FR4 mechanism: the case keeps each `PATH` directory holding no `xxd` as it is and
+  swaps each one that does for a link directory omitting `xxd`. The first draft symlinked every
+  command on the whole `PATH` into one directory, and that broke this host's `rm` wrapper (it finds
+  the real `rm` by skipping its own directory, so the link resolved to itself: `rm: command not
+  found`, exit 127). This host has no `xxd`, so the swap branch was exercised by hand (run): a stub
+  `xxd` in a directory prepended to `PATH` left the case green on the fix, and still red on M1.
+  The `claimed_by:` assertion uses distinct empty fallbacks: the first draft passed with both sides
+  empty while the claim had died.
+- 2026-11-27 — Mutations, all run against committed `42c2daf` and restored with `git checkout`,
+  then a control run green (222/0):
+  | Mutation | Result |
+  |---|---|
+  | M1: template line 149 back to `head -c2 /dev/urandom \| xxd -p` | red, 4 FAIL, `.tickets/claim: 149: xxd: not found` (AC1) |
+  | M1 with a stub `xxd` on the real `PATH` | red, same 4 FAIL (the case does not depend on the host lacking `xxd`) |
+  | M2: `\| tr -d ' \n'` dropped | red, 1 FAIL `prints a four-hex token` (AC2) |
+  On M2 the printed token, `claimed_by:` and subject agree with each other (each is ` xx xx`), so
+  the red comes from the shape check on the printed token. The other two are held equal to it, so all
+  three are shape-checked transitively. AC3 is the existing `tests/backlog-scripts-installed.test.sh`,
+  green. AC4 is verify's to run. The quoted snippet printed a four-hex token here, on a host with no
+  `xxd` (run).
+- 2026-11-27 — Whole suite (`tests/*.test.sh`) green at `42c2daf` with a clean `git status`.
