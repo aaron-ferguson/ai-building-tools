@@ -56,7 +56,7 @@ scaffold() {
   cleanup
   FIX="$(mktemp -d)"
   mkdir -p "$FIX/.tickets/items"
-  git -C "$FIX" init -q
+  git -C "$FIX" init -q -b main
   git -C "$FIX" config user.email test@example.invalid
   git -C "$FIX" config user.name "claim test"
 
@@ -869,6 +869,78 @@ done
 assert_row "the row is untouched" '| 0268 | Build it | develop | ready | 0000 |'
 assert_eq "no commit was made" "$(git -C "$FIX" log --oneline | wc -l | tr -d ' ')" 1
 assert_eq "no lock is left" "$([ -e "$FIX/.tickets/.lock" ] && echo held || echo free)" free
+
+# --- 0242 S7 (0235) — the backlog is written on one branch --------------------------------------
+# Every fixture above starts on `main` (FR57). These move off it, or name another shared branch,
+# and assert the refusal is up front: no commit, byte-identical backlog, no lock taken.
+backlog_sums() { find "$FIX/.tickets" -type f | sort | xargs cksum; }
+commits() { git -C "$FIX" rev-list --count HEAD; }
+
+echo "0242 AC66 — a claim on 'feature' refuses, changes nothing and takes no lock"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0280 | Off branch | develop | ready | 0000 |' 0280
+git -C "$FIX" switch -q -c feature
+before_sums="$(backlog_sums)"; before_n="$(commits)"
+out="$(cd "$FIX" && .tickets/claim 0280 tok0 2>&1)" && rc=0 || rc=$?
+assert_rc "exits 1" "$rc" 1 "$out"
+assert_contains "names both branches" "$out" "this checkout is on 'feature', and the backlog is shared on 'main'"
+assert_contains "says nothing changed" "$out" 'nothing was changed and no lock was taken'
+assert_contains "names the switch and the key" "$out" "switch with: git switch main, or set shared_branch: in .tickets/config.yml if 'main' is wrong"
+assert_contains "cites the section" "$out" "see references/CONCURRENCY.md, 'The backlog is written on one branch'"
+assert_eq "no commit is added" "$(commits)" "$before_n"
+assert_eq "QUEUE.md and the item are byte-identical" "$(backlog_sums)" "$before_sums"
+assert_eq "no lock exists" "$([ -e "$FIX/.tickets/.lock" ] && echo held || echo free)" free
+
+echo "0242 AC70 — shared_branch: with a trailing comment names the branch"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0281 | Keyed | develop | ready | 0000 |' 0281
+printf 'shared_branch: trunk  # ours\n' > "$FIX/.tickets/config.yml"
+git -C "$FIX" add -A; git -C "$FIX" commit -q -m "key"
+out="$(cd "$FIX" && .tickets/claim 0281 tok0 2>&1)" && rc=0 || rc=$?
+assert_rc "on main it exits 1" "$rc" 1 "$out"
+assert_contains "naming 'main' and 'trunk'" "$out" "this checkout is on 'main', and the backlog is shared on 'trunk'"
+git -C "$FIX" switch -q -c trunk
+out="$(cd "$FIX" && .tickets/claim 0281 tok0 2>&1)" && rc=0 || rc=$?
+assert_rc "on trunk it exits 0" "$rc" 0 "$out"
+
+echo "0242 AC71 — with no key, origin/HEAD names the branch"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0282 | Remote head | develop | ready | 0000 |' 0282
+git -C "$FIX" update-ref refs/remotes/origin/develop HEAD
+git -C "$FIX" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/develop
+out="$(cd "$FIX" && .tickets/claim 0282 tok0 2>&1)" && rc=0 || rc=$?
+assert_rc "on main it exits 1" "$rc" 1 "$out"
+assert_contains "naming 'develop'" "$out" "the backlog is shared on 'develop'"
+git -C "$FIX" switch -q -c develop
+out="$(cd "$FIX" && .tickets/claim 0282 tok0 2>&1)" && rc=0 || rc=$?
+assert_rc "on develop it exits 0" "$rc" 0 "$out"
+
+echo "0242 AC72 — the key is consulted before origin/HEAD"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0283 | Both | develop | ready | 0000 |' 0283
+git -C "$FIX" update-ref refs/remotes/origin/develop HEAD
+git -C "$FIX" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/develop
+printf 'shared_branch: trunk\n' > "$FIX/.tickets/config.yml"
+git -C "$FIX" add -A; git -C "$FIX" commit -q -m "key"
+git -C "$FIX" switch -q -c develop
+out="$(cd "$FIX" && .tickets/claim 0283 tok0 2>&1)" && rc=0 || rc=$?
+assert_rc "on develop it exits 1" "$rc" 1 "$out"
+assert_contains "naming 'trunk'" "$out" "the backlog is shared on 'trunk'"
+git -C "$FIX" switch -q -c trunk
+out="$(cd "$FIX" && .tickets/claim 0283 tok0 2>&1)" && rc=0 || rc=$?
+assert_rc "on trunk it exits 0" "$rc" 0 "$out"
+
+echo "0242 AC73 — a detached HEAD is off the branch"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0284 | Detached | develop | ready | 0000 |' 0284
+git -C "$FIX" checkout -q --detach
+out="$(cd "$FIX" && .tickets/claim 0284 tok0 2>&1)" && rc=0 || rc=$?
+assert_rc "exits 1" "$rc" 1 "$out"
+assert_contains "names the detached HEAD" "$out" "this checkout is on 'HEAD (detached)'"
+
+echo "0242 AC74 — the branch check comes before the lock"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0285 | Locked | develop | ready | 0000 |' 0285
+git -C "$FIX" switch -q -c feature
+mkdir "$FIX/.tickets/.lock"; echo other > "$FIX/.tickets/.lock/held-by"
+out="$(cd "$FIX" && .tickets/claim 0285 tok0 2>&1)" && rc=0 || rc=$?
+assert_contains "prints FR42's first line" "$out" "refusing to claim 0285: this checkout is on 'feature', and the backlog is shared on 'main'"
+assert_not_contains "and not the lock-held message" "$out" 'backlog is locked by'
+assert_eq "the other session's lock is still there" "$(cat "$FIX/.tickets/.lock/held-by" 2>/dev/null)" other
 
 echo "$PASS passed, $FAIL failed"
 TALLIED=1

@@ -161,7 +161,7 @@ scaffold() {
   FIX="$(mktemp -d)"
   ID_UNDER_TEST="$4"
   mkdir -p "$FIX/.tickets/items"
-  git -C "$FIX" init -q
+  git -C "$FIX" init -q -b main
   git -C "$FIX" config user.email test@example.invalid
   git -C "$FIX" config user.name "handoff test"
 
@@ -1009,6 +1009,19 @@ assert_rc "exits 0" "$rc" 0 "$out"
 assert_row "the row reads develop | waiting" '| 0923 | Held with a blocker | develop | waiting | 0000 |'
 
 # --- result -------------------------------------------------------------------------------------
+# --- 0242 AC67 (0235) — a hand-off off the shared branch refuses up front -----------------------
+echo "0242 AC67 — a hand-off on 'feature' refuses, keeps the claim, adds no commit, leaves no lock"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0280 | Off branch | develop | in-progress | 0000 |' 0280 develop in-progress tok0
+git -C "$FIX" switch -q -c feature
+before_n="$(git -C "$FIX" rev-list --count HEAD)"
+out="$(run_handoff 0280 tok0 develop)" && rc=0 || rc=$?
+assert_rc "exits 1" "$rc" 1 "$out"
+assert_contains "FR42's first line names feature and main" "$out" \
+  "refusing to hand off 0280: this checkout is on 'feature', and the backlog is shared on 'main'"
+assert_contains "the item still carries the claim" "$(cat "$FIX"/.tickets/items/0280-*.md)" 'claimed_by: "tok0"'
+assert_eq "no commit is added" "$(git -C "$FIX" rev-list --count HEAD)" "$before_n"
+assert_eq "no lock remains" "$([ -e "$FIX/.tickets/.lock" ] && echo held || echo free)" free
+
 echo
 echo "$PASS passed, $FAIL failed"
 TALLIED=1

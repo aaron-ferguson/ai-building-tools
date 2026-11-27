@@ -192,7 +192,7 @@ scaffold() {
   cleanup
   FIX="$(mktemp -d)"
   mkdir -p "$(BL)/items"
-  git -C "$FIX" init -q
+  git -C "$FIX" init -q -b main
   git -C "$FIX" config user.email test@example.invalid
   git -C "$FIX" config user.name "reopen test"
 
@@ -471,6 +471,20 @@ assert_contains "a table row in Step 1 runs ./reopen" "$(printf '%s\n' "$STEP1" 
 # --- NFR Documentation — the script names what it replaces ---------------------------------------
 echo "NFR — the header comment names the by-hand composition it replaces"
 assert_contains "the header cites ecc6a60" "$(sed -n '1,/^set /p' "$REOPEN_SRC")" 'ecc6a60'
+
+# --- 0242 AC69 (0235) — a reopen off the shared branch refuses up front -------------------------
+echo "0242 AC69 — a reopen on 'feature' refuses, keeps the row in DONE.md, adds no commit"
+scaffold '| 0102 | Another row | develop | ready |  |'
+commit_fixture
+git -C "$FIX" switch -q -c feature
+before_n="$(git -C "$FIX" rev-list --count HEAD)"
+out="$(run_reopen 0101 top "r")" && rc=0 || rc=$?
+assert_rc "exits 1" "$rc" 1 "$out"
+assert_contains "FR42's first line names feature and main" "$out" \
+  "refusing to reopen 0101: this checkout is on 'feature', and the backlog is shared on 'main'"
+assert_contains "the row is still in DONE.md" "$(data_rows DONE.md)" '| 0101 |'
+assert_not_contains "and absent from QUEUE.md" "$(data_rows QUEUE.md)" '| 0101 |'
+assert_eq "no commit is added" "$(git -C "$FIX" rev-list --count HEAD)" "$before_n"
 
 echo
 echo "reopen: $PASS passed, $FAIL failed"

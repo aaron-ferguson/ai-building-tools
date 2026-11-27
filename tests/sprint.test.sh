@@ -2115,7 +2115,7 @@ fi
 mk_two_row_backlog() {
   tw="$1"
   rm -rf "$tw"; mkdir -p "$tw/.tickets/items"
-  git -C "$tw" init -q
+  git -C "$tw" init -q -b main
   git -C "$tw" config user.email test@example.invalid
   git -C "$tw" config user.name "sprint test"
   {
@@ -3156,7 +3156,7 @@ marker_block() {
 MB="$(marker_block "$SKILL")"
 REPO185="$FIX/repo185"
 mkdir -p "$REPO185/.tickets"
-git -C "$REPO185" init -q
+git -C "$REPO185" init -q -b main
 if [ -z "$MB" ]; then
   bad "0185 AC2 — no fenced block in the skill takes the .active marker; nothing to run"
 elif [ -e "$REPO185/.tickets/runs" ]; then

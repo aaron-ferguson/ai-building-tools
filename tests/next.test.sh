@@ -56,7 +56,7 @@ scaffold() {
   cleanup
   FIX="$(mktemp -d)"
   mkdir -p "$FIX/.tickets/items"
-  git -C "$FIX" init -q
+  git -C "$FIX" init -q -b main
   git -C "$FIX" config user.email test@example.invalid
   git -C "$FIX" config user.name "next test"
 

@@ -57,7 +57,7 @@ section() {
 # one closed row, every script installed at that location.
 mk_repo() {
   rm -rf "$1"; mkdir -p "$1/$2/items"
-  git -C "$1" init -q
+  git -C "$1" init -q -b main
   git -C "$1" config user.email test@example.invalid
   git -C "$1" config user.name "location test"
   b="$1/$2"

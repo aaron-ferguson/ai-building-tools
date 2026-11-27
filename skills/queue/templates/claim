@@ -167,6 +167,45 @@ if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 &&
   exit 1
 fi
 
+# copy-begin: shared-branch
+# The backlog is written on one branch (0235, 0242 S7). A claim committed on any other branch is
+# invisible to every session reading the shared one, so the single-holder guarantee stops at the
+# branch: a `prototype/` session once claimed, decided and handed off a row that `main` still read
+# as unclaimed. Refuse, never warn, and up front — directly after the linked-worktree refusal,
+# before the lock and before any file is read for writing — so the session learns it at `./claim`,
+# before it has spent anything on the row. A detached HEAD is off the branch. Outside a git work
+# tree the check does not apply. No flag overrides it: the `shared_branch:` key is the one way to
+# name another branch. Resolved first hit wins, and nothing fetches:
+#   1. `shared_branch:` in this directory's config.yml, comment and blanks stripped (empty = unset)
+#   2. `git symbolic-ref --short refs/remotes/origin/HEAD`, its `origin/` removed
+#   3. `main`
+# See `CONCURRENCY.md`, *The backlog is written on one branch*. $1 is the script's own verb.
+refuse_off_shared_branch() {
+  git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || return 0
+  sb=""
+  if [ -f "$DIR/config.yml" ]; then
+    sb="$(awk '/^shared_branch:/ {
+      v = $0; sub(/^shared_branch:/, "", v); sub(/#.*/, "", v); gsub(/[ \t]/, "", v)
+      print v; exit
+    }' "$DIR/config.yml")"
+  fi
+  if [ -z "$sb" ] && sb="$(git -C "$DIR" symbolic-ref --short -q refs/remotes/origin/HEAD 2>/dev/null)"; then
+    sb="${sb#origin/}"
+  fi
+  [ -n "$sb" ] || sb="main"
+  cur="$(git -C "$DIR" symbolic-ref --short -q HEAD 2>/dev/null)" || cur=""
+  [ -n "$cur" ] || cur="HEAD (detached)"
+  [ "$cur" != "$sb" ] || return 0
+  cfg="$(git -C "$DIR" rev-parse --show-prefix 2>/dev/null || true)config.yml"
+  echo "refusing to $1 $ID: this checkout is on '$cur', and the backlog is shared on '$sb'" >&2
+  echo "switch with: git switch $sb, or set shared_branch: in $cfg if '$sb' is wrong" >&2
+  echo "see references/CONCURRENCY.md, 'The backlog is written on one branch'" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+}
+# copy-end: shared-branch
+refuse_off_shared_branch claim
+
 # --- the fourth refusal: a foreign edit this claim's commit would carry ------------------------
 # This script used to *warn* here and commit anyway, which is the shape a warning always has: it
 # was right, it was read, and the other window's row went into the git record under this claim's

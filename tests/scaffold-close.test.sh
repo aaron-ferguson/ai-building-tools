@@ -53,7 +53,7 @@ saw()         { printf '%s\n' "$1" | sed '1s/^/         saw: /; 1!s/^/          
 
 # --- fixture: the templates, and only the templates -------------------------------------------
 FIX="$(mktemp -d)"
-git -C "$FIX" init -q
+git -C "$FIX" init -q -b main
 git -C "$FIX" config user.email test@example.invalid
 git -C "$FIX" config user.name "scaffold-close test"
 mkdir -p "$FIX/$BL/items"

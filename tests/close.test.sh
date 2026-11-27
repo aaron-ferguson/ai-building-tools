@@ -58,7 +58,7 @@ scaffold() {
   cleanup
   FIX="$(mktemp -d)"
   mkdir -p "$FIX/$BL/items"
-  git -C "$FIX" init -q
+  git -C "$FIX" init -q -b main
   git -C "$FIX" config user.email test@example.invalid
   git -C "$FIX" config user.name "close test"
 
@@ -1617,6 +1617,22 @@ for flag in --help -h; do
   assert_contains "close $flag documents --note" "$out" '--note <text>'
   refute_contains "close $flag is not read as an id" "$out" 'no row for'
 done
+
+# --- 0242 AC68 (0235) — a close off the shared branch refuses up front --------------------------
+echo "0242 AC68 — a close on 'feature' refuses, keeps the row, adds no commit, leaves no lock"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0280 | Off branch | verify | in-progress | 0000 |'
+mkitem 0280 verify in-progress '"ab12"' '[]'
+commit_fixture
+git -C "$FIX" switch -q -c feature
+before_n="$(git -C "$FIX" rev-list --count HEAD)"
+out="$(run_close 0280 ab12)" && rc=0 || rc=$?
+assert_eq "exits 1" "$rc" 1
+assert_contains "FR42's first line names feature and main" "$out" \
+  "refusing to close 0280: this checkout is on 'feature', and the backlog is shared on 'main'"
+assert_contains "the row is still in QUEUE.md" "$(cat "$FIX/$BL/QUEUE.md")" '| 0280 |'
+refute_contains "and absent from DONE.md" "$(cat "$FIX/$BL/DONE.md")" '| 0280 |'
+assert_eq "no commit is added" "$(git -C "$FIX" rev-list --count HEAD)" "$before_n"
+assert_no_lock "no lock remains"
 
 echo "$PASS passed, $FAIL failed"
 TALLIED=1
