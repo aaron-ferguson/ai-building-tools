@@ -1717,6 +1717,48 @@ fixture-scripted. AC77 is a read verify does anyway. Both values stand.
 - **`./claim 0242` with no token died before the lock** with only `xxd: not found`; claimed with an
   `od`-minted token. Parked in `FINDINGS.md` (`662ebd8`).
 
+### S6 build notes — 2026-11-27, develop `9232` (sprint run-20261127T024025Z)
+
+- **2026-11-27 — S6 landed at `b9e6303`** (FR53, FR54; AC63–AC65). `skills/queue/templates/reopen`
+  reads `close_by` with `fm_value`, the same reader `close` uses, so a quoted or commented
+  `close_by: "develop"  # …` is caught. On `develop` it sets a flag. The item awk replaces the
+  `close_by:` line with `close_by: verify` only when that flag is set, so a `verify` value or a
+  missing key passes through as it was. The note gets
+  `; close_by: develop → verify — a reopen is for an independent verify` after the reason. The
+  existing read-back now also refuses, before anything moves, when a reset was due and the temp
+  item does not read `verify`. Header bullet added (FR54). `.tickets/reopen` re-copied, `cmp` equal.
+- **AC64 fixture:** the fixture copies the `claim` and `close` templates in, claims with `ab12`, and
+  writes a `## QA evidence` body. That body carries a `Conventions: ../conventions` line, because
+  `close`'s sixth refusal (0160) needs one. Without it, close refuses for a reason that has nothing
+  to do with AC64. A real verify pass writes the line anyway.
+- **Clause table, AC text → assertion → mutation (all run on the committed `b9e6303`, template only,
+  each restored by `git checkout` in the same call, control green at 94/0 after):**
+
+| AC | clause | assertion in `tests/reopen.test.sh` | mutation | result |
+|---|---|---|---|---|
+| AC63 | Given … `status: done` recording `close_by: develop` and `qa_level: unit`, with a `DONE.md` row | fixture: `scaffold` + `set_close_by 'close_by: develop'` | — | fixture |
+| AC63 | the item reads `close_by: verify` | `the item reads close_by: verify` | M1b: the awk reset line **and** the read-back removed | red, 90/4 |
+| AC63 | the last line of `## Notes & decisions` contains both `fixture reason` | `the last notes line carries the reason` | M1 (reset removed, read-back kept: the script refuses) | red, 86/8 |
+| AC63 | and `close_by: develop → verify` | `the last notes line records the reset` | M2: the note suffix removed | red, 93/1 |
+| AC63 | `git show --name-only HEAD` lists exactly the item, `QUEUE.md` and `DONE.md` | `git show --name-only HEAD lists exactly …` | M1 (no commit happens) | red. **Reasoned, not run:** an extra file in the commit would also red it, by the same `assert_eq` AC1 already proves |
+| AC64 | `./close <id> <token>` … exits 0 | `./close exits 0` | M1b | red |
+| AC64 | never prints `the stage that may close it is 'develop'` | `it never names develop as the closing stage` | M1b | red |
+| AC65 | the first still reads `close_by: verify` | `close_by: verify still reads …` + `exactly one close_by: line` | M3: reset taken whatever the value | red, 66/28 (the read-back refuses the no-key item; the `verify` item's note records a reset) |
+| AC65 | the second still has no `close_by:` line | `no close_by: — still has no close_by: line` | M4: awk writes `close_by: verify` when the key is absent | red, 93/1 |
+
+  No mutation stayed green. AC65 is the only AC with two fixture items, and it has both.
+- **Whole suite:** `for t in tests/*.test.sh` green at `b9e6303`, with `git status --porcelain`
+  clean before and after the run.
+- **Sibling read, left alone:** the `./reopen` row in `skills/queue/SKILL.md:147`, Step 1, lists
+  what reopen does and does not yet mention the `close_by` reset. It is incomplete, not false. Skill
+  prose is S14's, and the file is outside this leg's `touches:`.
+- **NFR rows bearing on S6:** none of the table's rows is S6's. No log field, egress, credential or
+  UI. Nothing company-specific. `b9e6303` carries the trailer. `CHANGELOG.md` `## Unreleased`
+  carries the S6 note.
+- **`./claim 0242` with no token died again** with `.tickets/claim: 149: xxd: not found`, before
+  the lock, writing nothing. Claimed with an `od`-minted token. Already parked four times in
+  `FINDINGS.md`, so nothing new is parked.
+
 ### Open questions for the unspecified slices
 
 **Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
