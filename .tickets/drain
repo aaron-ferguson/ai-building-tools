@@ -196,8 +196,9 @@ git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
 }
 
 # Anything already changed in a file this commit names would ride along on it, and a pathspec limits
-# a commit to paths, never to authorship — CONCURRENCY.md, 'A pathspec is necessary but not
-# sufficient'. Staged or not, so against HEAD; an untracked held file is someone else's write too.
+# a commit to paths, never to authorship —
+# CONCURRENCY.md, 'A pathspec is necessary but not sufficient'. Staged or not, so against HEAD; an
+# untracked held file is someone else's write too.
 HELD_TRACKED=""
 ! git -C "$DIR" ls-files --error-unmatch -- FINDINGS-HELD.md >/dev/null 2>&1 || HELD_TRACKED=1
 drain_dirty() { # drain_dirty <when> — refuses if a buffer this drain writes differs from HEAD
