@@ -2,8 +2,8 @@
 id: "0192"
 title: Stop an unpriced session reading as free in the sprint ledger and the harvest
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 close_by: verify
 size: m
@@ -17,9 +17,10 @@ expects:
   - skills/sprint/SKILL.md
 parent:
 blocked_by: []
-claimed_by: "12f8"
-claimed_at: 2026-11-27T21:38:59Z
+claimed_by:
+claimed_at:
 touches:
+closed: 2026-11-27
 ---
 
 ## Problem
@@ -77,28 +78,28 @@ readers of the same figures still do, and three sessions hit them independently.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given a fixture run whose sessions are all unpriced, `record`'s GATE, RATIO and DESIGN
+- [x] AC1 — Given a fixture run whose sessions are all unpriced, `record`'s GATE, RATIO and DESIGN
   lines print `unpriced` and no `USD 0.00`. Red: restore the 0.00 formatting.
-- [ ] AC2 — Given two wholly unpriced skills with different turn counts, the per-skill table prints
+- [x] AC2 — Given two wholly unpriced skills with different turn counts, the per-skill table prints
   a row for each with its own count. Red: drop the row, or print the first skill's count for both.
-- [ ] AC3 — 0186 AC2's guard uses two unpriced sessions with different counts, and the mutations
+- [x] AC3 — 0186 AC2's guard uses two unpriced sessions with different counts, and the mutations
   `% r["unpriced"]` → `% 1` and `merged["unpriced"] = unpriced` → `= unpriced_total` each redden it.
-- [ ] AC4 — The `wall_clock_min` row names the run log's event timestamps as its source. Red: remove
+- [x] AC4 — The `wall_clock_min` row names the run log's event timestamps as its source. Red: remove
   `log_src` from that row.
-- [ ] AC5 — `skills/sprint/SKILL.md` Step 7 names the unpriced-session resume cap. Red: delete it.
-- [ ] AC6 — Given a fixture session of one `claude-opus-5-5` turn with 1,000,000 each of input,
+- [x] AC5 — `skills/sprint/SKILL.md` Step 7 names the unpriced-session resume cap. Red: delete it.
+- [x] AC6 — Given a fixture session of one `claude-opus-5-5` turn with 1,000,000 each of input,
   output, cache-read and 5-minute cache-write tokens, when it is harvested, then the TOTAL row reads
   USD 29.20 (4.00 + 20.00 + 0.20 + 5.00) and no `UNPRICED` line prints. **Write this test first and
   record it red** (today: unpriced, USD 0.00). Red: remove the `RATES` entry (unpriced), price it at
   0.1x cache read (29.40), or alias it to `claude-opus-5`'s rates (36.75) — the three figures differ
   on purpose.
-- [ ] AC7 — The same fixture under the date-suffixed id `claude-opus-5-5-20261001` also prices at
+- [x] AC7 — The same fixture under the date-suffixed id `claude-opus-5-5-20261001` also prices at
   USD 29.20. Red: break the `DATE_SUFFIX` fallback.
-- [ ] AC8 — Given 0186 AC3's all-priced store, the harvest's `RATES per million:` line names every
+- [x] AC8 — Given 0186 AC3's all-priced store, the harvest's `RATES per million:` line names every
   `RATES` key with its own figures, and editing one rate in `RATES` (in a copy of the script made by
   the test) changes that line. Red: restore the literal header. 0186 AC3's golden output is updated in
   the same commit for this one line only; every other line of it stays byte-for-byte.
-- [ ] AC9 — Given 0186 AC3's all-priced store (`claude-opus-5` only), every figure in the harvest
+- [x] AC9 — Given 0186 AC3's all-priced store (`claude-opus-5` only), every figure in the harvest
   other than the `RATES` line is unchanged by FR6. Red: change the 0.1x default in `RATES`.
 
 ## Notes & decisions

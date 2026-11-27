@@ -3,7 +3,7 @@ id: "0240"
 title: Make a sprint's cost measured, estimated and tunable
 type: chore
 next: develop
-status: blocked
+status: ready
 qa_level: unit
 close_by: verify
 size: l
