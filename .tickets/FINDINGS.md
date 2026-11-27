@@ -53,4 +53,3 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
-- 2026-11-18 — **`./next --ac-digest <id>` prints the whole `ac_digest: …` line, and `queue` Step 2 says to "write `ac_digest:` from" it**, which reads as "the value after the key". Substituting the output after `ac_digest: ` doubled the key in 0234 (`69203c8`); `--ac-digest --check` caught it before hand-off, and `52b9888` fixed it. (queue, amend 0234)
