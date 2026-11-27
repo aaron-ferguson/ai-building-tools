@@ -1278,6 +1278,80 @@ intent. `CHANGELOG.md` `## Unreleased` carries develop's S6 note, which is the n
 
 **Hand-off:** pass. `./handoff 0242 f5e3 develop --slice S6`. S7 is specified (AC66–AC77).
 
+### Leg S7 — verify `27e9`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: `../ai-building-conventions`
+
+**Subject:** `115bc34` (S7 code `9e76240`, docs `83364b8`), checkout on `main`. Step 2 capture
+(`git status --porcelain`, fused onto the first run) was empty, so the dirty set is empty and the
+intersection with the evidence set is empty: not advisory. Copy executed: the repo templates, which
+the tests copy into fixtures. `.tickets/{claim,handoff,close,reopen}` `cmp`-equal to the templates.
+`./next --ac-digest 0242 --check` → `0242: ac_digest matches`.
+
+**Checked against the person's answer** (*S7 decision*, design `3708`): "refuse", and "a check up
+front". Refuse, not warn: M11 (the function returns 0 after printing) reds claim, `206 passed, 11
+failed`. Up front: the call sits directly after the linked-worktree refusal and before `mkdir "$LOCK"`
+in all four templates (claim worktree→call→lock; handoff 200→244→266; close 148→192→237; reopen
+124→167→184, read from the line numbers), and M10 (call moved after the lock) reds AC74.
+
+**Commands, verbatim:**
+- `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`) — 45 files, no file
+  printed a non-zero failed count, none `ABORTED`.
+- AC76: `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=init.defaultBranch GIT_CONFIG_VALUE_0=master` then
+  `for t in tests/*.test.sh; do "$t" || exit 1; done` — `AC76 loop exit 0`; probe under the same env:
+  `probe default: master`.
+
+**Clause table** (Given / predicate / object rows per AC):
+
+| AC | Given | Predicate | Objects asserted |
+|---|---|---|---|
+| AC66 | repo on `main`, no key, no remote, after `git switch -c feature`, `ready` row | `./claim <id>` | exit 1; both stderr lines; commit count unchanged; `QUEUE.md` + item byte-identical (cksum of `.tickets`); no `.lock` |
+| AC67 | row claimed on `main`, then `feature` | `./handoff <id> <token> develop` | exit 1; FR42 line names `feature` and `main`; `claimed_by:` kept; no commit; no `.lock` |
+| AC68 | claimed on `main` with `## QA evidence`, then `feature` | `./close` | exit 1; FR42 line; row in `QUEUE.md`; absent `DONE.md`; no commit; no `.lock` |
+| AC69 | done row, then `feature` | `./reopen <id> top "r"` | exit 1; FR42 line; row in `DONE.md`; absent `QUEUE.md`; no commit |
+| AC70 | `shared_branch: trunk  # ours` | claim on `trunk` / on `main` | exit 0 / exit 1 naming `'main'` and `'trunk'` |
+| AC71 | no key, `origin/HEAD` → `origin/develop` | claim on `develop` / on `main` | exit 0 / exit 1 naming `'develop'` |
+| AC72 | AC71 plus `shared_branch: trunk` | claim on `trunk` / on `develop` | exit 0 / exit 1 naming `'trunk'` |
+| AC73 | `main` after `git checkout --detach` | `./claim` | exit 1; `this checkout is on 'HEAD (detached)'` |
+| AC74 | on `feature`, a foreign `.lock` present | `./claim` | FR42 first line; not the lock-held message; the foreign `.lock` still there |
+| AC75 | tree after the change | `declared-copies` + `backlog-scripts-installed` run | both exit 0; a `shared-branch` block in each of the four (plural: 4 copies) |
+| AC76 | tree after the change, `init.defaultBranch=master` | whole suite, fail-fast | exit 0 |
+| AC77 | `CONCURRENCY.md`, `CHANGELOG.md` | read | section directly after *A second checkout never writes the backlog*; refusal; FR55 order; `shared_branch:` fix; `## Unreleased` line |
+
+**Evidence (mutations run by this session by `python3` over the committed file, diff confirmed
+non-empty, restored by path with `git checkout -- <path>`, tree clean after each; control
+`tests/claim.test.sh` → `217 passed, 0 failed`):**
+
+| AC | Checked by | Mutation | Result |
+|---|---|---|---|
+| AC66 | `tests/claim.test.sh` `0242 AC66` | M1 call removed from `skills/queue/templates/claim` | red `197 passed, 20 failed` (exits 1, names both branches, says nothing changed, no commit…) |
+| AC66 (refuse ≠ warn) | same | M11 function `return 0` instead of `exit 1` | red `206 passed, 11 failed` (exits 1, byte-identical, no commit) |
+| AC67 | `tests/handoff.test.sh` `0242 AC67` | M2 call removed from `handoff` | red `269 passed, 4 failed` (exits 1, FR42 line, claim kept, no commit) |
+| AC68 | `tests/close.test.sh` `0242 AC68` | M3 call removed from `close` | red `331 passed, 5 failed` (row in QUEUE.md, absent DONE.md…) |
+| AC69 | `tests/reopen.test.sh` `0242 AC69` | M4 call removed from `reopen` | red `reopen: 94 passed, 5 failed` |
+| AC70 | `tests/claim.test.sh` `0242 AC70` | M5 key never read; M6 comment kept in value | red `211 passed, 6 failed`; red `215 passed, 2 failed` (`naming 'main' and 'trunk'`, `on trunk it exits 0`) |
+| AC71 | `0242 AC71` | M7 `origin/HEAD` never read | red `214 passed, 3 failed` |
+| AC72 | `0242 AC72` | M8 `origin/HEAD` read before the key | red `211 passed, 6 failed` |
+| AC73 | `0242 AC73` | M9 empty branch returns 0 (read as match) | red `215 passed, 2 failed` |
+| AC74 | `0242 AC74` | M10 call moved to after `mkdir "$LOCK"` | red `210 passed, 7 failed` (`prints FR42's first line`, `no lock exists`) |
+| AC75 | `tests/declared-copies.test.sh`, `tests/backlog-scripts-installed.test.sh` | M12 one comment char in `handoff`'s block; M13 `reopen`'s markers renamed; M14 call removed from `.tickets/claim` only | M12 red `22 passed, 2 failed` (`block shared-branch differs …`); M13 red `22 passed, 2 failed` (`reports shared-branch: 4 copies`); M14 red `54 passed, 1 failed` (`claim has diverged`) |
+| AC76 | AC76 command above | M15 `tests/claim.test.sh:59` back to `init -q`, run under the master env | red `110 passed, 107 failed`; unmutated run exits 0 |
+| AC77 | read `references/CONCURRENCY.md` and `CHANGELOG.md` | — (prose, unguarded by design) | holds: `## The backlog is written on one branch` follows *A second checkout never writes the backlog* with nothing between; states refuse-never-warn, detached HEAD, up front at `./claim`, the order key → `origin/HEAD` → `main`, no fetch, the one-line `shared_branch:` fix, no override flag. `## Unreleased` carries the FR58 line including the upgrade note. |
+
+**Not guarded (recorded, not a gap under any AC):** FR42's *before the lock* for `handoff`, `close`
+and `reopen` is true by reading only. AC67/AC68's `no .lock remains` cannot see it, because each
+script's EXIT trap removes its own lock; only `claim`'s position has a pre-existing-lock case
+(AC74). No AC claims it for the other three, so no AC is unverified.
+
+**NFR rows bearing on S7:** none of the table's rows is S7's. Always-on pass: no log field,
+analytics event, egress, credential or UI. No home path added in the diff. Nothing
+company-specific. `9e76240` and `83364b8` carry the trailer. Newly reachable: a checkout off the
+shared branch can no longer write the backlog. That is FR42's intent, and the linked-worktree
+refusal is unchanged. Live check: this session's `./claim 0242 27e9` on `main` succeeded
+(`1630944`).
+
+**Hand-off:** pass. `./handoff 0242 27e9 develop --slice S7`. S8 is next.
+
 ## Notes & decisions
 
 - **2026-11-26 (queue): AC8 example reworded, meaning unchanged.** Its literal home-path example
