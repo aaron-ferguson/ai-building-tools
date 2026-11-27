@@ -2072,6 +2072,92 @@ fixture-scripted. AC77 is a read verify does anyway. Both values stand.
   enumerations it falsified are updated above. Every other open FR enumerating "the five scripts" is
   S14's (FR11, AC16, and `queue` Step 0's `chmod +x` list), so nothing outside this ticket was staled.
 
+### S9 build notes — 2026-11-27, develop `e509` (sprint run-20261127T024025Z)
+
+- **2026-11-27 — S9 landed:** `e1b23af`. The subject is `skills/queue/templates/park`, copied to
+  `.tickets/park`. Its suite is `tests/park.test.sh`, 115 cases, and it runs the template copies of
+  `park` and `next`. The commit also lists the suite in README's guard block, bumps
+  `tests/declared-copies.test.sh`'s `shared-branch` count to 6, and adds `park` to
+  `tests/backlog-location.test.sh`'s script list and allowlist.
+- **"Public per its CLAUDE.md profile" has no defined marker, so this leg chose one.** The
+  conventions' Profile block (`../ai-building-conventions/README.md`) defines only
+  `collaboration:`, `company:` and `release:`. Nothing says `visibility:`. This repo's CLAUDE.md
+  says "This repo is public" in prose inside its `## Profile` section. `park` treats the destination
+  as public when the word `public` appears anywhere in the destination's `## Profile` section (up to
+  the next `## ` heading), case-insensitive, as a whole word. The test errs towards screening: "not
+  public" is screened too, which costs only a redaction. Two cases are not screened: a destination
+  with no CLAUDE.md, and one that says `public` only outside `## Profile`. Both are pinned by the
+  `FR6 — the screen applies where the destination is public, and only there` cases. The conventions
+  repo's CLAUDE.md does not say `public` in its Profile section, so a park into its `.tickets/`
+  would not be screened. Its *root* buffer is out of `park`'s reach anyway: FR6 says "the backlog of
+  the named checkout". This is a mechanism choice under FR6, not an AC change. If verify or the
+  author wants a structured `visibility:` key instead, that is a conventions change and a row.
+- **The screen is the tracked-tree guard's pattern, not a second one.** `HOME_PATH_PAT` in `park` is
+  byte-equal to `tests/measurement.test.sh`'s line, and a `park.test.sh` case asserts that. The
+  shape named on refusal is macOS (`/Users/<name>/…`), Linux (`/home/<name>/…`) or the dash slug.
+  Every real-shaped sample in the suite is assembled, so the suite cannot red the guard it mirrors.
+- **Choices left open by FR6, recorded so verify reads them as decided:**
+  - The entry is the text after the date. `park` writes `- <UTC date> — <entry>` and adds no bold.
+  - Refused before the lock:
+    - an empty entry, or one holding a line break;
+    - an entry that starts with a date, bolded or not, which would be dated twice;
+    - an entry that starts with a `[->…]` token, because the noticer never writes the token;
+    - an unknown argument;
+    - a `--repo` that is no directory, is not in a git checkout, or holds no backlog or more than one;
+    - a buffer missing, or with no `---` rule, since `./next` counts nothing above the rule;
+    - `FINDINGS.md` changed against HEAD;
+    - a linked worktree, or a destination off its shared branch.
+  - `--repo` accepts any path inside the checkout and resolves the checkout's root.
+  - The declared `shared-branch` block reads `$DIR`. `park` reassigns `DIR` to the destination
+    backlog first, so the block judges the repo being written. A case covers a `--repo` destination
+    on another branch.
+  - The lock is the destination backlog's `.lock`. It uses `capture`'s retry loop and is never
+    broken. The function names are `park_usage`, `park_refuse` and `park_cleanup`, because the
+    declared-copies guard refuses a second undeclared `cleanup`.
+- **TDD order, stated plainly:** the script was written before its suite, so the suite's first run
+  was green. The red half is the mutation sweep below. Every AC's own *Red* was applied to the
+  committed template and reddened it.
+- **Clause table (from the AC text):**
+
+  | AC | Given | Predicate | Objects asserted |
+  |---|---|---|---|
+  | AC6 | a fixture buffer | `./park "what happened"` | exactly one line appended; head-token shape (read back through `./next --findings-list`); today's UTC date; one commit; naming only `FINDINGS.md` |
+  | AC7 | `--repo <second fixture checkout>` | `./park` runs | entry lands in the second repo; its commit lands there; first repo unchanged (fingerprint, commit count, status) |
+  | AC8 | a second checkout whose `CLAUDE.md` profile marks it public | `./park` given an entry holding a real-shaped macOS or Linux home path (assembled) | exits non-zero; writes nothing (both fingerprints, both commit counts); names the failing shape; the redacted entry is written |
+
+- **Mutation sweep (run, not reasoned).** Each mutation was applied with `python3` to the committed
+  `skills/queue/templates/park`, and its diff was confirmed non-empty. `tests/park.test.sh` was run,
+  then the template was restored with `git checkout --`. The tree was clean after the sweep, and the
+  control run gave `park: 115 passed, 0 failed`.
+
+  | Target | Mutation | Result |
+  |---|---|---|
+  | AC6 (the AC's *Red*) | write the entry without its date | red `105 passed, 10 failed` (shape, `--findings-list`, count) |
+  | AC6 / FR2 | commit `-a` with no pathspec | red `113 passed, 2 failed` (staged `other.txt` in the commit, no longer staged) |
+  | AC7 (the AC's *Red*) | ignore `--repo` | red `87 passed, 28 failed` |
+  | AC8 (the AC's *Red*) | skip the guard | red `97 passed, 18 failed` (all three shapes) |
+  | FR6 scope | screen every destination | red `112 passed, 3 failed` (private, no CLAUDE.md) |
+  | FR6 scope | read `public` anywhere, not only in `## Profile` | red `113 passed, 2 failed` |
+  | FR6 pattern | `HOME_PATH_PAT` drops the `-` separator | red `109 passed, 6 failed` (slug shape, byte-equality) |
+  | FR1 | cleanup leaves the lock | red `110 passed, 5 failed` |
+  | FR1 | break a busy lock | red `111 passed, 4 failed` |
+  | FR3 | date check removed | red `97 passed, 18 failed` |
+  | FR3 | head-token check removed | red `103 passed, 12 failed` |
+  | FR4 | one line appended to `.tickets/park` | `backlog-scripts-installed` red `70 passed, 1 failed`; restored |
+
+- **Whole suite:** `for t in tests/*.test.sh` at `e1b23af`, with `git status` clean before it. All
+  47 files reported 0 failed.
+- **Restated contract:** FR1–FR4, FR6 and FR56, with AC6–AC8, at `qa_level: unit`, closed by
+  verify. NFR rows bearing on S9:
+  - Security and Privacy & data (AC8), met by the screen.
+  - Testing, met by the fixture cases.
+  - Documentation, met by the usage header, the `usage:` refusal and `--help`.
+
+  Nothing is company-specific, and the commit carries the trailer.
+- **Sibling grep (widening):** `park` adds a backlog-writing script. The two guards whose
+  enumerations it falsified are updated above. The skills' park steps (FR11, AC16) and `queue` Step
+  0's install list are S14's, so nothing outside this ticket was staled.
+
 ### Open questions for the unspecified slices
 
 **Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
