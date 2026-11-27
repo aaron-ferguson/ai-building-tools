@@ -1352,6 +1352,68 @@ refusal is unchanged. Live check: this session's `./claim 0242 27e9` on `main` s
 
 **Hand-off:** pass. `./handoff 0242 27e9 develop --slice S7`. S8 is next.
 
+### Leg S8 — verify `26f6`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: `../ai-building-conventions`
+
+**Subject:** `a4a4a09` (S8 code `bd65a89`, guard/README `90d357f`), checkout on `main`. The Step 2
+capture (`git status --porcelain`, fused onto the first suite run) was empty. So the dirty set is
+empty, its intersection with the evidence set is empty, and the verdict is not advisory. Copy
+executed: the repo templates. `tests/capture.test.sh` runs `skills/queue/templates/capture` and
+`next` in fixtures. `.tickets/capture` is `cmp`-equal to the template. `./next --ac-digest 0242
+--check` → `0242: ac_digest matches`.
+
+**Commands, verbatim:**
+- `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`) — 46 files, each
+  printing `N passed, 0 failed`, none `ABORTED`; `capture: 65 passed, 0 failed`.
+
+**Clause table:**
+
+| AC | Given | Predicate | Objects asserted |
+|---|---|---|---|
+| AC1 | `next_id: 5` while `items/` holds 0007 (and 0001, 0003) | `./capture draft.md above:0003` | `items/0008-*.md`; id `0008`; `next_id: 9`; row directly above 0003; one commit |
+| AC2 | AC1's capture | `./next --ac-digest 0008` | output equals the item's `ac_digest:` line |
+| AC3 | draft with no `- [ ] AC1 —` line | `./capture` | non-zero exit; no file written; `QUEUE.md`, `config.yml` byte-identical; no `.lock`; no commit |
+| AC4 | another path staged before the run | `./capture` commits | path absent from the capture commit; still staged afterwards |
+| AC5 | `above:9999`, no such row | `./capture` | refuses before minting; no `.lock`; no file changed |
+| AC12 | unclaimed item whose AC2 text was edited | `./capture --restamp <id>` | `./next --drift` reports no digest mismatch for it |
+
+**Evidence.** This session ran each mutation with `python3` over the committed
+`skills/queue/templates/capture`, the copy the suite runs, and confirmed each diff was non-empty. Each
+was restored with `git checkout -- skills/queue/templates/capture`, and `git status --porcelain` was
+empty after each. Control `tests/capture.test.sh` → `capture: 65 passed, 0 failed`.
+
+| AC | Checked by | Mutation | Result |
+|---|---|---|---|
+| AC1 (id, `next_id`) | `tests/capture.test.sh` `0242 AC1` | M1 mint from `next_id` − 1 (the AC's *Red*) | red `ABORTED before the tally: 4 passed, 6 failed so far` (`writes items/0008-<slug>.md`, `the item carries id 0008`, `sets next_id: 9`, `inserts the row directly above 0003`…) |
+| AC1 (directly above) | same | M2 `above` inserts below the anchor | red `64 passed, 1 failed` (`inserts the row directly above 0003`) |
+| AC1 (one commit) | same | M3 item committed separately first | red `63 passed, 2 failed` (`makes exactly one commit`) |
+| AC2 | `0242 AC2` | M4 stamp a fixed stale digest, `ac_digest` read-back removed | red `64 passed, 1 failed` (`the item's ac_digest: line is ./next --ac-digest 0008's output`) |
+| AC3 | `0242 AC3` | M5 draft AC1 check skipped (the AC's *Red*) | red `58 passed, 7 failed` (`exits non-zero`, `names what is wrong`, `writes no file … leaves no .lock`, `makes no commit`) |
+| AC4 | `0242 AC4` | M6 `git add` the paths, then commit with no pathspec | red `63 passed, 2 failed` (`other.txt is absent from the capture commit`, `and is still staged afterwards`) |
+| AC5 | `0242 AC5` | M7 anchor check removed and the row appended at the bottom on a miss (the AC's *Red*) | red `55 passed, 10 failed` (`exits non-zero`, `names the anchor`…) |
+| AC5 (no `.lock`) | `0242 AC5`, `0242 AC1` | M8 cleanup no longer removes the lock | red `56 passed, 9 failed` (`changes no file and leaves no .lock`, `no .lock is left`) |
+| AC12 | `0242 AC12` | M9 restamp writes the item's old stamp back, check removed (the AC's *Red*) | red `63 passed, 2 failed` (`after it, --drift reports no digest mismatch for 0003`, `--check agrees`) |
+| FR4 (install) | `tests/backlog-scripts-installed.test.sh` | M10 one line appended to `.tickets/capture` | red `62 passed, 1 failed` (`capture has diverged from skills/queue/templates/capture`); restored `63 passed, 0 failed` |
+
+**Not guarded (recorded, not a gap under any AC):** AC3's *leaves no `.lock`* holds by
+construction. The draft check runs before `mkdir "$LOCK"`, so no mutation of the cleanup can reach
+that path. The fingerprint does include `.lock`, so a refactor that took the lock first and leaked it
+would red. AC2's literal *Red* ("stamp before the id is written") cannot be expressed through
+`./next --ac-digest <id>`, which locates the item by its id. M4 breaks the AC's outcome instead, so
+the stamp and the computed digest differ.
+
+**NFR rows bearing on S8:** Testing, which the fixture cases cover. Documentation, met by the usage
+header, the `usage:` refusal and `--help` (`0242 FR4` cases). Always-on pass: no log field,
+analytics event, egress, credential or UI. The S8 diff adds no home path. Nothing is
+company-specific. `bd65a89` and `90d357f` each carry the `Co-Authored-By` trailer. Newly reachable:
+a backlog write that commits only by pathspec under the lock. It refuses off the shared branch
+(`0242 FR56` case) and never breaks a held lock (`0242 FR1` case). No `CHANGELOG.md` note is owed
+by this slice; S14 owns the CHANGELOG move. Develop's AC15 re-split from S8 to S11 changes no AC
+text, and the digest matches.
+
+**Hand-off:** pass. `./handoff 0242 26f6 develop --slice S8`. S9 is next.
+
 ## Notes & decisions
 
 - **2026-11-26 (queue): AC8 example reworded, meaning unchanged.** Its literal home-path example
