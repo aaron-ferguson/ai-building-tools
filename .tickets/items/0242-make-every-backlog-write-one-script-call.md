@@ -1624,6 +1624,45 @@ fixture-scripted. AC77 is a read verify does anyway. Both values stand.
 > S5 and S6 wait, specified but unbuilt, along with every later slice of 0242. No other row names
 > 0242 in `blocked_by`, so the rest of the backlog is unaffected.
 
+### S5 build notes — 2026-11-27, develop `be4c` (sprint run-20261127T024025Z)
+
+- **2026-11-27: S5 built in `ee2e63d`** (FR50–FR52): `skills/queue/templates/next`, `.tickets/next`,
+  `tests/ac-digest.test.sh`, `CHANGELOG.md`. One normalisation, `ac_digest_compute <new|legacy>`, with
+  `ac_digest_of` (new) and `ac_digest_legacy_of` (named legacy, comment naming 0242 S5) beside it; the
+  mode decides only what ends a criterion's text. `ac_digest_diff` takes the legacy digest as an
+  optional third argument and accepts a stamped key equal to either form. `--check` (so `close`,
+  which runs it) and `--drift` pass it; `--ac-digest <id>` prints the new form only. `close` is
+  unchanged: it carries no digest of its own (0195 AC9).
+- **Mutations, all run** against the committed template, each restored with `git checkout --`, then a
+  control run green (54/54). Each is the AC's own named red:
+
+  | Mutation | Reds |
+  |---|---|
+  | M1 today's normalisation (new-mode end rule deleted) | AC61 (2), AC56 (2) |
+  | M2 a rule ending every criterion at its label line | AC57, AC58, AC61, and 0195 AC1's rewrap case |
+  | M3 a rule ending a criterion at a blank line | AC58, AC61's AC1 `Red:` case |
+  | M4 FR51's legacy acceptance removed | AC59 (`--check` and `--drift`) |
+  | M5 a legacy comparison that accepts any value | AC60, AC57, AC58 and 0195 AC3/AC4/AC6 |
+  | M6 `ac_digest_of` stamping the legacy form | AC61, AC56 |
+  | AC62: `# mutation` appended to the template only | `backlog-scripts-installed`: `next has diverged` |
+
+- **AC57–AC60 were green before the change, by design**: they guard against the wrong fixes the ACs
+  name (M2–M5), not against today's code. Only AC56 and AC61 were red at baseline, and were run red
+  before `ee2e63d`.
+- **AC61's expected values are computed in the test** (`crc` over the literal normalised text), not
+  read back from `next`, so the test does not assert the code against itself.
+- **AC62 evidence, run at `ee2e63d`:** `.tickets/next --ac-digest 0242 --check` → `0242: ac_digest
+  matches`; the printed line is byte-identical to the stamped `ac_digest:` (0242 has no column-0 line
+  in its criteria, as design said). `tests/backlog-scripts-installed.test.sh` 55/55. `.tickets/next
+  --drift` → no drift. Not added to the suite: a guard pinned to a live ticket's stamp would red on a
+  legitimate restamp.
+- **Whole suite, run at `662ebd8`** (`ee2e63d` plus a `FINDINGS.md` append): 45 of 45 files pass.
+- **The QA plan's "S5 is prose, read rather than grepped" is stale**: it predates the slice
+  renumbering, and today's S5 is script behaviour over fixtures. AC56–AC62 are all fixture-scripted.
+  The plan is not this stage's to edit.
+- **`./claim 0242` with no token died before the lock** with only `xxd: not found`; claimed with an
+  `od`-minted token. Parked in `FINDINGS.md` (`662ebd8`).
+
 ### Open questions for the unspecified slices
 
 **Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
