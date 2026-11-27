@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0242 | Make every backlog write one script call, and make the scripts agree with each other | verify | ready |  |
+| 0242 | Make every backlog write one script call, and make the scripts agree with each other | verify | in-progress |  |
 | 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | verify | ready |  |
 | 0240 | Make a sprint's cost measured, estimated and tunable | develop | blocked | 0128 |
 | 0064 | Make the copy of a skill that runs provably the released one | develop | ready |  |
