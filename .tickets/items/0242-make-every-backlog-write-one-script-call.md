@@ -2,8 +2,8 @@
 id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -65,8 +65,8 @@ expects:
   - tests/scaffold-close.test.sh
   - tests/sprint.test.sh
 ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8
-claimed_by: "v5a1"
-claimed_at: 2026-11-27T09:28:50Z
+claimed_by:
+claimed_at:
 touches:
 slice: S11
 ---
@@ -756,7 +756,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S8 — `./capture` with its restamp form, the shared lock, commit and refusal behaviour, and its install — discharges AC1, AC2, AC3, AC4, AC5, AC12
 - [x] S9 — `./park`, with the public-repo screen — discharges AC6, AC7, AC8
 - [x] S10 — `./rank` and `./withdraw` — discharges AC9, AC10, AC11
-- [ ] S11 — `./drain`, on `0227`'s listing, and the ten-script sync — discharges AC13, AC14, AC15
+- [x] S11 — `./drain`, on `0227`'s listing, and the ten-script sync — discharges AC13, AC14, AC15
 - [ ] S12 — `queue` can send an open verify ticket back to design (0237) — unspecified
 - [ ] S13 — decide whether design may amend unheld sibling items its own FRs name (0236) — unspecified
 - [ ] S14 — the seven skills, `CONCURRENCY.md` and the CHANGELOG move onto the scripts, and every step that commits a sweep runs the privacy guard (0118) — discharges AC16, AC17, AC53, AC54, AC55
@@ -1546,6 +1546,64 @@ after the sweep. The controls gave `rank: 71 passed, 0 failed` and `withdraw: 87
 - **CHANGELOG.** No `CHANGELOG.md` note is owed by this slice. S14 owns the CHANGELOG move.
 
 **Hand-off:** pass. `./handoff 0242 59fc develop --slice S10`. S11 is next.
+
+### Leg S11 — verify `v5a1`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: `../ai-building-conventions`
+
+**Subject:** `b5d9310` (S11 code `636a1d2` and `d0db04d`, build notes `3bb8454`, hand-off
+`b5d9310`), checkout on `main`, claim `2601b59`. The Step 2 capture (`git status --porcelain`, fused
+onto the suite run) was empty. So the dirty set is empty, its intersection with the evidence set is
+empty, and the verdict is not advisory. Copy executed: the repo templates. `tests/drain.test.sh` runs
+`skills/queue/templates/drain` and `next`. `.tickets/drain` is `cmp`-equal to the template.
+`./next --ac-digest 0242 --check` → `0242: ac_digest matches`. Claim: `./claim 0242` with no token
+died at `.tickets/claim: 149: xxd: not found`, before the lock and with nothing written (parked as a
+finding, `a6430e1`). `./claim 0242 v5a1` then landed.
+
+**Commands, verbatim:**
+- `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`, each file's tail
+  captured): 50 files, every one printing `0 failed`, none `ABORTED`. `drain: 96 passed, 0 failed`,
+  `backlog-scripts-installed` `106 passed, 0 failed`, `backlog-location` `87 passed, 0 failed`,
+  `declared-copies: 24 passed, 0 failed`, `citations` `52 passed, 0 failed`.
+
+**Clause table:** develop's S11 table (in *S11 build notes*), reused unchanged. Each AC's Given,
+predicate and every object it names have a row. No omission was found.
+
+**Evidence and mutations.** All run by this session with a `python3` harness over the committed
+copies the suites run. Each substitution asserted a match, each `git diff --stat` was non-empty, and
+each file was restored with `git checkout -- <that path>`.
+
+| AC / NFR | How checked | Mutation | Result |
+|---|---|---|---|
+| AC13 | `tests/drain.test.sh`, AC13 block, over the shipped `skills/queue/templates/FINDINGS.md` header | M1: the AC's red, `AT` from `grep -n "^- .*$DATE"` over the whole file | red: AC13 `exits 0` and `the real 2026-09-05 entry is gone` fail (the in-script header read-back refuses) |
+| AC13 | same | M1b: M1 with the header read-back disabled | red: `the header is byte-identical`, `the header's fenced example is still there`; `drain: 86 passed, 10 failed` |
+| AC14 "absent from FINDINGS.md" | `tests/drain.test.sh`, AC14 block | M2: the AC's red, `held` copies the buffer unchanged, line-count read-back off | red: `the entry is absent from FINDINGS.md`, `its continuation is absent`, `both changes are in it`; `drain: 92 passed, 4 failed` |
+| AC14 "present verbatim" | same | M6: held copy keeps only the entry's first line, held read-back off | red: `it is present verbatim, last, in FINDINGS-HELD.md`; `drain: 95 passed, 1 failed` |
+| AC14 "one commit" | same | M5: `FINDINGS-HELD.md` committed separately | red: `one commit`, `both changes are in it`; `drain: 93 passed, 3 failed` |
+| AC15 "all ten … byte-equal" | `tests/backlog-scripts-installed.test.sh`, AC15 case | M4: the AC's red, the sync skips `drain` | red: `FAIL AC15 — drain is missing, not executable, or differs …`; `105 passed, 1 failed` |
+| AC15 "config.yml, QUEUE.md and FINDINGS.md byte-identical" | same | M7: the sync copies every template file, not only the executables | red: `FAIL AC15 — the sync rewrote a project-owned file`; `105 passed, 1 failed` |
+| NFR Migration / schema | AC15, above | M4, M7 | guarded |
+| NFR Testing (0155), template copies | `tests/backlog-scripts-installed.test.sh` | appended a line to the installed `.tickets/drain` | red: `FAIL drain has diverged from skills/queue/templates/drain`; `105 passed, 1 failed` |
+| NFR Documentation, usage | header comment, `drain_usage`, `--help` case in `tests/drain.test.sh` | read, not mutated | holds |
+| Control | `tests/drain.test.sh`; `tests/backlog-scripts-installed.test.sh` after every restore | none | `drain: 96 passed, 0 failed`; `106 passed, 0 failed`; `git status --porcelain` empty |
+
+- **AC15's guard runs a test-side rendering of Step 0's prose** (`step0_sync`), because Step 0's sync
+  is a session following prose. It proves the template set carries the ten and that the rule as
+  stated reaches each one. A change to the Step 0 sentence itself is invisible to it. That is
+  inherent in a prose step, not a gap in this slice.
+- **Always-on pass.** No log field, analytics event, egress, credential or UI. `636a1d2` and
+  `d0db04d` carry the `Co-Authored-By` trailer. The S11 diff adds no real home path, and the fixture
+  identity is `fixture@example.com`.
+- **Newly reachable.** `drain held` creates `FINDINGS-HELD.md` and `git add`s that one path. An
+  untracked held file that already exists is refused as another session's write. Both are pinned.
+- **Observation, not a verdict input.** The commit retry loop in `drain` (and its siblings `park` and
+  `close`) retries 30 times with no pause, so "retry briefly" lasts milliseconds against a held
+  `.git/index.lock`. This was already true before S11.
+- **CHANGELOG.** No note is owed by this slice. S14 owns the CHANGELOG move.
+
+**Hand-off:** pass. `./handoff 0242 v5a1 develop --slice S11`. S12 is next and `unspecified`. Per
+`templates/item.md` *Progress*, the next develop routes the ticket to `design`, and `./handoff
+--slice` refuses a leg holding an unspecified slice.
 
 ## Notes & decisions
 
