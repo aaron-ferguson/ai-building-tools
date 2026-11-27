@@ -561,12 +561,13 @@ beat() {
 }
 beat & BEAT=$!
 # ... the stage dispatch above, in this same Bash call ...
-kill "$BEAT"
+pkill -P "$BEAT"; kill "$BEAT"
 ```
 
 Sixty seconds fits fifteen times inside the stale age, so no single wait the skill permits reads as
 stale. `kill -0 "$$"` is a check inside one call, not a recorded pid: if the dispatching shell dies
-the loop stops, and a dead supervisor's marker ages out as it should.
+the loop stops, and a dead supervisor's marker ages out as it should. The `pkill -P` comes first
+because killing the loop alone orphans the `sleep` it is blocked on (0234, was 0170).
 
 **`--bare` is disqualifying and appears nowhere.** It skips CLAUDE.md auto-discovery, which means
 **no conventions** — and a stage that builds without them passes every test in `tests/`, because
