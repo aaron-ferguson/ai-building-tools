@@ -185,6 +185,8 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 
 - **2026-11-27 (verify S1, token bfb6): FAIL on AC4, one site.** `README.md:26` reads "Default to `/design` — escalation is cheap" — an imperative telling the reader which stage to run, by bare name. It is not a name in a table, not a description of what a skill does, and not a user's words, so it is outside every left-bare category in the build notes, and AC4 says none remains. **The constraint:** qualify the invoked name in that sentence (`/ai-building-tools:design`), then re-run the AC4 grep and the suite. The rest of that paragraph (`/design` never invokes `/prototype`) is description and stays bare. AC1, AC2, AC3 and AC5 pass on this leg (QA evidence below); no AC ticked, no slice ticked. Drift: frontmatter `qa_level: unit` against the QA plan's `**Level:** verify` — the frontmatter was run.
 
+- **2026-11-27 (develop S1 bounce, token 6b1c, 11fd156e).** `README.md:26` now reads "Default to `/ai-building-tools:design`"; the descriptive `/design never invokes /prototype` after it stays bare, per the verdict's constraint. AC4 grep re-run (run) over README: every remaining match is the skill table, description of what a skill does, or `/sprint` (not a stage) — lines 8, 14–19, 25, 27, 29–30, 36, 41, 208, 440. No guard in `tests/` pins "Default to". Whole suite green, 50 files, 0 failed. No mutation run.
+
 ### Carried notes of the absorbed tickets
 
 ### From 0157 — Make release verify compare the install against the released commit
