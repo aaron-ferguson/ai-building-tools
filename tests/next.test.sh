@@ -1226,10 +1226,11 @@ assert_not_contains "not on the one still blocked"         "$out" 'runs dry at 0
 echo "0038 AC29 — in-progress and waiting rows are not counted as takeable gates"
 scaffold
 add_row 0101 'A takeable row'    develop ready       0091
-add_row 0102 'Held by a session' develop in-progress 0092
+# The held row sits at `verify`: a held develop row now makes every develop dispatch wait (0234 FR29).
+add_row 0102 'Held by a session' verify  in-progress 0092
 add_row 0103 'Held for an answer' develop waiting    0093
 add_ticket 0101 develop ready       '[]' 0091 a/one.md
-add_ticket_held 0102 develop in-progress '[]' 0092 b/two.md '"tok9"'
+add_ticket_held 0102 verify  in-progress '[]' 0092 b/two.md '"tok9"'
 add_ticket 0103 develop waiting     '[]' 0093 c/three.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
@@ -1330,9 +1331,11 @@ assert_not_contains "dispatches nothing"              "$out" 'DISPATCH'
 
 echo "0038 FR8 — an in-progress row is stepped over, not taken"
 scaffold
-add_row 0101 'Held by another session' develop in-progress 0091
+# The held row sits at `verify`: a held develop row now makes every develop dispatch wait (0234 FR29,
+# guarded by the 0234 AC29 block), so stepping over a held row is shown at another stage.
+add_row 0101 'Held by another session' verify  in-progress 0091
 add_row 0102 'Free'                    develop ready       0092
-add_ticket_held 0101 develop in-progress '[]' 0091 a/one.md '"tok9"'
+add_ticket_held 0101 verify  in-progress '[]' 0091 a/one.md '"tok9"'
 add_ticket 0102 develop ready '[]' 0092 b/two.md
 seal
 out="$(run_next --drive)" && rc=0 || rc=$?
@@ -3889,6 +3892,48 @@ fx_queue; set_config 'bounce_max: 0'; seal
 out="$(run_next --drive --completed develop:0101 --scope 0101)" && rc=0 || rc=$?
 assert_rc           "queue after develop, bounce_max 0: exits 4" "$rc" 4 "$out"
 assert_not_contains "dispatches nothing"            "$out" 'DISPATCH'
+
+# --- 0234 AC29, AC30 — `--drive` dispatches no develop while a develop row is running ----------
+# One develop session at a time (0234 FR29): every path that would print `DISPATCH  develop` waits
+# (exit 6) while another develop row is held or in-progress; design and verify dispatch are not held.
+# fx_running <with design 0103 above 0102?> — 0101 at develop / in-progress held by `aaaa`, 0102 at
+# develop / ready. 0101's `touches:` is empty, so its scope is its `expects:` (x/held.md), which
+# neither 0102 nor 0103 names.
+fx_running() {
+  scaffold
+  add_row 0101 'A running develop' develop in-progress ''
+  [ -z "$1" ] || add_row 0103 'A design question' design ready ''
+  add_row 0102 'The next develop'  develop ready       ''
+  add_ticket_held 0101 develop in-progress '[]' '' x/held.md '"aaaa"'
+  add_ticket 0102 develop ready '[]' '' y/other.md
+  [ -z "$1" ] || add_ticket 0103 design ready '[]' '' z/design.md
+  seal
+}
+
+echo "0234 AC29 — --drive waits on a running develop row, and dispatches once it is done"
+fx_running ""
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "exits 6 — wait"                          "$rc" 6 "$out"
+assert_contains     "a WAIT line names the running develop"   "$(first_line "$out" 'WAIT      ')" '0101'
+assert_not_contains "and prints no DISPATCH  develop"         "$out" 'DISPATCH  develop'
+sed -i.bak '/^| 0101 /d' "$FIX/.tickets/QUEUE.md" && rm -f "$FIX/.tickets/QUEUE.md.bak"
+printf -- '---\nid: "0101"\ntitle: Fixture 0101\nnext:\nstatus: done\nblocked_by: []\nclaimed_by:\n---\n' \
+  > "$FIX/.tickets/items/0101-fixture.md"
+add_done 0101 'A running develop'
+seal
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "with 0101 done: exits 0"                 "$rc" 0 "$out"
+assert_contains     "and dispatches develop 0102"             "$out" 'DISPATCH  develop 0102'
+
+echo "0234 AC30 — a verify bounce waits too; a design row beside a running develop is dispatched"
+fx_running ""
+out="$(run_next --drive --completed verify:0102)" && rc=0 || rc=$?
+assert_rc           "bounce from verify: exits 6"             "$rc" 6 "$out"
+assert_not_contains "and prints no DISPATCH  develop"         "$out" 'DISPATCH  develop'
+fx_running yes
+out="$(run_next --drive)" && rc=0 || rc=$?
+assert_rc           "design ranked above: exits 0"            "$rc" 0 "$out"
+assert_contains     "and dispatches design 0103"              "$out" 'DISPATCH  design 0103'
 
 # --- result -----------------------------------------------------------------------------------
 echo

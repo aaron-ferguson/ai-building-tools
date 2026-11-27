@@ -1877,7 +1877,21 @@ if [ "${1:-}" = "--drive" ]; then
   }
 
   # wait_on_design <develop ids> — exits 6 where a running design session holds a file they expect.
+  #
+  # 0234 FR29: and first, where ANY develop row is running — one develop session at a time, in every
+  # project. Every path that prints `DISPATCH  develop` (the rank walk's gate, a started or bounced
+  # leg, the same-stage stand-down) comes through here, so the guard sits here and nowhere earlier:
+  # placed before the walk it would also hold back a design or verify dispatch, which run beside a
+  # develop session (0134). `./claim` refuses the same collision (FR28); this stops a supervisor
+  # paying a session's startup only to be refused at claim.
   wait_on_design() {
+    wd_running=""
+    for wd_id in $(running_at develop); do
+      contains_word "$wd_id" "$1" || wd_running="$wd_running $wd_id"
+    done
+    if [ -n "$wd_running" ]; then
+      decide "$WAIT" "WAIT      develop $1 waits: one develop session at a time, and develop${wd_running} is running — wait for its outcome, then call again with --completed"
+    fi
     if wd_wait="$(gate_wait "$1")"; then
       decide "$WAIT" "WAIT      develop $1 names ${wd_wait#* }, which design ${wd_wait%% *} is reading — wait for its outcome, then call again with --completed"
     fi
