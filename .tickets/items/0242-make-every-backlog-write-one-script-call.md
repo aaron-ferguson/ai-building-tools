@@ -3474,3 +3474,58 @@ to verify with `--slice S14`. S15 and S13 are still to build after it.
   `for t in tests/*.test.sh; do "$t" || exit 1; done`. `./next --drift` on the live backlog prints
   `no drift`, and names no entry of 0242 (AC84). AC85 is a reading of `skills/queue/templates/item.md`'s
   `expects:` comment and `CHANGELOG.md`'s `## Unreleased` line, both in `b8e15f3`.
+
+### S13 build notes — 2026-11-27, develop `d3bf` (sprint run-20261127T024025Z)
+
+S13, the closing leg: FR67–FR73 against AC86–AC91, as repaired by queue `e782`. Commits:
+`18c5c87` (FR72: the `--drive` arm, its usage text, AC86/AC87/AC91 cases in `tests/next.test.sh`,
+`.tickets/next` synced from the template) and `1effb20` (FR67–FR71, FR73: prose).
+
+- **FR72.** The queue-dispatch arm in `skills/queue/templates/next` gains `design` beside `verify`
+  and `develop`, under the same `bounce_count "$lid" 1`, `past_bound`, scope check and
+  `findings_gate`. The NOTE for a design completion reads `handed from design to next: queue (n of
+  max) — dispatching queue to fold in the sibling consequences recorded in <item>`. A `queue`
+  completion, any other stage (`prototype` was the fixture's), an out-of-scope row and no `--scope`
+  all still reach the stale-contract arm. The usage line asserted by AC91 is
+  `a verify, develop or design sent to next: queue`, kept on one line so the guard can match it.
+- **FR68/FR70** — `skills/design/SKILL.md` Step 4: the item-scoped path that hands to `develop` names
+  the exception, and a new path *Item-scoped, held by you, and it changes another item* carries the
+  heading, the four entry fields (id; FR/AC and how; why; observed state), `./handoff … queue`, the
+  own-slice case, FR70's "an FR directing a write to another item" case, and "write nothing outside
+  the item you hold, not even an unheld sibling". The *held by another* path is unchanged.
+- **FR69/FR70** — `skills/queue/SKILL.md` Step 1: one routing row, (a)/(b)/(c) with commands in
+  order, the stamp from `./next --ac-digest` before `./handoff` in (a) and (b), no
+  `./capture --restamp`; the `resolved` marking and the develop/design target. Step 2: FR70's
+  sentence, after *Amend first*. Written compactly because `tests/skill-size.test.sh` gives
+  `queue` 48538 + 5000 bytes: it is now 52902, 636 under the margin. The next skill change to
+  `queue` will need to re-argue or relocate.
+- **FR67/FR71** — `references/CONCURRENCY.md`, *A stage writes only the ticket it holds*: one new
+  bullet, stated once, keeping the single close-reconcile exception, naming FR67's unaffected
+  operations, and the bounded-wait cost. `design` and `queue` cite it rather than restating it.
+- **FR72 prose** — `skills/sprint/SKILL.md` Step 2's bounce paragraph names `a design` beside
+  verify and develop; the *never writes a ticket* bullet now says "no in-scope bounce or design
+  hand-off sent there".
+- **FR73** — one `CHANGELOG.md` `## Unreleased` line.
+
+**Mutation sweep, run** (template mutated in the working tree after `18c5c87`, restored with
+`git checkout --` each time; control run after, 815 passed, 0 failed). Rows from AC86/AC87/AC91's
+red-making inputs:
+
+| Mutation | Result |
+|---|---|
+| `design` removed from the arm (today's arm) | red, 8 — AC86 all, AC87 n = max |
+| `design` arm without the `bounce_max` bound | red, 3 — AC87 n = max + 1 |
+| `design` arm without the scope check | red, 5 — AC87 out of scope and no `--scope` |
+| keyed on any completed stage (`|| true`) | red, 8 — incl. 0234 AC16 and AC87 after queue |
+| keyed on any stage but `queue` | red, 2 — AC87 after any other stage |
+| usage left naming only `verify` and `develop` | red, 1 — AC91 |
+| NOTE not naming `design` | red, 1 — AC86 |
+
+AC88, AC89 and AC90 are readings, unguarded by design (`CLAUDE.md`, *Tests*); nothing here asserts
+them. `close_by: verify` stands. Reasoned, not run: AC90's "no other skill permits a stage holding
+one item to write another" rests on a grep for `sibling`, `another item` and `other ticket` over
+`skills/*/SKILL.md` and `references/*.md`, read by hand; verify should re-read it.
+
+Environment note: `./claim 0242` without a token exited 127 here (`xxd: not found`, line 149 of
+`.tickets/claim`), before the lock and writing nothing; claimed with a token minted by `od`. Already parked six times in `.tickets/FINDINGS.md`; not re-parked.
+Whole suite at `1effb20`: `for t in tests/*.test.sh` — all 50 files green, `git status` clean.
