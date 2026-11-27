@@ -13,6 +13,7 @@ no `--note` — and leads with the behaviour; a ticket number in parentheses is 
 the release session, because only a whole-release view can say it.
 
 ## Unreleased
+- `./handoff` with status `ready` on an item whose `blocked_by:` still names an open ticket now writes `blocked` to the row and the item, as the cache `next` derives, and says so; `--drift` no longer reports the row and `--drive` no longer escalates on it. `blocked` is still refused as an argument (0242 S4).
 
 ## 0.9.50 — 2026-11-27
 

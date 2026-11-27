@@ -62,6 +62,7 @@ touches:
   - .tickets/handoff
   - tests/handoff.test.sh
   - tests/declared-copies.test.sh  # re-anchor fm-list's copy count, 4 -> 5
+  - CHANGELOG.md  # the S4 behaviour note under ## Unreleased
 slice: S3
 ---
 
@@ -1218,6 +1219,49 @@ develop recorded.
 - **Stale sibling prose (reported, not edited):** `skills/develop/SKILL.md` Step 1's warning about
   closed items keeping a token stays true, and *Out of scope* (from 0229) keeps it. The class it
   warns about is now reported by `--drift`, which S14 may want to cite.
+
+### S4 build notes — 2026-11-27, develop `203d` (sprint run-20261127T024025Z)
+
+- **S4 built at `933484b`.** FR41, aiming at AC52. Claimed with `--touches` set to
+  `skills/queue/templates/handoff`, `.tickets/handoff` and `tests/handoff.test.sh`. It was widened
+  to `tests/declared-copies.test.sh` and `CHANGELOG.md` when the work reached them. The token was
+  passed by hand (`od -An -N2 -tx1`), because `./claim` with no token died on `xxd: not found`.
+  That is already parked three times in `FINDINGS.md`/`FINDINGS-HELD.md`, so it is not re-parked.
+- **The mechanism.** On a `ready` hand-off, `handoff` reads `blocked_by:` through the `fm-list`
+  declared copy, the parser `next`, `claim`, `close` and `reopen` use. It counts an entry as open
+  unless the entry's item exists and reads `done`, which is `next`'s `open_blockers_of` rule. A
+  blocker with no item file is open. When any entry is open, the script writes `blocked` to the row
+  and the item (`WRITE_STATUS`), reads it back the same way it reads every other field, and prints
+  `status: blocked, derived rather than authored — blocked_by still open: <ids>`.
+  **`blocked` is still refused as an argument** (FR2's case is unchanged and green). A `waiting`
+  hand-off is never derived, because a person authors it. **Every destination stage derives, not
+  only `develop`.** FR41 names develop, but the derived status is stage-independent, and `--drift`
+  would report any other stage's row the same way. `close`'s reconcile frees the row later, since
+  it selects exactly the dependents that read `blocked`.
+- **Guard re-anchored (falsified, not exposed):** `tests/declared-copies.test.sh` pinned
+  `fm-list: 4 copies` as a literal. `handoff` now carries a fifth copy, so the literal is now 5.
+- **Mutation table, every row run** against the committed template that `HANDOFF_SRC` runs, each
+  restored with `git checkout --`. Control after: `268 passed, 0 failed`, with `git status` clean.
+
+  | Clause (AC52 / FR41 text) | Mutation | Result |
+  |---|---|---|
+  | Given a held fixture item whose `blocked_by` names an open ticket … the row and item carry `blocked` | never set `WRITE_STATUS=blocked` (M1) | red, 7 (row, item, `--drift` exit and line, `--drive`) |
+  | when `./handoff` runs and then `./next --drift`, drift reports nothing for that row | row editor writes the asked status, not the derived one (M5) | red, 12 (read-back refuses: `exits 0` fails) |
+  | `--drive` does not escalate on it | M1 | red (`--drive does not escalate on drift`) |
+  | open = not done, as `next` reads it (a blocker with no item file is open) | missing item file counted closed (M2) | red, 2 |
+  | a done blocker is not open | done blocker counted open (M3) | red, 2 |
+  | written as the derived cache rather than authored (a `waiting` hand-off is left as written) | derivation applied to `waiting` too (M4) | red, 1 |
+
+- **Stale sibling prose (reported, not edited; S14 owns the skills).** `skills/develop/SKILL.md`
+  Step 5 (*If you cannot get the tree green*) says to set `status: ready` or add a `blocked_by`
+  entry, *"since `blocked` is derived and never typed"*. That is still true, and `./handoff` now
+  writes the derived value itself. No skill or reference states that `handoff` leaves `ready` over
+  a blocker (grep of `skills/*/SKILL.md` and `references/*.md`, run).
+- **Whole suite, run at `933484b`.** `for t in tests/*.test.sh`, file by file: 45 of 45 rc=0
+  (`tests/handoff.test.sh` `268 passed`, `tests/declared-copies.test.sh` `23 passed`,
+  `tests/next.test.sh` `783 passed`). The changelog guards were re-run once the note below was committed.
+- `CHANGELOG.md` `## Unreleased` gains one behaviour note for S4. It was empty, because S1–S3 left
+  theirs to S14.
 
 ### Open questions for the unspecified slices
 
