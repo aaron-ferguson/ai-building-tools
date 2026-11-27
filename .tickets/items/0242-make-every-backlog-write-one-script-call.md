@@ -504,6 +504,8 @@ this repo cannot see: what branch each consuming project shares its backlog on. 
 refs/remotes/origin/HEAD is not a symbolic ref`, so the remote's HEAD is not a dependable source,
 even in this repo.
 
+### Options
+
 #### Option A — Refuse, resolving the branch from config, then the remote, then `main`
 The branch is `shared_branch:` in `config.yml` if that key is set, otherwise `origin/HEAD` if
 that resolves, otherwise `main`. The refusal names both branches and the key. Pros: matches the
