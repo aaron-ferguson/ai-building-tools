@@ -718,11 +718,12 @@ s2_verify() { # no --commit: the default is what is under test
 }
 
 echo "0064 AC6 — a commit touching only the backlog after a release does not red verify"
-mkdir -p "$S2/co/.claude/backlog/items" "$S2/co/.tickets/items"
+mkdir -p "$S2/co/.claude/backlog/items" "$S2/co/.backlog" "$S2/co/.tickets/items"
 printf 'claimed\n' > "$S2/co/.claude/backlog/QUEUE.md"
 printf 'claimed\n' > "$S2/co/.claude/backlog/items/0001-x.md"
 printf 'claimed\n' > "$S2/co/.tickets/QUEUE.md"
-s2_commit "Claim 0001" .claude/backlog/QUEUE.md .claude/backlog/items/0001-x.md .tickets/QUEUE.md
+printf 'claimed\n' > "$S2/co/.backlog/QUEUE.md"
+s2_commit "Claim 0001" .claude/backlog/QUEUE.md .claude/backlog/items/0001-x.md .backlog/QUEUE.md .tickets/QUEUE.md
 write_record "$S2INST" "1.2.3" "$SHA"
 s2_verify
 if [ "$VST" -eq 0 ]; then ok "verify passes after a backlog-only commit"
@@ -736,7 +737,7 @@ case "$VOUT" in
   *) bad "AC6 — the report does not say why it compared against $SHA: $VOUT" ;;
 esac
 case "$VOUT" in
-  *"excluded  .claude/backlog/ .tickets/"*) ok "the report names the backlog directories it excluded" ;;
+  *"excluded  .claude/backlog/ .backlog/ .tickets/"*) ok "the report names the backlog directories it excluded" ;;
   *) bad "AC6 / FR6 — the report does not say the backlog is excluded: $VOUT" ;;
 esac
 

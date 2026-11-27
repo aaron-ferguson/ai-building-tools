@@ -152,11 +152,12 @@ next_patch() { # <version> -> that version with its last component incremented
 # for `-z` output to handle it.
 # THE BACKLOG IS NOT RELEASED CONTENT (0064 FR6, was 0157). A release is followed within minutes by
 # claim and hand-off commits, so the backlog in any commit a verify might name differs from the
-# install's. `.claude/backlog/` is the directory the finding named; `.tickets/` is where this repo's
-# backlog lives now. Both are excluded, and the report says so -- a silent exclusion is a hole.
-BACKLOG_EXCLUDED=".claude/backlog/ .tickets/"
+# install's. `.claude/backlog/` is the directory the finding named, `.backlog/` the second legacy
+# location (0228), and `.tickets/` where the backlog lives now. All three are excluded, and the
+# report says so -- a silent exclusion is a hole.
+BACKLOG_EXCLUDED=".claude/backlog/ .backlog/ .tickets/"
 not_backlog() { # stdin: lines of "[<blob> ]<path>" -> the same, minus backlog paths
-  grep -v -E '^([0-9a-f]{40,} )?(\.claude/backlog|\.tickets)/' || true
+  grep -v -E '^([0-9a-f]{40,} )?(\.claude/backlog|\.backlog|\.tickets)/' || true
 }
 
 paths_that_differ() {
