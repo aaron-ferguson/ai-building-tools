@@ -170,7 +170,7 @@ run_on "$ROOT"
 if [ "$rc" -eq 0 ]; then ok "the repo tree passes"; else bad "the repo tree passes"; printf '%s\n' "$out" | sed 's/^/         /'; fi
 for want in 'decomment: 8 copies' 'fm-value: 6 copies' 'fm-list: 5 copies' 'read-cell: 3 copies' \
             'column-in: 5 copies' 'header-of: 5 copies' 'column-named: 2 copies' 'scope-block: 2 copies' \
-            'shared-branch: 8 copies'; do
+            'shared-branch: 9 copies'; do
   case "$out" in *"$want, identical"*) ok "reports $want" ;; *) bad "reports $want" ;; esac
 done
 for name in saw-on-pass saw-prefix; do

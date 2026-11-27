@@ -365,6 +365,7 @@ tests/capture.test.sh      # ./capture — minting, ac_digest stamping, rank, --
 tests/park.test.sh         # ./park — the dated append, --repo, the public-repo screen, refusals
 tests/rank.test.sh         # ./rank — one row moved, every other line kept, in-progress refused
 tests/withdraw.test.sh     # ./withdraw — the record kept, the row removed, blocked_by: re-pointed
+tests/drain.test.sh        # ./drain — one listed entry removed, marked or held; the header never touched
 tests/close.test.sh        # ./close — ticking ACs, DONE.md, reconciling dependents
 tests/next.test.sh         # ./next — takeability, --waiting, --drift, --findings, --drive
 tests/batching.test.sh     # develop and verify state the batching rule, not the old prohibition

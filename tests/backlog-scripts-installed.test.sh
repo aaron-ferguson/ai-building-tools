@@ -296,6 +296,44 @@ else
   fi
 fi
 
+echo "0242 AC15 — queue Step 0's sync brings a five-script backlog up to all ten, touching no project file"
+# Step 0's sync is a session following prose, so this runs it as that prose states it — "Check every
+# executable in this skill's templates/, plus item.md ... Re-copy whatever is absent or differs,
+# chmod +x" — over a fixture backlog holding only the five scripts Step 0's scaffold names, and
+# project-owned files whose content is the project's own. What the case proves is that the TEMPLATE
+# SET carries the ten, and that a sync by Step 0's rule reaches each one and nothing it must not:
+# omit a script from the sync and its line below reds.
+step0_sync() { # step0_sync <templates> <backlog>
+  for f in "$1"/* "$1/item.md"; do
+    [ -f "$f" ] || continue
+    case "$f" in */item.md) : ;; *) [ -x "$f" ] || continue ;; esac
+    b="$(basename "$f")"
+    cmp -s "$f" "$2/$b" 2>/dev/null && continue
+    cp "$f" "$2/$b"
+    [ ! -x "$f" ] || chmod +x "$2/$b"
+  done
+}
+OLD="$(mktemp -d)"
+for s in next claim close handoff reopen; do cp "$TEMPLATES/$s" "$OLD/$s"; chmod +x "$OLD/$s"; done
+printf '# config\nnext_id: 42\n' > "$OLD/config.yml"
+printf '# Backlog\n\n| ID | Title | Next | Status |\n|---|---|---|---|\n| 0041 | Mine | develop | ready |\n' > "$OLD/QUEUE.md"
+printf '# Findings\n\n---\n\n- 2026-11-01 — a project entry\n' > "$OLD/FINDINGS.md"
+own_before="$(cd "$OLD" && cksum config.yml QUEUE.md FINDINGS.md)"
+step0_sync "$TEMPLATES" "$OLD"
+for s in next claim close handoff reopen capture park rank withdraw drain; do
+  if [ -x "$OLD/$s" ] && cmp -s "$TEMPLATES/$s" "$OLD/$s"; then
+    ok "AC15 — $s is present, executable and byte-equal to templates/$s after the sync"
+  else
+    bad "AC15 — $s is missing, not executable, or differs from templates/$s after the sync"
+  fi
+done
+if [ "$(cd "$OLD" && cksum config.yml QUEUE.md FINDINGS.md)" = "$own_before" ]; then
+  ok "AC15 — config.yml, QUEUE.md and FINDINGS.md are byte-identical after the sync"
+else
+  bad "AC15 — the sync rewrote a project-owned file: $(cd "$OLD" && cksum config.yml QUEUE.md FINDINGS.md | tr '\n' ' ')"
+fi
+rm -rf "$OLD"
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 TALLIED=1
 [ "$FAIL" = 0 ]
