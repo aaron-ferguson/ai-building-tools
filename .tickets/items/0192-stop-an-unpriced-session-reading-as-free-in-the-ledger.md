@@ -148,3 +148,64 @@ readers of the same figures still do, and three sessions hit them independently.
   - **Not covered, and stays so:** a GATE over a session id with no transcript at all still
     reads a measured `USD 0.00`. That is 0173's case (no turns, no unpriced count), not an
     unpriced one.
+- **2026-11-27 (verify, token 12f8) — PASS.** Verified at HEAD `87c5edd` (claim commit over
+  `eca8208`); the build commits above are ancestors of it. Every AC re-checked and every mutation
+  re-run by this pass; develop's table was not trusted. Some fail counts differ from develop's
+  because the 0186 AC3 golden now also reddens on any RATES edit, which is that golden working as
+  designed.
+
+## QA evidence
+
+Conventions: ../ai-building-conventions (resolved from `.tickets/config.yml` `conventions.path`)
+
+Level: `unit` (frontmatter; no `**Level:**` prose in the QA plan, so no drift). Command run, the
+reporting form of `commands.unit`: `for t in tests/*.test.sh; do "$t" || true; done` — 52 files,
+every tally `0 failed` (`tests/sprint-ledger.test.sh`: `266 passed, 0 failed`; `tests/sprint.test.sh`:
+`387 passed, 0 failed, 0 skipped`; `tests/next.test.sh`: `815 passed, 0 failed`). Lint, typecheck,
+integration, e2e: not configured in `config.yml`, none run.
+
+`./next --ac-digest 0192 --check`: `0192: ac_digest absent — unverifiable: no stamp to compare the
+criteria against`.
+
+Tree: `git status --porcelain` empty at the first run and after the last mutation (control); dirty
+set empty, so the advisory intersection is empty. Copy executed: the repo copy, via
+`tests/sprint-ledger.test.sh`'s `$ROOT`; `tools/harvest-usage.sh`, `tools/sprint-ledger.sh` and
+`skills/sprint/SKILL.md` are byte-identical to the installed 0.9.51 copy.
+
+Mutations were applied one at a time to the committed file, the diff checked non-empty, the test
+file run, and the path restored with `git checkout -- <path>`; control after all of them:
+`266 passed, 0 failed`.
+
+Clause table (Given / predicate / object), each row with the mutation that reddened it:
+
+| AC | Clause | Evidence (paths) | Mutation → result |
+|---|---|---|---|
+| AC1 | Given: a fixture run whose sessions are all unpriced | `tests/sprint-ledger.test.sh` 0192 AC1, store-0192-up: design, develop and verify sessions all on `claude-no-such-model-0` | fixture read |
+| AC1 | GATE line prints `unpriced`, no `USD 0.00` | `tools/sprint-ledger.sh` `observed_text`, GATE block | GATE alone → `"USD %.2f" % usd` → 264/2 (AC1 GATE, FR1 partial) |
+| AC1 | RATIO line | RATIO block `per_ticket` and `numerator` | RATIO head → `"0.00"` → 265/1; numerator → `USD %.2f` → 265/1 |
+| AC1 | DESIGN line | DESIGN block | DESIGN alone → `USD %.2f` → 265/1 |
+| AC1 | Red: restore the 0.00 formatting | `observed_text` | `text = "USD %.2f" % …` → 263/3 (GATE, numerator, DESIGN) |
+| AC2 | Given: two wholly unpriced skills with different turn counts | store-0192-skills: queue 2 turns, retro 3 turns | fixture read; two items differing in the value |
+| AC2 | a row for each | `tools/harvest-usage.sh` skill print loop | print only skills with priced turns → 264/2 (no queue row, no retro row) |
+| AC2 | with its own count | `skill_row` | `% r["unpriced"]` → `% 1` → 264/2; `+= n` → `= unpriced_total` (running count) → 265/1 (retro) |
+| AC3 | two unpriced sessions with different counts | 0192 AC3 case, sessions eeeeeeee (2) / ffffffff (3) | fixture read |
+| AC3 | `% r["unpriced"]` → `% 1` reddens | `session_row` | 264/2 |
+| AC3 | `merged["unpriced"] = unpriced` → `= unpriced_total` reddens | harvest session loop | 265/1 |
+| AC4 | `wall_clock_min` row names the run log's event timestamps | `record` FIGURES loop, `log_src` | `src = "%s, actual from %s" % (src, log_src)` → `src = src` → 265/1 |
+| AC5 | Step 7 names the unpriced-session resume cap | `skills/sprint/SKILL.md` Step 7 | delete the "Where that harvest shows … measured." sentence → 263/3 (both 0192 AC5 cases, plus 0175 AC2) |
+| AC6 | Given: one `claude-opus-5-5` turn, 1M each of in/out/cache-read/5m-write | `mk_model_turn` fixture | fixture read |
+| AC6 | TOTAL reads USD 29.20, no `UNPRICED` line | `tools/harvest-usage.sh` `RATES`, `cost_of` | remove entry → 259/7 (unpriced, 0.00); cache read 0.40 → 262/4 (29.40); alias opus-5 rates → 261/5 (36.75); `cost_of` global `inp * 0.1` → 264/2 (29.40) |
+| AC6 | written first, recorded red | build commits `80eb4288` and earlier | develop's recorded pre-fix red; not re-derivable, not relied on |
+| AC7 | date-suffixed id also 29.20 | `DATE_SUFFIX` lookup in `cost_of` | `rates = RATES.get(model)` only → 264/2 (store-0192-dated unpriced) |
+| AC8 | Given: 0186 AC3's all-priced store | `$FIX/store` | fixture read |
+| AC8 | header names every `RATES` key with its own figures | RATES header print | literal header → 262/4; omit last key → 264/2 (`omits: claude-haiku-4-5`) |
+| AC8 | editing one rate in a copy changes the line | test's `sed` copy `harvest-0192.sh` | literal header → "did not follow an edit" red; alias mutation tripped the "edit matched nothing" check |
+| AC8 | golden updated in the same commit for this one line only | `git show 0a8bdbd9 -- tests/sprint-ledger.test.sh` | diff shows exactly one `-`/`+` pair in the golden, the RATES line |
+| AC9 | every figure other than the RATES line unchanged by FR6 | 0186 AC3 golden + 0192 AC9 opus-5 36.75 case | opus-5 cache read 0.50 → 0.60 → 264/2 (golden RATES line, AC9 36.85) |
+
+NFRs: the ticket declares no NFR table. Always-on pass against `CONVENTIONS_CORE.md`: no auth,
+credentials, UI or new egress; model ids printed in public output stay behind 0186's
+`MODEL_ID_SHAPE` guard. AC5's guard is a prose `says` match, which this repo's CLAUDE.md
+disfavours for new guards; the AC itself names "Red: delete it", so it is recorded, not failed.
+
+Gaps: none. Every mutation above reddened.
