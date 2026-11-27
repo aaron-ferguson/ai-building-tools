@@ -84,6 +84,9 @@ relates: []
 # reader also accepts the inline `["a", "b"]` list and a bare `a, b` scalar, and until 0242 one of
 # them read each of those as EMPTY — a scope that compares nothing and lets two sessions land in one
 # file. Three shapes for one field is what made that possible, so write this one.
+# An entry naming a file this ticket will CREATE carries `# new` — a comment beginning with the word,
+# so `# new — the script S8 adds` counts and `# renewed` does not. `./next --drift` and `--drive`
+# report any other entry that exists nowhere in the repo, and `--drive` escalates on it.
 expects:
 # The digest of the criteria the AUTHOR agreed, one key per ACn: `ac_digest: AC1=<hex> AC2=<hex>`.
 # Written from `./next --ac-digest <id>` by `queue` (Add, Re-specify, Amend) and by `design` when it
