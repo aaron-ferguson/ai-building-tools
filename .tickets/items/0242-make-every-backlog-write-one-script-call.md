@@ -2,8 +2,8 @@
 id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -55,8 +55,8 @@ expects:
   - tests/handoff.test.sh
   - tests/findings-routing.test.sh
 ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7
-claimed_by: "357a"
-claimed_at: 2026-11-27T03:43:34Z
+claimed_by:
+claimed_at:
 touches:
 slice: S2
 ---
@@ -792,6 +792,70 @@ common and correct case"*. That is a genuine contract conflict, not missing deta
 `design`'s. One residual: S15 names AC28 but, being `unspecified`, does not yet discharge it, so the
 design pass that sharpens S15 must name AC28 as discharged there.
 
+### Leg S2 — verify `357a`, 2026-11-27 (sprint run-20261127T024025Z) — FAIL on AC30, no AC or slice ticked
+
+Conventions: ../ai-building-conventions
+Level: `unit` (frontmatter). Command, `commands.unit_by_file` verbatim:
+`for t in tests/*.test.sh; do "$t" || true; done`, each file's rc and last line recorded.
+Subject: the checkout at `8f28d7c` (the claim commit over `f05f35f`; S2 code at `3a7e008` and `cbda31d`).
+Copy executed: the repo templates (`tests/{claim,close,next}.test.sh` run `skills/queue/templates/…`).
+The session's skills came from the 0.9.50 install.
+Dirty set at Step 2: empty. Fresh capture after the last check: empty. Intersection: empty.
+`./next --ac-digest 0242 --check`: `0242: ac_digest matches`.
+
+**Whole suite:** 45 files, every one rc=0. Tallies pasted: `tests/claim.test.sh` `189 passed, 0 failed`;
+`tests/next.test.sh` `752 passed, 0 failed`; `tests/close.test.sh` `330 passed, 0 failed`;
+`tests/backlog-scripts-installed.test.sh` `55 passed, 0 failed`; `tests/declared-copies.test.sh`
+`declared-copies: 23 passed, 0 failed`; `tests/handoff.test.sh` `250 passed, 0 failed`.
+
+**Clause table, and the mutation that reddened each row.** Mutations ran in scratch clones of
+`8f28d7c`, never in the shared tree. Each substitution had to match exactly once (`mut.py` refuses
+otherwise), the diff was confirmed non-empty, and the file was restored with `git checkout --` on that
+path alone. Controls: `claim` `189 passed, 0 failed`, `close` `330 passed, 0 failed`. For `next`, the clone
+control was `748 passed, 4 failed`, all in 0060 findings-gate cases that no S2 mutation touches
+(see FINDINGS). So each `next` result below is that mutation's fail set minus the control's.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC30 | Given a claim on a `next: verify` row / claim succeeds / message does not instruct setting `touches:` | non-build branch keeps `BUILDS` (MA1); SEED=0 branch prints `set it in` (MA2) | red: `no instruction to widen it`, `says verify holds no file scope`; `no instruction: set it in` |
+| AC30 | the same Given, **with `--touches`** | none: probed directly | **FAIL**: see below |
+| AC31 | Given a `next: develop` row / message instructs setting `touches:` | `NARROW it in` → `trim in` (MB1); `set it in $item` → `fill $item` (MB2) | red: `seeded: told to narrow it` (+3); `nothing to seed: told to set it` |
+| AC32 | Given in-progress row at a no-file-scope stage / `./next` claimed-files block / says so, not `assume held, ask` | `declared_scope` stage case `*)` → `zzz)` | red: `says the stage holds no file scope`, `not the undeclared wording`, `and not told to assume it held`, `bare ./next says the same` |
+| AC33 | `./claim --help` / usage, exit 0 | help `case` line → `:` (MC1) | red: `exits 0`, `-h exits 0 too` |
+| AC33 | `./close --help` / usage, exit 0 | `-h\|--help)` → `--nope)` (MD1) | red: `close --help exits 0`, `close -h exits 0` |
+| AC34 | Given row 1 waiting, takeable lower / prints both | `TAKEABLE:` label renamed (MN2) | red: `and the topmost takeable row is printed, marked`, `the takeable row is printed`, `the takeable row is the verify one` |
+| AC34 | … / marks which is takeable | ` — not takeable:` mark dropped (MN6) | red: `ROW 1 says it is not takeable, with the question`, `names the blocking id`, `names the holder` |
+| AC35 | Given row 1 takeable / not printed twice | `if [ -n "$row1_why" ]` → `if true` (MN3) | red: `no TAKEABLE line repeats it` |
+| AC36 | installed copies vs templates | one byte in `.tickets/next`, `.tickets/claim`, `.tickets/close` each, separately | red each: `<name> has diverged from skills/queue/templates/<name>` (`54 passed, 1 failed`) |
+| AC37 | whole suite | the run above | 45/45 rc=0 |
+| AC38 | `--touches path/a path/b` / touches: exactly both / same commit | keep only the first path (ME1) | red: `touches: holds path/a and path/b`, `the report says the scope was declared`. *Same commit*: guarded by `one commit on top of the fixture`, `and carries both files` and `the tree is clean`. Reasoned, no mutation run. |
+| AC39 | Given `expects:` differs / touches: only the given paths | `SEED_LIST="$EXPECTS_LIST $TOUCHES_ARGS"` (MG1) | red: `touches: holds only path/a` (both fixtures) |
+| AC40 | Given row 1 **waiting** / names the question inline | question dropped (MN4) | red: `ROW 1 says it is not takeable, with the question` |
+| AC40 | Given row 1 **blocked** / names the `blocked_by` id inline | id dropped (MN5) | red: `ROW 1 names the blocking id` |
+
+**AC30 FAIL, the actual output.** Fixture: one `| 0300 | Up for QA | verify | ready |` row, item with
+`expects: [src/alpha.ts]`. The template `claim` ran as `.tickets/claim 0300 tok0 --touches src/alpha.ts`:
+
+```
+claimed 0300 with token tok0
+touches: is set from --touches (1 paths) — exactly the paths named, never expects:'s;
+widen it in <fixture>/.tickets/items/0300-fixture.md the moment the work reaches further
+rc=0
+```
+
+A successful claim on a `next: verify` row instructs the session to widen `touches:`. That is the
+wording the leg's own 0261 case asserts a verify claim must not print (`no instruction to widen it`).
+It also breaks FR24 ("does not where it does not").
+
+**NFR rows bearing on S2.** Documentation (0066): AC33's usage text documents every mode. Dropping
+`--touches` from the usage is not run separately, but MC1/MD1 redden the usage line. The
+`documents --touches` / `documents --note` cases name the modes. Progressive delivery (0066): AC36's
+mutation, red, guarded. Correctness (0066), FR29 inside the claim's lock and commit: the `--touches`
+write is in the same awk pass as the claim, and the AC38 single-commit and clean-tree assertions
+would red on a follow-up write. The row names no check of its own, so it rests on AC38. Always-on:
+no log field, analytics event or egress is added. The commits carry the trailer, and nothing
+company-specific was added.
+
 ## Notes & decisions
 
 - **2026-11-26 (queue): AC8 example reworded, meaning unchanged.** Its literal home-path example
@@ -949,6 +1013,20 @@ design pass that sharpens S15 must name AC28 as discharged there.
 - **Stale sibling prose this leg creates (reported, not edited):** `skills/develop/SKILL.md` Step 1
   still tells a session to write `touches:` after the claim by hand. It does not name
   `--touches`. That prose is S14's (FR11) to move onto the script.
+
+### S2 verify FAIL — 2026-11-27, verify `357a` → develop
+
+- **AC30 fails on the `--touches` branch; everything else in the leg held under mutation.** The output
+  is in *QA evidence*, Leg S2. `./claim <id> <tok> --touches <path>` on a `next: verify` row succeeds
+  and prints `widen it in <item> the moment the work reaches further`.
+- **The constraint, from FR24 and AC30:** a successful claim at a stage that does not build prints no
+  instruction to set, narrow or widen `touches:` on any branch, `--touches` included. FR29 is not
+  in question: the write itself still happens whatever the stage. Only the message is
+  stage-gated, as the existing-`touches:` branch already gates it on `BUILDS`. AC30 needs a case for a
+  verify claim given `--touches`, asserting none of `NARROW it`, `set it in`, `widen it`.
+  Mutate it red by ungating the line.
+- The rest of S2 needs no rework (AC31–AC40 each reddened under its own mutation, recorded in the
+  evidence table). A re-entry verify reuses that clause table.
 
 ### Open questions for the unspecified slices
 
