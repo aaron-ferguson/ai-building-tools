@@ -284,12 +284,12 @@ released_commit() { # <version> <sha>; uses CHECKOUT COMMIT
     RECORD_BASIS="equal"
   elif [ -n "$2" ] && git -C "$CHECKOUT" cat-file -e "$2^{commit}" 2>/dev/null; then
     FULL_COMMIT="$(git -C "$CHECKOUT" rev-parse "$2")"
-    WHY="the gitCommitSha recorded for this install, the commit it was released at (not HEAD)"
+    WHY="the gitCommitSha recorded for this install, the commit it was released at; not HEAD"
     RECORD_BASIS="version"
   else
     FULL_COMMIT="$(bump_commit_for "$CHECKOUT" "$1")"
     [ -n "$FULL_COMMIT" ] || die "no commit in $CHECKOUT carries version $1 and the recorded gitCommitSha ${2:-(none)} is not a commit here, so there is no released commit to compare against; fetch, or name one with --commit" 2
-    WHY="the bump commit for version $1, since the recorded gitCommitSha is not a commit in this checkout (not HEAD)"
+    WHY="the bump commit for version $1, since the recorded gitCommitSha is not a commit in this checkout; not HEAD"
     RECORD_BASIS="equal"
   fi
 }
