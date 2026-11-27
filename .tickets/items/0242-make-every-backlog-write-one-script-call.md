@@ -2,8 +2,8 @@
 id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -65,8 +65,8 @@ expects:
   - tests/scaffold-close.test.sh
   - tests/sprint.test.sh
 ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8
-claimed_by: "80c2"
-claimed_at: 2026-11-27T07:07:03Z
+claimed_by:
+claimed_at:
 touches:
 slice: S5
 ---
@@ -750,7 +750,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S2 — the three places the scripts answer the wrong question (0066) — discharges AC30, AC31, AC32, AC33, AC34, AC35, AC36, AC37, AC38, AC39, AC40
 - [x] S3 — `next` reports a closed item still carrying a token, says an empty queue is empty, and lists the findings entries (0229, 0230, 0227) — discharges AC41, AC42, AC43, AC44, AC45, AC46, AC47, AC48, AC49, AC50, AC51
 - [x] S4 — `handoff` records a blocker without leaving drift that stops a driver (0156) — discharges AC52
-- [ ] S5 — a note written below the last AC no longer changes that AC's digest (0217) — discharges AC56, AC57, AC58, AC59, AC60, AC61, AC62
+- [x] S5 — a note written below the last AC no longer changes that AC's digest (0217) — discharges AC56, AC57, AC58, AC59, AC60, AC61, AC62
 - [ ] S6 — `reopen` of a develop self-close leaves a ticket verify can close (0219) — discharges AC63, AC64, AC65
 - [ ] S7 — `claim`, `handoff`, `close` and `reopen` refuse up front when run off the branch the backlog is shared on (0235) — discharges AC66, AC67, AC68, AC69, AC70, AC71, AC72, AC73, AC74, AC75, AC76, AC77
 - [ ] S8 — `./capture` with its restamp form, the shared lock, commit and refusal behaviour, and its install — discharges AC1, AC2, AC3, AC4, AC5, AC12, AC15
@@ -1171,6 +1171,61 @@ or verify -> develop (the leg passed); nothing was changed`). A design hand-off 
 would leave the passed S4 unticked. So this leg hands back `./handoff 0242 e297 develop --slice S4`,
 which ticks S4. develop then finds S5 `unspecified`, which is `design`'s (`skills/develop/SKILL.md`),
 and forwards the ticket. Parked in `FINDINGS.md`.
+
+### Leg S5 — verify `80c2`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: ../ai-building-conventions
+Level: `unit` (frontmatter). Command, `commands.unit_by_file` verbatim:
+`for t in tests/*.test.sh; do "$t" || true; done`, each file's rc and last line recorded.
+Subject: the checkout at `22d8e02` (the claim commit over `0bbddf6`; S5 built at `ee2e63d`).
+Copy executed: the repo template (`tests/ac-digest.test.sh` copies `skills/queue/templates/next`
+into each fixture). `.tickets/next` is byte-identical to the template (`cmp`). The session's skills
+came from the 0.9.50 install.
+Dirty set at Step 2: empty. Fresh capture after the last check: empty. Intersection: empty.
+`./next --ac-digest 0242 --check`: `0242: ac_digest matches`.
+Claim: `./claim 0242 80c2`, with a python3-minted token.
+
+**Whole suite:** 45 files, 45 rc=0 in one pass. Tallies, pasted: `tests/ac-digest.test.sh`
+`ac-digest: 54 passed, 0 failed`; `tests/backlog-scripts-installed.test.sh` `55 passed, 0 failed`;
+`tests/next.test.sh` `783 passed, 0 failed`. This run at `22d8e02` is also the control for every
+mutation below, which ran in detached worktrees of that commit and never touched the checkout.
+
+**Clause table and mutations, all run in this session.** Each mutation went into its own detached
+worktree, into `skills/queue/templates/next` (the copy the harness runs). Each substitution matched
+exactly once (asserted), `git diff --shortstat` was non-empty, and every run printed its tally.
+
+| AC | Clause (verbatim) | Mutation | Result |
+|---|---|---|---|
+| AC56 | Given a fixture item stamped with FR50's digest, whose last criterion is followed by a blank line and then a column-0 note | M1: the new-mode end rule deleted (today's normalisation) | red: `50 passed, 4 failed` — `--check exited 1 … changed: AC2`, `--check printed: … changed: AC2` |
+| AC56 | when the note's text is edited … then it exits 0 and prints `ac_digest matches` | M1, and M6 (`ac_digest_of` computes legacy) | red in both, same two assertions |
+| AC57 | when an indented continuation line of its last criterion is edited, then `--check` exits 1 and names that criterion as `changed:` | M2: a rule ending every criterion at its label line | red: `47 passed, 7 failed` — `--check exited 0: 9956: ac_digest matches`, `does not name AC2` |
+| AC58 | a criterion whose text runs on after a blank line as an indented line (0161 AC1's shape) … names the criterion | M3: a rule ending a criterion at a blank line | red: `51 passed, 3 failed` — `AC1's digest does not include its Red: line`, `--check exited 0: 9958`, `does not name AC1` |
+| AC59 | Given a fixture item stamped with the legacy digest … `--check` exits 0 | M4: FR51's legacy acceptance removed from `ac_digest_diff` | red: `51 passed, 3 failed` — `--check exited 1`, `--check printed`, `--drift reports 9959` |
+| AC59 | and `./next --drift` prints no `ac_digest` line for it | M7: legacy argument dropped from the `--drift` call only, `--check` keeps it | red: `53 passed, 1 failed` — `--drift reports 9959: DRIFT 9959 \| ac_digest differs … changed: AC2`. The drift half is guarded on its own |
+| AC60 | when the last criterion's own label-line text is edited, then `--check` exits 1 and names it | M5: a legacy comparison that accepts any value | red: `39 passed, 15 failed` — AC60 `--check exited 0: 9959`, `does not name AC2`, plus AC57, AC58, 0195 AC3/AC4/AC6 |
+| AC61 | the value it prints for the trailing-note criterion differs from the legacy digest and equals FR50's digest | M6: `ac_digest_of` stamps the legacy form; M1 | red in both: `AC2 is f2393ef4, FR50's is b46d92a1`, `AC2 is the legacy digest`. Expected values are `crc` over literal text in the test, not read back from `next` |
+| AC62 | `tests/backlog-scripts-installed.test.sh` … passes. Red: an edit to the template alone | `# mutation` appended to the template only | red: `next has diverged from skills/queue/templates/next` (`54 passed, 1 failed`) |
+| AC62 | `.tickets/next --ac-digest 0242 --check` … passes | in a worktree, AC1's `0008` edited to `0009` in this item | red: `0242: ac_digest differs from the criteria on disk — changed: AC1`, rc=1. Unedited, on the checkout: `0242: ac_digest matches` |
+
+No mutation stayed green. No AC in S5 carries a plural or quantifier over fixture items, so no
+two-item fixture is owed.
+
+**FR51 read:** `close` calls `$DIR/next --ac-digest <id> --check` (`skills/queue/templates/close`,
+the digest block), so it inherits the legacy acceptance, and M5 reddened 0195 AC6's close refusal
+through that path. The legacy computation sits beside the new one, named as legacy, with a comment
+naming 0242 S5. `--ac-digest <id>` prints only the new form (M6 reds it). FR52: `cmp` equal.
+
+**NFR rows bearing on S5:** none of the table's rows is S5's. Always-on pass: no log field,
+analytics event, egress, credential or UI. Nothing company-specific. `ee2e63d` carries the trailer.
+Newly reachable: a column-0 line inside `## Acceptance criteria` no longer belongs to any digest,
+so an edit there is not reported. That is FR50's stated intent, and design `b7a4` scanned every item
+and found only notes in that position. `CHANGELOG.md` `## Unreleased` carries develop's S5 note,
+which is the note.
+
+**Drift recorded, not a failure:** the QA plan's "S5 is prose, read rather than grepped" predates
+the renumbering, as develop recorded. AC56–AC62 are fixture-scripted and were run as such.
+
+**Hand-off:** pass. `./handoff 0242 80c2 develop --slice S5`. S6 is specified (AC63–AC65).
 
 ## Notes & decisions
 
