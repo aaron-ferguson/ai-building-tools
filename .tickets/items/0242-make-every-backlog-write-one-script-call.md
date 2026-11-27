@@ -2,8 +2,8 @@
 id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -65,8 +65,8 @@ expects:
   - tests/scaffold-close.test.sh
   - tests/sprint.test.sh
 ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8 AC78=9de0f100 AC79=d33bbcc4 AC80=e46fe1e6 AC81=ff13b5c9 AC82=d9ab8d22 AC83=7d5d6a7c AC84=7e39137c AC85=4c37e61e AC86=034cf395 AC87=5714d3fe AC88=88f5d80c AC89=98d1d4ff AC90=76644f05 AC91=d1ca1c88
-claimed_by: "c7e1"
-claimed_at: 2026-11-27T16:12:28Z
+claimed_by:
+claimed_at:
 touches:
 slice: S12
 ---
@@ -963,7 +963,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S9 — `./park`, with the public-repo screen — discharges AC6, AC7, AC8
 - [x] S10 — `./rank` and `./withdraw` — discharges AC9, AC10, AC11
 - [x] S11 — `./drain`, on `0227`'s listing, and the ten-script sync — discharges AC13, AC14, AC15
-- [ ] S12 — `queue` sends an open verify ticket back to design with `./claim` then `./handoff … design`, named in its Step 1 (0237; FR44, FR45, FR59, FR60) — discharges AC78, AC79, AC80
+- [x] S12 — `queue` sends an open verify ticket back to design with `./claim` then `./handoff … design`, named in its Step 1 (0237; FR44, FR45, FR59, FR60) — discharges AC78, AC79, AC80
 - [ ] S14 — the seven skills, `CONCURRENCY.md` and the CHANGELOG move onto the scripts, and every step that commits a sweep runs the privacy guard (0118) — discharges AC16, AC17, AC53, AC54, AC55
 - [ ] S15 — `--drift` and `--drive` report an `expects:` path that exists nowhere unless it is marked `# new`, through the shared check; fixtures and this item's own `expects:` are corrected (0155; FR22, FR61–FR66) — discharges AC28, AC81, AC82, AC83, AC84, AC85
 - [ ] S13 — design records sibling consequences and hands to `queue`, which folds them in, reopens a done sibling, or sends the decision back, and `--drive` dispatches that pass (0236; FR67–FR73) — discharges AC86, AC87, AC88, AC89, AC90, AC91
@@ -1810,6 +1810,58 @@ each file was restored with `git checkout -- <that path>`.
 **Hand-off:** pass. `./handoff 0242 v5a1 develop --slice S11`. S12 is next and `unspecified`. Per
 `templates/item.md` *Progress*, the next develop routes the ticket to `design`, and `./handoff
 --slice` refuses a leg holding an unspecified slice.
+
+### Leg S12 — verify `c7e1`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`), each file's exit
+code checked. Every file in the suite (50) exited 0 at `0d9a067` (the claim, whose parent is the hand-off `4a7463c`).
+`./next --ac-digest 0242 --check` → `0242: ac_digest matches`. Step 2 capture of `git status --porcelain`: empty.
+The tree was clean again after the last mutation's restore, so nothing is advisory.
+Copy executed: the repo templates (`skills/queue/templates/claim`, `skills/queue/templates/handoff`),
+which `tests/handoff.test.sh` loads through `HANDOFF_SRC` and `CLAIM_SRC`.
+
+| AC | Evidence set | Check | Result |
+|---|---|---|---|
+| AC78 | `tests/handoff.test.sh`, `skills/queue/templates/claim`, `skills/queue/templates/handoff` | 0242 AC78 case, 8 assertions | `284 passed, 0 failed` |
+| AC79 | same | 0242 AC79 case, 3 assertions | `284 passed, 0 failed` |
+| AC80 | `skills/queue/SKILL.md` Step 1, `references/CONCURRENCY.md`, `skills/verify/SKILL.md` | read | holds (below) |
+
+**Clause table and mutations (AC78, AC79).** Verify ran each of these itself on the committed templates, restored each by path, then ran a control.
+| Clause | Mutation | Result |
+|---|---|---|
+| AC78 Given: a row at `next: verify`, `status: ready`, unheld | (fixture `0290 verify ready ''`, read) | — |
+| AC78 "both exit 0"; red input "`handoff` refusing a `verify -> design` move" | M1: `design` dropped from `handoff`'s stage `case` (l.148) | red, `262 passed, 22 failed`, 6 AC78 assertions |
+| AC78 "`claimed_by:` empty"; red input "leaving the claim held" | M2: `handoff` prints `claimed_by: kept` (l.811) | red, `198 passed, 86 failed`, AC78 included |
+| AC78 "last commit `Hand off <id> to design [<token>]`" | M3: subject `Handed $ID` (l.900) | red, `278 passed, 6 failed`, AC78's log assertion |
+| AC78 "previous commit `Claim <id> [<token>]`" | M6: `claim` subject `Took $ID` (l.640) | red, `283 passed, 1 failed`, AC78's log assertion |
+| AC78 "`git status --porcelain` is empty" | M4: `handoff` commits `$QUEUE` only, leaves the item uncommitted | red, `283 passed, 1 failed`, `the tree is clean` |
+| AC78 item `next: design` / `status: ready`, row `design \| ready` | covered by M1, which leaves all three wrong | red |
+| AC79 Given: the row already held by another token | (fixture `0291 verify in-progress ab12`, read) | — |
+| AC79 "exits non-zero"; "item, row and `git log` unchanged"; red input "a claim that takes a held verify row" | M5: `claim`'s `[ "$status" = "ready" ] \|\|` → `true \|\|` (l.286) | red, `281 passed, 3 failed`, all 3 AC79 assertions |
+| Control | all restored | `284 passed, 0 failed` |
+
+**AC80 (read).** The Step 1 row names the trigger (the user overturns the decision on an open ticket at `next: verify`). It lists `./claim <id>`, then the dated
+*Notes & decisions* line, then the restated `## Open design question`, then `./handoff <id> <token>
+design`, in that order. It says to stop and report when `./claim` refuses. The row cites the
+heading *A stage writes only the ticket it holds* (`references/CONCURRENCY.md:227`), and that section
+holds the bullet FR45 names (`:257`). FR60: neither `references/CONCURRENCY.md` nor
+`skills/verify/SKILL.md` says that only `verify` or `reopen` may move a row off `next: verify`. A
+pattern search for that claim found nothing, and the reading agrees.
+
+**NFRs / always-on.** No NFR row is specific to S12. The leg's commits (`23e7ace`, `6b8ad68`,
+`0383ce2`, `0d829c2`) carry the `Co-Authored-By` trailer and add no home path. *Newly reachable:*
+`queue` can now move a `verify` row to `design`. The claim gate that AC79 pins guards that move, so it
+cannot take a row a verify pass holds. No CHANGELOG note is owed by this leg, because S14 owns the
+CHANGELOG move.
+
+**`tests/sprint.test.sh` intermittent red (parked at `24fc7b1`).** It did not reproduce. It passed five
+times at `0d9a067`, once in the suite and four times alone, each `388 passed, 0 failed, 0
+skipped`. The S12 leg (`18aa698..4a7463c`) changes only `.tickets/FINDINGS.md`, `.tickets/QUEUE.md`,
+this item, `skills/queue/SKILL.md` and `tests/handoff.test.sh`. It touches no sprint file, so it is
+not this leg's.
+
+**Hand-off:** pass. `./handoff 0242 c7e1 develop --slice S12`. S14 is next.
 
 ## Notes & decisions
 
