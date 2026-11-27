@@ -3377,3 +3377,51 @@ to verify with `--slice S14`. S15 and S13 are still to build after it.
 - **Claim note.** `./claim 0242` with no token died at `xxd: not found`, because this machine has no
   `xxd`. Nothing was written and no lock was left. A token minted with `od` was passed explicitly.
   The finding is parked.
+
+### S15 build notes (develop `be99`, 2026-11-27)
+
+- **S15 built in `2f5a00a` (the class, fixtures, own `expects:`) and `b8e15f3` (FR66 prose).**
+  Discharges AC28, AC81, AC82, AC83, AC84, AC85, all for verify; nothing ticked here.
+- **Where it sits.** `drift_report` class 9, beside the per-row `elif` chain rather than in it, so a
+  row that drifts on a state class still reports its paths, one line per entry (FR61). Only rows of
+  `QUEUE.md` are walked (`all_ids`), so a `DONE.md` row is never checked. The comment is read by
+  `comment_of` / `marked_new` in a `NEW_MARK` awk block placed after `copy-end: decomment`; the
+  declared copy is unchanged (FR63). `expects_marked` walks the list the way `fm_list` does, and on
+  an inline or scalar line its one comment marks every entry on it.
+- **Two choices FR62 left open, made here.** An entry with a `..` segment is not read, because it
+  would read outside the repo root: it is reported as existing nowhere. The word test is
+  `^new([^A-Za-z0-9_]|$)` after leading blanks, so `# new`, `# new — …` and `# new: …` exempt, while
+  `# renewed`, `# newly` and `# not new` do not. It is case-sensitive, as FR63 writes `new`.
+- **The message uses `\047` for its apostrophes.** Written as `'\''`, `tests/backlog-scripts-installed.test.sh`
+  reported "a quote defect … awk program opened at next:1361", although that line is a shell
+  `printf` outside any awk program. Parked as a finding.
+- **FR65 is stale on 0240, by a sibling, not by this leg.** 0240's `expects:` already names
+  `MEASUREMENT.md`, which exists at the repo root, and `./next --drift` reports nothing on 0240 at
+  `b8e15f3`. So 0240 does **not** still need its `expects:` corrected. Nothing was written to 0240.
+  The only missing, unmarked entries on the live backlog were 0242's four `.claude/backlog/*`
+  paths. They are dropped from `expects:`, and from the `touches:` that `./claim` seeded from it.
+- **FR64 fixtures, by file.** `tests/next.test.sh`: 13 one-path heredoc lines carry `# new`, and
+  `add_ticket_expects` marks every uncommented entry of the body it is given. `tests/design-hold.test.sh`
+  `src/$1.ts` and `tests/sprint.test.sh`'s three writers (AC16's two items and the `printf` one
+  behind 0134 AC9) carry `# new`. In `tests/handoff.test.sh` the fixture **creates** `src/one.ts`
+  after the hand-off in AC4, 0242 AC52 and FR41. A mark there would break the exact-line assertion
+  `expects: is left alone '  - src/one.ts'`. Before the fixtures, the class reddened 345 cases in
+  `next`, 6 in `handoff`, 5 in `design-hold`, 2 in `sprint`, and aborted sprint's AC16 under `set -e`.
+  The *0142 FR3* case is green, and it still counts three drifted rows (AC84).
+- **Mutation sweep, all run** against committed `2f5a00a` with `tests/next.test.sh`, each restored
+  by `git checkout`, then a control run green at 794/0:
+
+  | AC clause (red-making input) | Mutation | Result |
+  |---|---|---|
+  | AC81 "no exemption" | `marked_new` returns 0 | 347 red |
+  | AC81 "an exemption that matches `new` anywhere" | `c ~ /new/` | 2 red (`# renewed`, `# not new`) |
+  | AC82 "a glob compared as a literal path" | `"$em_root/$em_path"` quoted | 1 red |
+  | AC83 "the class added to `--drift`'s own path and not to `drift_report`" | class gated on `DR9`, set only in the `--drift` branch | 2 red (`--drive` exit 4, same line) |
+  | AC83 usage names the class | usage clause deleted | 1 red |
+  | AC28 / FR22 class absent | `if false` | 7 red |
+  | AC82 "a closed row checked" | — | **reasoned, not run**: the class is inside the `all_ids` loop over `QUEUE.md`, and a walk of `items/` would print 0424 and red the `assert_eq` |
+
+- **Whole suite at `b8e15f3`, clean tree:** every `tests/*.test.sh` exited 0, in the per-file form
+  `for t in tests/*.test.sh; do "$t" || exit 1; done`. `./next --drift` on the live backlog prints
+  `no drift`, and names no entry of 0242 (AC84). AC85 is a reading of `skills/queue/templates/item.md`'s
+  `expects:` comment and `CHANGELOG.md`'s `## Unreleased` line, both in `b8e15f3`.
