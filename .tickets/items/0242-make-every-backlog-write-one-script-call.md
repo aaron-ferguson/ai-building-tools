@@ -2925,6 +2925,43 @@ repair; nothing was narrowed. What was checked, effectiveness first:
   class escalates it. S13 stays last.
 - `qa_level: unit` and `close_by: verify` re-read against the repaired criteria: still fit.
 
+### S12 build notes — 2026-11-27, develop `22a6` (sprint run-20261127T024025Z)
+
+S12 is built in `23e7ace` (AC78, AC79 guards), `6b8ad68` (AC80's routing row) and `0383ce2`
+(the row's citation repaired). No script changed, as FR44 says: AC78 is green at baseline (FR59).
+- **AC78/AC79** are two cases at the end of `tests/handoff.test.sh`. They run the real
+  `skills/queue/templates/claim`, installed into the fixture by `with_claim`, and not
+  `claim_fixture`, because the guarantee is that the two scripts compose. Both pass a token
+  (`./claim <id> tok0`), as `tests/claim.test.sh` does. A bare `./claim` mints with `xxd`, which this
+  machine lacks (already parked twice).
+- **Clause table (AC78/AC79), each mutation run, not reasoned.** Transient edits to committed
+  templates, each restored with `git checkout --`. A control run afterwards was green (284/0) on a
+  clean tree.
+  | AC clause | Assertion | Mutation | Result |
+  |---|---|---|---|
+  | AC78 "both exit 0"; `handoff` refusing a `verify -> design` move | `./handoff … design exits 0`, item and row lines | `design` dropped from `handoff`'s stage list | red, 6 AC78 assertions |
+  | AC78 "`claimed_by:` empty"; leaving the claim held | `claimed_by: is empty` | `handoff` writes `claimed_by: "kept"` | red (its read-back refuses, exit non-zero) |
+  | AC78 "last two commits are `Claim <id> [<token>]` and `Hand off <id> to design [<token>]`" | `log -2` subjects equal | covered by both mutations above | red |
+  | AC78 "`git status --porcelain` is empty" | `the tree is clean` | not separately mutated (reasoned: the read-back refusal exits before commit, so no hand-off ran) | — |
+  | AC79 "exits non-zero"; "item, row and `git log` unchanged"; a claim that takes a held verify row | three assertions | `claim`'s `status = ready` check replaced by `true` | red, all 3 |
+- **AC80** is one row in `skills/queue/SKILL.md` Step 1, below the `./reopen` row. It names the
+  trigger, `./claim`, the dated Notes line, the restored `## Open design question`, `./handoff <id>
+  <token> design` and stopping when `./claim` refuses. It cites `CONCURRENCY.md`, *A stage writes
+  only the ticket it holds*. That is the section holding the bullet *A claimed ticket is never
+  amended, even by `queue`*. The first draft cited the bullet, and `tests/citations.test.sh` reds on
+  anything but a heading (`0383ce2`). **FR60** was checked by reading. `references/CONCURRENCY.md`
+  says that verify refuses a row not at `next: verify` and that verify owns closing. Neither says
+  that only verify or reopen may move a row off `verify`. `skills/verify/SKILL.md` says nothing of
+  the kind either. Neither file was edited.
+- **Size:** `skills/queue/SKILL.md` is now 52,353 bytes against the 53,538 bound (`argued_at`
+  48,538 + 5,000 margin, `tests/skill-size.test.sh`). **S14, which moves this skill onto the scripts,
+  has 1,185 bytes of headroom.** It must net-shrink or re-argue.
+- **Suite:** the whole suite is green at `0383ce2`. One intermittent red was seen in the first pass:
+  `tests/sprint.test.sh` 0165 AC2's child copy tallied `381 passed, 1 failed`, with no FAIL line
+  above it naming the case. It was green on the next run in this checkout at the same commit, with a
+  clean tree and no other runner live. It was also green in a worktree at `18aa698` (before this leg)
+  and at `0383ce2`. Not this leg's, and parked in `FINDINGS.md`.
+
 ### Open questions for the unspecified slices
 
 **Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
