@@ -1975,6 +1975,45 @@ FR65: 0240 needed no correction. That is the sibling's state, as the build notes
 
 **Hand-off:** pass. `./handoff 0242 a7c3 develop --slice S15`. S13 is next, and it is the last slice, so its verify is the closing one and checks every AC.
 
+### Leg S13 (closing) — verify `c0c4`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, closes the ticket
+
+Conventions: ../ai-building-conventions
+Command: `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`, every file reporting), then `for t in tests/*.test.sh; do "$t" || exit 1; done` (`commands.unit`) after this evidence commit.
+Copy executed: the repo copy (`skills/queue/templates/next`, synced byte-identical to `.tickets/next`); the session's own skills ran from installed 0.9.50.
+Tree: `git status --porcelain` empty at Step 2 and at the verdict; dirty set empty, so the advisory intersection is empty.
+`./next --ac-digest 0242 --check` → `0242: ac_digest matches`.
+
+Whole suite, by file, at `746f93a`: all 50 files print `N passed, 0 failed`, none `ABORTED`; `tests/next.test.sh` `815 passed, 0 failed`, `tests/sprint.test.sh` `387 passed, 0 failed, 0 skipped` (the parked 0165 AC2 intermittent did not fire).
+
+Clause table and mutations, AC86/AC87/AC91 — run by this pass in a detached scratch worktree at `746f93a`, against `skills/queue/templates/next` (the copy `tests/next.test.sh` copies into each fixture via `NEXT_SRC`), with a harness of `tests/next.test.sh`'s preamble (lines 1–415), `set_config`/`notes_before_dispatch` (3719–3721) and the S13 block (4298–4345). Each anchor was matched exactly once and the file confirmed changed; control before and after: `21 passed, 0 failed`.
+
+| AC | Clause | Mutation (red-making input) | Result |
+|---|---|---|---|
+| AC86 | Given in-scope row 0001 at `next: queue` / `ready`, `--completed design:0001` | today's arm (verify/develop only) | red, 13/8: exits 0, dispatches queue, escalates nothing, NOTE names design, and the id; AC87 n = max |
+| AC86 | exits 0, prints `DISPATCH  queue 0001`, no `ESCALATE` | same | red, as above |
+| AC86 | a NOTE naming `design` | NOTE text `from design` → `from a stage` | red, 20/1: `a NOTE before it names design` |
+| AC87 | `--bounces 0001=<n>` past `bounce_max` → exit 4, `bounce_max` ESCALATE | `past_bound` branch disabled | red, 18/3: n = max + 1 exits 4, the bounce_max escalation, dispatches nothing |
+| AC87 | row out of scope escalates as today | scope check removed from the arm | red, 16/5: out of scope exits 4, stale contract, no queue; no `--scope` exits 4, no queue |
+| AC87 | `--completed queue:0001` reaches stale-contract ESCALATE (0234 FR14) | arm keyed on any completed stage | red, 16/5: after queue exits 4, stale contract, no queue; after any other stage ×2 |
+| AC87 | keyed on `design` and not any stage | arm keyed on any stage but `queue` | red, 19/2: after any other stage (`prototype`) exits 4, no queue |
+| AC91 | `--help`'s `--drive` text names `design` | usage reverted to `a verify or develop sent to next: queue` | red, 20/1 |
+| AC91 | whole suite exits 0 | — | green, above and in the post-commit `unit` run below |
+
+Readings (AC88–AC90, unguarded by design, `CLAUDE.md` *Tests*):
+
+| AC | Read | Result |
+|---|---|---|
+| AC88 | `skills/design/SKILL.md` Step 4 | holds: the develop path names "The exception: a decision that changes what another item must say"; new path *Item-scoped, held by you, and it changes another item* carries the heading `### Sibling consequences — <date>, design <token>`, the four fields (id; FR or AC and how; why; observed state), `./handoff <id> <token> queue, never develop`, own-slice consequences written by design, FR70's held-FR case, and "write nothing outside the item you hold, not even an unheld sibling" |
+| AC89 | `skills/queue/SKILL.md` Step 1 and Step 2 | holds: one routing row with the re-read, the check against other open tickets and their ACs, (a) `./claim` → amend → stamp from `./next --ac-digest` → `./handoff`, (b) `./reopen` → `./claim` → amend → stamp → `./handoff … develop` with intentional-rework notes, (c) restore `## Open design question`; `resolved <date> queue <token>` marking; hand-off to develop, or design on (c); no `./capture --restamp`. Step 2 states FR70 ("Write no FR directing another stage to write an item it will not hold") |
+| AC90 | `references/CONCURRENCY.md`, `skills/sprint/SKILL.md`, `CHANGELOG.md` | holds: the section keeps "One narrow exception" (the close's reconcile) and the new bullet says "No second exception" and states FR71 once, listing FR67's unaffected queue operations; sprint Step 2 names "a verify, a develop or a design" for the in-scope dispatch to queue; `## Unreleased` carries the FR73 line. Sweep re-run by this pass: `grep -i -E 'sibling|another item|other ticket|different item'` over `skills/*/SKILL.md` and `references/*.md`, read by hand — no other passage permits a stage holding one item to write a different one (`skills/develop/SKILL.md`'s *criterion carried in from another ticket* defers to `CONCURRENCY.md`) |
+
+AC1–AC85 (closing check): every guard they rest on ran green in the whole suite above. Their mutations were run and recorded by each leg's verify (S1–S12, S14, S15, above) and were **not re-run** by this pass; S13 changed only the `--drive` queue arm, its usage line and the S13 test block in code, and added prose to the five files named, none of which the earlier readings (AC16, AC17, AC53, AC54, AC80, AC85) now read differently.
+
+| NFR row | Check | Result |
+|---|---|---|
+| All rows | S13 adds no NFR row and touches no log field, egress, credential or public-repo write; each row's guard ran green in the suite | holds; mutations as recorded by earlier legs, not re-run |
+| Always-on (`CONVENTIONS_CORE.md`) | diff of `18c5c87`, `1effb20`: no secret, no company material, no machine path; test and code in one commit | holds |
+
 ## Notes & decisions
 
 - **2026-11-26 (queue): AC8 example reworded, meaning unchanged.** Its literal home-path example
