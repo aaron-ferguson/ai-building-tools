@@ -13,7 +13,8 @@
 #   * the reported version is not evidence the bytes changed.
 #
 # Only the bytes are. `release verify` therefore diffs the resolved install directory against the
-# checkout AT A NAMED COMMIT, and checks the recorded sha as a SECOND, INDEPENDENT assertion --
+# checkout AT A NAMED COMMIT -- `--commit`, or by default the commit that install was released at,
+# never HEAD (0064, was 0157), with the backlog directories excluded -- and checks the recorded sha as a SECOND, INDEPENDENT assertion --
 # the two failure modes were observed independently and neither check catches both.
 #
 # The install directory is read from `installPath`, never constructed from the version string, so
@@ -149,12 +150,21 @@ next_patch() { # <version> -> that version with its last component incremented
 # `core.quotePath=false` keeps non-ASCII paths readable. A path containing a newline would break
 # the line-oriented pairing below; nothing in this repo has one, and git would have to be asked
 # for `-z` output to handle it.
+# THE BACKLOG IS NOT RELEASED CONTENT (0064 FR6, was 0157). A release is followed within minutes by
+# claim and hand-off commits, so the backlog in any commit a verify might name differs from the
+# install's. `.claude/backlog/` is the directory the finding named; `.tickets/` is where this repo's
+# backlog lives now. Both are excluded, and the report says so -- a silent exclusion is a hole.
+BACKLOG_EXCLUDED=".claude/backlog/ .tickets/"
+not_backlog() { # stdin: lines of "[<blob> ]<path>" -> the same, minus backlog paths
+  grep -v -E '^([0-9a-f]{40,} )?(\.claude/backlog|\.tickets)/' || true
+}
+
 paths_that_differ() {
   _checkout="$1"; _commit="$2"; _install="$3"
   _tmp="$(mktemp -d)"
 
   git -C "$_checkout" -c core.quotePath=false ls-tree -r "$_commit" \
-    | sed -n 's/^[0-7]\{6\} blob \([0-9a-f]\{40,\}\)	\(.*\)$/\1 \2/p' > "$_tmp/tree"
+    | sed -n 's/^[0-7]\{6\} blob \([0-9a-f]\{40,\}\)	\(.*\)$/\1 \2/p' | not_backlog > "$_tmp/tree"
 
   : > "$_tmp/present"
   while read -r _blob _path; do
@@ -177,7 +187,7 @@ paths_that_differ() {
 }
 
 tracked_count() { # <checkout> <commit>
-  git -C "$1" ls-tree -r --name-only "$2" | grep -c . || true
+  git -C "$1" -c core.quotePath=false ls-tree -r --name-only "$2" | not_backlog | grep -c . || true
 }
 
 # --- the release authorisation ------------------------------------------------------------------
@@ -249,11 +259,47 @@ open(path, "w").write("\n".join(out).rstrip("\n") + "\n")' "$1" "$2" "$3"
 
 # --- verify ------------------------------------------------------------------------------------
 
-verify_one() { # <label> <installPath> <version> <sha>; uses KEY CHECKOUT FULL_COMMIT RECORD
+# The commit a version was released at, when the record cannot name it: the oldest commit of the
+# newest unbroken run of commits whose plugin.json carries <version> -- the bump. Empty if none does.
+bump_commit_for() { # <checkout> <version>
+  _found=""
+  for _c in $(git -C "$1" log --format=%H -- .claude-plugin/plugin.json); do
+    _v="$(git -C "$1" show "$_c:.claude-plugin/plugin.json" 2>/dev/null | plugin_json_field - version 2>/dev/null || true)"
+    if [ "$_v" = "$2" ]; then _found="$_c"
+    elif [ -n "$_found" ]; then break
+    fi
+  done
+  printf '%s' "$_found"
+}
+
+# Which commit an install is compared against, and why (0064 FR5, was 0157). Never HEAD by
+# default: HEAD moves with every backlog commit and every unreleased change, so a correct install
+# went red within minutes of each release. Sets FULL_COMMIT, WHY and RECORD_BASIS.
+released_commit() { # <version> <sha>; uses CHECKOUT COMMIT
+  if [ -n "$COMMIT" ]; then
+    git -C "$CHECKOUT" cat-file -e "$COMMIT^{commit}" 2>/dev/null \
+      || die "$COMMIT is not a commit in $CHECKOUT" 2
+    FULL_COMMIT="$(git -C "$CHECKOUT" rev-parse "$COMMIT")"
+    WHY="named by --commit"
+    RECORD_BASIS="equal"
+  elif [ -n "$2" ] && git -C "$CHECKOUT" cat-file -e "$2^{commit}" 2>/dev/null; then
+    FULL_COMMIT="$(git -C "$CHECKOUT" rev-parse "$2")"
+    WHY="the gitCommitSha recorded for this install, the commit it was released at (not HEAD)"
+    RECORD_BASIS="version"
+  else
+    FULL_COMMIT="$(bump_commit_for "$CHECKOUT" "$1")"
+    [ -n "$FULL_COMMIT" ] || die "no commit in $CHECKOUT carries version $1 and the recorded gitCommitSha ${2:-(none)} is not a commit here, so there is no released commit to compare against; fetch, or name one with --commit" 2
+    WHY="the bump commit for version $1, since the recorded gitCommitSha is not a commit in this checkout (not HEAD)"
+    RECORD_BASIS="equal"
+  fi
+}
+
+verify_one() { # <label> <installPath> <version> <sha>; uses KEY CHECKOUT COMMIT RECORD
   _label="$1"; INSTALL_PATH="$2"; REC_VERSION="$3"; REC_SHA="$4"
 
   [ -n "$INSTALL_PATH" ] || die "the $_label entry has no installPath for $KEY; there is no directory to verify" 4
   [ -d "$INSTALL_PATH" ] || die "installPath $INSTALL_PATH ($_label) does not exist -- the record names a directory that is not there" 1
+  released_commit "$REC_VERSION" "$REC_SHA"
 
   DIFFS="$(paths_that_differ "$CHECKOUT" "$FULL_COMMIT" "$INSTALL_PATH")"
   N_DIFFS="$(printf '%s' "$DIFFS" | grep -c . || true)"
@@ -262,7 +308,14 @@ verify_one() { # <label> <installPath> <version> <sha>; uses KEY CHECKOUT FULL_C
   BYTES_OK=0
   RECORD_OK=0
   [ "$N_DIFFS" -eq 0 ] && BYTES_OK=1
-  [ "$REC_SHA" = "$FULL_COMMIT" ] && RECORD_OK=1
+  # With the commit taken FROM the record, "the record equals it" would be true by construction,
+  # so the second assertion becomes: the recorded sha carries the recorded version.
+  if [ "$RECORD_BASIS" = "version" ]; then
+    SHA_VERSION="$(git -C "$CHECKOUT" show "$FULL_COMMIT:.claude-plugin/plugin.json" 2>/dev/null | plugin_json_field - version 2>/dev/null || true)"
+    [ "$SHA_VERSION" = "$REC_VERSION" ] && RECORD_OK=1
+  else
+    [ "$REC_SHA" = "$FULL_COMMIT" ] && RECORD_OK=1
+  fi
 
   if [ "$BYTES_OK" -eq 1 ] && [ "$RECORD_OK" -eq 1 ]; then
     say "$ME: verified $KEY $REC_VERSION"
@@ -273,6 +326,9 @@ verify_one() { # <label> <installPath> <version> <sha>; uses KEY CHECKOUT FULL_C
   say "  version   $REC_VERSION"
   say "  install   $INSTALL_PATH"
   say "            (from installPath in $RECORD, never built from the version string)"
+  say "  compared  $FULL_COMMIT"
+  say "            ($WHY)"
+  say "  excluded  $BACKLOG_EXCLUDED -- backlog state, which moves after every release"
 
   # The two assertions both report, always. They were observed failing independently, so a run
   # that short-circuits one of them hands over half a diagnosis.
@@ -282,8 +338,13 @@ verify_one() { # <label> <installPath> <version> <sha>; uses KEY CHECKOUT FULL_C
     say "  bytes     FAILED -- $N_DIFFS of $N_TRACKED tracked paths do not match $FULL_COMMIT:"
     printf '%s\n' "$DIFFS" | sed 's/^/              /'
   fi
-  if [ "$RECORD_OK" -eq 1 ]; then
+  if [ "$RECORD_OK" -eq 1 ] && [ "$RECORD_BASIS" = "version" ]; then
+    say "  record    ok -- gitCommitSha $FULL_COMMIT carries version $REC_VERSION"
+  elif [ "$RECORD_OK" -eq 1 ]; then
     say "  record    ok -- gitCommitSha is $FULL_COMMIT"
+  elif [ "$RECORD_BASIS" = "version" ]; then
+    say "  record    FAILED -- gitCommitSha $FULL_COMMIT carries version ${SHA_VERSION:-(none)}, but the"
+    say "            record says $REC_VERSION; one half of the record is stale"
   else
     say "  record    FAILED -- gitCommitSha is $REC_SHA but the verified commit is $FULL_COMMIT;"
     say "            that field was written by an update that extracted nothing, so it is not"
@@ -295,10 +356,6 @@ verify_one() { # <label> <installPath> <version> <sha>; uses KEY CHECKOUT FULL_C
 
 cmd_verify() { # uses RECORD KEY CHECKOUT COMMIT
   ENTRIES="$(record_entries "$RECORD" "$KEY")" || exit $?
-
-  git -C "$CHECKOUT" cat-file -e "$COMMIT^{commit}" 2>/dev/null \
-    || die "$COMMIT is not a commit in $CHECKOUT" 2
-  FULL_COMMIT="$(git -C "$CHECKOUT" rev-parse "$COMMIT")"
 
   # A here-document, not a pipe, so the loop runs in this shell and its counts survive it.
   N_CHECKED=0
@@ -324,7 +381,7 @@ ENTRIES
     say "            the copy it started with"
     return 0
   fi
-  say "$ME: $N_FAILED of $N_CHECKED recorded installs do not hold $FULL_COMMIT"
+  say "$ME: $N_FAILED of $N_CHECKED recorded installs do not hold the commit each was compared against"
   return 1
 }
 
@@ -541,7 +598,7 @@ if [ -z "$KEY" ]; then
 fi
 
 if [ "$SUB" = "verify" ]; then
-  [ -n "$COMMIT" ] || COMMIT="$(git -C "$CHECKOUT" rev-parse HEAD)"
+  # No --commit: each install is compared against the commit it was released at (released_commit).
   cmd_verify
 else
   cmd_release

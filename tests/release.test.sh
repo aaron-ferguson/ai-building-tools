@@ -696,6 +696,106 @@ PY
   esac
 fi
 
+# --- 0064 S2 (was 0157): verify compares against the RELEASED commit, never HEAD ----------------
+# A release is followed within minutes by backlog commits -- claims, hand-offs -- and by unreleased
+# work. Comparing the install against HEAD reds on every one of them, over a correct install. So a
+# `verify` given no --commit compares each install against the commit it was released at: the
+# record's gitCommitSha, or the bump commit for its version when that sha is not in the checkout.
+# Its own clone, so the commits added here move no HEAD the cases above rely on.
+S2="$FIX/s2"
+git clone -q "$CO" "$S2/co"
+S2INST="$S2/install"
+mkdir -p "$S2INST"
+git -C "$S2/co" archive "$SHA" | tar -x -C "$S2INST"
+s2_commit() { # <message> <path>...
+  _m="$1"; shift
+  git -C "$S2/co" -c user.email=fixture@example.invalid -c user.name=fixture add -- "$@"
+  git -C "$S2/co" -c user.email=fixture@example.invalid -c user.name=fixture commit -q -m "$_m" -- "$@"
+}
+s2_verify() { # no --commit: the default is what is under test
+  VST=0
+  VOUT="$("$TOOL" verify --record "$FIX/record.json" --plugin "$KEY" --checkout "$S2/co" 2>&1)" || VST=$?
+}
+
+echo "0064 AC6 — a commit touching only the backlog after a release does not red verify"
+mkdir -p "$S2/co/.claude/backlog/items" "$S2/co/.tickets/items"
+printf 'claimed\n' > "$S2/co/.claude/backlog/QUEUE.md"
+printf 'claimed\n' > "$S2/co/.claude/backlog/items/0001-x.md"
+printf 'claimed\n' > "$S2/co/.tickets/QUEUE.md"
+s2_commit "Claim 0001" .claude/backlog/QUEUE.md .claude/backlog/items/0001-x.md .tickets/QUEUE.md
+write_record "$S2INST" "1.2.3" "$SHA"
+s2_verify
+if [ "$VST" -eq 0 ]; then ok "verify passes after a backlog-only commit"
+else bad "AC6 — verify red over a correct install after a backlog commit: $VOUT"; fi
+case "$VOUT" in
+  *"compared  $SHA"*) ok "the report names the commit it compared against" ;;
+  *) bad "AC6 — the report does not name the compared commit $SHA: $VOUT" ;;
+esac
+case "$VOUT" in
+  *"compared  $SHA"*gitCommitSha*) ok "the report says why that commit: the recorded gitCommitSha" ;;
+  *) bad "AC6 — the report does not say why it compared against $SHA: $VOUT" ;;
+esac
+case "$VOUT" in
+  *"excluded  .claude/backlog/ .tickets/"*) ok "the report names the backlog directories it excluded" ;;
+  *) bad "AC6 / FR6 — the report does not say the backlog is excluded: $VOUT" ;;
+esac
+
+echo "0064 FR6 — named explicitly, a commit differing from the install only in the backlog verifies"
+# The default above never reaches the exclusion: the released tree has no backlog commit in it.
+# An explicit --commit at the claim commit does, and the record names that commit too.
+S2_CLAIM="$(git -C "$S2/co" rev-parse HEAD)"
+write_record "$S2INST" "1.2.3" "$S2_CLAIM"
+VST=0
+VOUT="$("$TOOL" verify --record "$FIX/record.json" --plugin "$KEY" --checkout "$S2/co" \
+          --commit "$S2_CLAIM" 2>&1)" || VST=$?
+if [ "$VST" -eq 0 ]; then ok "the backlog paths the install lacks are excluded, not reported missing"
+else bad "FR6 — backlog paths failed verify: $VOUT"; fi
+case "$VOUT" in
+  *"--commit"*) ok "the report says the compared commit was named by --commit" ;;
+  *) bad "observability — the report does not say --commit chose the commit: $VOUT" ;;
+esac
+write_record "$S2INST" "1.2.3" "$SHA"
+
+echo "0064 AC7 — an unreleased skills/ commit does not red verify; an altered install does"
+printf 'alpha, unreleased\n' > "$S2/co/skills/demo/SKILL.md"
+s2_commit "Unreleased skill change" skills/demo/SKILL.md
+s2_verify
+if [ "$VST" -eq 0 ]; then ok "verify passes over an unreleased skills/ commit"
+else bad "AC7 — verify compared against HEAD, not the released commit: $VOUT"; fi
+printf 'tampered\n' > "$S2INST/skills/demo/SKILL.md"
+s2_verify
+if [ "$VST" -ne 0 ]; then ok "verify fails once the install is altered"
+else bad "AC7 — an altered install verified clean: $VOUT"; fi
+case "$VOUT" in
+  *"differs  skills/demo/SKILL.md"*) ok "the failure names the altered path" ;;
+  *) bad "AC7 — the failure does not name skills/demo/SKILL.md: $VOUT" ;;
+esac
+git -C "$CO" show "$SHA:skills/demo/SKILL.md" > "$S2INST/skills/demo/SKILL.md"
+
+echo "0064 FR5 — a gitCommitSha the checkout lacks falls back to the bump commit for the version"
+write_record "$S2INST" "1.2.3" "$OTHER_SHA"
+s2_verify
+case "$VOUT" in
+  *"compared  $SHA"*"bump commit"*) ok "the bump commit for 1.2.3 is compared, and named as such" ;;
+  *) bad "FR5 — no fallback to the bump commit for the recorded version: $VOUT" ;;
+esac
+case "$VOUT" in
+  *"bytes     ok"*) ok "the bytes still match the bump commit" ;;
+  *) bad "FR5 — the bytes were not compared against the bump commit: $VOUT" ;;
+esac
+if [ "$VST" -ne 0 ]; then ok "the unusable record still fails its own assertion"
+else bad "FR5 — a gitCommitSha absent from the checkout verified clean: $VOUT"; fi
+
+echo "0064 FR5 — a recorded version no commit carries refuses, naming the version"
+write_record "$S2INST" "7.7.7" "$OTHER_SHA"
+s2_verify
+if [ "$VST" -ne 0 ]; then ok "verify refuses"
+else bad "FR5 — an unreleasable version verified clean: $VOUT"; fi
+case "$VOUT" in
+  *"7.7.7"*"--commit"*) ok "the refusal names the version and the --commit way out" ;;
+  *) bad "FR5 — the refusal does not name 7.7.7 and --commit: $VOUT" ;;
+esac
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 TALLIED=1
 [ "$FAIL" -eq 0 ]
