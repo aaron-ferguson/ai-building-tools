@@ -847,7 +847,7 @@ assert_eq "touches: holds only path/a" "$(touches_block 0267)" 'touches:
 
 echo "0242 FR29 — --touches with no path, or an unknown flag, refuses and changes nothing"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0268 | Build it | develop | ready | 0000 |' 0268
-for args in '0268 tok0 --touches' '0268 tok0 --frobnicate x' '0268 --touches'; do
+for args in '0268 tok0 --touches' '0268 tok0 --frobnicate x' '0268 --touches' '--frobnicate'; do
   # shellcheck disable=SC2086
   out="$(cd "$FIX" && .tickets/claim $args 2>&1)" && rc=0 || rc=$?
   assert_rc "claim $args exits 2" "$rc" 2 "$out"
