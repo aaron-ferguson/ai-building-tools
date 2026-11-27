@@ -2,8 +2,8 @@
 id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -55,8 +55,8 @@ expects:
   - tests/handoff.test.sh
   - tests/findings-routing.test.sh
 ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7
-claimed_by: "c7d1"
-claimed_at: 2026-11-27T03:56:26Z
+claimed_by:
+claimed_at:
 touches:
 slice: S2
 ---
@@ -597,7 +597,7 @@ reads the live backlog.
 one develop session's work (`product-definition-conventions.md` → "Slice Vertically and Thinly").
 
 - [x] S1 — `claim` and `next` read `expects:` and `touches:` through one parser, agree on what blocks a take, and `claim` writes an empty `touches:` key when it seeds nothing (0215, 0225, 0155) — discharges AC18, AC19, AC20, AC21, AC22, AC23, AC24, AC25, AC26, AC27, AC29
-- [ ] S2 — the three places the scripts answer the wrong question (0066) — discharges AC30, AC31, AC32, AC33, AC34, AC35, AC36, AC37, AC38, AC39, AC40
+- [x] S2 — the three places the scripts answer the wrong question (0066) — discharges AC30, AC31, AC32, AC33, AC34, AC35, AC36, AC37, AC38, AC39, AC40
 - [ ] S3 — `next` reports a closed item still carrying a token, says an empty queue is empty, and lists the findings entries (0229, 0230, 0227) — discharges AC41, AC42, AC43, AC44, AC45, AC46, AC47, AC48, AC49, AC50, AC51
 - [ ] S4 — `handoff` records a blocker without leaving drift that stops a driver (0156) — discharges AC52
 - [ ] S5 — a note written below the last AC no longer changes that AC's digest (0217) — unspecified
@@ -855,6 +855,49 @@ write is in the same awk pass as the claim, and the AC38 single-commit and clean
 would red on a follow-up write. The row names no check of its own, so it rests on AC38. Always-on:
 no log field, analytics event or egress is added. The commits carry the trailer, and nothing
 company-specific was added.
+
+### Leg S2 re-verify — verify `c7d1`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: ../ai-building-conventions
+Level: `unit` (frontmatter). Command, `commands.unit_by_file` verbatim:
+`for t in tests/*.test.sh; do "$t" || true; done`, each file's rc and last line recorded.
+Subject: the checkout at `35cbff5` (the claim commit over `3c31f0e`; AC30 fix at `66afa28`).
+Copy executed: the repo templates (`tests/claim.test.sh` runs `skills/queue/templates/claim`);
+`.tickets/claim` is byte-identical to the template (`cmp`). The session's skills came from the
+0.9.50 install.
+Dirty set at Step 2: empty. Fresh capture after the last check: empty. Intersection: empty.
+`./next --ac-digest 0242 --check`: `0242: ac_digest matches`.
+
+**Whole suite:** 45 files, every one rc=0. Tallies pasted: `tests/claim.test.sh` `195 passed, 0 failed`;
+`tests/next.test.sh` `752 passed, 0 failed`; `tests/close.test.sh` `330 passed, 0 failed`;
+`tests/backlog-scripts-installed.test.sh` `55 passed, 0 failed`; `tests/declared-copies.test.sh`
+`declared-copies: 23 passed, 0 failed`; `tests/handoff.test.sh` `250 passed, 0 failed`.
+
+**Clause table.** AC31–AC40 reuse verify `357a`'s table above unchanged. Each of those rows reddened
+under its own mutation then, and `66afa28` touches only the `--touches` message branch of `claim` and
+one new case. AC30 was re-run. Mutations ran in a scratch clone of `35cbff5`, never in the shared
+tree. Each substitution was scoped to the `if [ -n "$TOUCHES_GIVEN" ]` block and had to match exactly
+once there. The diff was confirmed non-empty, then restored with `git checkout --` on that path
+alone. Control after restore: `195 passed, 0 failed`.
+
+| AC | Clause | Mutation in `skills/queue/templates/claim` | Result |
+|---|---|---|---|
+| AC30 | Given a claim on a `next: verify` row, **with `--touches`** / claim succeeds / message does not instruct setting `touches:` | gate removed, `widen it …` printed ungated (MA3) | red: `no instruction: widen it`, `says verify holds no file scope` (`193 passed, 2 failed`) |
+| AC30 | the same / object: no *set* instruction | else branch prints `…; set it in $item` (MA4) | red: `no instruction: set it in` (`194 passed, 1 failed`) |
+| AC30 | Given a `next: verify` row, without `--touches` | 357a's MA1, MA2 (branch unchanged by `66afa28`) | red then, reused |
+| AC31–AC40 | as 357a's table | as 357a's table | red then, reused |
+| AC37 | whole suite | the run above | 45/45 rc=0 |
+
+The 357a FAIL probe now prints `verify holds no file scope, so nothing here asks you to change it`,
+and the new case `0242 AC30 — nor when the verify claim is given --touches` asserts it.
+
+**A mutation that stayed green, published, not covered.** (MC) `"$BUILDS" -eq 1` → `-eq 9` in the
+`--touches` block, so a **develop** claim given `--touches` loses its `widen it` line: `195 passed,
+0 failed`. AC31's Given names no `--touches`, and its own branches reddened under MB1/MB2. So AC31
+is not left unverified, but no case pins a develop `--touches` claim's instruction.
+
+**NFR rows bearing on S2:** unchanged from 357a's record. `66afa28` adds no log field, analytics
+event or egress, and nothing company-specific. Its commit carries the trailer.
 
 ## Notes & decisions
 
