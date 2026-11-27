@@ -761,10 +761,10 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S5 — a note written below the last AC no longer changes that AC's digest (0217) — discharges AC56, AC57, AC58, AC59, AC60, AC61, AC62
 - [x] S6 — `reopen` of a develop self-close leaves a ticket verify can close (0219) — discharges AC63, AC64, AC65
 - [x] S7 — `claim`, `handoff`, `close` and `reopen` refuse up front when run off the branch the backlog is shared on (0235) — discharges AC66, AC67, AC68, AC69, AC70, AC71, AC72, AC73, AC74, AC75, AC76, AC77
-- [ ] S8 — `./capture` with its restamp form, the shared lock, commit and refusal behaviour, and its install — discharges AC1, AC2, AC3, AC4, AC5, AC12, AC15
+- [ ] S8 — `./capture` with its restamp form, the shared lock, commit and refusal behaviour, and its install — discharges AC1, AC2, AC3, AC4, AC5, AC12
 - [ ] S9 — `./park`, with the public-repo screen — discharges AC6, AC7, AC8
 - [ ] S10 — `./rank` and `./withdraw` — discharges AC9, AC10, AC11
-- [ ] S11 — `./drain`, on `0227`'s listing — discharges AC13, AC14
+- [ ] S11 — `./drain`, on `0227`'s listing, and the ten-script sync — discharges AC13, AC14, AC15
 - [ ] S12 — `queue` can send an open verify ticket back to design (0237) — unspecified
 - [ ] S13 — decide whether design may amend unheld sibling items its own FRs name (0236) — unspecified
 - [ ] S14 — the seven skills, `CONCURRENCY.md` and the CHANGELOG move onto the scripts, and every step that commits a sweep runs the privacy guard (0118) — discharges AC16, AC17, AC53, AC54, AC55
@@ -1946,6 +1946,71 @@ fixture-scripted. AC77 is a read verify does anyway. Both values stand.
   lock, writing nothing. Claimed with an `od`-minted token. Already parked, so nothing new is parked.
 - **Sibling grep (widening):** the four scripts' new refusal is not an enumeration another open
   item's FR lists. S8–S11 must carry the block, per FR56's build note; nothing staled.
+
+### S8 build notes — 2026-11-27, develop `89b0` (sprint run-20261127T024025Z)
+
+- **2026-11-27 — S8 landed:** `bd65a89` (script, install, suite, guard counts) and `90d357f`
+  (README guard block, a citation kept on one line). The subject is `skills/queue/templates/capture`,
+  copied to `.tickets/capture`. Its suite is `tests/capture.test.sh`, 65 cases, and it runs the
+  template copies of `capture` and `next`.
+- **2026-11-27 — AC15 moved from S8 to S11 (slice re-split, no AC changed).** AC15 asserts that
+  *all ten* scripts are present after the sync. Only S11 (`drain`) completes that set, so S8 could not
+  discharge it, and handing it to verify as S8's would fail by construction. S8 now discharges AC1–AC5
+  and AC12. S11 discharges AC13, AC14 and AC15. FR4's install half holds today regardless:
+  `tests/backlog-scripts-installed.test.sh` derives its script list from the executables on either
+  side (0089), so `capture` is already held byte-equal there (63 passed).
+- **FR1's "as `./claim` does (0047)" is not true of the tree.** No backlog script retries a busy
+  lock. `claim`, `close`, `handoff` and `reopen` each `mkdir` once and refuse. 0047 changed the
+  close-time *procedure*, not a script. `capture` builds FR1's own requirement: it retries `mkdir`
+  once a second for `BACKLOG_LOCK_TRIES` tries (default 10), then refuses, naming the holder, and it
+  never breaks the lock. The S9–S11 scripts should carry the same loop. The FR's parenthetical is a
+  stale cache; this note leaves it unedited.
+- **Choices left open by FR5, recorded so verify reads them as decided, not missed:**
+  - The draft is a whole item file. Its `id:` is replaced by the minted id and any `ac_digest:` is
+    replaced.
+  - Refused before the lock:
+    - a missing `title:`, a `|` in it, or the `<…>` placeholder;
+    - a `next:` outside queue/design/develop/verify, or a `status:` outside ready/waiting/blocked;
+    - an unparseable position;
+    - `--ranking` naming an empty file;
+    - `QUEUE.md`, `config.yml` or (with `--ranking`) `RANKING.md` changed against HEAD;
+    - no git repo, a linked worktree, or a branch other than the shared one.
+  - The slug is the title, lowercased and hyphenated, cut at a word boundary past 60 characters.
+  - The new id is the last line printed.
+  - `--restamp` commits the item with its edits. Those edits are what a re-specify restamps, so a
+    dirty item is the expected input and is not refused.
+- **Declared copies carried** (FR56, plus the readers): `shared-branch`, `decomment`, `fm-value`,
+  `header-of`, `column-in`, and the location block. `tests/declared-copies.test.sh`'s exact counts are
+  bumped to 5/6/4/3/3, and `tests/backlog-location.test.sh` lists `capture` in its script list and its
+  allowlist. The function guard refused `refuse` and `usage` as names already defined elsewhere, so
+  they are `capture_refuse` and `capture_usage`.
+- **Mutation sweep (run, not reasoned).** Each mutation was applied to the committed template, the
+  suite was run, and the template was restored with `git checkout --`. The tree was clean after each.
+
+  | AC | Mutation (the AC's own *Red*) | Result |
+  |---|---|---|
+  | AC1 | mint from `next_id` − 1 | red: id, next_id, row order, commit (aborted mid-suite) |
+  | AC2 | stamp a stale value, read-back check removed | red: stamp ≠ `./next --ac-digest 0008` |
+  | AC3 | skip the AC1 draft check | red: exit, message, fingerprint, commit count |
+  | AC4 | commit without a pathspec | red: commit contents, 15 cases |
+  | AC5 | anchor check removed and append at the bottom on a miss | red: exit, message, fingerprint, commit |
+  | AC12 | `--restamp` keeps the old stamp | red: `--drift` still names 0003, `--check` |
+
+  The first AC5 mutation removed only the anchor check. The read-back then refused on a missing row,
+  and only the message assertion went red. The AC's own *Red* ("append at the bottom") is the row
+  above, and it reds four cases.
+- **Whole suite:** `for t in tests/*.test.sh` at `90d357f`, run file by file, `git status` clean
+  before it, 46 files, all green. The first run at `bd65a89` had one red file, `tests/citations.test.sh`,
+  for two reasons. The suite was missing from README's guard block. A `CONCURRENCY.md` citation in
+  `capture` was wrapped across two lines, which the line-based checker cannot match. Both are fixed
+  in `90d357f`.
+- **Restated contract:** FR1–FR5, FR9 and FR56, with AC1–AC5 and AC12, at `qa_level: unit`, closed
+  by verify. NFR rows bearing on S8: Testing, which the fixture cases cover, and Documentation, where
+  the usage line is the header comment, the `usage:` refusal and `--help`. Nothing company-specific,
+  and every commit carries the trailer.
+- **Sibling grep (widening):** `capture` adds a backlog-writing script. The two guards whose
+  enumerations it falsified are updated above. Every other open FR enumerating "the five scripts" is
+  S14's (FR11, AC16, and `queue` Step 0's `chmod +x` list), so nothing outside this ticket was staled.
 
 ### Open questions for the unspecified slices
 
