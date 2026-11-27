@@ -4057,6 +4057,144 @@ assert_eq           "ROW 1 is the row, unchanged" "$(printf '%s\n' "$out" | grep
 assert_not_contains "no TAKEABLE line repeats it" "$out" 'TAKEABLE:'
 assert_not_contains "and ROW 1 is not marked"     "$out" 'not takeable'
 
+# --- 0242 S3 (was 0229, 0230, 0227) ------------------------------------------------------------
+
+# $1 id, $2 a closed status, $3 the claimed_by value written verbatim — an item with no QUEUE.md
+# row, which is the shape every closed ticket takes once `close` drops its row.
+add_closed_item() {
+  cat > "$FIX/.tickets/items/$1-fixture.md" <<ITEM
+---
+id: "$1"
+title: Fixture $1
+next:
+status: $2
+qa_level: unit
+size: s
+blocked_by: []
+expects:
+  - some/file.md
+claimed_by: $3
+claimed_at:
+touches:
+---
+
+## Problem
+ITEM
+}
+
+for closed in done withdrawn rejected; do
+  echo "0242 AC41/AC42 — a $closed item still carrying a token is drift"
+  scaffold
+  add_row 0501 'An agreeing open row' develop ready 0000
+  add_ticket 0501 develop ready '[]' '' a/one.md
+  add_closed_item 0502 "$closed" '"ab12"'
+  seal
+  out="$(run_next --drift)" && rc=0 || rc=$?
+  assert_rc_nonzero "exits non-zero"            "$rc" "$out"
+  assert_eq         "one DRIFT line"            "$(printf '%s\n' "$out" | grep -c '^DRIFT')" 1
+  assert_contains   "names id, status, token"   "$(printf '%s\n' "$out" | grep '^DRIFT')" \
+    "DRIFT     0502 | status $closed, item claimed_by: ab12 — a closed item keeps its token; clear claimed_by:"
+done
+
+echo "0242 AC43 — a done item with an empty claimed_by: is not drift"
+scaffold
+add_row 0511 'An agreeing open row' develop ready 0000
+add_ticket 0511 develop ready '[]' '' a/one.md
+add_closed_item 0512 done ''
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc           "exits 0"          "$rc" 0 "$out"
+assert_not_contains "no DRIFT line"    "$out" 'DRIFT'
+
+echo "0242 FR32 — an open item's token is judged exactly as before"
+scaffold
+add_row 0521 'Held and saying so' develop in-progress 0000
+add_ticket_held 0521 develop in-progress '[]' '' a/one.md '"cd34"'
+seal
+out="$(run_next --drift)" && rc=0 || rc=$?
+assert_rc           "a held open row is not drift" "$rc" 0 "$out"
+
+echo "0242 AC44 — --help's --drift line names a closed item keeping a token"
+scaffold
+seal
+out="$(run_next --help)" && rc=0 || rc=$?
+assert_contains "names the class" "$(printf '%s\n' "$out" | awk '/\.\/next --drift/ { on = 1 } on && /\.\/next --ac-digest/ { exit } on')" \
+  'a closed item keeping a token'
+
+echo "0242 AC45 — an empty queue says so on ROW 1"
+scaffold
+seal
+out="$(run_next)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_eq "ROW 1 reads none" "$(printf '%s\n' "$out" | grep '^ROW 1:')" 'ROW 1:     none — the queue holds no rows'
+
+echo "0242 AC46 — a one-row queue prints the row unchanged"
+scaffold
+add_row 0001 'Fixture row' develop ready ''
+add_ticket 0001 develop ready '[]' '' a/one.md
+seal
+out="$(run_next)" && rc=0 || rc=$?
+assert_eq "ROW 1 is the row" "$(printf '%s\n' "$out" | grep '^ROW 1:')" 'ROW 1:     0001 | Fixture row | develop | ready'
+
+# FR40's buffer: a preamble whose fenced example matches the by-hand reader regex
+# `^- (\*\*)?20[0-9]{2}-`, the rule, and two entries, one of them [->NNNN]-marked. Line numbers are
+# fixed by construction: the example is line 6, the entries lines 11 and 13.
+fr40_findings() {
+  {
+    printf '# Findings\n\nAn entry looks like this:\n\n```\n'
+    printf -- '- 2026-09-05 [->0060] — **what happened.** why it matters.\n'
+    printf '```\n\n---\n\n'
+    printf -- '- 2026-11-01 — **a first entry.** why it matters.\n'
+    printf '  its continuation line.\n'
+    printf -- '- 2026-11-02 [->0242] — **a second entry, handed over.** why it matters.\n'
+    [ -z "${1:-}" ] || printf '%s\n' "$1"
+  } > "$FIX/.tickets/FINDINGS.md"
+}
+
+echo "0242 AC47/AC48 — --findings-list lists the two entries, never the preamble's example, and agrees with --findings"
+scaffold
+fr40_findings
+seal
+list="$(run_next --findings-list)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$list"
+assert_eq "exactly two lines" "$(printf '%s\n' "$list" | grep -c .)" 2
+assert_contains "the first entry, by line number"  "$list" 'FINDINGS.md:11  - 2026-11-01 — **a first entry.** why it matters.'
+assert_contains "the second entry, by line number" "$list" 'FINDINGS.md:13  - 2026-11-02 [->0242] — **a second entry, handed over.** why it matters.'
+assert_not_contains "not the fenced example"       "$list" ':6  '
+assert_not_contains "nor any continuation line"    "$list" 'continuation'
+count="$(run_next --findings | awk '/^FINDINGS/ { print $2; exit }')"
+assert_eq "the count equals the listing's line count" "$count" "$(printf '%s\n' "$list" | grep -c .)"
+
+echo "0242 AC49 — a body line with no date is listed as MALFORMED, with its line number"
+scaffold
+fr40_findings '- a bullet with no date at all.'
+seal
+list="$(run_next --findings-list)" && rc=0 || rc=$?
+assert_rc_nonzero "exits non-zero, as --findings does" "$rc" "$list"
+assert_contains "listed, marked, numbered" "$list" 'MALFORMED '
+assert_contains "at line 14"               "$(printf '%s\n' "$list" | grep '^MALFORMED')" 'FINDINGS.md:14  - a bullet with no date at all.'
+assert_eq "and the two entries still listed" "$(printf '%s\n' "$list" | grep -v '^MALFORMED' | grep -c 'FINDINGS.md:')" 2
+
+echo "0242 FR36 — --findings-list reads the tools buffer --findings counts"
+scaffold
+fr40_findings
+TOOLS_FIX="$(mktemp -d)"
+mkdir -p "$TOOLS_FIX/.tickets"
+printf '# Findings\n\n---\n\n- 2026-11-03 — a tools entry.\n' > "$TOOLS_FIX/.tickets/FINDINGS.md"
+printf 'project: Fixture\ntools:\n  path: %s\n' "$TOOLS_FIX" > "$FIX/.tickets/config.yml"
+seal
+list="$(run_next --findings-list)" && rc=0 || rc=$?
+assert_eq "three lines, both buffers" "$(printf '%s\n' "$list" | grep -c .)" 3
+assert_contains "the tools entry, by its own path" "$list" "$TOOLS_FIX/.tickets/FINDINGS.md:5  - 2026-11-03 — a tools entry."
+rm -rf "$TOOLS_FIX"
+
+echo "0242 FR36 — --help documents --findings-list"
+scaffold
+seal
+out="$(run_next --help)" && rc=0 || rc=$?
+assert_contains "in the usage line" "$(printf '%s\n' "$out" | head -1)" '--findings-list'
+assert_contains "and described"     "$out" './next --findings-list'
+
 echo
 echo "$PASS passed, $FAIL failed"
 TALLIED=1

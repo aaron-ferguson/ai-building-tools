@@ -154,15 +154,25 @@ read_bounce_max() {
 #
 # $1 the buffer to read, named in any MALFORMED line so a second buffer's bad entry is not hunted
 # for in the wrong repo.
+#
+# $2, optional: `list`, which also prints every entry it counts as `<buffer>:<line>  <first line>`
+# (0242 FR36, was 0227). THE LISTING IS THIS PROGRAM, NOT A SECOND ONE (FR37): a sweeper that
+# re-derived entry boundaries from the header's regex counted the header's own fenced example as an
+# entry, twice, so the reader that lists and the reader that counts are one awk run and cannot
+# disagree about which lines are entries.
 count_findings() {
-  awk -v src="$1" '
+  awk -v src="$1" -v list="${2:-}" '
     function dated(s)  { return s ~ /^- [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ }
     function bolded(s) { return s ~ /^- \*\*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ }
     # The preamble above the rule is prose about the file, and counting it inflates every read.
     !body && /^---$/ { body = 1; next }
     !body { next }
     /^- / {
-      if (dated($0) || bolded($0)) { n++; next }
+      if (dated($0) || bolded($0)) {
+        n++
+        if (list == "list") printf "%s:%d  %s\n", src, NR, $0
+        next
+      }
       printf "MALFORMED %s:%d  %s\n", src, NR, $0
       bad = 1
     }
@@ -362,7 +372,7 @@ findings_sources() {
 
 usage() {
   cat <<'USAGE'
-usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --findings | --drive [--propose] [--completed <stage>[:<id>]] [--started <id>]… [--scope <id>]… [--bounces <id>=<n>]… | --help]
+usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --findings | --findings-list | --drive [--propose] [--completed <stage>[:<id>]] [--started <id>]… [--scope <id>]… [--bounces <id>=<n>]… | --help]
 
   ./next             counts by stage and by status, row 1 and why nothing can take it if so, the
                      topmost takeable row when that is not row 1, plus anything another session holds
@@ -371,7 +381,9 @@ usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --fi
   ./next --waiting   every waiting row with the question it is waiting on
   ./next --drift     every row that disagrees with its blocked_by or with its own item —
                      stage, status, a claim the row does not match either way, a missing item file,
-                     a stamped ac_digest the criteria no longer match; one line per row, exits 1 if any
+                     a stamped ac_digest the criteria no longer match, and
+                     a closed item keeping a token (done, withdrawn or rejected, claimed_by: set);
+                     one line per row or item, exits 1 if any
   ./next --ac-digest <id> [--check]
                      the digest of the item's acceptance criteria, one key per ACn, as queue and
                      design stamp it; --check compares it with the stamped ac_digest: and exits 1
@@ -379,6 +391,12 @@ usage: ./next [<stage> | --waiting | --drift | --ac-digest <id> [--check] | --fi
   ./next --findings  how many entries FINDINGS.md holds, and the TWO limits a driver gates on:
                      the count against findings_threshold, and the oldest entry's age in completed
                      sprints against findings_max_sprints. Either one crossed dispatches the tail
+  ./next --findings-list
+                     every entry --findings counts, one line each, as <buffer>:<line> and the
+                     entry's first line, from both buffers it reads. A line it cannot date is
+                     listed as MALFORMED, and the exit is 1 then, as --findings exits. This is how a
+                     sweeper enumerates the entries it will remove: by the one rule that counts
+                     them, never by matching the header's pattern by hand
   ./next --drive     what should happen next, for a driver rather than a human: one decision line,
                      how deep the backlog is, and a distinct exit code per outcome. It runs the
                      same drift check --drift runs before it picks a gate, and escalates on it:
@@ -479,6 +497,27 @@ if [ "${1:-}" = "--findings" ]; then
   fi
   [ "$FBAD" = 0 ] || {
     echo "the count above is not trustworthy: an entry matches neither '- <date>' nor '- **<date>'" >&2
+    exit 1
+  }
+  exit 0
+fi
+
+# --- --findings-list (0242 FR36, was 0227) ---------------------------------------------------------
+# Every entry `--findings` counts, from the same buffers, through the same `count_findings` run: the
+# listing is that program's `list` output with its COUNT line dropped, so the line count here and
+# the count there are one answer. Nothing is printed for an absent buffer — an empty listing is the
+# true answer, and `--findings` is the mode that says why.
+if [ "${1:-}" = "--findings-list" ]; then
+  read_tools_buffer
+  fl_bad=0
+  for fl_buf in "$FINDINGS" "$TOOLS_FINDINGS"; do
+    [ -n "$fl_buf" ] && [ -f "$fl_buf" ] || continue
+    fl_rep="$(count_findings "$fl_buf" list)"
+    printf '%s\n' "$fl_rep" | grep -v '^COUNT ' || true
+    [ "$(printf '%s\n' "$fl_rep" | awk '/^COUNT/ { print $3; exit }')" = 0 ] || fl_bad=1
+  done
+  [ "$fl_bad" = 0 ] || {
+    echo "a MALFORMED line above matches neither '- <date>' nor '- **<date>'" >&2
     exit 1
   }
   exit 0
@@ -1115,7 +1154,7 @@ fi
 # --- --drift ----------------------------------------------------------------------------------
 # A row and the item behind it are two records of one ticket, and only one of them is authoritative
 # on each field. This names every row where the two disagree, so the staleness is visible without
-# opening a ticket. Seven classes, and this comment is the one place they are listed — `usage()`
+# opening a ticket. Eight classes, and this comment is the one place they are listed — `usage()`
 # names them in a line, and the prose that cites this mode cites the contract rather than copying
 # it (0115 FR6):
 #
@@ -1135,6 +1174,14 @@ fi
 #   7. a stamped `ac_digest:` that differs from the criteria on disk (0195 FR4) — naming each
 #      criterion changed, added or removed. An ABSENT stamp is not this class: every backlog holds
 #      items written before the field, and `--drive` would stop on exit 4 for a state nobody caused
+#   8. a CLOSED item — `status:` done, withdrawn or rejected — still carrying a `claimed_by:` token
+#      (0242 FR31, was 0229). A closed ticket has no row, so the walk over rows above never reaches
+#      it; this one walks `items/`. `close`, `handoff` and `reopen` clear the field, but closes made
+#      by hand before a project had `close` did not, and a grep of `claimed_by:` over the items then
+#      reads them as live scope. An id that still has a row is left to the row classes above, so one
+#      ticket is still one line. An empty token is no drift, and nothing about how an OPEN item's
+#      token is judged changes (FR32). `--drive` shares this function, so it escalates on the class
+#      too — which is why the line names the fix
 #
 # One line per row, the classes in that order: a second line about the same row is noise, and the
 # stale `blocked` cache is the more actionable reading whenever it and 4 both fire. It exits
@@ -1191,6 +1238,19 @@ drift_report() {
         "$id" "$ddiff"
       dr_drifted=1
     fi
+  done
+  for dr_item in "$DIR"/items/*.md; do
+    [ -f "$dr_item" ] || continue
+    dr_status="$(fm "$dr_item" status)"
+    case "$dr_status" in done|withdrawn|rejected) ;; *) continue ;; esac
+    dr_tok="$(fm "$dr_item" claimed_by)"
+    [ -n "$dr_tok" ] || continue
+    dr_cid="$(fm "$dr_item" id)"
+    [ -n "$dr_cid" ] || dr_cid="$(basename -- "$dr_item" | cut -d- -f1)"
+    [ -z "$(row_for "$dr_cid")" ] || continue
+    printf 'DRIFT     %s | status %s, item claimed_by: %s — a closed item keeps its token; clear claimed_by:\n' \
+      "$dr_cid" "$dr_status" "$dr_tok"
+    dr_drifted=1
   done
   return "$dr_drifted"
 }
@@ -2404,9 +2464,15 @@ row1="$(rows | head -1)"
 row1_id="$(field "$row1" "$ID")"
 row1_why=""
 [ -z "$row1_id" ] || row1_why="$(not_takeable_because "$row1_id")"
-printf 'ROW 1:     %s | %s | %s | %s%s\n' \
-  "$row1_id" "$(field "$row1" "$TITLE")" \
-  "$(field "$row1" "$NEXT")" "$(field "$row1" "$STATUS")" "${row1_why:+ — not takeable: $row1_why}"
+# An empty queue keeps the line and gives it words (0242 FR34, was 0230): printed from an empty
+# `rows`, every field was blank and the line read as a malformed row unless `ROWS: 0` was checked.
+if [ -z "$row1" ]; then
+  printf 'ROW 1:     none — the queue holds no rows\n'
+else
+  printf 'ROW 1:     %s | %s | %s | %s%s\n' \
+    "$row1_id" "$(field "$row1" "$TITLE")" \
+    "$(field "$row1" "$NEXT")" "$(field "$row1" "$STATUS")" "${row1_why:+ — not takeable: $row1_why}"
+fi
 if [ -n "$row1_why" ]; then
   first_takeable=""
   for tid in $(all_ids); do

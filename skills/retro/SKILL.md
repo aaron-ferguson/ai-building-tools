@@ -325,6 +325,10 @@ other half and leaves it reading as stale.
 **no entry survives the pass that read it** — a held entry leaves for `FINDINGS-HELD.md`. Your own Step 6 parks are the next pass's input rather
 than residue left by this one, which is why a healthy buffer is rarely empty and never stale.
 
+**Enumerate what you remove with `./next --findings-list`**, never the header's pattern by hand: it
+lists each entry as `<buffer>:<line>` by the rule `--findings` counts with, so the header's own
+fenced example is not an entry, and a line it cannot date reads `MALFORMED`.
+
 ---
 
 ## Step 5 — Make it durable

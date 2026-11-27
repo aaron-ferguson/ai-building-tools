@@ -614,6 +614,8 @@ names, not just `DONE.md`**, because a fix that landed outside the lifecycle lea
 
 **Remove only the entries you processed, and commit in the same turn**, by pathspec. Leaving a processed
 entry is re-read by the next sweep; removing an unprocessed one loses `retro`'s half.
+**Enumerate the entries with `./next --findings-list`**, never the header's pattern by hand: the
+header's fenced example matches that pattern, and the listing uses the rule `--findings` counts with.
 
 **Where a ticket was bundled from several entries, the removal list comes from the ticket's FRs, and
 never the cluster that produced it.** A cluster is how you got there; the FRs are what the row
