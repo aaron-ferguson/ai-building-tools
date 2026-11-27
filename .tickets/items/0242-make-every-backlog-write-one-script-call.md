@@ -57,7 +57,14 @@ expects:
   - tests/ac-digest.test.sh
   - tests/reopen.test.sh
   - .tickets/reopen
-ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118
+  - .tickets/claim
+  - .tickets/handoff
+  - .tickets/close
+  - tests/backlog-location.test.sh
+  - tests/design-hold.test.sh
+  - tests/scaffold-close.test.sh
+  - tests/sprint.test.sh
+ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8
 claimed_by: "3708"
 claimed_at: 2026-11-27T06:55:01Z
 touches:
@@ -427,9 +434,26 @@ in reverse: cheaper turns, wrong backlog.
   a fenced example line that matches the reader regex, the `---` rule, and two entries, one of them
   `[->NNNN]`-marked.
 - FR41 *(was 0156 FR1)* — after `./handoff <id> <token> develop` on an item whose `blocked_by` names an open ticket, the row and item carry `blocked`, written as the derived cache rather than authored, and `--drift` is silent for that row.
-- FR42 *(was 0235 FR1)* — `claim`, `handoff` and `close` refuse (or warn, per the decision) when run off the shared
-  branch, naming both branches.
-- FR43 *(was 0235 FR2)* — `references/CONCURRENCY.md` states the rule beside *A second checkout never writes the backlog*.
+- FR42 *(was 0235 FR1; sharpened by design `3708`, 2026-11-27)* — `claim`, `handoff`, `close` and `reopen` **refuse**,
+  and never only warn, when the primary checkout's current branch is not the shared branch (FR55).
+  A detached HEAD also counts as off the branch. The check runs **up front**: before the lock is
+  taken and before any file is read for writing, directly after the linked-worktree refusal in
+  each script, so a session learns it is on the wrong branch at `./claim`, before it spends
+  anything on the row. The refusal exits 1, writes nothing, takes no lock, and prints these four
+  lines to stderr:
+  `refusing to <verb> <id>: this checkout is on '<current>', and the backlog is shared on '<shared>'`,
+  then `switch with: git switch <shared>, or set shared_branch: in <backlog dir>/config.yml if '<shared>' is wrong`,
+  then `see references/CONCURRENCY.md, 'The backlog is written on one branch'`,
+  then `nothing was changed and no lock was taken`.
+  `<verb>` is the script's own verb (`claim`, `hand off`, `close`, `reopen`). `<current>` is
+  `HEAD (detached)` when no branch is checked out. Outside a git work tree the check does not
+  apply, as with the linked-worktree check. There is no flag that overrides it: the key is the
+  one way to name another branch.
+- FR43 *(was 0235 FR2; sharpened by design `3708`, 2026-11-27)* — `references/CONCURRENCY.md` gains a section
+  *The backlog is written on one branch*, placed directly after *A second checkout never writes
+  the backlog*. It states the refusal, the resolution order (FR55), that the check is made at
+  claim time so it lands before any work starts, and the one-line fix. Prose only, and unguarded
+  (`CLAUDE.md`, *Tests*: no new guard greps prose).
 - FR44 *(was 0237 FR1)* — An open row at `next: verify` can be moved to `next: design` by one script call that writes
   the item and its `QUEUE.md` row in one locked commit.
 - FR45 *(was 0237 FR2)* — `queue` Step 1 names the operation and when it applies (the user reopens a decision).
@@ -461,6 +485,27 @@ in reverse: cheaper turns, wrong backlog.
   that key exactly as it was.
 - FR54 *(0219, design 2026-11-27)* — `reopen`'s header comment lists the reset beside the other item resets it
   names, and `.tickets/reopen` is re-copied from the template so the two stay byte-equal.
+- FR55 *(0235, design `3708`, 2026-11-27)* — The shared branch is resolved in this order, first hit wins:
+  (1) a top-level `shared_branch: <name>` key in the backlog directory's `config.yml`, with a
+  trailing `# comment` and surrounding blanks stripped as `findings_threshold` is read in `next`;
+  (2) `git symbolic-ref --short refs/remotes/origin/HEAD` with its leading `origin/` removed,
+  when that command succeeds; (3) `main`. Nothing fetches or touches the network. An empty
+  `shared_branch:` value counts as unset.
+- FR56 *(0235, design `3708`, 2026-11-27)* — The resolution and the comparison are one function, in one
+  `copy-begin: shared-branch` / `copy-end: shared-branch` block that is byte-identical in
+  `skills/queue/templates/claim`, `handoff`, `close` and `reopen`, which `tests/declared-copies.test.sh`
+  already enforces. `.tickets/claim`, `handoff`, `close` and `reopen` are re-copied from the templates
+  so `tests/backlog-scripts-installed.test.sh` stays green. Each backlog-writing script added after
+  S7 (S8–S11's `capture`, `park`, `rank`, `withdraw`, `drain`) carries the same block. That is a
+  build note for those slices, and their criteria are unchanged.
+- FR57 *(0235, design `3708`, 2026-11-27)* — Every test fixture that runs one of the four scripts in a git
+  repo starts on `main` (`git init -q -b main`, or a `shared_branch:` key that names its branch). As
+  re-verified on 2026-11-27, a bare `git init -q` here starts on `master` (git 2.43, no
+  `init.defaultBranch`), so an unpinned fixture would refuse.
+- FR58 *(0235, design `3708`, 2026-11-27)* — `CHANGELOG.md` `## Unreleased` carries one line for consuming
+  projects: the four scripts now refuse off the shared branch, how that branch is resolved, and
+  that a project sharing on a branch other than `main` with no `origin/HEAD` needs one
+  `shared_branch:` line in its `config.yml` after upgrading.
 
 
 ## Non-functional requirements
@@ -482,66 +527,6 @@ in reverse: cheaper turns, wrong backlog.
 | Testing | (0156) The case runs the real hand-off then `--drift`, in fixture. | Two separately-built fixtures that never meet. | `testing-conventions.md` |
 | Privacy & data | (0118) The rule being enforced is `CLAUDE.md`'s public-repo constraint; cite it, do not restate it | AC55: a tracked file carrying a real home path, run through the named command, is not refused | `data-privacy-conventions.md` |
 | Documentation | (0118) Both skills state the same requirement once each, in their own voice | prose only — no artifact yet | `documentation-conventions.md` |
-
-## Waiting on
-
-### Outcome
-The single-holder guarantee reaches across branches: a claim made in the primary checkout is one
-that every other session sees, whatever branch that checkout has out (0235, slice S7).
-
-### Where it stands
-S1–S4 are built and have passed verify. This design pass (`b7a4`, 2026-11-27) specified S5 (0217,
-AC56–AC62) and S6 (0219, AC63–AC65), both decided on evidence and ready to build. S7 is the only
-open question in front of them, and the row waits on it alone. S8–S15 wait behind in slice order.
-FR42 and FR43 already exist for S7 and read "refuse (or warn, per the decision)".
-
-### What needs you
-Decide whether `claim`, `handoff` and `close` refuse when run off the shared branch, and how they learn which branch that is.
-This changes which checkouts may write every consuming project's backlog, so it is a concurrency
-architecture rule (`coding-conventions.md`, *What Not to Delegate to AI*). It also rests on a fact
-this repo cannot see: what branch each consuming project shares its backlog on. Observed here on
-2026-11-27: `git symbolic-ref refs/remotes/origin/HEAD` prints `fatal: ref
-refs/remotes/origin/HEAD is not a symbolic ref`, so the remote's HEAD is not a dependable source,
-even in this repo.
-
-### Options
-
-#### Option A — Refuse, resolving the branch from config, then the remote, then `main`
-The branch is `shared_branch:` in `config.yml` if that key is set, otherwise `origin/HEAD` if
-that resolves, otherwise `main`. The refusal names both branches and the key. Pros: matches the
-linked-worktree refusal (`CONCURRENCY.md`, *A second checkout never writes the backlog*), and
-`claim`'s own header comment records a warning that was read and committed past anyway (AetherWorks
-0091). The answer is always deterministic. Cons: a consuming project that shares on `master` or
-`trunk`, with no `origin/HEAD` and no key, refuses at its next upgrade until it adds one config line.
-A prototype-branch session has to claim from the shared branch. Wins if a loud, one-line breakage
-on upgrade is acceptable.
-
-#### Option B — Refuse when the branch is known, warn when it is not
-Same resolution without the `main` fallback. With no key and no `origin/HEAD`, the scripts print
-a warning naming the key and go ahead. Pros: no project breaks on upgrade. Cons: in this repo, and
-in any checkout like it, the guard is only a warning until someone sets the key, which is the
-warn-and-commit shape `claim`'s history says fails. Wins if breaking a consuming project's backlog
-on upgrade costs more than a window of claims that are not guarded.
-
-#### Option C — Warn only
-Pros: nothing breaks, and the code is smallest. Cons: the AetherWorks 0136 case (a claim committed
-on `prototype/`, invisible on `main`) happens again whenever the warning scrolls by. Wins only if
-non-default-branch backlog work is a pattern worth keeping.
-
-### Recommendation
-Option A. Prior art in this repo answers every comparable case with a refusal, and a refusal that
-names its one-line fix costs a consuming project a minute. The silent fork it prevents cost a
-second session a whole design pass on a row it could not see was held.
-
-### What to do
-Reply `A`, `B` or `C`, naming a different key if `shared_branch:` is wrong. The next
-`/ai-building-tools:design 0242` then writes S7's FRs and ACs and hands the row to develop at S5.
-To build S5–S6 first and leave this open, reply `build S5–S6 first`: that design session moves this
-brief into *Notes & decisions*, leaves S7 `unspecified`, and hands off to develop.
-
-### If no answer
-S5 and S6 wait, specified but unbuilt, along with every later slice of 0242. No other row names
-0242 in `blocked_by`, so the rest of the backlog is unaffected.
 
 ## Acceptance criteria
 
@@ -707,6 +692,53 @@ reads the live backlog.
 - [ ] AC65 *(0219)* — Given one done fixture item recording `close_by: verify` and another with no `close_by:` key,
   when each is reopened, then the first still reads `close_by: verify` and the second still has no
   `close_by:` line. In `tests/reopen.test.sh`. Red: a reopen that writes the key unconditionally.
+- [ ] AC66 *(0235)* — Given a fixture repo on `main` with no `shared_branch:` key and no remote, after
+  `git switch -c feature`, when `./claim <id>` runs on a `ready` row, then it exits 1, stderr
+  carries `this checkout is on 'feature', and the backlog is shared on 'main'` and `nothing was
+  changed and no lock was taken`, `git rev-list --count HEAD` is unchanged, `QUEUE.md` and the item
+  are byte-identical to before, and no `.lock` directory exists. In `tests/claim.test.sh`. Red:
+  today's claim, which claims on `feature`.
+- [ ] AC67 *(0235)* — Given a fixture row claimed on `main`, after `git switch -c feature`, when
+  `./handoff <id> <token> develop` runs, then it exits 1 with FR42's first line naming `feature`
+  and `main`, the item still carries `claimed_by: <token>`, no commit is added and no `.lock`
+  remains. In `tests/handoff.test.sh`. Red: the block omitted from `handoff`.
+- [ ] AC68 *(0235)* — Given a fixture row claimed on `main` with a `## QA evidence` body, after `git switch -c
+  feature`, when `./close <id> <token>` runs, then it exits 1 with FR42's first line, the row is
+  still in `QUEUE.md` and absent from `DONE.md`, no commit is added and no `.lock` remains. In
+  `tests/close.test.sh`. Red: the block omitted from `close`.
+- [ ] AC69 *(0235)* — Given a fixture done row, after `git switch -c feature`, when `./reopen <id> top "r"` runs,
+  then it exits 1 with FR42's first line, the row is still in `DONE.md` and absent from `QUEUE.md`,
+  and no commit is added. In `tests/reopen.test.sh`. Red: the block omitted from `reopen`.
+- [ ] AC70 *(0235)* — Given a fixture whose `config.yml` reads `shared_branch: trunk  # ours`, when `./claim`
+  runs on branch `trunk`, then it exits 0. When it runs on `main`, then it exits 1 naming `'main'`
+  and `'trunk'`. In `tests/claim.test.sh`. Red: a resolution that ignores the key, or keeps the
+  comment in the value.
+- [ ] AC71 *(0235)* — Given a fixture with no key, whose `refs/remotes/origin/HEAD` is a symbolic ref to
+  `refs/remotes/origin/develop`, when `./claim` runs on `develop`, then it exits 0. When it runs on
+  `main`, then it exits 1 naming `'develop'`. In `tests/claim.test.sh`. Red: resolution by the
+  `main` fallback alone.
+- [ ] AC72 *(0235)* — Given the AC71 fixture plus `shared_branch: trunk` in `config.yml`, when `./claim` runs on
+  `trunk`, then it exits 0. When it runs on `develop`, then it exits 1 naming `'trunk'`. In
+  `tests/claim.test.sh`. Red: `origin/HEAD` consulted before the key.
+- [ ] AC73 *(0235)* — Given a fixture on `main` after `git checkout --detach`, when `./claim` runs, then it
+  exits 1 and stderr carries `this checkout is on 'HEAD (detached)'`. In `tests/claim.test.sh`. Red:
+  a check that reads an empty branch name as a match or skips it.
+- [ ] AC74 *(0235)* — Given a fixture on `feature` whose backlog directory already holds a `.lock` directory
+  that another session made, when `./claim` runs, then stderr carries FR42's first line and not
+  the lock-held message, and the pre-existing `.lock` is still there afterwards. In
+  `tests/claim.test.sh`. Red: the check placed after the lock is taken, which is no longer up front.
+- [ ] AC75 *(0235)* — Given the tree after the change, when `tests/declared-copies.test.sh` and
+  `tests/backlog-scripts-installed.test.sh` run, then both exit 0 and the first lists a
+  `shared-branch` block in each of `claim`, `handoff`, `close` and `reopen`. Red: one copy edited
+  alone, or one script left without the block.
+- [ ] AC76 *(0235)* — Given the tree after the change, when the whole suite runs as
+  `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=init.defaultBranch GIT_CONFIG_VALUE_0=master` with
+  `for t in tests/*.test.sh; do "$t" || exit 1; done`, then it exits 0. Red: any fixture left on
+  git's default branch (FR57).
+- [ ] AC77 *(0235)* — Given `references/CONCURRENCY.md` and `CHANGELOG.md` after the change, when verify reads
+  them, then the section FR43 names sits directly after *A second checkout never writes the
+  backlog* and states the refusal, FR55's order and the `shared_branch:` fix, and `## Unreleased`
+  carries FR58's line. Checked by reading, not by a guard (`CLAUDE.md`, *Tests*).
 
 
 ## Progress
@@ -720,7 +752,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S4 — `handoff` records a blocker without leaving drift that stops a driver (0156) — discharges AC52
 - [ ] S5 — a note written below the last AC no longer changes that AC's digest (0217) — discharges AC56, AC57, AC58, AC59, AC60, AC61, AC62
 - [ ] S6 — `reopen` of a develop self-close leaves a ticket verify can close (0219) — discharges AC63, AC64, AC65
-- [ ] S7 — decide whether `claim`, `handoff` and `close` refuse off the branch the backlog is shared on (0235) — unspecified
+- [ ] S7 — `claim`, `handoff`, `close` and `reopen` refuse up front when run off the branch the backlog is shared on (0235) — discharges AC66, AC67, AC68, AC69, AC70, AC71, AC72, AC73, AC74, AC75, AC76, AC77
 - [ ] S8 — `./capture` with its restamp form, the shared lock, commit and refusal behaviour, and its install — discharges AC1, AC2, AC3, AC4, AC5, AC12, AC15
 - [ ] S9 — `./park`, with the public-repo screen — discharges AC6, AC7, AC8
 - [ ] S10 — `./rank` and `./withdraw` — discharges AC9, AC10, AC11
@@ -1475,6 +1507,118 @@ brief and recorded no answer.
 **`qa_level: unit` and `close_by: verify` re-read against AC56–AC65:** all are fixture-scripted
 and none needs a person, so both stand.
 
+### S7 decision — 2026-11-27, design `3708` (sprint run-20261127T024025Z)
+
+**The person's answer to the `b7a4` brief, verbatim:** "Making sure we are working from the same
+branch is important. I am more interested in adding a check up front so we do not accidentally
+create merge conflicts and extra work. We should also refuse if work is not being done in the same
+branch."
+
+**Decided: Option A, refuse, with the check made up front.** "Refuse" rules out B and C. "Up front"
+puts the check at `./claim`, before the lock and before any work. `claim` is the first act of every
+stage (design Step 1 claims before any reading), so a wrong-branch session is stopped before it
+spends anything. `handoff`, `close` and `reopen` carry the same check, because a session can switch
+branches mid-pass and every one of them commits to the backlog. The answer names no
+branch-resolution source, and nothing in it contradicts the brief's recommendation, so FR55's order
+stands: `shared_branch:` key, then `origin/HEAD`, then `main`.
+
+**What this changes in the criteria:** FR42 and FR43 are sharpened. FR42 now says refuse, adds
+`reopen`, fixes the position (before the lock) and gives the message. FR43 names the new section.
+FR55–FR58 and AC66–AC77 are added. No S1–S6 or S8–S15 criterion changed, and no `ac_digest` value
+for AC1–AC65 moved.
+
+**Facts re-verified 2026-11-27:**
+- `git rev-parse --abbrev-ref origin/HEAD` fails in this repo. This repo resolves by the `main`
+  fallback, on which it works, so it needs no key.
+- A bare `git init -q` starts on `master` here (git 2.43, `init.defaultBranch` unset). The fixtures
+  in `tests/claim.test.sh:59`, `tests/handoff.test.sh:164`, `tests/close.test.sh:61`,
+  `tests/reopen.test.sh:195` and `tests/next.test.sh:59` all use it. Without FR57 the check would
+  turn them red. AC76 forces `master` as the default, so the suite cannot pass on a machine that
+  happens to default to `main`.
+- `tests/declared-copies.test.sh` already enforces byte-identical `copy-begin` blocks over
+  `skills/queue/templates/*`. FR56 adds no new guard.
+
+**Rejected:**
+- **Warn (B, C):** the person said refuse. `claim`'s header records a warning that was read and
+  committed past anyway (AetherWorks 0091).
+- **An override flag:** it would become the warn path under another name. The `shared_branch:` key
+  is the one sanctioned way to name a different branch.
+- **Gating `./next` as well:** `next` only reads, so a refusal there protects nothing. It would
+  also be a fifth copy of the rule that could drift from the other four.
+- **Checking freshness against `origin`:** that needs a fetch, which means network in every claim,
+  and it is a different guarantee.
+
+**Trade-off accepted:** a consuming project that shares on `master` or `trunk`, with no
+`origin/HEAD` and no key, refuses at its first claim after upgrading. It fixes this with one
+config line, which the refusal names. Also accepted: the check is about branch identity, not
+freshness. A session on a `main` that is behind `origin/main` still claims, and that conflict
+surfaces at push, as it does today.
+
+**`qa_level: unit` and `close_by: verify` re-read against AC66–AC77:** AC66–AC76 are
+fixture-scripted. AC77 is a read verify does anyway. Both values stand.
+
+**The `b7a4` brief, moved here from `## Waiting on` when it was answered:**
+
+> ## Waiting on
+>
+> ### Outcome
+> The single-holder guarantee reaches across branches: a claim made in the primary checkout is one
+> that every other session sees, whatever branch that checkout has out (0235, slice S7).
+>
+> ### Where it stands
+> S1–S4 are built and have passed verify. This design pass (`b7a4`, 2026-11-27) specified S5 (0217,
+> AC56–AC62) and S6 (0219, AC63–AC65), both decided on evidence and ready to build. S7 is the only
+> open question in front of them, and the row waits on it alone. S8–S15 wait behind in slice order.
+> FR42 and FR43 already exist for S7 and read "refuse (or warn, per the decision)".
+>
+> ### What needs you
+> Decide whether `claim`, `handoff` and `close` refuse when run off the shared branch, and how they learn which branch that is.
+> This changes which checkouts may write every consuming project's backlog, so it is a concurrency
+> architecture rule (`coding-conventions.md`, *What Not to Delegate to AI*). It also rests on a fact
+> this repo cannot see: what branch each consuming project shares its backlog on. Observed here on
+> 2026-11-27: `git symbolic-ref refs/remotes/origin/HEAD` prints `fatal: ref
+> refs/remotes/origin/HEAD is not a symbolic ref`, so the remote's HEAD is not a dependable source,
+> even in this repo.
+>
+> ### Options
+>
+> #### Option A — Refuse, resolving the branch from config, then the remote, then `main`
+> The branch is `shared_branch:` in `config.yml` if that key is set, otherwise `origin/HEAD` if
+> that resolves, otherwise `main`. The refusal names both branches and the key. Pros: matches the
+> linked-worktree refusal (`CONCURRENCY.md`, *A second checkout never writes the backlog*), and
+> `claim`'s own header comment records a warning that was read and committed past anyway (AetherWorks
+> 0091). The answer is always deterministic. Cons: a consuming project that shares on `master` or
+> `trunk`, with no `origin/HEAD` and no key, refuses at its next upgrade until it adds one config line.
+> A prototype-branch session has to claim from the shared branch. Wins if a loud, one-line breakage
+> on upgrade is acceptable.
+>
+> #### Option B — Refuse when the branch is known, warn when it is not
+> Same resolution without the `main` fallback. With no key and no `origin/HEAD`, the scripts print
+> a warning naming the key and go ahead. Pros: no project breaks on upgrade. Cons: in this repo, and
+> in any checkout like it, the guard is only a warning until someone sets the key, which is the
+> warn-and-commit shape `claim`'s history says fails. Wins if breaking a consuming project's backlog
+> on upgrade costs more than a window of claims that are not guarded.
+>
+> #### Option C — Warn only
+> Pros: nothing breaks, and the code is smallest. Cons: the AetherWorks 0136 case (a claim committed
+> on `prototype/`, invisible on `main`) happens again whenever the warning scrolls by. Wins only if
+> non-default-branch backlog work is a pattern worth keeping.
+>
+> ### Recommendation
+> Option A. Prior art in this repo answers every comparable case with a refusal, and a refusal that
+> names its one-line fix costs a consuming project a minute. The silent fork it prevents cost a
+> second session a whole design pass on a row it could not see was held.
+>
+> ### What to do
+> Reply `A`, `B` or `C`, naming a different key if `shared_branch:` is wrong. The next
+> `/ai-building-tools:design 0242` then writes S7's FRs and ACs and hands the row to develop at S5.
+> To build S5–S6 first and leave this open, reply `build S5–S6 first`: that design session moves this
+> brief into *Notes & decisions*, leaves S7 `unspecified`, and hands off to develop.
+>
+> ### If no answer
+> S5 and S6 wait, specified but unbuilt, along with every later slice of 0242. No other row names
+> 0242 in `blocked_by`, so the rest of the backlog is unaffected.
+
 ### Open questions for the unspecified slices
 
 **Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
@@ -1502,7 +1646,7 @@ and none needs a person, so both stand.
 
 - Options: `reopen` resets `close_by` to `verify` when the reopen is for an independent verify (a flag or a reason class), or `close` accepts a verify close on a reopened row. The first keeps `close`'s refusal simple.
 
-**Briefed 2026-11-27 in `## Waiting on`, not decided. Open design question, from 0235 — Decide whether claim, handoff and close refuse off the branch the backlog is shared on:**
+**Settled 2026-11-27 by design `3708` (S7, FR42–FR43, FR55–FR58) — kept as the question it answered. Open design question, from 0235 — Decide whether claim, handoff and close refuse off the branch the backlog is shared on:**
 
 Refuse or warn when the checked-out branch is not the one the backlog is shared on — and how does a
 script know which branch that is (a `config.yml` key, the remote's HEAD, or `main` by default)?
