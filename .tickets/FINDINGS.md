@@ -53,4 +53,3 @@ normal state of this file is empty, and **if it has grown, that is itself the fi
 
 ---
 
-- 2026-11-27 — **`./next --drive --scope 0242` named `DISPATCH verify 0192` after 0242 closed, rather than stepping over an out-of-scope row and exiting 5.** In the same call it stepped over out-of-scope design rows 0243 and 0244 with a NOTE, so the step-over applies to design rows and not to verify rows. A supervisor routing on the exit code alone would have verified an unconfirmed ticket instead of starting the tail (sprint run-20261127T024025Z; pointer: `skills/queue/templates/next`, the `--scope` handling in `--drive`).
