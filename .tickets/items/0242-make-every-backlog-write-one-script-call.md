@@ -1093,6 +1093,68 @@ event or egress, and nothing company-specific. Its commit carries the trailer.
 - Environment note: `./claim 0242` with no token died at `xxd: not found` before writing anything
   (no lock, no commit); claimed with an explicit token instead. Already in FINDINGS.md (verify `357a`'s entry), so not re-parked.
 
+### S3 build notes — 2026-11-27, develop `0c29` (sprint run-20261127T024025Z)
+
+- **S3 built at `53897af`.** FR31–FR40, aiming at AC41–AC51. Claimed with `--touches` narrowed to
+  `skills/queue/templates/next`, `.tickets/next`, `tests/next.test.sh`, `skills/retro/SKILL.md`,
+  `skills/queue/SKILL.md`.
+- **FR31/FR32 — the eighth `--drift` class.** `drift_report` now also walks `items/*.md`. For every
+  `done`, `withdrawn` or `rejected` item with a non-empty `claimed_by:`, it prints FR31's line verbatim.
+  An id that still has a `QUEUE.md` row is skipped there and left to the row classes, so one ticket
+  stays one line. A closed status over a live row already reads as class 4. `--drive` shares the
+  function, so it escalates on the class too (0229's knock-on note). **Checked on this backlog,
+  2026-11-27:** `.tickets/next --drift` reports no drift, so no closed item here keeps a token and the
+  running sprint's `--drive` is unaffected. The class comment's count was moved from seven to eight.
+- **FR33:** the `--drift` usage line names *a closed item keeping a token* on one line, so AC44's
+  phrase cannot straddle a wrap.
+- **FR34/FR35:** an empty `rows` prints `ROW 1:     none — the queue holds no rows`. Otherwise the
+  S2 line is unchanged.
+- **FR36/FR37 — `--findings-list`, through `count_findings` itself.** `count_findings` takes an
+  optional second argument, `list`, and in that mode it also prints `<buffer>:<line>  <first line>`
+  for each entry it counts. There is one awk program and one function, and no second parser. The mode
+  reads the same two buffers `--findings` does (`read_tools_buffer`) and drops the COUNT line. A
+  MALFORMED line is listed with its line number, and the exit is then 1, as `--findings` exits. The
+  function header stayed where `tests/findings-buffer.test.sh`'s window expects it. Live check: the
+  listing printed the same number of lines as `--findings`'s count on this buffer.
+- **FR38:** `.tickets/next` was re-copied (this repo's installed copy, 0228; `.claude/backlog/next`
+  does not exist here). FR38 is `tests/backlog-scripts-installed.test.sh` green.
+- **FR39:** one short paragraph each in `skills/retro/SKILL.md` Step 4 (after *Then empty what you
+  read*) and `skills/queue/SKILL.md` Step 5 (after *Remove only the entries you processed*). These were
+  added, not rewrapped. They are unguarded per *Out of scope* (from 0227), and AC47–AC49 assert the
+  mechanism. Sizes: queue 51,644→~51,850 bytes and retro 30,801→~31,040, both inside `skill-size`'s
+  margin.
+- **FR40:** `fr40_findings` builds the buffer: a fenced `- 2026-09-05 [->0060] — …` at line 6, the
+  rule at line 9, and entries at lines 11 and 13 (the second `[->0242]`-marked), with a continuation
+  line at 12.
+- **Red proofs, run:** before the implementation, the new cases failed 23 against the unchanged
+  template (`760 passed, 23 failed`). **Green at baseline, so these are regression guards and not
+  red-to-green proofs** (run): AC43, AC46 and FR32's held-open-row case.
+- **Mutation sweep, run.** Each mutation was applied to the committed template the harness runs
+  (`NEXT_SRC`), the diff was confirmed non-empty, and the file was restored with `git checkout --`.
+  Control after: `783 passed, 0 failed` and `55 passed, 0 failed`, with `git status` clean.
+
+  | AC | Clause (AC text) | Mutation | Result |
+  |---|---|---|---|
+  | AC47 | FR36's mode prints exactly two lines … neither preamble line | both preamble-skip lines removed (M1) | red, 4 |
+  | AC48 | its count equals AC47's line count, one fixture, one case | list mode skips the `---` rule, i.e. a listing without the preamble rule (M2) | red, 5 (`the count equals …`) |
+  | AC49 | a `- ` line with no date … printed marked `MALFORMED`, with its line number | MALFORMED printf gated off in list mode (M3) | red, 1 |
+  | AC41 | a `status: done` item with `claimed_by: "ab12"` and no row … exits non-zero, one DRIFT line | items walk emptied (M5) | red, 9 |
+  | AC42 | the same at `withdrawn`, and at `rejected` | status case narrowed to `done` (M4) | red, 6 |
+  | AC43 | a `done` item with an empty `claimed_by:` … no DRIFT line, exit 0 | empty-token skip removed (M6) | red, 10 |
+  | AC44 | `--help`'s `--drift` line names a closed item keeping a token | phrase removed from usage (M7) | red, 1 |
+  | AC45 | header and no rows … `ROW 1:     none — the queue holds no rows` | empty branch disabled (M8) | red, 1 |
+  | AC46 | one row … the line is the row | empty branch always taken (M9) | red, 5 (incl. `ROW 1 is the row`) |
+  | FR36 | for every buffer `--findings` counts | tools buffer dropped from the loop (M10) | red, 2 |
+  | AC50 | both copies of `next` … installed test passes | template-only edit (M11), `tests/backlog-scripts-installed.test.sh` | red, 1 (`next has diverged`) |
+
+- **AC51 / whole suite, run at `53897af`:** `for t in tests/*.test.sh` file by file, 45 of 45 rc=0
+  (`tests/next.test.sh` `783 passed, 0 failed`; `tests/backlog-scripts-installed.test.sh` `55 passed`;
+  `tests/findings-buffer.test.sh` `46 passed`; `tests/skill-size.test.sh` `45 passed`;
+  `tests/declared-copies.test.sh` `23 passed`). The tree was clean before and after.
+- **Stale sibling prose (reported, not edited):** `skills/develop/SKILL.md` Step 1's warning about
+  closed items keeping a token stays true, and *Out of scope* (from 0229) keeps it. The class it
+  warns about is now reported by `--drift`, which S14 may want to cite.
+
 ### Open questions for the unspecified slices
 
 **Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
