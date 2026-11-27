@@ -1414,6 +1414,68 @@ text, and the digest matches.
 
 **Hand-off:** pass. `./handoff 0242 26f6 develop --slice S8`. S9 is next.
 
+### Leg S9 — verify `f34e`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: `../ai-building-conventions`
+
+**Subject:** `e321f1f` (S9 code `e1b23af`, build notes `3f17bab`, hand-off `bd6971a`), checkout on
+`main`. The Step 2 capture (`git status --porcelain`, fused onto the first suite run) was empty. So
+the dirty set is empty, its intersection with the evidence set is empty, and the verdict is not
+advisory. Copy executed: the repo templates. `tests/park.test.sh` runs `skills/queue/templates/park`
+and `next` in fixtures. `.tickets/park` is `cmp`-equal to the template. `./next --ac-digest 0242
+--check` → `0242: ac_digest matches`. Claim: `./claim 0242 f34e`, with a python3-minted token.
+
+**Commands, verbatim:**
+- `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`): 47 files, each printing
+  `N passed, 0 failed`, none `ABORTED`. `park: 115 passed, 0 failed`.
+
+**Clause table:** this is develop's S9 table, reused unchanged. Each AC's Given, predicate and every
+object it names have a row.
+
+| AC | Given | Predicate | Objects asserted |
+|---|---|---|---|
+| AC6 | a fixture buffer | `./park "what happened"` | exactly one line appended; head-token shape (`- YYYY-MM-DD — …`, the header's `Format:` line, read back via `./next --findings-list`); today's UTC date; one commit; naming only `FINDINGS.md` |
+| AC7 | `--repo <second fixture checkout>` | `./park` runs | entry lands in the second repo; its commit lands there; first repo unchanged |
+| AC8 | a second checkout whose `CLAUDE.md` profile marks it public | `./park` given an entry holding a real-shaped macOS or Linux home path (assembled) | exits non-zero; writes nothing; names the failing shape; the same entry redacted is written |
+
+**Evidence.** This session ran its own mutations with `python3` over the committed
+`skills/queue/templates/park`, the copy the suite runs. Each substitution asserted exactly one match,
+and each diff was confirmed non-empty (`1 file changed`). Each was restored with `git checkout --
+skills/queue/templates/park`. `git status --porcelain` was empty after the sweep, and the control
+`tests/park.test.sh` → `park: 115 passed, 0 failed`.
+
+| AC | Checked by | Mutation | Result |
+|---|---|---|---|
+| AC6 (date) | `tests/park.test.sh` `0242 AC6` | M1 write the entry without its date (the AC's *Red*) | red `105 passed, 10 failed` (`the line is '- <today, UTC> — what happened'`, `./next --findings-list counts it…`, `--findings now counts two`) |
+| AC6 (today's date) | same | M2 a fixed 2020-01-01 date | red `106 passed, 9 failed` |
+| AC6 (exactly one line) | same | M4 append the line plus a blank line | red `90 passed, 25 failed` (`appends exactly one line`…) |
+| AC6 (commit names only FINDINGS.md) | `0242 FR2` | M3 `commit -a` in place of the pathspec | red `113 passed, 2 failed` (`other.txt is absent from the park commit`, `and is still staged afterwards`) |
+| AC7 (lands in the second repo) | `0242 AC7` | M5 ignore `--repo` (the AC's *Red*) | red `75 passed, 40 failed` (`the entry is the second repo's last buffer line`, `one commit in the second repo`…) |
+| AC7 (first repo unchanged) | same | M9 also append a line to the first repo's `FINDINGS.md` | red `107 passed, 8 failed` (`the first repo's backlog is byte-identical`, `and the first repo's tree is clean`) |
+| AC8 (non-zero, writes nothing) | `0242 AC8` | M6 skip the guard (the AC's *Red*) | red `98 passed, 17 failed` (mac/linux/slug: `exits non-zero`, `writes nothing in the second repo`…) |
+| AC8 (writes nothing on refusal) | same | M8 the refusal falls through instead of `exit 1` | red `104 passed, 11 failed` (`exits non-zero`, `writes nothing in the second repo`, `commits nothing in either`) |
+| AC8 (names the failing shape) | same | M7 the macOS shape message replaced by `a path` | red `114 passed, 1 failed` (`mac: names the failing shape`) |
+| FR4 (install) | `tests/backlog-scripts-installed.test.sh` | M10 one line appended to `.tickets/park` | red `70 passed, 1 failed` (`park has diverged from skills/queue/templates/park`); restored `71 passed, 0 failed` |
+
+**NFR rows bearing on S9:**
+- **Security and Privacy & data (AC8).** The screen holds and is guarded (M6, M8). Its pattern is
+  `tests/measurement.test.sh`'s `HOME_PATH_PAT`, byte for byte, which a case asserts.
+- **Testing.** Met by the fixture cases on the template copies.
+- **Documentation.** Met by the usage header, the `usage:` refusal and `--help`.
+- **Always-on pass.** There is no log field, analytics event, credential or UI. One egress-like
+  path is new: a commit into another local checkout. It refuses on a linked worktree and off the
+  destination's shared branch (`0242 FR56` case), and the lock is never broken (`0242 FR1` case).
+  `e1b23af` carries the `Co-Authored-By` trailer. The diff adds no home path, and the
+  measurement guard is green.
+- **Newly reachable.** `--repo` writes into the conventions checkout. That repo is public, but its
+  `## Profile` section does not say `public`, so park does not screen it. FR6 is satisfied
+  literally, because it says "public per its `CLAUDE.md` profile". Develop's choice of marker is
+  recorded in the S9 build notes, and develop already parked it (`c4e06f1`). It is not re-parked,
+  and it is not a gap under any AC.
+- **CHANGELOG.** No `CHANGELOG.md` note is owed by this slice. S14 owns the CHANGELOG move.
+
+**Hand-off:** pass. `./handoff 0242 f34e develop --slice S9`. S10 is next.
+
 ## Notes & decisions
 
 - **2026-11-26 (queue): AC8 example reworded, meaning unchanged.** Its literal home-path example
