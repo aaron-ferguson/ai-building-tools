@@ -2,8 +2,8 @@
 id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -61,8 +61,8 @@ expects:
   - tests/scaffold-close.test.sh
   - tests/sprint.test.sh
 ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8 AC78=9de0f100 AC79=d33bbcc4 AC80=e46fe1e6 AC81=ff13b5c9 AC82=d9ab8d22 AC83=7d5d6a7c AC84=7e39137c AC85=4c37e61e AC86=034cf395 AC87=5714d3fe AC88=88f5d80c AC89=98d1d4ff AC90=76644f05 AC91=d1ca1c88
-claimed_by: "a7c3"
-claimed_at: 2026-11-27T17:29:00Z
+claimed_by:
+claimed_at:
 touches:
 slice: S15
 ---
@@ -961,7 +961,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S11 — `./drain`, on `0227`'s listing, and the ten-script sync — discharges AC13, AC14, AC15
 - [x] S12 — `queue` sends an open verify ticket back to design with `./claim` then `./handoff … design`, named in its Step 1 (0237; FR44, FR45, FR59, FR60) — discharges AC78, AC79, AC80
 - [x] S14 — the seven skills, `CONCURRENCY.md` and the CHANGELOG move onto the scripts, and every step that commits a sweep runs the privacy guard (0118) — discharges AC16, AC17, AC53, AC54, AC55
-- [ ] S15 — `--drift` and `--drive` report an `expects:` path that exists nowhere unless it is marked `# new`, through the shared check; fixtures and this item's own `expects:` are corrected (0155; FR22, FR61–FR66) — discharges AC28, AC81, AC82, AC83, AC84, AC85
+- [x] S15 — `--drift` and `--drive` report an `expects:` path that exists nowhere unless it is marked `# new`, through the shared check; fixtures and this item's own `expects:` are corrected (0155; FR22, FR61–FR66) — discharges AC28, AC81, AC82, AC83, AC84, AC85
 - [ ] S13 — design records sibling consequences and hands to `queue`, which folds them in, reopens a done sibling, or sends the decision back, and `--drive` dispatches that pass (0236; FR67–FR73) — discharges AC86, AC87, AC88, AC89, AC90, AC91
 
 
@@ -1925,6 +1925,55 @@ order, and `tests/handoff.test.sh` AC6's two `By hand` assertions. AC6's asserti
 names `.tickets/handoff` are kept.
 
 **Hand-off:** pass. `./handoff 0242 462c develop --slice S14`. S15 is next.
+
+### Leg S15 — verify `a7c3`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: `../ai-building-conventions` (`config.yml` `conventions.path`)
+Level: `qa_level: unit`, run as `commands.unit_by_file`: `for t in tests/*.test.sh; do "$t" || true; done`, each file's rc and last line recorded.
+Subject: committed `c387735` + claim `61225f4`. The tree was clean at Step 2 and at the last read. The dirty set is empty, so not advisory.
+Copy executed: the repo copies. `tests/next.test.sh` runs `skills/queue/templates/next`, and `.tickets/next` is byte-identical (`cmp`).
+`./next --ac-digest 0242 --check`: `0242: ac_digest matches`.
+Leg verify: S13 remains after S15, so this pass checks only S15's ACs (AC28, AC81–AC85) literally, plus the whole suite. No AC is ticked.
+AC28 / verify `45e7` residual: discharged. S15's Progress line names AC28, and design `56a2` sharpened FR22 for it.
+
+**Whole suite:** 50 files, every one `rc=0`. Among them: `tests/next.test.sh` `794 passed, 0 failed`, `tests/handoff.test.sh` `282 passed, 0 failed`,
+`tests/design-hold.test.sh` `design-hold: 35 passed, 0 failed`, and `tests/sprint.test.sh` `387 passed, 0 failed, 0 skipped`.
+The parked `sprint.test.sh` intermittent did not fire. S15 changed only one fixture's `expects:` line in that file, which is not its cause.
+
+**Clause table, and the mutations this pass ran.** Each was applied to committed `skills/queue/templates/next` (or to the named test file). The pass confirmed a non-empty diff, ran `tests/next.test.sh`, and restored by path. Control afterwards: `794 passed, 0 failed`.
+
+| AC | Clause | Mutation | Result |
+|---|---|---|---|
+| AC28 | Given an open row expecting a path that does not exist / then reported | class 9 gated `if false` | 787/7 red: `names the id and the path, in FR61's form`, `exits 1`, … |
+| AC28 | that **id** … reported | id printed as `""` | 789/5 red: `names the id and the path, in FR61's form` |
+| AC28 | exit is non-zero | `dr_drifted=1` deleted from class 9 | 792/2 red: `exits 1`, `exits 4 — escalate` |
+| AC81 | `# new` → no DRIFT line (no exemption) | `marked_new` → `return 0` | 447/347 red |
+| AC81 | `# renewed` printed (exemption matching `new` anywhere) | `c ~ /new/` | 792/2 red: `# renewed is printed`, `# not new is printed` |
+| AC81 | `# new — created by S8` exempt | `c ~ /^new$/` | 793/1 red: `# new — created by S8 exempts it` |
+| AC82 | glob matching one is present (glob compared as a literal) | `"$em_root/$em_path"` quoted | 793/1 red: `only the glob matching none is reported, in FR61's form` |
+| AC82 | existing path is present | `[ -e "$em_m.x" ]` | 793/1 red: same assertion |
+| AC82 | glob matching none **is** reported | any `*` entry counted present | 793/1 red: same assertion |
+| AC82 | a `DONE.md` row is not checked (closed row checked) | `drift_report` walks every `items/` id | 762/32 red, including `only the glob matching none is reported, in FR61's form` (confirmed by a second, targeted run) |
+| AC82 | in FR61's form | `exists nowhere` → `is missing` | 789/5 red |
+| AC83 | `--drive` exits 4 and prints the same line (class added to `--drift`'s path, not `drift_report`) | class gated on `DR9`, set only in the `--drift` branch | 792/2 red: `exits 4 — escalate`, `prints --drift's expects: line` |
+| AC83 | `--help`'s `--drift` usage names the class | usage clause deleted | 793/1 red: `the --drift usage text names the class` |
+| AC84 | whole suite exits 0 (a fixture helper writing an unmarked missing path) | `add_ticket_expects` mark removed (`ate_body="$6"`) | 767/27 red |
+| AC84 | *0142 FR3* case still counts three drifted rows | `add_ticket`'s `- $6  # new` unmarked | 500/294 red, including `FAIL — three rows drifted` |
+| AC84 | live `./next --drift` names no `expects:` entry of 0242 (0242's `.claude/backlog/*` left in place) | `- .claude/backlog/claim` inserted into this item | `DRIFT     0242 \| expects: .claude/backlog/claim exists nowhere — …`. Restored, then the control printed `no drift: every row agrees with its blocked_by and with its item`, exit 0 |
+| AC85 | the item.md `expects:` comment states the `# new` rule | reading | holds: "An entry naming a file this ticket will CREATE carries `# new`…", plus `# renewed` as the counter-example, and `--drift`/`--drive` report the rest |
+| AC85 | `## Unreleased` carries FR66's upgrade line | reading | holds: "**After upgrading, `--drive` escalates on every open row whose `expects:` names a missing, unmarked path: correct the path, or mark it `# new`…** (0242 S15)" |
+
+AC84 live check: `./.tickets/next --drift` → `no drift: every row agrees with its blocked_by and with its item`, exit 0, and 0 lines name 0242.
+FR65: 0240 needed no correction. That is the sibling's state, as the build notes say, and `--drift` confirms it.
+
+| NFR row | Check | Result |
+|---|---|---|
+| Testing (0155): the template copies are what the cases exercise, and `backlog-scripts-installed` reds on a single-copy edit | `marked_new` mutated in `.tickets/next` only | `105 passed, 1 failed`, against a clean-tree control of `106 passed, 0 failed` |
+| Documentation (0229): `--help` names the class | AC83's usage mutation | red, as above |
+| Privacy / Security | S15 adds no log field, egress or write. Paths resolve under the repo root, and a `..` entry is reported rather than read | holds; the `..` refusal is reasoned, not mutated (no AC names it) |
+| Always-on (`CONVENTIONS_CORE.md`) | No company material and no machine path in the diff | holds |
+
+**Hand-off:** pass. `./handoff 0242 a7c3 develop --slice S15`. S13 is next, and it is the last slice, so its verify is the closing one and checks every AC.
 
 ## Notes & decisions
 
