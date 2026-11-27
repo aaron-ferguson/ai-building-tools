@@ -182,8 +182,35 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   - **FR2** is a paragraph directly above README's skill table, where a reader starts; the existing line under *To check a new environment* stays. **FR3** extends `CLAUDE.md`'s installed-copy bullet: the name does not prove which skill answered either.
   - AC1 check (run): an awk loop over the six files printed each first non-blank line after the frontmatter, all qualified. Whole suite green after the handoff re-copy; `tests/skill-size.test.sh` 45/0. No mutation run: none of this leg's ACs rests on a guard this leg wrote.
 
+- **2026-11-27 (verify S1, token bfb6): FAIL on AC4, one site.** `README.md:26` reads "Default to `/design` — escalation is cheap" — an imperative telling the reader which stage to run, by bare name. It is not a name in a table, not a description of what a skill does, and not a user's words, so it is outside every left-bare category in the build notes, and AC4 says none remains. **The constraint:** qualify the invoked name in that sentence (`/ai-building-tools:design`), then re-run the AC4 grep and the suite. The rest of that paragraph (`/design` never invokes `/prototype`) is description and stays bare. AC1, AC2, AC3 and AC5 pass on this leg (QA evidence below); no AC ticked, no slice ticked. Drift: frontmatter `qa_level: unit` against the QA plan's `**Level:** verify` — the frontmatter was run.
+
 ### Carried notes of the absorbed tickets
 
 ### From 0157 — Make release verify compare the install against the released commit
 
 - **Filed by a retro pass 2026-09-12 from FINDINGS.md.** One buffer entry; filed because the tool the release chain ends on is red within minutes of every release in this repo.
+
+## QA evidence
+
+**S1 leg, 2026-11-27, verify token bfb6 — FAIL (AC4).** Copy executed: installed plugin 0.9.51; repo checkout is the authority for the change under test (`2d3159c9`).
+
+Conventions: ../ai-building-conventions
+
+Command (frontmatter `qa_level: unit`; QA plan prose says `verify` — drift, frontmatter run), per-file form `commands.unit_by_file`:
+`for t in tests/*.test.sh; do "$t" || true; done` — 50 files, every one exit 0, 0 failed in each tally (e.g. `tests/skill-size.test.sh` "45 passed, 0 failed", `tests/next.test.sh` "815 passed, 0 failed", `tests/release.test.sh` "71 passed, 0 failed"). `./next --ac-digest 0064 --check`: `0064: ac_digest matches`.
+
+Clause table (S1's ACs): AC1 Given "each of the six `skills/*/SKILL.md` files" (plural — six differing files), predicate "opening lines are read", object "names the plugin and the skill". AC2 Given `README.md`, objects "plugin-qualified invocation form" and "a bare name can resolve elsewhere". AC3 Given `CLAUDE.md`, object "paragraph on what actually runs covers which skill answered, not only which version". AC4 Given "every shipped file in this repo", predicate "grepped for an instruction to invoke a stage by bare name", object "none remains outside of prose quoting a user's words". AC5 Given "the whole suite", object "every suite passes — including `tests/skill-size.test.sh`", qualifier "recorded justification naming this ticket for any file pushed over its goal".
+
+| AC | How checked | Evidence paths | Result |
+|---|---|---|---|
+| AC1 | Scripted loop asserting the first non-blank body line of each of the six files equals `# /ai-building-tools:<name>`: "AC1 green: 6/6". Mutation: prototype heading back to `# Prototype` → "AC1 RED skills/prototype/SKILL.md: # Prototype", exit 1; restored by path, green | `skills/{queue,design,prototype,develop,verify,retro}/SKILL.md` | PASS |
+| AC2 | Read `git show 2d3159c9 -- README.md`: new paragraph above the skill table — "Invoke each skill by its plugin-qualified name … A bare name can resolve to a built-in skill or another plugin's skill of the same name, silently". Prose, unguarded by design (CLAUDE.md, *No new guard greps prose*) | `README.md` | PASS (read; unguarded) |
+| AC3 | Read the installed-copy bullet in `CLAUDE.md`: "Nor does the skill's name prove *which* skill answered … Invoke the stages as `/ai-building-tools:<name>`". Prose, unguarded | `CLAUDE.md` | PASS (read; unguarded) |
+| AC4 | The build notes' grep, `git ls-files \| grep -vE '^\.tickets/\|^CHANGELOG\|^tests/' \| xargs grep -nE '(^\|[^a-z:/._-])/(queue\|design\|prototype\|develop\|verify\|retro)\b'`, plus a broader `run\|invoke\|use … <stage>` grep; every match classified by hand. Mutation: `skills/develop/SKILL.md:610` reverted to `/verify <id>` → grep printed `skills/develop/SKILL.md:610:`; restored. **Gap: `README.md:26` "Default to `/design`"** is an instruction to invoke a stage by bare name | `README.md`, `MEASUREMENT.md`, `CLAUDE.md`, `skills/**/SKILL.md`, `skills/queue/templates/next`, `references/`, `docs/` | **FAIL** |
+| AC5 | Whole suite green (above). Mutation: 201 bytes appended to `skills/prototype/SKILL.md` → `tests/skill-size.test.sh` "FAIL skills/prototype/SKILL.md is 30559 bytes … 44 passed, 1 failed"; restored → "45 passed, 0 failed". No file pushed over its goal, so no justification owed | `tests/*.test.sh`, `skills/prototype/SKILL.md` | PASS |
+| NFR Documentation | README and CLAUDE.md both carry the form (AC2, AC3); `documentation-conventions.md` — documented where a reader starts | `README.md`, `CLAUDE.md` | holds; unguarded (prose) |
+| NFR Progressive delivery | The heading and qualified form work regardless of what else is installed — no machine-specific detection added | `skills/*/SKILL.md` | holds; unguarded (prose) |
+| NFR Observability (0157) | S2's row; not this leg | — | n/a this leg |
+
+Dirty set at Step 2: empty. Dirty set at verdict: empty. Intersection: empty — not advisory.
+
