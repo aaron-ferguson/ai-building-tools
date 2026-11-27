@@ -14,6 +14,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+## 0.9.50 — 2026-11-27
+
 - `next --drive` re-dispatches `develop` when a verify fail hands a row back to `next: develop`, instead of exiting 4, printing a `NOTE` that names where verify's diagnosis is. The bound is `bounce_max:` in `config.yml` (absent means 2; `0` restores escalate-on-every-bounce), counted from the supervisor's `--bounces <id>=<n>`; past it the bounce escalates (0234).
 - `next --drive` dispatches a `queue` repair when a verify or develop session hands an in-scope row to `next: queue`, under the same `bounce_max` and count; an out-of-scope row, or one with no `--scope`, still escalates as a stale contract. A re-entry into `design` spends the same allowance (0234).
 - `/queue`'s Re-specify tells a repair (correcting a contradictory, unmeetable or drifted criterion of an outcome the ticket keeps) from a narrowing (removing or weakening an AC, moving scope out); a narrowing in a session with no person in it is not written but handed off as `waiting` (0234).
