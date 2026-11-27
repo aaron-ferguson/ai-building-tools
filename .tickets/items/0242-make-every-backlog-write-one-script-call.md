@@ -75,6 +75,7 @@ touches:
   - .tickets/items/0242-make-every-backlog-write-one-script-call.md
   - .tickets/FINDINGS.md
   - tests/backlog-location.test.sh
+  - README.md
 slice: S7
 ---
 

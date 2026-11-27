@@ -263,8 +263,8 @@ refuse_off_shared_branch() {
 refuse_off_shared_branch "$VERB"
 
 # Anything already changed in a file this commit names would ride along on it, and a pathspec limits
-# a commit to paths, never to authorship — CONCURRENCY.md, 'A pathspec is necessary but not
-# sufficient'. Staged or not, so against HEAD. Not checked for --restamp's item: its edits are what
+# a commit to paths, never to authorship —
+# CONCURRENCY.md, 'A pathspec is necessary but not sufficient'. Staged or not, so against HEAD. Not checked for --restamp's item: its edits are what
 # the restamp commits.
 git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
   echo "refusing to $VERB $ID: $DIR is not in a git repository, and a backlog write is a commit" >&2
