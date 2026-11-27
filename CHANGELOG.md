@@ -14,6 +14,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- `./claim` with no token now mints its token with POSIX `od` instead of `xxd`, so it works on hosts without vim's `xxd`. `references/CONCURRENCY.md` *Claim tokens* shows the same form (0245).
+
 ## 0.9.51 — 2026-11-27
 
 - `queue` and `design` now say that `./next --ac-digest <id>` prints the whole `ac_digest:` line, key included, so it replaces the item's line; substituting it after the key doubled the key.
