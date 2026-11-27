@@ -2,8 +2,8 @@
 id: "0064"
 title: Make the copy of a skill that runs provably the released one
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -23,14 +23,10 @@ expects:
   - tools/release
   - tests/release.test.sh
 ac_digest: AC1=3990b053 AC2=5b6d0b3f AC3=63686a6f AC4=44ecaa4e AC5=8f89b56f AC6=bb74f016 AC7=c6a73335
-claimed_by: "476c"
-claimed_at: 2026-11-27T22:31:43Z
+claimed_by:
+claimed_at:
 touches:
-  - tools/release
-  - tests/release.test.sh
-  - CHANGELOG.md
-  - .tickets/items/0064-stage-skill-name-collisions.md
-slice: S1
+slice: S2
 ---
 
 ## Problem
