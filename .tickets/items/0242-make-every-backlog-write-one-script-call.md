@@ -2392,6 +2392,94 @@ fixture-scripted. AC77 is a read verify does anyway. Both values stand.
   ticket* still describe the by-hand moves, and moving them onto the scripts is S14's (FR11, AC16),
   so nothing outside this ticket was staled.
 
+### S11 build notes — 2026-11-27, develop `8c46` (sprint run-20261127T024025Z)
+
+- **2026-11-27 — S11 landed:** `636a1d2`, then `d0db04d`, which puts one citation back on a single
+  line. The subject is `skills/queue/templates/drain`, copied to `.tickets/drain`. Its suite is
+  `tests/drain.test.sh` (96 cases), which runs the template copies of `drain` and `next`. The fixture
+  buffer is the shipped `skills/queue/templates/FINDINGS.md` with entries added after it, so AC13's
+  header is the real one every project carries. AC15 is a new case at the end of
+  `tests/backlog-scripts-installed.test.sh` (106 passed). The same commit adds `drain` to
+  `tests/backlog-location.test.sh`'s script list and allowlist, bumps `tests/declared-copies.test.sh`
+  to `shared-branch: 9 copies`, and adds the suite to README's guard block.
+- **Choices left open by FR10, recorded so verify reads them as decided:**
+  - **How the entry is found.** `drain` runs `./next --findings-list` and keeps the lines for this
+    backlog's own `FINDINGS.md` (never the tools buffer). It matches the date as the first 10
+    characters after `- ` or `- **`. Each entry is addressed by the line number the listing prints,
+    so the preamble above the `---` rule can never be picked. Before writing, the script also checks
+    that the preamble is byte-identical.
+  - **FR10's `[<row-id>]`** is read as a second way to write the mark: `marked 0060` is the same as
+    `marked:0060`. A row id given with `removed` or `held` is refused. A mark names `none` or a
+    four-digit id that has an item file.
+  - **Several entries on one date** cause a refusal that lists them. `--line <n>`, taken from the
+    listing, picks one, and it is refused if the listing does not name that line for that date. This
+    goes beyond FR10's text. Without it, two entries parked on the same day could not be drained.
+  - **An entry's extent** is its listed line plus every following line that starts with a space or
+    a tab. `removed` and `held` take the whole extent. `marked` rewrites only the first line, and it
+    replaces any `[->…]` token already after the date rather than adding a second one.
+  - **`held`** appends the extent, unchanged, to the end of `FINDINGS-HELD.md`. If that file does
+    not exist, it is created with a one-line title. An untracked file is `git add`ed by its path
+    only, so that it can be committed by pathspec. An untracked `FINDINGS-HELD.md` that already
+    exists is refused, because it is another session's write.
+  - **Refused, with nothing changed and no lock held:** a bad date, a bad disposition or a bad mark;
+    a date or `--line` the listing does not name; an ambiguous date; a dirty `FINDINGS.md` or
+    `FINDINGS-HELD.md`; a linked worktree; any branch other than the shared one. A busy lock is
+    retried `BACKLOG_LOCK_TRIES` times and is never broken.
+- **AC15 runs Step 0's sync as written, because Step 0's sync is prose.** The case's `step0_sync`
+  follows Step 0's own sentence: every executable in `templates/`, plus `item.md`, re-copied when it
+  is missing or differs, then `chmod +x`. It runs over a fixture that holds only the five scripts the
+  scaffold names. It asserts that the ten scripts are present, executable and byte-equal, and that
+  `config.yml`, `QUEUE.md` and `FINDINGS.md` keep the same checksums. The sync also copies
+  `migrate`, the eleventh executable; the AC names ten, and nothing asserts against the eleventh.
+  The AC's red ("omit one new script from the sync list") is M4 below. Because the list is derived
+  from the template set, the case proves two things: the template set carries all ten, and Step 0's
+  rule reaches each one.
+- **For S14, not built here:** Step 0's *scaffold* sentence in `skills/queue/SKILL.md` still says
+  ``chmod +x` `next`, `claim`, `close`, `handoff` and `reopen``, five names. Its retrofit paragraph
+  ("every executable in this skill's `templates/`") already covers all ten. S14 owns the skill
+  prose.
+- **This repo's own `.tickets/FINDINGS.md` still shows the damage 0227 describes.** Its fenced
+  example block is empty: the opening and closing fences are there with nothing between them. The
+  shipped template still has the example line. That file belongs to the project and Step 0 never
+  re-copies it, so the line will not come back unless someone restores it. That is outside this
+  slice. It is recorded here so nobody takes the empty block for the intended shape.
+- **The installed-copies quote scanner flagged `printf '# Findings held …'`** as an awk program
+  closed early. A single-quoted string that begins with `#` reads to it as a comment start. Changing
+  it to double quotes cleared the flag. This is the same misdiagnosis class S10 parked, so it is not
+  parked again.
+- **Clause table (AC13–AC15)**, each row's guard in `tests/drain.test.sh` unless named:
+
+  | AC | Clause | Guard |
+  |---|---|---|
+  | AC13 | Given a buffer whose header carries the fenced example `- 2026-09-05 [->0060] — …` | `the header holds '- 2026-09-05 [->0060] — '` (shipped template) |
+  | AC13 | and one real entry dated 2026-09-05 | fixture `E1`; `./next --findings-list names three entries` |
+  | AC13 | when `./drain 2026-09-05 removed` runs | AC13 block, `run 2026-09-05 removed` |
+  | AC13 | then only the real entry is removed | `the real 2026-09-05 entry is gone`, `the other entries stay` |
+  | AC13 | and the header is byte-identical | `the header is byte-identical`, `the header's fenced example is still there` |
+  | AC14 | Given a real entry, when `./drain <date> held` runs | AC14 block, `run 2026-09-06 held` |
+  | AC14 | the entry is absent from `FINDINGS.md` | `the entry is absent from FINDINGS.md` (+ its continuation) |
+  | AC14 | present verbatim in `FINDINGS-HELD.md` | `it is present verbatim, last, in FINDINGS-HELD.md` |
+  | AC14 | both changes are in one commit | `one commit`, `both changes are in it` |
+  | AC15 | Given a fixture backlog holding only the five pre-existing scripts | `backlog-scripts-installed`: `OLD` fixture of next/claim/close/handoff/reopen |
+  | AC15 | when `queue` Step 0's sync runs | `step0_sync` (Step 0's retrofit rule, as written) |
+  | AC15 | all ten scripts are present and byte-equal to `templates/` | ten `AC15 — <s> is present, executable and byte-equal` lines |
+  | AC15 | `config.yml`, `QUEUE.md` and `FINDINGS.md` are byte-identical | `AC15 — config.yml, QUEUE.md and FINDINGS.md are byte-identical` |
+
+- **Mutations, all run 2026-11-27 against committed files, each restored with `git checkout --` in
+  the same turn:**
+
+  | # | Mutation | Result |
+  |---|---|---|
+  | M1 | AC13's red: pick the first line matching the date by regex over the whole file | `drain: 76 passed, 20 failed`. AC13 `exits 0` fails because the in-script header read-back refuses. |
+  | M1b | M1 with the header read-back also deleted | AC13 `the header is byte-identical` and `the header's fenced example is still there` fail. The example line is deleted, which is the 0227 damage. |
+  | M2 | AC14's red: `held` writes the held file without removing the entry | `drain: 87 passed, 9 failed` (AC14 `exits 0`, `one commit`, `both changes are in it`) |
+  | M3 | FR2: commit without `-- $paths` | `drain: 67 passed, 29 failed` (`other.txt is still staged`, `the commit names only FINDINGS.md`) |
+  | M4 | AC15's red: the sync skips `drain` | `105 passed, 1 failed` (`AC15 — drain is missing …`) |
+
+- **Whole suite:** `for t in tests/*.test.sh` at `d0db04d`, all 50 files green, `git status` clean.
+  The first run hit one red, in `tests/citations.test.sh`, from a citation wrapped across two
+  comment lines in this slice's own script. `d0db04d` fixes it.
+
 ### Open questions for the unspecified slices
 
 **Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
