@@ -3,7 +3,7 @@ id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
 next: design
-status: waiting
+status: ready
 qa_level: unit
 close_by: verify
 size: l
