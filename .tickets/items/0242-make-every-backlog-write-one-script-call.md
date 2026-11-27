@@ -2,8 +2,8 @@
 id: "0242"
 title: Make every backlog write one script call, and make the scripts agree with each other
 type: debt
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -65,8 +65,8 @@ expects:
   - tests/scaffold-close.test.sh
   - tests/sprint.test.sh
 ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8
-claimed_by: "59fc"
-claimed_at: 2026-11-27T09:04:07Z
+claimed_by:
+claimed_at:
 touches:
 slice: S10
 ---
@@ -755,7 +755,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S7 — `claim`, `handoff`, `close` and `reopen` refuse up front when run off the branch the backlog is shared on (0235) — discharges AC66, AC67, AC68, AC69, AC70, AC71, AC72, AC73, AC74, AC75, AC76, AC77
 - [x] S8 — `./capture` with its restamp form, the shared lock, commit and refusal behaviour, and its install — discharges AC1, AC2, AC3, AC4, AC5, AC12
 - [x] S9 — `./park`, with the public-repo screen — discharges AC6, AC7, AC8
-- [ ] S10 — `./rank` and `./withdraw` — discharges AC9, AC10, AC11
+- [x] S10 — `./rank` and `./withdraw` — discharges AC9, AC10, AC11
 - [ ] S11 — `./drain`, on `0227`'s listing, and the ten-script sync — discharges AC13, AC14, AC15
 - [ ] S12 — `queue` can send an open verify ticket back to design (0237) — unspecified
 - [ ] S13 — decide whether design may amend unheld sibling items its own FRs name (0236) — unspecified
@@ -1475,6 +1475,77 @@ skills/queue/templates/park`. `git status --porcelain` was empty after the sweep
 - **CHANGELOG.** No `CHANGELOG.md` note is owed by this slice. S14 owns the CHANGELOG move.
 
 **Hand-off:** pass. `./handoff 0242 f34e develop --slice S9`. S10 is next.
+
+### Leg S10 — verify `59fc`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: `../ai-building-conventions`
+
+**Subject:** `bc48218` (S10 code `98b0179`, build notes `8772805`, hand-off `bc48218`), checkout on
+`main`. The Step 2 capture (`git status --porcelain`, fused onto the first suite run) was empty. So
+the dirty set is empty, its intersection with the evidence set is empty, and the verdict is not
+advisory. The final capture, fused onto the last control run, was empty too. Copy executed: the repo
+templates. `tests/rank.test.sh` runs `skills/queue/templates/rank`, and `tests/withdraw.test.sh`
+runs `skills/queue/templates/withdraw` and `next`. `.tickets/rank` and `.tickets/withdraw` are
+`cmp`-equal to the templates. `./next --ac-digest 0242 --check` → `0242: ac_digest matches`.
+Claim: `./claim 0242 59fc`, with a python3-minted token.
+
+**Commands, verbatim:**
+- `for t in tests/*.test.sh; do "$t" || true; done` (`commands.unit_by_file`): 49 files, each printing
+  `N passed, 0 failed`, none `ABORTED`. `rank: 71 passed, 0 failed`, `withdraw: 87 passed, 0 failed`,
+  `backlog-scripts-installed` `87 passed, 0 failed`.
+
+**Clause table:** this is develop's S10 table, reused unchanged. Each AC's Given, predicate and every
+object it names have a row.
+
+| AC | Given | Predicate | Objects asserted |
+|---|---|---|---|
+| AC9 | rows A, B, C | `./rank C above:A` runs | order is C, A, B; every other line of `QUEUE.md` unchanged; one commit |
+| AC10 | B `in-progress` under a token | `./rank B top` runs | refuses; changes nothing |
+| AC11 | 0004 named in 0005's `blocked_by:` | `./withdraw 0004 "merged" --into 0006` runs | 0004's file stays; `status: withdrawn`; empty `next:`; a dated note; its row is gone; 0005's `blocked_by:` names 0006; `next_id` unchanged |
+
+**Evidence.** This session ran its own mutations with a `python3` harness over the committed
+templates, the copies the suites run. Each substitution asserted exactly one match, each diff was
+confirmed non-empty, and each template was restored with `git checkout -- <that path>`. Where the
+script's own read-back would have refused the broken output first, the read-back was disabled in
+the same mutation, so that the AC's outcome itself was tested. `git status --porcelain` was empty
+after the sweep. The controls gave `rank: 71 passed, 0 failed` and `withdraw: 87 passed, 0 failed`.
+
+| AC | Checked by | Mutation | Result |
+|---|---|---|---|
+| AC9 (order C, A, B) | `tests/rank.test.sh` `0242 AC9` | R1 `above:` inserts below the anchor, read-back off | red `70 passed, 1 failed` (`the order is C, A, B`) |
+| AC9 (order, the AC's *Red*) | same | R2 re-sort the table, read-back off | red `61 passed, 10 failed` (`the order is C, A, B`, `makes exactly one commit`…) |
+| AC9 (every other line unchanged) | same | R3 drop the trailing prose line, read-back off | red `66 passed, 5 failed` (`every other line of QUEUE.md is unchanged, in its order`, `the line count is unchanged`) |
+| AC9 (one commit) | same | R4 an extra empty commit after the rank | red `64 passed, 7 failed` (`makes exactly one commit`…) |
+| AC10 (refuses, the AC's *Red*) | `0242 AC10` | R5 drop the claim check (cell and `claimed_by:`) | red `63 passed, 8 failed` (`exits non-zero`, `names why`, `changes no file and leaves no lock`) |
+| AC10 (refuses) | same | R6 drop the Status-cell check only | red `70 passed, 1 failed` (`names why`). The fixture's B carries both the cell and a token, so the `claimed_by:` check still refuses. Only the message moved, and the outcome held. This is defence in depth, not a gap |
+| AC10 (refuses) | same | R7 drop the `claimed_by:` check only | red `68 passed, 3 failed` (`exits non-zero`, `names the holder`…) |
+| AC10 (changes nothing) | same | R8 the refusal appends to `QUEUE.md` before exiting | red `65 passed, 6 failed` (`changes no file and leaves no lock`) |
+| AC10 (changes nothing) | same | R9 the refusal leaks the lock | red `65 passed, 6 failed` (same) |
+| AC11 (file stays, the AC's *Red*) | `tests/withdraw.test.sh` `0242 AC11` | W1 delete the item file after the commit | red `80 passed, 7 failed` (`0004's item file stays`) |
+| AC11 (`status: withdrawn`) | same | W2 write `status: done`, read-back off | red `85 passed, 2 failed` (`0004 is status: withdrawn`) |
+| AC11 (empty `next:`) | same | W3 keep `next:`, read-back off | red `86 passed, 1 failed` (`0004's next: is empty`) |
+| AC11 (a dated note) | same | W4 the note without its date | red `85 passed, 2 failed` (`0004 carries a dated note…`) |
+| AC11 (a dated note) | same | W9 no note written, read-back off | red `85 passed, 2 failed` (same) |
+| AC11 (row gone) | same | W5 keep the row, read-back off | red `82 passed, 5 failed` (`its row is gone`…) |
+| AC11 (0005 names 0006, the AC's *Red*) | same | W6 leave 0005 on 0004, read-back off | red `75 passed, 12 failed` (`0005's blocked_by: names 0006`…) |
+| AC11 (0005 names 0006) | same | W7 `--into` ignored, the entry dropped | red `83 passed, 4 failed` (`0005's blocked_by: names 0006`…) |
+| AC11 (`next_id` unchanged) | same | W8 rewrite `next_id:` in `config.yml` | red `86 passed, 1 failed` (`next_id is unchanged (config.yml byte-identical)`) |
+| FR4 (install) | `tests/backlog-scripts-installed.test.sh` | one line appended to `.tickets/rank` | red `86 passed, 1 failed` (`rank has diverged from skills/queue/templates/rank`); restored `87 passed, 0 failed` |
+
+**NFR rows bearing on S10:**
+- **Testing.** Met by the fixture cases on the template copies.
+- **Documentation.** `./rank --help` and `./withdraw --help` both exit 0. Run bare, each refuses
+  with its `usage:` line: `usage: rank <id> <top|above:<row-id>|below:<row-id>> [--ranking <file>]`
+  and `usage: withdraw <id> <reason> [--into <absorbing-id>]`.
+- **Always-on pass.** There is no log field, analytics event, egress, credential or UI. `98b0179`
+  carries the `Co-Authored-By` trailer. The measurement guard (home paths) is green.
+- **Newly reachable.** `withdraw` writes dependents' items, which are items it does not hold. It
+  refuses a claimed dependent, leaves closed dependents alone, and keeps `waiting` as it is. All
+  three are pinned by suite cases and recorded as decided in the S10 build notes. `rank` can move
+  a row past an in-progress row, which queue Step 4 permits.
+- **CHANGELOG.** No `CHANGELOG.md` note is owed by this slice. S14 owns the CHANGELOG move.
+
+**Hand-off:** pass. `./handoff 0242 59fc develop --slice S10`. S11 is next.
 
 ## Notes & decisions
 
