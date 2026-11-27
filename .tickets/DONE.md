@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0064 | Make the copy of a skill that runs provably the released one | bug | unit | 2026-11-27 | [items/0064-stage-skill-name-collisions.md](items/0064-stage-skill-name-collisions.md) |
 | 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | bug | unit | 2026-11-27 | [items/0192-stop-an-unpriced-session-reading-as-free-in-the-ledger.md](items/0192-stop-an-unpriced-session-reading-as-free-in-the-ledger.md) |
 | 0245 | Mint the claim token with od, so ./claim works on a host without xxd | bug | unit | 2026-11-27 | [items/0245-mint-the-claim-token-with-od-so-claim-works-on-a-host.md](items/0245-mint-the-claim-token-with-od-so-claim-works-on-a-host.md) |
 | 0242 | Make every backlog write one script call, and make the scripts agree with each other | debt | unit | 2026-11-27 | [items/0242-make-every-backlog-write-one-script-call.md](items/0242-make-every-backlog-write-one-script-call.md) |

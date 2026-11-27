@@ -2,8 +2,8 @@
 id: "0064"
 title: Make the copy of a skill that runs provably the released one
 type: bug
-next: verify
-status: in-progress
+next:
+status: done
 qa_level: unit
 size: m
 created: 2026-08-25
@@ -23,10 +23,11 @@ expects:
   - tools/release
   - tests/release.test.sh
 ac_digest: AC1=3990b053 AC2=5b6d0b3f AC3=63686a6f AC4=44ecaa4e AC5=8f89b56f AC6=bb74f016 AC7=c6a73335
-claimed_by: "593c"
-claimed_at: 2026-11-27T22:44:59Z
+claimed_by:
+claimed_at:
 touches:
 slice: S2
+closed: 2026-11-27
 ---
 
 ## Problem
@@ -90,19 +91,19 @@ identical (verify 0129 AC6).
 
 ## Acceptance criteria
 
-- [ ] AC1 — Given each of the six `skills/*/SKILL.md` files, when the opening lines are read, then
+- [x] AC1 — Given each of the six `skills/*/SKILL.md` files, when the opening lines are read, then
   each names the plugin and the skill.
-- [ ] AC2 — Given `README.md`, when read, then it names the plugin-qualified invocation form and
+- [x] AC2 — Given `README.md`, when read, then it names the plugin-qualified invocation form and
   says a bare name can resolve elsewhere.
-- [ ] AC3 — Given `CLAUDE.md`, when read, then its paragraph on what actually runs covers which
+- [x] AC3 — Given `CLAUDE.md`, when read, then its paragraph on what actually runs covers which
   skill answered, not only which version.
-- [ ] AC4 — Given every shipped file in this repo, when grepped for an instruction to invoke a
+- [x] AC4 — Given every shipped file in this repo, when grepped for an instruction to invoke a
   stage by bare name, then none remains outside of prose quoting a user's words.
-- [ ] AC5 — Given the whole suite, when it runs, then every suite passes — including
+- [x] AC5 — Given the whole suite, when it runs, then every suite passes — including
   `tests/skill-size.test.sh`, with a recorded justification naming this ticket for any file pushed
   over its goal.
-- [ ] AC6 *(was 0157 AC1)* — Given a fixture release followed by a commit touching only `.claude/backlog/`, when `tools/release verify` runs, then it passes. Red-making input: today's HEAD comparison.
-- [ ] AC7 *(was 0157 AC2)* — Given a fixture release followed by a commit changing `skills/`, not released, when `verify` runs against an install of the released commit, then it passes; and given the install altered, it fails. Red-making change: excluding everything.
+- [x] AC6 *(was 0157 AC1)* — Given a fixture release followed by a commit touching only `.claude/backlog/`, when `tools/release verify` runs, then it passes. Red-making input: today's HEAD comparison.
+- [x] AC7 *(was 0157 AC2)* — Given a fixture release followed by a commit changing `skills/`, not released, when `verify` runs against an install of the released commit, then it passes; and given the install altered, it fails. Red-making change: excluding everything.
 
 
 ## Progress
@@ -111,7 +112,7 @@ identical (verify 0129 AC6).
 one develop session's work (`product-definition-conventions.md` → "Slice Vertically and Thinly").
 
 - [x] S1 — a stage skill says which copy of it is running — discharges AC1, AC2, AC3, AC4, AC5
-- [ ] S2 — `tools/release verify` compares the install against the released commit (0157) — discharges AC6, AC7
+- [x] S2 — `tools/release verify` compares the install against the released commit (0157) — discharges AC6, AC7
 
 
 ## QA plan
@@ -198,6 +199,8 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   - **Clause table (AC6, AC7).** AC6: Given "a fixture release followed by a commit touching only `.claude/backlog/`" (case: `s2` clone, commit "Claim 0001"); when "`tools/release verify` runs" (no `--commit`); then "it passes" (`verify passes after a backlog-only commit`). AC7: Given "a fixture release followed by a commit changing `skills/`, not released" (commit "Unreleased skill change"); when "`verify` runs against an install of the released commit" (`S2INST` from `git archive $SHA`); then "it passes" (`verify passes over an unreleased skills/ commit`); and "given the install altered, it fails" (`verify fails once the install is altered`, naming `skills/demo/SKILL.md`).
   - Whole suite at 76d58311: 50 files, 0 red. The 952b54a2 change touches only `tools/release` and `tests/release.test.sh`, and the release suite is green at 87/0 there. `CHANGELOG.md` was left alone because its entry is verify's `./close --note`. **Stale prose, not edited (outside touches):** `CLAUDE.md:49` says the chain diffs "against the pushed commit" and that `verify` "makes that comparison on its own"; on its own it now compares against the released commit, which is the pushed commit for a release this tool made.
 
+- **2026-11-27 (verify S2, closing leg, token 593c): PASS on every AC.** S2 (AC6, AC7) checked literally with this pass's own mutations; S1's ACs (AC1–AC5) re-checked, since the closing verify checks all of them, and no file S1 rests on changed since `11fd156e`. AC6's Given names `.claude/backlog/` only while the guard's fixture also touches `.backlog/` and `.tickets/`; a literal variant (commit touching only `.claude/backlog/`) was run and passes 87/0, so the superset fixture hides nothing. Stale prose noted by develop at `CLAUDE.md:49` ("against the pushed commit") stays true for a release this tool made and is not an AC. Drift still stands: frontmatter `qa_level: unit` against the QA plan's `**Level:** verify` — the frontmatter was run.
+
 ### Carried notes of the absorbed tickets
 
 ### From 0157 — Make release verify compare the install against the released commit
@@ -247,5 +250,32 @@ Clause table: reused from the prior round (above), unchanged.
 | NFR Documentation | README and CLAUDE.md both carry the form (AC2, AC3) | `README.md`, `CLAUDE.md` | holds; unguarded (prose) |
 | NFR Progressive delivery | Heading and qualified form need no knowledge of what else is installed | `skills/*/SKILL.md` | holds; unguarded (prose) |
 | NFR Observability (0157) | S2's row; not this leg | — | n/a this leg |
+
+Dirty set at Step 2: empty. Dirty set after the last evidence command: empty. Intersection: empty — not advisory.
+
+**S2 leg, closing verify, 2026-11-27, verify token 593c — PASS (AC1–AC7).** Copy executed: installed plugin 0.9.51; repo checkout is the authority for the change under test (`cd1efb3c`..`952b54a2`, HEAD `a9e4a32b` at run).
+
+Conventions: ../ai-building-conventions
+
+Command (frontmatter `qa_level: unit`; QA plan prose says `verify` — drift, frontmatter run), per-file form `commands.unit_by_file`:
+`for t in tests/*.test.sh; do "$t" || true; done` — 50 files, 50 tallies, every tally `0 failed`, no file exited non-zero (`tests/release.test.sh` "87 passed, 0 failed", `tests/skill-size.test.sh` "45 passed, 0 failed"). `./next --ac-digest 0064 --check`: `0064: ac_digest matches`.
+
+Clause table: AC1–AC5 reused from the S1 rounds above. AC6 — Given "a fixture release followed by a commit touching only `.claude/backlog/`"; when "`tools/release verify` runs"; then "it passes"; red-making input "today's HEAD comparison". AC7 — Given "a fixture release followed by a commit changing `skills/`, not released"; when "`verify` runs against an install of the released commit"; then "it passes"; and Given "the install altered", then "it fails"; red-making change "excluding everything". Reused from develop's build notes, checked against the AC text: no omission.
+
+| AC | How checked | Evidence paths | Result |
+|---|---|---|---|
+| AC1 | Loop over six files, first non-blank body line equals `# /ai-building-tools:<name>`: 6× `ok`. Mutation evidence from the S1 rounds; no S1 file changed since `11fd156e` (`git diff --stat 11fd156e..HEAD` over skills, README, CLAUDE.md, references, templates: empty) | `skills/{queue,design,prototype,develop,verify,retro}/SKILL.md` | PASS |
+| AC2 | Read `README.md` lines 7–10: "Invoke each skill by its plugin-qualified name … A bare name can resolve to a built-in skill or another plugin's skill of the same name, silently". Prose, unguarded by design | `README.md` | PASS (read; unguarded) |
+| AC3 | `CLAUDE.md:34`: "Nor does the skill's name prove *which* skill answered". Prose, unguarded | `CLAUDE.md` | PASS (read; unguarded) |
+| AC4 | The S1 grep re-run; every match is a table name, a description, a `description:` trigger quoting the user, a "Do not invoke" line, a `templates/next` comment, `MEASUREMENT.md:674`, or the CLAUDE.md warning — same classification as the S1 PASS round | `README.md`, `CLAUDE.md`, `MEASUREMENT.md`, `skills/**/SKILL.md`, `skills/queue/templates/next` | PASS |
+| AC5 | Whole suite green (above); skill-size 45/0; no file over its goal, no justification owed | `tests/*.test.sh` | PASS |
+| AC6 | `tests/release.test.sh` case "verify passes after a backlog-only commit" plus "names the compared commit" / "says why". **M1** (red-making input: `COMMIT` defaulted to `rev-parse HEAD` before `cmd_verify`) → "80 passed, 7 failed", including `FAIL AC6 — verify red over a correct install after a backlog commit` and both AC6 report cases. **Literal Given:** fixture commit cut to `.claude/backlog/` paths only (commit stat: `.claude/backlog/QUEUE.md`, `.claude/backlog/items/0001-x.md`) → 87/0. Both restored by path; control 87/0 | `tools/release`, `tests/release.test.sh` | PASS |
+| AC7 | Cases "verify passes over an unreleased skills/ commit" and "verify fails once the install is altered" (names `skills/demo/SKILL.md`). M1 reddens the pass case (`FAIL AC7 — verify compared against HEAD`). **M2** (red-making change: `not_backlog` emits nothing) → "80 passed, 7 failed", including `FAIL AC7 — an altered install verified clean`. Restored by path; control 87/0 | `tools/release`, `tests/release.test.sh` | PASS |
+| FR6 exclusion | **M3** (`not_backlog` passes everything) → "86 passed, 1 failed": `FAIL FR6 — backlog paths failed verify`. Restored; control 87/0 | `tools/release`, `tests/release.test.sh` | guarded |
+| Real install | `tools/release verify` against 0.9.51: "verified", `compared 4a989e49…` "(the gitCommitSha recorded for this install, the commit it was released at; not HEAD)", `excluded .claude/backlog/ .backlog/ .tickets/`, "104 tracked paths identical", record ok; exit 0, with backlog and S2 commits on top of the release | `tools/release` | PASS |
+| NFR Documentation | README and CLAUDE.md carry the form (AC2, AC3) | `README.md`, `CLAUDE.md` | holds; unguarded (prose) |
+| NFR Progressive delivery | Heading and qualified form need no knowledge of what else is installed | `skills/*/SKILL.md` | holds; unguarded (prose) |
+| NFR Observability (0157) | Every report prints `compared <sha>` and why; M1 reddens "the report names the commit it compared against" and "says why that commit" | `tools/release`, `tests/release.test.sh` | holds; guarded |
+| Always-on (`CONVENTIONS_CORE.md`) | Enforced in a script with behaviour tests, not prose; fixture identity `fixture@example.invalid`; no egress, logging or auth change | `tools/release`, `tests/release.test.sh` | holds |
 
 Dirty set at Step 2: empty. Dirty set after the last evidence command: empty. Intersection: empty — not advisory.

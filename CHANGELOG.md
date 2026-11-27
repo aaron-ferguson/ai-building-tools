@@ -16,6 +16,7 @@ the release session, because only a whole-release view can say it.
 
 - `./claim` with no token now mints its token with POSIX `od` instead of `xxd`, so it works on hosts without vim's `xxd`. `references/CONCURRENCY.md` *Claim tokens* shows the same form (0245).
 - Each stage skill now opens with its plugin-qualified name as its heading (`# /ai-building-tools:develop`), so a session can see which skill loaded, and every command a stage names for the next session is qualified the same way: `next: /ai-building-tools:queue`, `/ai-building-tools:verify <id>`. A bare `/verify` or `/design` can resolve to a built-in or another plugin's skill. `README.md` and this repo's `CLAUDE.md` say to invoke the stages qualified (0064).
+- `tools/release verify` with no `--commit` now compares each install against the commit it was released at — the record's `gitCommitSha`, or the bump commit for its version — instead of `HEAD`, so backlog commits and unreleased work after a release no longer red a correct install. It excludes the backlog directories (`.claude/backlog/`, `.backlog/`, `.tickets/`) and prints which commit it compared against and why (0064, was 0157).
 
 ## 0.9.51 — 2026-11-27
 
