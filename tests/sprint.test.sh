@@ -2346,8 +2346,8 @@ fi
 
 # 0234 AC25 (was 0170 AC1) — `kill "$BEAT"` alone stops the loop's subshell and orphans the `sleep` it
 # is blocked on (run-20260913T222409Z: a `sleep 60` with ppid 1 outliving its dispatch). The same
-# extraction is RUN with the interval lengthened rather than shortened, so an orphan outlives the
-# block by seconds and the check is not a race against its natural end: the stand-in records the
+# extraction is RUN with a shortened interval, 9 s rather than the 1 s the 0153 run above uses, so an
+# orphan outlives the block by seconds and the check is not a race against its natural end: the stand-in records the
 # loop's children mid-dispatch, and once the block's own stop has run, none may remain. An empty
 # record would make the check vacuous, so it is asserted non-empty first. Survivors are killed here
 # either way, so a red leaves no process behind.
