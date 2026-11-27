@@ -123,7 +123,10 @@ echo "0050 FR1/AC4 — the file stays the unit of scope and rows sharing one go 
 section "$CON" '## The working tree is shared too'
 present "FR1 — the settled rule is stated in the section" 'where a file cannot have one writer, the session does'
 present "AC4 — rows sharing a file are worked by one session" 'rows sharing a file are worked by one session'
-present "FR1 — develop is serialised here until 0137 says otherwise" 'serialised in this repo by design until `0137` decides otherwise'
+# The "serialised until 0137 decides otherwise" assertion was deleted by 0234 S6, which states the
+# settled rule in its place; the rule is enforced by ./claim and --drive (tests/claim.test.sh,
+# tests/next.test.sh, 0234 AC27-AC30), and per CLAUDE.md *Tests* a prose guard reding on a correct
+# rewording is deleted, not re-anchored.
 echo "0050 FR2/AC1 — every takeable row colliding is a designed wait"
 # Each AC clause is asserted in the AC's own words (0050 verify, gaps 1-3): the condition, not only
 # the outcome, and the subject and its mid-session qualifier on the one line that carries them.
