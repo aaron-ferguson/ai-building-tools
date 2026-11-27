@@ -186,6 +186,8 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 
 - **2026-11-27 (develop S1 bounce, token 6b1c, 11fd156e).** `README.md:26` now reads "Default to `/ai-building-tools:design`"; the descriptive `/design never invokes /prototype` after it stays bare, per the verdict's constraint. AC4 grep re-run (run) over README: every remaining match is the skill table, description of what a skill does, or `/sprint` (not a stage) — lines 8, 14–19, 25, 27, 29–30, 36, 41, 208, 440. No guard in `tests/` pins "Default to". Whole suite green, 50 files, 0 failed. No mutation run.
 
+- **2026-11-27 (verify S1 re-entry, token 6dd8): PASS on the S1 leg.** `README.md:26` now reads "Default to `/ai-building-tools:design`"; the AC4 grep's remaining matches are all names in the skill table, descriptions of what a skill does, user's words, the CLAUDE.md warning that quotes the bare form, or `/sprint` (not a stage). Every S1 AC re-checked from this pass's own evidence and mutation (QA evidence below). Handed back to `develop` with `--slice S1`; no AC ticked, since S2 (AC6, AC7) holds the closing verify. Drift still stands: frontmatter `qa_level: unit` against the QA plan's `**Level:** verify` — the frontmatter was run.
+
 ### Carried notes of the absorbed tickets
 
 ### From 0157 — Make release verify compare the install against the released commit
@@ -216,3 +218,24 @@ Clause table (S1's ACs): AC1 Given "each of the six `skills/*/SKILL.md` files" (
 
 Dirty set at Step 2: empty. Dirty set at verdict: empty. Intersection: empty — not advisory.
 
+**S1 leg re-entry, 2026-11-27, verify token 6dd8 — PASS (S1: AC1–AC5).** Copy executed: installed plugin 0.9.51; repo checkout is the authority for the change under test (`11fd156e`, HEAD `80a9179a` at run).
+
+Conventions: ../ai-building-conventions
+
+Command (frontmatter `qa_level: unit`; QA plan prose says `verify` — drift, frontmatter run), per-file form `commands.unit_by_file`:
+`for t in tests/*.test.sh; do "$t" || true; done` — 50 files, 50 tallies, every tally `0 failed` (e.g. `tests/skill-size.test.sh` "45 passed, 0 failed"). `./next --ac-digest 0064 --check`: `0064: ac_digest matches`.
+
+Clause table: reused from the prior round (above), unchanged.
+
+| AC | How checked | Evidence paths | Result |
+|---|---|---|---|
+| AC1 | Scripted loop, first non-blank body line of each of six files equals `# /ai-building-tools:<name>`: "AC1 green: 6/6". Mutation: prototype heading → `# Prototype` gave "AC1 RED skills/prototype/SKILL.md: # Prototype", "AC1 green: 5/6", exit 1. Restored by path; control "AC1 green: 6/6" | `skills/{queue,design,prototype,develop,verify,retro}/SKILL.md` | PASS |
+| AC2 | Read `README.md` lines 7–10: "Invoke each skill by its plugin-qualified name … A bare name can resolve to a built-in skill or another plugin's skill of the same name, silently". Prose, unguarded by design | `README.md` | PASS (read; unguarded) |
+| AC3 | Read `CLAUDE.md`'s installed-copy bullet: "Nor does the skill's name prove *which* skill answered … Invoke the stages as `/ai-building-tools:<name>`". Prose, unguarded | `CLAUDE.md` | PASS (read; unguarded) |
+| AC4 | Same grep as the prior round: `git ls-files \| grep -vE '^\.tickets/\|^CHANGELOG\|^tests/' \| xargs grep -nE '(^\|[^a-z:/._-])/(queue\|design\|prototype\|develop\|verify\|retro)\b'`. Every match classified: `README.md:26` now qualified; remaining README lines 8, 14–19, 25, 26 (trailing descriptive `/design never`), 27, 29–30, 36, 41, 208, 440 are table names or descriptions; `CLAUDE.md:35–36` quotes the bare form as the warning; skill `description:` lines quote the user; "Do not invoke" lines; `skills/queue/templates/next` comments; `MEASUREMENT.md:674`; `skills/prototype/SKILL.md` path/footer mentions. Mutation: `README.md:26` reverted to "Default to `/design`" → grep printed `README.md:26:Default to \`/design\``. Restored by path; control printed the qualified line | `README.md`, `CLAUDE.md`, `MEASUREMENT.md`, `skills/**/SKILL.md`, `skills/queue/templates/next` | PASS |
+| AC5 | Whole suite green (above). Mutation: 250 bytes appended to `skills/prototype/SKILL.md` → "FAIL skills/prototype/SKILL.md is 30608 bytes … 44 passed, 1 failed"; restored by path → "45 passed, 0 failed". No file over its goal, so no justification owed | `tests/*.test.sh`, `skills/prototype/SKILL.md` | PASS |
+| NFR Documentation | README and CLAUDE.md both carry the form (AC2, AC3) | `README.md`, `CLAUDE.md` | holds; unguarded (prose) |
+| NFR Progressive delivery | Heading and qualified form need no knowledge of what else is installed | `skills/*/SKILL.md` | holds; unguarded (prose) |
+| NFR Observability (0157) | S2's row; not this leg | — | n/a this leg |
+
+Dirty set at Step 2: empty. Dirty set after the last evidence command: empty. Intersection: empty — not advisory.
