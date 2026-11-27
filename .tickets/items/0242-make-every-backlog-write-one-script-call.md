@@ -1827,6 +1827,65 @@ fixture-scripted. AC77 is a read verify does anyway. Both values stand.
   the lock, writing nothing. Claimed with an `od`-minted token. Already parked four times in
   `FINDINGS.md`, so nothing new is parked.
 
+### S7 build notes — 2026-11-27, develop `331a` (sprint run-20261127T024025Z)
+
+- **Commits:** `f9e3483` claim, `3155d1c` touches widened to `tests/declared-copies.test.sh`,
+  `9e76240` scripts, installs and tests, `83364b8` `CONCURRENCY.md` section and changelog line.
+- **Mechanism (FR42, FR55, FR56):** one `copy-begin: shared-branch` block defines
+  `refuse_off_shared_branch <verb>`. Each of `claim`, `handoff`, `close` and `reopen` calls it on
+  the line after the block, and the block sits directly after the linked-worktree refusal, so the
+  order is worktree, then branch, then the dirty-file refusals, then the lock. Resolution: an awk
+  read of `^shared_branch:` in `$DIR/config.yml`, with `# comment` and blanks stripped as `next`
+  reads `findings_threshold` (an empty value is unset). Then `git symbolic-ref --short -q
+  refs/remotes/origin/HEAD` minus `origin/`. Then `main`. The current branch is
+  `git symbolic-ref --short -q HEAD`, and empty means `HEAD (detached)`. The `<backlog dir>` in the
+  second refusal line is printed as `git rev-parse --show-prefix` plus `config.yml`, which is
+  repo-relative (for example `.tickets/config.yml`). Outside a work tree the function returns 0.
+  `.tickets/{claim,handoff,close,reopen}` were re-copied from the templates.
+- **FR57:** every `git init -q` fixture that can reach one of the four scripts now reads
+  `init -q -b main`. That covers `tests/{ac-digest,backlog-location,claim,close,design-hold,handoff,
+  next,reopen,scaffold-close}.test.sh` and both sites in `tests/sprint.test.sh`. `release.test.sh`
+  already pinned `main`.
+- **AC75's listing:** `tests/declared-copies.test.sh <root>` already listed
+  `shared-branch: 4 copies, identical`. But the default run asserted only that copies were
+  identical, so a script left without the block (3 copies) stayed green. The default run's list
+  now includes `shared-branch: 4 copies`. This is a behaviour assertion over the scan, not a prose
+  grep.
+- **Where each AC is asserted:** AC66, AC70–AC74 in `tests/claim.test.sh` (`0242 AC66` … `0242 AC74`).
+  AC67 in `tests/handoff.test.sh`, AC68 in `tests/close.test.sh`, AC69 in `tests/reopen.test.sh`.
+  AC75 in `tests/declared-copies.test.sh` and `tests/backlog-scripts-installed.test.sh`. AC76 is the
+  whole-suite run below. AC77 is checked by reading.
+- **Mutation sweep (run, not reasoned), each applied to the committed template and restored with
+  `git checkout --`, tree clean after:**
+
+  | Mutation | Suite | Result |
+  |---|---|---|
+  | call removed from `handoff` | handoff | red: AC67 exit, first line, claim kept |
+  | call removed from `close` | close | red: AC68 exit, first line, row kept |
+  | call removed from `reopen` | reopen | red: AC69 exit, first line, DONE row kept |
+  | call removed from `claim` | claim | red: AC66 and every branch case |
+  | key never read | claim | red: AC70 both halves |
+  | comment kept in the value | claim | red: AC70 naming `'trunk'`, exit 0 on trunk |
+  | `origin/HEAD` never read | claim | red: AC71 both halves |
+  | `origin/HEAD` read before the key | claim | red: AC72 (and AC70's main half) |
+  | empty branch read as a match | claim | red: AC73 both assertions |
+  | call moved after the lock | claim | red: AC74 first line, not-lock-message; AC66 no-lock |
+  | block deleted from `reopen` | declared-copies | red: `reports shared-branch: 4 copies` |
+
+- **AC76 run (run):** `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=init.defaultBranch
+  GIT_CONFIG_VALUE_0=master`, then `for t in tests/*.test.sh; do "$t" || exit 1; done` at `83364b8`.
+  All 45 files ran and the loop exited 0. A probe confirmed the env really moves the default: a bare
+  `git init` under it starts on `master`, and with `trunkx` on `trunkx`.
+- **This repo's own backlog:** it resolves by the `main` fallback (no key, no symbolic
+  `origin/HEAD`), and its claims and hand-offs work on `main`. This leg's own `./handoff` is the
+  live check.
+- **NFR rows bearing on S7:** no log field, egress, credential or UI. Nothing company-specific. Both
+  code commits carry the trailer.
+- **`./claim 0242` with no token died again** with `.tickets/claim: 149: xxd: not found`, before the
+  lock, writing nothing. Claimed with an `od`-minted token. Already parked, so nothing new is parked.
+- **Sibling grep (widening):** the four scripts' new refusal is not an enumeration another open
+  item's FR lists. S8–S11 must carry the block, per FR56's build note; nothing staled.
+
 ### Open questions for the unspecified slices
 
 **Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
