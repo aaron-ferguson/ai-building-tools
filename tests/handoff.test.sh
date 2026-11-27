@@ -943,6 +943,71 @@ out="$(run_handoff 0916 tok0 develop)" && rc=0 || rc=$?
 assert_rc "a ready hand-off over the same partial brief exits 0" "$rc" 0 "$out"
 assert_row "and the row reads develop | ready" '| 0916 | Needs a decision | develop | ready | 0000 |'
 
+# --- 0242 FR41 (was 0156) — a hand-off over an open blocker writes the derived cache -------------
+# A develop stage that cannot go green records the blocker in blocked_by and hands back to develop.
+# `blocked` is still never AUTHORED (FR2's refusal above stands): the script derives it, by the rule
+# `next` derives it by, so the row it leaves is one `--drift` agrees with and `--drive` does not
+# escalate on. $1 the held id, $2 the blocker's status (no item file when empty), $3 the stage.
+blocked_fixture() {
+  scaffold "$FIVE_HEAD" "$FIVE_SEP" "| $1 | Held with a blocker | $3 | in-progress | 0000 |" "$1" "$3" in-progress tok0
+  f="$FIX/.tickets/items/$1-fixture.md"
+  sed 's/^blocked_by: \[\]$/blocked_by: ["0999"]/' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  printf '| 0999 | The blocker | develop | %s | 0000 |\n' "${2:-ready}" >> "$FIX/.tickets/QUEUE.md"
+  if [ -n "$2" ]; then
+    cat > "$FIX/.tickets/items/0999-blocker.md" <<ITEM
+---
+id: "0999"
+title: The blocker
+next: develop
+status: $2
+blocked_by: []
+claimed_by:
+claimed_at:
+touches:
+---
+ITEM
+  fi
+  git -C "$FIX" add -A && git -C "$FIX" commit -q -m "blocked fixture"
+}
+run_next() { (cd "$FIX" && .tickets/next "$@" 2>&1); }
+
+echo "0242 AC52 — develop -> develop over an open blocker leaves blocked, which --drift and --drive accept"
+blocked_fixture 0920 ready develop
+out="$(run_handoff 0920 tok0 develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_row "the row reads develop | blocked" '| 0920 | Held with a blocker | develop | blocked | 0000 |'
+assert_item_line "the item reads status: blocked" 'status: blocked'
+assert_item_line "and the claim is released" 'claimed_by:'
+assert_contains "the output says the status was derived, naming the blocker" "$out" 'blocked_by still open: 0999'
+assert_contains "it lands in the hand-off commit" "$(git -C "$FIX" log -1 --format=%s)" 'Hand off 0920 to develop [tok0]'
+dout="$(run_next --drift)" && drc=0 || drc=$?
+assert_rc "--drift exits 0 afterwards" "$drc" 0 "$dout"
+assert_not_contains "--drift reports nothing for the row" "$dout" 'DRIFT     0920'
+vout="$(run_next --drive)" || true
+assert_not_contains "--drive does not escalate on drift" "$vout" 'drift'
+assert_contains "--drive steps over the row as blocked" "$vout" '0920'
+
+echo "0242 FR41 — a blocker with no item file is open, as next reads it"
+blocked_fixture 0921 '' develop
+out="$(run_handoff 0921 tok0 develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_row "the row reads develop | blocked" '| 0921 | Held with a blocker | develop | blocked | 0000 |'
+dout="$(run_next --drift)" && drc=0 || drc=$?
+assert_not_contains "--drift reports nothing for the row" "$dout" 'DRIFT     0921'
+
+echo "0242 FR41 — a done blocker is not open: the hand-off writes ready, as asked"
+blocked_fixture 0922 done develop
+out="$(run_handoff 0922 tok0 develop)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_row "the row reads develop | ready" '| 0922 | Held with a blocker | develop | ready | 0000 |'
+assert_not_contains "and says nothing about a blocker" "$out" 'blocked_by still open'
+
+echo "0242 FR41 — a waiting hand-off is authored by a person and is left as written"
+blocked_fixture 0923 ready verify
+out="$(run_handoff 0923 tok0 develop waiting)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_row "the row reads develop | waiting" '| 0923 | Held with a blocker | develop | waiting | 0000 |'
+
 # --- result -------------------------------------------------------------------------------------
 echo
 echo "$PASS passed, $FAIL failed"

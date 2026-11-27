@@ -28,6 +28,8 @@
 # guess between `verify`'s three outgoing branches — `develop` on red, `queue` on a stale contract,
 # and the stage that resumes a `waiting` ticket — which is exactly where this script must refuse.
 # `status` defaults to `ready` and exists for `verify`'s `waiting` branch.
+# A `ready` hand-off over a `blocked_by:` entry still open writes `blocked` instead, as the cache
+# `next` derives (0242 FR41): `blocked` is never an argument, but it is what such a row IS.
 #
 # The token is not optional and is not minted here, for `close`'s reason: ownership is memory, no
 # script can check memory, and the argument is how the session proves it.
@@ -373,6 +375,62 @@ item_status="$(fm_value "$item" status)"
   exit 1
 }
 
+# --- `blocked` is written as the derived cache, never authored (0242 FR41, was 0156) ------------
+# A develop stage that cannot go green records what must land first in `blocked_by:` and hands back
+# to develop. Writing the `ready` it asked for over an open blocker leaves a row that `./next
+# --drift` reports as "written ready, derived blocked" — and `--drive` escalates on any drift, so
+# the documented hand-off stopped a driver. `blocked` is still refused as an ARGUMENT above, since
+# a person or a stage never authors it; what changes is that this script derives it, by the rule
+# `next`'s `open_blockers_of` uses: an entry is open unless its item exists and reads `done`, and a
+# blocker with no item file is open. `close`'s reconcile is what frees the row once the last
+# blocker closes, and it selects exactly the rows that read `blocked`. Only a `ready` hand-off is
+# derived: `waiting` asks a person for something, and that is authored, not cached.
+#
+# `fm_list` is the parser `next`, `claim`, `close` and `reopen` read `blocked_by` with, so the
+# five scripts answer "what blocks this?" identically.
+# copy-begin: fm-list
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+fm_list() {
+  [ -n "$1" ] || return 0
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && $0 ~ "^" key ":" {
+      rest = $0; sub("^" key ": *", "", rest)
+      rest = decomment(rest)
+      if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
+      # A bare SCALAR is read as its paths, never as empty (0242 FR14): `expects: a.ts, b.ts` and
+      # `touches: "*"` are both written in the wild, and reading either as nothing makes the scope
+      # check compare nothing, which fails open. Commas and quotes separate; what is left is the list.
+      gsub(/[",]/, " ", rest); gsub(/[ \t]+/, " ", rest); sub(/^ /, "", rest); sub(/ $/, "", rest)
+      if (rest != "") { printf "%s ", rest; exit }
+      inside = 1; next
+    }
+    # A comment on its own line is skipped rather than ending the block: falling through to the
+    # `exit` below would silently truncate the list at the note.
+    inside && /^[ \t]*#/ { next }
+    inside && /^  *- / {
+      sub(/^ *- */, "")
+      entry = decomment($0)
+      if (entry != "") printf "%s ", entry
+      next
+    }
+    inside { exit }
+  ' "$1"
+}
+# copy-end: fm-list
+
+WRITE_STATUS="$STATUS"
+OPEN_BLOCKERS=""
+if [ "$STATUS" = ready ]; then
+  for b in $(fm_list "$item" blocked_by); do
+    bfile="$(ls "$DIR/items/$b-"*.md 2>/dev/null | head -1 || true)"
+    if [ -z "$bfile" ]; then OPEN_BLOCKERS="$OPEN_BLOCKERS $b(no item file)"; continue; fi
+    [ "$(fm_value "$bfile" status)" = "done" ] || OPEN_BLOCKERS="$OPEN_BLOCKERS $b"
+  done
+  [ -z "$OPEN_BLOCKERS" ] || WRITE_STATUS=blocked
+fi
+
 # --- a waiting hand-off carries a whole decision brief (0231 FR14) ------------------------------
 # `waiting` asks a person for something, and an unattended run reports that ask to someone who was
 # not there for any of the work. So the `## Waiting on` section is a decision brief: seven
@@ -695,7 +753,7 @@ trap 'rm -f "$item_tmp" "$queue_tmp"; rm -rf "$LOCK"' EXIT INT TERM
 # `touches:` is cleared with its list entries — a handed-off ticket that keeps reserving files
 # reads as held to the other window (CONCURRENCY.md, 'The working tree is shared too'). `expects:`
 # is left alone: it is the prediction the next capture calibrates on, not a reservation.
-awk -v stage="$STAGE" -v st="$STATUS" -v slice="$SLICE" -v given="$SLICE_GIVEN" -v leg=" $LEG " -v tick="$TICK_LEG" '
+awk -v stage="$STAGE" -v st="$WRITE_STATUS" -v slice="$SLICE" -v given="$SLICE_GIVEN" -v leg=" $LEG " -v tick="$TICK_LEG" '
   NR == 1 && /^---$/ { fm = 1; print; next }
   fm && /^---$/      {
     if (given && !slice_seen) print "slice: " slice
@@ -722,7 +780,7 @@ awk -v stage="$STAGE" -v st="$STATUS" -v slice="$SLICE" -v given="$SLICE_GIVEN" 
 ' "$item" > "$item_tmp"
 
 awk -F'|' -v OFS='|' -v id="$ID" -v idc="$Q_ID" -v nc="$Q_NEXT" -v sc="$Q_STATUS" \
-    -v stage="$STAGE" -v st="$STATUS" '
+    -v stage="$STAGE" -v st="$WRITE_STATUS" '
   /^\|/ {
     v = $idc; gsub(/^ +| +$/, "", v)
     if (v == id) { $nc = " " stage " "; $sc = " " st " " }
@@ -740,7 +798,7 @@ awk -F'|' -v OFS='|' -v id="$ID" -v idc="$Q_ID" -v nc="$Q_NEXT" -v sc="$Q_STATUS
 # it (`testing-conventions.md`, prove a new guard fails).
 unapplied=""
 [ "$(fm_value "$item_tmp" next)"       = "$STAGE"  ] || unapplied="$unapplied next"
-[ "$(fm_value "$item_tmp" status)"     = "$STATUS" ] || unapplied="$unapplied status"
+[ "$(fm_value "$item_tmp" status)"     = "$WRITE_STATUS" ] || unapplied="$unapplied status"
 [ -z "$(fm_value "$item_tmp" claimed_by)" ]         || unapplied="$unapplied claimed_by"
 [ -z "$(fm_value "$item_tmp" claimed_at)" ]         || unapplied="$unapplied claimed_at"
 [ -z "$(fm_value "$item_tmp" touches)" ]            || unapplied="$unapplied touches"
@@ -775,7 +833,7 @@ fi
 
 new_row="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$queue_tmp")"
 [ "$(read_cell "$new_row" "$Q_NEXT")"   = "$STAGE"  ] || unapplied="$unapplied row.Next"
-[ "$(read_cell "$new_row" "$Q_STATUS")" = "$STATUS" ] || unapplied="$unapplied row.Status"
+[ "$(read_cell "$new_row" "$Q_STATUS")" = "$WRITE_STATUS" ] || unapplied="$unapplied row.Status"
 
 [ -z "$unapplied" ] || {
   echo "$ID: the hand-off did not apply to:$unapplied" >&2
@@ -808,7 +866,8 @@ until git -C "$DIR" commit -q -m "Hand off $ID to $STAGE [$TOKEN]" -m "$COAUTHOR
   }
 done
 
-echo "handed off $ID: $item_next -> $STAGE, status $STATUS, claim $TOKEN released"
+echo "handed off $ID: $item_next -> $STAGE, status $WRITE_STATUS, claim $TOKEN released"
+[ -z "$OPEN_BLOCKERS" ] || echo "status: blocked, derived rather than authored — blocked_by still open:$OPEN_BLOCKERS"
 if [ -n "$SLICE_GIVEN" ]; then
   if [ -n "$TICK_LEG" ]; then echo "leg ended at $SLICE: ticked $LEG; slice: $SLICE"
   else echo "leg ended at $SLICE: $LEG handed to verify, nothing ticked; slice: $SLICE"; fi

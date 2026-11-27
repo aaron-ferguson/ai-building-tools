@@ -61,6 +61,7 @@ touches:
   - skills/queue/templates/handoff
   - .tickets/handoff
   - tests/handoff.test.sh
+  - tests/declared-copies.test.sh  # re-anchor fm-list's copy count, 4 -> 5
 slice: S3
 ---
 
