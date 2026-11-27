@@ -1022,6 +1022,38 @@ assert_contains "the item still carries the claim" "$(cat "$FIX"/.tickets/items/
 assert_eq "no commit is added" "$(git -C "$FIX" rev-list --count HEAD)" "$before_n"
 assert_eq "no lock remains" "$([ -e "$FIX/.tickets/.lock" ] && echo held || echo free)" free
 
+# --- 0242 AC78/AC79 (0237) — queue sends an open verify row back to design: ./claim, ./handoff ---
+# The real claim template, not claim_fixture: the guarantee is that the two scripts compose. AC78 is
+# a regression guard, green at baseline (FR59) — neither script changed for it.
+CLAIM_SRC="$ROOT/skills/queue/templates/claim"
+with_claim() { cp "$CLAIM_SRC" "$FIX/.tickets/claim"; chmod +x "$FIX/.tickets/claim"
+  git -C "$FIX" add -A && git -C "$FIX" commit -q -m "install claim"; }
+run_claim() { (cd "$FIX" && .tickets/claim "$@" 2>&1); }
+
+echo "0242 AC78 — ./claim then ./handoff <id> <token> design moves an unheld verify row to design"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0290 | Overturned | verify | ready | 0000 |' 0290 verify ready ''
+with_claim
+out="$(run_claim 0290 tok0)" && rc=0 || rc=$?
+assert_rc "./claim exits 0" "$rc" 0 "$out"
+out="$(run_handoff 0290 tok0 design)" && rc=0 || rc=$?
+assert_rc "./handoff … design exits 0" "$rc" 0 "$out"
+assert_item_line "the item reads next: design" 'next: design'
+assert_item_line "the item reads status: ready" 'status: ready'
+assert_item_line "claimed_by: is empty" 'claimed_by:'
+assert_row "the row reads design | ready" '| 0290 | Overturned | design | ready | 0000 |'
+assert_eq "the last two commits are the claim and the hand-off" \
+  "$(git -C "$FIX" log -2 --format=%s | tr '\n' '|')" 'Hand off 0290 to design [tok0]|Claim 0290 [tok0]|'
+assert_eq "the tree is clean" "$(git -C "$FIX" status --porcelain)" ''
+
+echo "0242 AC79 — ./claim on a verify row another token holds refuses and changes nothing"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0291 | Held by verify | verify | in-progress | 0000 |' 0291 verify in-progress ab12
+with_claim
+before="$(fingerprint)"; before_log="$(git -C "$FIX" log --format=%H)"
+out="$(run_claim 0291 tok0)" && rc=0 || rc=$?
+assert_rc_nonzero "./claim exits non-zero" "$rc" "$out"
+assert_unchanged "the item and the row are unchanged" "$before"
+assert_eq "git log is unchanged" "$(git -C "$FIX" log --format=%H)" "$before_log"
+
 echo
 echo "$PASS passed, $FAIL failed"
 TALLIED=1
