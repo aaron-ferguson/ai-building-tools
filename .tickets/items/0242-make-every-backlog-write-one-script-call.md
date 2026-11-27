@@ -58,47 +58,14 @@ ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=
 claimed_by: "5b13"
 claimed_at: 2026-11-27T02:45:55Z
 touches:
-  - skills/queue/templates/capture
-  - skills/queue/templates/park
-  - skills/queue/templates/rank
-  - skills/queue/templates/withdraw
-  - skills/queue/templates/drain
-  - skills/queue/templates/next
-  - .tickets/capture
-  - .tickets/park
-  - .tickets/rank
-  - .tickets/withdraw
-  - .tickets/drain
-  - tests/capture.test.sh
-  - tests/park.test.sh
-  - tests/rank.test.sh
-  - tests/withdraw.test.sh
-  - tests/drain.test.sh
-  - tests/backlog-scripts-installed.test.sh
-  - skills/queue/SKILL.md
-  - skills/retro/SKILL.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/design/SKILL.md
-  - skills/sprint/SKILL.md
-  - skills/prototype/SKILL.md
-  - references/CONCURRENCY.md
-  - CHANGELOG.md
   - skills/queue/templates/claim
-  - skills/queue/templates/close
-  - skills/queue/templates/reopen
+  - skills/queue/templates/next
   - skills/queue/templates/item.md
-  - tests/next.test.sh
-  - tests/claim.test.sh
-  - .claude/backlog/claim
-  - .claude/backlog/next
-  - .claude/backlog/close
-  - tests/close.test.sh
+  - .tickets/claim
   - .tickets/next
-  - skills/queue/templates/handoff
-  - .claude/backlog/handoff
-  - tests/handoff.test.sh
-  - tests/findings-routing.test.sh
+  - .tickets/item.md
+  - tests/claim.test.sh
+  - tests/next.test.sh
 ---
 
 ## Problem
