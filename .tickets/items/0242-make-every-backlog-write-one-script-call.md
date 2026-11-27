@@ -2625,6 +2625,28 @@ Either name a second narrow exception in *A stage writes only the ticket it hold
 items named in the held item's own FRs, under the lock, in the decision's commit), or have `queue`
 stop writing FRs that amend other items. Which?
 
+- **2026-11-27 (develop, 38d6): S12 is next and `unspecified`, so this leg routes the ticket to `design` and builds nothing.**
+  S11 passed verify at `0c2da1e`; the first unticked slice is S12, and S13 and S15 are also
+  `unspecified`. A grep for `0237` and `0236` outside `.tickets/` finds nothing, so neither has
+  been built ad hoc. `skills/queue/templates/reopen` still takes only `<id> <top|above:<row-id>> <reason>`,
+  with no target stage, and `handoff` still needs a claim token. What design owes:
+  1. **S12 (FR44–FR45, from 0237):** which carries the verify → design move, as the open question
+     above puts it: a `queue` Step 1 operation that claims and then runs `./handoff … design`, an
+     unclaimed form of `./handoff`, or `./reopen` taking a target stage. Then the ACs, and the slice
+     they belong to.
+  2. **S13 (FR46, from 0236):** a second narrow exception in *A stage writes only the ticket it holds*,
+     or `queue` stops writing FRs that amend other items. Then its ACs.
+  3. **S15 (FR22, AC28):** whether `--drive` gates on an `expects:` path that exists nowhere, and
+     whether a path commented `# new` is exempt. AC28 is already written, so design specifies it
+     rather than writes it.
+  If one design pass settles S12, S13 and S15 together, it saves two develop → design round trips.
+  This leg did not move the specified S14 ahead of them. The dispatch pointed at the
+  unspecified-slice route, and the slice order is the author's. If design would rather build S14
+  first, it can re-order the slices.
+  The first `./claim 0242` died at `claim:149` with `xxd: not found` before taking the lock, so
+  nothing was written. `./claim 0242 38d6`, with the token minted by `od`, succeeded at `40e2b59`.
+  That gap is already parked twice in `.tickets/FINDINGS.md`.
+
 ### Carried notes of the absorbed tickets
 
 ### From 0215 — Make claim and next read expects and touches through one parser that refuses or accepts the comma form
