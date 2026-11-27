@@ -3242,3 +3242,79 @@ stop writing FRs that amend other items. Which?
   landed fix at `2a69aa9`. The landed half is dropped from the buffer; this is what was left
   needing a row.
 - **2026-09-12 (retro pass 2026-09-12, absorbed from FINDINGS.md).** Another commit site: a QA-evidence table quoting a guard's failure message verbatim published a home-directory path in `items/0052-…md:294` (`Close 0052`), reddening `measurement.test.sh` and the fail-fast release gate. Since redacted and green, but `verify` Step 7's evidence write is the ordinary route and runs no privacy check before its commit.
+
+### S14 build — 2026-11-27, develop `bf64` (sprint run-20261127T024025Z)
+
+**Slice S14 landed at `7e9e226`.** It discharges AC16, AC17, AC53, AC54 and AC55, so the leg goes
+to verify with `--slice S14`. S15 and S13 are still to build after it.
+
+- **AC16: the write sites, for the reading.** Each one listed here now calls its script:
+  - `queue`: Step 0's scaffold (`chmod +x` every executable, not five names); the *Use the scripts*
+    paragraph; Step 1's stamp sentence (`./capture` / `./capture --restamp`; a held row writes
+    `ac_digest:` from `./next --ac-digest <id>` before `./handoff`, because `--restamp` refuses a
+    claimed item); *Withdrawing* and *Merging* (`./withdraw … --into`); Step 2's mint (`./capture`);
+    Step 3's placement and `RANKING.md` (`./capture`'s position and `--ranking`); Step 4 (`./rank`);
+    Step 5's removal, *Absorbed* marker and both-halves marker (`./drain`); Step 6 (now only the
+    unscripted writes); Step 7 (`./park`).
+  - `retro`: Step 4's lock paragraph, *Filed* (`./capture`), *Held* (`./drain … held`) and emptying
+    the buffer (`./drain`); Step 6 (`./park`).
+  - `develop`: Step 1's by-hand claim fallback is removed, keeping its `touches:` guidance and naming
+    `./claim --touches`. Step 5's by-hand hand-off fallback is removed. Step 7 uses `./park`.
+  - `verify`: the by-hand claim in Step 1 is removed, and so are Step 5's by-hand close (items 1–4)
+    and its by-hand hand-back. Its cost/tracker item stays as a paragraph. Step 6 uses `./park`.
+  - `design` Step 5 and `prototype` Step 8 use `./park`. Neither has any other write site; `design`'s
+    `ac_digest:` write is made under its own claim.
+  - `sprint` Step 9's supervisor park is now `./park "<entry>" --repo <that checkout>`.
+  - `references/CONCURRENCY.md`: *Lock every write* now lists the scripted writes and names the writes
+    still without a script: a *Notes & decisions* line on an unheld item, and a `blocked_by:` or
+    `## Waiting on` edit to an unclaimed one. The by-hand paragraph is scoped to those writes, and
+    *The five scripts* names the five new ones. The heading still says "five", because renaming it
+    would break citations in repos this one cannot see.
+  - `grep -rn 'mkdir[^`]*\.lock' skills/*/SKILL.md references/CONCURRENCY.md` was run and finds
+    nothing. Its one `mkdir` hit, `sprint`'s `.tickets/runs/.active`, is the run marker, not a lock.
+- **AC17.** `CHANGELOG.md` `## Unreleased` has one entry per new script. Each names the steps that
+  call it. A sixth entry covers the privacy-guard sentence and the removed fallbacks.
+- **AC53/AC54.** The command named is `tests/measurement.test.sh`, in `queue` Step 7 and `retro`
+  Step 6. Both sit directly after the `./park` sentence, and that is the step that commits the park.
+  **No guard was added for them.** `CLAUDE.md` *Tests* says no new guard greps prose, so verify
+  checks both by grep at QA time, as the ACs say. The sentence is also the one `sprint` Step 9 points
+  at ("as `queue` Step 7 says").
+- **AC55, run.** The transient file `docs/ac55-scratch.md` held an assembled `/home/<name>/src` and
+  was tracked with `git add -N`. `tests/measurement.test.sh` exited 1 with
+  `FAIL Privacy & data NFR — a tracked file publishes a home-directory path:` /
+  `docs/ac55-scratch.md:1:…`, tally `142 passed, 1 failed`. The file was removed with
+  `git rm --cached` plus `rm` in the same call. The control run after it was `143 passed, 0 failed`
+  with a clean tree.
+- **Two guards were falsified by FR11 and deleted, not re-anchored** (`CLAUDE.md`, *Tests*):
+  - `tests/sprint.test.sh`'s 0184 block asserted that the by-hand park sequence in `sprint` Step 9
+    was ordered commit before release. `./park` now does that sequence.
+  - The two cases in `tests/handoff.test.sh` AC6 (0081/0087) asserting that `develop` and `verify`
+    keep a `By hand` fallback. The cases asserting that each names `.tickets/handoff` stay.
+  - Those tickets are closed and their text was not edited. This is the report the sibling grep owes.
+- **Guards kept green by wording, not edited:**
+  - `tests/by-hand-lock.test.sh` 0091 AC1 needs *The append takes the backlog lock* and the rule
+    citation in every park step. Both phrases are kept, each on one line.
+  - `tests/ac-digest.test.sh` AC11 needs the stamp phrase in `queue`.
+  - `tests/retro-lock-citation.test.sh` FR2 needs its three phrases. Its AC2 fixture deletes
+    ` *Lock every write…*` after a space, so the citation must not open a line.
+- **`tests/citations.test.sh` 0189 AC1 red once, before the commit.** It compares a worktree at
+  `HEAD` with the checkout (38 vs 39 mentions), and the checkout held my uncommitted edits. It was
+  green once committed.
+- **Sizes after the leg, all net-shrunk or within margin:**
+
+  | skill | bytes |
+  |---|---|
+  | `queue` | 51,633 (bound 53,538) |
+  | `develop` | 54,932 (55,862) |
+  | `prototype` | 30,327 (30,361) |
+  | `verify` | 45,406 |
+  | `retro` | 31,409 |
+  | `sprint` | 70,660 |
+  | `design` | 16,016 |
+
+  `references/CONCURRENCY.md` is 29,550 bytes, and `tests/reference-size.test.sh` is green.
+- **Whole suite, run at `7e9e226` with a clean tree:** every `tests/*.test.sh` exited 0, including
+  `tests/sprint.test.sh`. Its known intermittent red did not appear.
+- **Claim note.** `./claim 0242` with no token died at `xxd: not found`, because this machine has no
+  `xxd`. Nothing was written and no lock was left. A token minted with `od` was passed explicitly.
+  The finding is parked.
