@@ -3,7 +3,7 @@ id: "0192"
 title: Stop an unpriced session reading as free in the sprint ledger and the harvest
 type: bug
 next: verify
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: m
@@ -17,8 +17,8 @@ expects:
   - skills/sprint/SKILL.md
 parent:
 blocked_by: []
-claimed_by:
-claimed_at:
+claimed_by: "12f8"
+claimed_at: 2026-11-27T21:38:59Z
 touches:
 ---
 
