@@ -1,0 +1,323 @@
+#!/bin/sh
+#
+# Rerank one row of the backlog: refuse bad input → lock → re-read → move that one row → append the
+# ranking → commit → unlock, as one step (0242 FR7).
+#
+# Usage:  .tickets/rank <id> <top|above:<row-id>|below:<row-id>> [--ranking <file>]
+#         .tickets/rank --help
+#
+# **What this replaces** is queue Step 4's Rerank, made by hand: two single-line Edits to QUEUE.md,
+# each after a fresh read, an append to RANKING.md, a commit by pathspec and a by-hand lock.
+#
+# **The rank is the caller's judgement.** The position is where the session decided the row goes
+# and `--ranking` is why; this script decides neither (0242, *What stays out of the scripts*). The
+# position form is `capture`'s and `reopen`'s.
+#
+# **Only the moved row's line changes.** Every other line of QUEUE.md is kept byte for byte and in
+# its order, and the result is read back for exactly that before anything is written: the table is
+# never re-sorted or rebuilt.
+#
+# **It refuses a row in progress under any token** (queue Step 4): another session is working it,
+# and its rank is no longer the interesting fact about it. The Status cell and the item's
+# `claimed_by:` are both read, under the lock.
+#
+# **It refuses rather than guesses**, changing nothing and leaving no lock: an id or position it
+# cannot parse; an anchor that is the row itself, or no row; a row not in QUEUE.md; QUEUE.md or (with
+# `--ranking`) RANKING.md uncommitted; a linked worktree; a branch other than the shared one. A busy
+# lock is retried for BACKLOG_LOCK_TRIES seconds (default 10), then refused — never broken. A row
+# already at the position is reported and nothing is committed.
+#
+# See references/CONCURRENCY.md — 'Lock every write to the backlog directory'.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+# --- where the backlog lives (0182) -- byte-identical in claim, close, handoff, next and reopen ---
+# `.tickets/` at the repo root is the location (0228). `.claude/backlog/` and `.backlog/` are legacy:
+# the harness refuses writes under any `.claude` path segment as a sensitive file, which is what 0182
+# moved away from, and `.backlog/` was the name 0182 chose before 0228 named the directory for the
+# whole ticket system it holds. A repo holding more than one is refused rather than guessed at.
+# LEGACY_UNTIL is the date in references/CONCURRENCY.md, *Where the backlog lives*, and
+# tests/backlog-location.test.sh holds the two equal. The note is exported so a nested call (`close`
+# runs `next`) does not print it twice.
+LEGACY_UNTIL=2026-12-31
+case "$DIR" in
+  */.claude/backlog) ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"; LEGACY_AT=.claude/backlog ;;
+  */.backlog)        ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT=.backlog ;;
+  *)                 ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT="" ;;
+esac
+HELD_AT=""
+HELD_COUNT=0
+for held_loc in .tickets .backlog .claude/backlog; do
+  if [ -d "$ROOT/$held_loc" ]; then HELD_AT="$HELD_AT $ROOT/$held_loc"; HELD_COUNT=$((HELD_COUNT + 1)); fi
+done
+if [ "$HELD_COUNT" -gt 1 ]; then
+  echo "refusing: this repo holds more than one backlog:$HELD_AT -- keep one (references/CONCURRENCY.md, Where the backlog lives)" >&2
+  exit 1
+fi
+if [ -n "$LEGACY_AT" ] && [ -z "${BACKLOG_LEGACY_NOTED:-}" ]; then
+  echo "note: this backlog is at the legacy $LEGACY_AT/ -- run ./migrate to move it to .tickets/; the legacy location works until $LEGACY_UNTIL" >&2
+  BACKLOG_LEGACY_NOTED=1
+  export BACKLOG_LEGACY_NOTED
+fi
+# --- end of where the backlog lives ---
+QUEUE="$DIR/QUEUE.md"
+CONFIG="$DIR/config.yml"
+RANKING="$DIR/RANKING.md"
+LOCK="$DIR/.lock"
+
+# The generic trailer, for `handoff`'s reason: the script cannot know which model is driving it.
+COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+
+rank_usage() {
+  echo "usage: rank <id> <top|above:<row-id>|below:<row-id>> [--ranking <file>]"
+  echo "  id         the row to move; refused while it is in progress under any token"
+  echo "  position   where the row goes in QUEUE.md — a queue judgement, so never defaulted"
+  echo "  --ranking  a file whose text is appended to RANKING.md: why the row sits there"
+}
+
+RANKFILE=""
+case "${1:-}" in
+  -h|--help) rank_usage; exit 0 ;;
+  ""|-*) rank_usage >&2; exit 2 ;;
+esac
+[ $# -ge 2 ] || { rank_usage >&2; exit 2; }
+ID="$1"; POSITION="$2"; shift 2
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --ranking) [ $# -ge 2 ] && [ -n "$2" ] || { rank_usage >&2; exit 2; }; RANKFILE="$2"; shift 2 ;;
+    *) echo "refusing to rank: unknown argument '$1'" >&2; rank_usage >&2; exit 2 ;;
+  esac
+done
+VERB=rank
+
+# copy-begin: header-of
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+header_of() {
+  awk -F'|' '/^\|/ {
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
+  }' "$1"
+}
+# copy-end: header-of
+# copy-begin: column-in
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+column_in() {
+  printf '%s' "$1" | awk -F'|' -v want="$2" '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
+  }'
+}
+# copy-end: column-in
+# copy-begin: decomment
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+DECOMMENT='
+function decomment(s,   i, ch, quote, out, start) {
+  sub(/^[ \t]+/, "", s)
+  start = 1
+  ch = substr(s, 1, 1)
+  if (ch == "\"" || ch == "\047") { quote = ch; start = 2 }
+  for (i = start; i <= length(s); i++) {
+    ch = substr(s, i, 1)
+    if (quote != "" && ch == quote) { quote = ""; continue }
+    if (quote != "")                { out = out ch; continue }
+    if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
+    out = out ch
+  }
+  sub(/[ \t]+$/, "", out)
+  return out
+}
+'
+# copy-end: decomment
+
+# copy-begin: fm-value
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+fm_value() {
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && index($0, key ":") == 1 {
+      print decomment(substr($0, length(key) + 2)); exit
+    }
+  ' "$1"
+}
+# copy-end: fm-value
+
+# --- refuse malformed input before the lock (FR3) ------------------------------------------------
+rank_refuse() { echo "refusing to $VERB $ID: $1" >&2; echo "nothing was changed and no lock was taken" >&2; exit 1; }
+
+case "$ID" in [0-9][0-9][0-9][0-9]) : ;; *) rank_refuse "'$ID' is not a four-digit id" ;; esac
+case "$POSITION" in
+  top) ANCHOR=""; SIDE="" ;;
+  above:[0-9][0-9][0-9][0-9]) ANCHOR="${POSITION#above:}"; SIDE=above ;;
+  below:[0-9][0-9][0-9][0-9]) ANCHOR="${POSITION#below:}"; SIDE=below ;;
+  *) rank_refuse "'$POSITION' is not a position — expected 'top', 'above:<row-id>' or 'below:<row-id>'" ;;
+esac
+[ "$ANCHOR" != "$ID" ] || rank_refuse "$POSITION names the row being moved; a row cannot sit beside itself"
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+if [ -n "$RANKFILE" ]; then
+  [ -f "$RANKFILE" ] && [ -n "$(tr -d ' \t\n' < "$RANKFILE")" ] || rank_refuse "--ranking names no file with text in it: $RANKFILE"
+  [ -f "$RANKING" ] || rank_refuse "--ranking was given and there is no RANKING.md at $RANKING"
+fi
+
+# --- the linked-worktree refusal (0083) --------------------------------------------------------
+# The lock, QUEUE.md and the items live in the working tree, so a linked worktree's copies are ones
+# no other session reads (CONCURRENCY.md, 'A second checkout never writes the backlog').
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 &&
+   [ "$(git -C "$DIR" rev-parse --path-format=absolute --git-dir)" != \
+     "$(git -C "$DIR" rev-parse --path-format=absolute --git-common-dir)" ]; then
+  echo "refusing to $VERB $ID: this is a linked worktree, whose lock and QUEUE.md no other session reads" >&2
+  echo "run it from the primary checkout: $(git -C "$DIR" worktree list --porcelain | sed -n '1s/^worktree //p')" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# copy-begin: shared-branch
+# The backlog is written on one branch (0235, 0242 S7). A claim committed on any other branch is
+# invisible to every session reading the shared one, so the single-holder guarantee stops at the
+# branch: a `prototype/` session once claimed, decided and handed off a row that `main` still read
+# as unclaimed. Refuse, never warn, and up front — directly after the linked-worktree refusal,
+# before the lock and before any file is read for writing — so the session learns it at `./claim`,
+# before it has spent anything on the row. A detached HEAD is off the branch. Outside a git work
+# tree the check does not apply. No flag overrides it: the `shared_branch:` key is the one way to
+# name another branch. Resolved first hit wins, and nothing fetches:
+#   1. `shared_branch:` in this directory's config.yml, comment and blanks stripped (empty = unset)
+#   2. `git symbolic-ref --short refs/remotes/origin/HEAD`, its `origin/` removed
+#   3. `main`
+# See `CONCURRENCY.md`, *The backlog is written on one branch*. $1 is the script's own verb.
+refuse_off_shared_branch() {
+  git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || return 0
+  sb=""
+  if [ -f "$DIR/config.yml" ]; then
+    sb="$(awk '/^shared_branch:/ {
+      v = $0; sub(/^shared_branch:/, "", v); sub(/#.*/, "", v); gsub(/[ \t]/, "", v)
+      print v; exit
+    }' "$DIR/config.yml")"
+  fi
+  if [ -z "$sb" ] && sb="$(git -C "$DIR" symbolic-ref --short -q refs/remotes/origin/HEAD 2>/dev/null)"; then
+    sb="${sb#origin/}"
+  fi
+  [ -n "$sb" ] || sb="main"
+  cur="$(git -C "$DIR" symbolic-ref --short -q HEAD 2>/dev/null)" || cur=""
+  [ -n "$cur" ] || cur="HEAD (detached)"
+  [ "$cur" != "$sb" ] || return 0
+  cfg="$(git -C "$DIR" rev-parse --show-prefix 2>/dev/null || true)config.yml"
+  echo "refusing to $1 $ID: this checkout is on '$cur', and the backlog is shared on '$sb'" >&2
+  echo "switch with: git switch $sb, or set shared_branch: in $cfg if '$sb' is wrong" >&2
+  echo "see references/CONCURRENCY.md, 'The backlog is written on one branch'" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+}
+# copy-end: shared-branch
+refuse_off_shared_branch "$VERB"
+
+git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
+  echo "refusing to $VERB $ID: $DIR is not in a git repository, and a backlog write is a commit" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+}
+# Anything already changed in a file this commit names would ride along on it, and a pathspec limits
+# a commit to paths, never to authorship —
+# CONCURRENCY.md, 'A pathspec is necessary but not sufficient'. Staged or not, so against HEAD.
+owned="QUEUE.md"
+[ -z "$RANKFILE" ] || owned="$owned RANKING.md"
+# shellcheck disable=SC2086
+if ! git -C "$DIR" diff --quiet HEAD -- $owned 2>/dev/null; then
+  echo "refusing to rank $ID: $(git -C "$DIR" diff --name-only HEAD -- $owned | tr '\n' ' ')holds uncommitted changes this commit would carry" >&2
+  echo "commit them by pathspec if they are yours; if they are another session's, leave them alone and wait" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# --- lock, retried while busy, never broken (FR1) ----------------------------------------------
+tries="${BACKLOG_LOCK_TRIES:-10}"
+until mkdir "$LOCK" 2>/dev/null; do
+  tries=$((tries - 1))
+  [ "$tries" -gt 0 ] || {
+    echo "backlog is locked by: $(cat "$LOCK/held-by" 2>/dev/null || echo unknown)" >&2
+    echo "nothing was changed; the lock is another session's, so it was left alone" >&2
+    exit 1
+  }
+  sleep 1
+done
+printf '%s %s\n%s\n' "$VERB" "$ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK/held-by"
+TMPD=""
+rank_cleanup() {
+  [ -z "$TMPD" ] || rm -rf "$TMPD"
+  rm -rf "$LOCK"
+}
+trap rank_cleanup EXIT INT TERM
+TMPD="$(mktemp -d)"
+rank_locked_refuse() { echo "refusing to $VERB $ID: $1" >&2; echo "nothing was changed and the lock is released" >&2; exit 1; }
+
+# --- re-read the table under the lock ------------------------------------------------------------
+QHEAD="$(header_of "$QUEUE")"
+[ -n "$QHEAD" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
+Q_ID="$(column_in "$QHEAD" ID)"
+Q_ST="$(column_in "$QHEAD" Status)"
+[ -n "$Q_ID" ] && [ -n "$Q_ST" ] || { echo "QUEUE.md's table has no ID or Status column — a shape this script cannot read is an error" >&2; exit 1; }
+row_of() { awk -F'|' -v id="$1" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) { print; exit } }' "$QUEUE"; }
+ROW="$(row_of "$ID")"
+[ -n "$ROW" ] || rank_locked_refuse "it has no row in QUEUE.md"
+[ "$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) n++ } END { print n + 0 }' "$QUEUE")" = 1 ] \
+  || rank_locked_refuse "QUEUE.md holds more than one row for it; that is drift for queue to settle, not a rank"
+[ -z "$ANCHOR" ] || [ -n "$(row_of "$ANCHOR")" ] || rank_locked_refuse "$SIDE:$ANCHOR names no row in QUEUE.md"
+
+# In progress under ANY token — the Status cell, and the item's claimed_by: (queue Step 4).
+status="$(printf '%s' "$ROW" | awk -F'|' -v c="$Q_ST" '{ v = $c; gsub(/^ +| +$/, "", v); print v }')"
+[ "$status" != "in-progress" ] || rank_locked_refuse "its row is in-progress; another session is working it, and its rank is not this session's to move"
+item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
+if [ -n "$item" ]; then
+  holder="$(fm_value "$item" claimed_by)"
+  [ -z "$holder" ] || rank_locked_refuse "it is claimed by [$holder]; another session is working it, and its rank is not this session's to move"
+fi
+
+# --- move exactly one line ---------------------------------------------------------------------
+queue_tmp="$TMPD/QUEUE.md"
+awk -F'|' -v hdr="$QHEAD" -v side="$SIDE" -v anchor="$ANCHOR" -v idc="$Q_ID" -v id="$ID" -v row="$ROW" '
+  $0 == hdr && !seen { seen = 1; print; hdr_at = NR; next }
+  side == "" && hdr_at && NR == hdr_at + 1 { print; print row; next }
+  /^\|/ && hdr_at { v = $idc; gsub(/^ +| +$/, "", v)
+    if (v == id) next
+    if (side != "" && v == anchor && side == "above") { print row; print; next }
+    if (side != "" && v == anchor && side == "below") { print; print row; next } }
+  { print }
+' "$QUEUE" > "$queue_tmp"
+
+# --- read the result back before anything moves (handoff's 0087 lesson) ------------------------
+# The row appears once, and with it taken out the two files are identical line for line: nothing
+# else moved, was rewritten or was lost.
+unapplied=""
+[ "$(grep -cxF -- "$ROW" "$queue_tmp")" = 1 ] || unapplied="$unapplied row-count"
+grep -vxF -- "$ROW" "$QUEUE" > "$TMPD/before.rest" || true
+grep -vxF -- "$ROW" "$queue_tmp" > "$TMPD/after.rest" || true
+cmp -s "$TMPD/before.rest" "$TMPD/after.rest" || unapplied="$unapplied other-lines"
+[ -z "$unapplied" ] || { echo "the rank did not apply cleanly ($unapplied) — nothing has been written" >&2; exit 1; }
+
+if cmp -s "$QUEUE" "$queue_tmp"; then
+  echo "$ID is already at $POSITION — nothing was changed or committed"
+  [ -z "$RANKFILE" ] || echo "note: --ranking was not appended, since nothing moved" >&2
+  exit 0
+fi
+
+# --- move into place, then commit by pathspec in the same breath -------------------------------
+backup_q="$TMPD/QUEUE.bak"; cp "$QUEUE" "$backup_q"
+cat "$queue_tmp" > "$QUEUE"
+paths="QUEUE.md"
+if [ -n "$RANKFILE" ]; then
+  backup_r="$TMPD/RANKING.bak"; cp "$RANKING" "$backup_r"
+  { cat "$backup_r"; echo; cat "$RANKFILE"; } > "$RANKING"
+  paths="$paths RANKING.md"
+fi
+rank_restore() {
+  cat "$backup_q" > "$QUEUE"
+  [ -z "$RANKFILE" ] || cat "$backup_r" > "$RANKING"
+}
+# Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
+n=0
+# shellcheck disable=SC2086
+until git -C "$DIR" commit -q -m "Rank $ID $POSITION" -m "$COAUTHOR" -- $paths 2>/dev/null; do
+  n=$((n + 1))
+  [ "$n" -lt 30 ] || { rank_restore; echo "could not commit (git busy) — nothing was kept" >&2; exit 1; }
+done
+
+echo "ranked $ID at $POSITION"

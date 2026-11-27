@@ -35,7 +35,7 @@ ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 TEMPLATES="$ROOT/skills/queue/templates"
 CONC="$ROOT/references/CONCURRENCY.md"
 SKILL_SPRINT="$ROOT/skills/sprint/SKILL.md"
-SCRIPTS="claim close handoff next reopen capture park"
+SCRIPTS="claim close handoff next reopen capture park rank withdraw"
 LEGACY_NOTE='this backlog is at the legacy '
 
 PASS=0
@@ -347,7 +347,7 @@ while IFS= read -r hit; do
   case "$f" in
     skills/queue/templates/migrate) continue ;;
     references/CONCURRENCY.md) if in_range "$n" "$WL" || in_range "$n" "$RL"; then continue; fi ;;
-    skills/queue/templates/capture|skills/queue/templates/park|skills/queue/templates/claim|skills/queue/templates/close|skills/queue/templates/handoff|skills/queue/templates/next|skills/queue/templates/reopen)
+    skills/queue/templates/capture|skills/queue/templates/park|skills/queue/templates/rank|skills/queue/templates/withdraw|skills/queue/templates/claim|skills/queue/templates/close|skills/queue/templates/handoff|skills/queue/templates/next|skills/queue/templates/reopen)
       if in_range "$n" "$(block_range "$ROOT/$f")"; then continue; fi
       case "$f:$text" in *next:*'tbuf="$troot/.claude/backlog/FINDINGS.md"'*) continue ;; esac
       # park --repo resolves ANOTHER repo's backlog, so it names the three locations outside the block.

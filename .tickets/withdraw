@@ -1,0 +1,433 @@
+#!/bin/sh
+#
+# Withdraw a ticket from the backlog: refuse bad input → lock → re-read → mark the item withdrawn →
+# remove its row → re-point every open blocked_by: naming it → commit → unlock, as one step
+# (0242 FR8).
+#
+# Usage:  .tickets/withdraw <id> <reason> [--into <absorbing-id>]
+#         .tickets/withdraw --help
+#
+# **What this replaces** is queue's *Withdrawing a ticket* and the withdraw half of *Merging tickets
+# into one outcome*, made by hand: `status:` and `next:` edited, a dated note, the row removed, every
+# `blocked_by:` naming the id re-pointed, a commit by pathspec and a by-hand lock. `3b72d38` broke
+# both withdrawal rules at once.
+#
+# **The two rules it holds** (queue, *Withdrawing a ticket*):
+#   - the item file is KEPT as the record — `status: withdrawn`, `next:` emptied, and a dated line
+#     carrying the reason appended to `## Notes & decisions`. It is never deleted;
+#   - `next_id` only ever rises — this script never reads or writes config.yml.
+#
+# **Every open item's `blocked_by:` naming the id is re-pointed** to `--into`, or has the entry
+# removed where there is no `--into`. An entry already naming `--into`, or an item that IS `--into`,
+# drops the entry rather than duplicating it or pointing an item at itself. The list is written back
+# in the ONE inline form `templates/item.md` gives it. Because `blocked` is derived from
+# `blocked_by:`, an item at `ready` or `blocked` has its status recomputed from the list it now holds
+# — item and row both — so the withdrawal leaves no drift behind it; a `waiting` item keeps its
+# status. A closed item (`done`, `withdrawn`, `rejected`) is history and is not rewritten.
+#
+# **Which ticket goes, and why, is the caller's judgement** (0242, *What stays out of the scripts*).
+#
+# **It refuses rather than guesses**, changing nothing and leaving no lock: an id it cannot parse; an
+# empty reason or one holding a line break; an `--into` that is the id itself, no item, or closed; an
+# item already closed; a claimed item, or a row in progress; a dependent that another session holds;
+# QUEUE.md or any file it would write uncommitted; a linked worktree; a branch other than the shared
+# one. A busy lock is retried for BACKLOG_LOCK_TRIES seconds (default 10), then refused — never
+# broken. An item with no row (a project, whose row left the queue when it gained a child) is
+# withdrawn without one, and says so.
+#
+# See references/CONCURRENCY.md — 'Lock every write to the backlog directory'.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+# --- where the backlog lives (0182) -- byte-identical in claim, close, handoff, next and reopen ---
+# `.tickets/` at the repo root is the location (0228). `.claude/backlog/` and `.backlog/` are legacy:
+# the harness refuses writes under any `.claude` path segment as a sensitive file, which is what 0182
+# moved away from, and `.backlog/` was the name 0182 chose before 0228 named the directory for the
+# whole ticket system it holds. A repo holding more than one is refused rather than guessed at.
+# LEGACY_UNTIL is the date in references/CONCURRENCY.md, *Where the backlog lives*, and
+# tests/backlog-location.test.sh holds the two equal. The note is exported so a nested call (`close`
+# runs `next`) does not print it twice.
+LEGACY_UNTIL=2026-12-31
+case "$DIR" in
+  */.claude/backlog) ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"; LEGACY_AT=.claude/backlog ;;
+  */.backlog)        ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT=.backlog ;;
+  *)                 ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT="" ;;
+esac
+HELD_AT=""
+HELD_COUNT=0
+for held_loc in .tickets .backlog .claude/backlog; do
+  if [ -d "$ROOT/$held_loc" ]; then HELD_AT="$HELD_AT $ROOT/$held_loc"; HELD_COUNT=$((HELD_COUNT + 1)); fi
+done
+if [ "$HELD_COUNT" -gt 1 ]; then
+  echo "refusing: this repo holds more than one backlog:$HELD_AT -- keep one (references/CONCURRENCY.md, Where the backlog lives)" >&2
+  exit 1
+fi
+if [ -n "$LEGACY_AT" ] && [ -z "${BACKLOG_LEGACY_NOTED:-}" ]; then
+  echo "note: this backlog is at the legacy $LEGACY_AT/ -- run ./migrate to move it to .tickets/; the legacy location works until $LEGACY_UNTIL" >&2
+  BACKLOG_LEGACY_NOTED=1
+  export BACKLOG_LEGACY_NOTED
+fi
+# --- end of where the backlog lives ---
+QUEUE="$DIR/QUEUE.md"
+CONFIG="$DIR/config.yml"
+RANKING="$DIR/RANKING.md"
+LOCK="$DIR/.lock"
+
+# The generic trailer, for `handoff`'s reason: the script cannot know which model is driving it.
+COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+
+withdraw_usage() {
+  echo "usage: withdraw <id> <reason> [--into <absorbing-id>]"
+  echo "  id      the ticket to withdraw; its item file is kept, its row removed, its id burned"
+  echo "  reason  why; appended, dated, to '## Notes & decisions'"
+  echo "  --into  the ticket absorbing it: every open blocked_by: naming id is re-pointed there;"
+  echo "          without it, the entry is removed"
+}
+
+INTO=""
+case "${1:-}" in
+  -h|--help) withdraw_usage; exit 0 ;;
+  ""|-*) withdraw_usage >&2; exit 2 ;;
+esac
+[ $# -ge 2 ] || { withdraw_usage >&2; exit 2; }
+ID="$1"; REASON="$2"; shift 2
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --into) [ $# -ge 2 ] && [ -n "$2" ] || { withdraw_usage >&2; exit 2; }; INTO="$2"; shift 2 ;;
+    *) echo "refusing to withdraw: unknown argument '$1'" >&2; withdraw_usage >&2; exit 2 ;;
+  esac
+done
+VERB=withdraw
+
+# copy-begin: header-of
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+header_of() {
+  awk -F'|' '/^\|/ {
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == "ID") { print; exit } }
+  }' "$1"
+}
+# copy-end: header-of
+# copy-begin: column-in
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+column_in() {
+  printf '%s' "$1" | awk -F'|' -v want="$2" '{
+    for (i = 2; i < NF; i++) { v = $i; gsub(/^ +| +$/, "", v); if (v == want) { print i; exit } }
+  }'
+}
+# copy-end: column-in
+# copy-begin: decomment
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+DECOMMENT='
+function decomment(s,   i, ch, quote, out, start) {
+  sub(/^[ \t]+/, "", s)
+  start = 1
+  ch = substr(s, 1, 1)
+  if (ch == "\"" || ch == "\047") { quote = ch; start = 2 }
+  for (i = start; i <= length(s); i++) {
+    ch = substr(s, i, 1)
+    if (quote != "" && ch == quote) { quote = ""; continue }
+    if (quote != "")                { out = out ch; continue }
+    if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
+    out = out ch
+  }
+  sub(/[ \t]+$/, "", out)
+  return out
+}
+'
+# copy-end: decomment
+
+# copy-begin: fm-value
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+fm_value() {
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/      { exit }
+    fm && index($0, key ":") == 1 {
+      print decomment(substr($0, length(key) + 2)); exit
+    }
+  ' "$1"
+}
+# copy-end: fm-value
+
+# --- refuse malformed input before the lock (FR3) ------------------------------------------------
+withdraw_refuse() { echo "refusing to $VERB $ID: $1" >&2; echo "nothing was changed and no lock was taken" >&2; exit 1; }
+is_closed() { case "$1" in done|withdrawn|rejected) return 0 ;; *) return 1 ;; esac; }
+item_of() { ls "$DIR/items/$1-"*.md 2>/dev/null | head -1 || true; }
+
+case "$ID" in [0-9][0-9][0-9][0-9]) : ;; *) withdraw_refuse "'$ID' is not a four-digit id" ;; esac
+[ -n "$(printf '%s' "$REASON" | tr -d ' \t')" ] || withdraw_refuse "the reason is empty; a withdrawal's record is why it was withdrawn"
+case "$REASON" in *"
+"*) withdraw_refuse "the reason holds a line break; it is one dated line in Notes & decisions" ;; esac
+if [ -n "$INTO" ]; then
+  case "$INTO" in [0-9][0-9][0-9][0-9]) : ;; *) withdraw_refuse "--into '$INTO' is not a four-digit id" ;; esac
+  [ "$INTO" != "$ID" ] || withdraw_refuse "--into names the ticket being withdrawn"
+fi
+[ -f "$QUEUE" ] || { echo "no QUEUE.md at $QUEUE" >&2; exit 1; }
+item="$(item_of "$ID")"
+[ -n "$item" ] || withdraw_refuse "no item file for $ID"
+item_rel="items/$(basename "$item")"
+st="$(fm_value "$item" status)"
+! is_closed "$st" || withdraw_refuse "$item_rel is already '$st'"
+holder="$(fm_value "$item" claimed_by)"
+[ -z "$holder" ] || withdraw_refuse "it is claimed by [$holder]; a held ticket is its holder's until it is handed back"
+if [ -n "$INTO" ]; then
+  into_item="$(item_of "$INTO")"
+  [ -n "$into_item" ] || withdraw_refuse "--into $INTO has no item file"
+  into_st="$(fm_value "$into_item" status)"
+  ! is_closed "$into_st" || withdraw_refuse "--into $INTO is '$into_st'; an absorbing ticket is an open one"
+fi
+
+# --- the linked-worktree refusal (0083) --------------------------------------------------------
+# The lock, QUEUE.md and the items live in the working tree, so a linked worktree's copies are ones
+# no other session reads (CONCURRENCY.md, 'A second checkout never writes the backlog').
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 &&
+   [ "$(git -C "$DIR" rev-parse --path-format=absolute --git-dir)" != \
+     "$(git -C "$DIR" rev-parse --path-format=absolute --git-common-dir)" ]; then
+  echo "refusing to $VERB $ID: this is a linked worktree, whose lock and QUEUE.md no other session reads" >&2
+  echo "run it from the primary checkout: $(git -C "$DIR" worktree list --porcelain | sed -n '1s/^worktree //p')" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# copy-begin: shared-branch
+# The backlog is written on one branch (0235, 0242 S7). A claim committed on any other branch is
+# invisible to every session reading the shared one, so the single-holder guarantee stops at the
+# branch: a `prototype/` session once claimed, decided and handed off a row that `main` still read
+# as unclaimed. Refuse, never warn, and up front — directly after the linked-worktree refusal,
+# before the lock and before any file is read for writing — so the session learns it at `./claim`,
+# before it has spent anything on the row. A detached HEAD is off the branch. Outside a git work
+# tree the check does not apply. No flag overrides it: the `shared_branch:` key is the one way to
+# name another branch. Resolved first hit wins, and nothing fetches:
+#   1. `shared_branch:` in this directory's config.yml, comment and blanks stripped (empty = unset)
+#   2. `git symbolic-ref --short refs/remotes/origin/HEAD`, its `origin/` removed
+#   3. `main`
+# See `CONCURRENCY.md`, *The backlog is written on one branch*. $1 is the script's own verb.
+refuse_off_shared_branch() {
+  git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || return 0
+  sb=""
+  if [ -f "$DIR/config.yml" ]; then
+    sb="$(awk '/^shared_branch:/ {
+      v = $0; sub(/^shared_branch:/, "", v); sub(/#.*/, "", v); gsub(/[ \t]/, "", v)
+      print v; exit
+    }' "$DIR/config.yml")"
+  fi
+  if [ -z "$sb" ] && sb="$(git -C "$DIR" symbolic-ref --short -q refs/remotes/origin/HEAD 2>/dev/null)"; then
+    sb="${sb#origin/}"
+  fi
+  [ -n "$sb" ] || sb="main"
+  cur="$(git -C "$DIR" symbolic-ref --short -q HEAD 2>/dev/null)" || cur=""
+  [ -n "$cur" ] || cur="HEAD (detached)"
+  [ "$cur" != "$sb" ] || return 0
+  cfg="$(git -C "$DIR" rev-parse --show-prefix 2>/dev/null || true)config.yml"
+  echo "refusing to $1 $ID: this checkout is on '$cur', and the backlog is shared on '$sb'" >&2
+  echo "switch with: git switch $sb, or set shared_branch: in $cfg if '$sb' is wrong" >&2
+  echo "see references/CONCURRENCY.md, 'The backlog is written on one branch'" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+}
+# copy-end: shared-branch
+refuse_off_shared_branch "$VERB"
+
+git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
+  echo "refusing to $VERB $ID: $DIR is not in a git repository, and a backlog write is a commit" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+}
+# Anything already changed in a file this commit names would ride along on it, and a pathspec limits
+# a commit to paths, never to authorship —
+# CONCURRENCY.md, 'A pathspec is necessary but not sufficient'. Staged or not, so against HEAD. The
+# dependents are checked again under the lock, once the set is known.
+withdraw_dirty() { # withdraw_dirty <when> <paths...> — refuses if any path differs from HEAD
+  when="$1"; shift
+  # shellcheck disable=SC2086
+  git -C "$DIR" diff --quiet HEAD -- "$@" 2>/dev/null && return 0
+  echo "refusing to withdraw $ID: $(git -C "$DIR" diff --name-only HEAD -- "$@" | tr '\n' ' ')holds uncommitted changes this commit would carry" >&2
+  echo "commit them by pathspec if they are yours; if they are another session's, leave them alone and wait" >&2
+  echo "nothing was changed and $when" >&2
+  exit 1
+}
+withdraw_dirty "no lock was taken" QUEUE.md "$item_rel"
+
+# --- lock, retried while busy, never broken (FR1) ----------------------------------------------
+tries="${BACKLOG_LOCK_TRIES:-10}"
+until mkdir "$LOCK" 2>/dev/null; do
+  tries=$((tries - 1))
+  [ "$tries" -gt 0 ] || {
+    echo "backlog is locked by: $(cat "$LOCK/held-by" 2>/dev/null || echo unknown)" >&2
+    echo "nothing was changed; the lock is another session's, so it was left alone" >&2
+    exit 1
+  }
+  sleep 1
+done
+printf '%s %s\n%s\n' "$VERB" "$ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK/held-by"
+TMPD=""
+withdraw_cleanup() {
+  [ -z "$TMPD" ] || rm -rf "$TMPD"
+  rm -rf "$LOCK"
+}
+trap withdraw_cleanup EXIT INT TERM
+TMPD="$(mktemp -d)"
+withdraw_locked_refuse() { echo "refusing to $VERB $ID: $1" >&2; echo "nothing was changed and the lock is released" >&2; exit 1; }
+
+# --- re-read under the lock ----------------------------------------------------------------------
+st="$(fm_value "$item" status)"
+! is_closed "$st" || withdraw_locked_refuse "$item_rel is already '$st'"
+holder="$(fm_value "$item" claimed_by)"
+[ -z "$holder" ] || withdraw_locked_refuse "it is claimed by [$holder]; a held ticket is its holder's until it is handed back"
+QHEAD="$(header_of "$QUEUE")"
+[ -n "$QHEAD" ] || { echo "no table header in $QUEUE — expected a row with an 'ID' cell" >&2; exit 1; }
+Q_ID="$(column_in "$QHEAD" ID)"
+Q_ST="$(column_in "$QHEAD" Status)"
+[ -n "$Q_ID" ] && [ -n "$Q_ST" ] || { echo "QUEUE.md's table has no ID or Status column — a shape this script cannot read is an error" >&2; exit 1; }
+cell_of() { # cell_of <id> <column> — that row's cell, trimmed; empty when there is no row
+  awk -F'|' -v id="$1" -v idc="$Q_ID" -v c="$2" '
+    /^\|/ { v = $idc; gsub(/^ +| +$/, "", v); if (v == id) { v = $c; gsub(/^ +| +$/, "", v); print v; exit } }
+  ' "$QUEUE"
+}
+HAS_ROW="$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) n++ } END { print n + 0 }' "$QUEUE")"
+[ "$HAS_ROW" -le 1 ] || withdraw_locked_refuse "QUEUE.md holds more than one row for it; that is drift for queue to settle first"
+[ "$(cell_of "$ID" "$Q_ST")" != "in-progress" ] || withdraw_locked_refuse "its row is in-progress; another session is working it"
+
+# The blocked_by: entries of an item, one id per line, from the inline list or a `- ` block.
+blockers_of() {
+  awk '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && /^blocked_by:/ { inb = 1; v = $0; sub(/^blocked_by:/, "", v); sub(/#.*/, "", v)
+      gsub(/[][" \t\047]/, "", v); n = split(v, a, ","); for (i = 1; i <= n; i++) if (a[i] != "") print a[i]; next }
+    fm && inb && /^[ \t]*- / { v = $0; sub(/^[ \t]*- /, "", v); sub(/#.*/, "", v); gsub(/[" \t\047]/, "", v); if (v != "") print v; next }
+    fm { inb = 0 }
+  ' "$1"
+}
+# Rewrites $1's blocked_by: as the inline list $2 and, when $3 is set, its status: as $3.
+rewrite_dependent() {
+  awk -v list="$2" -v st="$3" '
+    NR == 1 && /^---$/ { fm = 1; print; next }
+    fm && /^---$/ { fm = 0; print; next }
+    fm && /^blocked_by:/ { print "blocked_by: " list; inb = 1; next }
+    fm && inb && /^[ \t]*- / { next }
+    fm { inb = 0 }
+    fm && st != "" && /^status:/ { print "status: " st; next }
+    { print }
+  ' "$1"
+}
+
+# --- the dependents: every open item whose blocked_by: names the id ------------------------------
+DEPS=""
+ROWSET=""
+for f in "$DIR"/items/[0-9][0-9][0-9][0-9]-*.md; do
+  [ -f "$f" ] || continue
+  [ "$f" != "$item" ] || continue
+  blockers_of "$f" | grep -qx "$ID" || continue
+  dst="$(fm_value "$f" status)"
+  ! is_closed "$dst" || continue
+  did="$(fm_value "$f" id)"; [ -n "$did" ] || did="$(basename "$f" | cut -c1-4)"
+  dholder="$(fm_value "$f" claimed_by)"
+  [ -z "$dholder" ] || withdraw_locked_refuse "$did names it in blocked_by: and is claimed by [$dholder]; that item is its holder's to write"
+  newl=""
+  for b in $(blockers_of "$f"); do
+    [ "$b" != "$ID" ] || b="$INTO"
+    [ -n "$b" ] && [ "$b" != "$did" ] || continue
+    case " $newl " in *" $b "*) continue ;; esac
+    newl="$newl $b"
+  done
+  inline="[$(printf '%s' "$newl" | awk '{ for (i = 1; i <= NF; i++) printf "%s\"%s\"", (i > 1 ? ", " : ""), $i }')]"
+  # `blocked` is derived: an item at ready or blocked is recomputed from the list it now holds.
+  newst=""
+  case "$dst" in
+    ready|blocked)
+      newst=ready
+      for b in $newl; do
+        bf="$(item_of "$b")"
+        if [ -z "$bf" ] || [ "$(fm_value "$bf" status)" != done ]; then newst=blocked; break; fi
+      done
+      [ "$newst" != "$dst" ] || newst=""
+      ;;
+  esac
+  rewrite_dependent "$f" "$inline" "$newst" > "$TMPD/dep.$did"
+  DEPS="$DEPS $did"
+  [ -z "$newst" ] || ROWSET="$ROWSET $did=$newst"
+done
+dep_paths=""
+for did in $DEPS; do dep_paths="$dep_paths items/$(basename "$(item_of "$did")")"; done
+# shellcheck disable=SC2086
+[ -z "$dep_paths" ] || withdraw_dirty "the lock is released" $dep_paths
+
+# --- the item: withdrawn, next: emptied, the dated reason appended ----------------------------
+TODAY="$(date -u +%Y-%m-%d)"
+note="- $TODAY — **Withdrawn** by \`./withdraw\`: $REASON"
+[ -z "$INTO" ] || note="$note — absorbed into $INTO"
+item_tmp="$TMPD/item"
+awk -v note="$note" '
+  NR == 1 && /^---$/ { fm = 1; print; next }
+  fm && /^---$/ { fm = 0; print; next }
+  fm && /^status:/ { print "status: withdrawn"; next }
+  fm && /^next:/   { print "next:"; next }
+  fm { print; next }
+  { line[++n] = $0 }
+  END {
+    # The note goes after the LAST non-blank line of the notes section, so it is that section`s
+    # last line whether the section ends the file or another heading follows it.
+    for (i = 1; i <= n; i++) {
+      if (line[i] ~ /^## /) insec = (line[i] ~ /^## Notes & decisions/)
+      if (insec && line[i] !~ /^[ \t]*$/) at = i
+      if (line[i] ~ /^## Notes & decisions/) found = 1
+    }
+    for (i = 1; i <= n; i++) { print line[i]; if (i == at) print note }
+    if (!found) { print ""; print "## Notes & decisions"; print ""; print note }
+  }
+' "$item" > "$item_tmp"
+
+# --- QUEUE.md: the row removed, and each re-derived dependent's Status cell rewritten -------------
+queue_tmp="$TMPD/QUEUE.md"
+awk -F'|' -v OFS='|' -v id="$ID" -v idc="$Q_ID" -v stc="$Q_ST" -v set="$ROWSET" '
+  BEGIN { n = split(set, a, " "); for (i = 1; i <= n; i++) { split(a[i], kv, "="); want[kv[1]] = kv[2] } }
+  /^\|/ { v = $idc; gsub(/^ +| +$/, "", v)
+    if (v == id) next
+    if (v in want) { $stc = " " want[v] " "; print; next } }
+  { print }
+' "$QUEUE" > "$queue_tmp"
+
+# --- read the result back before anything moves (handoff's 0087 lesson) ------------------------
+unapplied=""
+[ "$(fm_value "$item_tmp" status)" = withdrawn ] || unapplied="$unapplied status"
+[ -z "$(fm_value "$item_tmp" next)" ] || unapplied="$unapplied next"
+grep -qF -- "$note" "$item_tmp" || unapplied="$unapplied note"
+[ "$(awk -F'|' -v id="$ID" -v c="$Q_ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) n++ } END { print n + 0 }' "$queue_tmp")" = 0 ] \
+  || unapplied="$unapplied QUEUE.row"
+for did in $DEPS; do
+  ! blockers_of "$TMPD/dep.$did" | grep -qx "$ID" || unapplied="$unapplied $did.blocked_by"
+done
+[ -z "$unapplied" ] || { echo "the withdrawal did not apply to:$unapplied — nothing has been written" >&2; exit 1; }
+
+# --- move into place, then commit by pathspec in the same breath -------------------------------
+mkdir "$TMPD/bak"
+cp "$QUEUE" "$TMPD/bak/QUEUE.md"; cp "$item" "$TMPD/bak/item"
+for did in $DEPS; do cp "$(item_of "$did")" "$TMPD/bak/dep.$did"; done
+withdraw_restore() {
+  cat "$TMPD/bak/QUEUE.md" > "$QUEUE"; cat "$TMPD/bak/item" > "$item"
+  for did in $DEPS; do cat "$TMPD/bak/dep.$did" > "$(item_of "$did")"; done
+}
+cat "$item_tmp" > "$item"
+paths="$item_rel"
+if ! cmp -s "$QUEUE" "$queue_tmp"; then cat "$queue_tmp" > "$QUEUE"; paths="QUEUE.md $paths"; fi
+for did in $DEPS; do cat "$TMPD/dep.$did" > "$(item_of "$did")"; done
+paths="$paths$dep_paths"
+# Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
+n=0
+msg="Withdraw $ID"
+[ -z "$INTO" ] || msg="$msg into $INTO"
+# shellcheck disable=SC2086
+until git -C "$DIR" commit -q -m "$msg" -m "$REASON" -m "$COAUTHOR" -- $paths 2>/dev/null; do
+  n=$((n + 1))
+  [ "$n" -lt 30 ] || { withdraw_restore; echo "could not commit (git busy) — nothing was kept" >&2; exit 1; }
+done
+
+[ "$HAS_ROW" = 1 ] || echo "note: $ID had no row in QUEUE.md; the item alone was withdrawn" >&2
+for did in $DEPS; do
+  case " $ROWSET " in *" $did="*) r="${ROWSET#*" $did="}"; echo "re-pointed $did's blocked_by: (status now ${r%% *})" ;;
+    *) echo "re-pointed $did's blocked_by:" ;; esac
+done
+echo "withdrew $ID — the item is kept as the record, its row is removed, and its id stays burned"
