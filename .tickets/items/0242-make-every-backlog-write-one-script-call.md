@@ -608,7 +608,7 @@ reads the live backlog.
 **One outcome is one ticket, even across many sessions**; its slices are worked in order, each about
 one develop session's work (`product-definition-conventions.md` → "Slice Vertically and Thinly").
 
-- [ ] S1 — `claim` and `next` read `expects:` and `touches:` through one parser, agree on what blocks a take, and `claim` writes an empty `touches:` key when it seeds nothing (0215, 0225, 0155) — discharges AC18, AC19, AC20, AC21, AC22, AC23, AC24, AC25, AC26, AC27, AC28, AC29
+- [ ] S1 — `claim` and `next` read `expects:` and `touches:` through one parser, agree on what blocks a take, and `claim` writes an empty `touches:` key when it seeds nothing (0215, 0225, 0155) — discharges AC18, AC19, AC20, AC21, AC22, AC23, AC24, AC25, AC26, AC27, AC29
 - [ ] S2 — the three places the scripts answer the wrong question (0066) — discharges AC30, AC31, AC32, AC33, AC34, AC35, AC36, AC37, AC38, AC39, AC40
 - [ ] S3 — `next` reports a closed item still carrying a token, says an empty queue is empty, and lists the findings entries (0229, 0230, 0227) — discharges AC41, AC42, AC43, AC44, AC45, AC46, AC47, AC48, AC49, AC50, AC51
 - [ ] S4 — `handoff` records a blocker without leaving drift that stops a driver (0156) — discharges AC52
@@ -622,6 +622,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [ ] S12 — `queue` can send an open verify ticket back to design (0237) — unspecified
 - [ ] S13 — decide whether design may amend unheld sibling items its own FRs name (0236) — unspecified
 - [ ] S14 — the seven skills, `CONCURRENCY.md` and the CHANGELOG move onto the scripts, and every step that commits a sweep runs the privacy guard (0118) — discharges AC16, AC17, AC53, AC54, AC55
+- [ ] S15 — FR22 and AC28, `--drift` reporting an `expects:` path that exists nowhere: decide whether `--drive` gates on it (0142 FR3) and whether a path commented `# new` is exempt (0155) — unspecified
 
 
 ## QA plan
@@ -781,6 +782,54 @@ pattern at all.
   - `0236` (Decide whether design may amend unheld sibling items its own FRs name): FR46–FR46, no ACs (an unspecified slice)
   - `0118` (Run the privacy guard where a sweep commits, not only where a suite runs): FR47–FR49, AC53–AC55
   Each absorbed ticket's Problem is quoted verbatim above, and its FRs, ACs, NFR rows, QA plan, Out of scope and Notes are carried below with `*(was NNNN FRn)*` tags. **Bare FR and AC numbers inside the carried text were renumbered to this ticket's.** A reference to another ticket's criterion not written as `NNNN ACn` may have been renumbered too, and the withdrawn file holds the original. An unspecified slice sends this ticket to `design` when it is next; its open question is below.
+
+### S1 build notes — 2026-11-27, develop `5b13` (sprint run-20261127T024025Z)
+
+- **S1 built at `36138a7`, citation fix `718a756`.** FR13–FR21 and FR23, discharging AC18–AC27 and
+  AC29. Whole suite green file by file after `718a756`.
+- **FR14 — parsed, not reported.** A bare scalar `expects: a.ts, b.ts` (or `touches: "*"`) is read
+  as its paths, split on commas and quotes, by the `fm-list` block. Chosen because a live item in
+  this backlog, 0214, carries eight paths in that form and read as empty until now. Reporting it
+  would have left 0214 unpredicted until someone rewrote it.
+- **FR13 — one definition through the declared copy.** `claim` now carries the `fm-list` and
+  `decomment` copy-blocks `next`, `close` and `reopen` already share, so
+  `tests/declared-copies.test.sh` reds if any copy diverges. Its counts are re-anchored from 3 to 4
+  and from 4 to 5. `claim` seeds `touches:` from `fm_list`'s output as normalised `  - <path>`
+  lines. An `expects:` entry's own comment is no longer copied into `touches:`.
+- **FR16** — the key is added whenever it is absent, with seeds when the stage seeds and empty
+  otherwise. It is reported through the existing backfill note (FR18).
+- **FR17** — `existing_touches` is read through `fm_list` too, so a populated inline `touches:`
+  is kept. Before this, only a block-form `touches:` counted as populated, so an inline one was
+  seeded over. AC24's case is the inline form.
+- **FR19** — the detector matches an entry that is exactly `*`.
+- **FR21 — reported, not refused.** `claim` prints `COLLIDES <id> | <paths> — held by <id> [<tok>],
+  its touches` (or `its expects (predicted)` when the holder's `touches:` is empty, as `next`'s
+  `declared_scope` reads it) after `claimed …`. Closed items and the claimant's own token are
+  skipped. Its comparison runs under `set -f`, so a glob entry is compared as written.
+- **FR20 is scoped to `./next <stage>`**, the mode that prints TAKE. *Reasoned, not run:*
+  `--drive`'s gate walk was not checked for an exclusive row offered while another row is held.
+- **Red proofs, run.** The new cases ran in a worktree at `c8a4066`, with this leg's test files
+  over the baseline scripts. `tests/claim.test.sh` failed 13 and `tests/next.test.sh` failed 7,
+  and every new case passes at `718a756`. **AC23 is green at baseline** (also run): the old seeder
+  already added a seeded key when none existed. Its case is a regression guard, not a red-to-green
+  proof.
+- **FR22 / AC28 moved out of S1 into S15, `unspecified` (re-split 2026-11-27).** Built as written
+  inside `drift_report`, the class made `--drive` escalate on every fixture whose `expects:` names a
+  file the fixture never made: 322 reds in `tests/next.test.sh`. On a live backlog it would
+  escalate on every ticket that declares a file it will create. That is the case `claim`'s 0147
+  FR2 calls "the common and correct case", and this ticket's own S8–S11 paths are examples. Built
+  in `--drift` alone, it reds 0142 FR3's guard *"--drive and --drift name the same rows and
+  classes, because they share the check"*. Both readings break a closed contract that is guarded,
+  so this is a decision, not missing detail. The open questions are whether `--drive` gates on the
+  class and whether a path commented `# new` (`develop` Step 1's own instruction) is exempt.
+  Measured over the live backlog on 2026-11-27, the class would name 0240
+  (`references/MEASUREMENT.md`, which is at the repo root) and 0242's to-be-created and
+  `.claude/backlog/*` paths.
+- **0242's own `expects:` is stale in one respect.** `.claude/backlog/{claim,next,close,handoff}`
+  do not exist in this repo, whose backlog is at `.tickets/` (0228). Left for the leg that touches
+  them.
+- **`./claim` without a token dies here on `xxd: not found`.** This is already parked twice in
+  `FINDINGS.md` (2026-11-26, 2026-11-27). This leg claimed with a token minted by `od`.
 
 ### Open questions for the unspecified slices
 
