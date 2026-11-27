@@ -3,7 +3,7 @@ id: "0069"
 title: Add a live domain-model and decision-record discipline to design and develop
 type: feature
 next: design
-status: in-progress
+status: ready
 qa_level: verify
 size: m
 created: 2026-08-26
@@ -14,8 +14,8 @@ relates: ["0070", "0071"]
 expects:
   - skills/design/SKILL.md
   - skills/develop/SKILL.md
-claimed_by: "e782"
-claimed_at: 2026-11-27T15:51:13Z
+claimed_by:
+claimed_at:
 touches:
 ---
 
@@ -113,3 +113,13 @@ Cannot be written until the design question is settled.
   produces rather than inventing their own vocabulary-recording step. Not a `blocked_by` — none of
   the three is gated on another's ticket closing, only on being aware of the others when their
   design questions are settled.
+- **2026-11-27 (queue `e782`, resolving 0242's *Sibling consequences — 2026-11-27, design `213b`*).**
+  Two things the design pass on this ticket must read, neither changing a criterion here yet.
+  (1) 0242 S13 (FR67, FR68, FR70) rewrites `skills/design/SKILL.md` Step 4, the step this ticket also
+  extends: a decision that changes another item is recorded in the held item under
+  `### Sibling consequences` and handed to `queue`, and design writes no other item. This ticket's
+  records go to project-level files, not to items, so the two do not contradict; place the record
+  step beside that hand-off, not inside it, and build against Step 4 as 0242 leaves it. (2) The QA plan's
+  *scoped greps for the three-part ADR test* and AC3's "appears verbatim, once" are prose guards,
+  which `CLAUDE.md`, *Tests*, forbids ("No new guard greps prose"); the design pass chooses a check
+  that is a reading or a script, and `qa_level` with it.
