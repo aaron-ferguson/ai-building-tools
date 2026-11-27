@@ -514,3 +514,9 @@ The order now, top down:
 Ranked directly below 0242 at the person's instruction (approved recommendation, sprint run-20261127T024025Z). 0243 changes the item storage 0242's scripts act on, and 0242 is rewriting those scripts now, so 0242 first; 0243 above 0244 because its slice statuses are evidence 0244's loop signals read, and it removes the design-behind-develop serialisation that cost this run the most sessions.
 
 Ranked directly below 0243 (both directly below 0242, at the person's instruction). Replaces 0242 FR72's bounded design -> queue arm and every past_bound arm in --drive, so it follows 0242; below 0243 because 0243's slice statuses are an input to its loop signals.
+
+- **2026-11-27 — the `xxd` claim-token row at the top.** Tier 1: `./claim` with no token is broken
+  today on any host without `xxd`, which includes the cloud image these sessions run on, and every
+  claim there needs a hand-minted token. Blast radius is every project that installs the backlog
+  scripts. It is size `s`, so it also wins tie-breaker 4. Placed at the top at the person's direction
+  in sprint run-20261127T024025Z.
