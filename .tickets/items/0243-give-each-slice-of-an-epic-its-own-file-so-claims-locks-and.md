@@ -221,3 +221,35 @@ cases per slice.
   develop on it should start after 0242 closes, since both rewrite `next`, `claim` and `handoff`.
 - Absorbs three `FINDINGS.md` entries dated 2026-11-27 (`c9183cc`; verify `e297`; design `b7a4`), each
   marked `[->0243]` there and discharged by FR4, FR5 and FR6.
+
+- **2026-11-27 (retro, sprint run-20261127T024025Z tail) — six more `FINDINGS.md` entries absorbed
+  here, each a design input for the open question, not yet a criterion; re-verify on claim.** All
+  were observed on 0242 in this run except the first (0234 S1, 2026-11-26).
+  - *Which leg is under test is not recorded on a path through `queue`.* `slice:` is written only by
+    develop → verify `--slice`; 0234 S1 went develop → queue (an AC repair) → verify, arrived with
+    `slice:` empty, and the passing `./handoff --slice S<n>` refused until verify set `slice: S1` by
+    hand. FR5's in-sprint queue repair makes that path routine. Bears on (2) and (3): a slice file
+    that carries its own stage makes the leg under test a fact rather than a field one path forgets.
+  - *A slice kind is parsed from free text and defaults silently.* `progress_slices` (`handoff`,
+    `next`) takes the kind from the text after the last ` — ` and reads anything unrecognised as `ac`,
+    so `— unspecified; waiting on a person` made an undesignable slice look buildable (design `56a2`,
+    S13). Bears on (1) and (3): the kind belongs in a field a reader can refuse when unknown.
+  - *An answered `waiting` row has no scripted way back to `ready`.* Twice on 0242 in this run
+    (design `3708`, design `213b`): `./claim` refused `0242 is 'waiting', not ready`, and each pass
+    hand-edited row and item `status:` under the lock (`Resume 0242`). `handoff` takes `waiting` as a
+    destination and nothing takes a row out of it. Bears on (3): whatever the slice-status vocabulary
+    is, each state needs a scripted exit, and `waiting` is the one observed missing.
+  - *Start from the existing `parent:` model, inverted so that only outcomes are ranked* (supervisor,
+    at the user's request). `skills/queue/templates/item.md`'s `parent:` comment already gives children
+    their own files and derives them by grep, but a project's row leaves `QUEUE.md` and its tasks are
+    ranked and claimed; the user wants `QUEUE.md` to show only outcomes, with children reached through
+    pointers and never worked as rows of their own. The design should cover: why 0242 chose one file
+    over `parent:` (its Notes record the user's instruction to work an outcome as one ticket with
+    ordered slices) and what parent/child lacked — slice order, one place to read the context; how
+    `QUEUE.md`, `./next`'s take and the gate join change when only parents are ranked; a ticket that is
+    both parent and child (rank only the top ancestor, or cap at two levels and refuse a third at
+    capture); slice order and a "needs revisiting" status on a child. Bears on (1) and (4).
+  - *A ticket with no parent and no children is an outcome* (supervisor, at the user's request): it is
+    ranked and worked directly, and stays the same ticket in the same place when it later gains
+    children. `item.md`'s `parent:` comment says the opposite ("a ticket with no children is a TASK"),
+    and that line inverts with the ranking. Bears on (4) and (6).
