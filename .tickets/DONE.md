@@ -2,6 +2,7 @@
 
 | ID | Title | Type | QA | Closed | Item |
 |------|-------|------|----|--------|------|
+| 0234 | Drive a whole outcome ticket through a sprint unattended, routing whatever stage it needs | feature | unit | 2026-11-27 | [items/0234-let-drive-re-dispatch-develop-on-a-verify-bounce.md](items/0234-let-drive-re-dispatch-develop-on-a-verify-bounce.md) |
 | 0233 | Make the release test's fixture remote independent of init.defaultBranch | bug | unit | 2026-11-19 | [items/0233-make-the-release-test-fixture-remote-independent-of-init-defaultbranch.md](items/0233-make-the-release-test-fixture-remote-independent-of-init-defaultbranch.md) |
 | 0232 | Make the sprint lock-age check read one mtime on GNU and BSD stat | bug | unit | 2026-11-19 | [items/0232-make-the-sprint-lock-age-check-read-one-mtime-on-gnu-and-bsd-stat.md](items/0232-make-the-sprint-lock-age-check-read-one-mtime-on-gnu-and-bsd-stat.md) |
 | 0231 | Drive one outcome ticket across slice sessions unattended | feature | unit | 2026-11-18 | [items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md](items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md) |
