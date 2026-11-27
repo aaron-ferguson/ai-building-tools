@@ -23,7 +23,7 @@ skill's first heading is its qualified name, so the transcript shows which one l
 first version released on or after 2026-12-10.
 
 `/design` and `/prototype` split the Design phase by output: **tell me** versus **show me**.
-Default to `/design` — escalation is cheap, a prototype you didn't need is not. `/design` never
+Default to `/ai-building-tools:design` — escalation is cheap, a prototype you didn't need is not. `/design` never
 invokes `/prototype`; it names what a prototype would have to settle and leaves the call to you.
 
 **No skill invokes another, and `/sprint` is not an exception.** `/develop` stops at
