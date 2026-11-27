@@ -679,3 +679,137 @@ RATIO verify_usd_per_ticket unbatched session bd41753a = 2.04
   denominator 1 ticket(s) (run-20261126T212112Z.jsonl outcome events @ 2026-11-27T01:23:31Z)
 DESIGN 0234 session 2baf9937 sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-11-27T01:23:31Z) observed USD 1.29 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T01:23:31Z)
 FINDINGS parked 3 (run-20261126T212112Z.jsonl outcome events @ 2026-11-27T01:23:31Z)
+
+## sprint run-20261127T024025Z -- ended 2026-11-27T20:27:06Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 1 | 4 | confirmed scope @ 2026-11-27T20:31:13Z |
+| wall_clock_min | 196 | 1066 | LEDGER.md 13 recorded sprint(s) over 73 ticket(s), 1 excluded (no ticket count), 6 predate the tail split, actual from run-20261127T024025Z.jsonl event timestamps |
+| tokens | 7141388 | 133478673 | LEDGER.md 13 recorded sprint(s) over 73 ticket(s), 1 excluded (no ticket count), 6 predate the tail split — partial: 1 unpriced turn(s) |
+| usd | 5.06 | 73.01 | LEDGER.md 13 recorded sprint(s) over 73 ticket(s), 1 excluded (no ticket count), 6 predate the tail split — partial: 1 unpriced turn(s) |
+| tail_tokens | no prior | 10333135 | harvest-usage.sh over 3 session id(s) @ 2026-11-27T20:31:13Z |
+| tail_usd | no prior | 5.96 | harvest-usage.sh over 3 session id(s) @ 2026-11-27T20:31:13Z |
+
+| Window | Stage | Elapsed min | Context tokens | USD |
+|---|---|---|---|---|
+| bce6bb64 | develop | 20.6 | 8102563 | 3.93 |
+| c73f9044 | verify | 13.1 | 2654755 | 1.67 |
+| 5b57d4e8 | develop | 22.9 | 6198634 | 3.20 |
+| d45bcbb6 | verify | 7.3 | 2929436 | 1.66 |
+| daaf93a5 | develop | 4.8 | 1264249 | 0.80 |
+| b3fa8d93 | verify | 6.3 | 1551970 | 1.01 |
+| 2ffa9246 | develop | 23.2 | 5048733 | 2.61 |
+| ba96af9b | verify | 14.1 | 2679535 | 1.55 |
+| e93dcdf6 | develop | 9.6 | 5194144 | 2.45 |
+| 3a3f6b28 | verify | 8.3 | 1823698 | 1.23 |
+| 238e5745 | develop | 1.4 | 1064568 | 0.75 |
+| fa398f22 | design | 4.5 | 2271470 | 1.56 |
+| 0ad707cf | design | 4.1 | 2131238 | 1.53 |
+| 94166569 | develop | 7.5 | 3581616 | 1.98 |
+| 74d6aa8a | verify | 8.7 | 1565631 | 1.25 |
+| 74694079 | develop | 7.1 | 2651897 | 1.56 |
+| bfaea400 | verify | 9.4 | 1402635 | 0.96 |
+| df4dcb40 | develop | 13.9 | 5247994 | 2.56 |
+| 4b54f0aa | verify | 13.5 | 2557393 | 1.52 |
+| 8839595f | develop | 17.0 | 7762308 | 3.74 |
+| 08b1112a | verify | 10.1 | 1967535 | 1.28 |
+| a703212f | develop | 12.6 | 4632548 | 2.66 |
+| 33370629 | verify | 6.8 | 1332552 | 1.09 |
+| 001e2745 | develop | 13.9 | 6254417 | 3.46 |
+| 10c70912 | verify | 7.8 | 1865979 | 1.38 |
+| bed653c9 | develop | 15.6 | 4673195 | 2.86 |
+| 96628657 | verify | 11.2 | 2938776 | 1.58 |
+| 6a8a1ec8 | develop | 1.3 | 900941 | 0.67 |
+| 713c8819 | design | 6.5 | 3295387 | 1.97 |
+| bb9bbdd8 | design | 4.2 | 2379489 | 1.65 |
+| b51b59c9 | queue | 12.5 | 6041595 | 3.16 |
+| c6d0a451 | develop | 12.3 | 3639859 | 1.75 |
+| 042844cf | verify | 22.0 | 2424188 | 1.34 |
+| 1b3992e9 | develop | 16.5 | 8906900 | 3.78 |
+| ec623fb7 | verify | 6.2 | 2169614 | 1.36 |
+| 0769b2c4 | develop | 29.6 | 6358490 | 2.81 |
+| d124dd1e | verify | 35.2 | 3027821 | 1.66 |
+| 9649a325 | develop | 21.2 | 5610048 | 2.49 |
+| bd12baba | verify | 9.5 | 3416467 | 1.68 |
+| fd4fec82 | retro | 6.8 | 2968383 | 1.67 |
+| bd0a9e3c | queue | 1.6 | 1323157 | 1.13 |
+| total | 41 window(s) | 480.7 | 143811808 | 78.95 |
+| average | per window | 11.7 | 3507605 | 1.93 |
+WINDOWS elapsed is first to last turn per transcript and excludes start-up (harvest-usage.sh --by-session over 41 session id(s) @ 2026-11-27T20:31:13Z)
+CLOSED 0242 (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+TICKET 0242 verdict pass title Make every backlog write one script call, and make the scripts agree with each other (run-20261127T024025Z.jsonl outcome events, DONE.md @ 2026-11-27T20:31:13Z)
+PER_TICKET whole-run USD 78.97, develop-and-verify USD 66.28 over 1 closed ticket(s), beside MEASUREMENT.md whole-run USD 5.71, develop-and-verify USD 4.23 as at 2026-08-30 (harvest-usage.sh over 41 session id(s), run-20261127T024025Z.jsonl outcome events, MEASUREMENT.md read @ 2026-11-27T20:31:13Z)
+
+GATE develop 1 ticket(s) session bce6bb64: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 3.93 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 5b57d4e8: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 3.20 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session daaf93a5: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 0.80 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 2ffa9246: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 2.61 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session e93dcdf6: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 2.45 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 238e5745: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 0.75 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 94166569: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 1.98 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 74694079: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 1.56 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session df4dcb40: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 2.56 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 8839595f: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 3.74 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session a703212f: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 2.66 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 001e2745: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 3.46 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session bed653c9: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 2.86 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 6a8a1ec8: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 0.67 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session c6d0a451: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 1.75 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 1b3992e9: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 3.78 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 0769b2c4: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 2.81 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+GATE develop 1 ticket(s) session 9649a325: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-27T20:31:13Z) observed USD 2.49, partial: 1 unpriced turn(s) (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session c73f9044 = 1.67
+  numerator USD 1.67 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session d45bcbb6 = 1.66
+  numerator USD 1.66 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session b3fa8d93 = 1.01
+  numerator USD 1.01 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session ba96af9b = 1.55
+  numerator USD 1.55 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session 3a3f6b28 = 1.23
+  numerator USD 1.23 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session 74d6aa8a = 1.25
+  numerator USD 1.25 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session bfaea400 = 0.96
+  numerator USD 0.96 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session 4b54f0aa = 1.52
+  numerator USD 1.52 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session 08b1112a = 1.28
+  numerator USD 1.28 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session 33370629 = 1.09
+  numerator USD 1.09 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session 10c70912 = 1.38
+  numerator USD 1.38 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session 96628657 = 1.58
+  numerator USD 1.58 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session 042844cf = 1.34
+  numerator USD 1.34 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session ec623fb7 = 1.36
+  numerator USD 1.36 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session d124dd1e = 1.66
+  numerator USD 1.66 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RATIO verify_usd_per_ticket unbatched session bd12baba = 1.68
+  numerator USD 1.68 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+  denominator 1 ticket(s) (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+DESIGN 0242 session fa398f22 sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-11-27T20:31:13Z) observed USD 1.56 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+DESIGN 0242 session 0ad707cf sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-11-27T20:31:13Z) observed USD 1.53 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+DESIGN 0242 session 713c8819 sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-11-27T20:31:13Z) observed USD 1.97 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+DESIGN 0242 session bb9bbdd8 sequential: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-11-27T20:31:13Z) observed USD 1.65 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T20:31:13Z)
+FINDINGS parked 18 (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
+RETRO consumed 0 produced 0 (run-20261127T024025Z.jsonl outcome events @ 2026-11-27T20:31:13Z)
