@@ -2292,9 +2292,9 @@ if [ -n "${1:-}" ]; then
       continue
     fi
     # An EXCLUSIVE CLAIM row is not offered while anything else is held (0242 FR20): `claim`
-    # refuses it then (`CONCURRENCY.md`, *A change that touches every file takes an exclusive
-    # claim*), so printing TAKE sends the session to a refusal. The entry must be exactly `*` —
-    # `tests/*.test.sh` is a glob naming files, not the whole tree.
+    # refuses it then, so printing TAKE sends the session to a refusal. The rule:
+    # `CONCURRENCY.md`, *A change that touches every file takes an exclusive claim*.
+    # The entry must be exactly `*` — `tests/*.test.sh` is a glob naming files, not the whole tree.
     if contains_word '*' "$exp"; then
       xheld=""
       for xid in $(all_ids); do
