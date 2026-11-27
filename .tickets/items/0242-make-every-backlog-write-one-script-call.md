@@ -1227,6 +1227,57 @@ the renumbering, as develop recorded. AC56–AC62 are fixture-scripted and were 
 
 **Hand-off:** pass. `./handoff 0242 80c2 develop --slice S5`. S6 is specified (AC63–AC65).
 
+### Leg S6 — verify `f5e3`, 2026-11-27 (sprint run-20261127T024025Z) — PASS, no AC ticked
+
+Conventions: ../ai-building-conventions
+Level: `unit` (frontmatter). Command, `commands.unit_by_file` verbatim:
+`for t in tests/*.test.sh; do "$t" || true; done`, each file's rc and last line recorded.
+Subject: the checkout at `329ffc6` (the claim commit over `8950797`; S6 built at `b9e6303`).
+Copy executed: the repo template (`tests/reopen.test.sh` copies `skills/queue/templates/reopen`,
+`claim` and `close` into each fixture). `.tickets/reopen` is byte-identical to the template (`cmp`).
+The session's skills came from the 0.9.50 install.
+Dirty set at Step 2: empty. Fresh capture after the last check: empty. Intersection: empty.
+`./next --ac-digest 0242 --check`: `0242: ac_digest matches`.
+Claim: `./claim 0242 f5e3`, with a python3-minted token.
+
+**Whole suite:** 45 files, 45 rc=0 in one pass. Tallies, pasted: `tests/reopen.test.sh`
+`reopen: 94 passed, 0 failed`; `tests/close.test.sh` `330 passed, 0 failed`;
+`tests/backlog-scripts-installed.test.sh` `55 passed, 0 failed`; `tests/next.test.sh`
+`783 passed, 0 failed`. This run at `329ffc6` is the control for every mutation below, which ran
+in detached worktrees of that commit and never touched the checkout.
+
+**Clause table and mutations, all run in this session.** Each mutation went into its own detached
+worktree, into `skills/queue/templates/reopen` (the copy the harness runs). Each substitution
+matched exactly once (asserted), `git diff --shortstat` was non-empty, and every run printed its
+tally.
+
+| AC | Clause (verbatim) | Mutation | Result |
+|---|---|---|---|
+| AC63 | Given a fixture item at `status: done` recording `close_by: develop` and `qa_level: unit`, with a `DONE.md` row | — | fixture (`scaffold` + `set_close_by 'close_by: develop'`) |
+| AC63 | then the item reads `close_by: verify` | M1b: awk reset line and the `close_by` read-back both removed | red: `90 passed, 4 failed` — `the item reads close_by: verify`, `no longer reads close_by: develop`, AC64's two |
+| AC63 | the last line of `## Notes & decisions` contains … `fixture reason` | M6: the reset branch overwrites the note, dropping the reason | red: `93 passed, 1 failed` — `the last notes line carries the reason` |
+| AC63 | … and `close_by: develop → verify` | M2: the note suffix removed | red: `93 passed, 1 failed` — `the last notes line records the reset` |
+| AC63 | `git show --name-only HEAD` lists exactly the item, `QUEUE.md` and `DONE.md` | M5: reopen also edits and commits `config.yml` | red: `92 passed, 2 failed` — AC63's and AC1's exact-three-files assertions |
+| AC64 | then it exits 0 and never prints `the stage that may close it is 'develop'` | M1b (FR53 omitted) | red: `./close exits 0`, `it never names develop as the closing stage` |
+| AC65 | the first still reads `close_by: verify` | M3: the reset flag set whatever the value | `close_by: verify` item: green — a `verify`→`verify` rewrite is observably the right outcome, not a gap; the no-key item reds through the read-back (`67 passed, 27 failed`, `the reopen did not apply to: close_by`) |
+| AC65 | the second still has no `close_by:` line | M4: awk writes `close_by: verify` at the frontmatter end when no key was seen | red: `93 passed, 1 failed` — `no close_by: — still has no close_by: line` |
+
+No mutation left an AC's named outcome standing. AC65's plural is covered by two fixture items
+differing in the value under test. M1 (awk reset removed, read-back kept) also reds, `86 passed,
+8 failed`, through the read-back refusal, matching develop's table; develop's M3 recorded a red on
+the `verify` item's note that this session's M3 (flag only) does not reproduce, and the AC's outcome
+there holds under both.
+
+**FR53 read:** `close_by` is read by `fm_value`, the reader `close` uses. The reset rides the same
+locked commit (M5's control assertion). **FR54:** header bullet present; `cmp` equal.
+
+**NFR rows bearing on S6:** none of the table's rows is S6's. Always-on pass: no log field,
+analytics event, egress, credential or UI. Nothing company-specific. `b9e6303` carries the trailer.
+Newly reachable: a reopened develop self-close is now closable only by `verify`, which is FR53's
+intent. `CHANGELOG.md` `## Unreleased` carries develop's S6 note, which is the note.
+
+**Hand-off:** pass. `./handoff 0242 f5e3 develop --slice S6`. S7 is specified (AC66–AC77).
+
 ## Notes & decisions
 
 - **2026-11-26 (queue): AC8 example reworded, meaning unchanged.** Its literal home-path example
