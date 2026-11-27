@@ -1,0 +1,289 @@
+#!/bin/sh
+#
+# Park one finding: refuse a bad entry → resolve the destination backlog → screen it if that repo is
+# public → lock → append one dated line to FINDINGS.md → commit it in that repo → unlock, as one step
+# (0242 FR6).
+#
+# Usage:  .tickets/park "<entry>" [--repo <checkout>]
+#         .tickets/park --help
+#
+# **What this replaces** is every stage's *Park what surprised you* step and `sprint` Step 9, made by
+# hand: take the lock, append a dated line, commit by pathspec, release — with the head shape and the
+# public-repo privacy bar (0118) checked by nobody at that moment (0242 Problem).
+#
+# **Every judgement stays with the caller.** Whether something is a finding at all, what it says and
+# which repo it is about are the session's (references/CONVENTIONS.md, *Routing a finding to the
+# repo it is about*); `--repo` is that routing decision, made by the caller and only carried out here.
+#
+# The entry is the text after the date: `**what happened.** why it might matter (pointer: …)`. This
+# script writes `- <today, UTC> — <entry>`, the canonical shape the buffer's own header states, and
+# nothing else. It refuses an entry that already starts with a date (it would be dated twice) or
+# with a `[->…]` head token (the noticer never writes the token; a sweeper does), and an entry that
+# is empty or holds a line break (a buffer entry is one line, and ./next reads entries by line).
+#
+# `--repo <checkout>` parks into the backlog of another git checkout — a finding about a skill or a
+# backlog script belongs in the tools repo's buffer — and commits it in THAT repo, under THAT
+# backlog's lock, never in this one. Without it the destination is the backlog this script sits in.
+#
+# **The public-repo screen.** When the destination repo's CLAUDE.md says `public` anywhere in its
+# `## Profile` section (case-insensitive, as a word), the entry is screened for a home-directory path
+# before anything is written, by the same pattern tests/measurement.test.sh guards every tracked file
+# with — the absolute path and the dash slug the transcript store makes of it, macOS and Linux. A hit
+# is refused, naming the shape and the redaction that passes (`<name>`). The word test errs towards
+# screening on purpose: a profile line that says "not public" is screened too, which costs a
+# redaction, where the opposite error publishes a path. Company material has no mechanical detector
+# and stays the session's judgement, as before (0242 NFR, Privacy & data).
+#
+# **It refuses rather than guesses**, changing nothing and leaving no lock: an entry as above; a
+# `--repo` that is no git checkout, or holds no backlog, or more than one; a buffer with no `---` rule
+# (./next counts nothing above it, so the entry would be invisible); FINDINGS.md already changed
+# against HEAD; a linked worktree; a branch other than the destination's shared one. A busy lock is
+# retried for BACKLOG_LOCK_TRIES seconds (default 10), then refused — never broken.
+#
+# See references/CONCURRENCY.md — 'Lock every write to the backlog directory'.
+
+set -eu
+
+DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+# --- where the backlog lives (0182) -- byte-identical in claim, close, handoff, next and reopen ---
+# `.tickets/` at the repo root is the location (0228). `.claude/backlog/` and `.backlog/` are legacy:
+# the harness refuses writes under any `.claude` path segment as a sensitive file, which is what 0182
+# moved away from, and `.backlog/` was the name 0182 chose before 0228 named the directory for the
+# whole ticket system it holds. A repo holding more than one is refused rather than guessed at.
+# LEGACY_UNTIL is the date in references/CONCURRENCY.md, *Where the backlog lives*, and
+# tests/backlog-location.test.sh holds the two equal. The note is exported so a nested call (`close`
+# runs `next`) does not print it twice.
+LEGACY_UNTIL=2026-12-31
+case "$DIR" in
+  */.claude/backlog) ROOT="$(CDPATH= cd -- "$DIR/../.." && pwd)"; LEGACY_AT=.claude/backlog ;;
+  */.backlog)        ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT=.backlog ;;
+  *)                 ROOT="$(CDPATH= cd -- "$DIR/.." && pwd)"; LEGACY_AT="" ;;
+esac
+HELD_AT=""
+HELD_COUNT=0
+for held_loc in .tickets .backlog .claude/backlog; do
+  if [ -d "$ROOT/$held_loc" ]; then HELD_AT="$HELD_AT $ROOT/$held_loc"; HELD_COUNT=$((HELD_COUNT + 1)); fi
+done
+if [ "$HELD_COUNT" -gt 1 ]; then
+  echo "refusing: this repo holds more than one backlog:$HELD_AT -- keep one (references/CONCURRENCY.md, Where the backlog lives)" >&2
+  exit 1
+fi
+if [ -n "$LEGACY_AT" ] && [ -z "${BACKLOG_LEGACY_NOTED:-}" ]; then
+  echo "note: this backlog is at the legacy $LEGACY_AT/ -- run ./migrate to move it to .tickets/; the legacy location works until $LEGACY_UNTIL" >&2
+  BACKLOG_LEGACY_NOTED=1
+  export BACKLOG_LEGACY_NOTED
+fi
+# --- end of where the backlog lives ---
+
+# The generic trailer, for `handoff`'s reason: the script cannot know which model is driving it.
+COAUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+
+# The leak is the NAME after the separator, never the word: `<name>`, `{name}` and `$USER` pass.
+# This line is byte-equal to tests/measurement.test.sh's, which tests/park.test.sh asserts, so the
+# screen at the moment of writing and the guard over the tracked tree cannot disagree.
+HOME_PATH_PAT='[-/](Users|home)[-/][A-Za-z0-9._-]'
+
+park_usage() {
+  echo "usage: park \"<entry>\" [--repo <checkout>]"
+  echo "  entry   one line, the text after the date: '**what happened.** why it matters (pointer: …)'"
+  echo "          written as '- <today, UTC> — <entry>'; no date and no [->…] token of its own"
+  echo "  --repo  park into the backlog of this git checkout instead, and commit it there; when its"
+  echo "          CLAUDE.md profile says public, an entry holding a home-directory path is refused"
+  echo "prints the line it wrote as its last line"
+}
+
+ENTRY=""
+REPO=""
+case "${1:-}" in
+  -h|--help) park_usage; exit 0 ;;
+esac
+[ $# -ge 1 ] || { park_usage >&2; exit 2; }
+ENTRY="$1"; shift
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --repo) [ $# -ge 2 ] && [ -n "$2" ] || { park_usage >&2; exit 2; }; REPO="$2"; shift 2 ;;
+    *) echo "refusing to park: unknown argument '$1'" >&2; park_usage >&2; exit 2 ;;
+  esac
+done
+
+# --- refuse malformed input before the lock (FR3) ------------------------------------------------
+# Every check here reads only what the caller handed over, so a refusal has nothing to undo.
+park_refuse() { echo "refusing to park: $1" >&2; echo "nothing was changed and no lock was taken" >&2; exit 1; }
+
+case "$ENTRY" in
+  *"
+"*) park_refuse "the entry holds a line break — a buffer entry is one line; put the detail in the item or file the pointer names" ;;
+esac
+trimmed="$(printf '%s' "$ENTRY" | sed 's/^[ \t]*//; s/[ \t]*$//')"
+[ -n "$trimmed" ] || park_refuse "the entry is empty"
+if printf '%s' "$trimmed" | grep -qE '^(- )?(\*\*)?[0-9]{4}-[0-9]{2}-[0-9]{2}'; then
+  park_refuse "the entry starts with a date — pass only the text after it; the script writes today's UTC date itself"
+fi
+case "$trimmed" in
+  "[->"*) park_refuse "the entry starts with a [->…] head token — the noticer never writes the token, a sweeper does (FINDINGS.md header)" ;;
+esac
+
+# --- the destination ---------------------------------------------------------------------------
+# DEST is the backlog directory written to, DEST_ROOT the repo that holds it. Without --repo they
+# are this backlog and its repo.
+DEST="$DIR"
+DEST_ROOT="$ROOT"
+if [ -n "$REPO" ]; then
+  [ -d "$REPO" ] || park_refuse "--repo names no directory: $REPO"
+  DEST_ROOT="$(git -C "$REPO" rev-parse --show-toplevel 2>/dev/null)" \
+    || park_refuse "--repo is not in a git checkout: $REPO — a park is a commit in the destination repo"
+  found=""
+  for loc in .tickets .backlog .claude/backlog; do
+    [ -d "$DEST_ROOT/$loc" ] && found="$found $loc"
+  done
+  case "$found" in
+    "") park_refuse "--repo $REPO holds no backlog (.tickets/) — park locally, prefixed [for <repo>], so a retro forwards it (references/CONVENTIONS.md)" ;;
+    " "*" "*) park_refuse "--repo $REPO holds more than one backlog:$found — it must keep one" ;;
+  esac
+  DEST="$DEST_ROOT/${found# }"
+fi
+BUFFER="$DEST/FINDINGS.md"
+LOCK="$DEST/.lock"
+[ -f "$BUFFER" ] || park_refuse "no FINDINGS.md at $BUFFER — its header states the shape an entry takes; scaffold it from templates/FINDINGS.md"
+grep -qx -- '---' "$BUFFER" \
+  || park_refuse "$BUFFER has no '---' rule — ./next --findings counts nothing above it, so this entry would never be seen"
+
+# --- the public-repo screen (FR6, 0118) --------------------------------------------------------
+PUBLIC=""
+if [ -f "$DEST_ROOT/CLAUDE.md" ] && awk '
+    /^## / { inprof = ($0 ~ /^## Profile[ \t]*$/); next }
+    inprof && tolower($0) ~ /(^|[^a-z0-9_])public([^a-z0-9_]|$)/ { hit = 1; exit }
+    END { exit !hit }
+  ' "$DEST_ROOT/CLAUDE.md"; then
+  PUBLIC=yes
+fi
+if [ -n "$PUBLIC" ]; then
+  hit="$(printf '%s' "$ENTRY" | grep -oE "${HOME_PATH_PAT}[A-Za-z0-9._-]*" | head -1 || true)"
+  if [ -n "$hit" ]; then
+    case "$hit" in
+      /U*) shape="a macOS home path (/Users/<name>/…)" ;;
+      /h*) shape="a Linux home path (/home/<name>/…)" ;;
+      *)   shape="a home path in the transcript store's dash form (-Users-<name>-… or -home-<name>-…)" ;;
+    esac
+    echo "refusing to park: the destination is public per its CLAUDE.md profile, and the entry holds $shape" >&2
+    echo "  at: $hit" >&2
+    echo "redact the name — write <name> in its place — or park it in a private backlog instead" >&2
+    echo "nothing was changed and no lock was taken" >&2
+    exit 1
+  fi
+fi
+
+# --- the linked-worktree refusal (0083) --------------------------------------------------------
+# The lock and the buffer live in the working tree, so a linked worktree's copies are ones no other
+# session reads (CONCURRENCY.md, 'A second checkout never writes the backlog').
+# From here on DIR is the DESTINATION backlog: the declared blocks below read $DIR, and what they
+# must judge is the repo being written, not the one this script was run from.
+DIR="$DEST"
+ID="a finding"
+if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 &&
+   [ "$(git -C "$DIR" rev-parse --path-format=absolute --git-dir)" != \
+     "$(git -C "$DIR" rev-parse --path-format=absolute --git-common-dir)" ]; then
+  echo "refusing to park: $DIR is in a linked worktree, whose lock and FINDINGS.md no other session reads" >&2
+  echo "run it from the primary checkout: $(git -C "$DIR" worktree list --porcelain | sed -n '1s/^worktree //p')" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# copy-begin: shared-branch
+# The backlog is written on one branch (0235, 0242 S7). A claim committed on any other branch is
+# invisible to every session reading the shared one, so the single-holder guarantee stops at the
+# branch: a `prototype/` session once claimed, decided and handed off a row that `main` still read
+# as unclaimed. Refuse, never warn, and up front — directly after the linked-worktree refusal,
+# before the lock and before any file is read for writing — so the session learns it at `./claim`,
+# before it has spent anything on the row. A detached HEAD is off the branch. Outside a git work
+# tree the check does not apply. No flag overrides it: the `shared_branch:` key is the one way to
+# name another branch. Resolved first hit wins, and nothing fetches:
+#   1. `shared_branch:` in this directory's config.yml, comment and blanks stripped (empty = unset)
+#   2. `git symbolic-ref --short refs/remotes/origin/HEAD`, its `origin/` removed
+#   3. `main`
+# See `CONCURRENCY.md`, *The backlog is written on one branch*. $1 is the script's own verb.
+refuse_off_shared_branch() {
+  git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || return 0
+  sb=""
+  if [ -f "$DIR/config.yml" ]; then
+    sb="$(awk '/^shared_branch:/ {
+      v = $0; sub(/^shared_branch:/, "", v); sub(/#.*/, "", v); gsub(/[ \t]/, "", v)
+      print v; exit
+    }' "$DIR/config.yml")"
+  fi
+  if [ -z "$sb" ] && sb="$(git -C "$DIR" symbolic-ref --short -q refs/remotes/origin/HEAD 2>/dev/null)"; then
+    sb="${sb#origin/}"
+  fi
+  [ -n "$sb" ] || sb="main"
+  cur="$(git -C "$DIR" symbolic-ref --short -q HEAD 2>/dev/null)" || cur=""
+  [ -n "$cur" ] || cur="HEAD (detached)"
+  [ "$cur" != "$sb" ] || return 0
+  cfg="$(git -C "$DIR" rev-parse --show-prefix 2>/dev/null || true)config.yml"
+  echo "refusing to $1 $ID: this checkout is on '$cur', and the backlog is shared on '$sb'" >&2
+  echo "switch with: git switch $sb, or set shared_branch: in $cfg if '$sb' is wrong" >&2
+  echo "see references/CONCURRENCY.md, 'The backlog is written on one branch'" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+}
+# copy-end: shared-branch
+refuse_off_shared_branch park
+
+git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || {
+  echo "refusing to park: $DIR is not in a git repository, and a backlog write is a commit" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+}
+# Anything already changed in the buffer would ride along on this commit, and a pathspec limits a
+# commit to paths, never to authorship — CONCURRENCY.md, 'A pathspec is necessary but not sufficient'.
+if ! git -C "$DIR" diff --quiet HEAD -- FINDINGS.md 2>/dev/null; then
+  echo "refusing to park: $BUFFER holds uncommitted changes this commit would carry" >&2
+  echo "commit them by pathspec if they are yours; if they are another session's, leave them alone and wait" >&2
+  echo "nothing was changed and no lock was taken" >&2
+  exit 1
+fi
+
+# --- lock, retried while busy, never broken (FR1) ----------------------------------------------
+tries="${BACKLOG_LOCK_TRIES:-10}"
+until mkdir "$LOCK" 2>/dev/null; do
+  tries=$((tries - 1))
+  [ "$tries" -gt 0 ] || {
+    echo "backlog is locked by: $(cat "$LOCK/held-by" 2>/dev/null || echo unknown)" >&2
+    echo "nothing was changed; the lock is another session's, so it was left alone" >&2
+    exit 1
+  }
+  sleep 1
+done
+printf 'park\n%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK/held-by"
+# Set only AFTER the mkdir succeeded: a lock this script did not create is another session's.
+TMPD=""
+park_cleanup() {
+  [ -z "$TMPD" ] || rm -rf "$TMPD"
+  rm -rf "$LOCK"
+}
+trap park_cleanup EXIT INT TERM
+TMPD="$(mktemp -d)"
+
+# --- append, read back, commit by pathspec -----------------------------------------------------
+LINE="- $(date -u +%Y-%m-%d) — $trimmed"
+backup="$TMPD/FINDINGS.bak"; cp "$BUFFER" "$backup"
+new="$TMPD/FINDINGS.md"
+# A buffer whose last byte is not a newline would glue the entry onto its last line.
+{ cat "$BUFFER"; [ -z "$(tail -c 1 "$BUFFER")" ] || echo; printf '%s\n' "$LINE"; } > "$new"
+before="$(wc -l < "$backup")"
+[ "$(tail -n 1 "$new")" = "$LINE" ] && [ "$(wc -l < "$new")" -le $((before + 2)) ] \
+  || { echo "the append did not read back as one line at the end — nothing has been written" >&2; exit 1; }
+cat "$new" > "$BUFFER"
+
+summary="$(printf '%s' "$trimmed" | sed 's/\*\*//g' | cut -c1-60)"
+n=0
+# Retry briefly: the other window may hold .git/index.lock mid-commit. Never remove that lock.
+until git -C "$DIR" commit -q -m "Park finding: $summary" -m "$COAUTHOR" -- FINDINGS.md 2>/dev/null; do
+  n=$((n + 1))
+  [ "$n" -lt 30 ] || { cat "$backup" > "$BUFFER"; echo "could not commit (git busy) — the buffer is as it was" >&2; exit 1; }
+done
+
+rel="$(git -C "$DIR" rev-parse --show-prefix 2>/dev/null || true)FINDINGS.md"
+if [ -n "$PUBLIC" ]; then screened=", screened (public per its CLAUDE.md profile)"; else screened=""; fi
+echo "parked in $(basename "$DEST_ROOT")/$rel$screened"
+echo "$LINE"
