@@ -29,7 +29,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 | 0064 | Make the copy of a skill that runs provably the released one | develop | ready |  |
 | 0238 | Make prototype levels 2 and 3 work inside a consuming project | design | ready |  |
 | 0214 | Add a profile-declared gate that a stage refuses to pass without its artifact | design | ready |  |
-| 0069 | Add a live domain-model and decision-record discipline to design and develop | design | ready |  |
+| 0069 | Add a live domain-model and decision-record discipline to design and develop | design | in-progress |  |
 | 0070 | Add a structured, feedback-loop-first debugging discipline | design | ready |  |
 | 0138 | Decide whether idea capture is a lighter-weight skill than queue's Add, and what triggers it | design | ready |  |
 | 0239 | Codex test | develop | ready |  |

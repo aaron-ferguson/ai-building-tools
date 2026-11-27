@@ -3,7 +3,7 @@ id: "0069"
 title: Add a live domain-model and decision-record discipline to design and develop
 type: feature
 next: design
-status: ready
+status: in-progress
 qa_level: verify
 size: m
 created: 2026-08-26
@@ -14,8 +14,8 @@ relates: ["0070", "0071"]
 expects:
   - skills/design/SKILL.md
   - skills/develop/SKILL.md
-claimed_by:
-claimed_at:
+claimed_by: "e782"
+claimed_at: 2026-11-27T15:51:13Z
 touches:
 ---
 
