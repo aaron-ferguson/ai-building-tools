@@ -2224,6 +2224,106 @@ fixture-scripted. AC77 is a read verify does anyway. Both values stand.
   enumerations it falsified are updated above. The skills' park steps (FR11, AC16) and `queue` Step
   0's install list are S14's, so nothing outside this ticket was staled.
 
+### S10 build notes — 2026-11-27, develop `661e` (sprint run-20261127T024025Z)
+
+- **2026-11-27 — S10 landed:** `98b0179`. The subjects are `skills/queue/templates/rank` and
+  `skills/queue/templates/withdraw`, copied to `.tickets/rank` and `.tickets/withdraw`. Their suites
+  are `tests/rank.test.sh` (71 cases) and `tests/withdraw.test.sh` (87 cases), and each runs the
+  template copy. The same commit adds both suites to README's guard block, bumps
+  `tests/declared-copies.test.sh`'s exact counts by two each (decomment 8, fm-value 6, column-in 5,
+  header-of 5, shared-branch 8), and adds both scripts to `tests/backlog-location.test.sh`'s script
+  list and allowlist.
+- **Shared mechanics carried from `capture`:** the location block, the declared copies, the
+  linked-worktree and shared-branch refusals, and `capture`'s lock loop, which retries
+  `BACKLOG_LOCK_TRIES` times and never breaks the lock. Both commit by pathspec with the trailer.
+  Function names carry the `rank_`/`withdraw_` prefix because the declared-copies guard refuses a
+  second undeclared definition.
+- **Choices left open by FR7, recorded so verify reads them as decided:**
+  - "Every other line unchanged" is enforced, not only tested. Before writing, `rank` checks that
+    the moved row appears once in the result, and that with that row taken out the old and new
+    files are identical (`cmp`).
+  - A row already at its position exits 0, prints `already at`, and commits nothing. A `--ranking`
+    text is not appended in that case, and the script says so.
+  - "In-progress under any token" is read two ways under the lock: the row's Status cell, and the
+    item's `claimed_by:`. Either one refuses. Moving a different row past an in-progress row is
+    allowed.
+  - Refused: a bad id or position, an anchor that is the row itself, a row or anchor not in the
+    queue, a duplicated row, an empty `--ranking`, a dirty QUEUE.md or RANKING.md.
+- **Choices left open by FR8, recorded so verify reads them as decided:**
+  - **The dated note** is `- <UTC date> — **Withdrawn** by \`./withdraw\`: <reason>`, with
+    ` — absorbed into <id>` added when `--into` is given. It goes after the last non-blank line of
+    `## Notes & decisions`, which is `reopen`'s placement. The reason is also the commit body.
+  - **"Every open item"** means every item whose status is not `done`, `withdrawn` or `rejected`.
+    A closed item that names the id is history and is left alone (pinned by the `0002` case).
+  - **Re-pointing keeps order and never duplicates.** An entry already naming `--into` is dropped,
+    and so is the absorbing item's own entry, so no item ends up blocked by itself. The list is
+    written back in the inline form `templates/item.md` specifies, and a `- ` block is read too.
+  - **`blocked` is derived, so `withdraw` re-derives it.** This goes beyond FR8's text, and it is
+    needed to keep FR8 from leaving drift that stops `--drive` (the 0156 class). A dependent at
+    `ready` or `blocked` gets its status recomputed from its new list, on both the item and the
+    row. A `waiting` dependent keeps its status, because a person clears `waiting`, not a script.
+    `./next --drift` is asserted clean after each withdrawal case.
+  - **Refused:**
+    - a claimed item or an in-progress row;
+    - a dependent another session holds;
+    - an item already closed;
+    - an `--into` that is the id itself, has no item, or is closed;
+    - an empty reason, or one holding a line break;
+    - a dirty QUEUE.md, item or dependent. Dependents are checked under the lock, once the set is
+      known.
+  - **An item with no row** (a project) is withdrawn anyway, and the script says so on stderr.
+  - `config.yml` is never opened, so `next_id` cannot move.
+- **Fixture correction found by the suite.** The first `withdraw` fixture had a `waiting` item with
+  an open blocker. `./next --drift` already calls that drift ("written waiting, derived blocked"),
+  so the fixture was wrong, not the script. 0007 is now `blocked`, and a separate case shows a
+  `waiting` item staying `waiting`.
+- **The installed-copies guard reported a two-line awk program as a "quote defect".** `cell_of`'s
+  program opened on one line and closed on the next, after code. Reshaping it to the sibling
+  layout (opening quote alone on its line, closing quote on its own line) cleared it. Parked.
+- **TDD order, stated plainly:** each script was written before its suite, so each suite's first
+  run was green apart from the fixture correction above. The red half is the mutation sweep below.
+- **Clause table (from the AC text):**
+
+  | AC | Given | Predicate | Objects asserted |
+  |---|---|---|---|
+  | AC9 | rows A, B, C | `./rank C above:A` runs | order is C, A, B; every other line of `QUEUE.md` unchanged (lines minus the row equal, row byte-equal, line count); one commit |
+  | AC10 | B `in-progress` under a token | `./rank B top` runs | refuses (non-zero, names why); changes nothing (fingerprint incl. `.lock`, commit count, order) |
+  | AC11 | 0004 named in 0005's `blocked_by:` | `./withdraw 0004 "merged" --into 0006` runs | 0004's file stays; `status: withdrawn`; empty `next:`; a dated note; its row is gone; 0005's `blocked_by:` names 0006; `next_id` unchanged (config.yml cksum) |
+
+- **Mutation sweep (run, not reasoned).** Each mutation was applied with `python3` to the committed
+  template at `98b0179`, and its diff was confirmed non-empty. The suite was run, then the template
+  was restored with `git checkout --`. `git status` was clean afterwards, and the control runs gave
+  `rank: 71 passed, 0 failed` and `withdraw: 87 passed, 0 failed`.
+
+  | Target | Mutation | Result |
+  |---|---|---|
+  | AC9 (the AC's *Red*) | re-sort the table, read-back disabled | red `63 passed, 8 failed` |
+  | AC10 (the AC's *Red*) | drop the claim check (cell and `claimed_by:`) | red `63 passed, 8 failed` |
+  | FR1 | rank cleanup leaves the lock | red `57 passed, 14 failed` |
+  | FR2 | rank commits with no pathspec | red `55 passed, 16 failed` |
+  | AC11 (the AC's *Red*) | delete the item file | red `80 passed, 7 failed` |
+  | AC11 (the AC's *Red*) | leave 0005 pointing at 0004 | red `75 passed, 12 failed` |
+  | AC11 | decrement `next_id` | red `85 passed, 2 failed` |
+  | FR8 | drop the claimed-item check | red `86 passed, 1 failed` |
+  | FR8 | never re-derive `blocked` | red `82 passed, 5 failed` |
+  | FR8 | re-derive a `waiting` item too | red `86 passed, 1 failed` |
+  | FR8 | rewrite a closed dependent | red `85 passed, 2 failed` |
+  | FR2 | withdraw commits with no pathspec | red `59 passed, 28 failed` |
+  | FR4 | one line appended to `.tickets/withdraw` | `backlog-scripts-installed` red `86 passed, 1 failed`; restored |
+
+- **Whole suite:** `for t in tests/*.test.sh` at `98b0179`, with `git status` clean before it. All
+  49 files exited 0.
+- **Restated contract:** FR1–FR4, FR7, FR8 and FR56, with AC9–AC11, at `qa_level: unit`, closed by
+  verify. NFR rows that bear on S10:
+  - Testing, met by the fixture cases.
+  - Documentation, met by the usage header, the `usage:` refusal and `--help`.
+
+  Nothing is company-specific, and the commit carries the trailer.
+- **Sibling grep (widening):** `rank` and `withdraw` add two backlog-writing scripts. The two
+  guards whose enumerations they falsified are updated above. queue Step 4 and *Withdrawing a
+  ticket* still describe the by-hand moves, and moving them onto the scripts is S14's (FR11, AC16),
+  so nothing outside this ticket was staled.
+
 ### Open questions for the unspecified slices
 
 **Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
