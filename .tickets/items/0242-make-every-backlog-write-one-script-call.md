@@ -88,6 +88,7 @@ touches:
   - tests/sprint.test.sh
   - references/CONCURRENCY.md
   - CHANGELOG.md
+  - tests/declared-copies.test.sh
 slice: S6
 ---
 
