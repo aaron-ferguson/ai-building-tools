@@ -2,8 +2,8 @@
 id: "0234"
 title: Drive a whole outcome ticket through a sprint unattended, routing whatever stage it needs
 type: feature
-next: design
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -26,11 +26,15 @@ expects:
   - .tickets/items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md
   - tests/sprint.test.sh
   - references/CONCURRENCY.md
-claimed_by: "09d9"
-claimed_at: 2026-11-27T00:50:54Z
+  - skills/queue/templates/claim
+  - .tickets/claim
+  - tests/claim.test.sh
+  - skills/develop/SKILL.md
+claimed_by:
+claimed_at:
 touches:
 slice: S5
-ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=e083f2f6 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
+ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=e083f2f6 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69 AC27=83fa4f4a AC28=c7101f36 AC29=8eb7c220 AC30=db7486fd AC31=5308ea25 AC32=92f40623
 ---
 
 ## Problem
@@ -393,6 +397,31 @@ code tree while leaving `.claude/backlog/` shared — and shared is correct ther
   working the same file — the case `0054` covers for a shared dirty tree.
 - FR27 *(was 0137 FR3)* — If parallelism is declined, that is recorded as a decision with its reasoning, not left as an
   absence.
+- FR28 *(S6)* — **One develop session at a time, in every project these scripts run in.** `./claim <id> [token]` on a
+  row at `next: develop` refuses when any other row at `next: develop` is held — its item's `claimed_by:` non-empty —
+  by a token other than the one this call claims with. The refusal is decided under the lock and before any write,
+  names each holder's id and token on stderr, exits 1, releases the lock, and leaves `QUEUE.md`, the item and `HEAD`
+  as they were. A call carrying the holder's own token is not refused: that is how one develop session claims the
+  several rows of its gate. A claim at any other stage is not affected by this rule.
+- FR29 *(S6)* — `./next --drive` prints no `DISPATCH  develop` while any row at `next: develop` is held or
+  `in-progress`, on every path that would otherwise print one — the rank walk's gate, the started-leg dispatch and the
+  post-bounce re-dispatch alike. It decides `WAIT` (exit 6, the code `wait_on_design` already uses) with a line naming
+  each running develop id. Design and verify dispatch are unchanged: design beside a develop session stays permitted
+  (0134, *Design beside other stages*).
+- FR30 *(S6)* — `skills/develop/SKILL.md`'s claim step says a gate claims every row after the first with the token
+  the first `./claim` printed, and that FR28's refusal is the designed wait (`CONCURRENCY.md`): claim nothing,
+  report the holder's id and token, and stop or take work at another stage.
+- FR31 *(S6; discharges FR25 and FR27)* — The decision is stated where it is read. `references/CONCURRENCY.md`,
+  *The working tree is shared too*, replaces "`develop` is serialised in this repo by design until `0137` decides
+  otherwise" with the settled rule: one develop session at a time in every project, enforced by `./claim` (FR28) and
+  `--drive` (FR29); the priority order it was chosen under (quality, then cost, then time — wall-clock is the axis
+  allowed to vary); and the two rejected candidates, each with the reason it lost (*Notes & decisions*, S6). In
+  `skills/sprint/SKILL.md`, *Design beside other stages* and Step 8's "never runs two stage sessions at once" cite
+  `0234` S6 in place of "`0137` declines it" and say the scripts enforce it. FR26 does not apply, parallelism being
+  declined.
+- FR32 *(S6)* — `.tickets/claim` and `.tickets/next` are re-synced from their templates, and `CHANGELOG.md`'s
+  `## Unreleased` carries one entry: a second develop claim, or a develop dispatch beside a running develop, is now
+  refused or waited on.
 
 
 ## Non-functional requirements
@@ -435,6 +464,12 @@ code tree while leaving `.claude/backlog/` shared — and shared is correct ther
 - [ ] AC26 *(was 0170 AC2)* — Given the same extraction, the timestamp still advances while the stand-in runs, so
   `0153` AC26 is unaffected. Guard: `tests/sprint.test.sh`. Red: a stop that also prevents the
   refresh.
+- [ ] AC27 — Given a fixture backlog with 0101 and 0102 at `develop` / `ready`, 0103 at `design` / `ready`, and 0101 claimed with token `aaaa`, when `./claim 0102 bbbb` runs, then it exits 1, stderr contains `0101` and `aaaa`, 0102's row still reads `ready`, its item's `claimed_by:` is empty and `HEAD` has not moved; and a following `./claim 0103 cccc` exits 0 at once — the lock was released. Red: the unmodified `claim` (the first call exits 0); a refusal that returns with the lock held (the second call refuses as busy). Test: `tests/claim.test.sh`.
+- [ ] AC28 — Given AC27's fixture, when `./claim 0102 aaaa` runs, then it exits 0 and 0102 reads `in-progress` — one session's gate; and given 0104 at `verify` / `ready`, `./claim 0104 dddd` exits 0 while 0101 is held. Red: a refusal keyed on any held develop row whatever the token (the first half refuses), or on a held row at any stage (the second half refuses). Test: `tests/claim.test.sh`.
+- [ ] AC29 — Given a fixture with 0101 at `develop` / `in-progress` held by `aaaa`, 0102 at `develop` / `ready`, and nothing else takeable, when `./next --drive` runs, then it exits 6, prints a `WAIT` line containing `0101`, and prints no `DISPATCH  develop`; and with 0101 moved to `done`, the same call exits 0 with `DISPATCH  develop 0102`. Red: the unmodified `next`, which prints `DISPATCH  develop 0102` — observed 2026-11-27 on a scratch copy of this backlog, `DISPATCH  develop 0064` exit 0 with develop 0242 held. Test: `tests/next.test.sh`.
+- [ ] AC30 — Given AC29's held fixture, when `./next --drive --completed verify:0102` runs (0102 bounced back to `develop` / `ready`), then it exits 6 with no `DISPATCH  develop`; and given 0103 at `design` / `ready` ranked above 0102 and naming no file 0101's `touches:` names, `./next --drive` exits 0 with `DISPATCH  design 0103`. Red: the guard placed only in the rank walk's gate (the bounce half dispatches); the guard placed before the walk for every stage (the design half waits). Test: `tests/next.test.sh`.
+- [ ] AC31 — Given the change, when `diff skills/queue/templates/claim .tickets/claim` and `diff skills/queue/templates/next .tickets/next` run, then both print nothing; and when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then it exits 0. Red: a project copy not re-synced, or a neighbouring assertion left on the old contract (an existing `claim` or `--drive` fixture holding two develop rows under two tokens).
+- [ ] AC32 — Given `references/CONCURRENCY.md`, `skills/sprint/SKILL.md`, `skills/develop/SKILL.md` and `CHANGELOG.md` after the change, when verify reads them, then: *The working tree is shared too* states one develop session at a time in every project, enforced by `./claim` and `--drive`, the priority order quality, cost, time, and both rejected candidates with their reasons, and no longer says "until `0137` decides otherwise"; the sprint skill's two places cite `0234` S6 and the enforcement; develop's claim step carries FR30's gate token and refusal handling; and `## Unreleased` carries FR32's entry. Red: any of these missing. A reading at verify — no prose guard, per `CLAUDE.md` *Tests*.
 
 
 ## Progress
@@ -447,7 +482,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [x] S3 — the prose: `skills/sprint/SKILL.md` Steps 1, 2, 3, 4, 7, 8 and the proposal (FR7–FR9, FR17, FR20, FR21), `skills/queue/SKILL.md`'s *Re-specify* bullet, the config template comment, `CHANGELOG.md`, 0231's pointer note — discharges AC11, AC17, AC21
 - [x] S4 — the marker heartbeat leaves no orphaned `sleep` child (0170) — discharges AC25, AC26
 - [x] S5 — route a queue completion that re-specifies a waiting row to develop instead of exiting 4 (0204) — discharges none: already discharged by FR13/AC15, landed in S1 (the after-queue arm in `skills/queue/templates/next`, guarded by `tests/next.test.sh` block `0234 AC15`); ticked by `queue` on the user's decision, 2026-11-27
-- [ ] S6 — decide whether two develop sessions may run at once, and in what isolation (0137) — unspecified
+- [ ] S6 — one develop session at a time (0137, decided 2026-11-27): `./claim` refuses a second develop holder, `--drive` waits on a running develop, the develop/CONCURRENCY/sprint prose, both scripts re-synced, `CHANGELOG.md` — discharges AC27, AC28, AC29, AC30, AC31, AC32
 
 
 ## QA plan
@@ -901,21 +936,54 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   design question below, and an `unspecified` next slice goes to `design`
   (`skills/queue/templates/item.md`, *Progress*). S6 is untouched.
 
-**Open design question, from 0137 — Decide whether two develop sessions may run at once, and in what isolation:**
+**S6 decided — design, 2026-11-27, token `09d9`: one develop session at a time, in every project, enforced by a script.**
 
-- **Question:** May two develop sessions run at once, and what isolates their working trees? The
-  candidates: **a worktree per session**, with a defined lifecycle and a merge path back; **one tree
-  with a stricter, verified scope predicate**, which requires something better than `expects:` before
-  dispatch; or **no parallel develop**, keeping the gate as the only concurrency and treating
-  wall-clock as the axis that varies.
-- **Why it blocks specification:** the acceptance criteria are incompatible. A worktree answer needs
-  a lifecycle, a merge protocol, and a statement of what happens when two worktrees both run the
-  suite. A stricter-predicate answer needs a definition of verified scope that does not exist. The
-  third is prose plus a deliberate non-goal. And there is a prior question the answer turns on:
-  whether the suite can be run in two worktrees at once at all, given every guard greps the repo's
-  own prose files.
-- **Settle it with:** `/design` — the inputs are `references/CONCURRENCY.md`, the `0084` incident in
-  `config.yml`, `0136`'s partition, and what `git worktree` costs to set up and tear down.
+- **The question** (from 0137): may two develop sessions run at once, and what isolates their working
+  trees? There were three candidates: a worktree per session, one tree with a verified scope predicate,
+  or no parallel develop.
+- **The answer: no parallel develop.** The user's direction, 2026-11-27, in substance: running more than one develop
+  session at once carries a very high risk of two sessions touching the same file at the same time, producing merge
+  conflicts or files that cannot be read, and the speed gain is small. A parallel shape could only be proposed if it
+  was safe with an extremely high success rate, avoided merge conflicts and did not significantly raise token cost.
+  Neither candidate meets that bar.
+- **Priority order it was chosen under (FR25): quality, then cost, then time.** Parallel develop buys only
+  wall-clock, which is the axis this project lets vary. It spends the two axes ranked above it. A later reader
+  should not reopen this on wall-clock grounds alone.
+- **Rejected: a worktree per session.** It moves the conflict to merge time rather than removing it. In a repo whose
+  prose files are the product, rows share files as a rule (`references/CONCURRENCY.md`, *The working tree is shared
+  too*, 0050). Re-verified 2026-11-27: the two takeable develop rows, 0242 and 0064, both name
+  `skills/queue/SKILL.md` in `expects:`. It also needs a subsystem that does not exist. `claim`, `close`, `handoff`
+  and `reopen` refuse from a linked worktree (*A second checkout never writes the backlog*), so every backlog write
+  would have to go back to the primary checkout, and a merge protocol would have to be added on top. Each extra
+  session re-pays the ~20k-token startup floor that one gate holding the same rows pays once, and every conflicted
+  merge costs another session. That fails "does not significantly increase token cost". *What would have to be true
+  for it to win:* gates whose file sets are provably disjoint before dispatch, plus wall-clock ranked above cost.
+  Neither holds.
+- **Rejected: one tree with a stricter, verified scope predicate.** No verified scope exists before dispatch.
+  `expects:` is the prediction, `touches:` is written only on claim, and a `touches:` collision warns neither
+  session (`CONCURRENCY.md`). *What would have to be true:* a pre-dispatch predicate with near-zero false
+  negatives against the code. Nothing in the suite produces one, and the prose-is-product shape makes its
+  true-positive rate high anyway.
+- **What made it buildable rather than prose-only.** Observed on 2026-11-27, on a scratch copy of this backlog with
+  develop 0242 claimed (`in-progress`, token `aaaa`): `./next --drive` printed `DISPATCH  develop 0064` and exited
+  0. 0064 shares `skills/queue/SKILL.md` with 0242. So "serialised by design" (`CONCURRENCY.md`) was a sentence
+  that nothing enforced. A supervisor beside a hand-driven develop window would have dispatched the exact collision
+  the user named. Per `CLAUDE.md` *Tests*, a rule that must hold exactly goes in a script that refuses. Hence FR28
+  (`./claim`, the one path every develop session takes, including hand-driven ones) and FR29 (`--drive`, so a
+  supervisor does not pay a session's startup only to be refused at claim). The token exception in FR28 keeps
+  gates working: one session, one token, several rows (FR30).
+- **Trade-offs accepted.** (1) Wall-clock: develop work is strictly sequential. (2) A dead develop session's stale
+  claim now blocks *all* develop work, not just its own row, until it is released. The refusal names the holder's
+  id and token so the person can act on it, and stale-claim handling is unchanged. (3) The rule binds every project
+  that installs these scripts, including ones whose develop rows touch disjoint files. That follows the user's
+  direction, and it has no config knob, because a knob would bring back the hazard as an opt-in.
+- **Unchanged:** design beside develop, verify or design (0134), and the gate as the unit that batches tickets
+  inside one develop session. FR26 does not apply, because parallelism is declined. FR27 is discharged by this
+  entry and FR31.
+- **Accounting against S6's existing criteria:** S6 carried FR25–FR27 and no ACs. This pass confirms FR25 and FR27,
+  marks FR26 not applicable, adds FR28–FR32 and AC27–AC32, and names them on S6's line. `qa_level: unit` stays,
+  because AC27–AC31 are behaviour tests and AC32 is a reading. `close_by: verify` stays. `expects:` gains
+  `skills/queue/templates/claim`, `.tickets/claim`, `tests/claim.test.sh` and `skills/develop/SKILL.md`.
 
 ### Carried notes of the absorbed tickets
 
