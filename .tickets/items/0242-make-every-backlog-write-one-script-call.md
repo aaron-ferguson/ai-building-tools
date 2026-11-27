@@ -58,47 +58,7 @@ ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=
 claimed_by: "b3fa"
 claimed_at: 2026-11-27T04:59:54Z
 touches:
-  - skills/queue/templates/capture
-  - skills/queue/templates/park
-  - skills/queue/templates/rank
-  - skills/queue/templates/withdraw
-  - skills/queue/templates/drain
-  - skills/queue/templates/next
-  - .tickets/capture
-  - .tickets/park
-  - .tickets/rank
-  - .tickets/withdraw
-  - .tickets/drain
-  - tests/capture.test.sh
-  - tests/park.test.sh
-  - tests/rank.test.sh
-  - tests/withdraw.test.sh
-  - tests/drain.test.sh
-  - tests/backlog-scripts-installed.test.sh
-  - skills/queue/SKILL.md
-  - skills/retro/SKILL.md
-  - skills/develop/SKILL.md
-  - skills/verify/SKILL.md
-  - skills/design/SKILL.md
-  - skills/sprint/SKILL.md
-  - skills/prototype/SKILL.md
-  - references/CONCURRENCY.md
-  - CHANGELOG.md
-  - skills/queue/templates/claim
-  - skills/queue/templates/close
-  - skills/queue/templates/reopen
-  - skills/queue/templates/item.md
-  - tests/next.test.sh
-  - tests/claim.test.sh
-  - .claude/backlog/claim
-  - .claude/backlog/next
-  - .claude/backlog/close
-  - tests/close.test.sh
-  - .tickets/next
-  - skills/queue/templates/handoff
-  - .claude/backlog/handoff
-  - tests/handoff.test.sh
-  - tests/findings-routing.test.sh
+  - .tickets/items/0242-make-every-backlog-write-one-script-call.md
 slice: S4
 ---
 
@@ -1362,6 +1322,23 @@ and forwards the ticket. Parked in `FINDINGS.md`.
 **Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
 
 - Either `--ac-digest` ends an AC at a line that is not a `- [ ] ACn` continuation, or `develop`'s re-entry guidance names where a stop note goes. The recurrence argues for the script fix: a note's position is not something a session reliably reads guidance about.
+- **2026-11-27 (develop, b3fa): S5 is next and `unspecified`, so this leg routes the ticket to `design` and builds nothing.**
+  The defect still reproduces in the code: `ac_digest_of` in `skills/queue/templates/next`
+  appends every line after an AC's label line to that AC until the next `label` line or `## `
+  heading (`label != "" { text = text " " $0 }`), so prose below the last AC is part of its
+  digest. What design owes, so that S5 can carry ACs:
+  1. **Script fix or guidance?** The established lean above is the script fix.
+  2. **If it is the script fix, what ends an AC.** It could be a blank line, a line that is neither
+     indented nor a label, or an explicit marker. A blank-line rule would also cut a multi-paragraph
+     AC, so check the live items for one before choosing.
+  3. **Migration.** Changing the normalisation changes the digest of every stamped AC that has
+     trailing text, in this backlog and in every consuming one. After an upgrade, `--drift` and
+     `close` would report drift that no person caused. Decide whether stamps are recomputed
+     (by whom, and in which commit) or whether the old digest is accepted alongside the new one.
+  S6 and S7 come straight after S5 and are also `unspecified`. If design specifies S5–S7 in one
+  pass, it saves two more develop→design round trips. This leg did not reorder the specified S8
+  ahead of them: the dispatch pointed at the unspecified-slice route, and the slice order is the
+  author's sequencing.
 
 **Established, not yet specified (it was at next: queue), from 0219 — Make reopen leave a ticket that verify can close when it reopens a develop self-close:**
 
