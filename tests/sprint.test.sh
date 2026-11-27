@@ -2025,11 +2025,9 @@ if says "$SKILL" "$DSEC" 'disjoint' && says "$SKILL" "$DSEC" '0050'; then
 else
   bad "0134 FR6 — the section does not state the disjoint-files reason and cite 0050"
 fi
-if says "$SKILL" "$DSEC" '0137'; then
-  ok "Documentation NFR — and names 0137, so the permission is not generalised to develop"
-else
-  bad "0134 Documentation NFR — the section does not say why this does not extend to parallel develop (0137)"
-fi
+# The "names 0137" assertion was deleted by 0234 S6, which settles parallel develop in 0137's place
+# and enforces it in ./claim and --drive (0234 AC27-AC30); per CLAUDE.md *Tests* a prose guard reding
+# on a correct rewording is deleted, not re-anchored.
 if says "$SKILL" "Step 5" 'its ticket id'; then
   ok "FR7 — a design dispatch event carries its ticket id in the run log"
 else
