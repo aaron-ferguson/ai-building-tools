@@ -242,6 +242,11 @@ fm_list() {
       rest = $0; sub("^" key ": *", "", rest)
       rest = decomment(rest)
       if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
+      # A bare SCALAR is read as its paths, never as empty (0242 FR14): `expects: a.ts, b.ts` and
+      # `touches: "*"` are both written in the wild, and reading either as nothing makes the scope
+      # check compare nothing, which fails open. Commas and quotes separate; what is left is the list.
+      gsub(/[",]/, " ", rest); gsub(/[ \t]+/, " ", rest); sub(/^ /, "", rest); sub(/ $/, "", rest)
+      if (rest != "") { printf "%s ", rest; exit }
       inside = 1; next
     }
     # A comment on its own line is skipped rather than ending the block: falling through to the

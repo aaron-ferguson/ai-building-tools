@@ -680,6 +680,94 @@ witness="$(cat "$FIX/.lock-witness" 2>/dev/null || echo MISSING)"
 if [ "$witness" = held ]; then ok "the lock was held when the commit ran"; else
   bad "0092 — the lock (.tickets/.lock) was not held when claim's commit ran: the witness read $witness"; fi
 
+# --- 0242 S1 — claim reads expects: and touches: through next's parser (FR13, FR14, FR16–FR21) --
+# The seeder used to read only the `- ` block form, and the exclusive detector any `*`. Each case
+# is one shape the two scripts answered differently.
+NEXT_SRC="$ROOT/skills/queue/templates/next"
+HANDOFF_SRC="$ROOT/skills/queue/templates/handoff"
+
+echo "0242 AC18 — an inline [\"a\", \"b\"] expects: seeds touches: with a and b"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0240 | Inline expects | develop | ready | 0000 |' 0240 'expects: ["a", "b"]'
+out="$(run_claim 0240)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_eq "touches: holds a and b" "$(touches_block 0240)" 'touches:
+  - a
+  - b'
+
+# AC19: one case over every written form, comparing what `./next develop` prints with what `claim`
+# seeds, so the two readers cannot drift apart again. The comma scalar is FR14's form, parsed.
+for form in 'expects:
+  - src/one.ts
+  - src/two.ts' 'expects: ["src/one.ts", "src/two.ts"]' 'expects: src/one.ts, src/two.ts'; do
+  echo "0242 AC19/AC20 — next develop and claim name the same paths: $(printf '%s' "$form" | head -1)"
+  scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0241 | Same paths | develop | ready | 0000 |' 0241 "$form"
+  cp "$NEXT_SRC" "$FIX/.tickets/next"; chmod +x "$FIX/.tickets/next"
+  git -C "$FIX" add -A; git -C "$FIX" commit -q -m "next"
+  nexp="$( (cd "$FIX" && .tickets/next develop) 2>&1 | sed -n 's/^EXPECTS   //p' | tr -s ' ' '\n' | sed '/^$/d')"
+  out="$(run_claim 0241)" && rc=0 || rc=$?
+  assert_rc "claim exits 0" "$rc" 0 "$out"
+  assert_eq "next develop prints both paths" "$nexp" 'src/one.ts
+src/two.ts'
+  assert_eq "claim seeds the paths next printed" "$(touches_block 0241 | sed -n 's/^  - //p')" "$nexp"
+done
+
+echo "0242 AC22 — no expects: and no touches: key: claim adds an empty key and handoff succeeds"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0242 | No scope keys | develop | ready | 0000 |' 0242 'next: develop' 'size: s'
+cp "$HANDOFF_SRC" "$FIX/.tickets/handoff"; chmod +x "$FIX/.tickets/handoff"
+git -C "$FIX" add -A; git -C "$FIX" commit -q -m "handoff"
+out="$(run_claim 0242)" && rc=0 || rc=$?
+assert_rc "claim exits 0" "$rc" 0 "$out"
+assert_eq "the item carries an empty touches: key" "$(touches_block 0242)" 'touches:'
+assert_contains "reported through the backfill note" "$out" 'item predated some of the claim keys; added them'
+out="$( (cd "$FIX" && .tickets/handoff 0242 tok0 design) 2>&1 )" && rc=0 || rc=$?
+assert_rc "handoff to design exits 0" "$rc" 0 "$out"
+assert_not_contains "handoff does not refuse a missing key" "$out" 'has no: touches'
+
+echo "0242 AC23 — expects: entries and no touches: key: touches: holds them exactly once"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0243 | Seed once | develop | ready | 0000 |' 0243 'expects:
+  - src/alpha.ts
+  - src/beta.ts' 'size: s'
+out="$(run_claim 0243)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_eq "touches: holds the entries once" "$(touches_block 0243)" 'touches:
+  - src/alpha.ts
+  - src/beta.ts'
+assert_count "one touches: key" "$(cat "$FIX/.tickets/items/0243-fixture.md")" 'touches:' 1
+
+echo "0242 AC24 — a populated inline touches: is left byte-identical"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0244 | Keep scope | develop | ready | 0000 |' 0244 'expects:
+  - src/alpha.ts' 'touches: ["keep/me.md", "and/me.md"]'
+out="$(run_claim 0244)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_eq "touches: is unchanged" "$(touches_block 0244)" 'touches: ["keep/me.md", "and/me.md"]'
+
+echo "0242 AC25 — a glob entry is not an exclusive claim"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0245 | Glob expects | develop | ready | 0000 |' 0245 'expects:
+  - tests/*.test.sh'
+add_held 0246 xx77 verify
+out="$(run_claim 0245)" && rc=0 || rc=$?
+assert_rc "exits 0 while another row is held" "$rc" 0 "$out"
+assert_not_contains "is not refused as exclusive" "$out" 'exclusive claim over the whole tree'
+assert_eq "touches: keeps the glob as written" "$(touches_block 0245)" 'touches:
+  - tests/*.test.sh'
+
+echo "0242 AC27 — claim names a collision with a held row's touches: and its holder"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0247 | Shares a file | develop | ready | 0000 |' 0247 'expects:
+  - some/other/file.md
+  - mine/only.md'
+add_held 0248 ww66 verify
+out="$(run_claim 0247)" && rc=0 || rc=$?
+assert_rc "exits 0 — a report, not a refusal" "$rc" 0 "$out"
+assert_contains "names the collision, the path and the holder" "$out" 'COLLIDES  0247 | some/other/file.md — held by 0248 [ww66]'
+assert_not_contains "does not name an unshared path" "$out" 'mine/only.md — held'
+
+echo "0242 AC27 — no collision, no report"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0249 | Clear | develop | ready | 0000 |' 0249 'expects:
+  - mine/only.md'
+add_held 0250 vv55 verify
+out="$(run_claim 0249)" && rc=0 || rc=$?
+assert_not_contains "says nothing collides" "$out" 'COLLIDES'
+
 echo "$PASS passed, $FAIL failed"
 TALLIED=1
 [ "$FAIL" -eq 0 ] || exit 1

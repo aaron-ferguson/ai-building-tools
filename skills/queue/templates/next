@@ -430,7 +430,7 @@ only the ticket it holds*, is where that is settled. `blocked` is
 DERIVED from `blocked_by`, so the column is a cache of that answer and never the authority — a
 row is offered on the graph's answer whatever the column says, and the disagreement is reported.
 
-A row held out on that third test is reported as COLLIDES, naming the shared paths and the row
+A row held out on the file-scope test is reported as COLLIDES, naming the shared paths and the row
 holding them, and the walk carries on to the next clear row rather than stopping at the first
 stage match. The held set spans every stage: a develop row can collide with a live verify claim.
 Where every row at the stage collides, the closing line says so in different words from an
@@ -734,6 +734,11 @@ fm_list() {
       rest = $0; sub("^" key ": *", "", rest)
       rest = decomment(rest)
       if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
+      # A bare SCALAR is read as its paths, never as empty (0242 FR14): `expects: a.ts, b.ts` and
+      # `touches: "*"` are both written in the wild, and reading either as nothing makes the scope
+      # check compare nothing, which fails open. Commas and quotes separate; what is left is the list.
+      gsub(/[",]/, " ", rest); gsub(/[ \t]+/, " ", rest); sub(/^ /, "", rest); sub(/ $/, "", rest)
+      if (rest != "") { printf "%s ", rest; exit }
       inside = 1; next
     }
     # A comment on its own line is skipped rather than ending the block: falling through to the
@@ -2285,6 +2290,23 @@ if [ -n "${1:-}" ]; then
       printf '%s\n' "$clash"
       collided=1
       continue
+    fi
+    # An EXCLUSIVE CLAIM row is not offered while anything else is held (0242 FR20): `claim`
+    # refuses it then (`CONCURRENCY.md`, *A change that touches every file takes an exclusive
+    # claim*), so printing TAKE sends the session to a refusal. The entry must be exactly `*` —
+    # `tests/*.test.sh` is a glob naming files, not the whole tree.
+    if contains_word '*' "$exp"; then
+      xheld=""
+      for xid in $(all_ids); do
+        [ "$xid" != "$id" ] || continue
+        xtok="$(held_by "$xid")" || continue
+        xheld="$xheld $xid [$xtok]"
+      done
+      if [ -n "$xheld" ]; then
+        printf 'SKIP      %s | expects "*", an exclusive claim, and it waits until nothing else is held:%s\n' "$id" "$xheld"
+        collided=1
+        continue
+      fi
     fi
     # `close_by` is printed unconditionally, ABSENT OR NOT, rather than only when it is `develop`.
     # It decides whether the develop session closes the ticket itself or hands it to a QA pass, so a

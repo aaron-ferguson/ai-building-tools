@@ -3936,6 +3936,43 @@ assert_rc           "design ranked above: exits 0"            "$rc" 0 "$out"
 assert_contains     "and dispatches design 0103"              "$out" 'DISPATCH  design 0103'
 
 # --- result -----------------------------------------------------------------------------------
+# --- 0242 S1 — next reads the comma form, and holds an exclusive row back (FR14, FR20, FR23) ------
+echo "0242 AC20 — a comma-separated scalar expects: is printed as its paths"
+scaffold
+add_row 0301 'Comma form' develop ready 0000
+add_ticket_expects 0301 develop ready '[]' '' ' a.ts, b.ts'
+out="$(run_next develop)"
+assert_contains "EXPECTS names both paths" "$out" 'EXPECTS   a.ts b.ts'
+assert_not_contains "is not read as unpredicted" "$out" 'EXPECTS   not predicted'
+
+echo "0242 AC26 — an exclusive-claim row is not offered while another row is held"
+scaffold
+add_row 0302 'Rename everything' develop ready 0000
+add_ticket_expects 0302 develop ready '[]' '' ' "*"'
+add_row 0303 'Held elsewhere' verify in-progress 0000
+add_ticket_held 0303 verify in-progress '[]' '' some/file.md '"cc33"'
+add_row 0304 'Ordinary' develop ready 0000
+add_ticket_expects 0304 develop ready '[]' '' ' other/file.md'
+out="$(run_next develop)"
+assert_not_contains "0302 is not printed as TAKE" "$out" 'TAKE      0302'
+assert_contains "says why, naming the holder" "$out" 'SKIP      0302 | expects "*", an exclusive claim, and it waits until nothing else is held: 0303 [cc33]'
+assert_contains "the walk carries on to the next clear row" "$out" 'TAKE      0304'
+
+echo "0242 AC26 — and is offered once nothing else is held"
+scaffold
+add_row 0302 'Rename everything' develop ready 0000
+add_ticket_expects 0302 develop ready '[]' '' ' "*"'
+out="$(run_next develop)"
+assert_contains "0302 is TAKE" "$out" 'TAKE      0302'
+
+echo "0242 AC29 — --help names the collision test without an ordinal"
+scaffold
+out="$(run_next --help)"
+assert_contains "names the file-scope test" "$out" 'held out on the file-scope test'
+for ord in 'that third test' 'that fourth test' 'that second test' 'that first test'; do
+  assert_not_contains "no ordinal: $ord" "$out" "$ord"
+done
+
 echo
 echo "$PASS passed, $FAIL failed"
 TALLIED=1

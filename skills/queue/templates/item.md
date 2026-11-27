@@ -80,6 +80,10 @@ relates: []
 # in-progress item's `touches:` without researching every candidate itself. Advisory: it
 # protects nothing, it goes stale, and being wrong here costs one suboptimal pick. `develop`
 # checks it against the code on claim and promotes the corrected list to `touches:`.
+# ONE form: a `- ` block, one path per line, so a path can carry its own comment (`# new`). Every
+# reader also accepts the inline `["a", "b"]` list and a bare `a, b` scalar, and until 0242 one of
+# them read each of those as EMPTY — a scope that compares nothing and lets two sessions land in one
+# file. Three shapes for one field is what made that possible, so write this one.
 expects:
 # The digest of the criteria the AUTHOR agreed, one key per ACn: `ac_digest: AC1=<hex> AC2=<hex>`.
 # Written from `./next --ac-digest <id>` by `queue` (Add, Re-specify, Amend) and by `design` when it
@@ -100,6 +104,7 @@ claimed_at:
 # Empty reads two ways by reader: as *held* to a session deciding what to take, and to the
 # release-time scope report an empty touches: means nothing declared, so every path the pass
 # changed is named. `touches: "*"` is the exclusive claim and covers every path (0145).
+# ONE form, the same as `expects:`: a `- ` block, one path per line; `./claim` writes it that way.
 touches:
 # ONLY on a sliced ticket — one carrying `## Progress` below. The last slice of the most recent
 # leg: written by `./handoff --slice S<n>` and by nothing else, in the same commit as the hand-off.

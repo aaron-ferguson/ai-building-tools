@@ -214,6 +214,65 @@ stage=""
 item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
 [ -n "$item" ] || { echo "no item file for $ID" >&2; exit 1; }
 
+# --- the frontmatter list reader, shared with next, close and reopen (0242 FR13) ---------------
+# `expects:` and `touches:` are read here through the SAME definition `next` reads them with, so
+# for any item the EXPECTS line `./next develop` prints and the `touches:` this claim seeds name the
+# same paths. The seeder used to read only the `- ` block form, so an inline `[a, b]` list that
+# `next` printed in full seeded nothing here (AetherWorks 0130, this repo's 0231).
+# copy-begin: decomment
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+DECOMMENT='
+function decomment(s,   i, ch, quote, out, start) {
+  sub(/^[ \t]+/, "", s)
+  start = 1
+  ch = substr(s, 1, 1)
+  if (ch == "\"" || ch == "\047") { quote = ch; start = 2 }
+  for (i = start; i <= length(s); i++) {
+    ch = substr(s, i, 1)
+    if (quote != "" && ch == quote) { quote = ""; continue }
+    if (quote != "")                { out = out ch; continue }
+    if (ch == "#" && (i == start || substr(s, i - 1, 1) ~ /[ \t]/)) break
+    out = out ch
+  }
+  sub(/[ \t]+$/, "", out)
+  return out
+}
+'
+# copy-end: decomment
+# copy-begin: fm-list
+# A declared copy: tests/declared-copies.test.sh reds unless every copy of this block is identical.
+fm_list() {
+  [ -n "$1" ] || return 0
+  awk -v key="$2" "$DECOMMENT"'
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/ { exit }
+    fm && $0 ~ "^" key ":" {
+      rest = $0; sub("^" key ": *", "", rest)
+      rest = decomment(rest)
+      if (rest ~ /\[/) { gsub(/[][",]/, " ", rest); printf "%s", rest; exit }
+      # A bare SCALAR is read as its paths, never as empty (0242 FR14): `expects: a.ts, b.ts` and
+      # `touches: "*"` are both written in the wild, and reading either as nothing makes the scope
+      # check compare nothing, which fails open. Commas and quotes separate; what is left is the list.
+      gsub(/[",]/, " ", rest); gsub(/[ \t]+/, " ", rest); sub(/^ /, "", rest); sub(/ $/, "", rest)
+      if (rest != "") { printf "%s ", rest; exit }
+      inside = 1; next
+    }
+    # A comment on its own line is skipped rather than ending the block: falling through to the
+    # `exit` below would silently truncate the list at the note.
+    inside && /^[ \t]*#/ { next }
+    inside && /^  *- / {
+      sub(/^ *- */, "")
+      entry = decomment($0)
+      if (entry != "") printf "%s ", entry
+      next
+    }
+    inside { exit }
+  ' "$1"
+}
+# copy-end: fm-list
+
+EXPECTS_LIST="$(fm_list "$item" expects)"
+
 # --- an exclusive claim refuses while anything else is held (0067 FR6) -------------------------
 # `expects: "*"` declares a change that touches every file — a cross-cutting rename
 # (`references/CONCURRENCY.md`, *A change that touches every file takes an exclusive claim*). Its
@@ -224,19 +283,11 @@ item="$(ls "$DIR/items/$ID-"*.md 2>/dev/null | head -1 || true)"
 # point `touches:` is still whatever the ticket was authored with, and `expects:` is what the
 # ticket DECLARED. Placed with the other refusals, ABOVE the row edit, so a refused claim has
 # nothing to undo — the fail-open shape 0082 and 0090 both closed.
-exclusive="$(awk '
-  NR == 1 && /^---$/ { fm = 1; next }
-  fm && /^---$/      { exit }
-  fm && /^expects:/ {
-    rest = $0; sub(/^expects:[ \t]*/, "", rest)
-    if (rest ~ /\*/) { print "yes"; exit }
-    inx = 1; next
-  }
-  inx && /^[ \t]*$/ { next }
-  inx && /^[ \t]*#/ { next }
-  inx && /^[ \t]*- / { if ($0 ~ /\*/) { print "yes"; exit } ; next }
-  inx { exit }
-' "$item")"
+# An entry that is EXACTLY `*` (quoted or not — the reader strips the quotes), never one that
+# merely contains an asterisk: `tests/*.test.sh` is a glob naming files, and reading it as the
+# whole tree refused an ordinary claim whenever anything else was held (0242 FR19).
+exclusive=""
+case " $EXPECTS_LIST " in *" * "*) exclusive=yes ;; esac
 
 if [ -n "$exclusive" ]; then
   holders=""
@@ -265,6 +316,47 @@ if [ -n "$exclusive" ]; then
     exit 1
   fi
 fi
+
+# --- a file another held row already declares (0242 FR21) -------------------------------------
+# Reported, never refused: `expects:` is a prediction, and the decision to take a colliding row is
+# the session's (`CONCURRENCY.md`, *The working tree is shared too*). But `./claim <id>` used to grant
+# with no word at all where `./next <stage>` would have said COLLIDES, so a session claiming by id
+# reserved the four paths another session held without being told. A held row's scope is its
+# `touches:`, or its `expects:` labelled as predicted where `touches:` is empty, as `next` reads it.
+collisions=""
+for other in "$DIR/items/"*.md; do
+  [ -f "$other" ] || continue
+  case "$other" in *"/$ID-"*) continue ;; esac
+  ostat="$(awk 'NR == 1 && /^---$/ { fm = 1; next } fm && /^---$/ { exit } fm && /^status:/ { sub(/^status:[ \t]*/, ""); print; exit }' "$other")"
+  case "$ostat" in done|withdrawn|rejected) continue ;; esac
+  otok="$(awk '
+    NR == 1 && /^---$/ { fm = 1; next }
+    fm && /^---$/        { exit }
+    fm && /^claimed_by:/ {
+      sub(/^claimed_by:[ \t]*/, "")
+      gsub(/["\047]/, "")
+      sub(/[ \t]+#.*$/, "")
+      sub(/[ \t]+$/, "")
+      print; exit
+    }
+  ' "$other")"
+  [ -n "$otok" ] && [ "$otok" != "$TOKEN" ] || continue
+  oid="$(basename "$other" | sed 's/-.*//')"
+  oscope="$(fm_list "$other" touches)"; olabel=touches
+  [ -n "$oscope" ] || { oscope="$(fm_list "$other" expects)"; olabel="expects (predicted)"; }
+  shared=""
+  case " $oscope " in *" * "*) shared="every file — an exclusive claim" ;; esac
+  if [ -z "$shared" ]; then
+    set -f   # the entries are compared as written: a glob is a word here, not its matches
+    for p in $EXPECTS_LIST; do
+      case " $oscope " in *" $p "*) shared="$shared $p" ;; esac
+    done
+    set +f
+  fi
+  [ -n "$shared" ] || continue
+  collisions="$collisions
+COLLIDES  $ID |${shared} — held by $oid [$otok], its $olabel"
+done
 
 # --- one develop session at a time (0234 FR28) ------------------------------------------------
 # A develop claim refuses while any OTHER row at `next: develop` is held by a different token. The
@@ -340,21 +432,8 @@ now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 # A standalone comment line inside the block is SKIPPED rather than ending it. Falling through
 # would read a narrowed-and-annotated block as empty, which is the precise reading that produced
 # the duplicate list this rule exists to prevent.
-existing_touches="$(awk '
-  NR == 1 && /^---$/ { fm = 1; next }
-  fm && /^---$/      { exit }
-  fm && /^touches:/  { intou = 1; next }
-  intou && /^[ \t]*$/ { next }
-  intou && /^[ \t]*#/ { next }
-  intou && /^[ \t]*- / {
-    sub(/^[ \t]*- */, "")
-    sub(/[ \t]+#.*$/, "")
-    sub(/[ \t]+$/, "")
-    if ($0 != "") print
-    next
-  }
-  intou { exit }
-' "$item")"
+# Trimmed, so `touches: []` reads as empty rather than as the spaces its brackets became.
+existing_touches="$(fm_list "$item" touches | awk '{ $1 = $1; print }')"
 
 # `develop` is the only stage that builds, so it is the only stage a build scope belongs to. An
 # unreadable stage (no `Next` column) is not a reason to withhold the seed — see the header.
@@ -385,26 +464,28 @@ paths="$(mktemp)"
 # Every rule is guarded on `fm`. Without it the `intou`/`inexp` list rules would swallow an
 # indented bullet in the item's PROSE, which is a data-loss bug that no assertion about
 # frontmatter can see.
-awk -v tok="$TOKEN" -v now="$now" -v cf="$count" -v pf="$paths" -v seed="$SEED" '
+set -f
+awk -v tok="$TOKEN" -v now="$now" -v cf="$count" -v pf="$paths" -v seed="$SEED" -v list="$EXPECTS_LIST" '
+  BEGIN { n = split(list, want, /[ \t]+/); m = 0; for (i = 1; i <= n; i++) if (want[i] != "") want[++m] = want[i]; n = m }
   NR == 1 && /^---$/ { fm = 1; print; next }
   fm && /^---$/      {
     if (!by)  { print "claimed_by: \"" tok "\""; added = 1 }
     if (!at)  { print "claimed_at: " now;         added = 1 }
-    if (!tou && n && seed) { print "touches:"; for (i = 1; i <= n; i++) print want[i]; added = 1 }
+    # The key is ADDED whether or not anything seeds it (0242 FR16): `handoff` refuses an item with
+    # no `touches:` key at all, so a claim that seeded nothing used to leave a session committing an
+    # empty key by hand only so the hand-off could run (AetherWorks 0027).
+    if (!tou) { print "touches:"; if (seed) for (i = 1; i <= n; i++) print "  - " want[i]; added = 1 }
     fm = 0
     if (added) print "note: item predated some of the claim keys; added them" > "/dev/stderr"
     print; next
   }
-  fm && /^expects:/    { inexp = 1; print; next }
-  fm && inexp && /^[ \t]+-/ { want[++n] = $0; print; next }
-  fm && inexp          { inexp = 0 }
   fm && /^touches:/    {
     tou = 1
     # No seed: print the key and let the block that follows fall through untouched, entries,
     # comments and all. This is the branch a re-claim and a non-develop claim both take.
     if (!seed) { print; next }
     print "touches:"
-    for (i = 1; i <= n; i++) print want[i]
+    for (i = 1; i <= n; i++) print "  - " want[i]
     intou = 1; next
   }
   fm && intou && /^[ \t]+-/ { next }
@@ -413,23 +494,14 @@ awk -v tok="$TOKEN" -v now="$now" -v cf="$count" -v pf="$paths" -v seed="$SEED" 
   fm && /^claimed_at:/ { print "claimed_at: " now;         at = 1; next }
   fm && /^status:/     { print "status: in-progress"; next }
   { print }
-  # The count and the path list come out of this one pass for the reason the header gives: two
-  # parsers of the same frontmatter drift, and the drift is silent. `want[i]` is the raw line, so
-  # strip the bullet, then the trailing comment, then the quotes — comment before quotes, or a
-  # quoted `#` inside a path would survive as part of it. An entry that cleans to nothing is
-  # dropped rather than reported as a missing path named "".
+  # The count and the path list are the ones `fm_list` read, so the report and the file cannot
+  # disagree about what was seeded.
   END {
     print n + 0 > cf
-    for (i = 1; i <= n; i++) {
-      p = want[i]
-      sub(/^[ \t]*-[ \t]*/, "", p)
-      sub(/[ \t]+#.*$/, "", p)
-      gsub(/["\047]/, "", p)
-      sub(/[ \t]+$/, "", p)
-      if (p != "") print p > pf
-    }
+    for (i = 1; i <= n; i++) print want[i] > pf
   }
 ' "$item" > "$tmp"
+set +f
 mv "$tmp" "$item"
 N_EXPECTS="$(cat "$count")"
 rm -f "$count"
@@ -481,6 +553,10 @@ if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
 fi
 
 echo "claimed $ID with token $TOKEN"
+if [ -n "$collisions" ]; then
+  echo "another held row already declares a file this row expects — granted, but ask before you open it:"
+  printf '%s\n' "$collisions" | sed '/^$/d'
+fi
 # Four outcomes, and each says which one it is. Silence about a scope that was NOT written reads as
 # "a scope was written" to the next reader, which is the failure the unset branch was added for.
 if [ -n "$existing_touches" ]; then

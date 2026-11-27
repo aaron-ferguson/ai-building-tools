@@ -168,7 +168,7 @@ mkroot() { rm -rf "$FIX/$1"; mkdir -p "$FIX/$1/skills/queue/templates" "$FIX/$1/
 echo "AC5 — the repo tree's declared copies are all present and identical"
 run_on "$ROOT"
 if [ "$rc" -eq 0 ]; then ok "the repo tree passes"; else bad "the repo tree passes"; printf '%s\n' "$out" | sed 's/^/         /'; fi
-for want in 'decomment: 4 copies' 'fm-value: 3 copies' 'fm-list: 3 copies' 'read-cell: 3 copies' \
+for want in 'decomment: 5 copies' 'fm-value: 3 copies' 'fm-list: 4 copies' 'read-cell: 3 copies' \
             'column-in: 2 copies' 'header-of: 2 copies' 'column-named: 2 copies' 'scope-block: 2 copies'; do
   case "$out" in *"$want, identical"*) ok "reports $want" ;; *) bad "reports $want" ;; esac
 done
