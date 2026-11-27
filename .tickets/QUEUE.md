@@ -23,7 +23,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 
 | ID | Title | Next | Status | Parent |
 |------|-------|------|--------|--------|
-| 0245 | Mint the claim token with od, so ./claim works on a host without xxd | develop | ready |  |
+| 0245 | Mint the claim token with od, so ./claim works on a host without xxd | develop | in-progress |  |
 | 0243 | Give each slice of an epic its own file, so claims, locks and revisits work per slice | design | ready |  |
 | 0244 | Make sprint judge loops and likely loops itself, instead of ending a run on a bounce count | design | ready |  |
 | 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | verify | ready |  |

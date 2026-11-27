@@ -3,7 +3,7 @@ id: "0245"
 title: Mint the claim token with od, so ./claim works on a host without xxd
 type: bug
 next: develop
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -18,9 +18,13 @@ expects:
   - .tickets/claim
   - references/CONCURRENCY.md
   - tests/claim.test.sh
-claimed_by:
-claimed_at:
+claimed_by: "7401"
+claimed_at: 2026-11-27T21:08:20Z
 touches:
+  - skills/queue/templates/claim
+  - .tickets/claim
+  - references/CONCURRENCY.md
+  - tests/claim.test.sh
 slice:
 ac_digest: AC1=c5169689 AC2=d1073b86 AC3=2f2123a3 AC4=aa8e8c42
 ---
