@@ -64,7 +64,7 @@ expects:
   - tests/design-hold.test.sh
   - tests/scaffold-close.test.sh
   - tests/sprint.test.sh
-ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8 AC78=9de0f100 AC79=d33bbcc4 AC80=e46fe1e6 AC81=ff13b5c9 AC82=d9ab8d22 AC83=7d5d6a7c AC84=7e39137c AC85=4c37e61e
+ac_digest: AC1=3f4813fa AC2=00ed7e8d AC3=cc9098c3 AC4=c39ef3f4 AC5=cd5192a9 AC6=08ff8130 AC7=19b18cb5 AC8=b842bc08 AC9=18fa1024 AC10=6e4e0541 AC11=4fce6a8a AC12=85333459 AC13=184dee36 AC14=e8fbc130 AC15=f8a8f901 AC16=b2de2b18 AC17=f8f530b6 AC18=3c1c133b AC19=c00e3e5b AC20=b7aea097 AC21=2797aa8b AC22=2982ae38 AC23=2ae59f5d AC24=4ee45ae4 AC25=efb5b2ea AC26=d6679279 AC27=1900687b AC28=f0678e1a AC29=ca008731 AC30=2c0cb400 AC31=2fea3bb7 AC32=0ea2fa1f AC33=0798a7d2 AC34=17f78639 AC35=81a1eeed AC36=295a79f7 AC37=03c9ed76 AC38=99abb6b8 AC39=157525d8 AC40=ea7e3fba AC41=e8935ea1 AC42=d89f512e AC43=b2861434 AC44=7dfc9899 AC45=167587a8 AC46=e93172ec AC47=cef1068e AC48=66233639 AC49=e1f1156c AC50=d1b0c900 AC51=6158b990 AC52=553a49b4 AC53=71802b40 AC54=6a89e958 AC55=fc2745e7 AC56=aa350e52 AC57=87c0e9e6 AC58=a583d20d AC59=dd572398 AC60=48f5e107 AC61=aa483225 AC62=c77fc918 AC63=e6003050 AC64=cd0488b1 AC65=dfa70118 AC66=49bcb542 AC67=9f11e85d AC68=ba932761 AC69=b7bd5a10 AC70=79bbe8a3 AC71=50e7157c AC72=7f1f7079 AC73=3902e103 AC74=4ae18559 AC75=ed583ed7 AC76=1f74adcb AC77=daa124e8 AC78=9de0f100 AC79=d33bbcc4 AC80=e46fe1e6 AC81=ff13b5c9 AC82=d9ab8d22 AC83=7d5d6a7c AC84=7e39137c AC85=4c37e61e AC86=034cf395 AC87=5714d3fe AC88=88f5d80c AC89=fe70c6dd AC90=4e8d4db0 AC91=d1ca1c88
 claimed_by: "213b"
 claimed_at: 2026-11-27T15:42:21Z
 touches:
@@ -565,6 +565,70 @@ in reverse: cheaper turns, wrong backlog.
   fix is to correct the path or mark it `# new`. The template comment and the CHANGELOG line are
   prose only, and unguarded (`CLAUDE.md`, *Tests*). The usage text is script output, and AC83
   checks it.
+- FR67 *(0236, design `213b`, 2026-11-27)* — **No stage writes an item it does not hold, and no
+  second exception is added.** `references/CONCURRENCY.md`, *A stage writes only the ticket it
+  holds*, keeps its one exception (a close reconciling dependents). `design` amends no sibling item,
+  even an unheld one its own FRs name. Rejected: a second narrow exception for `design` (the brief's
+  Option A) and a `claim` mode for `blocked` rows (Option C). The reasons are in *Notes &
+  decisions*, S13.
+- FR68 *(0236, design `213b`, 2026-11-27)* — **A design pass whose decision changes what another
+  item must say records it in the held item, then hands to `queue`.** It writes a subsection under
+  `## Notes & decisions` headed `### Sibling consequences — <date>, design <token>`. Each entry
+  carries the affected item's id, the FR or AC there that must change and how, why, and the item's
+  state as observed at that moment: open and unheld, held (with the token), or `done`. Then it
+  releases with `./handoff <id> <token> queue`, never `develop`. A consequence that lands on
+  another slice of the item design holds is not a sibling consequence. `design` writes that itself,
+  because it holds the file. A decision with no sibling consequence hands off as today.
+  `skills/design/SKILL.md` Step 4 says this. The item-scoped path that hands to `develop` names
+  this case as the exception. The path that is held by another is unchanged.
+- FR69 *(0236, design `213b`, 2026-11-27)* — **`queue` folds sibling consequences in, judges them
+  holistically, and may send the decision back.** `skills/queue/SKILL.md` Step 1 gets one routing
+  row for a ticket at `next: queue` whose Notes carry an unresolved `### Sibling consequences`
+  subsection. For each entry, `queue` first re-reads the sibling against the source, because the
+  entry is a cached claim (`CONCURRENCY.md`, *A criterion belonging to another ticket…*). Then
+  it checks the proposal against the other open tickets and their ACs, not only the sibling named.
+  Then it does one of three things:
+  - (a) **Amend** the sibling by Step 1's existing path: claim, amend, restamp `ac_digest`, hand
+    back. For a held sibling, wait for the release first (*A claimed ticket is never amended…*).
+  - (b) For a `done` sibling, `./reopen <id> <rank> "<reason>"`, then `./claim`, amend, restamp,
+    and `./handoff <id> <token> develop`, so the fix is built and then verified, not only
+    re-verified. The reopen and the amendment are named in both items' Notes as intentional rework.
+  - (c) Judge that the consequence does not serve the outcome or conflicts with another ticket. In
+    that case, restore an `## Open design question` in the held item that names the conflict, and
+    `./handoff <id> <token> design`.
+
+  `queue` marks each entry `resolved <date> queue <token>: <a|b|c and the commit>`, then hands the
+  held item to `develop`, or to `design` if any entry took (c). It writes "still needs" for any
+  entry it could not reach (*A stage may record what still needs filing…*).
+- FR70 *(0236, design `213b`, 2026-11-27)* — **`queue` writes no FR that directs another stage to
+  write an item it will not hold.** `skills/queue/SKILL.md` Step 2 says this. Work that must land in
+  another item is either an Amend that `queue` performs itself, or, found by `design`, an FR68
+  entry. `skills/design/SKILL.md` Step 4 says what to do with a held item's FR that directs such a
+  write: treat it as an FR68 sibling consequence, write nothing outside the held item, and say so in
+  Notes. That was 0236's consuming-project case.
+- FR71 *(0236, design `213b`, 2026-11-27)* — **A queue pass follows every plan change before the
+  changed work continues.** `references/CONCURRENCY.md` states this once, in *A stage writes only
+  the ticket it holds*, with FR68's hand-off as the mechanism and the bounded wait as the accepted
+  cost. The sibling reads stale until the `queue` pass runs. A sibling that is held when design
+  records the consequence finishes its current leg against the old contract, at most one leg (0231
+  FR18), and `queue` then amends it. `skills/design/SKILL.md` and `skills/queue/SKILL.md` cite
+  that rule, and do not restate it.
+- FR72 *(0236/0234, design `213b`, 2026-11-27)* — **`./next --drive` dispatches `queue` on an
+  in-scope row that a `design` completion handed to `next: queue` / `ready`, and does not escalate
+  it.** Read on 2026-11-27, `skills/queue/templates/next` (~line 2141) dispatches `queue` only when
+  the completed stage is `verify` or `develop`. Any other completed stage reaches the
+  `ESCALATE … went back to next: queue … the contract is stale` arm, so a `--completed design:<id>`
+  hand-off to queue escalates today. The arm gains `design` with the same `bounce_count`, the same
+  `bounce_max` bound and the same findings gate, and its NOTE says `from design`. A `queue`
+  completion that leaves the row at `next: queue` still reaches the stale-contract arm (0234 FR14),
+  and an out-of-scope row still escalates. Counting this hand-off against `bounce_max` is kept
+  deliberately. It is the loop guard the run has today, and a later epic decides how it is
+  replaced (the person's answer 6, *Notes & decisions*, S13). The `--drive` usage text and
+  `skills/sprint/SKILL.md`'s routing prose name `design` beside `verify` and `develop`.
+- FR73 *(0236, design `213b`, 2026-11-27)* — `CHANGELOG.md` `## Unreleased` carries one line: a
+  design decision that changes other items now hands to `queue`, which folds the changes in, and
+  `--drive` dispatches that pass rather than escalating. Prose only, unguarded (`CLAUDE.md`,
+  *Tests*).
 
 
 ## Non-functional requirements
@@ -586,77 +650,6 @@ in reverse: cheaper turns, wrong backlog.
 | Testing | (0156) The case runs the real hand-off then `--drift`, in fixture. | Two separately-built fixtures that never meet. | `testing-conventions.md` |
 | Privacy & data | (0118) The rule being enforced is `CLAUDE.md`'s public-repo constraint; cite it, do not restate it | AC55: a tracked file carrying a real home path, run through the named command, is not refused | `data-privacy-conventions.md` |
 | Documentation | (0118) Both skills state the same requirement once each, in their own voice | prose only — no artifact yet | `documentation-conventions.md` |
-
-## Waiting on
-
-### Outcome
-Slice S13 (from 0236) settles whether `design` may write sibling items that its own FRs name.
-Then the rule in `references/CONCURRENCY.md`, *A stage writes only the ticket it holds*, and the
-skills it binds say one thing, and no session repeats what one consuming project did: write two
-unheld items under the lock because a `queue`-written FR told it to.
-
-### Where it stands
-S1–S11 passed verify. Design `56a2` (2026-11-27) specified S12 (FR44, FR45, FR59, FR60, AC78–AC80)
-and S15 (FR22, FR61–FR66, AC28, AC81–AC85), and moved S13 to the end of `## Progress`. Once this is
-released, `develop` builds S12, S14 and S15 in that order without waiting on this answer. Only S13
-waits. S13 changes who may write which item, which is the backlog's concurrency architecture
-(`coding-conventions.md`, *What Not to Delegate to AI*). An unattended session prepares that
-decision and does not make it.
-
-### What needs you
-S13: may `design` amend unheld sibling items its own FRs name (a second exception), or must `queue` stop writing such FRs?
-
-### Options
-#### Option A — a second narrow exception for design
-`design`, holding item X, may also edit items that X's own FRs name. Each such item must have an
-empty `claimed_by:` and must not be `done`. The edit happens under the backlog lock, in the same
-commit as the decision, and restamps that item's `ac_digest`.
-Pros: the decision and its consequences land in one commit, with no `queue` round trip. Prior
-art: `retro` already writes unheld items under the lock (*A session with no ticket writes only
-what is unheld*).
-Cons: `retro`'s exception covers appends only. This one would let a non-author rewrite criteria
-and restamp `ac_digest`, and the template says that restamp is the one edit the digest cannot catch.
-It widens the set of writers for every item. It also needs a script, because *An exception is a
-script, never a technique*, so it is new code, not a prose line.
-Would have to be true: cross-item FRs are common, and the `queue` round trip costs more than one
-extra writer per item.
-#### Option B — queue stops writing FRs that amend other items (recommended)
-An FR names work on its own item only. If a decision changes what sibling items must say, the
-decision records that "items B and C still need amending to match" in its `## Notes & decisions`,
-which *A stage may record what still needs filing* already allows. `queue` then runs an
-**Amend** on each one: claim, amend, hand back. That is the pattern CONCURRENCY already prescribes.
-`queue` Step 2 says this, `design` Step 4 says what to do with an FR that does it anyway, and
-CONCURRENCY says it once.
-Pros: no rule is relaxed, and every item keeps one author path and an honest `ac_digest`. It is
-prose only, with no script. It matches *A criterion belonging to another ticket cannot be filed by
-the stage that finds it*.
-Cons: one `queue` pass per decision that has sibling consequences. Until that pass runs, the
-siblings read stale.
-Would have to be true: decisions with sibling consequences are rare enough that the round trip
-does not matter. On the evidence so far that is one consuming project, one occurrence (0236).
-#### Option C — design claims each sibling
-`./claim` gains a mode that lets `design` claim a `blocked` row it does not stage, so the edit
-happens under a held token.
-Pros: it keeps "write only what you hold" literally true.
-Cons: it is a script change to `claim`. A held `blocked` row is a new state that `--drive` and
-`--drift` would each have to learn. It solves a rare case with machinery every reader pays for.
-Would have to be true: Option A is wanted, and a held token is required for it.
-
-### Recommendation
-Option B. The rules already say it. The consuming project's FR49 was the defect: an FR directing a
-write that its own stage is forbidden to make. The cost is a round trip, measured at one
-occurrence.
-
-### What to do
-Reply with `A`, `B` or `C`, plus any condition, in a session running `/design 0242`. That session
-writes S13's FRs and ACs, restamps `ac_digest` and hands the row to `develop`. To have the
-specified slices built before you decide, reply `defer S13`. The design session then hands the row
-to `develop`, keeps this brief, and `develop` reaches S13 last and routes it back here.
-
-### If no answer
-S12, S14 and S15 wait with the row, although all three are specified. The S13 move means that
-`defer S13` is the only reply needed to release them. `--drive` continues with other in-scope rows
-past a waiting one. Nothing else in the backlog names 0242 in `blocked_by`.
 
 ## Acceptance criteria
 
@@ -906,6 +899,36 @@ reads the live backlog.
 - [ ] AC85 *(0155)* — Given `skills/queue/templates/item.md` and `CHANGELOG.md` after the change, when
   verify reads them, then the `expects:` comment states FR66's `# new` rule, and `## Unreleased`
   carries FR66's upgrade line. Checked by reading, not by a guard (`CLAUDE.md`, *Tests*).
+- [ ] AC86 *(0236)* — Given a fixture whose in-scope row 0001 is at `next: queue` / `ready`, when
+  `./next --drive --scope 0001 --completed design:0001` runs, then it exits 0, prints
+  `DISPATCH  queue 0001` and a NOTE naming `design`, and prints no `ESCALATE` line. This is in
+  `tests/next.test.sh`. Red-making input: today's arm, which keys on `verify` or `develop` only.
+- [ ] AC87 *(0236)* — Given the same fixture with `--bounces 0001=<n>` past `bounce_max`, when
+  `./next --drive` runs after `design:0001`, then it exits 4 with the `bounce_max` ESCALATE line.
+  Given the row out of scope, it escalates as today. Given `--completed queue:0001`, it reaches the
+  stale-contract ESCALATE line (0234 FR14 kept). This is in `tests/next.test.sh`. Red-making
+  input: the `design` arm without the bound, or without the scope check, or keyed on any completed
+  stage.
+- [ ] AC88 *(0236)* — Given `skills/design/SKILL.md` after the change, when verify reads Step 4,
+  then it states FR68 (the subsection heading and its four entry fields, `./handoff … queue`,
+  own-slice consequences written by design) and FR70's handling of an FR that directs a write to
+  another item, and it permits no write to an unheld sibling. Checked by reading, not by a guard
+  (`CLAUDE.md`, *Tests*).
+- [ ] AC89 *(0236)* — Given `skills/queue/SKILL.md` after the change, when verify reads Step 1 and
+  Step 2, then one routing row carries FR69's re-read, the holistic check, and outcomes (a), (b)
+  and (c), each with its commands in order, plus the `resolved` marking and the hand-off target.
+  Step 2 also states FR70. Checked by reading, not by a guard.
+- [ ] AC90 *(0236)* — Given `references/CONCURRENCY.md`, `skills/sprint/SKILL.md` and
+  `CHANGELOG.md` after the change, when verify reads them, then *A stage writes only the ticket it
+  holds* still names exactly one exception and states FR71 once, sprint's routing prose names
+  `design` beside `verify` and `develop` for an in-scope dispatch to `queue` (FR72), and
+  `## Unreleased` carries FR73's line. No other skill or reference permits a stage to write an
+  item it does not hold. Checked by reading, not by a guard.
+- [ ] AC91 *(0236)* — Given the tree after the change, when the whole suite runs as
+  `for t in tests/*.test.sh; do "$t" || exit 1; done`, then it exits 0. When `./next --help`
+  runs, the `--drive` text names `design` as a stage whose hand-off to `queue` is dispatched in
+  scope. This is in `tests/next.test.sh`. Red-making input: the usage text left naming only
+  `verify` and `develop`.
 
 
 ## Progress
@@ -927,7 +950,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 - [ ] S12 — `queue` sends an open verify ticket back to design with `./claim` then `./handoff … design`, named in its Step 1 (0237; FR44, FR45, FR59, FR60) — discharges AC78, AC79, AC80
 - [ ] S14 — the seven skills, `CONCURRENCY.md` and the CHANGELOG move onto the scripts, and every step that commits a sweep runs the privacy guard (0118) — discharges AC16, AC17, AC53, AC54, AC55
 - [ ] S15 — `--drift` and `--drive` report an `expects:` path that exists nowhere unless it is marked `# new`, through the shared check; fixtures and this item's own `expects:` are corrected (0155; FR22, FR61–FR66) — discharges AC28, AC81, AC82, AC83, AC84, AC85
-- [ ] S13 — decide whether design may amend unheld sibling items its own FRs name (0236); waiting on a person (`## Waiting on`), moved last by design `56a2` on 2026-11-27 so S12, S14 and S15 are built without waiting on it — unspecified
+- [ ] S13 — design records sibling consequences and hands to `queue`, which folds them in, reopens a done sibling, or sends the decision back, and `--drive` dispatches that pass (0236; FR67–FR73) — discharges AC86, AC87, AC88, AC89, AC90, AC91
 
 
 ## QA plan
@@ -2749,6 +2772,93 @@ criterion is a fixture case or a reading. The slice-kind parser (`progress-slice
 `next`) reads the kind from the text after the last ` — `, so S13's annotation sits before its
 `— unspecified`.
 
+### S13 decision — 2026-11-27, design `213b` (sprint run-20261127T024025Z)
+
+**S13 (0236): the person chose a variant of Option B. `design` records the sibling consequences in
+the held item and hands to `queue`. `queue` folds them in, checks them holistically, and may send
+the decision back. A done sibling is reopened and fixed. A queue pass follows every plan change.**
+The person gave the answer in the supervising session. Their words are quoted here verbatim from
+the machine-local, uncommitted `.tickets/runs/s13-answer.md`, so the decision does not rest on a
+file that is not in the repo.
+
+> First reply to the brief:
+> "Design should add what it found to the ticket as a finding and then mark the ticket as ready for queue. Then Queue should wrap the finding into the actual tickets AC. This easy we leverage the context design already has, but also compare the proposal against other tickets and AC to make sure our plan is holistic. Do you see gaps with that approach before we lock it in?"
+>
+> The supervisor raised six gaps (1 finding means the ticket's Notes, not FINDINGS.md; 2 which ticket is marked for queue; 3 siblings stale until queue runs; 4 a sibling claimed or done; 5 queue's holistic check disagreeing with design; 6 sprint counting design->queue as a bounce). The person's answers:
+>
+> 1. Agreed
+> 2. We have essentially changed our build tools from focusing on traditional user stories to Epics and are focusing on the larger view and outcome, but because we have built it as Epics are the ticket and every story underneath it is part of the same file, our lock system is tricky. If something we find actually affects another ticket then we update that ticket and everything works smoothly, but if we are updating the same ticket for a different slice, that is where the complication happens. I like having all of the context in one place, but also there's no reason we couldn't update the system to have a separate file per slice and then have our sessions pull in each slice file that it needs to be effective for its job that would also make it easier here to mark something as needing to be revisited because that slice would need to be revisited. Would love your recommendation.
+> 3. After making changes to the plan, we would want to run the queue session before continuing to work on the plan to make sure that it is up-to-date and effective. This is just a matter of discipline and intentional organization.
+> 4. If we update work that is already claimed then we are talking about number three and we just need to make sure that we are running a queue session after the design session finishes and before we do that work. If the work had already been marked done and we updated it, like in the case of a missed red test, then we would need to reopen that ticket and make sure it is actually fixed.
+> 5. Agreed. our goal is always effectiveness first, then efficiency. If we are adding scope or clarity to a ticket, we need to make sure that it makes sense, that it actually gets us closer to the specified outcome and that we are working in a way that sets us up for the future. Rework is OK when it is needed to build a clean high-quality system and we just need to be intentional and call it out. going fast and trying to save on token usage because something's already implemented in a certain way is often the wrong approach. We can work quickly enough that spending the time to do it correctly right now is the way this tool kit should be built.
+> 6. The bounce limit is a tool. We added it in to help keep track of runaway sessions and to identify potential loops. The sprint tool needs the ability to be smart, to look at what is happening and make good decisions on its own. when there is a loop or a potential loop identified then it should escalate to me so that I can intervene and fix the thing before we go off the rails, but we want to build sprint in a way that maximizes its own ability to identify those possible loops and address them on its own. A hard bounce limit is less important to me than designing and building a system that understands the goal and has the autonomy to move us toward that outcome effectively.
+>
+> The supervisor's recommendation on 2, which the person approved ("Yes, go ahead with all three"):
+> - Split each slice into its own file, with the epic file kept as the index (outcome, problem, NFRs, the slice list linking each slice file) and each slice file holding its FRs, ACs, digest, claim, QA evidence and notes, so claims and locks work per slice and "needs revisiting" is a slice status. Sessions load the epic plus the slice files their job needs.
+> - Do it as its own epic, ranked right after 0242, not inside 0242: 0242 is rewriting the same scripts. Within 0242 today, sibling consequences that land on other slices of the ticket design already holds are written by design itself.
+> - 6 becomes a second new epic: sprint judges loops and likely loops itself and escalates those, rather than stopping on a hard bounce count.
+> Both new epics are captured by a queue session after this design; they are not S13's work.
+
+How each answer became criteria:
+- **Answers 1 and 2.** The "finding" is a `### Sibling consequences` subsection in the held item's
+  Notes, not a `FINDINGS.md` line. The ticket "marked ready for queue" is the held item, through
+  `./handoff … queue` (FR68). A consequence on another slice of the held item is written by design,
+  as the approved recommendation says (FR68). The one-file-per-slice split is **not** S13 work. It
+  still needs a row, which the queue session after this pass captures.
+- **Answers 3 and 4.** A queue pass follows the plan change (FR71). A held sibling finishes its leg,
+  and then `queue` amends it. A done sibling is reopened, amended and rebuilt (FR69 (b)). This is
+  intentional rework, named in both items.
+- **Answer 5.** `queue`'s holistic check may disagree and send the decision back to design
+  (FR69 (c)). Effectiveness comes before efficiency, so the round trip is accepted, not minimised.
+- **Answer 6.** This was the one fact the decision turned on. Read on 2026-11-27,
+  `skills/queue/templates/next` (~line 2141) dispatches queue only after a verify or develop
+  completion, so a design → queue hand-off escalates today (`ESCALATE … the contract is stale`).
+  FR72 adds `design` to that arm, under the existing `bounce_max` bound for now. The judging-loops
+  epic replaces the bound, and it still needs a row. FR72 is written so that epic can delete the
+  bound in one place.
+
+Rejected:
+- **Option A, a second exception for design.** A non-author would rewrite criteria and restamp
+  their `ac_digest`, which is the one edit the digest cannot catch.
+- **Option C, a `claim` mode for `blocked` rows.** It creates a new held-blocked state that `--drive`
+  and `--drift` would both have to learn, for one rare case.
+- **Every design pass hands to queue, siblings or not.** Answer 3 asks for a queue pass after "changes
+  to the plan". A design that changes only its own item is the author of those criteria, and `queue`
+  would re-read work no other item depends on. If a later queue pass disagrees, this is the line to
+  reopen.
+- **A `handoff` refusal for `design → queue` without a `### Sibling consequences` subsection.** It is
+  exact enough to script. But it would add a new refusal to a script that S14 is moving every skill
+  onto, and nothing has yet gone wrong that it would catch. Prose for now.
+
+Criteria accounting: FR67–FR73 and AC86–AC91 are added. No existing FR or AC changes. FR60 (S12) is
+compatible, because FR69's routing row sits beside AC80's row, and neither forbids the other.
+`qa_level: unit` and `close_by: verify` were re-read against AC86–AC91 and still fit. AC86, AC87 and
+AC91 are fixture cases, and AC88–AC90 are readings. S13 stays last in `## Progress`. It edits the
+same `design`, `queue` and `sprint` prose that S14 moves onto the scripts, so building it after S14
+means it edits the final text once. S13's own criteria were cross-read against S12's FR45/FR60 and
+S15's FR64. `tests/next.test.sh` is shared with S15, which is a sequencing note and not a conflict.
+
+**Hand-off: `next: queue`, not `develop`**, per the person's answer 3 and the dispatch. The queue
+pass reviews S12, S13 and S15 against each other and against the open backlog before develop
+resumes. Until S13 is built, this hand-off escalates under `--drive` (FR72's own gap), so the
+supervisor dispatches that queue pass by hand.
+
+### Sibling consequences — 2026-11-27, design `213b`
+
+This entry uses FR68's form on its own decision, so the first `queue` pass to read the shape reads
+a real one.
+- **0069** (Add a live domain-model and decision-record discipline to design and develop). It is at
+  `design | ready`, and `claimed_by:` was empty when read. Its work lands in `skills/design/SKILL.md`
+  Step 4, which FR68 and FR70 also change. Queue should check that 0069's criteria do not contradict
+  "design writes no unheld item" or the `### Sibling consequences` hand-off, and should check where
+  a decision record about another item goes. Why: two tickets rewriting one step, each blind to the
+  other.
+- **One file per slice** (no row yet; it still needs one). FR68 places the subsection in the held
+  item's Notes. Once slices are files, "needs revisiting" becomes a slice status, and FR68/FR69 should
+  name the slice file. The epic's criteria should carry that migration.
+- **Sprint judges loops** (no row yet; it still needs one). FR72 deliberately counts design → queue
+  against `bounce_max`. That epic's criteria should name FR72's arm as one it replaces.
+
 ### Open questions for the unspecified slices
 
 **Settled 2026-11-27 by design `b7a4` (S5, FR50–FR52) — kept as the question it answered. Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
@@ -2786,7 +2896,7 @@ script know which branch that is (a `config.yml` key, the remote's HEAD, or `mai
 Which carries it: a named operation in `queue` Step 1 that claims then `./handoff … design`, an
 unclaimed form of `./handoff`, or `./reopen` taking a target stage?
 
-**Briefed 2026-11-27 by design `56a2`, not settled — see `## Waiting on`. Open design question, from 0236 — Decide whether design may amend unheld sibling items its own FRs name:**
+**Settled 2026-11-27 by design `213b` (S13, FR67–FR73), on the person's answer — kept as the question it answered. Open design question, from 0236 — Decide whether design may amend unheld sibling items its own FRs name:**
 
 Either name a second narrow exception in *A stage writes only the ticket it holds* (unheld, non-done
 items named in the held item's own FRs, under the lock, in the decision's commit), or have `queue`
