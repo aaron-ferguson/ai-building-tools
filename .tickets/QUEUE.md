@@ -25,6 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0242 | Make every backlog write one script call, and make the scripts agree with each other | develop | ready |  |
 | 0243 | Give each slice of an epic its own file, so claims, locks and revisits work per slice | design | ready |  |
+| 0244 | Make sprint judge loops and likely loops itself, instead of ending a run on a bounce count | design | ready |  |
 | 0192 | Stop an unpriced session reading as free in the sprint ledger and the harvest | verify | ready |  |
 | 0240 | Make a sprint's cost measured, estimated and tunable | develop | blocked | 0128 |
 | 0064 | Make the copy of a skill that runs provably the released one | develop | ready |  |

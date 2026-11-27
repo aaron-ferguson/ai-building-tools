@@ -512,3 +512,5 @@ The order now, top down:
 - Then the four standalone design rows in their previous order, `0214`, `0069`, `0070`, `0138`, and `0239` (kept at the user's request) at the bottom.
 
 Ranked directly below 0242 at the person's instruction (approved recommendation, sprint run-20261127T024025Z). 0243 changes the item storage 0242's scripts act on, and 0242 is rewriting those scripts now, so 0242 first; 0243 above 0244 because its slice statuses are evidence 0244's loop signals read, and it removes the design-behind-develop serialisation that cost this run the most sessions.
+
+Ranked directly below 0243 (both directly below 0242, at the person's instruction). Replaces 0242 FR72's bounded design -> queue arm and every past_bound arm in --drive, so it follows 0242; below 0243 because 0243's slice statuses are an input to its loop signals.
