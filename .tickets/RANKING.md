@@ -520,3 +520,11 @@ Ranked directly below 0243 (both directly below 0242, at the person's instructio
   claim there needs a hand-minted token. Blast radius is every project that installs the backlog
   scripts. It is size `s`, so it also wins tie-breaker 4. Placed at the top at the person's direction
   in sprint run-20261127T024025Z.
+
+
+### 2026-11-27 — sprint preflight placed directly below 0064
+
+Placed at the user's direction below this run's confirmed scope (0245, 0064), which keeps its order.
+On its own merits it is Tier 2: every sprint started on a stale checkout or install spends a stage
+before failing, and run-20261127T205235Z lost develop 0245's dispatch that way. It sits under 0064
+because both concern which copy of the plugin runs, and 0064 is already confirmed scope.
