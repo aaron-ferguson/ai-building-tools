@@ -146,6 +146,27 @@ reached after the worktree was removed. `claim`, `close`, `handoff` and `reopen`
 before taking the lock. **A second clone is caught by nothing but this rule**: nothing inside a clone
 tells it from the primary.
 
+## The backlog is written on one branch
+
+A claim committed on any other branch is one no session on the shared branch can see, so the
+single-holder guarantee stops at the branch: a design pass once claimed, decided and handed off on a
+`prototype/` branch while `main` still read the row as unclaimed and takeable. **`claim`, `handoff`,
+`close` and `reopen` refuse when the primary checkout is not on the shared branch**, and a detached
+`HEAD` counts as off it. They refuse, never warn, and write nothing and take no lock.
+
+The check is made **up front**, directly after the linked-worktree refusal and before the lock, so
+it lands at `./claim`, the first act of every stage, before the session has spent anything on the
+row. The shared branch is resolved in this order, first hit wins, with no fetch:
+
+1. a top-level `shared_branch: <name>` in the backlog directory's `config.yml`;
+2. `origin/HEAD`, when it is a symbolic ref, without its `origin/`;
+3. `main`.
+
+**The fix is one line.** Switch to the branch the refusal names, or, if that branch is wrong for
+this project, write `shared_branch: <name>` into `config.yml`. There is no override flag: the key is
+the one way to name another branch. The check is about which branch, not how fresh it is. A `main`
+behind `origin/main` still claims (*A behind checkout fast-forwards only over backlog commits*).
+
 ## A behind checkout fast-forwards only over backlog commits
 
 The stop on a behind checkout exists because resolving divergence can mean choosing between two of
