@@ -788,6 +788,19 @@ assert_rc "exits 0" "$rc" 0 "$out"
 assert_not_contains "no instruction to widen it" "$out" 'widen it'
 assert_contains "says verify holds no file scope" "$out" 'verify holds no file scope'
 
+# The verify 357a bounce: the --touches branch printed "widen it" whatever the stage. FR29's write
+# still happens at verify; only the instruction is gated on a building stage.
+echo "0242 AC30 — nor when the verify claim is given --touches"
+scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0270 | Up for QA | verify | ready | 0000 |' 0270 'expects:
+  - src/alpha.ts'
+out="$(cd "$FIX" && .tickets/claim 0270 tok0 --touches path/a 2>&1)" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+assert_contains "the scope is still reported as written" "$out" 'touches: is set from --touches (1 paths)'
+for word in 'NARROW it' 'set it in' 'widen it'; do
+  assert_not_contains "no instruction: $word" "$out" "$word"
+done
+assert_contains "says verify holds no file scope" "$out" 'verify holds no file scope'
+
 echo "0242 AC31 — a develop claim is told to set touches:"
 scaffold "$FIVE_HEAD" "$FIVE_SEP" '| 0262 | Build it | develop | ready | 0000 |' 0262 'expects:
   - src/alpha.ts'

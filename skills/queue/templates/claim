@@ -616,8 +616,13 @@ fi
 # `touches:`. A `verify` claim reads and runs; telling it to declare a file scope it never opens is
 # how a correct QA claim came to read, to every other session, as an under-specified develop one.
 if [ -n "$TOUCHES_GIVEN" ]; then
+  # The write happens at any stage (FR29); only the instruction is gated, as the branch below is.
   echo "touches: is set from --touches ($N_EXPECTS paths) — exactly the paths named, never expects:'s;"
-  echo "widen it in $item the moment the work reaches further"
+  if [ "$BUILDS" -eq 1 ]; then
+    echo "widen it in $item the moment the work reaches further"
+  else
+    echo "$stage holds no file scope, so nothing here asks you to change it"
+  fi
 elif [ -n "$existing_touches" ]; then
   echo "touches: was already set and is left as the previous session set it — a narrowed scope is"
   echo "verified and a prediction from expects: never overwrites one. It keeps:"
