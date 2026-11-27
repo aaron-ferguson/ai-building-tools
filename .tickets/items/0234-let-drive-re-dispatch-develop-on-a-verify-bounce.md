@@ -1111,3 +1111,34 @@ required rewording, as that rule directs, and re-argued `tests/skill-size.test.s
 Evidence set: `skills/sprint/SKILL.md`, `skills/queue/SKILL.md`, `skills/queue/templates/config.yml`,
 `CHANGELOG.md`, `README.md`, `tests/sprint.test.sh`, `tests/skill-size.test.sh`,
 `.tickets/items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md`, `tests/*.test.sh`.
+
+### S4 leg — verify, 2026-11-27, token 4535 — PASS (leg; no AC ticked, per 0231 FR5)
+
+Conventions: ../ai-building-conventions
+Level: `unit` (frontmatter). Command, verbatim: `for t in tests/*.test.sh; do "$t" || true; done`
+(`commands.unit_by_file`, every file reporting); every file exited 0, `tests/sprint.test.sh`
+printing `389 passed, 0 failed, 0 skipped`. Copy executed: the skill under test is the repo's
+`skills/sprint/SKILL.md`, which the guard extracts and runs. The session itself ran the installed
+0.9.49 skills, which do not yet carry the S4 change. `./next --ac-digest 0234 --check`: `0234: ac_digest matches`.
+Tree: `git status --porcelain` empty at Step 2 and again after the last check, so the dirty set is
+empty and the intersection is empty. This is not advisory.
+
+| AC | Clause → guard | Mutation (run on committed `skills/sprint/SKILL.md`, restored by path) | Result |
+|---|---|---|---|
+| AC25 | Given "the Step 3 snippet extracted and run with a shortened interval" → `$HEARTBEAT` awk extraction, `sleep 60` → `sleep 9`; when "the stop it prescribes has run" → block run with its stop line; then "no descendant of the heartbeat's pid remains" → every recorded child fails `kill -0`, record non-empty | M1 stop reverted to `kill "$BEAT"` (the Red the AC names) → `FAIL 0234 AC25 … (seen: 1, alive: 15328)`, 387/2. M3 `pkill -P "$$"; kill "$BEAT"` → `FAIL 0234 AC25 … (seen: 1, alive: 32301)`, 387/2 | ok: `run as written, the Step 3 stop leaves none of the heartbeat's 1 child process(es) alive` |
+| AC26 | Given "the same extraction" → `$HEARTBEAT`; then "the timestamp still advances while the stand-in runs" → `BEAT_DISTINCT ≥ 2`, `BEAT_BAD = 0` | M2 stop moved above the dispatch line (a stop that prevents the refresh) → `FAIL 0234 AC26 … (1 distinct stamps, 0 bad samples)` plus 0153 AC2/FR1 and AC25's non-vacuity half, 382/7 | ok: `with that stop, held-by still advanced while the dispatch stood in (4 distinct stamps)` |
+| AC12 (whole suite, owed by every leg) | `unit_by_file` above | — | every file exit 0 |
+
+Control after the three mutations: `git status --porcelain` empty, `tests/sprint.test.sh` exit 0,
+`389 passed, 0 failed, 0 skipped`.
+
+Note on AC25's quantifier: "no descendant" is checked over **direct** children (`pgrep -P`). The snippet has
+only direct children: the `sleep`, plus a short-lived `$(date)` subshell. So the check covers
+every descendant this snippet can have. A future snippet that forks grandchildren would need a tree
+walk. NFRs: the Testing row holds for S4 (the new block was seen red against the old stop, M1).
+The Reliability and Progressive-delivery rows name AC22/AC3, which are not this leg's. Always-on
+pass (`CONVENTIONS_CORE.md`): the guard runs the snippet rather than grepping prose, kills any survivor
+itself, and the diff carries no private path or company material. No process this pass started is
+left running.
+
+Evidence set: `skills/sprint/SKILL.md`, `tests/sprint.test.sh`, `CHANGELOG.md`, `tests/*.test.sh`.
