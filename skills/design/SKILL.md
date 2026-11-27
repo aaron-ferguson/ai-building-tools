@@ -170,7 +170,7 @@ This step is most of the skill's value.
    criteria you write are that slice's: name them on its line in place of `unspecified`, so every AC
    still sits on exactly one slice.
    **Where you wrote or changed criteria, last of all**:
-   write `ac_digest:` from `./next --ac-digest <id>` into the frontmatter — the author's stamp,
+   write `ac_digest:` from `./next --ac-digest <id>` into the frontmatter, replacing the line whole (it prints the key too) — the author's stamp,
    which `close` and `--drift` refuse criteria against, so it rides in the same commit (0195).
 3. Delete the *Open design question* section, then release the row with
    `./handoff <id> <token> develop` — or `verify` when the decision is the whole deliverable and

@@ -184,7 +184,7 @@ change, and neither is optional:
 **Every path that writes or edits criteria — Add, Re-specify, Amend — ends the same way:**
 `ac_digest:` stamped in the same commit as the criteria. `./capture` stamps an Add; `./capture
 --restamp <id>` stamps and commits an unclaimed item's edits; on a row you hold through `./claim`,
-write `ac_digest:` from `./next --ac-digest <id>` before `./handoff`. It is the author's stamp: `--drift` and `close` refuse criteria that no longer match it,
+write `ac_digest:` from `./next --ac-digest <id>` before `./handoff`; it prints the whole line, key included, so it replaces the item's `ac_digest:` line rather than following the key. It is the author's stamp: `--drift` and `close` refuse criteria that no longer match it,
 which is what stops a later stage rewriting the contract it is held to (0195).
 
 ### Withdrawing a ticket — the work goes, the id is burned
@@ -210,7 +210,8 @@ file *and* decremented the counter, queueing up a reissue of an id two guards al
 ### Merging tickets into one outcome
 
 Absorbing tickets into one outcome ticket: amend the absorbing ticket (above), carrying each one's
-work as an FR and its ACs where they still hold, and **quote any user-reported evidence verbatim** in
+work as an FR and its ACs where they still hold, its NFR rows in the template's current shape (a row
+written before the *How it would red* column needs that cell, or `tests/item-nfr-red.test.sh` reds), and **quote any user-reported evidence verbatim** in
 its Problem — a paraphrase loses the evidence. Then withdraw each absorbed ticket per *Withdrawing a
 ticket* with `--into <absorbing-id>`, its reason pointing at the FR that now carries it. Record the merge in the absorbing ticket's
 *Notes & decisions*. Worked example: `0231`'s second amendment (0212, 0220, 0226, 0071).
