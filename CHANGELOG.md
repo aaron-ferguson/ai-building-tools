@@ -13,6 +13,9 @@ no `--note` — and leads with the behaviour; a ticket number in parentheses is 
 the release session, because only a whole-release view can say it.
 
 ## Unreleased
+
+## 0.9.51 — 2026-11-27
+
 - `queue` and `design` now say that `./next --ac-digest <id>` prints the whole `ac_digest:` line, key included, so it replaces the item's line; substituting it after the key doubled the key.
 - `queue`'s *Merging tickets into one outcome* now says to carry an absorbed ticket's NFR rows in the template's current shape, adding the *How it would red* cell a row written before that column lacks.
 - New `./capture <draft> <top|above:<row-id>|below:<row-id>> [--ranking <file>]` mints the id from the disk, writes the item, stamps `ac_digest:`, inserts the row, appends the ranking and commits, as one call; `./capture --restamp <id>` re-stamps and commits an unclaimed item's edited criteria. `queue` Step 2 (Add), Step 1 (Re-specify, Amend) and Step 3 (the placement), and `retro` Step 4 (Filed) now call it instead of minting and editing by hand.
