@@ -921,6 +921,76 @@ design pass that sharpens S15 must name AC28 as discharged there.
 - **`./claim` without a token dies here on `xxd: not found`.** This is already parked twice in
   `FINDINGS.md` (2026-11-26, 2026-11-27). This leg claimed with a token minted by `od`.
 
+### S2 build notes — 2026-11-27, develop `b7b2` (sprint run-20261127T024025Z)
+
+- **S2 built at `3a7e008`, plus guard `cbda31d`.** FR24–FR30, aiming at AC30–AC40. The whole
+  suite ran file by file at `cbda31d`: all 45 files rc=0 (`tests/claim.test.sh` `189 passed`,
+  `tests/next.test.sh` `752 passed`, `tests/close.test.sh` `330 passed`,
+  `tests/backlog-scripts-installed.test.sh` `55 passed`, `tests/declared-copies.test.sh` `23 passed`).
+- **FR24 was mostly already true. Run:** at baseline, a verify claim with an empty `touches:` already
+  printed no set, narrow or widen instruction (0106/0145). The gap was a non-build claim over an
+  item that still carried an earlier session's `touches:`. That branch printed `widen it in …`.
+  It is now gated on the stage building, and both non-build branches say `<stage> holds no file
+  scope`. AC31's two develop branches (`NARROW it`, `set it in`) were green at baseline, so their
+  cases are regression guards, not red-to-green proofs.
+- **FR25: "a stage that does not build" means what `claim`'s seed already means.** Any `Next` other
+  than `develop`, with an empty or unreadable stage treated as building. `declared_scope` takes the
+  row's `Next` cell and prints `none — <stage> holds no file scope; it writes only its item and row`.
+  A held develop row with an empty `touches:` keeps `assume held, ask`. Only the CLAIMED FILES
+  block changed. `collision_report` and `design_conflict` are untouched, since FR25 names only the
+  block.
+- **FR26:** `claim --help`/`-h` and `close --help`/`-h` print a usage block covering every mode and
+  exit 0 before anything reads the queue. `claim` also refuses a flag in the id position (exit 2).
+  The function is `claim_usage`, not `usage`, because `tests/declared-copies.test.sh` reds on a
+  function name defined in two scripts outside a marked copy block (`next` has `usage`). That red
+  was the only one in the first whole-suite run.
+- **FR27/FR30:** bare `./next` appends ` — not takeable: <reason>` to `ROW 1:` when row 1 cannot be
+  taken. The reason is `waiting on: <the ## Waiting on question>`, `blocked by <ids>`,
+  `held by [<tok>]`, a non-dispatchable stage, a stray Status, a collision, or a held-elsewhere
+  exclusive row. A `TAKEABLE:` line follows, giving the topmost row that can be taken, or
+  `TAKEABLE:  none — no row is takeable at any stage`. A takeable row 1 prints exactly as before,
+  with no `TAKEABLE:` line (AC35). The helper `not_takeable_because` repeats the `./next <stage>`
+  take loop's tests in the same order. The empty queue is left to S3 (FR34): with no rows, neither
+  addition fires.
+- **FR29 and one interpretation to check.** `claim <id> [token] --touches <path>...` writes exactly
+  the named paths. It replaces any existing `touches:` and never reads `expects:`. The write happens
+  in the same awk pass, lock and commit as the claim. AC38's "the `QUEUE.md` row reflect[s] exactly
+  `path/a` and `path/b`" was read as "the row is claimed in that same commit". No table shape these
+  scripts read carries a touches column, since ownership and scope live in the item's frontmatter
+  (`claim` header, *Columns are resolved by header name*). The case asserts the row reads
+  `in-progress` and that the one commit carries both files. The missing-path warning is skipped
+  under `--touches`, per *Out of scope* ("recorded, not validated").
+- **FR28:** `.tickets/{claim,close,next}` were re-copied from the templates in `3a7e008`. This
+  repo's installed copies live there, not under `.claude/backlog/` (0228), so AC36's
+  `.claude/backlog/` paths read as `.tickets/` here.
+- **Red proofs, run:** the new cases were written first and ran against the unchanged templates.
+  `tests/claim.test.sh` had 20 FAIL, `tests/next.test.sh` 12 FAIL and `tests/close.test.sh`
+  2 FAIL. All passed after `3a7e008`.
+- **Mutation sweep, run** (each applied to the committed template the harness runs, the diff
+  confirmed non-empty, then restored with `git checkout --`; `git status` clean after):
+
+  | AC | Clause | Mutation | Result |
+  |---|---|---|---|
+  | AC33 | `./claim --help` / prints usage / exits zero | help branch deleted (M1) | red: `exits 0`, `-h exits 0 too` |
+  | AC33 | `./close --help` / prints usage / exits zero | help branch → `-NOPE` (M6) | red: both flags |
+  | AC38 | `--touches path/a path/b` / touches: reflects exactly them / same commit | seed list ← expects (M2) | red: 4 cases |
+  | AC39 | expects names different paths / touches: only the given paths | M2; `SEED=1` dropped so an existing scope is kept (M4) | red: `holds only path/a` |
+  | AC30 | Given a claim on a `next: verify` row / message does not instruct setting touches: | non-build branch keeps `BUILDS=1` (M3) | red: `no instruction to widen it` |
+  | AC32 | in-progress row at a no-file-scope stage / block says so | stage case removed (M7) | red: 4 cases |
+  | AC34 | row 1 waiting, takeable lower / prints both, marks which | reason forced empty (M8); first-takeable picks row 1 (M12) | red: 7 and 4 |
+  | AC35 | row 1 takeable / not printed twice | TAKEABLE always printed (M9) | red: `no TAKEABLE line repeats it` |
+  | AC40 | waiting → the question; blocked → the id | question dropped (M10); id dropped (M11) | red: each |
+  | FR26 | a flag in the id position refuses | `-*` id branch disabled (M5) | first sweep GREEN, an unguarded clause; `cbda31d` adds the case, re-run red |
+
+  AC31 (`NARROW it`, `set it in`) is the baseline behaviour this leg kept. AC36 is
+  `tests/backlog-scripts-installed.test.sh` green, and AC37 is the whole suite above.
+  *Reasoned, not run:* `not_takeable_because`'s collision and exclusive-row branches have no bare
+  `./next` case. They reuse `collision_report` and the take loop's exclusive test, which
+  `tests/next.test.sh` already guards in `./next <stage>`.
+- **Stale sibling prose this leg creates (reported, not edited):** `skills/develop/SKILL.md` Step 1
+  still tells a session to write `touches:` after the claim by hand. It does not name
+  `--touches`. That prose is S14's (FR11) to move onto the script.
+
 ### Open questions for the unspecified slices
 
 **Established, not yet specified (it was at next: queue), from 0217 — Stop a note written below the last AC from changing that AC's digest:**
