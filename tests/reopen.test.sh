@@ -404,6 +404,65 @@ assert_contains "names the held dependent" "$out" "0102"
 assert_unchanged "nothing changed" "$before"
 assert_not_contains "no .lock/ remains" "$(ls -a "$(BL)")" '.lock'
 
+# --- 0242 S6 (0219) — a reopen of a develop self-close leaves a ticket verify can close ----------
+# $1 the close_by: line to add after qa_level:, or empty for none. The fixture item carries none.
+set_close_by() {
+  [ -n "$1" ] || return 0
+  awk -v l="$1" '{ print } /^qa_level:/ { print l }' "$(BL)/items/0101-fixture.md" > "$FIX/t" &&
+    mv "$FIX/t" "$(BL)/items/0101-fixture.md"
+}
+notes_last() { section "$(BL)/items/0101-fixture.md" '## Notes & decisions' | grep . | tail -1; }
+
+echo "AC63 — reopening a close_by: develop item writes close_by: verify and says so"
+scaffold
+set_close_by 'close_by: develop'
+commit_fixture
+out="$(run_reopen 0101 top "fixture reason")" && rc=0 || rc=$?
+assert_rc "exits 0" "$rc" 0 "$out"
+ITEM="$(cat "$(BL)/items/0101-fixture.md")"
+assert_contains "the item reads close_by: verify" "$ITEM" '
+close_by: verify
+'
+assert_not_contains "the item no longer reads close_by: develop" "$ITEM" 'close_by: develop
+'
+assert_contains "the last notes line carries the reason" "$(notes_last)" 'fixture reason'
+assert_contains "the last notes line records the reset" "$(notes_last)" 'close_by: develop → verify'
+assert_eq "git show --name-only HEAD lists exactly the item, QUEUE.md and DONE.md" \
+  "$(git -C "$FIX" show --name-only --format= HEAD | sort)" \
+  "$(printf '%s\n' .claude/backlog/DONE.md .claude/backlog/QUEUE.md .claude/backlog/items/0101-fixture.md)"
+
+echo "AC64 — the reopened ticket, claimed and with QA evidence written, closes at verify"
+cp "$ROOT/skills/queue/templates/claim" "$(BL)/claim"; chmod +x "$(BL)/claim"
+cp "$ROOT/skills/queue/templates/close" "$(BL)/close"; chmod +x "$(BL)/close"
+git -C "$FIX" add -- .claude/backlog/claim .claude/backlog/close
+git -C "$FIX" commit -q -m "scripts" -- .claude/backlog/claim .claude/backlog/close
+out="$( (cd "$FIX" && .claude/backlog/claim 0101 ab12) 2>&1)" && rc=0 || rc=$?
+assert_rc "the reopened row claims" "$rc" 0 "$out"
+awk '{ print } /^## QA evidence/ { print ""; print "Conventions: ../conventions"; print "- AC1, AC2 — re-verified: tests/one.test.sh, 3 passed." }' \
+  "$(BL)/items/0101-fixture.md" > "$FIX/t" && mv "$FIX/t" "$(BL)/items/0101-fixture.md"
+git -C "$FIX" commit -q -m "QA evidence" -- .claude/backlog/items/0101-fixture.md
+out="$( (cd "$FIX" && .claude/backlog/close 0101 ab12) 2>&1)" && rc=0 || rc=$?
+assert_rc "./close exits 0" "$rc" 0 "$out"
+assert_not_contains "it never names develop as the closing stage" "$out" "the stage that may close it is 'develop'"
+
+echo "AC65 — a reopen leaves close_by: verify, and an absent close_by:, exactly as they were"
+scaffold
+set_close_by 'close_by: verify'
+commit_fixture
+out="$(run_reopen 0101 top "r")" && rc=0 || rc=$?
+assert_rc "close_by: verify — exits 0" "$rc" 0 "$out"
+assert_contains "close_by: verify still reads close_by: verify" "$(cat "$(BL)/items/0101-fixture.md")" '
+close_by: verify
+'
+assert_eq "close_by: verify — exactly one close_by: line" "$(grep -c '^close_by:' "$(BL)/items/0101-fixture.md")" 1
+assert_not_contains "close_by: verify — no reset is recorded" "$(notes_last)" 'close_by: develop → verify'
+scaffold
+commit_fixture
+out="$(run_reopen 0101 top "r")" && rc=0 || rc=$?
+assert_rc "no close_by: — exits 0" "$rc" 0 "$out"
+assert_not_contains "no close_by: — still has no close_by: line" "$(cat "$(BL)/items/0101-fixture.md")" 'close_by:'
+assert_not_contains "no close_by: — no reset is recorded" "$(notes_last)" '→ verify'
+
 # --- AC6 — queue Step 1's operation table runs ./reopen ------------------------------------------
 echo "AC6 — skills/queue/SKILL.md Step 1's table contains ./reopen"
 STEP1="$(awk '/^## Step 1 /{f=1;next} f&&/^## /{exit} f' "$ROOT/skills/queue/SKILL.md")"

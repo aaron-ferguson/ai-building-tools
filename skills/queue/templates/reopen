@@ -26,7 +26,11 @@
 #   - every `- [x]` under `## Acceptance criteria` unticked — a tick is evidence from the pass being
 #     distrusted, and `close` re-ticks what the new pass checks (`queue`'s re-specify rule);
 #   - `## QA evidence` left byte-for-byte — it is the history of the pass being distrusted;
-#   - a dated line carrying the reason appended to `## Notes & decisions`.
+#   - `close_by: develop` reset to `close_by: verify` (0242 FR53, from 0219) — on a develop
+#     self-close the verdict distrusted is develop's own, so leaving the key would have `close`
+#     refuse the very verify pass the reopen is for; `close_by: verify`, or no key, is left as it is;
+#   - a dated line carrying the reason appended to `## Notes & decisions`, naming the reset after it
+#     when there was one.
 #
 # **Dependents are reconciled as `close` does it, in reverse.** Closing is the only event that
 # frees a row naming this ticket in `blocked_by`, so reopening is the only event that re-blocks
@@ -323,13 +327,21 @@ done_tmp="$(mktemp)"
 trap 'rm -f "$item_tmp" "$queue_tmp" "$done_tmp"; rm -rf "$LOCK"' EXIT INT TERM
 
 note="- $TODAY — **Reopened to verify** by \`./reopen\`: $REASON"
-awk -v note="$note" '
+# A develop self-close reopened goes to an independent verify, so its close_by: is raised with it
+# (0242 FR53). Any other value, or no key, is left exactly as it was.
+RESET_CLOSE_BY=""
+if [ "$(fm_value "$item" close_by)" = "develop" ]; then
+  RESET_CLOSE_BY=1
+  note="$note; close_by: develop → verify — a reopen is for an independent verify"
+fi
+awk -v note="$note" -v reset="$RESET_CLOSE_BY" '
   NR == 1 && /^---$/ { fm = 1; print; next }
   fm && /^---$/ { fm = 0; print; next }
   fm {
     if ($0 ~ /^next:/)       { print "next: verify"; next }
     if ($0 ~ /^status:/)     { print "status: ready"; next }
     if ($0 ~ /^closed:/)     { next }
+    if (reset && $0 ~ /^close_by:/) { print "close_by: verify"; next }
     if ($0 ~ /^claimed_by:/) { print "claimed_by:"; next }
     if ($0 ~ /^claimed_at:/) { print "claimed_at:"; next }
     if ($0 ~ /^touches:/)    { print "touches:"; skiplist = 1; next }
@@ -392,6 +404,8 @@ unapplied=""
 [ "$(fm_value "$item_tmp" next)"   = "verify" ] || unapplied="$unapplied next"
 [ "$(fm_value "$item_tmp" status)" = "ready" ]  || unapplied="$unapplied status"
 ! grep -q '^closed:' "$item_tmp"                || unapplied="$unapplied closed"
+[ -z "$RESET_CLOSE_BY" ] || [ "$(fm_value "$item_tmp" close_by)" = "verify" ] \
+                                                || unapplied="$unapplied close_by"
 [ "$(awk -F'|' -v c="$Q_ID" -v id="$ID" '/^\|/ { v = $c; gsub(/^ +| +$/, "", v); if (v == id) n++ } END { print n + 0 }' "$queue_tmp")" = 1 ] \
                                                 || unapplied="$unapplied QUEUE.row"
 [ -z "$(row_in "$done_tmp" "$ID" "$D_ID")" ]    || unapplied="$unapplied DONE.row"
