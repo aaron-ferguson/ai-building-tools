@@ -838,6 +838,41 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   dispatch" read as the proposal, with mid-run raises logged as `cap_raised`, matches AC21's
   unattended run. `.tickets/claim 0234` with no token died on `xxd: not found` before the lock
   (already in `FINDINGS.md`); claimed with an explicit token. No backlog write was refused.
+- **2026-11-27 (develop, S4 leg, token 668c) — S4 built at `120f1e9` (guard comment `5fa51cf`);
+  handed to `verify` with `--slice S4`, since S4 discharges AC25 and AC26.** FR23: Step 3's stop is
+  now `pkill -P "$BEAT"; kill "$BEAT"` with one sentence saying why; FR24: the `0234 AC25/AC26`
+  block in `tests/sprint.test.sh`, directly after the 0153 AC2 heartbeat block, reusing its
+  `$HEARTBEAT` extraction. `CHANGELOG.md` `## Unreleased` gains one bullet. `skills/sprint/SKILL.md`
+  grew 131 bytes to 70462, inside `tests/skill-size.test.sh`'s 5000-byte margin over its argued
+  70331, so no re-argument is owed.
+  - **Why the plain order and not a STOP/CONT freeze (run, not reasoned).** I expected `pkill -P`
+    then `kill` to race, with the loop re-forking a `sleep` between the two. A scratch harness
+    measured 0 survivors in 40 runs each under `dash` and `bash` with `pkill -P "$BEAT"; kill
+    "$BEAT"`, and 5 of 5 with `kill "$BEAT"` alone. So FR23 is built as the finding's own fix, which
+    is also simpler to read than `kill -STOP … kill -CONT`. The window is not proven empty, only
+    unobserved.
+  - **Why 9 s.** AC25 is RUN with the interval shortened from 60 s to 9 s, not 1 s as in the 0153
+    run, so an orphan outlives the block by seconds. With 1 s, the check would race the sleep's own
+    end and could pass a broken stop. The stand-in records `pgrep -P "$BEAT"` after 1 s. A record
+    with no child is a red (the non-vacuity half), and survivors are killed by the test either way.
+  - **AC26** reuses the 0153 AC2 run, which is the same extraction with the stop included, so its
+    advancing stamps are AC26's evidence. It gets its own named `ok`/`FAIL` line.
+  - **Clause table (AC text → guard):** AC25 Given "the Step 3 snippet extracted and run with a
+    shortened interval" → `$HEARTBEAT` awk extraction, `sleep 9`; when "the stop it prescribes has
+    run" → the block runs as written, stop line included; then "no descendant of the heartbeat's pid
+    remains" → every pid in `kids` fails `kill -0`, with `kids` non-empty. AC26 Given "the same
+    extraction" → `$HEARTBEAT`; then "the timestamp still advances while the stand-in runs" →
+    `BEAT_DISTINCT ≥ 2`, `BEAT_BAD = 0`. Only direct children are recorded: the `sleep` is a direct
+    child, and the `$(date)` subshell is transient.
+  - **Mutations (run, on the committed `skills/sprint/SKILL.md`, each restored with `git checkout`
+    in the same call, then a control run green 389/0):** M1 the stop reverted to `kill "$BEAT"` →
+    AC25 red (seen 1, alive 1); M2 `pkill -P "$$"; kill "$BEAT"` → AC25 red; M3 the stop moved above
+    the dispatch line → AC26 red, plus AC25's non-vacuity half (seen 0) and 0153 AC2/FR1. Before the
+    fix, the new block was red against the unmodified snippet (seen 1, alive 1).
+  - Whole suite: `for t in tests/*.test.sh; do "$t" || exit 1; done`, 45 files, all green at
+    `120f1e9`, with `git status --porcelain` clean before the run. That macOS's BSD `pkill -P`
+    behaves the same is reasoned, not run: this host is Linux. Nothing new for `FINDINGS.md`: the
+    `xxd: not found` claim failure is already parked there.
 
 ### Open questions for the unspecified slices
 
