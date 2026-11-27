@@ -106,8 +106,17 @@ in one component, unwarned.
   where a file cannot have one writer, the session does.** In a repo whose prose files are the
   product, every ticket about the tooling touches the tooling's prose, so
   rows sharing a file are worked by one session — one develop gate (`--drive` joins rows by shared
-  file), or hand-driven, one after another. `develop` is
-  serialised in this repo by design until `0137` decides otherwise.
+  file), or hand-driven, one after another.
+- **One develop session at a time, in every project** (`0234` S6, the user's call 2026-11-27):
+  `./claim` refuses a develop claim while another develop row is held under a different token, and
+  `./next --drive` waits (exit 6) rather than dispatch develop beside a running one. A gate's own
+  rows share its one token. Chosen under quality, then cost, then time: parallel develop buys only
+  wall-clock, the axis allowed to vary, so do not reopen it on wall-clock alone. Two candidates lost.
+  *A worktree per session* moves the conflict to merge time rather than removing it, rows here share
+  files as a rule, and every extra session re-pays the startup floor one gate pays once. *One tree
+  with a verified scope predicate* has nothing to verify before dispatch: `expects:` is the
+  prediction, and `touches:` exists only after a claim. No config knob, which would bring the hazard
+  back as an opt-in. Design and verify run beside a develop session as before.
 - **The stall when every takeable row at a stage collides is a designed outcome:**
   a designed wait, not a failure. The session claims nothing, reports the holders — each one's id,
   token and shared paths as `./next` prints them — and waits: it stops, or takes work at another
