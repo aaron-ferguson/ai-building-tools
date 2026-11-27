@@ -891,6 +891,21 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 
 - The rule set has no queue-completion case; the fix is likely one routing rule plus a `tests/next.test.sh`
   section. Not read: which function in `tools/next` holds the completion rules.
+- **2026-11-27 — develop (token `c2ca`) handed S5 to `queue` unbuilt: it carries no FR and no AC,
+  so there is nothing to build or verify against, and `./handoff --slice S5` refuses an
+  `unspecified` slice.** Diagnosis for `queue`, **read from the code, not run**:
+  `skills/queue/templates/next` (re-synced to `.tickets/next`, `diff -q` empty) already has the arm
+  S5 asks for. In the `--completed` rules, `lstage = queue`, `lstatus = ready`, `lnext` ∈
+  {`develop`, `verify`} prints `NOTE  <id> is at next: <next> after queue — carrying on to the rank
+  walk` and falls through to the rank walk instead of reaching the catch-all exit 4. Its comment
+  cites 0204, and S1 added it under FR13. `tests/next.test.sh` block `0234 AC15` guards it. That arm
+  is keyed on the row's state after queue, not on how it got there. So it covers both triggers in
+  *From 0204*: the re-specified `waiting` row, and AetherWorks' fresh repair-first row (0130).
+  **`queue`'s choices:** (a) tick S5 as discharged by FR13/AC15, (b) give it an AC of its own
+  (for example, AC15's case with no `--scope`, which AC15 does not cover; untested here), or
+  (c) drop it. The choice is `queue`'s, because it narrows or widens the contract. S6 (0137) stays
+  `design`'s, and its open question is above. The expects path `tools/next` and
+  `.claude/backlog/next` don't exist. `./claim` warned about both, and `queue` should correct `expects:`.
 
 **Open design question, from 0137 — Decide whether two develop sessions may run at once, and in what isolation:**
 
