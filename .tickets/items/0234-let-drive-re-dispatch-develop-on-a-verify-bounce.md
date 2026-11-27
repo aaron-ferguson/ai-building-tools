@@ -2,8 +2,8 @@
 id: "0234"
 title: Drive a whole outcome ticket through a sprint unattended, routing whatever stage it needs
 type: feature
-next: verify
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -28,8 +28,8 @@ expects:
   - tools/next
   - references/CONCURRENCY.md
   - .claude/backlog/next
-claimed_by: "c7e1"
-claimed_at: 2026-11-26T23:56:49Z
+claimed_by:
+claimed_at:
 touches:
 slice: S3
 ac_digest: AC1=8d157b25 AC2=99cde558 AC3=7615f1f5 AC4=b8b5e381 AC5=e269ef8c AC6=07913581 AC7=ffd82fa5 AC8=e083f2f6 AC9=6515e3e2 AC10=ea7f7fcb AC11=c2fe5ce7 AC12=7626989e AC13=643d9a36 AC14=070405ec AC15=180d715f AC16=9a294489 AC17=355e6087 AC18=cdd8a9d7 AC19=b1b8bcf3 AC20=566f0ef0 AC21=1c7e5714 AC22=9e17d262 AC23=8a16a8ad AC24=d9075f16 AC25=8a9a83a7 AC26=7b99fe69
@@ -446,7 +446,7 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
 
 - [x] S1 — `--drive`: the develop and queue bounce arms, the develop → queue and design re-entry bounds, `--bounces`, `bounce_max`, help, the amended 0038/0231 tests, `.tickets/next` re-synced — discharges AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8, AC9, AC10, AC12, AC13, AC14, AC15, AC16, AC18, AC19
 - [x] S2 — the headroom gate in `tools/sprint-ledger.sh`: `reading` and `outcome` over a stream, `envelope` reworked from a budget/deadline STOP into CONTINUE/WAIT/not-visible, 0231's envelope tests amended citing 0234 — discharges AC20, AC22, AC23, AC24
-- [ ] S3 — the prose: `skills/sprint/SKILL.md` Steps 1, 2, 3, 4, 7, 8 and the proposal (FR7–FR9, FR17, FR20, FR21), `skills/queue/SKILL.md`'s *Re-specify* bullet, the config template comment, `CHANGELOG.md`, 0231's pointer note — discharges AC11, AC17, AC21
+- [x] S3 — the prose: `skills/sprint/SKILL.md` Steps 1, 2, 3, 4, 7, 8 and the proposal (FR7–FR9, FR17, FR20, FR21), `skills/queue/SKILL.md`'s *Re-specify* bullet, the config template comment, `CHANGELOG.md`, 0231's pointer note — discharges AC11, AC17, AC21
 - [ ] S4 — the marker heartbeat leaves no orphaned `sleep` child (0170) — discharges AC25, AC26
 - [ ] S5 — route a queue completion that re-specifies a waiting row to develop instead of exiting 4 (0204) — unspecified
 - [ ] S6 — decide whether two develop sessions may run at once, and in what isolation (0137) — unspecified
@@ -823,6 +823,19 @@ one develop session's work (`product-definition-conventions.md` → "Slice Verti
   `.tickets/claim: 102: xxd: not found` before taking the lock (already in `FINDINGS.md`); claimed
   with an explicit token. No backlog write was refused.
 
+- **2026-11-27 (verify, S3 leg, token c7e1) — PASS on the S3 leg; handed back to `develop` with
+  `--slice S3`.** AC11, AC17 and AC21 read clause by clause against `42fbe87` (plus `81c17ba`'s 0231
+  pointer), the whole suite green, table under *QA evidence*. No AC ticked: a leg pass ticks the
+  slice. The person's 2026-11-26 direction is stated in `skills/sprint/SKILL.md`: the proposal's
+  "no sprint-wide budget or deadline is proposed or enforced" paragraph and its "each planned stage
+  session and its projected cap … before the first dispatch" bullet, Step 3's runaway-catch
+  paragraph. develop's five S3 decisions re-read and not disputed: (1) AC21's "`budget_usd` and
+  `deadline` being the forecast" is met by the older-run sentence, and the direction supersedes
+  FR17/FR21's "Step 1 still records them", so no `queue` amend is owed; (2) "proposed before
+  dispatch" read as the proposal, with mid-run raises logged as `cap_raised`, matches AC21's
+  unattended run. `.tickets/claim 0234` with no token died on `xxd: not found` before the lock
+  (already in `FINDINGS.md`); claimed with an explicit token. No backlog write was refused.
+
 ### Open questions for the unspecified slices
 
 **Established, not yet specified (it was at next: queue), from 0204 — Route a queue completion that re-specifies a waiting row to develop instead of exiting 4:**
@@ -1031,3 +1044,35 @@ and goes to the gitignored `.tickets/runs/`, so no privacy row is owed. No egres
 visibility change. Newly reachable: a sprint no longer stops on budget or deadline. That is the
 contract change FR19 makes on the user's call, and FR21's reactive `limit_hit` pause (S3's prose)
 backstops it.
+
+**S3 leg — PASS** (verify, 2026-11-27, token c7e1). Prose under test: `42fbe87` (and `81c17ba`);
+hand-off at `427f755`. `./next --ac-digest 0234 --check` → `0234: ac_digest matches`. Copy read: the
+repo's `skills/` (the change is unreleased; this session ran the installed 0.9.49 `verify`).
+
+Conventions: ../ai-building-conventions (CONVENTIONS_CORE.md; testing-conventions.md cited by the
+Testing row)
+
+Level: `unit` (frontmatter). Command: `for t in tests/*.test.sh; do "$t" || exit 1; done` →
+`suite_rc=0`, 45 files, every tally `N passed, 0 failed`. `git status --porcelain` empty at Step 2
+and at the verdict, so the advisory intersection is empty.
+
+| AC / row | How checked | Result |
+|---|---|---|
+| AC11 — Step 2 | `skills/sprint/SKILL.md` Step 2: "A bounce is routed, not escalated, up to `bounce_max`"; develop bounce → `DISPATCH  develop`; in-scope `next: queue` → `queue` repair "under the same bound and the same count"; `--completed queue:<id>` after it; `--bounces <id>=<n>` counting rule and "after any outcome that re-entered a ticket" | met |
+| AC11 — prompts (FR8) | Step 3 bullet "A dispatch after a bounce carries verify's `detail` pointer … and the failed AC"; the `queue` prompt names the re-specify repair and FR14's hand-off (`waiting`, `next: queue`, `## Waiting on`, `escalation`); Step 4's "both go into the bounce's prompt" | met |
+| AC11 — Step 8 (FR9) | principle with the four examples (narrowing, release action, past `bounce_max`, cap kill), "routes every stage the confirmed outcome needs" (FR9's own wording) and the reason; queuing outside scope escalates, designing/re-specifying in-scope routed; a narrowing repair and a `next: queue` row no in-scope bounce sent there listed as escalations; "two exceptions"; "never … narrows a contract" kept with "A repair is not narrowing" | met |
+| AC11 — no bounce in an escalation list | `grep -n bounce skills/sprint/SKILL.md`: no list in Steps 2, 4, 8 names a verify or in-scope contract bounce as an escalation | met |
+| AC17 | `skills/queue/SKILL.md` Step 1 *Re-specify*: repair and narrowing defined as FR15 does, repair recorded as one line in *Notes & decisions*, an unattended narrowing not written but handed off (`status: waiting`, `next: queue`, `## Waiting on`, outcome `escalation`) | met |
+| AC21 — caps/forecast (FR17) | Step 3 "A stage's cap is a runaway catch, not a budget", raise and added sessions logged as `cap_raised` with `reason` before dispatch; proposal "a forecast … never a ceiling"; Step 7 "never a figure chosen silently", cap kill still the escalation; proposal "no sprint-wide budget or deadline is proposed or enforced", older `budget_usd`/`deadline` "read as that forecast; nothing reads either as a stop"; `skills/queue/templates/config.yml` comment "a runaway catch" | met |
+| AC21 — routing (FR20) | Step 2: a mid-run `next: design` scope row dispatched "under that bound too"; `--bounces` after any re-entry | met |
+| AC21 — gate (FR21) | Step 1 probe and Step 3 command carry `--output-format stream-json --verbose`, probe fallback "the headroom gate runs blind"; Step 4 reads `outcome --stream`, keeps "all you read", appends `reading --stream`'s `headroom` line after every stage; Step 2 `envelope --run <run log> --stage <stage>` (no `--config`/`--measurement`), `WAIT` logs `headroom_wait`, waits, asks again, "never ends the run"; Step 7 `limit_hit` named as the fallback; Step 8 names no envelope `STOP`; `grep -nE 'STOP|refuse an envelope|deadline'` finds nothing presenting a cap, estimate, budget or deadline as a stop | met |
+| Person's direction (2026-11-26) | proposal paragraph and projected-cap bullet; Step 3 cap paragraph; `CHANGELOG.md` `## Unreleased`; `README.md` envelope sentence corrected | stated |
+| AC12 (suite) | command above | exit 0 |
+| NFR Testing / Reliability / Progressive delivery | rest on S1/S2's behaviour tests, mutated at those legs' verifies; green in this run, not re-mutated here (no AC ticked this leg; the closing verify re-checks every AC) | green, not re-mutated |
+
+Mutations: none — AC11, AC17 and AC21 are readings with no prose guard by design (`CLAUDE.md`
+*Tests*); S3 deleted the `0180 AC4` 'one exception' guard in `tests/sprint.test.sh` for FR9's
+required rewording, as that rule directs, and re-argued `tests/skill-size.test.sh`'s sprint entry.
+Evidence set: `skills/sprint/SKILL.md`, `skills/queue/SKILL.md`, `skills/queue/templates/config.yml`,
+`CHANGELOG.md`, `README.md`, `tests/sprint.test.sh`, `tests/skill-size.test.sh`,
+`.tickets/items/0231-drive-one-outcome-ticket-across-slice-sessions-unattended.md`, `tests/*.test.sh`.
