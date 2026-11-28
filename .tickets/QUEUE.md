@@ -25,7 +25,7 @@ resolves to `items/<id>-*.md` by glob**, and ownership is not a column (`CONCURR
 |------|-------|------|--------|--------|
 | 0247 | Name the child copy's failing case in sprint.test.sh's 0165 AC2 red, and remove the nondeterminism behind it | develop | ready |  |
 | 0243 | Give each slice of an epic its own file, so claims, locks and revisits work per slice | design | in-progress |  |
-| 0244 | Make sprint judge loops and likely loops itself, instead of ending a run on a bounce count | design | ready |  |
+| 0244 | Make sprint judge loops and likely loops itself, instead of ending a run on a bounce count | design | in-progress |  |
 | 0240 | Make a sprint's cost measured, estimated and tunable | develop | ready | 0128 |
 | 0246 | Make sprint refuse to start on a stale main or a stale plugin | develop | ready |  |
 | 0238 | Make prototype levels 2 and 3 work inside a consuming project | design | ready |  |
