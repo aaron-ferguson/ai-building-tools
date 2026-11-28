@@ -3,7 +3,7 @@ id: "0243"
 title: Give each slice of an epic its own file, so claims, locks and revisits work per slice
 type: feature
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: l
@@ -41,8 +41,8 @@ expects:
   - skills/verify/SKILL.md
   - skills/sprint/SKILL.md
   - CHANGELOG.md
-claimed_by:
-claimed_at:
+claimed_by: "6a4b"
+claimed_at: 2026-11-28T00:01:49Z
 touches:
 slice:
 ac_digest: AC1=9ef9cc2a AC2=ac7c8953 AC3=365cc19e AC4=fd0dd04c AC5=5930153d AC6=11fcfb0d
