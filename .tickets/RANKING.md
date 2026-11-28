@@ -528,3 +528,12 @@ Placed at the user's direction below this run's confirmed scope (0245, 0064), wh
 On its own merits it is Tier 2: every sprint started on a stale checkout or install spends a stage
 before failing, and run-20261127T205235Z lost develop 0245's dispatch that way. It sits under 0064
 because both concern which copy of the plugin runs, and 0064 is already confirmed scope.
+
+
+### 2026-11-27 — NNNN at the top (repair-first, sprint run-20261127T234238Z)
+
+Tier 1, Bleeding: the unit baseline is intermittently red on a case nobody can name, so every gate
+that runs the unit level can red, and a red that cannot be attributed is read as "the flake" — output
+that is silently wrong about the tree. It sits above 0243 because nothing in the queue can be gated
+cleanly until the baseline is green; a repair-first row for a red baseline goes first by the sprint's
+own rule.
