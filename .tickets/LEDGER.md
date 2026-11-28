@@ -870,3 +870,36 @@ RATIO verify_usd_per_ticket unbatched session bdfc5d9a = 1.16
   numerator USD 1.16 (harvest-usage.sh over 1 session id(s) @ 2026-11-27T22:56:23Z)
   denominator 1 ticket(s) (run-20261127T205235Z.jsonl outcome events @ 2026-11-27T22:56:23Z)
 FINDINGS parked 1 (run-20261127T205235Z.jsonl outcome events @ 2026-11-27T22:56:23Z)
+
+## sprint run-20261127T234238Z -- ended 2026-11-28T00:41:44Z
+
+| Figure | Estimate | Actual | Estimate source |
+|---|---|---|---|
+| tickets | 3 | 3 | confirmed scope @ 2026-11-28T00:45:25Z |
+| wall_clock_min | 573 | 59 | LEDGER.md 15 recorded sprint(s) over 81 ticket(s), 1 excluded (no ticket count), 6 predate the tail split, actual from run-20261127T234238Z.jsonl event timestamps |
+| tokens | 25911294 | 6476737 | LEDGER.md 15 recorded sprint(s) over 81 ticket(s), 1 excluded (no ticket count), 6 predate the tail split |
+| usd | 17.47 | 4.17 | LEDGER.md 15 recorded sprint(s) over 81 ticket(s), 1 excluded (no ticket count), 6 predate the tail split |
+| tail_tokens | no prior | 981347 | harvest-usage.sh over 1 session id(s) @ 2026-11-28T00:45:25Z |
+| tail_usd | no prior | 1.01 | harvest-usage.sh over 1 session id(s) @ 2026-11-28T00:45:25Z |
+
+| Window | Stage | Elapsed min | Context tokens | USD |
+|---|---|---|---|---|
+| aa200218 | queue | 1.9 | 981347 | 1.01 |
+| 85aacd63 | design | 1.1 | 363201 | 0.49 |
+| 5caff485 | design | 1.2 | 656874 | 0.56 |
+| 73cc03cb | develop | 12.5 | 3211875 | 1.80 |
+| dff686f2 | verify | 26.0 | 2244787 | 1.32 |
+| total | 5 window(s) | 42.7 | 7458084 | 5.18 |
+| average | per window | 8.5 | 1491616 | 1.04 |
+WINDOWS elapsed is first to last turn per transcript and excludes start-up (harvest-usage.sh --by-session over 5 session id(s) @ 2026-11-28T00:45:25Z)
+CLOSED 0247 (run-20261127T234238Z.jsonl outcome events @ 2026-11-28T00:45:25Z)
+TICKET 0247 verdict pass title outside the ledger character set, read DONE.md (run-20261127T234238Z.jsonl outcome events, DONE.md @ 2026-11-28T00:45:25Z)
+PER_TICKET whole-run USD 5.18, develop-and-verify USD 3.12 over 1 closed ticket(s), beside MEASUREMENT.md whole-run USD 5.71, develop-and-verify USD 4.23 as at 2026-08-30 (harvest-usage.sh over 5 session id(s), run-20261127T234238Z.jsonl outcome events, MEASUREMENT.md read @ 2026-11-28T00:45:25Z)
+
+GATE develop 1 ticket(s) session 73cc03cb: predicted USD 6.05 (config.yml stage_budget_usd, as at 2026-08-30 @ 2026-11-28T00:45:25Z) observed USD 1.80 (harvest-usage.sh over 1 session id(s) @ 2026-11-28T00:45:25Z)
+RATIO verify_usd_per_ticket unbatched session dff686f2 = 1.32
+  numerator USD 1.32 (harvest-usage.sh over 1 session id(s) @ 2026-11-28T00:45:25Z)
+  denominator 1 ticket(s) (run-20261127T234238Z.jsonl outcome events @ 2026-11-28T00:45:25Z)
+DESIGN 0243 session 85aacd63 concurrent: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-11-28T00:45:25Z) observed USD 0.49 (harvest-usage.sh over 1 session id(s) @ 2026-11-28T00:45:25Z)
+DESIGN 0244 session 5caff485 concurrent: predicted USD 2.32 (MEASUREMENT.md per-skill table, recorded 2026-08-24 @ 2026-11-28T00:45:25Z) observed USD 0.56 (harvest-usage.sh over 1 session id(s) @ 2026-11-28T00:45:25Z)
+FINDINGS parked 3 (run-20261127T234238Z.jsonl outcome events @ 2026-11-28T00:45:25Z)
