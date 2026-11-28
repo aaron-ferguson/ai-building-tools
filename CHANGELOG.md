@@ -14,6 +14,8 @@ the release session, because only a whole-release view can say it.
 
 ## Unreleased
 
+- When the sprint suite's clean child copy goes red, its FAIL now names the child's own failing case instead of saying only that the file is red. The intermittent heartbeat-survivor red, a zombie that `kill -0` read as alive, is gone (0247).
+
 ## 0.9.52 — 2026-11-27
 
 - `./claim` with no token now mints its token with POSIX `od` instead of `xxd`, so it works on hosts without vim's `xxd`. `references/CONCURRENCY.md` *Claim tokens* shows the same form (0245).
