@@ -23,7 +23,7 @@ claimed_by:
 claimed_at:
 touches:
 slice:
-ac_digest: AC1=8eb231e8 AC2=a8fd38f2 AC3=c3ec75f8 AC4=d1245f15 AC5=42c1e7f4 AC6=c17a915c AC7=26842efe AC8=3f6e51dd AC9=aba5b8d4
+ac_digest: AC1=7c6f063c AC2=a8fd38f2 AC3=c3ec75f8 AC4=d1245f15 AC5=42c1e7f4 AC6=c17a915c AC7=26842efe AC8=3f6e51dd AC10=47434c17 AC11=c41841a3 AC9=aba5b8d4
 ---
 
 ## Problem
@@ -67,6 +67,17 @@ Absorbed parked finding (`.tickets/FINDINGS.md`, 2026-11-27, parked at `c0a1884`
 > three (pointer: `skills/sprint/SKILL.md` Step 1, `skills/queue/templates/claim`
 > `refuse_off_shared_branch`, `tools/release verify`).
 
+Second occurrence, sprint run-20261127T234238Z (`.tickets/FINDINGS.md`, 2026-11-28), verbatim:
+
+> **A sprint-dispatched queue session started on a harness branch (claude/*), so ./capture refused
+> off main**; the fix was git switch main plus a cherry-pick of a backlog commit already made on the
+> branch.
+
+So the branch check must come first and name its repair. The session had already written a backlog
+commit on the wrong branch before any script refused, and the recovery needed a cherry-pick. The
+person accepted the remedy on 2026-11-28: keep the backlog scripts' main-only guard and work on
+`main`. A `claude/*` assignment is not a reason to set `shared_branch:` (CLAUDE.md, *Concurrency*).
+
 **One correction to the proposed shape, from reading the code.** `tools/release verify --commit
 origin/main` compares *every* tracked path at that commit against the install directory
 (`verify_one` → `paths_that_differ`), so it reds on the first backlog commit after a release — the
@@ -81,9 +92,11 @@ answers the same question without that false red.
   order and stops at the first that fails, with a distinct non-zero exit per check and a message
   naming the check, the observed state and the command a person would run. It changes nothing but
   remote-tracking refs: it never checks out, resets, merges, bumps, pushes or releases.
-- FR2 — **Check 1, the checkout.** It fetches the shared branch from `origin`, and refuses when the
-  fetch fails (currency is then unprovable), when the current branch is not the shared branch, or
-  when local and `origin/<shared>` differ — naming *behind N*, *ahead M* or *diverged N/M*. The
+- FR2 — **Check 1, the checkout.** It first refuses when the current branch is not the shared branch,
+  before any fetch or other check, and the message names the current branch, the shared branch and
+  the command `git switch <shared>`. It then fetches the shared branch from `origin`, and refuses when
+  the fetch fails (currency is then unprovable) or when local and `origin/<shared>` differ, naming
+  *behind N*, *ahead M* or *diverged N/M*. The
   shared branch resolves exactly as `skills/queue/templates/claim`'s `refuse_off_shared_branch`
   resolves it (`shared_branch:` in `config.yml`, then `origin/HEAD`, then `main`), so the two can
   never disagree about which branch is current.
@@ -112,7 +125,7 @@ answers the same question without that false red.
 | Dimension | Requirement for this item | How it would red | Convention |
 |---|---|---|---|
 | Security | The refusal is fail-closed: a fetch failure, a missing record or an unreadable `plugin.json` refuses rather than passes. | AC3 reds if the fetch is `\|\| true`; AC8's fixture reds if check 2 runs outside a source checkout and passes on a missing record. | `security-conventions.md` |
-| Observability | Each refusal names which check failed, the observed state (branch name, ahead/behind counts, both versions, differing paths) and the next command. | AC1, AC2, AC4, AC5 and AC7 each assert the named state in the output; dropping it reds them. | `observability-conventions.md` |
+| Observability | Each refusal names which check failed, the observed state (branch name, ahead/behind counts, both versions, differing paths) and the next command (`git switch <shared>` for a wrong branch). | AC1, AC2, AC4, AC5, AC7, AC10 and AC11 each assert the named state in the output; dropping it reds them. | `observability-conventions.md` |
 | Privacy & data | Nothing it prints reaches a tracked file; the test fixtures are built under `mktemp -d` and hard-code no home path. | `tests/measurement.test.sh` reds on a home path in a tracked file. | `data-privacy-conventions.md` |
 | Documentation | One `## Unreleased` entry in `CHANGELOG.md` saying a sprint now refuses to start on a stale checkout or install, per the repo's release rule. | `tools/release` refuses a bump on an empty `## Unreleased`; a reading at verify finds the entry absent. | `documentation-conventions.md` |
 
@@ -122,7 +135,7 @@ All fixtures are built by `tests/sprint-preflight.test.sh`: a bare `origin`, a c
 plugin-source cases a `.claude-plugin/plugin.json`, a `CHANGELOG.md`, an install directory and a
 fixture install record passed with `--record`.
 
-- [ ] AC1 — Given a clone on branch `claude/x` whose `main` equals `origin/main`, when `preflight` runs, then it exits with check 1's code, the output names `claude/x` and `main`, and `git symbolic-ref HEAD` is still `refs/heads/claude/x`. Red: delete the branch comparison.
+- [ ] AC1 — Given a clone on branch `claude/x` whose `main` equals `origin/main`, when `preflight` runs, then it exits with check 1's code, the output names `claude/x`, `main` and `git switch main`, and `git symbolic-ref HEAD` is still `refs/heads/claude/x`. Red: delete the branch comparison, or drop the `git switch` line from the message.
 - [ ] AC2 — Given a clone on `main` and a commit pushed to the bare `origin` from a second clone *after* the first clone's last fetch, when `preflight` runs, then it exits with check 1's code naming *behind 1*, and local `main` still points at its old commit; a second case with one local and one remote commit names *diverged 1/1*. Red: compare against the existing `origin/main` ref without fetching — the fixture's stale ref then matches and the case passes.
 - [ ] AC3 — Given a clone whose `origin` URL points at a path that does not exist, when `preflight` runs, then it exits non-zero naming the failed fetch. Red: make the fetch `|| true`.
 - [ ] AC4 — Given a current plugin-source clone whose fixture record names version `0.1.0` while `origin/main`'s `plugin.json` says `0.1.1`, when `preflight` runs, then it exits with check 2's code naming both versions. Red: drop the version comparison.
@@ -130,6 +143,8 @@ fixture install record passed with `--record`.
 - [ ] AC6 — Given an install whose record and bytes match the release commit, an empty `## Unreleased`, and one later commit on `origin/main` that changes only `.tickets/QUEUE.md`, when `preflight` runs, then it exits 0. Red: pass `--commit origin/main` to `tools/release verify` instead of the record's `gitCommitSha`.
 - [ ] AC7 — Given AC6's fixture with one bullet under `## Unreleased` on `origin/main`, when `preflight` runs, then it exits with check 3's code, the output names `tools/release`, and the clone's `HEAD`, `plugin.json` and `origin` refs are unchanged. Red: delete check 3.
 - [ ] AC8 — Given a current clone with no `.claude-plugin/plugin.json` and no install record, when `preflight` runs, then it exits 0 and prints that checks 2 and 3 were skipped. Red: run check 2 unconditionally — it then refuses on the missing record.
+- [ ] AC10 — Given a clone on branch `claude/x` whose `origin` URL points at a path that does not exist, when `preflight` runs, then it exits with check 1's code and the output names `git switch main` and does not name the failed fetch. Red: run the fetch before the branch comparison. The fetch then fails first and the output names the fetch instead.
+- [ ] AC11 — Given a clone on `main`, with `origin/main` and `origin/trunk` both present and `shared_branch: trunk` in its `.tickets/config.yml`, when `preflight` runs, then it exits with check 1's code and the output names `git switch trunk`. Red: hard-code `main` as the shared branch instead of resolving it as `refuse_off_shared_branch` does.
 - [ ] AC9 — Given `skills/sprint/SKILL.md`, when Step 1 is read, then it runs `skills/sprint/preflight` before the CLI probe and ends the run on a non-zero exit with the script's message as the escalation, and the check count in the heading and in *The proposal* matches. Red: the step absent, placed after the probe, or the counts left at four.
 
 ## Out of scope
@@ -158,3 +173,13 @@ fixture install record passed with `--record`.
   `origin/main`) is a correction with a right answer, recorded in the Problem.
 - 2026-11-27 — `close_by: verify`, because AC9 is a reading of skill prose and the repo's rule is
   that no new guard greps prose.
+- 2026-11-28 — **Re-specified (queue, dispatched after sprint run-20261127T234238Z).** Nothing is
+  built yet. This is a repair that widens the contract, and nothing is narrowed. FR2 now refuses off
+  the shared branch *first*, before the fetch, and names `git switch <shared>`. AC1 also asserts the
+  `git switch main` line. New AC10 pins the order (wrong branch plus unreachable origin reports the
+  branch, not the fetch), and new AC11 pins the `shared_branch:` resolution (`git switch trunk`).
+  Observability's row cites both. Evidence is the second occurrence quoted in the Problem. The person
+  accepted keeping the scripts' main-only guard and working on `main`. Still no surface and no open
+  decision, so it stays `next: develop`. `size: m`, `qa_level: unit`, `close_by: verify`, `expects:`
+  and *Out of scope* re-checked and unchanged. Switching branch stays out of scope: the script names
+  the command and stops. No AC was ticked, so none needed un-ticking.
