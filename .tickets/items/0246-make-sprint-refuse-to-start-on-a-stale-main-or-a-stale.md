@@ -23,7 +23,7 @@ claimed_by:
 claimed_at:
 touches:
 slice:
-ac_digest: AC1=7c6f063c AC2=a8fd38f2 AC3=c3ec75f8 AC4=d1245f15 AC5=42c1e7f4 AC6=c17a915c AC7=26842efe AC8=3f6e51dd AC10=47434c17 AC11=c41841a3 AC9=aba5b8d4
+ac_digest: AC1=7c6f063c AC2=a8fd38f2 AC3=c3ec75f8 AC4=d1245f15 AC5=42c1e7f4 AC6=c17a915c AC7=26842efe AC8=3f6e51dd AC9=aba5b8d4 AC10=47434c17 AC11=c41841a3
 ---
 
 ## Problem
@@ -143,9 +143,9 @@ fixture install record passed with `--record`.
 - [ ] AC6 — Given an install whose record and bytes match the release commit, an empty `## Unreleased`, and one later commit on `origin/main` that changes only `.tickets/QUEUE.md`, when `preflight` runs, then it exits 0. Red: pass `--commit origin/main` to `tools/release verify` instead of the record's `gitCommitSha`.
 - [ ] AC7 — Given AC6's fixture with one bullet under `## Unreleased` on `origin/main`, when `preflight` runs, then it exits with check 3's code, the output names `tools/release`, and the clone's `HEAD`, `plugin.json` and `origin` refs are unchanged. Red: delete check 3.
 - [ ] AC8 — Given a current clone with no `.claude-plugin/plugin.json` and no install record, when `preflight` runs, then it exits 0 and prints that checks 2 and 3 were skipped. Red: run check 2 unconditionally — it then refuses on the missing record.
+- [ ] AC9 — Given `skills/sprint/SKILL.md`, when Step 1 is read, then it runs `skills/sprint/preflight` before the CLI probe and ends the run on a non-zero exit with the script's message as the escalation, and the check count in the heading and in *The proposal* matches. Red: the step absent, placed after the probe, or the counts left at four.
 - [ ] AC10 — Given a clone on branch `claude/x` whose `origin` URL points at a path that does not exist, when `preflight` runs, then it exits with check 1's code and the output names `git switch main` and does not name the failed fetch. Red: run the fetch before the branch comparison. The fetch then fails first and the output names the fetch instead.
 - [ ] AC11 — Given a clone on `main`, with `origin/main` and `origin/trunk` both present and `shared_branch: trunk` in its `.tickets/config.yml`, when `preflight` runs, then it exits with check 1's code and the output names `git switch trunk`. Red: hard-code `main` as the shared branch instead of resolving it as `refuse_off_shared_branch` does.
-- [ ] AC9 — Given `skills/sprint/SKILL.md`, when Step 1 is read, then it runs `skills/sprint/preflight` before the CLI probe and ends the run on a non-zero exit with the script's message as the escalation, and the check count in the heading and in *The proposal* matches. Red: the step absent, placed after the probe, or the counts left at four.
 
 ## Out of scope
 
