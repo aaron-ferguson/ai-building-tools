@@ -2362,15 +2362,65 @@ printf '%s' "$HEARTBEAT" | awk -v standin="$KIDS_DIR/standin" '
 : > "$KIDS_DIR/kids"
 (cd "$KIDS_DIR" && RUN_ID=run-fixture-0234-kids sh beat.sh >/dev/null 2>&1) || true
 KIDS_SEEN="$(grep -c . "$KIDS_DIR/kids" || true)"
-KIDS_LEFT=""
-for kid in $(cat "$KIDS_DIR/kids"); do
-  if kill -0 "$kid" 2>/dev/null; then KIDS_LEFT="$KIDS_LEFT $kid"; kill "$kid" 2>/dev/null || true; fi
-done
+# heartbeat_survivors <pid-file> — the pids listed in it that are still RUNNING after a 2 s settle.
+# Running means present and not a zombie (0247 AC3, below): `kill -0` answers yes for a zombie, and
+# the stop leaves one behind whenever it kills the loop before the loop reaps its `sleep`. The settle
+# covers a SIGTERM still pending on a loaded machine; a real orphan sleeps 9 s, so it outlives it.
+running_pid() {
+  rp_stat="$(ps -o stat= -p "$1" 2>/dev/null)" || return 1
+  case "$rp_stat" in *Z*|'') return 1 ;; esac
+}
+heartbeat_survivors() {
+  hs_left=""
+  for hs_pid in $(cat "$1"); do
+    hs_n=0
+    while running_pid "$hs_pid" && [ "$hs_n" -lt 20 ]; do sleep 0.1; hs_n=$((hs_n + 1)); done
+    if running_pid "$hs_pid"; then hs_left="$hs_left $hs_pid"; fi
+  done
+  printf '%s' "$hs_left"
+}
+KIDS_LEFT="$(heartbeat_survivors "$KIDS_DIR/kids")"
+for kid in $KIDS_LEFT; do kill "$kid" 2>/dev/null || true; done
 if [ "$KIDS_SEEN" -ge 1 ] && [ -z "$KIDS_LEFT" ]; then
   ok "run as written, the Step 3 stop leaves none of the heartbeat's $KIDS_SEEN child process(es) alive"
 else
   bad "0234 AC25 — after the Step 3 stop, heartbeat children survived (seen: $KIDS_SEEN, alive:${KIDS_LEFT:- none}); kill the loop's descendants (pkill -P \"\$BEAT\") before the loop itself"
 fi
+
+# 0247 AC3 — a ZOMBIE is not a survivor. The mechanism above this case's fix: `pkill -P "$BEAT"` kills
+# the `sleep 9`, then `kill "$BEAT"` kills the loop before it reaps that sleep, so the sleep is left
+# dead-but-unreaped and is re-parented to PID 1. `kill -0` SUCCEEDS on a zombie, so until PID 1 reaps
+# it the check read a correctly stopped heartbeat as an orphan. Where PID 1 reaps late -- a container
+# whose init is not a reaper, or any machine under load -- that is the intermittent `0234 AC25` red
+# 0165's clean child copy hit (seen: 1, alive: <pid>), 1 run in 12 with three copies running at once.
+# The zombie is FORCED here rather than waited for: a shell that backgrounds a `sleep 0` and then
+# execs into a `sleep` never waits on it, so the dead child stays a zombie for as long as that sleep
+# runs. A live control beside it keeps the helper from passing by calling everything dead.
+echo "0247 AC3 — the heartbeat survivor check counts a zombie as dead and a running process as alive"
+ZDIR="$FIX/0247-zombie"
+mkdir -p "$ZDIR"
+sh -c 'sleep 0 & echo $! > "$1/zombie"; exec sleep 8' sh "$ZDIR" & Z_HOLDER=$!
+sleep 8 & Z_LIVE=$!
+z_n=0
+until [ -s "$ZDIR/zombie" ] && ps -o stat= -p "$(cat "$ZDIR/zombie")" 2>/dev/null | grep -q Z; do
+  z_n=$((z_n + 1))
+  [ "$z_n" -lt 50 ] || break
+  sleep 0.1
+done
+if ! { [ -s "$ZDIR/zombie" ] && ps -o stat= -p "$(cat "$ZDIR/zombie")" 2>/dev/null | grep -q Z; }; then
+  bad "0247 AC3 — the fixture never produced a zombie, so the case below would prove nothing"
+else
+  cp "$ZDIR/zombie" "$ZDIR/pids"
+  echo "$Z_LIVE" >> "$ZDIR/pids"
+  Z_LEFT="$(heartbeat_survivors "$ZDIR/pids")"
+  if [ "$Z_LEFT" = " $Z_LIVE" ]; then
+    ok "a dead-but-unreaped child is not reported as surviving the stop, and a running one is"
+  else
+    bad "0247 AC3 — the survivor check reported '${Z_LEFT:-nothing}' for a zombie $(cat "$ZDIR/zombie") and a running $Z_LIVE; it must report only the running one"
+  fi
+fi
+kill "$Z_HOLDER" "$Z_LIVE" 2>/dev/null || true
+wait "$Z_HOLDER" "$Z_LIVE" 2>/dev/null || true
 # 0234 AC26 (was 0170 AC2) — the stop must not cost the refresh. The 0153 AC2 run above is the same
 # extraction, stop included, so its advancing stamps are this criterion's evidence too.
 if [ "$BEAT_BAD" = 0 ] && [ "$BEAT_DISTINCT" -ge 2 ]; then
@@ -3015,6 +3065,16 @@ fi
 #
 # The copy is NOT placed in the real tests/ directory: the project's suite is the glob
 # `for t in tests/*.test.sh`, so a second .test.sh file there would be picked up by every later run.
+#
+# WHY THE CLEAN COPY WENT RED WHEN THE PARENT DID NOT (0247). Not the fixture: the copy's failing case
+# was `0234 AC25` (seen: 1, alive: <pid>), a timing race that either generation can lose and the copy
+# simply lost more often, running last and under the load of whatever else was running. The heartbeat
+# stop kills the loop's `sleep` and then the loop before it reaps it, so the sleep is a ZOMBIE until
+# PID 1 reaps it, and the check asked `kill -0`, which answers yes for a zombie. Reproduced 1 run in 12
+# with three copies at once, in a container whose PID 1 reaps late; `ps` showed every "survivor" as
+# `Z`. The fix is at that case (heartbeat_survivors: running means present and not a zombie, after a
+# short settle) and 0247 AC3 forces a zombie to hold it. The copy's own FAIL line is now carried into
+# this file's FAIL, so the next such red names its case instead of reading as "the flake".
 if [ -n "${SPRINT_TEST_CHILD:-}" ]; then
   : # a child copy asserts nothing about its own children
 else
@@ -3082,23 +3142,50 @@ else
   fi
 
   # AC2 — no forced failure: no re-print block, and the tally's shape is unchanged.
-  cp "$0" "$CHILD"
-  chmod +x "$CHILD"
-  SPRINT_TEST_CHILD=1 SPRINT_SKIP_PROBE=1 "$CHILD" > "$FIX/clean.out" 2>&1 || true
+  #
   # The clean copy is only a witness for "green implies no block" WHEN IT IS GREEN, and it is a copy
   # of the working tree -- so any unrelated red anywhere in this file would otherwise surface here as
   # a confusing 0165 failure. Say which of the two happened rather than folding them together.
+  # report_clean_copy <child-output> — that verdict, as an ok or a bad in this file's own tally.
+  report_clean_copy() {
+    rcc_tally="$(tail -1 "$1")"
+    case "$rcc_tally" in
+      *' 0 failed, '*)
+        if grep -qF 'FAIL lines, re-printed' "$1"; then
+          bad "0165 AC2 — a green run prints the re-print block anyway; it must appear only when something failed"
+        else
+          ok "a green run prints no re-print block"
+        fi ;;
+      *)
+        # The copy's FAIL lines exist only in its output, which the fixture cleanup discards, so they
+        # are carried into this file's own FAIL (0247 FR1): from the copy's re-print block, or, if it
+        # died before printing one, its last lines.
+        rcc_named="$(awk '
+          reprint && /^  (FAIL|HARNESS) / { sub(/^  /, ""); printf "%s%s", sep, $0; sep = " | " }
+          /^--- [0-9]+ FAIL lines, re-printed ---$/ { reprint = 1 }
+        ' "$1")"
+        [ -n "$rcc_named" ] || rcc_named="no re-print block; its last lines: $(tail -3 "$1" | tr '\n' ' ')"
+        bad "0165 AC2 — the clean copy was not green ($rcc_tally), so 'a green run prints no block' went untested; the copy's own failure: $rcc_named" ;;
+    esac
+  }
+
+  # 0247 AC1 — the not-green branch is run over an authored child output, in a subshell so its `bad`
+  # is counted there and read back rather than reddening this file.
+  printf '  ok   x\n  FAIL X-0247-authored-case\n\n--- 1 FAIL lines, re-printed ---\n  FAIL X-0247-authored-case\n\n9 passed, 1 failed, 0 skipped\n' \
+    > "$FIX/0247-red.out"
+  RCC_FAIL="$(FAIL=0; report_clean_copy "$FIX/0247-red.out" >/dev/null; printf '%s' "$FAIL")"
+  RCC_LINES="$(FAILED_LINES=""; report_clean_copy "$FIX/0247-red.out" >/dev/null; printf '%s' "$FAILED_LINES")"
+  if [ "$RCC_FAIL" = 1 ] && printf '%s' "$RCC_LINES" | grep -qF 'X-0247-authored-case'; then
+    ok "a red clean copy is a FAIL here, and that FAIL names the copy's own failing case"
+  else
+    bad "0247 AC1 — over a red child output naming X-0247-authored-case, the report counted $RCC_FAIL failure(s) and recorded: $(printf '%s' "$RCC_LINES" | tr '\n' ' ')"
+  fi
+
+  cp "$0" "$CHILD"
+  chmod +x "$CHILD"
+  SPRINT_TEST_CHILD=1 SPRINT_SKIP_PROBE=1 "$CHILD" > "$FIX/clean.out" 2>&1 || true
   CLEAN_TALLY="$(tail -1 "$FIX/clean.out")"
-  case "$CLEAN_TALLY" in
-    *' 0 failed, '*)
-      if grep -qF 'FAIL lines, re-printed' "$FIX/clean.out"; then
-        bad "0165 AC2 — a green run prints the re-print block anyway; it must appear only when something failed"
-      else
-        ok "a green run prints no re-print block"
-      fi ;;
-    *)
-      bad "0165 AC2 — the clean copy was not green ($CLEAN_TALLY), so 'a green run prints no block' went untested; this file is red for a reason named above, not by 0165" ;;
-  esac
+  report_clean_copy "$FIX/clean.out"
   if printf '%s\n' "$CLEAN_TALLY" | grep -qE '^[0-9]+ passed, [0-9]+ failed, [0-9]+ skipped$'; then
     ok "and its tally line keeps its shape, which every tally-reading loop depends on"
   else
