@@ -120,3 +120,37 @@ cases, so a time- or load-sensitive case can land differently. Last commit touch
   no surface and no open decision — the cause is discoverable by reading and running the code, and
   the fix's shape follows from it. `close_by: verify` because AC2 and AC4 are observations a second
   pass should read, not single committed assertions.
+- 2026-11-28 develop [57c0] — **The child's failing case was `0234 AC25`**, not anything in 0165's
+  fixture: `FAIL 0234 AC25 — after the Step 3 stop, heartbeat children survived (seen: 1, alive:
+  13259)`, tally `380 passed, 1 failed, 2 skipped` — the exact shape of the sprint's red. (run)
+- **Mechanism (FR3).** The Step 3 stop is `pkill -P "$BEAT"; kill "$BEAT"`: the pkill kills the
+  loop's `sleep 9`, then the kill takes the loop before it reaps that sleep, so the sleep is left a
+  **zombie**, re-parented to PID 1. AC25's check asked `kill -0`, which succeeds on a zombie, so a
+  correctly stopped heartbeat read as an orphan until PID 1 reaped it. In this container PID 1 is
+  `process_api`, which reaps late; under load the race lands more often. Not child-specific — the
+  child lost it more because it runs last, under whatever else is running. The "copies the live
+  tree" lead is discarded: the files involved (`tests/sprint.test.sh`, `skills/sprint/SKILL.md`)
+  are byte-identical between `8c2d838` and the reproduction tree (`git diff 8c2d838 a3af103`: empty).
+- **Reproduction (AC2), run against the `8c2d838` content:** build the child copy as 0165's block
+  does (whole repo minus `.git`, `tests/`, `.tickets/runs/`, `.claude` beyond `settings*.json`) with
+  `tests/sprint.test.sh` as `tests/child.test.sh`, then three loops in parallel, each 4×
+  `SPRINT_TEST_CHILD=1 SPRINT_SKIP_PROBE=1 <copy>/tests/child.test.sh`: **1 of 12 red, on 0234
+  AC25.** Isolating the stop (the extracted heartbeat with the AC25 stand-in, 4 loops × 15 under
+  4 CPU burners): **12 of 60 recorded kids were still `kill -0`-alive, every one `ps` stat `Z`,
+  ppid 1, and still `Z` 0.5 s later.** (run) Deterministic form: 0247 AC3 forces a zombie (a shell
+  that backgrounds `sleep 0` then execs into `sleep 8`, so it never reaps it).
+- **Fix (FR4)** at the case: `heartbeat_survivors` counts a pid only if `ps -o stat=` finds it and it
+  is not `Z`, after a settle of up to 2 s for a pending SIGTERM; a real orphan sleeps 9 s, so it still
+  reds. After the fix the same 3×4 loaded reproduction: **12 of 12 green.** (run)
+- **FR1**: `report_clean_copy` carries the copy's re-print-block FAIL lines (or its last 3 lines if it
+  died before printing one) into the parent's `bad`, so they are re-printed at the parent's end too.
+  The old message's "red for a reason named above" was false and is gone.
+- **Mutations (all run, each restored and the file green after):** `running_pid` → `kill -0` reds
+  0247 AC3 (`reported ' 27114 27112' for a zombie 27114 and a running 27112`); the message reverted to
+  the `8c2d838` tally-only text reds 0247 AC1; the not-green branch turned into a `skip` reds 0247 AC1
+  (`counted 0 failure(s)`).
+- **Performance row:** still exactly two `"$CHILD"` runs. The file went 33 s → 38.5 s, wall-clock,
+  one sample each: AC3's live control spends the 2 s settle once per generation (parent and two
+  children). No third child.
+- Whole suite (`unit_by_file` form) once at `37459a5`: every file green, `git status` clean.
+  AC4's five full-loop runs are verify's observation.
