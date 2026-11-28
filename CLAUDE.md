@@ -87,3 +87,9 @@ skill and reference files **are** the product, so they are structurally multi-wr
 file-scope rule is weaker here than it reads. What holds instead is one session per shared file, a
 designed wait when every row collides, and no opening a `verify`-held file mid-session:
 `references/CONCURRENCY.md`, *The working tree is shared too*.
+
+**Work on `main`, and push to `main`.** The backlog is written on one shared branch, and the
+backlog scripts refuse off it, because a claim committed elsewhere is invisible to every other
+session (`references/CONCURRENCY.md`, *The backlog is written on one branch*). A cloud session
+assigned a `claude/*` branch switches to `main` before its first backlog write, and that
+assignment is not a reason to set `shared_branch:` (the user's decision, 2026-11-28).
