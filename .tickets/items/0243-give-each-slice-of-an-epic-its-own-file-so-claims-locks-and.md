@@ -3,7 +3,7 @@ id: "0243"
 title: Give each slice of an epic its own file, so claims, locks and revisits work per slice
 type: feature
 next: design
-status: in-progress
+status: waiting
 qa_level: unit
 close_by: verify
 size: l
@@ -41,8 +41,8 @@ expects:
   - skills/verify/SKILL.md
   - skills/sprint/SKILL.md
   - CHANGELOG.md
-claimed_by: "6a4b"
-claimed_at: 2026-11-28T00:01:49Z
+claimed_by:
+claimed_at:
 touches:
 slice:
 ac_digest: AC1=9ef9cc2a AC2=ac7c8953 AC3=365cc19e AC4=fd0dd04c AC5=5930153d AC6=11fcfb0d
@@ -107,6 +107,89 @@ Those rules are stated against one file per ticket and must move with this chang
 **Source.** Toolkit work the user asked for in sprint run-20261127T024025Z, so `CLAUDE.md`'s
 held-finding rule (*Where toolkit work comes from*) does not apply: this is not a finding from this
 repo's own sessions waiting for a consuming project to confirm it.
+
+## Waiting on
+
+### Outcome
+Two sessions can hold two slices of one epic at once, one slice can be marked for revisiting without
+touching its siblings, and a session reads the epic index plus only the slice files its job needs.
+
+### Where it stands
+Design `6a4b`, 2026-11-28, sprint run-20261127T234238Z (unattended). The shape is concurrency
+architecture (`coding-conventions.md`, *What Not to Delegate to AI*), so this pass prepared the
+decision and did not record it. No FR or AC changed and `ac_digest` was not restamped. Facts
+re-read today in `skills/queue/templates/`:
+- every script finds an item by `item_for() { ls "$DIR/items/$1-"*.md | head -1; }` (`next:729`). A
+  sibling file named `items/0243-S1-*.md` would match that glob too, and in the C locale it sorts
+  ahead of `0243-give-…`, so `head -1` would return the slice instead of the epic. Slice files
+  therefore need either their own directory or their own id.
+- `claim` refuses any row whose status is not `ready` (`claim:287`), one claim per id.
+- `item.md`'s `parent:` model already gives children their own files, ids, claims and stages. It
+  inverts the ranking you want, though: the parent leaves `QUEUE.md` and the children are ranked.
+- 8 items on disk carry `## Progress` (0064, 0231, 0234, 0238, 0240, 0242, 0243, 0244). 0242 has
+  3,041 lines and 15 slices.
+Nothing else waits on this. 0242 keeps building meanwhile, and develop on 0243 should start only
+after 0242 closes (Notes, queue `e782`).
+
+### What needs you
+Pick how a slice is stored and addressed: as a child ticket with its own id, or as a slice file
+inside the epic with a new `<id>/S<n>` address. It sets the claim unit for every backlog script.
+
+### Options
+#### Option A — Slices are child tickets: invert `parent:` so that only outcomes are ranked
+Each slice becomes its own item, with a four-digit id, `parent: <epic>` and an ordinal
+`slice: S<n>`. It carries its own `next:`, `status:`, claim, FRs, ACs, `ac_digest` and QA evidence.
+AC numbers stay epic-wide, so the digests do not change when an AC moves. The epic keeps the
+outcome, problem, NFRs and a `## Progress` list whose lines link the child ids.
+(1) Layout: `items/NNNN-<slug>.md` as today. (2) `claim`, the lock and `handoff` stay per id and
+are unchanged. The epic is written only by `queue` under a claim on the epic, and a slice session
+never writes it. (3) No new status vocabulary: "needs revisiting" is `./reopen <child>` to
+`queue` or `design`, and `waiting` gets a scripted exit (`./handoff … ready` or a resume verb).
+(4) `QUEUE.md` gets one row per outcome. `./next` takes the first takeable child of the top
+outcome in slice order. `--drive` may run design on one child beside develop on another, but
+serialises two develop legs of one outcome. (5) A one-commit `./capture --split <id>` migrates
+an old item. Until it runs, the old single-file shape keeps reading. (6) An unsliced ticket is
+unchanged. Cap the depth at two levels: `capture` refuses a grandchild.
+- Pros: FR2, FR4, FR5 and FR6 follow from what the scripts already do per id. Most of the change
+  lands in `next` (ranking, take, drive) and `capture`. This builds on the `parent:` model the
+  retro notes say you asked for.
+- Cons: each slice uses up an id, so 0242 becomes 16 ids. Every reader that treats "a row" as
+  "the ranked unit" changes (the `QUEUE.md` join, the gate's `parent` batching at `next:1557`).
+  `item.md`'s `parent:` comment inverts, so the project/task wording changes in every skill.
+- Wins if: a slice should be addressable, citable and closable exactly like a ticket, and spending
+  ids is acceptable.
+#### Option B — Slice files under the epic: `items/<id>/S<n>.md`, addressed as `<id>/S<n>`
+The epic file stays where it is, and a sidecar directory holds one file per slice. That keeps
+both out of the `item_for` glob. Every script learns a slice address: `./claim 0243/S2`,
+`./handoff 0243/S2 <tok> design`. The claim and the slice's `next:`/`status:` live in the slice
+file, and `--slice`/`slice:` retire. `QUEUE.md` keeps one row per epic, with a derived column
+naming the takeable slices.
+- Pros: no ids spent. A slice is visibly *part of* its epic in the filesystem, which keeps your
+  "all of the context in one place" sense closest. `parent:` keeps its current meaning.
+- Cons: a second addressing scheme in all six scripts and their tests, so every id parser, row
+  join and `--drift` check takes a new code path. That is the larger and riskier rewrite, and it
+  lands on the same scripts 0242 is rewriting. Two hierarchy mechanisms (`parent:` and slice
+  directories) then coexist, and nothing explains when to use which.
+- Wins if: slices must never look like tickets in their own right, or id inflation matters.
+#### Option C — Keep one file and put a claim on each `## Progress` line
+- Pros: the smallest diff.
+- Cons: it fails FR1 and FR7, because the 3,041-line file is still read whole. Two sessions also
+  write one file in a shared working tree. Included only so the record shows why it lost.
+
+### Recommendation
+Option A. The id-keyed claim, lock and hand-off machinery already does per-slice concurrency if a
+slice *is* an id, so FR2/FR4/FR5/FR6 come mostly free and the risk sits in `next`'s ranking. B
+rebuilds that machinery under a second address. The one thing that should flip this: if you want a
+slice never to appear anywhere as a ticket (its own id in `DONE.md`, citable as `0251`), choose B.
+
+### What to do
+Reply "A", "B", or "A with <change>" (for example "no depth cap", "revisit is a new status, not
+reopen"). Then resume the row to `design` `ready` and run `/ai-building-tools:design 0243`. The next
+pass records the decision, writes the per-slice FRs/ACs for S1–S4 and restamps `ac_digest`.
+
+### If no answer
+0243 waits at design, and nothing else is blocked. 0242 and every unsliced ticket run as today, and
+new sliced epics keep being written in the single-file shape, which adds to the migration.
 
 ## Open design question
 
