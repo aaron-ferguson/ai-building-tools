@@ -2,8 +2,8 @@
 id: "0247"
 title: Name the child copy's failing case in sprint.test.sh's 0165 AC2 red, and remove the nondeterminism behind it
 type: bug
-next: develop
-status: in-progress
+next: verify
+status: ready
 qa_level: unit
 close_by: verify
 qa_manual:
@@ -15,10 +15,9 @@ blocked_by: []
 relates: ["0165"]
 expects:
 - tests/sprint.test.sh
-claimed_by: "57c0"
-claimed_at: 2026-11-28T00:02:32Z
+claimed_by:
+claimed_at:
 touches:
-- tests/sprint.test.sh
 slice:
 ac_digest: AC1=216fd3dc AC2=8a78151d AC3=0092c022 AC4=c37c7984
 ---
