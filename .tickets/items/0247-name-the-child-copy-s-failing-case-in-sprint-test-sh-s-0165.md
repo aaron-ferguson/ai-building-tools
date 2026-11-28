@@ -18,6 +18,7 @@ expects:
 claimed_by: "57c0"
 claimed_at: 2026-11-28T00:02:32Z
 touches:
+- tests/sprint.test.sh
 slice:
 ac_digest: AC1=216fd3dc AC2=8a78151d AC3=0092c022 AC4=c37c7984
 ---
