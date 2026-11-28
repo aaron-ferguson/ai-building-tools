@@ -2,8 +2,8 @@
 id: "0244"
 title: Make sprint judge loops and likely loops itself, instead of ending a run on a bounce count
 type: feature
-next: design
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -22,11 +22,11 @@ expects:
   - .tickets/config.yml
   - references/CONCURRENCY.md
   - CHANGELOG.md
-claimed_by: "936a"
-claimed_at: 2026-11-28T01:54:32Z
+claimed_by:
+claimed_at:
 touches:
 slice:
-ac_digest: AC1=e30a2ec4 AC2=ea81c612 AC3=2c800f49 AC4=96492c03 AC5=dec41c2b
+ac_digest: AC1=59f07451 AC2=83a7a2ba AC3=729acd33 AC4=11a144c3 AC5=9bc207d6 AC6=1e44df79 AC7=ca21624e AC8=c972eec3 AC9=93ec846d AC10=fb878eed
 ---
 
 ## Outcome
@@ -67,165 +67,196 @@ bound, and names this ticket as what replaces it.
 **Source.** Toolkit work the user asked for in sprint run-20261127T024025Z, so `CLAUDE.md`'s
 held-finding rule (*Where toolkit work comes from*) does not apply.
 
-## Waiting on
-
-### Outcome
-The sprint supervisor finds loops and likely loops itself, deals with the ones it can, escalates only
-the ones it cannot, and `bounce_max` stops being the rule that ends a run (answer 6, quoted above).
-
-### Where it stands
-Design `50ef` (sprint run-20261127T234238Z, unattended) read the evidence and stopped short of deciding,
-because (3) is an architecture choice and (2) decides what the supervisor may do without you. Nothing
-is recorded as decided: no FRs, ACs or `ac_digest` changed. Facts re-checked 2026-11-28:
-- The four count-based escalations are in `skills/queue/templates/next`: design re-entry (~L2244),
-  in-scope queue dispatch including 0242 FR72's design arm (~L2267), verify → develop (~L2301), plus the
-  catch-all `elif [ "$lnext" = "queue" ]` stale-contract ESCALATE (~L2285), which 0242's case hit. That
-  last one has no count at all; it fires on `--completed design:<id>` from a ticket out of scope or from
-  `queue` itself. `.tickets/next` matches the template.
-- **What a script can read.** Run-log `outcome` events carry `stage`, each ticket's `verdict`, `next`,
-  `status`, `slice`, `detail`, plus `commits` and `cost_usd` (`.tickets/runs/run-20261127T234238Z.jsonl`).
-  They do **not** carry `ac_digest:` or the ticked slices. Those can be read from the item at each
-  outcome's last commit (`git show <sha>:<item>`), so every signal in question (1) can be computed
-  without any change to what stages emit. "Same diagnosis" is the one exception. The diagnosis is
-  prose in *Notes & decisions*. The closest thing a script can compare is the failed AC id plus the
-  `detail` anchor.
-- The worked example's run log and `s13-answer.md` are not in this checkout (`.tickets/runs/` is
-  gitignored, so they exist only on the machine that ran it). `b5af0c5` *Hand off 0242 to queue [213b]*
-  is in history. The approval it depended on shows up only as run-log events (`escalation_answered`,
-  `scope_amended`), so FR4 needs `--drive` (or the script) to read the run log.
-
-### What needs you
-Where the loop judgement lives and how far the supervisor may go on its own: an architecture choice and
-an autonomy policy, which an unattended design pass prepares but does not make.
-
-Proposed signals (question 1, a factual matter, ready for you to confirm). Per ticket, since its last
-verify `pass`: a **no-progress re-entry** is an outcome sending it to an earlier stage while its
-`ac_digest:` and ticked-slice set are unchanged since the previous outcome for it. A **likely loop**
-is a second consecutive no-progress re-entry at the same stage, or the same failed AC from verify twice,
-or design ↔ queue twice with no criterion change. **Progress resets the count**: a digest change, a
-slice ticked, or a hand-off named in a `scope_amended` / `escalation_answered` event (FR4). Spend
-growing with no progress is reported next to these signals but never decides anything on its own.
-
-### Options
-#### Option A — Script computes the evidence, the supervising session judges
-`tools/sprint-ledger.sh loops --run <log>` (the ledger already reads the run log) prints each ticket's
-signals. `--drive` stays stateless and drops `--bounces`. `skills/sprint/SKILL.md` gives the supervisor
-a rule table for what to do with each signal.
-Pros: matches "smart, looks at what is happening". It handles cases no rule foresaw. `--drive` gets
-simpler.
-Cons: the decision is written as prose and made fresh each run, so two runs can judge one log
-differently. It cannot be fixture-tested beyond the signals themselves. FR2 is met but FR3 is only
-partly testable.
-Wins if: you value judgement on novel cases over runs that give the same answer for the same log.
-#### Option B — `--drive --run <log>` derives the verdict itself
-`--drive` reads the run log, computes the signals and works a fixed ladder. On a likely loop's first
-occurrence it re-dispatches with the prior diagnosis and the loop evidence in the prompt (`NOTE LIKELY-LOOP`).
-On the next no-progress re-entry it routes once to the stage above: verify→develop goes to `queue`,
-queue↔design goes to `design`. Then it escalates, `ESCALATE LOOP <id>` naming the evidence and both
-attempts. `--bounces` is replaced by `--run`.
-Pros: deterministic and fully fixture-testable (AC1–AC3 become exact). The supervisor cannot argue
-itself past a loop. FR4 is checkable.
-Cons: it is still a ladder of rules, only a smarter one than a count. `--drive` gains a run-log
-dependency and becomes stateful by input.
-Wins if: you want reproducible behaviour, with escalations you can trust to mean a real loop.
-#### Option C — B's script verdict, with the supervisor free to act early
-As B, but a `LIKELY-LOOP` NOTE is advisory. The supervisor may address it sooner, for example by
-rerouting on the first repeat, and records what it did and why in the run log (`loop_addressed`). Only
-the script's `LOOP` verdict ends the run.
-Pros: the person's "autonomy" with a floor that can be tested. Cons: two places hold loop logic.
-
-### Recommendation
-**Option C.** The signals and the verdict that ends a run come from the script, so FR2 and AC1–AC3
-are testable. The supervisor keeps room to act sooner than the floor, which is the autonomy answer 6
-asks for. **`bounce_max` is kept, under its existing name, but it now means the number of
-*no-progress* re-entries before the ladder escalates** (default 2). Progress resets the count, so a
-converging sliced epic never reaches it. Consuming projects keep their key, and the CHANGELOG says the
-meaning narrowed. Accepted cost: loop logic lives in both the script and the prose. The stale-contract
-catch-all stays an ESCALATE only for out-of-scope rows and for `queue`→`queue`.
-
-### What to do
-Reply with A, B or C (or edits to the signals or the `bounce_max` meaning). Then
-`./next --waiting` clears once someone writes `status: ready` back with `/ai-building-tools:design 0244`.
-That pass records your answer and writes the FRs and ACs per slice (S1 signals script, S2 `--drive`
-arms, S3 prose, config and CHANGELOG).
-
-### If no answer
-0244 waits. 0242 FR72's bounded arm stays as built, so approved design → queue hand-offs past
-`bounce_max` keep escalating. Other rows are unaffected.
-
-## Open design question
-
-- **Question:** (1) what counts as a loop and a likely loop — e.g. the same ticket back at the same stage
-  with an unchanged `ac_digest:` and no slice ticked, the same verify diagnosis twice, a design ↔ queue
-  oscillation with no criterion change, spend growing with no slice ticked; (2) which of those the
-  supervisor addresses on its own (re-dispatch with the prior diagnosis, route to `queue` or `design`,
-  reorder, narrow nothing) and which it escalates; (3) where the judgement lives — `--drive` is
-  stateless, so it supplies evidence (history, digests, slice ticks) and the supervising session
-  judges, or `--drive` derives a verdict from a run log it is given; (4) what becomes of `bounce_max`:
-  removed, or kept as a non-ending signal or a runaway backstop the person sets.
-- **Why it blocks specification:** every AC below needs (1)–(3) to name its fixture and its output, and
-  (2) is a judgement about what the person wants decided without them.
-- **Settle it with:** `/design`, reading `skills/sprint/SKILL.md` (routing, escalation), the
-  `past_bound` arms and `bounce_count` in `skills/queue/templates/next`, 0234's notes (why `bounce_max`
-  was added) and this run's log as the worked example.
-
 ## Functional requirements
 
-Fixed whatever the answer; design adds the rest and may sharpen these, never narrow them.
+FR1–FR6 are the outcome-level requirements queue wrote, kept. FR3 was reshaped (see *Notes & decisions*,
+2026-11-28 design `936a`). FR7 onward are what the decision added.
 
 - FR1 — `bounce_max` is not the rule that ends a run: no `--drive` arm escalates on a re-entry count
   alone. The arms this replaces are every `past_bound` escalation in `skills/queue/templates/next`,
   including 0242 FR72's design → queue arm.
-- FR2 — The supervisor identifies loops and likely loops from what the run shows (design's signals),
-  and the signals are computed by a script, not re-derived in prose each run.
-- FR3 — On a loop it can address, the supervisor addresses it and records what it did in the run log;
-  it escalates only a loop or likely loop it cannot address, naming the ticket, the evidence and what
-  it tried.
+- FR2 — The supervisor identifies loops and likely loops from what the run shows (FR8–FR11), and the
+  signals are computed by a script (`tools/sprint-ledger.sh loops`, FR7), not re-derived in prose each run.
+- FR3 — On a loop it can address, the supervisor addresses it and records what it did in the run log
+  as a `loop_addressed` event (FR16). It escalates only a loop or likely loop it cannot address, naming
+  the ticket, the evidence and what it tried. **Which response fits a given signal is the supervising
+  session's judgement, stated as default guidance in `skills/sprint/SKILL.md` (FR15), not as a ladder.**
+  The script tests the recorded half (FR11's `ADDRESSED` line). The judgement half is prose and stays
+  unguarded (`CLAUDE.md`, *Tests*).
 - FR4 — A hand-off a person approved, or one that moves the ticket forward (a slice ticked, criteria
-  changed), is never escalated as a loop; the `b5af0c5` design → queue hand-off is the case.
+  changed), is never escalated or signalled as a loop. The `b5af0c5` design → queue hand-off is the case.
+  In `--drive` (FR14), no count is read at all. In `loops` (FR9), such a hand-off counts as progress.
 - FR5 — `skills/sprint/SKILL.md` states which loops the supervisor addresses and which it escalates,
-  and `--drive`'s usage text matches it.
-- FR6 — `CHANGELOG.md` `## Unreleased` names the change and what happens to a consuming project's
-  `bounce_max:` key.
+  and `--drive`'s usage text matches it: `--drive` routes every re-entry and never counts, and the loop
+  judgement belongs to the supervisor.
+- FR6 — `CHANGELOG.md` `## Unreleased` names the change, one line per behaviour a session now sees
+  differently: the new `loops` subcommand (S1); `--drive` no longer escalating on a count, `--bounces`
+  ignored, and `bounce_max:`'s new meaning, so a consuming project knows its key is kept and what it now
+  does (S2).
+
+### S1 — the loop signals, by script
+
+- FR7 — `tools/sprint-ledger.sh loops --run <run-log.jsonl> [--repo <checkout>] [--config <config.yml>]`
+  is read-only. `--repo` defaults to the current directory. `--config` defaults to
+  `<repo>/.tickets/config.yml`, and an absent file means defaults. **The signals never decide anything,
+  and they never set the exit code.** The script exits 0 whenever it read the log, whatever it found. It
+  exits 1 on an unreadable or malformed log, a `--repo` that is not a git checkout, or a malformed
+  `bounce_max`, naming the key. It exits 2 on a usage error. The usage block in the file's header comment
+  gains the subcommand, as its siblings have.
+- FR8 — A **re-entry** is an `outcome` event's ticket entry whose `next` names an earlier stage than the
+  outcome's `stage`, in the order queue < design < develop < verify < done. This is the definition
+  `skills/sprint/SKILL.md` already gives `--bounces` today. **A ticket's window** starts at its last
+  verify `pass` outcome in the log, or at the start of the run when it has none. Everything below counts
+  within the window.
+- FR9 — **Progress** between a ticket's outcome and its previous one in the window is any of:
+  (a) the item's `ac_digest:` frontmatter value differs;
+  (b) the set of ticked `- [x] S<n>` lines under `## Progress` grew;
+  (c) between the two outcomes, a run-log event `escalation_answered` or `scope_amended` names the ticket
+  in its `tickets` array.
+  The item is read with `git show <sha>:<path>` at the last sha in the outcome's `commits`. An outcome
+  with no commits reads as unchanged from the ticket's previous outcome. A ticket's first outcome in the
+  window is compared with the item at the parent of that outcome's first commit. With no commits, it
+  counts as no progress. The item path is found by id under `.tickets/items/` at that sha.
+- FR10 — A **no-progress re-entry** is a re-entry with no progress (FR9) since the ticket's previous
+  outcome. A **likely loop** is two or more consecutive no-progress re-entries for one ticket from the
+  same `stage`, where "consecutive" is counted over that ticket's re-entries. A design ↔ queue
+  oscillation is the case of `stage: design` twice: the queue outcome between them is not a re-entry.
+  Spend is summed (`cost_usd` over the ticket's outcomes since its last progress) and reported, and it
+  never produces a likely loop on its own.
+- FR11 — Output, one line per finding, in the order the tickets first appear in the log, with these
+  exact prefixes:
+  - `TICKET <id> reentries=<n> no_progress=<n> usd_since_progress=<x.xx> window=<pass|run-start>`. One
+    line for every ticket with at least one re-entry in its window.
+  - `LIKELY-LOOP <id> from <stage> to next: <next> x<n> — no criterion change, no slice ticked; details: <detail> | <detail> …`.
+    `<n>` is the length of the run of no-progress re-entries, and every `detail` pointer in that run is
+    listed in order. The supervisor compares the diagnoses those pointers lead to: they are prose, which
+    the script does not judge.
+  - `PROGRESS <id> <ac_digest changed | S<n> ticked | approved by <event>> at <ts>`. One line, for the
+    ticket's most recent progress in the window.
+  - `ADDRESSED <id> <ts> <action>`. One line for each `loop_addressed` event naming the ticket in its
+    window (FR16).
+  - `REVIEW <id> reentries <n> > bounce_max <m>`. Printed when the window's re-entries exceed
+    `bounce_max` (FR12).
+  A log with no re-entries prints `NO-LOOPS` and nothing else.
+- FR12 — **`bounce_max:` keeps its name and its default, 2, and changes meaning.** It is now the
+  re-entry count past which `loops` prints a `REVIEW` line: a mark for the supervisor's attention that
+  counts all re-entries, progress or not. It never ends a run. `0` marks every re-entry. The validation
+  `--drive` does today moves here: a value that is not a whole number exits 1, naming the key.
+- FR13 — `loops` keeps the ledger's privacy invariant (the file's header): it prints ids, stage names,
+  verdict-derived words, `detail` pointers, timestamps and sums, and no other field of any event.
+
+### S2 — `--drive` stops counting; the supervisor judges
+
+- FR14 — `--drive` reads no count. `bounce_count`, `past_bound`, `read_bounce_max` and `BOUNCE_MAX` are
+  removed from `skills/queue/templates/next`, and every former `past_bound` arm routes as it does today
+  below the bound:
+  - design re-entry: a NOTE, then on to the rank walk.
+  - in-scope `next: queue` after verify, develop or design: `DISPATCH  queue <id>`.
+  - verify → develop: `dispatch_leg`.
+  No NOTE prints an `(n of m)`. `--bounces <id>=<n>` is still accepted, so a supervisor running an older
+  `skills/sprint/SKILL.md` does not stop. It prints one
+  `NOTE      --bounces is ignored since 0244 — loop judgement is the supervisor's (tools/sprint-ledger.sh loops)`
+  and has no other effect. Malformed `--bounces` input no longer exits 2. The stale-contract catch-all
+  (`elif [ "$lnext" = "queue" ]`) is unchanged: it still escalates an out-of-scope row, a call with no
+  `--scope`, and `--completed queue:<id>`, because those turn on scope, a person's, not on a count. The
+  usage text drops the bound's description and says the above (FR5). `.tickets/next` is updated to
+  match the template.
+- FR15 — `skills/sprint/SKILL.md`, in the routing paragraph that today begins *A bounce is routed, not
+  escalated, up to `bounce_max`*, and in the escalation section (Step 8):
+  - After every outcome, the supervisor runs `tools/sprint-ledger.sh loops --run <run log>` and reads
+    what it says about the tickets it is about to dispatch.
+  - **Judgement is the default**, as default guidance rather than a ladder:
+    - On a `LIKELY-LOOP`, address it. Re-dispatch with every listed diagnosis and the loop evidence in
+      the prompt, or route the ticket to `queue` (the contract is wrong) or to `design` (the question
+      was never settled), whichever the diagnoses point to.
+    - Escalate a likely loop that recurs after an `ADDRESSED` for that ticket, unless the supervisor can
+      name what will make the next attempt differ.
+    - Escalate any loop whose only remaining fix is a person's: a narrowed contract, a design question
+      on taste, a scope change.
+    - Weigh `REVIEW` and spend, and never treat either as an ending by itself.
+  - Every escalation names the ticket, the evidence lines and what was tried.
+  - **A fixed rule the person states** (in the scope confirmation or the project's `CLAUDE.md`, e.g.
+    "escalate any ticket past three re-entries") is followed. Fixed rules are allowed where they earn
+    their place, and they are not the default.
+  - The `--bounces` instruction is deleted.
+- FR16 — `skills/sprint/SKILL.md`'s run-log section names three events with a `tickets` array of ids,
+  because `loops` reads them:
+  - `loop_addressed`: `ticket`-scoped, with `signal`, `action` and `reason`. The supervisor writes it
+    whenever it acts on a signal.
+  - `escalation_answered`.
+  - `scope_amended`.
+  The last two already appear in run logs (`.tickets/runs/run-20261127T024025Z.jsonl`, machine-local)
+  with no shape the skill names.
+- FR17 — `skills/queue/templates/config.yml`'s `bounce_max:` comment states FR12's meaning: attention,
+  not a cap. It says the key is read by `tools/sprint-ledger.sh loops` and no longer by `./next`. This
+  repo's `.tickets/config.yml` sets no `bounce_max:` (checked 2026-11-28) and needs no change.
 
 ## Acceptance criteria
 
-Outcome-level and fixed regardless of the answer; design sharpens their fixtures and adds the rest.
-
-- [ ] AC1 — Given a fixture run whose in-scope ticket re-entered an earlier stage more than
-  `bounce_max` times, each re-entry ticking a new slice, when `./next --drive` runs, then it does not
-  exit 4 on the count. Red: today's `past_bound` arms.
-- [ ] AC2 — Given a fixture run in which one ticket returns to the same stage with an unchanged
-  `ac_digest:`, no slice ticked and the same recorded diagnosis, when the loop signal is computed, then
-  it names that ticket as a likely loop with that evidence. Red: a re-dispatch with no loop named.
-- [ ] AC3 — Given 0242's case — a `--completed design:<id>` hand-off to `next: queue` / `ready` in scope,
-  with `--bounces <id>` past `bounce_max` — when `./next --drive` runs, then it dispatches `queue` and
-  prints no ESCALATE line. Red: 0242 FR72's bounded arm.
-- [ ] AC4 — Given `skills/sprint/SKILL.md` after the change, when verify reads its routing and escalation
-  sections, then they state FR3 and FR5 and no sentence ends a run on a bounce count. A reading, not a
-  guard (`CLAUDE.md`, *Tests*).
-- [ ] AC5 — Given the tree after the change, when `for t in tests/*.test.sh; do "$t" || exit 1; done`
-  runs, then it exits 0. Red: a fixture left asserting a `bounce_max` ESCALATE line.
+- [ ] AC1 — Given a `tests/next.test.sh` fixture with an in-scope row bounced from verify to
+  `next: develop` / `ready`, `bounce_max: 2`, and `--completed verify:<id> --bounces <id>=3`, when
+  `./next --drive` runs, then it exits 0, prints `DISPATCH  develop <id>` and the `--bounces is ignored`
+  NOTE, and prints no ESCALATE line; and with the row instead at `next: design` / `ready` it exits 0
+  with no ESCALATE line. Red: today's `past_bound` arms exit 4.
+- [ ] AC2 — Given a `tests/sprint-ledger.test.sh` fixture (a scratch git repo with an item, plus a run
+  log) in which ticket 0901 has two consecutive `stage: verify` outcomes to `next: develop`, a develop
+  outcome between them that changes neither `ac_digest:` nor a ticked slice, and distinct `detail`
+  pointers, when `tools/sprint-ledger.sh loops --run <log> --repo <fixture>` runs, then it exits 0 and
+  prints `LIKELY-LOOP 0901 from verify to next: develop x2` naming both `detail` pointers in order. Red:
+  no `loops` subcommand.
+- [ ] AC3 — Given 0242's case, a `--completed design:<id>` hand-off to `next: queue` / `ready` in scope
+  with `--bounces <id>=3` and `bounce_max: 2`, when `./next --drive` runs, then it dispatches `queue`
+  and prints no ESCALATE line. The same row out of scope, with no `--scope`, or after `--completed
+  queue:<id>` still exits 4 on the stale-contract line. Red: 0242 FR72's bounded arm (0242 AC87's
+  past-bound case).
+- [ ] AC4 — Given `skills/sprint/SKILL.md`, `skills/queue/templates/config.yml` and `./next --help` after
+  the change, when verify reads the routing, escalation and run-log sections, then they state FR3, FR5,
+  FR15, FR16 and FR17, no sentence ends a run on a bounce count, and the `--bounces` instruction is gone.
+  A reading, not a guard (`CLAUDE.md`, *Tests*).
+- [ ] AC5 — Given the tree after S2, when `for t in tests/*.test.sh; do "$t" || exit 1; done` runs, then
+  it exits 0. The 0234 and 0242 AC87 fixtures that asserted a `bounce_max` ESCALATE now assert the
+  dispatch. Red: a fixture left asserting the escalation.
+- [ ] AC6 — Given AC2's fixture with progress between the two verify outcomes, run once per kind (the
+  develop outcome's commit ticks `S2`; queue restamps `ac_digest:`; an `escalation_answered` event
+  naming 0901 sits between them), when `loops` runs, then it prints no `LIKELY-LOOP` for 0901, and its
+  `PROGRESS 0901` line names that kind. Red: a loop reported across real progress.
+- [ ] AC7 — Given AC2's fixture followed by a verify `pass` outcome for 0901 and then one more verify →
+  develop re-entry, when `loops` runs, then 0901's `TICKET` line reads `reentries=1` and
+  `window=pass`, and it has no `LIKELY-LOOP` line. Red: counts carried across a pass.
+- [ ] AC8 — Given a fixture with three re-entries for one ticket, each with progress, and `bounce_max: 2`
+  in `--config`, when `loops` runs, then it exits 0 with `REVIEW <id> reentries 3 > bounce_max 2` and no
+  `LIKELY-LOOP`. With `bounce_max: 0` and one re-entry it prints `REVIEW`. With `bounce_max: x` it exits
+  1 naming `bounce_max`. Red: `REVIEW` absent, or a malformed value accepted.
+- [ ] AC9 — Given a log with a `loop_addressed` event naming 0901, when `loops` runs, then it prints
+  `ADDRESSED 0901 <ts> <action>`. A log with no re-entries prints `NO-LOOPS`. A malformed log line exits
+  1, `--repo` at a non-git directory exits 1, and a missing `--run` exits 2.
+- [ ] AC10 — Given a fixture log whose events carry a sentinel string in a field FR13 does not list
+  (e.g. an `escalation` sentence or a `prompt`), when `loops` runs, then the sentinel is absent from its
+  output. Red: an event echoed whole.
 
 ## Progress
 
 **One outcome is one ticket, even across many sessions**; its slices are worked in order, each about
 one develop session's work (`product-definition-conventions.md` → "Slice Vertically and Thinly").
 
-- [ ] S1 — the loop signals, computed by script from the run's evidence — unspecified
-- [ ] S2 — `--drive` stops escalating on a count; the `past_bound` arms and 0242 FR72's bound go — unspecified
-- [ ] S3 — `skills/sprint/SKILL.md`: what the supervisor addresses itself and what it escalates; `bounce_max:` in config and the CHANGELOG — unspecified
+- [ ] S1 — the loop signals, computed by `tools/sprint-ledger.sh loops` from the run log and the items at each outcome's commits; additive, so `--drive` still counts until S2 (FR7–FR13, FR6's S1 line) — discharges AC2, AC6, AC7, AC8, AC9, AC10
+- [ ] S2 — the switch: `--drive` stops counting and ignores `--bounces`, `skills/sprint/SKILL.md` makes judgement the default and names the run-log events, `bounce_max:`'s comment and the CHANGELOG (FR1, FR3–FR5, FR6's S2 line, FR14–FR17) — discharges AC1, AC3, AC4, AC5
 
 ## QA plan
 
-Fixture runs in `tests/next.test.sh` and `tests/sprint.test.sh`, at `qa_level: unit`; the sprint prose
-is checked by reading (`CLAUDE.md`, *Tests*). Design names the cases per slice.
+`qa_level: unit`. S1: `tests/sprint-ledger.test.sh` fixtures (a scratch git repo holding an item at
+several commits, plus a hand-written run log), AC2 and AC6–AC10. S2: `tests/next.test.sh` fixtures,
+AC1 and AC3, with the 0234 and 0242 AC87 bound cases rewritten (AC5). The sprint prose and the usage
+text are checked by reading (AC4). No new guard greps prose (`CLAUDE.md`, *Tests*).
 
 ## Out of scope
 
-- The per-slice file layout (0243), though its slice statuses are an input the loop signals may read.
+- The per-slice file layout (0243). If 0243 moves slice ticks out of the item, FR9(b) reads them from
+  wherever 0243 puts them; the develop session building S1 checks 0243's state first.
 - Changing the stages a run may dispatch, or deciding anything a person decides (design questions,
   pushes, releases, narrowed contracts stay escalations).
+- Any other `--drive` ESCALATE arm: waiting, held claim, same-stage-with-no-hand-off, drift and the
+  out-of-scope stale contract turn on facts, not counts, and stay.
 
 ## Notes & decisions
 
@@ -258,3 +289,62 @@ is checked by reading (`CLAUDE.md`, *Tests*). Design names the cases per slice.
   is unguarded, and only the signals get fixture tests. So narrowing or reshaping FR3's criteria is
   the design pass's call, and it must be recorded as such. No FR or AC was changed in this pass and
   `ac_digest` was not restamped.
+- **2026-11-28 (design `936a`, dispatched by a `/sprint` supervisor) — decided: Option A, with the
+  person's refinement.** The person chose A over the recommended C: "A. I want sprint to have more
+  autonomy and not get stuck by hard rules that don't always apply." They then refined it the same day:
+  > "we don't need to prevent hard rules, we just shouldn't default to them."
+
+  So the decision is that **judgement is the default, and the ladder is not**. A script
+  (`tools/sprint-ledger.sh loops`, which already reads the run log) computes the signals. The
+  supervising session judges them. `--drive` stays stateless and stops counting. A fixed rule stays
+  available wherever it earns its place, in two ways. First, the rules that turn on a fact, not a
+  count (waiting, held claim, drift, out-of-scope stale contract, same stage with no hand-off), are
+  kept. Second, a fixed rule the person states for their project is followed (FR15).
+  **Rejected:**
+  - B: the ladder becomes the default, which is the thing the person said not to default to.
+  - C: two places hold loop logic, and the script's verdict still ends the run, so the floor would be a
+    hard rule by default.
+- **`bounce_max` under A:** kept, same name and default (2), meaning changed to an attention mark
+  (`REVIEW`) that `loops` prints and the supervisor weighs (FR12, FR17). Removing it would be preventing
+  a rule. Keeping it as a cap would be defaulting to one. As an attention threshold it fits the
+  refinement, and a consuming project's key keeps working with no edit. C's narrowed meaning, counting
+  only *no-progress* re-entries, did not carry over. A no-progress repeat is already its own signal
+  (`LIKELY-LOOP`), so `REVIEW` counts every re-entry. That makes it a runaway mark that converging
+  work can also trip, which is fine for an attention mark.
+- **FR3 reshaped (this pass's call, as the queue note asked).** Option A's stated con was "FR3 is only
+  partly testable". Accepted, not engineered around. FR3 now separates two halves. The recorded half is
+  the `loop_addressed` event and `loops`' `ADDRESSED` line, which is fixture-tested (AC9). The
+  judgement half (which response fits which signal) is default guidance in prose, read by verify
+  (AC4), and unguarded per `CLAUDE.md` *No new guard greps prose*. This sharpens FR3 and narrows no
+  behaviour.
+- **Accounting against the arrived criteria:**
+  - AC1: confirmed, with its fixture sharpened to verify → develop and design re-entry with `--bounces`
+    past the bound.
+  - AC2: changed. "The same recorded diagnosis" is prose a script cannot compare, so the script lists
+    every `detail` pointer and the supervisor compares (FR11).
+  - AC3: confirmed, with the out-of-scope / after-queue escalations it must keep added.
+  - AC4: extended to the config comment and usage text.
+  - AC5: confirmed.
+  - AC6–AC10: added.
+  - FR1, FR2, FR4, FR5, FR6: kept. FR3: reshaped as above. FR7–FR17: added.
+  - Slices went from three to two. The old S2 (`--drive`) and S3 (prose) are merged, so the script
+    and the skill never disagree about who judges. In an S2 without S3, `--drive` would stop
+    escalating before the prose told the supervisor to run `loops`. S1 is purely additive, so the tree
+    is safe at every point.
+- **Signals, settled on fact (FR8–FR10).** The design ↔ queue oscillation is not a separate kind: it is
+  two consecutive no-progress re-entries from `design`, so one rule covers it. "Same diagnosis" is the
+  supervisor's comparison of the listed `detail` pointers. Spend never decides. Re-verified 2026-11-28:
+  - the `past_bound` arms at `skills/queue/templates/next` ~L2244, ~L2267, ~L2301;
+  - the catch-all at ~L2281;
+  - `bounce_max:` in `skills/queue/templates/config.yml` L54, and absent from `.tickets/config.yml`;
+  - `--bounces` defined in `skills/sprint/SKILL.md` ~L344–L355;
+  - `escalation_answered` and `scope_amended` named nowhere in `skills/sprint/`, hence FR16;
+  - the ledger's tests in `tests/sprint-ledger.test.sh`, not `tests/sprint.test.sh`.
+- **No sibling consequence.** 0242 FR72/AC87 (past-bound escalation) and 0234's bound ACs are `done`.
+  This ticket supersedes them, as 0242 FR72 itself anticipated ("written so that epic can delete"). The
+  fixtures move under AC5, and no done item is rewritten.
+- `qa_level: unit` and `close_by: verify` re-read against AC1–AC10: still right. Every AC is a fixture
+  except AC4's reading. `expects:` should gain `tools/sprint-ledger.sh` and `tests/sprint-ledger.test.sh`
+  and lose `.tickets/config.yml` and `references/CONCURRENCY.md`. Left for queue, since `expects:` is
+  its prediction and the claim script reads it. S2 collides with 0243's expected files, so develop
+  follows the claim script's COLLIDES report.
