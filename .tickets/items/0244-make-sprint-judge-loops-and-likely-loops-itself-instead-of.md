@@ -3,7 +3,7 @@ id: "0244"
 title: Make sprint judge loops and likely loops itself, instead of ending a run on a bounce count
 type: feature
 next: design
-status: ready
+status: in-progress
 qa_level: unit
 close_by: verify
 size: l
@@ -22,8 +22,8 @@ expects:
   - .tickets/config.yml
   - references/CONCURRENCY.md
   - CHANGELOG.md
-claimed_by:
-claimed_at:
+claimed_by: "936a"
+claimed_at: 2026-11-28T01:54:32Z
 touches:
 slice:
 ac_digest: AC1=e30a2ec4 AC2=ea81c612 AC3=2c800f49 AC4=96492c03 AC5=dec41c2b
