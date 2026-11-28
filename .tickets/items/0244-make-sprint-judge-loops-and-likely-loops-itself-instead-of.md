@@ -3,7 +3,7 @@ id: "0244"
 title: Make sprint judge loops and likely loops itself, instead of ending a run on a bounce count
 type: feature
 next: design
-status: in-progress
+status: waiting
 qa_level: unit
 close_by: verify
 size: l
@@ -22,8 +22,8 @@ expects:
   - .tickets/config.yml
   - references/CONCURRENCY.md
   - CHANGELOG.md
-claimed_by: "50ef"
-claimed_at: 2026-11-28T00:02:10Z
+claimed_by:
+claimed_at:
 touches:
 slice:
 ac_digest: AC1=e30a2ec4 AC2=ea81c612 AC3=2c800f49 AC4=96492c03 AC5=dec41c2b
@@ -66,6 +66,92 @@ bound, and names this ticket as what replaces it.
 
 **Source.** Toolkit work the user asked for in sprint run-20261127T024025Z, so `CLAUDE.md`'s
 held-finding rule (*Where toolkit work comes from*) does not apply.
+
+## Waiting on
+
+### Outcome
+The sprint supervisor finds loops and likely loops itself, deals with the ones it can, escalates only
+the ones it cannot, and `bounce_max` stops being the rule that ends a run (answer 6, quoted above).
+
+### Where it stands
+Design `50ef` (sprint run-20261127T234238Z, unattended) read the evidence and stopped short of deciding,
+because (3) is an architecture choice and (2) decides what the supervisor may do without you. Nothing
+is recorded as decided: no FRs, ACs or `ac_digest` changed. Facts re-checked 2026-11-28:
+- The four count-based escalations are in `skills/queue/templates/next`: design re-entry (~L2244),
+  in-scope queue dispatch including 0242 FR72's design arm (~L2267), verify → develop (~L2301), plus the
+  catch-all `elif [ "$lnext" = "queue" ]` stale-contract ESCALATE (~L2285), which 0242's case hit. That
+  last one has no count at all; it fires on `--completed design:<id>` from a ticket out of scope or from
+  `queue` itself. `.tickets/next` matches the template.
+- **What a script can read.** Run-log `outcome` events carry `stage`, each ticket's `verdict`, `next`,
+  `status`, `slice`, `detail`, plus `commits` and `cost_usd` (`.tickets/runs/run-20261127T234238Z.jsonl`).
+  They do **not** carry `ac_digest:` or the ticked slices. Those can be read from the item at each
+  outcome's last commit (`git show <sha>:<item>`), so every signal in question (1) can be computed
+  without any change to what stages emit. "Same diagnosis" is the one exception. The diagnosis is
+  prose in *Notes & decisions*. The closest thing a script can compare is the failed AC id plus the
+  `detail` anchor.
+- The worked example's run log and `s13-answer.md` are not in this checkout (`.tickets/runs/` is
+  gitignored, so they exist only on the machine that ran it). `b5af0c5` *Hand off 0242 to queue [213b]*
+  is in history. The approval it depended on shows up only as run-log events (`escalation_answered`,
+  `scope_amended`), so FR4 needs `--drive` (or the script) to read the run log.
+
+### What needs you
+Where the loop judgement lives and how far the supervisor may go on its own: an architecture choice and
+an autonomy policy, which an unattended design pass prepares but does not make.
+
+Proposed signals (question 1, a factual matter, ready for you to confirm). Per ticket, since its last
+verify `pass`: a **no-progress re-entry** is an outcome sending it to an earlier stage while its
+`ac_digest:` and ticked-slice set are unchanged since the previous outcome for it. A **likely loop**
+is a second consecutive no-progress re-entry at the same stage, or the same failed AC from verify twice,
+or design ↔ queue twice with no criterion change. **Progress resets the count**: a digest change, a
+slice ticked, or a hand-off named in a `scope_amended` / `escalation_answered` event (FR4). Spend
+growing with no progress is reported next to these signals but never decides anything on its own.
+
+### Options
+#### Option A — Script computes the evidence, the supervising session judges
+`tools/sprint-ledger.sh loops --run <log>` (the ledger already reads the run log) prints each ticket's
+signals. `--drive` stays stateless and drops `--bounces`. `skills/sprint/SKILL.md` gives the supervisor
+a rule table for what to do with each signal.
+Pros: matches "smart, looks at what is happening". It handles cases no rule foresaw. `--drive` gets
+simpler.
+Cons: the decision is written as prose and made fresh each run, so two runs can judge one log
+differently. It cannot be fixture-tested beyond the signals themselves. FR2 is met but FR3 is only
+partly testable.
+Wins if: you value judgement on novel cases over runs that give the same answer for the same log.
+#### Option B — `--drive --run <log>` derives the verdict itself
+`--drive` reads the run log, computes the signals and works a fixed ladder. On a likely loop's first
+occurrence it re-dispatches with the prior diagnosis and the loop evidence in the prompt (`NOTE LIKELY-LOOP`).
+On the next no-progress re-entry it routes once to the stage above: verify→develop goes to `queue`,
+queue↔design goes to `design`. Then it escalates, `ESCALATE LOOP <id>` naming the evidence and both
+attempts. `--bounces` is replaced by `--run`.
+Pros: deterministic and fully fixture-testable (AC1–AC3 become exact). The supervisor cannot argue
+itself past a loop. FR4 is checkable.
+Cons: it is still a ladder of rules, only a smarter one than a count. `--drive` gains a run-log
+dependency and becomes stateful by input.
+Wins if: you want reproducible behaviour, with escalations you can trust to mean a real loop.
+#### Option C — B's script verdict, with the supervisor free to act early
+As B, but a `LIKELY-LOOP` NOTE is advisory. The supervisor may address it sooner, for example by
+rerouting on the first repeat, and records what it did and why in the run log (`loop_addressed`). Only
+the script's `LOOP` verdict ends the run.
+Pros: the person's "autonomy" with a floor that can be tested. Cons: two places hold loop logic.
+
+### Recommendation
+**Option C.** The signals and the verdict that ends a run come from the script, so FR2 and AC1–AC3
+are testable. The supervisor keeps room to act sooner than the floor, which is the autonomy answer 6
+asks for. **`bounce_max` is kept, under its existing name, but it now means the number of
+*no-progress* re-entries before the ladder escalates** (default 2). Progress resets the count, so a
+converging sliced epic never reaches it. Consuming projects keep their key, and the CHANGELOG says the
+meaning narrowed. Accepted cost: loop logic lives in both the script and the prose. The stale-contract
+catch-all stays an ESCALATE only for out-of-scope rows and for `queue`→`queue`.
+
+### What to do
+Reply with A, B or C (or edits to the signals or the `bounce_max` meaning). Then
+`./next --waiting` clears once someone writes `status: ready` back with `/ai-building-tools:design 0244`.
+That pass records your answer and writes the FRs and ACs per slice (S1 signals script, S2 `--drive`
+arms, S3 prose, config and CHANGELOG).
+
+### If no answer
+0244 waits. 0242 FR72's bounded arm stays as built, so approved design → queue hand-offs past
+`bounce_max` keep escalating. Other rows are unaffected.
 
 ## Open design question
 
