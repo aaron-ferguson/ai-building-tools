@@ -2,8 +2,8 @@
 id: "0243"
 title: Give each slice of an epic its own file, so claims, locks and revisits work per slice
 type: feature
-next: design
-status: in-progress
+next: develop
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -41,11 +41,11 @@ expects:
   - skills/verify/SKILL.md
   - skills/sprint/SKILL.md
   - CHANGELOG.md
-claimed_by: "5945"
-claimed_at: 2026-11-28T01:54:30Z
+claimed_by:
+claimed_at:
 touches:
 slice:
-ac_digest: AC1=9ef9cc2a AC2=ac7c8953 AC3=365cc19e AC4=fd0dd04c AC5=5930153d AC6=11fcfb0d
+ac_digest: AC1=17efa2a3 AC2=8fc3064d AC3=b068c01f AC4=5a85d7be AC5=38c21a6e AC6=11fcfb0d AC7=8c9edf6a AC8=32c3d92f AC9=4f596816 AC10=5a668450 AC11=c2ead87f AC12=bea9eaca AC13=63945aa0 AC14=5baec811
 ---
 
 ## Outcome
@@ -108,107 +108,6 @@ Those rules are stated against one file per ticket and must move with this chang
 held-finding rule (*Where toolkit work comes from*) does not apply: this is not a finding from this
 repo's own sessions waiting for a consuming project to confirm it.
 
-## Waiting on
-
-### Outcome
-Two sessions can hold two slices of one epic at once, one slice can be marked for revisiting without
-touching its siblings, and a session reads the epic index plus only the slice files its job needs.
-
-### Where it stands
-Design `6a4b`, 2026-11-28, sprint run-20261127T234238Z (unattended). The shape is concurrency
-architecture (`coding-conventions.md`, *What Not to Delegate to AI*), so this pass prepared the
-decision and did not record it. No FR or AC changed and `ac_digest` was not restamped. Facts
-re-read today in `skills/queue/templates/`:
-- every script finds an item by `item_for() { ls "$DIR/items/$1-"*.md | head -1; }` (`next:729`). A
-  sibling file named `items/0243-S1-*.md` would match that glob too, and in the C locale it sorts
-  ahead of `0243-give-…`, so `head -1` would return the slice instead of the epic. Slice files
-  therefore need either their own directory or their own id.
-- `claim` refuses any row whose status is not `ready` (`claim:287`), one claim per id.
-- `item.md`'s `parent:` model already gives children their own files, ids, claims and stages. It
-  inverts the ranking you want, though: the parent leaves `QUEUE.md` and the children are ranked.
-- 8 items on disk carry `## Progress` (0064, 0231, 0234, 0238, 0240, 0242, 0243, 0244). 0242 has
-  3,041 lines and 15 slices.
-Nothing else waits on this. 0242 keeps building meanwhile, and develop on 0243 should start only
-after 0242 closes (Notes, queue `e782`).
-
-### What needs you
-Pick how a slice is stored and addressed: as a child ticket with its own id, or as a slice file
-inside the epic with a new `<id>/S<n>` address. It sets the claim unit for every backlog script.
-
-### Options
-#### Option A — Slices are child tickets: invert `parent:` so that only outcomes are ranked
-Each slice becomes its own item, with a four-digit id, `parent: <epic>` and an ordinal
-`slice: S<n>`. It carries its own `next:`, `status:`, claim, FRs, ACs, `ac_digest` and QA evidence.
-AC numbers stay epic-wide, so the digests do not change when an AC moves. The epic keeps the
-outcome, problem, NFRs and a `## Progress` list whose lines link the child ids.
-(1) Layout: `items/NNNN-<slug>.md` as today. (2) `claim`, the lock and `handoff` stay per id and
-are unchanged. The epic is written only by `queue` under a claim on the epic, and a slice session
-never writes it. (3) No new status vocabulary: "needs revisiting" is `./reopen <child>` to
-`queue` or `design`, and `waiting` gets a scripted exit (`./handoff … ready` or a resume verb).
-(4) `QUEUE.md` gets one row per outcome. `./next` takes the first takeable child of the top
-outcome in slice order. `--drive` may run design on one child beside develop on another, but
-serialises two develop legs of one outcome. (5) A one-commit `./capture --split <id>` migrates
-an old item. Until it runs, the old single-file shape keeps reading. (6) An unsliced ticket is
-unchanged. Cap the depth at two levels: `capture` refuses a grandchild.
-- Pros: FR2, FR4, FR5 and FR6 follow from what the scripts already do per id. Most of the change
-  lands in `next` (ranking, take, drive) and `capture`. This builds on the `parent:` model the
-  retro notes say you asked for.
-- Cons: each slice uses up an id, so 0242 becomes 16 ids. Every reader that treats "a row" as
-  "the ranked unit" changes (the `QUEUE.md` join, the gate's `parent` batching at `next:1557`).
-  `item.md`'s `parent:` comment inverts, so the project/task wording changes in every skill.
-- Wins if: a slice should be addressable, citable and closable exactly like a ticket, and spending
-  ids is acceptable.
-#### Option B — Slice files under the epic: `items/<id>/S<n>.md`, addressed as `<id>/S<n>`
-The epic file stays where it is, and a sidecar directory holds one file per slice. That keeps
-both out of the `item_for` glob. Every script learns a slice address: `./claim 0243/S2`,
-`./handoff 0243/S2 <tok> design`. The claim and the slice's `next:`/`status:` live in the slice
-file, and `--slice`/`slice:` retire. `QUEUE.md` keeps one row per epic, with a derived column
-naming the takeable slices.
-- Pros: no ids spent. A slice is visibly *part of* its epic in the filesystem, which keeps your
-  "all of the context in one place" sense closest. `parent:` keeps its current meaning.
-- Cons: a second addressing scheme in all six scripts and their tests, so every id parser, row
-  join and `--drift` check takes a new code path. That is the larger and riskier rewrite, and it
-  lands on the same scripts 0242 is rewriting. Two hierarchy mechanisms (`parent:` and slice
-  directories) then coexist, and nothing explains when to use which.
-- Wins if: slices must never look like tickets in their own right, or id inflation matters.
-#### Option C — Keep one file and put a claim on each `## Progress` line
-- Pros: the smallest diff.
-- Cons: it fails FR1 and FR7, because the 3,041-line file is still read whole. Two sessions also
-  write one file in a shared working tree. Included only so the record shows why it lost.
-
-### Recommendation
-Option A. The id-keyed claim, lock and hand-off machinery already does per-slice concurrency if a
-slice *is* an id, so FR2/FR4/FR5/FR6 come mostly free and the risk sits in `next`'s ranking. B
-rebuilds that machinery under a second address. The one thing that should flip this: if you want a
-slice never to appear anywhere as a ticket (its own id in `DONE.md`, citable as `0251`), choose B.
-
-### What to do
-Reply "A", "B", or "A with <change>" (for example "no depth cap", "revisit is a new status, not
-reopen"). Then resume the row to `design` `ready` and run `/ai-building-tools:design 0243`. The next
-pass records the decision, writes the per-slice FRs/ACs for S1–S4 and restamps `ac_digest`.
-
-### If no answer
-0243 waits at design, and nothing else is blocked. 0242 and every unsliced ticket run as today, and
-new sliced epics keep being written in the single-file shape, which adds to the migration.
-
-## Open design question
-
-- **Question:** what is the shape? Specifically: (1) where slice files live and how they are named
-  (`items/0243/S1.md`, `items/0243-S1-*.md`, …), and how the epic index links them; (2) what a claim and
-  the lock hold — the slice file only, or the slice plus a read lease on the index — and what of the
-  index (outcome, NFRs, slice list) a slice session may write; (3) the slice-status vocabulary, including
-  "needs revisiting" and `waiting`, and whether a slice carries its own `next:`; (4) what `QUEUE.md`
-  shows — one row per epic, or a row per takeable slice — and how `./next` and `--drive` choose a
-  slice; (5) migration of sliced items already on disk here and in consuming projects; (6) whether an
-  unsliced ticket is unchanged (expected: yes).
-- **Why it blocks specification:** every criterion below names a file, a claim or a status, and their
-  form depends on (1)–(4). Guessing them is building to a contract nobody agreed to. It is also
-  concurrency architecture (`coding-conventions.md`, *What Not to Delegate to AI*), so an unattended
-  design pass briefs the person rather than deciding.
-- **Settle it with:** `/design`, reading `references/CONCURRENCY.md`, `skills/queue/templates/item.md`
-  (`## Progress`, `slice:`), `handoff`'s `--slice` path, `next --drive`'s `dispatch_leg` and
-  `leg_state`, and 0242 as the worked example.
-
 ## Functional requirements
 
 Fixed whatever the shape; design adds the rest and may sharpen these, never narrow them.
@@ -239,6 +138,96 @@ Fixed whatever the shape; design adds the rest and may sharpen these, never narr
 - FR11 — `CHANGELOG.md` `## Unreleased` names the new layout and what a consuming project does on
   upgrade.
 
+Added by design `5945` (Option A, 2026-11-28). In FR1–FR10, a "slice file" is the slice's own item
+file: a slice is a child ticket.
+
+**S1 — layout and readers**
+- FR12 — A slice is a child ticket: its own four-digit id and item file `items/NNNN-<slug>.md`, with
+  `parent: "<epic>"`. It carries its own `next:`, `status:`, claim, FRs, ACs, `ac_digest:`,
+  `## QA evidence` and `## Notes & decisions`. AC numbers stay unique across the epic, so an AC keeps
+  its number, and therefore its digest, when it moves between the epic and a child.
+- FR13 — The epic's `## Progress` is the only record of slice order. Each line is
+  `- [ ] S<n> — <child id> — <what lands>`. A child stores no ordinal, so there is no second place
+  for the order to go stale (the same reasoning as `item.md`'s derived children). The epic carries
+  `status: active` and an empty `next:`. It holds the outcome, the problem, the NFRs and any FR that
+  several slices share, and no AC of its own.
+- FR14 — The hierarchy is inverted so that only outcomes are ranked. A ticket with no `parent:` is
+  an outcome. It has a `QUEUE.md` row, and it stays the same ticket in the same place when it gains
+  children. A ticket with a `parent:` is a slice. It has no row, and it is reached only through its
+  parent. The depth is two levels: `capture` refuses a draft whose parent itself has a parent.
+  `item.md`'s `parent:` comment and `QUEUE.md`'s header say this. Their current wording (children
+  ranked, the project's row leaves) is the task-oriented system the person rejected.
+- FR15 — An epic's `QUEUE.md` row shows, in its Next and Status cells, the `next:`/`status:` of its
+  first open child in `## Progress` order. Every script that writes a child's state rewrites that
+  row in the same locked commit.
+- FR16 — `./next` and `./next <stage>` take from a ranked outcome as follows. For an epic, the
+  candidate is its first child in `## Progress` order that is `ready`, unclaimed, at the asked stage
+  (if one was given), and not excluded by FR23. An unsliced outcome is taken exactly as today.
+- FR17 — `./next --drift` reports these cases: a child whose `parent:` names an epic that does not
+  list it in `## Progress`; a `## Progress` id whose item is missing or names another parent; a child
+  that holds a `QUEUE.md` row; and a third level. It reports nothing on a well-formed epic.
+
+**S2 — claim, lock and release per child**
+- FR18 — `claim`, `handoff`, `close` and `reopen` act on a child by its id, exactly as on a ticket.
+  The claim on one child never refuses a claim on a sibling or on the epic. Where a script writes a
+  row, a child's row is its epic's (FR15).
+- FR19 — Only `queue` writes an epic file (its outcome, NFRs and `## Progress`). It does so under
+  `./claim <epic>`, which accepts `status: active` and holds the epic file only. A hand-off releases
+  that claim, restoring `status: active` and an empty `next:`. No child's session writes the epic.
+  `capture` and `close` (FR20, FR29) are the exceptions: they are scripts writing the epic under the
+  lock, in the way `close` already reconciles every ticket that names a closed one in `blocked_by:`.
+- FR20 — `close <child>` ticks the child's `## Progress` line in the same commit. When it ticks the
+  last open line, it also closes the epic and moves the epic's row to `DONE.md`.
+- FR29 — For a draft with a `parent:`, `capture` takes no rank position and refuses one. It appends
+  `- [ ] S<n> — <id> — <title>` to the epic's `## Progress` in the minting commit and writes no row.
+- FR21 — "Needs revisiting" is a hand-off, not a new status. `./reopen <child> <queue|design> <reason>`
+  sends one child, open or done, to the stage the reopener names. It takes no rank position. It
+  unticks that child's line, and if the epic is `done` it reopens the epic too. No sibling's file
+  changes.
+
+**S3 — waiting, and `--drive` per child in slice order**
+- FR22 — A `waiting` item has a scripted exit: `./reopen <id> --resume [<stage>]` sets it `ready`
+  at its current `next:`, or at the stage given, under the lock in one commit. It refuses an item
+  that is not `waiting`. This applies to any ticket, not only a child.
+- FR23 — One outcome builds one slice at a time. A child at `next: develop` or `verify` is not
+  takeable while a sibling is at `develop` or `verify` with status `ready` or `in-progress`. A child
+  at `design` or `queue` is takeable beside one. A `waiting` or `blocked` child is skipped and parks
+  no sibling (FR6). Order is a preference, not a gate: one slice that depends on another says so in
+  `blocked_by:`, as any ticket does.
+- FR24 — `--drive` dispatches per child, never per epic. Beside a running develop or verify leg it
+  may dispatch design or queue on a sibling (FR4). Its next build leg for an outcome is always FR16's
+  first takeable child, so legs advance the outcome in slice order and never alternate between
+  siblings. A `parent:`-joined gate batch is one session, so it stays within FR23.
+- FR25 — A child's stage is its own `next:`. A child that is not yet specified sits at
+  `next: design`, so no slice kind is parsed from free text. When verify passes a child, the next
+  dispatch for that outcome is the next child by its own `next:`, and that is design if it is
+  unspecified (FR5). For a child, `handoff --slice` is refused as meaningless.
+
+**S4 — migration, prose and changelog**
+- FR26 — `./capture --split <id>` migrates one open single-file sliced item in one commit. It mints a
+  child per `## Progress` line, in order. Each child gets the ACs its line's `discharges` list names,
+  with their digest entries copied from the epic's stamp. An FR moves to the one child whose moved ACs
+  cite it. An FR cited by several children, or by none, stays in the epic. A ticked slice becomes a
+  `done` child with a `DONE.md` row. An unticked `unspecified` slice becomes `next: design`, and an
+  unticked specified one becomes `next: develop`, `ready`. The epic's `## Progress` is rewritten to
+  FR13's form, it becomes `status: active` with an empty `next:`, and its `ac_digest:` is cleared.
+  Notes and QA evidence stay in the epic as its history, and each child's Notes open with
+  `Split from <epic> on <date>`. It refuses, changing nothing, in these cases: the item or the
+  backlog lock is held; `./next --ac-digest <id> --check` fails; or a stamped AC sits on no slice
+  line or on two.
+- FR27 — The legacy shape keeps reading. An item whose `## Progress` lines carry no child id is read,
+  and handed off with `--slice`, exactly as today until it is split. A closed sliced item is never
+  split: it is a record. S4 splits the open sliced items on disk, except 0243 itself, which finishes
+  in the shape it was built in. It runs only when nothing is held (`CONCURRENCY.md`, *A change that
+  touches every file takes an exclusive claim*).
+- FR28 — The prose states the child model. `CONCURRENCY.md` and the `queue`, `design`, `develop`,
+  `verify` and `sprint` SKILL.md files say a session loads the epic plus the one child it holds, and
+  any sibling a `### Sibling consequences` entry names (FR7). Under that model 0242 S13's FR68
+  "own-slice" case becomes the sibling case, because another slice is another item. `### Sibling
+  consequences` entries name child ids, and `queue`'s FR69 fold-in writes those children (FR8).
+  `sprint` states the person's constraint: a sprint is outcome-oriented, ranks and drives only
+  outcomes, and never returns to a task-ranked queue.
+
 ## Non-functional requirements
 
 | Dimension | Requirement for this item | How it would red | Convention |
@@ -249,39 +238,78 @@ Fixed whatever the shape; design adds the rest and may sharpen these, never narr
 
 Outcome-level and fixed regardless of the shape; design sharpens their fixtures and adds the rest.
 
-- [ ] AC1 — Given a fixture epic whose S1 is held by develop token A and whose S2 is unspecified, when a
-  design session claims S2, then the claim succeeds, and S1's slice file and claim are byte-unchanged.
-  Red: today's one-holder-per-item refusal (`claim`'s held-row check).
-- [ ] AC2 — Given the AC1 fixture, when `./next --drive` runs after S1's develop dispatch, then it
-  dispatches design on S2 beside the running develop leg rather than waiting. Red: `--drive` choosing
-  design per row only.
-- [ ] AC3 — Given a fixture epic with S1 and S2 specified, when S2 is marked as needing revisiting, then
-  `./next` routes S2 (to the stage design names) and S1 stays takeable at develop with its digest and
-  claim unchanged. Red: a status written to the epic, or to S1.
-- [ ] AC4 — Given a fixture sliced item in today's single-file shape, when the migration runs (or, if
-  design keeps both shapes, when every script reads it), then every FR and AC lands in exactly one slice
-  file and every AC's digest equals its pre-migration value. Red: an AC lost, duplicated or re-digested.
-- [ ] AC5 — Given a fixture whose S1 passed verify and whose S2 is unspecified, when verify hands off,
-  then the next dispatch is design on S2 with no intervening develop session. Red: `handoff`'s
-  verify → design `--slice` refusal.
+- [ ] AC1 — Given a fixture outcome 0010 whose `## Progress` lists `S1 — 0011` and `S2 — 0012`,
+  with 0011 claimed at develop by token A and 0012 at `next: design`, `ready`, when `./claim 0012`
+  runs, then it succeeds, and 0011's item file and claim are byte-unchanged. Red: a claim refused
+  because a sibling or the epic is held, or 0011's file changed.
+- [ ] AC2 — Given the AC1 fixture, when `./next --drive` runs after 0011's develop dispatch, then it
+  dispatches design on 0012 beside the running develop leg rather than waiting. Red: `--drive`
+  dispatching per epic, or waiting on 0011.
+- [ ] AC3 — Given a fixture outcome 0010 with children 0011 and 0012, both at develop and `ready`,
+  when `./reopen 0012 design "<reason>"` runs, then 0012 is at `next: design` and its `## Progress`
+  line is unticked, and 0011's item file is byte-unchanged and `./next develop` offers 0011. Red: a
+  status written to the epic or to 0011, or reopen demanding a rank position for a child.
+- [ ] AC4 — Given a fixture single-file sliced item with three slices (one ticked, one specified,
+  one `unspecified`) and a matching `ac_digest:`, when `./capture --split <id>` runs, then the
+  following hold. Every stamped AC lands in exactly one child, and each child's `./next --ac-digest
+  <child>` entries equal the item's pre-split entries for those ACs. The children are done, at
+  develop `ready`, and at design, in that order. The epic's `## Progress` lists their ids in FR13's
+  form. It is all one commit. Red: an AC lost, duplicated or re-digested, or more than one commit.
+- [ ] AC5 — Given a fixture outcome whose child 0011 is claimed at verify and whose next child 0012
+  is at `next: design`, when verify passes 0011 (`close_by: verify`), then the next `./next --drive`
+  dispatch for that outcome is design on 0012, with no develop session between. Red: a develop
+  dispatch that only forwards, or `handoff`'s verify → design `--slice` refusal.
 - [ ] AC6 — Given the tree after the change, when `for t in tests/*.test.sh; do "$t" || exit 1; done`
   runs, then it exits 0. Red: any script or fixture left on the single-file assumption.
+- [ ] AC7 — Given the AC3 fixture with 0011 at develop `ready` and 0012 at design `ready`, and
+  `QUEUE.md` holding only 0010's row, when `./next` runs, then it prints 0011, and `./next design`
+  prints 0012. Red: no candidate, because neither child has a row, or 0010 itself offered.
+- [ ] AC8 — Given the AC7 fixture plus a child 0013 with `parent: "0010"` that is absent from
+  0010's `## Progress`, when `./next --drift` runs, then it names 0013 and exits non-zero. On the
+  AC7 fixture alone it reports nothing about 0010–0012. Red: an unlisted child that goes unreported,
+  or a false report on a well-formed epic.
+- [ ] AC9 — Given the AC7 fixture, when `./capture` runs on a draft with `parent: "0011"`, then it
+  exits non-zero, names the two-level cap, and mints no id. When it runs on a draft with
+  `parent: "0010"` and no rank position, it mints the child, appends its `S3` line to 0010's
+  `## Progress`, and adds no `QUEUE.md` row, all in one commit. Red: a grandchild minted, or a child
+  ranked.
+- [ ] AC10 — Given the AC1 fixture with 0011 held, when `./claim 0010` runs, then it succeeds and
+  holds only 0010, and `./claim 0012` still succeeds after it. Red: an `active` epic refused as
+  "not ready", or the epic's claim refusing a child's.
+- [ ] AC11 — Given an outcome whose children are all `done` except 0012, held at verify, when
+  `./close 0012 <token>` runs, then 0012's line is ticked, the epic is `done`, and the epic's row
+  has moved to `DONE.md`, all in one commit. With a second child still open, the epic stays
+  `active`. Red: an epic left open with every child done, or closed early.
+- [ ] AC12 — Given an outcome whose child 0011 is `waiting` at design and whose child 0012 is at
+  develop `ready`, when `./next develop` runs, then it offers 0012. When `./reopen 0011 --resume`
+  runs, 0011 is at `next: design`, `ready`, in one commit. The same command on a `ready` item exits
+  non-zero and changes nothing. Red: a waiting child parking its sibling, or a `waiting` row that
+  only a hand edit can clear.
+- [ ] AC13 — Given an outcome whose child 0011 is at `next: verify`, `ready`, and whose child 0012
+  is at develop `ready`, when `./next develop` and `./next --drive --propose` run, then neither offers
+  0012 until 0011 is `done`, or is at `queue` or `design`. Red: two build legs of one outcome open at
+  once.
+- [ ] AC14 — Given AC4's fixture, when `./capture --split <id>` runs with the item claimed, or with
+  its `ac_digest:` not matching `./next --ac-digest <id>`, or with a stamped AC named on no slice
+  line, then it exits non-zero, names the cause, and leaves the backlog's tree and history unchanged.
+  Red: a partial split, or a split that re-digests silently.
 
 ## Progress
 
 **One outcome is one ticket, even across many sessions**; its slices are worked in order, each about
 one develop session's work (`product-definition-conventions.md` → "Slice Vertically and Thinly").
 
-- [ ] S1 — the slice-file layout and the readers: `next` and `--drift` read an epic index plus slice files, and an unsliced ticket is unchanged — unspecified
-- [ ] S2 — claim and lock per slice; `handoff`, `close` and `reopen` act on a slice — unspecified
-- [ ] S3 — slice status (needs revisiting, waiting) and `--drive` choosing a slice, design beside develop — unspecified
-- [ ] S4 — migration of the sliced items on disk, and the skills, `CONCURRENCY.md` and 0242 S13's rules moved onto slice files, with the CHANGELOG — unspecified
+- [ ] S1 — a slice is a child ticket, and the readers: `next` takes an outcome's first takeable child, `QUEUE.md` ranks only outcomes, `--drift` and `capture` know the two-level shape, and an unsliced ticket is unchanged (FR12–FR17, FR29) — discharges AC7, AC8, AC9
+- [ ] S2 — claim, lock and release per child, an epic claim for `queue`, `close` ticking and closing the epic, and reopen as the revisit (FR18–FR21) — discharges AC1, AC3, AC10, AC11
+- [ ] S3 — the waiting exit, one build leg per outcome, and `--drive` per child in slice order with design beside develop (FR22–FR25) — discharges AC2, AC5, AC12, AC13
+- [ ] S4 — `capture --split` and the migration of the open sliced items, the legacy shape still reading, the skills, `CONCURRENCY.md` and 0242 S13's rules on the child model, and the CHANGELOG (FR26–FR28, FR8, FR11) — discharges AC4, AC6, AC14
 
 ## QA plan
 
 Fixture backlogs in `tests/*.test.sh`, at `qa_level: unit` (the scripts are the mechanism); the skill
 and reference prose is checked by reading, not by a guard (`CLAUDE.md`, *Tests*). Design names the
-cases per slice.
+cases per slice: they are the ACs named on each `## Progress` line, each a fixture backlog in the
+script's own `tests/<script>.test.sh`.
 
 ## Out of scope
 
@@ -352,3 +380,39 @@ cases per slice.
   also bears on `--drive`: legs of one outcome advance it in slice order, they do not bounce between
   siblings or stages (see 0244, answered the same day). No FR or AC was changed in this pass and
   `ac_digest` was not restamped. The design pass restamps when it writes criteria.
+
+- **2026-11-28 (design `5945`, dispatched by a sprint supervisor) — decided: Option A, slices are
+  child tickets, and only outcomes are ranked.** The decision is the person's (the answer quoted
+  above). This pass worked out what that answer implies and wrote it as FR12–FR28 and AC7–AC14.
+  - *Rejected:* B, slice files under `items/<id>/` with a `<id>/S<n>` address. It would add a second
+    addressing scheme to all six scripts. C, a claim per `## Progress` line, fails FR1 and FR7.
+  - *Departed from the brief, on fact:* the brief gave a child an ordinal `slice: S<n>`. This design
+    stores none, and the epic's `## Progress` line order is the only order (FR13). An ordinal stored
+    in the child is a second place to update, the reason `item.md` derives children rather than
+    storing them. `slice:` keeps its leg meaning on legacy items. The brief's "`waiting` gets a
+    scripted exit" is FR22, `reopen --resume`.
+  - *The person's constraint, carried:* "stay outcome oriented with our sprints so we don't keep
+    going back and forth". Only outcomes are ranked or driven (FR14, FR24). The build legs of one
+    outcome run one at a time, in slice order (FR23, FR24). Design or queue on a sibling may run
+    beside them, which is what FR4 asked for. That stops the alternation between siblings. 0244 owns
+    the loop judgement and `bounce_max`.
+  - *Accounting against the criteria queue wrote:* FR1–FR11 are confirmed. FR1's "slice file" reads
+    as the child's item file. FR3 is settled as FR21 (revisit is a reopen to a named stage, not a new
+    status). FR8 changes in substance, not in wording: under A, another slice is another item, so
+    0242 S13's own-slice case folds into `### Sibling consequences` (FR28). AC1, AC3, AC4 and AC5
+    are re-fixtured in the child form, with their outcomes unchanged. AC2 and AC6 are unchanged in
+    substance. AC7–AC14 are added.
+  - *Facts re-read today (2026-11-28) in `skills/queue/templates/`:*
+    - `item_for` globs `items/<id>-*.md` (`next:729`). A child has its own id, so nothing collides.
+    - `claim` holds one claim per id and refuses a status that is not `ready` (`claim:287`). That
+      is why FR19 opens `active` for an epic.
+    - The `--ac-digest` entries are keyed by AC number over the AC's text (`next:546`), so a moved
+      AC keeps its digest (AC4).
+    - `gate_from` joins a batch on a shared `parent:` (`next:1557`). Every sibling now shares one,
+      so FR24 bounds that batch to one session.
+    - `handoff`'s `--slice` path (`handoff:709`) stays for legacy items (FR27).
+  - *`qa_level: unit` and `close_by: verify` re-read against these criteria, and both are kept:*
+    every AC is a fixture-backlog script test, and the prose (FR28) is checked by reading.
+    `size: l` stands at four slices.
+  - *No sibling consequence.* 0242 is not written. FR8 and FR28 move its S13 rules in this item's
+    own S4, after 0242 closes (Out of scope).
