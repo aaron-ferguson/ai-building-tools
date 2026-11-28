@@ -3,7 +3,7 @@ id: "0243"
 title: Give each slice of an epic its own file, so claims, locks and revisits work per slice
 type: feature
 next: design
-status: waiting
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -336,3 +336,19 @@ cases per slice.
     ranked and worked directly, and stays the same ticket in the same place when it later gains
     children. `item.md`'s `parent:` comment says the opposite ("a ticket with no children is a TASK"),
     and that line inverts with the ranking. Bears on (4) and (6).
+- **2026-11-28 (queue, dispatched after sprint run-20261127T234238Z) — the person answered the
+  `## Waiting on` brief: Option A.** Verbatim:
+  > "Option A. We had a system like this before but it was oriented to tasks (children) instead of
+  > projects (parents). We just need to make sure that we stay outcome oriented with our sprints so
+  > we don't keep going back and forth."
+
+  Resumed to `next: design`, `status: ready` by hand under the lock (no script takes a row out of
+  `waiting`: the gap the Notes above record). **For the design pass:** record Option A as the decision,
+  write the slice FRs/ACs and the `## Progress` slices, and delete `## Waiting on` and
+  `## Open design question`. **Carry the person's constraint as a design input, not a criterion yet:**
+  sprints stay outcome-oriented. Only outcomes (parents) are ranked and driven. A child slice is
+  reached through its parent and never worked as a free-standing row, and the design must not swing
+  back to a task-ranked queue, which is the earlier system this answer rejects. "No back and forth"
+  also bears on `--drive`: legs of one outcome advance it in slice order, they do not bounce between
+  siblings or stages (see 0244, answered the same day). No FR or AC was changed in this pass and
+  `ac_digest` was not restamped. The design pass restamps when it writes criteria.

@@ -3,7 +3,7 @@ id: "0244"
 title: Make sprint judge loops and likely loops itself, instead of ending a run on a bounce count
 type: feature
 next: design
-status: waiting
+status: ready
 qa_level: unit
 close_by: verify
 size: l
@@ -243,3 +243,18 @@ is checked by reading (`CLAUDE.md`, *Tests*). Design names the cases per slice.
   should follow 0242's S13, which builds the FR72 arm this replaces.
 - Interacts with 0242's FR71 reading: if every design pass came to hand to `queue`, FR72's count would
   escalate sliced epics routinely until this lands.
+- **2026-11-28 (queue, dispatched after sprint run-20261127T234238Z) — the person answered the
+  `## Waiting on` brief: Option A, not the recommended C.** Verbatim:
+  > "A. I want sprint to have more autonomy and not get stuck by hard rules that don't always apply."
+
+  Resumed to `next: design`, `status: ready` by hand under the lock (no script takes a row out of
+  `waiting`; 0243's Notes record that gap). **For the design pass:** record Option A as the decision.
+  The script (`tools/sprint-ledger.sh loops --run <log>`) computes the signals, the supervising
+  session judges them, `--drive` drops `--bounces` and stays stateless, and the C recommendation's
+  `bounce_max` reinterpretation does not carry over. Decide what `bounce_max` becomes under A and say
+  so in the CHANGELOG. Rewrite the FRs/ACs and `## Progress` slices to that shape, and delete
+  `## Waiting on` and `## Open design question`. Option A's stated con needs an answer: FR3 is only
+  partly testable. Under CLAUDE.md's *No new guard greps prose*, the judgement half stays prose and
+  is unguarded, and only the signals get fixture tests. So narrowing or reshaping FR3's criteria is
+  the design pass's call, and it must be recorded as such. No FR or AC was changed in this pass and
+  `ac_digest` was not restamped.
